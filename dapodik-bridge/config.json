@@ -1,0 +1,18 @@
+{
+  "server_url": "http://localhost:8000",
+  "api_key": "11jtIdsSzunH3UDSAoNywFnLAkM9pGhsaK4RQm0Jafws4HCxC5yqH31lg8ZfSthQ",
+  "dapodik_url": "http://localhost:5774",
+  "dapodik_token": "YY8j57VCCbAVdJg",
+  "semester_id": "20261",
+  "tahun_ajaran": "2025/2026",
+  "nama_semester": "ganjil",
+  "auto_sync": false,
+  "last_sync": null,
+  "modules": {
+    "Sekolah": true,
+    "PesertaDidik": true,
+    "PTK": true,
+    "RombonganBelajar": true,
+    "Jadwal": true
+  }
+}

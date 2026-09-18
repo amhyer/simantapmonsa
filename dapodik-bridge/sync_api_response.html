@@ -1,0 +1,271 @@
+﻿<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SINKRONISASI</title>
+<!--- --->
+<link rel="preload" href="includes/fonts/glyphicons-halflings-regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" type="text/css" href="includes/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="includes/css/style.css">
+<script type="text/javascript" src="includes/js/jquery.js"></script>
+<script type="text/javascript" src="includes/js/easyui.js"></script>
+<link rel="stylesheet" type="text/css" href="includes/css/sync-modern.css">
+
+</head>
+<body>
+				<div id="tab1">
+		  <form name="interface" id="interface" method="post" enctype="multipart/form-data">
+		    		    <div class="col-lg-12">
+		      <div class="table-info"><i class="glyphicon glyphicon-log-in"></i> DATA SEKOLAH TIDAK LENGKAP</div>
+		      		<h4 style='color:#dc2626; text-align:center'> Silahkan relogin aplikasi Anda, karena waktu sesi Anda sudah habis. <br/>
+		          		Proses sinkronisasi dihentikan !</h4>
+		    </div>
+		    		    			<div style="clear:both"></div>
+			<div>
+		    <center>
+			<h2 class="info_sync">
+		        		      </h2>
+		      <h3 class="info_sync">
+		        		      </h3>
+		    		    		    </center>
+			</div>
+									<!-- Modal Progress Sinkronisasi -->
+			<div class="modal fade" id="syncProgressModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" aria-labelledby="syncProgressModalLabel" aria-hidden="true">
+			  <div class="modal-lg modal-dialog" role="document">
+			    <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+			      <div class="modal-header" style="background: #ffffff; color: #3730a3; border-radius: 5px 0 5px 0; padding: 20px 30px; border-top: 2px solid #4f46e5;">
+			        <h4 class="modal-title" id="syncProgressModalLabel" style="font-weight: 600; margin: 0;">
+			          <span id="modal-progress-title"> Proses Sinkronisasi</span>
+			        </h4>
+			      </div>
+			      <div class="modal-body" style="padding: 30px; background: #f8f9fa;">
+			        <!-- Status Bar -->
+		        <div class="phase-status-bar" style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+			          <div style="display: flex; align-items: center; gap: 15px;">
+			            <span class="phase-status-icon" id="global-progress-icon" style="font-size: 32px; animation: pulse 0.6s ease-in-out infinite;">&#128228;</span>
+			            <div style="flex: 1;">
+			              <span class="phase-status-text" id="global-progress-msg" style="font-size: 16px; font-weight: 500; color: #333; display: block;">
+			                Memulai proses sinkronisasi...			              </span>
+			              <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+			                <div class="phase-mini-spinner" style="width: 16px; height: 16px; border: 2px solid #c7d2fe; border-top: 2px solid #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+			                <span id="progress-percentage" style="font-size: 14px; color: #4f46e5; font-weight: 600;">0%</span>
+			              </div>
+			            </div>
+			          </div>
+			        </div>
+
+			        <!-- Progress Bar -->
+			        <div class="phase-progress-overall" style="margin-bottom: 25px;">
+			          <div class="phase-progress-bg" style="height: 30px; background: #e9ecef; border-radius: 15px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+			            <div class="phase-progress-fill" id="global-progress-fill" style="height: 100%; background: #a5b4fc; width: 0%; transition: width 0.3s ease, background 0.3s ease; position: relative; display: flex; align-items: center; justify-content: flex-end; color: #3730a3; font-weight: 600; font-size: 14px; box-shadow: 0 2px 10px rgba(129, 140, 248, 0.35);">
+			              <span id="progress-fill-text" style="position: absolute; left: 50%; transform: translateX(-50%);"></span>
+				          <div class="progress-ball">📁</div>
+			            </div>
+			          </div>
+			        </div>
+
+			        <!-- Statistics Cards -->
+			        <!-- <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+			          <div class="stat-card" style="background: #e4e7fb; padding: 15px; border-radius: 10px; text-align: center; color: #3730a3; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+			            <div style="font-size: 24px; font-weight: 700; margin-bottom: 5px;" id="stat-total">0</div>
+			            <div style="font-size: 12px; opacity: 0.9;">Total Data</div>
+			          </div>
+			          <div class="stat-card" style="background: #d1fae5; padding: 15px; border-radius: 10px; text-align: center; color: #065f46; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+			            <div style="font-size: 24px; font-weight: 700; margin-bottom: 5px;" id="stat-success">0</div>
+			            <div style="font-size: 12px; opacity: 0.9;">Berhasil</div>
+			          </div>
+			          <div class="stat-card" style="background: #fee2e2; padding: 15px; border-radius: 10px; text-align: center; color: #991b1b; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+			            <div style="font-size: 24px; font-weight: 700; margin-bottom: 5px;" id="stat-failed">0</div>
+			            <div style="font-size: 12px; opacity: 0.9;">Gagal</div>
+			          </div>
+			        </div> -->
+			        
+			        <!-- Table List -->
+			        <!-- <div class="phase-table-list" id="global-progress-list" style="background: white; border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05);"></div> -->
+			        
+			        <!-- Time Elapsed -->
+			        <div style="text-align: center; margin-top: 15px; padding: 10px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+			          <small style="color: #6c757d;">
+			            <i class="glyphicon glyphicon-time"></i> 
+			            Waktu: <span id="elapsed-time" style="font-weight: 600; color: #667eea;">0:00</span>
+			          </small>
+			        </div>
+			      </div>
+			    </div>
+			  </div>
+			</div>
+			<style>
+			/* Modal & Backdrop */
+			.modal {
+			  position: fixed;
+			  top: 0;
+			  right: 0;
+			  bottom: 0;
+			  left: 0;
+			  display: none;
+			  overflow-x: auto;
+			  overflow-y: auto;
+			  outline: 0;
+			  padding-right: 0 !important;
+			}
+			.modal.in {
+			  position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+			
+				z-index: 1000; /* Ensure it sits on top of everything */
+				background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+			
+			}
+			.modal-dialog {
+			  justify-content: center; 
+			  align-items: center;    
+			  padding: 0 !important; 
+
+			  width: 900px;
+			  max-width: 90%;
+			}
+			.modal-backdrop {
+			  position: relative;
+			  top: 0;
+			  right: 0;
+			  bottom: 0;
+			  left: 0;
+
+			  background-color: #000;
+			}
+			.modal-backdrop.fade {
+			  opacity: 0;
+			}
+			.modal-backdrop.in {
+			  opacity: 0.5;
+			}
+			@media (min-width: 768px) {
+			  .modal-dialog {
+			    width: 600px;
+			  }
+			  .modal-lg {
+			    width: 900px;
+			    max-width: 90%;
+			  }
+			}
+			@media (max-width: 767px) {
+			  .modal-dialog {
+			    margin: 10px;
+			  }
+			}
+			
+			@keyframes spin {
+			  0% { transform: rotate(0deg); }
+			  100% { transform: rotate(360deg); }
+			}
+			@keyframes pulse {
+			  0%, 100% { transform: scale(1); opacity: 1; }
+			  50% { transform: scale(1.1); opacity: 0.8; }
+			}
+			.stat-card {
+			  transition: transform 0.3s ease, box-shadow 0.3s ease;
+			}
+			.stat-card:hover {
+			  transform: translateY(-3px);
+			  box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+			}
+			#global-progress-list::-webkit-scrollbar {
+			  width: 6px;
+			}
+			#global-progress-list::-webkit-scrollbar-track {
+			  background: #f1f1f1;
+			  border-radius: 10px;
+			}
+			#global-progress-list::-webkit-scrollbar-thumb {
+			  background: #a5b4fc;
+			  border-radius: 10px;
+			}
+			#global-progress-list::-webkit-scrollbar-thumb:hover {
+			  background: #818cf8;
+			}
+			</style>
+						
+		    		    		    
+		    <!-- Sync Results Tabs (selalu dirender; JS menampilkan saat sync berlangsung, PHP menampilkan setelah selesai) -->
+<div class="col-lg-12" style="margin-top: 20px;display:none;" id="sync-results-tabs">
+  <div class="modern-tabs-container">
+    <!-- Tab Headers -->
+<div class="modern-tabs-header" id="sync-results-tabs-header">
+  <button type="button" class="modern-tab-btn active" data-tab="tab-sent">
+    <div class="tab-icon">&#128228;</div>
+    <div class="tab-content">
+      <span class="tab-title">Data Dikirim</span>
+      <span class="tab-subtitle">Upload ke Server</span>
+    </div>
+    <div class="tab-status" id="status-sent">
+      <div class="status-loader"></div>    </div>
+  </button>
+  <button type="button" class="modern-tab-btn " data-tab="tab-received">
+    <div class="tab-icon">&#128229;</div>
+    <div class="tab-content">
+      <span class="tab-title">Data Diterima</span>
+      <span class="tab-subtitle">Download dari Server</span>
+    </div>
+    <div class="tab-status" id="status-received">
+      <div class="status-loader"></div>    </div>
+  </button>
+  <button type="button" class="modern-tab-btn " data-tab="tab-reference">
+    <div class="tab-icon">&#128218;</div>
+    <div class="tab-content">
+      <span class="tab-title">Data Referensi</span>
+      <span class="tab-subtitle">Update Referensi</span>
+    </div>
+    <div class="tab-status" id="status-reference">
+      <div class="status-loader"></div>    </div>
+  </button>
+</div>
+<div class="tab-detail-head" id="tab-detail-head"></div>
+    <!-- Tab Content -->
+<div class="modern-tabs-body" id="sync-results-tabs-body">
+
+  <!-- Tab 1: Data Dikirim ke Server -->
+  <div class="modern-tab-pane active" id="tab-sent">
+        <div class="alert alert-info" style="margin-bottom:0;">Progress proses ditampilkan di atas tab.</div>
+      </div>
+
+  <!-- Tab 2: Data Diterima dari Server -->
+  <div class="modern-tab-pane " id="tab-received">
+        <div class="alert alert-info" style="margin-bottom:0;">Progress proses ditampilkan di atas tab.</div>
+      </div>
+
+  <!-- Tab 3: Data Referensi -->
+  <div class="modern-tab-pane " id="tab-reference">
+        <div class="alert alert-info" style="margin-bottom:0;">Progress proses ditampilkan di atas tab.</div>
+      </div>
+
+</div>
+  </div>
+</div>
+		    
+		  
+
+		    			
+			
+		    <input type="hidden" id="act" name="act"/>
+
+		  </form>
+		  		</div>
+					
+</body>
+<script type="text/javascript">
+window.SYNC_CONFIG = {
+	isConnect: true,
+	isProcessAction: false,
+	showGlobalProgress: false,
+	activeTab: 'tab-sent',
+	urls: {"ajax":"ajax.php","register":"?act=register","tarikData":"?act=tarikData","syncALL":"?act=syncALL","selesai":"?act=selesai","prefill":"?act=prefill","sendToken":"?act=sendtoken","cekValidasi":"?act=cekValidasi","cekVersi":"cek_versi.php"}};
+</script>
+<script type="text/javascript" src="includes/js/sync-modern.js"></script>
+<script type="text/javascript" src="includes/js/sync-actions.js"></script>
+<script type="text/javascript" src="includes/js/sync-init.js"></script>
+</html>
+
+
+
