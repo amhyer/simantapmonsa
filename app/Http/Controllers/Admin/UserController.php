@@ -247,7 +247,8 @@ public function prosesAkunMassal(Request $request)
 
     public function siswaIndex()
     {
+        $users = User::orderBy('peran')->orderBy('nama_lengkap')->get();
         $siswa = Siswa::with('guru')->get();
-        return view('admin.users.index', compact('siswa'));
+        return view('admin.users.index', compact('users', 'siswa'));
     }
 }

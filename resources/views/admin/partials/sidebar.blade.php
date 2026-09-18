@@ -7,6 +7,7 @@
         ['label' => 'SISTEM', 'items' => [
             ['route' => 'admin.dashboard', 'icon' => 'fa-solid fa-gauge-high', 'label' => 'Dasbor Sistem'],
             ['route' => 'admin.users.index', 'icon' => 'fa-solid fa-users', 'label' => 'Kelola Pengguna'],
+            ['route' => 'admin.users.siswa', 'icon' => 'fa-solid fa-graduation-cap', 'label' => 'Data Siswa'],
         ]],
         ['label' => 'PENGATURAN', 'items' => [
             ['route' => 'admin.peta-kelas.index', 'icon' => 'fa-solid fa-school', 'label' => 'Peta Kelas'],
@@ -31,7 +32,7 @@
     <div class="nav-label">{{ $group['label'] }}</div>
     @foreach($group['items'] as $item)
         <a href="{{ route($item['route']) }}" 
-           class="nav-item {{ request()->routeIs($item['route']) ? 'active' : '' }}">
+           class="nav-item {{ request()->routeIs($item['route'], $item['route'] . '.*') ? 'active' : '' }}">
             <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
             {{ $item['label'] }}
             @if(isset($item['badge']))

@@ -92,6 +92,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     
     // Kelola Pengguna
     Route::get('/users/akun-massal', [UserController::class, 'akunMassal'])->name('users.akun-massal');
+    Route::get('/users/siswa', [UserController::class, 'siswaIndex'])->name('users.siswa');
     Route::post('/users/proses-massal', [UserController::class, 'prosesAkunMassal'])->middleware('throttle:5,1')->name('users.proses-massal');
     Route::delete('/users/hapus-semua/{peran}', [UserController::class, 'destroyAll'])->middleware('throttle:5,1')->name('users.destroy-all');
     Route::resource('users', UserController::class)->except(['show']);
@@ -251,9 +252,9 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     
     // Kesiapan TKA
     Route::get('/tka', [TKAController::class, 'index'])->name('tka.index');
+    Route::get('/tka/analisis', [TKAController::class, 'analysis'])->name('tka.analysis');
     Route::get('/tka/{id}', [TKAController::class, 'show'])->name('tka.show');
     Route::post('/tka', [TKAController::class, 'store'])->name('tka.store');
-    Route::get('/tka/{id}/analisis', [TKAController::class, 'analysis'])->name('tka.analysis');
     
     // Analisis Belajar
     Route::get('/analisis', [AnalisisController::class, 'index'])->name('analisis.index');
@@ -302,7 +303,6 @@ Route::middleware(['auth', 'role:ortu', 'force.password.change'])->prefix('ortu'
 Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kepsek')->name('kepsek.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Kepsek\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/pantau', [\App\Http\Controllers\Kepsek\DashboardController::class, 'pantau'])->name('pantau.index');
-    Route::get('/belajar', [\App\Http\Controllers\Kepsek\DashboardController::class, 'belajar'])->name('belajar.index');
     Route::get('/rekap', [RekapController::class, 'index'])->name('rekap.index');
     Route::get('/rekap/{guruId}', [RekapController::class, 'detail'])->name('rekap.detail');
     Route::get('/rekap/unduh/csv', [RekapController::class, 'unduh'])->name('rekap.unduh');

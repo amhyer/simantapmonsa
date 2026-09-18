@@ -180,41 +180,6 @@ class DashboardController extends Controller
         return view('kepsek.pantau.index', compact('guru', 'aktivitas', 'statistikGuru', 'filterGuru', 'filterTanggal'));
     }
 
-    public function belajar(Request $request)
-    {
-        $kelas = $request->get('kelas');
-        $query = NilaiErapot::query();
-        if ($kelas) {
-            $query->where('kelas', $kelas);
-        }
-        $nilai = $query->get();
-
-        $perMapel = $nilai->groupBy('mata_pelajaran')->map(function ($items, $mapel) {
-            return [
-                'mapel' => $mapel,
-                'total' => $items->count(),
-                'rata' => round($items->avg('nilai_akhir'), 2),
-                'tertinggi' => $items->max('nilai_akhir'),
-                'terendah' => $items->min('nilai_akhir'),
-                'tuntas' => $items->where('nilai_akhir', '>=', getKKM())->count(),
-            ];
-        })->values();
-
-        $perKelas = $nilai->groupBy('kelas')->map(function ($items, $kelas) {
-            return [
-                'kelas' => $kelas,
-                'total' => $items->count(),
-                'rata' => round($items->avg('nilai_akhir'), 2),
-                'tuntas' => $items->where('nilai_akhir', '>=', getKKM())->count(),
-                'tidak_tuntas' => $items->where('nilai_akhir', '<', getKKM())->count(),
-            ];
-        })->values();
-
-        $listKelas = NilaiErapot::distinct('kelas')->pluck('kelas');
-
-        return view('kepsek.belajar.index', compact('perMapel', 'perKelas', 'listKelas', 'kelas'));
-    }
-
     protected function getPredikat($nilai, $kkm = null)
     {
         $kkm = $kkm ?? getKKM();

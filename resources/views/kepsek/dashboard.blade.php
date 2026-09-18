@@ -97,7 +97,7 @@
     <div class="card-body">
         <div style="display:flex;gap:10px;flex-wrap:wrap">
             <a href="{{ route('kepsek.rekap.index') }}" class="btn btn-sm" style="background:#1F3864;color:#fff">📊 Rekap Lengkap</a>
-            <a href="{{ route('kepsek.belajar.index') }}" class="btn btn-ghost btn-sm">🎓 Hasil Belajar</a>
+            <a href="{{ route('kepsek.hasil-belajar.index') }}" class="btn btn-ghost btn-sm">🎓 Hasil Belajar</a>
             <a href="{{ route('kepsek.pantau.index') }}" class="btn btn-ghost btn-sm">📡 Pantau Aktivitas</a>
             <a href="{{ route('kepsek.peta-kelas.index') }}" class="btn btn-ghost btn-sm">🏫 Peta Kelas</a>
         </div>

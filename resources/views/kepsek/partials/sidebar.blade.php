@@ -6,7 +6,7 @@
         ]],
         ['label' => 'PEMETAAN', 'items' => [
             ['route' => 'kepsek.peta-kelas.index', 'icon' => 'fa-solid fa-map', 'label' => 'Peta Kelas'],
-            ['route' => 'kepsek.belajar.index', 'icon' => 'fa-solid fa-chart-line', 'label' => 'Hasil Belajar'],
+            ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'fa-solid fa-chart-line', 'label' => 'Hasil Belajar'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
             ['route' => 'kepsek.pantau.index', 'icon' => 'fa-solid fa-satellite-dish', 'label' => 'Pantau Aktivitas'],
@@ -20,7 +20,7 @@
     <div class="nav-label">{{ $group['label'] }}</div>
     @foreach($group['items'] as $item)
         <a href="{{ route($item['route']) }}"
-           class="nav-item {{ request()->routeIs($item['route'].'*') ? 'active' : '' }}">
+           class="nav-item {{ request()->routeIs($item['route'], $item['route'] . '.*') ? 'active' : '' }}">
             <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
             {{ $item['label'] }}
         </a>
