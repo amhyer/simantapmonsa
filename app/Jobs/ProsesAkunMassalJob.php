@@ -23,12 +23,12 @@ class ProsesAkunMassalJob implements ShouldQueue
 
     public function handle(): void
     {
-        $siswa = Siswa::whereIn('id', $this->requestData['siswa_ids'])->get();
+        $siswa = Siswa::whereIn('id', $this->requestData['siswa_ids'] ?? [])->get();
         $created = 0;
         $usersToInsert = [];
 
         foreach ($siswa as $s) {
-            if ($this->requestData['buat_ortu']) {
+            if ($this->requestData['buat_ortu'] ?? false) {
                 $username = 'ortu' . $s->nis;
                 if (!User::where('nama_pengguna', $username)->exists()) {
                     $usersToInsert[] = [

@@ -39,37 +39,13 @@ class BackupController extends Controller
 
     public function export()
     {
-        $data = [
-            'users' => User::chunk(100, function ($users) {
-                return $users->map(function ($user) {
-                    return collect($user->toArray())->except([
-                        'kata_sandi', 'remember_token', 'dapodik_id', 'rekaman'
-                    ])->toArray();
-                })->toArray();
-            }),
-            'siswa' => Siswa::chunk(100, function ($siswa) {
-                return $siswa->map(fn($s) => collect($s->toArray())->except(['rekaman', 'foto', 'nik', 'no_kk'])->toArray())->toArray();
-            }),
-            'materi' => Materi::chunk(100),
-            'kuis' => Kuis::chunk(100),
-            'nilai' => Nilai::chunk(100),
-            'kehadiran' => Kehadiran::chunk(100),
-            'hasil_kuis' => HasilKuis::chunk(100),
-            'catatan' => Catatan::chunk(100),
-            'dimensi' => Dimensi::chunk(100),
-            'kebiasaan' => Kebiasaan::chunk(100),
-            'pengaturan_guru' => PengaturanGuru::chunk(100),
-            'ringkasan_guru' => RingkasanGuru::chunk(100),
-            'sekolah_settings' => SekolahSettings::chunk(100),
-            'aktivitas' => Aktivitas::chunk(100),
-        ];
-
-        // Dispatch job async
-        dispatch(new ExportBackupJob($data));
+        // Job query + tulis backup sendiri secara streaming (hemat memori).
+        // Tanpa payload agar antrean tetap ringan.
+        dispatch(new ExportBackupJob());
 
         return response()->json([
             'success' => true,
-            'message' => 'Export backup dimulai secara asynchronous. File akan siap dalam waktu singkat.',
+            'message' => 'Export backup dimulai secara asynchronous. File akan siap di folder backups dalam waktu singkat.',
         ]);
     }
 

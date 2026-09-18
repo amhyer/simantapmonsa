@@ -21,13 +21,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DapodikImportController extends Controller
 {
-    protected $dapodikService;
-
-    public function __construct(DapodikService $dapodikService)
-    {
-        $this->dapodikService = $dapodikService;
-    }
-
     public function index()
     {
         $logs = DapodikSyncLog::with('user')
@@ -94,8 +87,15 @@ $log = DapodikSyncLog::create([
             'started_at' => now(),
         ]);
 
-        // Dispatch job async
-        $this->dispatch->job(new ImportDapodikJob($data, $data['sekolah']['npsn'] ?? null, $data['tahun_ajaran'] ?? null, $data['semester'] ?? null));
+        // Dispatch job async (antrean: sync = langsung jalan, database/redis = background)
+        $guru = auth()->user();
+        ImportDapodikJob::dispatch(
+            $data,
+            $log->id,
+            $tipeSync,
+            $guru?->id,
+            $guru?->nama_lengkap ?? 'Dapodik Bridge'
+        );
 
         return response()->json([
             'success' => true,
