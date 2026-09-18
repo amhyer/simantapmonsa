@@ -6,7 +6,7 @@
 
 ## 1. Peta Menu Eksisting (ringkas)
 
-- **Admin (17 menu + 1 aksi, gaya e-Rapor dengan submenu):** UTAMA: Dasbor Sistem · INTEGRASI DAPODIK: Web Service + Ambil Data (satu halaman, dua pintu) · PENGGUNA: Data Pengguna, Data Siswa · DATA REFERENSI (submenu): Data Sekolah, Data Guru (baru), Data Kelas, Data Mapel, Data Pembelajaran (baru) · PENGATURAN: Semester, Kode & Akses, Modul & Tampilan, Bobot & Ketuntasan · SISTEM & LOG: Penyimpanan Data, Data & Pemulihan, API Keys, Log Aktivitas, Keluar
+- **Admin (pohon penuh e-Rapor SD, dengan submenu lipat):** UTAMA: Dasbor Sistem · INTEGRASI DAPODIK: Web Service + Ambil Data (satu halaman, dua pintu) · PENGGUNA: Data Pengguna, Data Siswa · DATA REFERENSI (submenu): Sekolah, Guru (baru), Siswa, Kelas, Mapel, Pembelajaran (baru) + Ekskul/Kelompok/Mapping/Logo-TTD/Tanggal/Foto = label "Segera" (non-link) · DATA KOKURIKULER (3, Segera) · STATUS PENILAIAN (2, Segera) · PERKEMBANGAN NILAI (2, Segera) · TRANSKRIP IJAZAH (6, Segera) · CETAK NILAI (3, Segera) · Kirim Nilai (Segera) · PENGATURAN: Semester, Kode & Akses, Modul & Tampilan, Bobot & Ketuntasan · SISTEM & LOG: Sheet, Backup, API Keys, Log. Aturan: item "Segera" tidak punya route (bukan link mati); tombol Keluar tetap milik footer layout global.
 - **Guru (17 menu):** Dasbor · Materi Ajar · Profil Lulusan (Dimensi) · Kesiapan TKA · Input Nilai Cepat · Input Nilai e-Rapor · Kuis & Soal · Daftar Nilai · Analisis Belajar · Kehadiran · Catatan Siswa · 7 Kebiasaan · Laporan & Rapor · Generate e-Rapor · Data Siswa · Google Sheet · Pengaturan
 - **Siswa (5 menu):** Beranda · Materi · Kuis · Nilaiku · Profil Saya
 - **Ortu (7 menu):** Ringkasan · Isi 7 Kebiasaan · Perkembangan Nilai · Rekap Kebiasaan · Kehadiran Anak · Catatan Guru · Laporan/Rapor

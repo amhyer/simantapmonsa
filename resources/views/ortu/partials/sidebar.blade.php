@@ -1,29 +1,52 @@
-<div class="nav-label">MENU ORANG TUA</div>
-<a href="{{ route('ortu.dashboard') }}" 
-   class="nav-item {{ request()->routeIs('ortu.dashboard') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-house"></i></span> Ringkasan
-</a>
-<a href="{{ route('ortu.kebiasaan.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.kebiasaan.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-house-chimney"></i></span> Isi 7 Kebiasaan
-</a>
-<a href="{{ route('ortu.nilai.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.nilai.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-chart-line"></i></span> Perkembangan Nilai
-</a>
-<a href="{{ route('ortu.rekap.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.rekap.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-chart-bar"></i></span> Rekap Kebiasaan
-</a>
-<a href="{{ route('ortu.kehadiran.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.kehadiran.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-calendar-check"></i></span> Kehadiran Anak
-</a>
-<a href="{{ route('ortu.catatan.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.catatan.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-sticky-note"></i></span> Catatan Guru
-</a>
-<a href="{{ route('ortu.laporan.index') }}" 
-   class="nav-item {{ request()->routeIs('ortu.laporan.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Laporan / Rapor
-</a>
+@php
+    $menuOrtu = [
+        ['label' => 'MENU ORANG TUA', 'items' => [
+            ['route' => 'ortu.dashboard', 'icon' => 'fa-solid fa-house', 'label' => 'Ringkasan'],
+        ]],
+        ['label' => 'KEMITRAAN', 'items' => [
+            ['route' => 'ortu.kebiasaan.index', 'icon' => 'fa-solid fa-house-chimney', 'label' => 'Isi 7 Kebiasaan'],
+            ['route' => 'ortu.rekap.index', 'icon' => 'fa-solid fa-chart-bar', 'label' => 'Rekap Kebiasaan'],
+        ]],
+        ['label' => 'PEMANTAUAN', 'items' => [
+            ['label' => 'Pemantauan Anak', 'icon' => 'fa-solid fa-eye', 'open' => true, 'children' => [
+                ['route' => 'ortu.nilai.index', 'icon' => 'fa-solid fa-chart-line', 'label' => 'Perkembangan Nilai'],
+                ['route' => 'ortu.kehadiran.index', 'icon' => 'fa-solid fa-calendar-check', 'label' => 'Kehadiran Anak'],
+                ['route' => 'ortu.catatan.index', 'icon' => 'fa-solid fa-sticky-note', 'label' => 'Catatan Guru'],
+                ['route' => 'ortu.laporan.index', 'icon' => 'fa-solid fa-file-lines', 'label' => 'Laporan / Rapor'],
+            ]],
+        ]],
+    ];
+    $isActive = function ($route) {
+        return request()->routeIs($route, $route . '.*');
+    };
+@endphp
+
+@foreach($menuOrtu as $group)
+    <div class="nav-label">{{ $group['label'] }}</div>
+    @foreach($group['items'] as $item)
+        @if(isset($item['children']))
+            @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
+            <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
+                <summary class="nav-item {{ $childActive ? 'active' : '' }}">
+                    <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                    {{ $item['label'] }}
+                </summary>
+                <div>
+                    @foreach($item['children'] as $child)
+                        <a href="{{ route($child['route']) }}"
+                           class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
+                            <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                            {{ $child['label'] }}
+                        </a>
+                    @endforeach
+                </div>
+            </details>
+        @else
+            <a href="{{ route($item['route']) }}"
+               class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
+                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                {{ $item['label'] }}
+            </a>
+        @endif
+    @endforeach
+@endforeach

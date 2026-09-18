@@ -180,6 +180,29 @@
             padding: 2px 8px;
             border-radius: 99px;
         }
+        .sidebar-nav details.nav-submenu > summary { list-style: none; }
+        .sidebar-nav details.nav-submenu > summary::-webkit-details-marker { display: none; }
+        .sidebar-nav details.nav-submenu > summary::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 10px;
+            margin-left: auto;
+            opacity: .6;
+        }
+        .sidebar-nav details.nav-submenu[open] > summary::after { content: '\f077'; }
+        .sidebar-nav .nav-subitem { padding-left: 46px; font-size: 12.5px; }
+        .sidebar-nav .nav-planned { opacity: .45; cursor: not-allowed; }
+        .sidebar-nav .badge-segera {
+            margin-left: auto;
+            background: rgba(255,255,255,.15);
+            color: rgba(255,255,255,.75);
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 99px;
+            white-space: nowrap;
+        }
         .sidebar-footer {
             padding: 12px 16px;
             border-top: 1px solid rgba(255,255,255,0.08);

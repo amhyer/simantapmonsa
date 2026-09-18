@@ -3,6 +3,8 @@
     use App\Models\Siswa;
     $lastSync = DapodikSyncLog::orderByDesc('created_at')->first();
     $syncedCount = Siswa::whereNotNull('dapodik_id')->count();
+    // 'planned' => true berarti backend belum ada (Fase 2): tampil nonaktif,
+    // BUKAN link mati. Jangan beri 'route' pada item planned.
     $menuAdmin = [
         ['label' => 'UTAMA', 'items' => [
             ['route' => 'admin.dashboard', 'icon' => 'fa-solid fa-gauge-high', 'label' => 'Dasbor Sistem'],
@@ -16,13 +18,59 @@
             ['route' => 'admin.users.siswa', 'icon' => 'fa-solid fa-graduation-cap', 'label' => 'Data Siswa'],
         ]],
         ['label' => 'DATA REFERENSI', 'items' => [
-            ['label' => 'Data Referensi', 'icon' => 'fa-solid fa-laptop', 'children' => [
+            ['label' => 'Data Referensi', 'icon' => 'fa-solid fa-laptop', 'open' => true, 'children' => [
                 ['route' => 'admin.sekolah.index', 'icon' => 'fa-solid fa-building-columns', 'label' => 'Data Sekolah'],
                 ['route' => 'admin.referensi.guru', 'icon' => 'fa-solid fa-chalkboard-user', 'label' => 'Data Guru'],
+                ['route' => 'admin.users.siswa', 'icon' => 'fa-solid fa-graduation-cap', 'label' => 'Data Siswa'],
                 ['route' => 'admin.peta-kelas.index', 'icon' => 'fa-solid fa-school', 'label' => 'Data Kelas'],
                 ['route' => 'admin.mapel.index', 'icon' => 'fa-solid fa-book', 'label' => 'Data Mapel'],
                 ['route' => 'admin.referensi.pembelajaran', 'icon' => 'fa-solid fa-calendar-days', 'label' => 'Data Pembelajaran'],
+                ['icon' => 'fa-solid fa-futbol', 'label' => 'Data Ekstrakurikuler', 'planned' => true],
+                ['icon' => 'fa-solid fa-layer-group', 'label' => 'Data Kelompok Mapel', 'planned' => true],
+                ['icon' => 'fa-solid fa-shuffle', 'label' => 'Mapping Rapor', 'planned' => true],
+                ['icon' => 'fa-solid fa-image', 'label' => 'Logo dan TTD', 'planned' => true],
+                ['icon' => 'fa-solid fa-calendar-day', 'label' => 'Tanggal Rapor', 'planned' => true],
+                ['icon' => 'fa-solid fa-camera', 'label' => 'Foto Siswa', 'planned' => true],
             ]],
+        ]],
+        ['label' => 'DATA KOKURIKULER', 'items' => [
+            ['label' => 'Data Kokurikuler', 'icon' => 'fa-solid fa-book-open', 'children' => [
+                ['icon' => 'fa-solid fa-bullseye', 'label' => 'Daftar Tema', 'planned' => true],
+                ['icon' => 'fa-solid fa-list-check', 'label' => 'Kegiatan Kokurikuler', 'planned' => true],
+                ['icon' => 'fa-solid fa-users', 'label' => 'Kelompok Kokurikuler', 'planned' => true],
+            ]],
+        ]],
+        ['label' => 'STATUS PENILAIAN', 'items' => [
+            ['label' => 'Status Penilaian', 'icon' => 'fa-solid fa-graduation-cap', 'children' => [
+                ['icon' => 'fa-solid fa-circle-check', 'label' => 'Status Penilaian', 'planned' => true],
+                ['icon' => 'fa-solid fa-chart-column', 'label' => 'Statistik Nilai Rapor', 'planned' => true],
+            ]],
+        ]],
+        ['label' => 'PERKEMBANGAN NILAI', 'items' => [
+            ['label' => 'Perkembangan Nilai', 'icon' => 'fa-solid fa-chart-line', 'children' => [
+                ['icon' => 'fa-solid fa-chart-line', 'label' => 'Perkembangan Nilai', 'planned' => true],
+                ['icon' => 'fa-solid fa-chart-area', 'label' => 'Grafik Nilai Rapor', 'planned' => true],
+            ]],
+        ]],
+        ['label' => 'TRANSKRIP IJAZAH', 'items' => [
+            ['label' => 'Transkrip Ijazah', 'icon' => 'fa-solid fa-file-pdf', 'children' => [
+                ['icon' => 'fa-solid fa-file-import', 'label' => 'Import Nomor Ijazah', 'planned' => true],
+                ['icon' => 'fa-solid fa-gear', 'label' => 'Setting Transkrip', 'planned' => true],
+                ['icon' => 'fa-solid fa-shuffle', 'label' => 'Mapping Mapel', 'planned' => true],
+                ['icon' => 'fa-solid fa-pen-to-square', 'label' => 'Input Nilai Transkrip', 'planned' => true],
+                ['icon' => 'fa-solid fa-upload', 'label' => 'Import Nilai Transkrip', 'planned' => true],
+                ['icon' => 'fa-solid fa-print', 'label' => 'Cetak Transkrip Nilai', 'planned' => true],
+            ]],
+        ]],
+        ['label' => 'CETAK NILAI', 'items' => [
+            ['label' => 'Cetak Nilai', 'icon' => 'fa-solid fa-print', 'children' => [
+                ['icon' => 'fa-solid fa-table-list', 'label' => 'Leger Rapor', 'planned' => true],
+                ['icon' => 'fa-solid fa-file-lines', 'label' => 'Pelengkap Rapor', 'planned' => true],
+                ['icon' => 'fa-solid fa-file-signature', 'label' => 'Nilai Rapor', 'planned' => true],
+            ]],
+        ]],
+        ['label' => 'LAINNYA', 'items' => [
+            ['icon' => 'fa-solid fa-upload', 'label' => 'Kirim Nilai Ke Dapodik', 'planned' => true],
         ]],
         ['label' => 'PENGATURAN', 'items' => [
             ['route' => 'admin.semester.index', 'icon' => 'fa-solid fa-calendar-alt', 'label' => 'Semester'],
@@ -35,57 +83,50 @@
             ['route' => 'admin.backup.index', 'icon' => 'fa-solid fa-database', 'label' => 'Data & Pemulihan'],
             ['route' => 'admin.api-keys.index', 'icon' => 'fa-solid fa-link', 'label' => 'API Keys'],
             ['route' => 'admin.log.index', 'icon' => 'fa-solid fa-clipboard-list', 'label' => 'Log Aktivitas'],
-            ['action' => 'logout', 'icon' => 'fa-solid fa-right-from-bracket', 'label' => 'Keluar'],
         ]],
     ];
     $isActive = function ($route) {
         return request()->routeIs($route, $route . '.*');
     };
+    $isPlanned = function ($item) {
+        return ($item['planned'] ?? false) === true || !isset($item['route']);
+    };
 @endphp
-
-<style>
-    .sidebar-nav details.nav-submenu > summary { list-style: none; }
-    .sidebar-nav details.nav-submenu > summary::-webkit-details-marker { display: none; }
-    .sidebar-nav details.nav-submenu > summary::after {
-        content: '\f078';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        font-size: 10px;
-        margin-left: auto;
-        opacity: .6;
-    }
-    .sidebar-nav details.nav-submenu[open] > summary::after { content: '\f077'; }
-    .sidebar-nav .nav-subitem { padding-left: 46px; font-size: 12.5px; }
-</style>
 
 @foreach($menuAdmin as $group)
     <div class="nav-label">{{ $group['label'] }}</div>
     @foreach($group['items'] as $item)
         @if(isset($item['children']))
-            @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
-            <details class="nav-submenu" {{ $childActive ? 'open' : '' }}>
+            @php $childActive = collect($item['children'])->contains(fn($c) => isset($c['route']) && $isActive($c['route'])); @endphp
+            <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
                 <summary class="nav-item {{ $childActive ? 'active' : '' }}">
                     <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
                     {{ $item['label'] }}
                 </summary>
                 <div>
                     @foreach($item['children'] as $child)
-                        <a href="{{ route($child['route']) }}"
-                           class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
-                            <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
-                            {{ $child['label'] }}
-                        </a>
+                        @if($isPlanned($child))
+                            <span class="nav-item nav-subitem nav-planned" title="Segera hadir — backend Fase 2">
+                                <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                                {{ $child['label'] }}
+                                <span class="badge badge-segera">Segera</span>
+                            </span>
+                        @else
+                            <a href="{{ route($child['route']) }}"
+                               class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
+                                <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                                {{ $child['label'] }}
+                            </a>
+                        @endif
                     @endforeach
                 </div>
             </details>
-        @elseif(isset($item['action']) && $item['action'] === 'logout')
-            <form method="POST" action="{{ route('logout') }}" style="margin:0">
-                @csrf
-                <button type="submit" class="nav-item">
-                    <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
-                    {{ $item['label'] }}
-                </button>
-            </form>
+        @elseif($isPlanned($item))
+            <span class="nav-item nav-planned" title="Segera hadir — backend Fase 2">
+                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                {{ $item['label'] }}
+                <span class="badge badge-segera">Segera</span>
+            </span>
         @else
             <a href="{{ route($item['route']) }}"
                class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">

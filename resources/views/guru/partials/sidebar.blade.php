@@ -9,11 +9,13 @@
             ['route' => 'guru.tka.index', 'icon' => 'fa-solid fa-ruler-combined', 'label' => 'Kesiapan TKA'],
         ]],
         ['label' => 'ASESMEN', 'items' => [
-            ['route' => 'guru.input-nilai.index', 'icon' => 'fa-solid fa-keyboard', 'label' => 'Input Nilai Cepat'],
-            ['route' => 'guru.nilai-erapor.index', 'icon' => 'fa-solid fa-file-alt', 'label' => 'Input Nilai e-Rapor'],
-            ['route' => 'guru.kuis.index', 'icon' => 'fa-solid fa-clipboard-list', 'label' => 'Kuis & Soal'],
-            ['route' => 'guru.nilai.index', 'icon' => 'fa-solid fa-calculator', 'label' => 'Daftar Nilai'],
-            ['route' => 'guru.analisis.index', 'icon' => 'fa-solid fa-chart-bar', 'label' => 'Analisis Belajar'],
+            ['label' => 'Asesmen & Nilai', 'icon' => 'fa-solid fa-clipboard-check', 'open' => true, 'children' => [
+                ['route' => 'guru.input-nilai.index', 'icon' => 'fa-solid fa-keyboard', 'label' => 'Input Nilai Cepat'],
+                ['route' => 'guru.nilai-erapor.index', 'icon' => 'fa-solid fa-file-alt', 'label' => 'Input Nilai e-Rapor'],
+                ['route' => 'guru.kuis.index', 'icon' => 'fa-solid fa-clipboard-list', 'label' => 'Kuis & Soal'],
+                ['route' => 'guru.nilai.index', 'icon' => 'fa-solid fa-calculator', 'label' => 'Daftar Nilai'],
+                ['route' => 'guru.analisis.index', 'icon' => 'fa-solid fa-chart-bar', 'label' => 'Analisis Belajar'],
+            ]],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
             ['route' => 'guru.kehadiran.index', 'icon' => 'fa-solid fa-calendar-check', 'label' => 'Kehadiran'],
@@ -30,15 +32,37 @@
             ['route' => 'guru.pengaturan.index', 'icon' => 'fa-solid fa-gear', 'label' => 'Pengaturan'],
         ]],
     ];
+    $isActive = function ($route) {
+        return request()->routeIs($route, $route . '.*');
+    };
 @endphp
 
 @foreach($menuGuru as $group)
     <div class="nav-label">{{ $group['label'] }}</div>
     @foreach($group['items'] as $item)
-        <a href="{{ route($item['route']) }}" 
-           class="nav-item {{ request()->routeIs($item['route'] . '*') ? 'active' : '' }}">
-            <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
-            {{ $item['label'] }}
-        </a>
+        @if(isset($item['children']))
+            @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
+            <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
+                <summary class="nav-item {{ $childActive ? 'active' : '' }}">
+                    <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                    {{ $item['label'] }}
+                </summary>
+                <div>
+                    @foreach($item['children'] as $child)
+                        <a href="{{ route($child['route']) }}"
+                           class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
+                            <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                            {{ $child['label'] }}
+                        </a>
+                    @endforeach
+                </div>
+            </details>
+        @else
+            <a href="{{ route($item['route']) }}"
+               class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
+                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                {{ $item['label'] }}
+            </a>
+        @endif
     @endforeach
 @endforeach
