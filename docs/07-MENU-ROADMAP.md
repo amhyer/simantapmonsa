@@ -6,7 +6,7 @@
 
 ## 1. Peta Menu Eksisting (ringkas)
 
-- **Admin (14 menu):** Dasbor Sistem · Kelola Pengguna (+akun massal) · Peta Kelas · Semester · Kode & Akses · Modul & Tampilan · Mata Pelajaran · Bobot & Ketuntasan · Identitas Sekolah · Penyimpanan Data (Sheet) · Data & Pemulihan (Backup) · API Keys · Import Dapodik · Log Aktivitas
+- **Admin (17 menu + 1 aksi, gaya e-Rapor dengan submenu):** UTAMA: Dasbor Sistem · INTEGRASI DAPODIK: Web Service + Ambil Data (satu halaman, dua pintu) · PENGGUNA: Data Pengguna, Data Siswa · DATA REFERENSI (submenu): Data Sekolah, Data Guru (baru), Data Kelas, Data Mapel, Data Pembelajaran (baru) · PENGATURAN: Semester, Kode & Akses, Modul & Tampilan, Bobot & Ketuntasan · SISTEM & LOG: Penyimpanan Data, Data & Pemulihan, API Keys, Log Aktivitas, Keluar
 - **Guru (17 menu):** Dasbor · Materi Ajar · Profil Lulusan (Dimensi) · Kesiapan TKA · Input Nilai Cepat · Input Nilai e-Rapor · Kuis & Soal · Daftar Nilai · Analisis Belajar · Kehadiran · Catatan Siswa · 7 Kebiasaan · Laporan & Rapor · Generate e-Rapor · Data Siswa · Google Sheet · Pengaturan
 - **Siswa (5 menu):** Beranda · Materi · Kuis · Nilaiku · Profil Saya
 - **Ortu (7 menu):** Ringkasan · Isi 7 Kebiasaan · Perkembangan Nilai · Rekap Kebiasaan · Kehadiran Anak · Catatan Guru · Laporan/Rapor
@@ -21,7 +21,9 @@ Detail route→controller→view per menu ada di laporan pemetaan (arsip sesi in
 |---|---|---|
 | Setting Web Service Dapodik | ⚠️ | Route `admin.dapodik.api.*` ada; verifikasi UI-nya di halaman Dapodik |
 | Tarik Data Dapodik | ✅ | Import Dapodik + Jobs async sudah jalan |
-| Data Referensi (gelar guru, hapus anggota rombel, mapel lokal) | ⚠️ | Hapus anggota rombel ✅ (`keluarkan`), mapel lokal ✅ (import-lokal/seed); gelar guru ❌ |
+| Data Referensi (gelar guru, hapus anggota rombel, mapel lokal) | ⚠️ | Hapus anggota rombel ✅ (`keluarkan`), mapel lokal ✅ (import-lokal/seed); gelar guru ❌ (kolom belum ada di tabel PTK) |
+| Data Guru (master PTK) | ✅ | Baru: `admin.referensi.guru` (read-only, badge DAPODIK + peran) |
+| Data Pembelajaran (jadwal) | ✅ | Baru: `admin.referensi.pembelajaran` (read-only; kosong sampai ada sync jadwal) |
 | Mapping/urutan mapel rapor | ❌ | Belum ada pengaturan urutan tampil |
 | Kelola Pengguna + Generate Akun Massal | ✅ | Lengkap + Jobs async |
 | Reset Password & Status Login | ⚠️ | Reset kemungkinan di form edit user; halaman "siapa sedang login" ❌ |

@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\SheetController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\MapelController;
+use App\Http\Controllers\Admin\DataReferensiController;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\HasilBelajarController;
@@ -117,6 +118,10 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::get('/mapel/{mapel}/edit', [MapelController::class, 'edit'])->name('mapel.edit');
     Route::put('/mapel/{mapel}', [MapelController::class, 'update'])->name('mapel.update');
     Route::delete('/mapel/{mapel}', [MapelController::class, 'destroy'])->name('mapel.destroy');
+
+    // Data Referensi (guru & pembelajaran dari Dapodik, read-only)
+    Route::get('/referensi/guru', [DataReferensiController::class, 'guru'])->name('referensi.guru');
+    Route::get('/referensi/pembelajaran', [DataReferensiController::class, 'pembelajaran'])->name('referensi.pembelajaran');
     
     // Kode & Akses
     Route::get('/kode-akses', [KodeAksesController::class, 'index'])->name('kode-akses.index');
