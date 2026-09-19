@@ -55,7 +55,7 @@ class DapodikSyncController extends Controller
             'peserta-didik' => 'siswa',
             'ptk' => 'gtk',
             'rombongan-belajar' => 'rombel',
-            'jadwal' => 'mapel',
+            'jadwal' => 'jadwal',
             default => $modul,
         };
 

@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->string('sekolah_npsn', 20)->nullable();
             $table->string('nama_sekolah')->nullable();
-            $table->enum('tipe', ['siswa', 'gtk', 'rombel', 'mapel', 'nilai', 'semua', 'full-sync']);
+            $table->enum('tipe', ['siswa', 'gtk', 'rombel', 'mapel', 'jadwal', 'nilai', 'semua', 'full-sync']);
             $table->string('tahun_ajaran', 20)->nullable();
             $table->string('semester', 10)->nullable();
             $table->integer('total_data')->default(0);
@@ -35,7 +35,7 @@ return new class extends Migration
         Schema::create('dapodik_data_cache', function (Blueprint $table) {
             $table->id();
             $table->string('dapodik_id', 100)->unique();
-            $table->enum('tipe', ['siswa', 'gtk', 'rombel', 'mapel', 'sekolah']);
+            $table->enum('tipe', ['siswa', 'gtk', 'rombel', 'mapel', 'jadwal', 'sekolah']);
             $table->json('data');
             $table->string('checksum', 64)->nullable();
             $table->timestamp('last_synced_at')->nullable();
