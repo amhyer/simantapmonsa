@@ -9,9 +9,19 @@
         ['label' => 'UTAMA', 'items' => [
             ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Sistem'],
         ]],
-        ['label' => 'INTEGRASI DAPODIK', 'items' => [
-            ['route' => 'admin.dapodik.index', 'icon' => 'lucide-plug-circle-check', 'label' => 'Web Service Dapodik'],
+['label' => 'INTEGRASI DAPODIK', 'items' => [
+            ['route' => 'admin.dapodik.index', 'icon' => 'lucide-plug-zap', 'label' => 'Web Service Dapodik'],
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSync ? $lastSync->created_at->diffForHumans() : 'Belum sync', 'badge_type' => $lastSync ? 'ok' : 'warn'],
+        ]],
+        ['label' => 'PUSH KE DAPODIK', 'items' => [
+            ['route' => 'admin.dapodik.push.sekolah', 'icon' => 'lucide-upload-cloud', 'label' => 'Push Sekolah'],
+            ['route' => 'admin.dapodik.push.peserta-didik', 'icon' => 'lucide-upload', 'label' => 'Push Peserta Didik'],
+            ['route' => 'admin.dapodik.push.gtk', 'icon' => 'lucide-users', 'label' => 'Push GTK (Guru/Tendik)'],
+            ['route' => 'admin.dapodik.push.rombel', 'icon' => 'lucide-users', 'label' => 'Push Rombel'],
+            ['route' => 'admin.dapodik.push.jadwal', 'icon' => 'lucide-calendar-clock', 'label' => 'Push Jadwal'],
+            ['route' => 'admin.dapodik.push.nilai-rapor', 'icon' => 'lucide-file-text', 'label' => 'Push Nilai Rapor'],
+            ['route' => 'admin.dapodik.push.kehadiran', 'icon' => 'lucide-calendar-check', 'label' => 'Push Kehadiran'],
+            ['route' => 'admin.dapodik.push.status', 'icon' => 'lucide-activity', 'label' => 'Status Push'],
         ]],
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
@@ -20,7 +30,7 @@
         ['label' => 'DATA REFERENSI', 'items' => [
             ['label' => 'Data Referensi', 'icon' => 'lucide-laptop', 'open' => true, 'children' => [
                 ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
-                ['route' => 'admin.referensi.guru', 'icon' => 'lucide-chalkboard-user', 'label' => 'Data Guru'],
+                ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru'],
                 ['route' => 'admin.users.siswa', 'icon' => 'lucide-graduation-cap', 'label' => 'Data Siswa'],
                 ['route' => 'admin.peta-kelas.index', 'icon' => 'lucide-school', 'label' => 'Data Kelas'],
                 ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Data Mapel'],
@@ -63,7 +73,7 @@
         ['label' => 'CETAK NILAI', 'items' => [
             ['label' => 'Cetak Nilai', 'icon' => 'lucide-printer', 'children' => [
                 ['icon' => 'lucide-table', 'label' => 'Leger Rapor', 'planned' => true],
-                ['icon' => 'lucide-file-lines', 'label' => 'Pelengkap Rapor', 'planned' => true],
+                ['icon' => 'lucide-scroll-text', 'label' => 'Pelengkap Rapor', 'planned' => true],
                 ['icon' => 'lucide-file-signature', 'label' => 'Nilai Rapor', 'planned' => true],
             ]],
         ]],
@@ -98,21 +108,21 @@
             @php $childActive = collect($item['children'])->contains(fn($c) => isset($c['route']) && $isActive($c['route'])); @endphp
             <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
                 <summary class="nav-item {{ $childActive ? 'active' : '' }}">
-                    <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                    <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
                     {{ $item['label'] }}
                 </summary>
                 <div>
                     @foreach($item['children'] as $child)
                         @if($isPlanned($child))
                             <span class="nav-item nav-subitem nav-planned" title="Segera hadir — backend Fase 2">
-                                <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                                <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
                                 {{ $child['label'] }}
                                 <span class="badge badge-segera">Segera</span>
                             </span>
                         @else
                             <a href="{{ route($child['route']) }}"
                                class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
-                                <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                                <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
                                 {{ $child['label'] }}
                             </a>
                         @endif
@@ -121,14 +131,14 @@
             </details>
         @elseif($isPlanned($item))
             <span class="nav-item nav-planned" title="Segera hadir — backend Fase 2">
-                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
                 {{ $item['label'] }}
                 <span class="badge badge-segera">Segera</span>
             </span>
         @else
             <a href="{{ route($item['route']) }}"
                class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
                 {{ $item['label'] }}
                 @if(isset($item['badge']))
                     <span class="badge" style="background:{{ ($item['badge_type'] ?? '') === 'ok' ? 'var(--ok)' : '#F59E0B' }};color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:auto;white-space:nowrap">{{ $item['badge'] }}</span>

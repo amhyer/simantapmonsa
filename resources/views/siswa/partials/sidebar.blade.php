@@ -18,7 +18,7 @@
     @foreach($group['items'] as $item)
         <a href="{{ route($item['route']) }}"
            class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-            <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+            <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
             {{ $item['label'] }}
         </a>
     @endforeach

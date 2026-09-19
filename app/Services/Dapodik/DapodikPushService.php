@@ -106,31 +106,37 @@ class DapodikPushService
 
     public function pushPesertaDidik(string $semesterId): array
     {
-        $result = ['berhasil' => 0, 'gagal' => 0, 'errors' => []];
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
 
-        $siswaList = Siswa::where('semester_id', $semesterId)
+        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $semesterKey = $semester?->id ?? $semesterId;
+
+        $siswaList = Siswa::where('semester_id', $semesterKey)
             ->where('aktif', true)
             ->whereNull('archived_at')
             ->with('guru', 'rombel')
             ->get();
 
-        if ($dipatikList->isEmpty()) {
+        if ($siswaList->isEmpty()) {
             return ['berhasil' => 0, 'gagal' => 0, 'errors' => ['Tidak ada siswa untuk di-push']];
         }
 
-        foreach ($dipatikList as $siswa) {
+        foreach ($siswaList as $siswa) {
             try {
                 $data = $this->mapSiswaToDapodik($siswa);
-                $result = $this->client->pushPesertaDidik($data);
+                $response = $this->client->pushPesertaDidik($data);
 
-                if (isset($result['success']) && $result['success']) {
+                if (isset($response['success']) && $response['success']) {
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Siswa {$siswa->nama_peserta_didik}: " . ($result['message'] ?? 'Unknown error');
+                    $errors[] = "Siswa {$siswa->nama_peserta_didik}: " . ($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
+                $errors[] = "Siswa {$siswa->nama_peserta_didik}: " . $e->getMessage();
                 Log::error("Push siswa gagal: " . $e->getMessage());
             }
         }
@@ -224,7 +230,9 @@ class DapodikPushService
 
     public function pushGtk(): array
     {
-        $result = ['berhasil' => 0, 'gagal' => 0, 'errors' => []];
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
 
         $gtkList = User::where('peran', 'guru')
             ->where('aktif', true)
@@ -290,16 +298,17 @@ class DapodikPushService
                     'status_hidup' => 'hidup',
                 ];
 
-                $result = $this->client->pushGtk($data);
+                $response = $this->client->pushGtk($data);
 
-                if (isset($result['success']) && $result['success']) {
+                if (isset($response['success']) && $response['success']) {
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Guru {$gtk->nama_lengkap}: " . ($result['message'] ?? 'Unknown error');
+                    $errors[] = "Guru {$gtk->nama_lengkap}: " . ($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
+                $errors[] = "Guru {$gtk->nama_lengkap}: " . $e->getMessage();
                 Log::error("Push GTK gagal: " . $e->getMessage());
             }
         }
@@ -311,7 +320,9 @@ class DapodikPushService
 
     public function pushRombel(): array
     {
-        $result = ['berhasil' => 0, 'gagal' => 0, 'errors' => []];
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
 
         $rombels = Rombel::with('guru')
             ->whereNotNull('dapodik_id')
@@ -336,13 +347,13 @@ class DapodikPushService
                     'wali_kelas' => $rombel->guru?->dapodik_id ?? '',
                 ];
 
-                $result = $this->client->pushRombonganBelajar($data);
+                $response = $this->client->pushRombonganBelajar($data);
 
-                if (isset($result['success']) && $result['success']) {
+                if (isset($response['success']) && $response['success']) {
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Rombel {$rombel->nama_rombel}: " . ($result['message'] ?? 'Unknown error');
+                    $errors[] = "Rombel {$rombel->nama_rombel}: " . ($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
@@ -357,7 +368,9 @@ class DapodikPushService
 
     public function pushJadwal(): array
     {
-        $result = ['berhasil' => 0, 'gagal' => 0, 'errors' => []];
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
 
         $jadwals = JadwalPelajaran::with('guru', 'rombonganBelajar')
             ->whereNotNull('dapodik_id')
@@ -386,17 +399,118 @@ class DapodikPushService
                     'ruangan' => $jadwal->ruangan,
                 ];
 
-                $result = $this->client->pushJadwal($data);
+                $response = $this->client->pushJadwal($data);
 
-                if (isset($result['success']) && $result['success']) {
+                if (isset($response['success']) && $response['success']) {
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Jadwal {$jadwal->mata_pelajaran}: " . ($result['message'] ?? 'Unknown error');
+                    $errors[] = "Jadwal {$jadwal->mata_pelajaran}: " . ($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
                 $errors[] = "Jadwal {$jadwal->mata_pelajaran}: " . $e->getMessage();
+            }
+        }
+
+        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'errors' => $errors];
+    }
+
+    // ─── PUSH NILAI RAPOR ───────────────────────────────────────────
+
+    public function pushNilaiRapor(string $semesterId): array
+    {
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
+
+        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $siswaIds = $semester
+            ? Siswa::where('semester_id', $semester->id)->pluck('id')
+            : collect();
+
+        $nilais = NilaiErapot::with('siswa')
+            ->when($siswaIds->isNotEmpty(), fn ($q) => $q->whereIn('siswa_id', $siswaIds))
+            ->when($semester, fn ($q) => $q->where('tahun_ajaran', $semester->tahun_ajaran))
+            ->get();
+
+        if ($nilais->isEmpty()) {
+            return ['berhasil' => 0, 'gagal' => 0, 'errors' => ['Tidak ada nilai rapor untuk di-push']];
+        }
+
+        foreach ($nilais as $nilai) {
+            try {
+                $data = [
+                    'peserta_didik_id' => $nilai->siswa?->dapodik_id,
+                    'semester_id' => $semesterId,
+                    'mata_pelajaran' => $nilai->mata_pelajaran,
+                    'kelas' => $nilai->kelas,
+                    'nilai_akhir' => $nilai->nilai_akhir,
+                    'predikat' => $nilai->predikat,
+                    'deskripsi' => $nilai->deskripsi_capaian,
+                ];
+
+                $response = $this->client->pushNilaiRapor($data);
+
+                if (isset($response['success']) && $response['success']) {
+                    $berhasil++;
+                } else {
+                    $gagal++;
+                    $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): " . ($response['message'] ?? 'Unknown error');
+                }
+            } catch (\Exception $e) {
+                $gagal++;
+                $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): " . $e->getMessage();
+                Log::error("Push nilai rapor gagal: " . $e->getMessage());
+            }
+        }
+
+        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'errors' => $errors];
+    }
+
+    // ─── PUSH KEHADIRAN ─────────────────────────────────────────────
+
+    public function pushKehadiran(string $semesterId): array
+    {
+        $berhasil = 0;
+        $gagal = 0;
+        $errors = [];
+
+        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $siswaIds = $semester
+            ? Siswa::where('semester_id', $semester->id)->pluck('id')
+            : collect();
+
+        $kehadiranList = Kehadiran::with('siswa')
+            ->when($siswaIds->isNotEmpty(), fn ($q) => $q->whereIn('siswa_id', $siswaIds))
+            ->get();
+
+        if ($kehadiranList->isEmpty()) {
+            return ['berhasil' => 0, 'gagal' => 0, 'errors' => ['Tidak ada data kehadiran untuk di-push']];
+        }
+
+        foreach ($kehadiranList as $hadir) {
+            try {
+                $data = [
+                    'peserta_didik_id' => $hadir->siswa?->dapodik_id,
+                    'semester_id' => $semesterId,
+                    'tanggal' => $hadir->tanggal?->format('Y-m-d'),
+                    'status' => $hadir->status,
+                    'keterangan' => $hadir->keterangan,
+                ];
+
+                $response = $this->client->pushKehadiran($data);
+
+                if (isset($response['success']) && $response['success']) {
+                    $berhasil++;
+                } else {
+                    $gagal++;
+                    $errors[] = "Kehadiran #{$hadir->id}: " . ($response['message'] ?? 'Unknown error');
+                }
+            } catch (\Exception $e) {
+                $gagal++;
+                $errors[] = "Kehadiran #{$hadir->id}: " . $e->getMessage();
+                Log::error("Push kehadiran gagal: " . $e->getMessage());
             }
         }
 

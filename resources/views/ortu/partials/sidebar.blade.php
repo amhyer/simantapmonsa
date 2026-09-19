@@ -28,14 +28,14 @@
             @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
             <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
                 <summary class="nav-item {{ $childActive ? 'active' : '' }}">
-                    <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                    <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
                     {{ $item['label'] }}
                 </summary>
                 <div>
                     @foreach($item['children'] as $child)
                         <a href="{{ route($child['route']) }}"
                            class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
-                            <span class="icon"><i class="{{ $child['icon'] }}"></i></span>
+                            <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
                             {{ $child['label'] }}
                         </a>
                     @endforeach
@@ -44,7 +44,7 @@
         @else
             <a href="{{ route($item['route']) }}"
                class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-                <span class="icon"><i class="{{ $item['icon'] }}"></i></span>
+                <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
                 {{ $item['label'] }}
             </a>
         @endif

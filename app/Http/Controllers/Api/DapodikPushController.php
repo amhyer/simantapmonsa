@@ -132,17 +132,17 @@ class DapodikPushController extends Controller
     public function status(): \Illuminate\Http\JsonResponse
     {
         $config = \App\Models\DapodikConfig::getInstance();
-        
+
         return response()->json([
             'success' => true,
             'data' => [
-                'npsn' => $this->config->npsn ?? 'Not configured',
-                'host' => $this->config->host ?? 'localhost',
-                'port' => $this->config->port ?? 5774,
-                'protocol' => $this->config->protocol ?? 'http',
-                'configured' => !empty($this->config->npsn) && !empty($this->config->token),
-                'last_sync' => $this->config->last_sync_at,
-                'last_sync_by' => $this->config->last_sync_by,
+                'npsn' => $config->npsn ?? 'Not configured',
+                'host' => $config->host ?? 'localhost',
+                'port' => $config->port ?? 5774,
+                'protocol' => $config->protocol ?? 'http',
+                'configured' => !empty($config->npsn) && !empty($config->token),
+                'last_sync' => $config->last_sync_at,
+                'last_sync_by' => $config->last_sync_by,
             ]
         ]);
     }
