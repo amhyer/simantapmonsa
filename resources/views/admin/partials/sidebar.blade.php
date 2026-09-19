@@ -78,7 +78,6 @@
             ]],
         ]],
         ['label' => 'LAINNYA', 'items' => [
-            ['icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik', 'planned' => true],
         ]],
         ['label' => 'PENGATURAN', 'items' => [
             ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Semester'],
