@@ -1,0 +1,685 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Laravel",
+        "version": "0.0.1"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api"
+        }
+    ],
+    "paths": {
+        "/dapodik/ping": {
+            "post": {
+                "operationId": "dapodik.ping",
+                "tags": [
+                    "Dapodik"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "SIMANTAP API siap menerima data."
+                                        },
+                                        "timestamp": {
+                                            "type": "string"
+                                        },
+                                        "version": {
+                                            "type": "string",
+                                            "const": "2.0"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "timestamp",
+                                        "version"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/dapodik/sync/{modul}": {
+            "post": {
+                "operationId": "dapodikSync.store",
+                "tags": [
+                    "DapodikSync"
+                ],
+                "parameters": [
+                    {
+                        "name": "modul",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "semester_id": {
+                                        "type": "string"
+                                    },
+                                    "tahun_ajaran": {
+                                        "type": "string"
+                                    },
+                                    "nama_semester": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ganjil",
+                                            "genap"
+                                        ]
+                                    },
+                                    "data": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "required": [
+                                    "semester_id",
+                                    "tahun_ajaran",
+                                    "nama_semester",
+                                    "data"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "modul": {
+                                            "type": "string"
+                                        },
+                                        "jumlah": {
+                                            "type": "integer"
+                                        },
+                                        "berhasil": {
+                                            "type": "string"
+                                        },
+                                        "diperbarui": {
+                                            "type": "string"
+                                        },
+                                        "dilewati": {
+                                            "type": "string"
+                                        },
+                                        "gagal": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "modul",
+                                        "jumlah",
+                                        "berhasil",
+                                        "diperbarui",
+                                        "dilewati",
+                                        "gagal"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/dapodik/sync/status": {
+            "get": {
+                "operationId": "dapodikSync.status",
+                "tags": [
+                    "DapodikSync"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "stats": {
+                                            "type": "object",
+                                            "properties": {
+                                                "semesters": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "siswa": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "ptk": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "rombel": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "jadwal": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "semesters",
+                                                "siswa",
+                                                "ptk",
+                                                "rombel",
+                                                "jadwal"
+                                            ]
+                                        },
+                                        "semesters": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Semester"
+                                            }
+                                        },
+                                        "recent_logs": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DapodikSyncLog"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "stats",
+                                        "semesters",
+                                        "recent_logs"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sekolah/lookup": {
+            "post": {
+                "operationId": "schoolLookup.lookup",
+                "tags": [
+                    "SchoolLookup"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "npsn": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]+$",
+                                        "minLength": 8,
+                                        "maxLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "npsn"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "npsn": {
+                                                    "type": "string"
+                                                },
+                                                "nama_sekolah": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "alamat": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "kecamatan": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "kabupaten": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "provinsi": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "akreditasi": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "email": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "telepon": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                ""
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "npsn",
+                                                "nama_sekolah",
+                                                "status",
+                                                "alamat",
+                                                "kecamatan",
+                                                "kabupaten",
+                                                "provinsi",
+                                                "akreditasi",
+                                                "email",
+                                                "telepon",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Data sekolah tidak ditemukan. Periksa kembali NPSN Anda."
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/tka-statistik": {
+            "get": {
+                "operationId": "tka.api",
+                "summary": "Get TKA statistics as JSON (for AJAX)",
+                "tags": [
+                    "Tka"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DapodikSyncLog": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "uuid": {
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "sekolah_npsn": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "nama_sekolah": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tipe": {
+                        "type": "string"
+                    },
+                    "tahun_ajaran": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "semester": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "total_data": {
+                        "type": "integer"
+                    },
+                    "berhasil": {
+                        "type": "integer"
+                    },
+                    "gagal": {
+                        "type": "integer"
+                    },
+                    "diperbarui": {
+                        "type": "integer"
+                    },
+                    "dilewati": {
+                        "type": "integer"
+                    },
+                    "ip_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "started_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "finished_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "duration_seconds": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "uuid",
+                    "user_id",
+                    "sekolah_npsn",
+                    "nama_sekolah",
+                    "tipe",
+                    "tahun_ajaran",
+                    "semester",
+                    "total_data",
+                    "berhasil",
+                    "gagal",
+                    "diperbarui",
+                    "dilewati",
+                    "ip_address",
+                    "started_at",
+                    "finished_at",
+                    "duration_seconds",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "DapodikSyncLog"
+            },
+            "Semester": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "semester_id": {
+                        "type": "string"
+                    },
+                    "tahun_ajaran": {
+                        "type": "string"
+                    },
+                    "nama_semester": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "semester_id",
+                    "tahun_ajaran",
+                    "nama_semester",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "Semester"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

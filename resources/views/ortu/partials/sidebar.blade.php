@@ -1,18 +1,18 @@
 @php
     $menuOrtu = [
         ['label' => 'MENU ORANG TUA', 'items' => [
-            ['route' => 'ortu.dashboard', 'icon' => 'fa-solid fa-house', 'label' => 'Ringkasan'],
+            ['route' => 'ortu.dashboard', 'icon' => 'lucide-home', 'label' => 'Ringkasan'],
         ]],
         ['label' => 'KEMITRAAN', 'items' => [
-            ['route' => 'ortu.kebiasaan.index', 'icon' => 'fa-solid fa-house-chimney', 'label' => 'Isi 7 Kebiasaan'],
-            ['route' => 'ortu.rekap.index', 'icon' => 'fa-solid fa-chart-bar', 'label' => 'Rekap Kebiasaan'],
+            ['route' => 'ortu.kebiasaan.index', 'icon' => 'lucide-home', 'label' => 'Isi 7 Kebiasaan'],
+            ['route' => 'ortu.rekap.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Rekap Kebiasaan'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
-            ['label' => 'Pemantauan Anak', 'icon' => 'fa-solid fa-eye', 'open' => true, 'children' => [
-                ['route' => 'ortu.nilai.index', 'icon' => 'fa-solid fa-chart-line', 'label' => 'Perkembangan Nilai'],
-                ['route' => 'ortu.kehadiran.index', 'icon' => 'fa-solid fa-calendar-check', 'label' => 'Kehadiran Anak'],
-                ['route' => 'ortu.catatan.index', 'icon' => 'fa-solid fa-sticky-note', 'label' => 'Catatan Guru'],
-                ['route' => 'ortu.laporan.index', 'icon' => 'fa-solid fa-file-lines', 'label' => 'Laporan / Rapor'],
+            ['label' => 'Pemantauan Anak', 'icon' => 'lucide-eye', 'open' => true, 'children' => [
+                ['route' => 'ortu.nilai.index', 'icon' => 'lucide-trending-up', 'label' => 'Perkembangan Nilai'],
+                ['route' => 'ortu.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Anak'],
+                ['route' => 'ortu.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Guru'],
+                ['route' => 'ortu.laporan.index', 'icon' => 'lucide-file-text', 'label' => 'Laporan / Rapor'],
             ]],
         ]],
     ];

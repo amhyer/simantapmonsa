@@ -1,0 +1,149 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Services\Dapodik\DapodikPushService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+
+class DapodikPushController extends Controller
+{
+    private DapodikPushService $pushService;
+
+    public function __construct(DapodikPushService $pushService)
+    {
+        $this->pushService = $pushService;
+    }
+
+    /**
+     * Push data sekolah ke Dapodik
+     */
+    public function pushSekolah(): JsonResponse
+    {
+        $result = $this->pushService->pushSekolah();
+        
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push sekolah berhasil' : 'Push sekolah gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push peserta didik ke Dapodik
+     */
+    public function pushPesertaDidik(Request $request): JsonResponse
+    {
+        $request->validate([
+            'semester_id' => 'required|string|exists:semesters,semester_id',
+        ]);
+
+        $result = $this->pushService->pushPesertaDidik($request->input('semester_id'));
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push peserta didik berhasil' : 'Push peserta didik gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push GTK (Guru/Tendik) ke Dapodik
+     */
+    public function pushGtk(): JsonResponse
+    {
+        $result = $this->pushService->pushGtk();
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push GTK berhasil' : 'Push GTK gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push Rombel ke Dapodik
+     */
+    public function pushRombel(): JsonResponse
+    {
+        $result = $this->pushService->pushRombel();
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push rombel berhasil' : 'Push rombel gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push Jadwal ke Dapodik
+     */
+    public function pushJadwal(): JsonResponse
+    {
+        $result = $this->pushService->pushJadwal();
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push jadwal berhasil' : 'Push jadwal gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push Nilai Rapor ke Dapodik
+     */
+    public function pushNilaiRapor(Request $request): JsonResponse
+    {
+        $request->validate([
+            'semester_id' => 'required|string|exists:semesters,semester_id',
+        ]);
+
+        $result = $this->pushService->pushNilaiRapor($request->input('semester_id'));
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push nilai rapor berhasil' : 'Push nilai rapor gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Push Kehadiran ke Dapodik
+     */
+    public function pushKehadiran(Request $request): JsonResponse
+    {
+        $request->validate([
+            'semester_id' => 'required|string|exists:semesters,semester_id',
+        ]);
+
+        $result = $this->pushService->pushKehadiran($request->input('semester_id'));
+
+        return response()->json([
+            'success' => $result['gagal'] === 0,
+            'message' => $result['gagal'] === 0 ? 'Push kehadiran berhasil' : 'Push kehadiran gagal',
+            'data' => $result
+        ], $result['gagal'] === 0 ? 200 : 400);
+    }
+
+    /**
+     * Status push Dapodik
+     */
+    public function status(): \Illuminate\Http\JsonResponse
+    {
+        $config = \App\Models\DapodikConfig::getInstance();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'npsn' => $this->config->npsn ?? 'Not configured',
+                'host' => $this->config->host ?? 'localhost',
+                'port' => $this->config->port ?? 5774,
+                'protocol' => $this->config->protocol ?? 'http',
+                'configured' => !empty($this->config->npsn) && !empty($this->config->token),
+                'last_sync' => $this->config->last_sync_at,
+                'last_sync_by' => $this->config->last_sync_by,
+            ]
+        ]);
+    }
+}

@@ -1,17 +1,17 @@
 @php
     $menuKepsek = [
         ['label' => 'MENU KEPSEK', 'items' => [
-            ['route' => 'kepsek.dashboard', 'icon' => 'fa-solid fa-chart-pie', 'label' => 'Dashboard'],
-            ['route' => 'kepsek.rekap.index', 'icon' => 'fa-solid fa-school', 'label' => 'Rekap Sekolah'],
+            ['route' => 'kepsek.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dashboard'],
+            ['route' => 'kepsek.rekap.index', 'icon' => 'lucide-school', 'label' => 'Rekap Sekolah'],
         ]],
         ['label' => 'PEMETAAN', 'items' => [
-            ['route' => 'kepsek.peta-kelas.index', 'icon' => 'fa-solid fa-map', 'label' => 'Peta Kelas'],
-            ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'fa-solid fa-chart-line', 'label' => 'Hasil Belajar'],
+            ['route' => 'kepsek.peta-kelas.index', 'icon' => 'lucide-map', 'label' => 'Peta Kelas'],
+            ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Hasil Belajar'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
-            ['route' => 'kepsek.pantau.index', 'icon' => 'fa-solid fa-satellite-dish', 'label' => 'Pantau Aktivitas'],
-            ['route' => 'kepsek.kebiasaan.index', 'icon' => 'fa-solid fa-star', 'label' => 'Rekap Kebiasaan'],
-            ['route' => 'kepsek.aktivitas.index', 'icon' => 'fa-solid fa-clipboard-list', 'label' => 'Log Aktivitas'],
+            ['route' => 'kepsek.pantau.index', 'icon' => 'lucide-activity', 'label' => 'Pantau Aktivitas'],
+            ['route' => 'kepsek.kebiasaan.index', 'icon' => 'lucide-star', 'label' => 'Rekap Kebiasaan'],
+            ['route' => 'kepsek.aktivitas.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas'],
         ]],
     ];
     $isActive = function ($route) {

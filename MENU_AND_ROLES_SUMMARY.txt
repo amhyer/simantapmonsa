@@ -1,0 +1,204 @@
+SIMANTAP - MENU & ROLE SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 QUICK REFERENCE - 5 ROLES & MAIN MENUS
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ADMIN (👨‍💼 Sysadmin)                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Access: PENUH (Full System)                                                 │
+│ Dashboard | Manajemen Pengguna | Peta Kelas | Mata Pelajaran               │
+│ Data Referensi | Ko-Kurikuler | Penilaian | Konfigurasi | Integrasi        │
+│ Dapodik | Backup & Restore | Log Sistem                                     │
+│ KEY: Bulk user create, Dapodik bridge, API keys, backups                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          GURU (👨‍🏫 Teacher)                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Access: Pembelajaran & Penilaian Siswa                                      │
+│ Dashboard | Data Siswa | Materi Ajar | Kuis & Soal | Penilaian              │
+│ Laporan | Kehadiran | Catatan Siswa | Analisis Belajar | Integrasi          │
+│ KEY: Input nilai, upload materi, kuis, e-rapor, Google Sheets sync          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SISWA (👨‍🎓 Student)                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Access: Personal Learning Dashboard                                          │
+│ Dashboard | Materi | Kuis | Nilai | Profil                                  │
+│ KEY: View materi, take quizzes, see grades, edit profile                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       ORANG TUA (👨‍👩‍👧 Parent)                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Access: Monitor Anak (Read-Only mostly)                                      │
+│ Dashboard | Nilai | Kehadiran | Catatan | Rekap | Laporan | Kebiasaan       │
+│ KEY: Monitor anak, submit 7 kebiasaan                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       KEPSEK (🎓 Principal)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Access: Oversight Sekolah (Read-Only)                                        │
+│ Dashboard | Peta Kelas | Rekap Penilaian | Hasil Belajar | Kebiasaan        │
+│ Aktivitas                                                                     │
+│ KEY: Monitor semua guru/siswa, view reports, export data                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+📈 FEATURE ACCESS MATRIX
+═══════════════════════════════════════════════════════════════════════════════
+
+                    Admin  Guru  Siswa  Ortu  Kepsek
+Kelola Pengguna      ✓     ✗     ✗      ✗     ✗
+Kelola Kelas         ✓     ✗     ✗      ✗     ✗
+Kelola Mapel         ✓     ✗     ✗      ✗     ✗
+Input Nilai          ✗     ✓     ✗      ✗     ✗
+Lihat Nilai          ✓     ✓     ✓      ✓     ✓
+Input Kehadiran      ✗     ✓     ✗      ✗     ✗
+Lihat Kehadiran      ✓     ✓     ✗      ✓     ✗
+Upload Materi        ✗     ✓     ✗      ✗     ✗
+Akses Materi         ✗     ✓     ✓      ✗     ✗
+Ikuti Kuis           ✗     ✗     ✓      ✗     ✗
+Buat Kuis            ✗     ✓     ✗      ✗     ✗
+Input Kebiasaan      ✗     ✗     ✗      ✓     ✗
+Lihat Kebiasaan      ✓     ✓     ✗      ✓     ✓
+Oversight/Report     ✗     ✗     ✗      ✗     ✓
+Manajemen Sistem     ✓     ✗     ✗      ✗     ✗
+
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 MAIN FEATURES PER ROLE
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMIN
+  ├─ Bulk user creation (akun massal)
+  ├─ Dapodik bridge integration & download
+  ├─ Google Sheets connection
+  ├─ Full backup/restore
+  ├─ API key management
+  └─ System configuration
+
+GURU
+  ├─ Quick grade input (paste Excel)
+  ├─ Auto-save e-Rapor
+  ├─ Bulk PDF export (raport)
+  ├─ Google Sheets auto-sync
+  ├─ Student data import/export
+  └─ 7 Kebiasaan monitoring
+
+SISWA
+  ├─ Timed quizzes
+  ├─ Instant score feedback
+  ├─ Learning materials access
+  └─ Profile self-edit
+
+ORTU
+  ├─ 7 Kebiasaan submission
+  ├─ Multi-child support
+  └─ Calendar attendance view
+
+KEPSEK
+  ├─ Real-time monitoring
+  ├─ Per-teacher drilling
+  ├─ CSV export
+  └─ Aggregate analytics
+
+
+═══════════════════════════════════════════════════════════════════════════════
+🔗 ROUTE PREFIX ORGANIZATION
+═══════════════════════════════════════════════════════════════════════════════
+
+/               → Public landing page & demo
+/auth           → Login, register, force password change
+/admin          → Admin dashboard & management (25+ routes)
+/guru           → Teacher tools & content (24+ routes)
+/siswa          → Student learning portal (10 routes)
+/ortu           → Parent dashboard & monitoring (8 routes)
+/kepsek         → Principal oversight & reporting (10 routes)
+/api            → Backend API for Dapodik sync
+
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 DASHBOARD REDIRECT LOGIC (/dashboard)
+═══════════════════════════════════════════════════════════════════════════════
+
+User Role  →  Redirects To
+─────────────────────────────
+Admin      →  /admin/dashboard
+Guru       →  /guru/dashboard
+Siswa      →  /siswa/dashboard
+Ortu       →  /ortu/dashboard
+Kepsek     →  /kepsek/dashboard
+[Not Auth] →  /login
+
+
+═══════════════════════════════════════════════════════════════════════════════
+📱 FULL MENU COUNT
+═══════════════════════════════════════════════════════════════════════════════
+
+Admin:   25+ menu items
+Guru:    24+ menu items
+Siswa:   10 menu items
+Ortu:     8 menu items
+Kepsek:  10 menu items
+────────────────────
+TOTAL:   77+ menu items across all roles
+
+
+═══════════════════════════════════════════════════════════════════════════════
+🔐 PUBLIC ROUTES (No Login Required)
+═══════════════════════════════════════════════════════════════════════════════
+
+/                    Landing page
+/demo                Demo access
+/login               Login form
+/register            Self-registration
+/tka-statistik       TKA statistics view
+/api/tka-statistik   TKA API
+
+
+═══════════════════════════════════════════════════════════════════════════════
+🔒 SECURITY MIDDLEWARE
+═══════════════════════════════════════════════════════════════════════════════
+
+Applied to ALL authenticated routes:
+  • auth (verify user logged in)
+  • role:admin|guru|siswa|ortu|kepsek (verify user role)
+  • force.password.change (block until password changed if required)
+
+Rate Limiting:
+  • Login: throttle:10,1 (10 per minute)
+  • Register: throttle:5,1 (5 per minute)
+  • Data operations: throttle:30-60,1
+
+
+═══════════════════════════════════════════════════════════════════════════════
+💡 USE CASES
+═══════════════════════════════════════════════════════════════════════════════
+
+ADMIN
+  → Setup awal sistem, manage user, backup data
+
+GURU
+  → Input nilai, upload materi, kelola kuis, generate raport
+
+SISWA
+  → Belajar, lihat nilai, ikuti kuis
+
+ORTU
+  → Monitor perkembangan anak, submit kebiasaan
+
+KEPSEK
+  → Monitor semua guru & siswa, lihat laporan performa sekolah
+
+
+═══════════════════════════════════════════════════════════════════════════════
+📄 FULL DOCUMENTATION: MENU_AND_ROLES_DOCUMENTATION.md
+═══════════════════════════════════════════════════════════════════════════════
+
+For complete details on each menu, features, and API endpoints, refer to:
+  D:\Project\simantap\MENU_AND_ROLES_DOCUMENTATION.md

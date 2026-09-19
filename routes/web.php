@@ -221,6 +221,18 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::get('/semesters', [\App\Http\Controllers\Api\DapodikController::class, 'semesters'])->name('semesters');
         Route::post('/sync', [\App\Http\Controllers\Api\DapodikController::class, 'sync'])->name('sync');
     });
+
+    // Dapodik Push (Sync ke Dapodik Server)
+    Route::prefix('dapodik/push')->name('dapodik.push.')->group(function () {
+        Route::get('/sekolah', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
+        Route::post('/peserta-didik', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');
+        Route::post('/gtk', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushGtk'])->name('gtk');
+        Route::post('/rombel', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushRombel'])->name('rombel');
+        Route::post('/jadwal', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushJadwal'])->name('jadwal');
+        Route::post('/nilai-rapor', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushNilaiRapor'])->name('nilai-rapor');
+        Route::post('/kehadiran', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushKehadiran'])->name('kehadiran');
+        Route::get('/status', [\App\Http\Controllers\Api\DapodikPushController::class, 'status'])->name('status');
+    });
 });
 
 // ==================== GURU ROUTES ====================

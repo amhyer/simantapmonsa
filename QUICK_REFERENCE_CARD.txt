@@ -1,0 +1,308 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    SIMANTAP - QUICK REFERENCE CARD                            ║
+║                 Student Information Management System (Indonesia)              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📋 WHAT IS SIMANTAP?                                                       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ Sistem Informasi Manajemen Akademik Terpadu (SIMANTAP)                    ┃
+┃ = Integrated Academic Management Information System                        ┃
+┃                                                                             ┃
+┃ For Indonesian K-12 Schools (SD / SMP / SMA)                               ┃
+┃                                                                             ┃
+┃ Manages: Students | Grades | Materials | Quizzes | Attendance            ┃
+┃          Report Cards | Habits | Co-curricular | Integration              ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 👥 THE 5 ROLES                                                             ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ 1️⃣  ADMIN (👨‍💼 System Admin)                                              ┃
+┃     • Full system control                                                  ┃
+┃     • Create/delete users (bulk)                                           ┃
+┃     • Manage school settings                                               ┃
+┃     • Import from Dapodik                                                  ┃
+┃     • Backup/restore database                                              ┃
+┃     → URL: /admin                                                           ┃
+┃     → Users: IT staff, system managers                                      ┃
+┃                                                                             ┃
+┃ 2️⃣  GURU (👨‍🏫 Teacher)                                                     ┃
+┃     • Input student grades                                                 ┃
+┃     • Upload teaching materials                                            ┃
+┃     • Create & manage quizzes                                              ┃
+┃     • Record attendance                                                    ┃
+┃     • Generate report cards (e-Rapor)                                      ┃
+┃     → URL: /guru                                                            ┃
+┃     → Users: Teachers, instructors                                         ┃
+┃                                                                             ┃
+┃ 3️⃣  SISWA (👨‍🎓 Student)                                                    ┃
+┃     • Access learning materials                                            ┃
+┃     • Take quizzes                                                         ┃
+┃     • View grades                                                          ┃
+┃     • Check attendance                                                     ┃
+┃     • Update personal profile                                              ┃
+┃     → URL: /siswa                                                           ┃
+┃     → Users: K-12 students                                                 ┃
+┃                                                                             ┃
+┃ 4️⃣  ORTU (👨‍👩‍👧 Parent)                                                    ┃
+┃     • Monitor child's grades                                               ┃
+┃     • View attendance & notes                                              ┃
+┃     • Submit habit tracking (7 Kebiasaan)                                  ┃
+┃     • Download report card (e-Rapor)                                       ┃
+┃     • Multi-child support                                                  ┃
+┃     → URL: /ortu                                                            ┃
+┃     → Users: Parents, guardians, wali                                      ┃
+┃                                                                             ┃
+┃ 5️⃣  KEPSEK (🎓 Principal)                                                  ┃
+┃     • Monitor all teachers & students (read-only)                          ┃
+┃     • Real-time progress dashboard                                         ┃
+┃     • View aggregated analytics                                            ┃
+┃     • Export compliance reports                                            ┃
+┃     • School-wide oversight                                                ┃
+┃     → URL: /kepsek                                                          ┃
+┃     → Users: Principal, vice-principal                                     ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📊 PERMISSION MATRIX: WHO CAN DO WHAT?                                     ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃             Admin  Guru  Siswa  Ortu  Kepsek                               ┃
+┃ Create user   ✓     ✗     ✗      ✗     ✗                                  ┃
+┃ Input grade   ✗     ✓     ✗      ✗     ✗                                  ┃
+┃ View grade    ✓     ✓     ✓      ✓     ✓                                  ┃
+┃ Upload materi ✗     ✓     ✗      ✗     ✗                                  ┃
+┃ Access materi ✗     ✓     ✓      ✗     ✗                                  ┃
+┃ Take quiz     ✗     ✗     ✓      ✗     ✗                                  ┃
+┃ Create quiz   ✗     ✓     ✗      ✗     ✗                                  ┃
+┃ Record attend ✗     ✓     ✗      ✗     ✗                                  ┃
+┃ View attend   ✓     ✓     ✗      ✓     ✗                                  ┃
+┃ Submit habit  ✗     ✗     ✗      ✓     ✗                                  ┃
+┃ View reports  ✓     ✓     ✗      ✗     ✓                                  ┃
+┃ Manage system ✓     ✗     ✗      ✗     ✗                                  ┃
+┃ Dapodik sync  ✓     ✗     ✗      ✗     ✗                                  ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📈 KEY FEATURES (10+)                                                      ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ 1. Dapodik Integration - Sync data from national education database       ┃
+┃ 2. e-Rapor Generation - Beautiful digital report cards (PDF)             ┃
+┃ 3. Quiz Management - Create quizzes, auto-score, track results            ┃
+┃ 4. Grade Tracking - Multiple grade types, calculations, KKM              ┃
+┃ 5. Attendance - Record & monitor student presence                         ┃
+┃ 6. 7 Kebiasaan - Habit tracking (Indonesian education framework)          ┃
+┃ 7. Co-Curricular - Manage extracurricular activities & groups             ┃
+┃ 8. Google Sheets - Bi-directional sync with teacher's spreadsheets       ┃
+┃ 9. Reporting - Excel/CSV export, ministry-compliance reports             ┃
+┃ 10. Bulk Operations - Import 1000s of students, mass PDF generation       ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🗂️  DATABASE OVERVIEW                                                      ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ Total Models: 31                                                           ┃
+┃ Total Tables: ~45                                                          ┃
+┃ Total Routes: 120+                                                         ┃
+┃                                                                             ┃
+┃ Model Categories:                                                          ┃
+┃   • Academic Structure (5): Semester, Rombel, MataPelajaran, Jadwal        ┃
+┃   • People (4): User, Siswa, Ptk, OrangTuaSiswa                           ┃
+┃   • Learning (3): Materi, Kuis, Dimensi/TKA                               ┃
+┃   • Assessment (8): Nilai, NilaiErapot, HasilKuis, Kehadiran, Catatan     ┃
+┃   • Co-Curricular (3): Tema, Kegiatan, Kelompok                           ┃
+┃   • Dapodik (3): Config, ImportLog, SyncLog                               ┃
+┃   • System (2): SekolahSettings, Ekstrakurikuler                          ┃
+┃   • Logging (1): Aktivitas                                                ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🚀 TYPICAL WORKFLOWS                                                       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ WORKFLOW 1: Teacher Entering Grades                                        ┃
+┃ ─────────────────────────────────────────────────────────────────────      ┃
+┃ Guru → Input Nilai Cepat → Select semester/subject/class                  ┃
+┃     → Enter/paste grades → Save → Parents notified                        ┃
+┃                                                                             ┃
+┃ WORKFLOW 2: Parent Monitoring Child                                        ┃
+┃ ─────────────────────────────────────────────────────────────────────      ┃
+┃ Ortu → Login → Dashboard → See grades/attendance                          ┃
+┃     → View teacher notes → Fill habit form → Download report card         ┃
+┃                                                                             ┃
+┃ WORKFLOW 3: Student Learning                                              ┃
+┃ ─────────────────────────────────────────────────────────────────────      ┃
+┃ Siswa → Access Materi → Study → Take Kuis → View Nilai                    ┃
+┃                                                                             ┃
+┃ WORKFLOW 4: Admin Importing Data                                           ┃
+┃ ─────────────────────────────────────────────────────────────────────      ┃
+┃ Admin → Dapodik → Upload CSV → Preview → Import                           ┃
+┃      → Check log → Data ready for class assignment                        ┃
+┃                                                                             ┃
+┃ WORKFLOW 5: Principal Generating Report                                    ┃
+┃ ─────────────────────────────────────────────────────────────────────      ┃
+┃ Kepsek → Dashboard → Real-time monitoring → Rekap → Export CSV            ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🔗 QUICK NAVIGATION                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ 🏠 Homepage               → /                                              ┃
+┃ 🔓 Login                  → /login                                         ┃
+┃ 📊 My Dashboard           → /dashboard (redirects to role-specific)       ┃
+┃                                                                             ┃
+┃ ADMIN ROUTES:                                                              ┃
+┃   /admin/dashboard        → Admin dashboard                                ┃
+┃   /admin/users            → User management                                ┃
+┃   /admin/mapel            → Subject management                             ┃
+┃   /admin/peta-kelas       → Class mapping                                  ┃
+┃   /admin/dapodik          → Dapodik import                                 ┃
+┃   /admin/backup           → Backup/restore                                 ┃
+┃                                                                             ┃
+┃ GURU ROUTES:                                                               ┃
+┃   /guru/dashboard         → Teacher dashboard                              ┃
+┃   /guru/siswa             → Student data                                   ┃
+┃   /guru/materi            → Teaching materials                             ┃
+┃   /guru/kuis              → Quiz management                                ┃
+┃   /guru/input-nilai       → Quick grade input                              ┃
+┃   /guru/nilai-erapor      → e-Report card input                            ┃
+┃   /guru/laporan           → Report generation                              ┃
+┃                                                                             ┃
+┃ SISWA ROUTES:                                                              ┃
+┃   /siswa/dashboard        → Student dashboard                              ┃
+┃   /siswa/materi           → Learning materials                             ┃
+┃   /siswa/kuis             → Available quizzes                              ┃
+┃   /siswa/nilai            → My grades                                      ┃
+┃                                                                             ┃
+┃ ORTU ROUTES:                                                               ┃
+┃   /ortu/dashboard         → Parent dashboard                               ┃
+┃   /ortu/nilai             → Child's grades                                 ┃
+┃   /ortu/kehadiran         → Attendance                                     ┃
+┃   /ortu/kebiasaan         → Habit submission                               ┃
+┃   /ortu/laporan           → Report card                                    ┃
+┃                                                                             ┃
+┃ KEPSEK ROUTES:                                                             ┃
+┃   /kepsek/dashboard       → Principal dashboard                            ┃
+┃   /kepsek/pantau          → Real-time monitoring                           ┃
+┃   /kepsek/rekap           → Grade summary                                  ┃
+┃   /kepsek/peta-kelas      → Class distribution                             ┃
+┃   /kepsek/hasil-belajar   → Learning outcomes                              ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 💻 TECH STACK                                                              ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ Backend:     Laravel 11, PHP 8.2+                                          ┃
+┃ Frontend:    Vue.js 3, Tailwind CSS, Inertia.js                            ┃
+┃ Database:    SQLite (dev), PostgreSQL/MySQL (production)                   ┃
+┃ Integration: Dapodik (XML/JSON), Google Sheets (OAuth2)                    ┃
+┃ Export:      PDF (mPDF/DomPDF), Excel (PhpSpreadsheet)                     ┃
+┃ Storage:     Local disk, S3 support                                        ┃
+┃ Queue:       Database-based                                                ┃
+┃ Cache:       Redis (optional)                                              ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📚 DOCUMENTATION FILES                                                     ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ START HERE:                                                                ┃
+┃   📄 DOCUMENTATION_INDEX.md ..................... Master index & nav guide ┃
+┃   📄 COMPLETE_APPLICATION_OVERVIEW.md .......... Full app description    ┃
+┃                                                                             ┃
+┃ DETAILS:                                                                   ┃
+┃   📄 MENU_AND_ROLES_DOCUMENTATION.md .......... All menus & permissions   ┃
+┃   📄 MENU_AND_ROLES_SUMMARY.txt ............... Quick reference (ASCII)   ┃
+┃   📄 DATABASE_MODELS_AND_RELATIONSHIPS.md .... Schema & relationships    ┃
+┃   📄 DAPODIK_FIX_SUMMARY.md ................... Error solutions           ┃
+┃   📄 QUICK_REFERENCE_CARD.txt ................ This file!                ┃
+┃                                                                             ┃
+┃ Location: D:\Project\simantap\                                             ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ❓ COMMON QUESTIONS                                                        ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                                                                             ┃
+┃ Q: What role should I create for [user type]?                             ┃
+┃ A: See MENU_AND_ROLES_DOCUMENTATION.md for role descriptions              ┃
+┃                                                                             ┃
+┃ Q: Can [role] do [action]?                                                ┃
+┃ A: Check Feature Access Matrix in MENU_AND_ROLES_DOCUMENTATION.md         ┃
+┃                                                                             ┃
+┃ Q: How do I get started as a [role]?                                      ┃
+┃ A: See COMPLETE_APPLICATION_OVERVIEW.md → Workflow section                ┃
+┃                                                                             ┃
+┃ Q: What are all the models in the database?                               ┃
+┃ A: See DATABASE_MODELS_AND_RELATIONSHIPS.md                               ┃
+┃                                                                             ┃
+┃ Q: I'm getting permission denied error                                    ┃
+┃ A: Check permission matrix in MENU_AND_ROLES_DOCUMENTATION.md             ┃
+┃                                                                             ┃
+┃ Q: How do I fix Dapodik sync errors?                                      ┃
+┃ A: See DAPODIK_FIX_SUMMARY.md                                             ┃
+┃                                                                             ┃
+┃ Q: Where do I find menu details?                                          ┃
+┃ A: See MENU_AND_ROLES_DOCUMENTATION.md (complete menu list per role)      ┃
+┃                                                                             ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🎯 QUICK START STEPS                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│ 1. FIRST TIME?                                                             │
+│    → Read: COMPLETE_APPLICATION_OVERVIEW.md (understand the system)       │
+│                                                                             │
+│ 2. NEED QUICK REFERENCE?                                                   │
+│    → Use: MENU_AND_ROLES_SUMMARY.txt (print & keep at desk)               │
+│                                                                             │
+│ 3. DEVELOPING NEW FEATURES?                                               │
+│    → Check: DATABASE_MODELS_AND_RELATIONSHIPS.md (schema)                 │
+│    → Follow: existing role controllers for patterns                        │
+│                                                                             │
+│ 4. DEBUGGING PERMISSIONS?                                                  │
+│    → Consult: MENU_AND_ROLES_DOCUMENTATION.md (permission matrix)         │
+│                                                                             │
+│ 5. STUCK ON SOMETHING?                                                     │
+│    → Reference: DOCUMENTATION_INDEX.md (navigation & FAQs)                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║  Created: 2026-01-13                                                         ║
+║  Version: 1.0                                                                ║
+║  Location: D:\Project\simantap\                                             ║
+║                                                                               ║
+║  📖 For complete documentation, start with: DOCUMENTATION_INDEX.md           ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
