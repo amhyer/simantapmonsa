@@ -34,11 +34,9 @@
             ]],
         ]],
         ['label' => 'DATA KOKURIKULER', 'items' => [
-            ['label' => 'Data Kokurikuler', 'icon' => 'fa-solid fa-book-open', 'children' => [
-                ['route' => 'admin.kokurikuler.tema', 'icon' => 'fa-solid fa-bullseye', 'label' => 'Daftar Tema'],
-                ['route' => 'admin.kokurikuler.kegiatan', 'icon' => 'fa-solid fa-list-check', 'label' => 'Kegiatan Kokurikuler'],
-                ['route' => 'admin.kokurikuler.kelompok', 'icon' => 'fa-solid fa-users', 'label' => 'Kelompok Kokurikuler'],
-            ]],
+            ['route' => 'admin.kokurikuler.tema', 'icon' => 'fa-solid fa-bullseye', 'label' => 'Daftar Tema'],
+            ['route' => 'admin.kokurikuler.kegiatan', 'icon' => 'fa-solid fa-list-check', 'label' => 'Kegiatan Kokurikuler'],
+            ['route' => 'admin.kokurikuler.kelompok', 'icon' => 'fa-solid fa-users', 'label' => 'Kelompok Kokurikuler'],
         ]],
         ['label' => 'STATUS PENILAIAN', 'items' => [
             ['label' => 'Status Penilaian', 'icon' => 'fa-solid fa-graduation-cap', 'children' => [

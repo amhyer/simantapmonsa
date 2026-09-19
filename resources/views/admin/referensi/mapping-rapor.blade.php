@@ -16,6 +16,15 @@
         </div>
         <div class="card-body tight">
             @if($mapel->count())
+                @if($errors->any())
+                    <div class="alert alert-danger" style="margin-bottom:16px">
+                        <ul style="margin:0;padding-left:18px">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 <form action="{{ route('admin.referensi.mapel-meta.update') }}" method="POST">
                     @csrf
                     @method('PUT')

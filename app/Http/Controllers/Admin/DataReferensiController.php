@@ -85,11 +85,15 @@ class DataReferensiController extends Controller
 
     public function updateMapelMeta(Request $request)
     {
+        \Log::info('Mapel meta update request', ['data' => $request->all()]);
+
         $validated = $request->validate([
             'mapel' => 'required|array',
             'mapel.*.kelompok' => 'nullable|string|max:50',
             'mapel.*.urutan' => 'nullable|integer|min:0|max:999',
         ]);
+
+        \Log::info('Mapel meta validated', ['validated' => $validated]);
 
         foreach ($validated['mapel'] as $id => $row) {
             MataPelajaran::where('id', $id)->update([
