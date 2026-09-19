@@ -3,17 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DapodikConfig;
 use App\Services\Dapodik\DapodikPushService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DapodikPushController extends Controller
 {
-    private DapodikPushService $pushService;
-
-    public function __construct(DapodikPushService $pushService)
+    public function __construct(private DapodikPushService $pushService)
     {
-        $this->pushService = $pushService;
     }
 
     /**
@@ -22,11 +20,11 @@ class DapodikPushController extends Controller
     public function pushSekolah(): JsonResponse
     {
         $result = $this->pushService->pushSekolah();
-        
+
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push sekolah berhasil' : 'Push sekolah gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -44,7 +42,7 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push peserta didik berhasil' : 'Push peserta didik gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -58,7 +56,7 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push GTK berhasil' : 'Push GTK gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -72,7 +70,7 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push rombel berhasil' : 'Push rombel gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -86,7 +84,7 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push jadwal berhasil' : 'Push jadwal gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -104,7 +102,7 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push nilai rapor berhasil' : 'Push nilai rapor gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
@@ -122,16 +120,16 @@ class DapodikPushController extends Controller
         return response()->json([
             'success' => $result['gagal'] === 0,
             'message' => $result['gagal'] === 0 ? 'Push kehadiran berhasil' : 'Push kehadiran gagal',
-            'data' => $result
+            'data' => $result,
         ], $result['gagal'] === 0 ? 200 : 400);
     }
 
     /**
      * Status push Dapodik
      */
-    public function status(): \Illuminate\Http\JsonResponse
+    public function status(): JsonResponse
     {
-        $config = \App\Models\DapodikConfig::getInstance();
+        $config = DapodikConfig::getInstance();
 
         return response()->json([
             'success' => true,
@@ -143,7 +141,7 @@ class DapodikPushController extends Controller
                 'configured' => !empty($config->npsn) && !empty($config->token),
                 'last_sync' => $config->last_sync_at,
                 'last_sync_by' => $config->last_sync_by,
-            ]
+            ],
         ]);
     }
 }
