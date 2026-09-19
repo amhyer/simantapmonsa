@@ -22,8 +22,17 @@ Detail route→controller→view per menu ada di laporan pemetaan (arsip sesi in
 | Setting Web Service Dapodik | ⚠️ | Route `admin.dapodik.api.*` ada; verifikasi UI-nya di halaman Dapodik |
 | Tarik Data Dapodik | ✅ | Import Dapodik + Jobs async sudah jalan |
 | Data Referensi (gelar guru, hapus anggota rombel, mapel lokal) | ⚠️ | Hapus anggota rombel ✅ (`keluarkan`), mapel lokal ✅ (import-lokal/seed); gelar guru ❌ (kolom belum ada di tabel PTK) |
-| Data Guru (master PTK) | ✅ | Baru: `admin.referensi.guru` (read-only, badge DAPODIK + peran) |
-| Data Pembelajaran (jadwal) | ✅ | Baru: `admin.referensi.pembelajaran` (read-only; kosong sampai ada sync jadwal) |
+| Data Guru (master PTK) | ✅ | `admin.referensi.guru` (read-only, badge DAPODIK + peran) |
+| Data Pembelajaran (jadwal) | ✅ | `admin.referensi.pembelajaran` (read-only) |
+| Data Ekstrakurikuler | ✅ | `admin.referensi.ekstrakurikuler` (CRUD; pakai tabel bawaan + pivot nilai siswa) |
+| Data Kelompok Mapel | ✅ | `admin.referensi.kelompok-mapel` (bulk form; kolom baru `kelompok`) |
+| Mapping Rapor | ✅ | `admin.referensi.mapping-rapor` (bulk form; kolom baru `urutan`) |
+| Logo dan TTD | ✅ | `admin.referensi.logo-ttd` (upload 4 file → `pengaturan` JSON settings) |
+| Tanggal Rapor | ✅ | `admin.referensi.tanggal-rapor` (upsert per tahun+semester) |
+| Foto Siswa | ✅ | `admin.referensi.foto-siswa` (massal, cocokkan nama file = NIS/NISN) |
+| Kokurikuler: Tema/Kegiatan/Kelompok+Anggota | ✅ | `admin.kokurikuler.*` (CRUD + pivot anggota; tabel baru) |
+| Status Penilaian | ✅ | `admin.penilaian.status` (agregasi per guru, read-only) |
+| Statistik Nilai Rapor | ✅ | `admin.penilaian.statistik` (sebaran predikat + rata mapel, read-only) |
 | Mapping/urutan mapel rapor | ❌ | Belum ada pengaturan urutan tampil |
 | Kelola Pengguna + Generate Akun Massal | ✅ | Lengkap + Jobs async |
 | Reset Password & Status Login | ⚠️ | Reset kemungkinan di form edit user; halaman "siapa sedang login" ❌ |

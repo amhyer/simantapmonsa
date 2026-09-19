@@ -39,6 +39,8 @@ use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\MapelController;
 use App\Http\Controllers\Admin\DataReferensiController;
+use App\Http\Controllers\Admin\KokurikulerController;
+use App\Http\Controllers\Admin\PenilaianController;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\HasilBelajarController;
@@ -122,6 +124,36 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     // Data Referensi (guru & pembelajaran dari Dapodik, read-only)
     Route::get('/referensi/guru', [DataReferensiController::class, 'guru'])->name('referensi.guru');
     Route::get('/referensi/pembelajaran', [DataReferensiController::class, 'pembelajaran'])->name('referensi.pembelajaran');
+    Route::get('/referensi/tanggal-rapor', [DataReferensiController::class, 'tanggalRapor'])->name('referensi.tanggal-rapor');
+    Route::post('/referensi/tanggal-rapor', [DataReferensiController::class, 'storeTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.store');
+    Route::delete('/referensi/tanggal-rapor/{tanggalRapor}', [DataReferensiController::class, 'destroyTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.destroy');
+    Route::get('/referensi/kelompok-mapel', [DataReferensiController::class, 'kelompokMapel'])->name('referensi.kelompok-mapel');
+    Route::get('/referensi/mapping-rapor', [DataReferensiController::class, 'mappingRapor'])->name('referensi.mapping-rapor');
+    Route::put('/referensi/mapel-meta', [DataReferensiController::class, 'updateMapelMeta'])->middleware('throttle:30,1')->name('referensi.mapel-meta.update');
+    Route::get('/referensi/logo-ttd', [DataReferensiController::class, 'logoTtd'])->name('referensi.logo-ttd');
+    Route::post('/referensi/logo-ttd', [DataReferensiController::class, 'storeLogoTtd'])->middleware('throttle:30,1')->name('referensi.logo-ttd.store');
+    Route::get('/referensi/foto-siswa', [DataReferensiController::class, 'fotoSiswa'])->name('referensi.foto-siswa');
+    Route::post('/referensi/foto-siswa', [DataReferensiController::class, 'storeFotoSiswa'])->middleware('throttle:10,1')->name('referensi.foto-siswa.store');
+
+    // Kokurikuler
+    Route::get('/kokurikuler/tema', [KokurikulerController::class, 'tema'])->name('kokurikuler.tema');
+    Route::post('/kokurikuler/tema', [KokurikulerController::class, 'storeTema'])->middleware('throttle:30,1')->name('kokurikuler.tema.store');
+    Route::delete('/kokurikuler/tema/{tema}', [KokurikulerController::class, 'destroyTema'])->middleware('throttle:30,1')->name('kokurikuler.tema.destroy');
+    Route::get('/kokurikuler/kegiatan', [KokurikulerController::class, 'kegiatan'])->name('kokurikuler.kegiatan');
+    Route::post('/kokurikuler/kegiatan', [KokurikulerController::class, 'storeKegiatan'])->middleware('throttle:30,1')->name('kokurikuler.kegiatan.store');
+    Route::delete('/kokurikuler/kegiatan/{kegiatan}', [KokurikulerController::class, 'destroyKegiatan'])->middleware('throttle:30,1')->name('kokurikuler.kegiatan.destroy');
+    Route::get('/kokurikuler/kelompok', [KokurikulerController::class, 'kelompok'])->name('kokurikuler.kelompok');
+    Route::post('/kokurikuler/kelompok', [KokurikulerController::class, 'storeKelompok'])->middleware('throttle:30,1')->name('kokurikuler.kelompok.store');
+    Route::get('/kokurikuler/kelompok/{kelompok}', [KokurikulerController::class, 'showKelompok'])->name('kokurikuler.kelompok.show');
+    Route::put('/kokurikuler/kelompok/{kelompok}/anggota', [KokurikulerController::class, 'updateAnggota'])->middleware('throttle:30,1')->name('kokurikuler.anggota.update');
+    Route::delete('/kokurikuler/kelompok/{kelompok}', [KokurikulerController::class, 'destroyKelompok'])->middleware('throttle:30,1')->name('kokurikuler.kelompok.destroy');
+
+    // Penilaian (agregasi read-only)
+    Route::get('/penilaian/status', [PenilaianController::class, 'status'])->name('penilaian.status');
+    Route::get('/penilaian/statistik', [PenilaianController::class, 'statistik'])->name('penilaian.statistik');
+    Route::get('/referensi/ekstrakurikuler', [DataReferensiController::class, 'ekstrakurikuler'])->name('referensi.ekstrakurikuler');
+    Route::post('/referensi/ekstrakurikuler', [DataReferensiController::class, 'storeEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.store');
+    Route::delete('/referensi/ekstrakurikuler/{ekstrakurikuler}', [DataReferensiController::class, 'destroyEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.destroy');
     
     // Kode & Akses
     Route::get('/kode-akses', [KodeAksesController::class, 'index'])->name('kode-akses.index');
