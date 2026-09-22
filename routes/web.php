@@ -106,6 +106,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     
     // Peta Kelas
     Route::get('/peta-kelas', [PetaKelasController::class, 'index'])->name('peta-kelas.index');
+    Route::get('/peta-kelas/daftar', [PetaKelasController::class, 'daftar'])->name('peta-kelas.daftar');
+    Route::get('/peta-kelas/{rombel}', [PetaKelasController::class, 'detail'])->name('peta-kelas.detail');
     Route::post('/peta-kelas', [PetaKelasController::class, 'store'])->name('peta-kelas.store');
     Route::delete('/peta-kelas/{id}', [PetaKelasController::class, 'destroy'])->name('peta-kelas.destroy');
     Route::post('/peta-kelas/pindah', [PetaKelasController::class, 'pindahSiswa'])->name('peta-kelas.pindah');
@@ -141,6 +143,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::post('/referensi/logo-ttd', [DataReferensiController::class, 'storeLogoTtd'])->middleware('throttle:30,1')->name('referensi.logo-ttd.store');
     Route::get('/referensi/foto-siswa', [DataReferensiController::class, 'fotoSiswa'])->name('referensi.foto-siswa');
     Route::post('/referensi/foto-siswa', [DataReferensiController::class, 'storeFotoSiswa'])->middleware('throttle:10,1')->name('referensi.foto-siswa.store');
+    Route::post('/referensi/foto-siswa/{siswa}', [DataReferensiController::class, 'storeFotoSiswaSatuan'])->middleware('throttle:30,1')->name('referensi.foto-siswa.satuan');
 
     // Kokurikuler
     Route::get('/kokurikuler/tema', [KokurikulerController::class, 'tema'])->name('kokurikuler.tema');

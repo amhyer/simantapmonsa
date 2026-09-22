@@ -28,7 +28,7 @@
             ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
             ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru'],
             ['route' => 'admin.users.siswa', 'icon' => 'lucide-graduation-cap', 'label' => 'Data Siswa'],
-            ['route' => 'admin.peta-kelas.index', 'icon' => 'lucide-school', 'label' => 'Data Kelas'],
+                ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Data Kelas'],
             ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Data Mapel'],
             ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
             ['route' => 'admin.referensi.ekstrakurikuler', 'icon' => 'lucide-activity', 'label' => 'Data Ekstrakurikuler'],
@@ -38,7 +38,7 @@
             ['route' => 'admin.referensi.tanggal-rapor', 'icon' => 'lucide-calendar', 'label' => 'Tanggal Rapor'],
             ['route' => 'admin.referensi.foto-siswa', 'icon' => 'lucide-camera', 'label' => 'Foto Siswa'],
         ]],
-        ['label' => 'DATA KOKURIKULER', 'items' => [
+        ['label' => 'DATA KOKURIKULER', 'icon' => 'lucide-notebook-pen', 'children' => [
             ['route' => 'admin.kokurikuler.tema', 'icon' => 'lucide-target', 'label' => 'Daftar Tema'],
             ['route' => 'admin.kokurikuler.kegiatan', 'icon' => 'lucide-list-checks', 'label' => 'Kegiatan Kokurikuler'],
             ['route' => 'admin.kokurikuler.kelompok', 'icon' => 'lucide-users', 'label' => 'Kelompok Kokurikuler'],
@@ -48,6 +48,7 @@
             ['route' => 'admin.penilaian.statistik', 'icon' => 'lucide-bar-chart-2', 'label' => 'Statistik Nilai Rapor'],
         ]],
         ['label' => 'PERKEMBANGAN NILAI', 'icon' => 'lucide-trending-up', 'children' => [
+            ['icon' => 'lucide-trending-up', 'label' => 'Perkembangan Nilai', 'planned' => true],
             ['icon' => 'lucide-area-chart', 'label' => 'Grafik Nilai Rapor', 'planned' => true],
         ]],
         ['label' => 'TRANSKRIP IJAZAH', 'icon' => 'lucide-file-text', 'children' => [

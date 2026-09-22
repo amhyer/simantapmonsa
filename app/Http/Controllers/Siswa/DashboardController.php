@@ -10,7 +10,6 @@ use App\Models\Materi;
 use App\Models\Nilai;
 use App\Models\Siswa;
 use App\Services\NilaiService;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -71,17 +70,24 @@ class DashboardController extends Controller
             ];
         })->values();
 
+        // Portabel lintas database (dulu to_char() khusus PostgreSQL):
+        // ambil baris tahun berjalan lalu kelompokkan per bulan di PHP.
+        // Bentuk output identik: nama (Inggris, cth. "January"), H, S, I, A.
         $kehadiranBulanan = Kehadiran::where('siswa_id', $siswa->id)
             ->whereYear('tanggal', date('Y'))
-            ->selectRaw("to_char(tanggal, 'FMMonth') as nama, to_char(tanggal, 'YYYY-MM') as bulan")
-            ->selectRaw("SUM(CASE WHEN status='H' THEN 1 ELSE 0 END) as h")
-            ->selectRaw("SUM(CASE WHEN status='S' THEN 1 ELSE 0 END) as s")
-            ->selectRaw("SUM(CASE WHEN status='I' THEN 1 ELSE 0 END) as i")
-            ->selectRaw("SUM(CASE WHEN status='A' THEN 1 ELSE 0 END) as a")
-            ->groupByRaw("to_char(tanggal, 'FMMonth'), to_char(tanggal, 'YYYY-MM')")
-            ->orderBy('bulan')
+            ->orderBy('tanggal')
             ->get()
-            ->map(fn($r) => ['nama' => $r->nama, 'H' => (int) $r->h, 'S' => (int) $r->s, 'I' => (int) $r->i, 'A' => (int) $r->a]);
+            ->groupBy(fn ($k) => $k->tanggal->format('Y-m'))
+            ->map(function ($items) {
+                return [
+                    'nama' => $items->first()->tanggal->format('F'),
+                    'H' => $items->where('status', 'H')->count(),
+                    'S' => $items->where('status', 'S')->count(),
+                    'I' => $items->where('status', 'I')->count(),
+                    'A' => $items->where('status', 'A')->count(),
+                ];
+            })
+            ->values();
 
         $saran = $this->generateSaran($siswa, $rataRata, $kehadiran, $nilaiPerMapel);
 

@@ -89,9 +89,12 @@ class AdminMenuTest extends TestCase
         $this->assertNotEmpty($m, 'Blok sidebar-nav tidak ditemukan.');
         $sidebar = $m[1];
 
-        foreach (['Data Referensi', 'Status Penilaian', 'Perkembangan Nilai', 'Transkrip Ijazah', 'Cetak Nilai'] as $label) {
+        foreach (['Data Referensi', 'Data Kokurikuler', 'Status Penilaian', 'Transkrip Ijazah', 'Cetak Nilai'] as $label) {
             $this->assertSame(1, substr_count($sidebar, $label), "Label '{$label}' muncul lebih dari sekali di sidebar.");
         }
+
+        // Cermin e-Rapor live: induk "Perkembangan Nilai" + anak "Perkembangan Nilai".
+        $this->assertSame(2, substr_count($sidebar, 'Perkembangan Nilai'), "Label 'Perkembangan Nilai' harus muncul 2x (induk + anak).");
 
         $this->assertSame(0, substr_count($sidebar, '<details class="nav-submenu" open'), 'Ada submenu yang terbuka by default.');
     }

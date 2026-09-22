@@ -233,8 +233,27 @@ class DataReferensiController extends Controller
     {
         $total = Siswa::count();
         $denganFoto = Siswa::whereNotNull('foto')->count();
+        $daftar = Siswa::orderBy('nama_peserta_didik')->get(['id', 'nama_peserta_didik', 'nis', 'nisn', 'kelas', 'foto']);
 
-        return view('admin.referensi.foto-siswa', compact('total', 'denganFoto'));
+        return view('admin.referensi.foto-siswa', compact('total', 'denganFoto', 'daftar'));
+    }
+
+    public function storeFotoSiswaSatuan(Request $request, Siswa $siswa)
+    {
+        $request->validate([
+            'foto' => 'required|image|mimes:jpeg,jpg,png|max:2048',
+        ], [
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
+            'foto.max' => 'Ukuran gambar maksimal 2MB.',
+        ]);
+
+        if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+            Storage::disk('public')->delete($siswa->foto);
+        }
+        $siswa->update(['foto' => $request->file('foto')->store('foto-siswa', 'public')]);
+
+        return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil diperbarui.");
     }
 
     public function storeFotoSiswa(Request $request)

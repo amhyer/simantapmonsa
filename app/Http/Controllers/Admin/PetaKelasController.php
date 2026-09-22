@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Rombel;
 use App\Models\User;
 use App\Models\Siswa;
 use App\Models\PengaturanGuru;
@@ -11,6 +12,27 @@ use Illuminate\Http\JsonResponse;
 
 class PetaKelasController extends Controller
 {
+    public function daftar(Request $request)
+    {
+        $jenis = $request->get('jenis');
+        $jenisList = ['Reguler', 'Pilihan', 'Ekskul', 'Lainnya'];
+
+        $query = Rombel::with(['guru', 'semester'])->withCount('siswa')->orderBy('nama_rombel');
+        if ($jenis) {
+            $query->where('jenis_rombel', $jenis);
+        }
+        $rombel = $query->get();
+
+        return view('admin.peta-kelas.daftar', compact('rombel', 'jenis', 'jenisList'));
+    }
+
+    public function detail(Rombel $rombel)
+    {
+        $rombel->load(['guru', 'semester', 'siswa' => fn($q) => $q->orderBy('nama_peserta_didik')]);
+
+        return view('admin.peta-kelas.detail', compact('rombel'));
+    }
+
     public function index()
     {
         $guru = User::where('peran', 'guru')->orderBy('nama_lengkap')->get();

@@ -10,6 +10,7 @@ use App\Models\Nilai;
 use App\Models\NilaiErapot;
 use App\Models\Siswa;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class PenilaianController extends Controller
 {
@@ -42,9 +43,16 @@ class PenilaianController extends Controller
         return view('admin.penilaian.status', compact('rows'));
     }
 
-    public function statistik()
+    public function statistik(Request $request)
     {
-        $nilai = NilaiErapot::whereNotNull('nilai_akhir')->get();
+        $kelasFilter = $request->get('kelas');
+        $kelasList = NilaiErapot::whereNotNull('kelas')->distinct()->orderBy('kelas')->pluck('kelas');
+
+        $query = NilaiErapot::whereNotNull('nilai_akhir');
+        if ($kelasFilter) {
+            $query->where('kelas', $kelasFilter);
+        }
+        $nilai = $query->get();
         $total = $nilai->count();
 
         $sebaran = collect(['A', 'B', 'C', 'D'])->mapWithKeys(function ($p) use ($nilai, $total) {
@@ -63,6 +71,6 @@ class PenilaianController extends Controller
 
         $rataSekolah = $total > 0 ? round($nilai->avg('nilai_akhir'), 2) : 0;
 
-        return view('admin.penilaian.statistik', compact('sebaran', 'perMapel', 'rataSekolah', 'total'));
+        return view('admin.penilaian.statistik', compact('sebaran', 'perMapel', 'rataSekolah', 'total', 'kelasList', 'kelasFilter'));
     }
 }

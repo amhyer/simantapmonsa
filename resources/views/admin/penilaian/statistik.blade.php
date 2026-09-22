@@ -10,6 +10,28 @@
 @section('page_subtitle', 'Sebaran predikat dan rata-rata per mata pelajaran (dari nilai e-rapor)')
 
 @section('content')
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+            <form action="{{ route('admin.penilaian.statistik') }}" method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px">
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pilih Kelas</label>
+                    <select name="kelas" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                        <option value="">Semua Kelas</option>
+                        @foreach($kelasList as $k)
+                            <option value="{{ $k }}" {{ $kelasFilter === $k ? 'selected' : '' }}>{{ $k }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-sm">Tampilkan</button>
+                    @if($kelasFilter)
+                        <a href="{{ route('admin.penilaian.statistik') }}" class="btn btn-sm btn-ghost">Reset</a>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="grid grid-4" style="margin-bottom:16px">
         <div class="stat"><div class="label">Total nilai</div><div class="value">{{ $total }}</div></div>
         <div class="stat ok"><div class="label">Rata-rata sekolah</div><div class="value">{{ $rataSekolah }}</div></div>

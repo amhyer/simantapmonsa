@@ -41,4 +41,61 @@
             </form>
         </div>
     </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Foto per Siswa</h3>
+            <input type="text" id="searchFoto" placeholder="Cari nama atau NIS..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:200px" oninput="filterFoto(this.value)">
+        </div>
+        <div class="card-body tight">
+            @if($daftar->count())
+                <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse" id="tabelFoto">
+                        <thead>
+                            <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nama Siswa</th>
+                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Foto</th>
+                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Ganti Foto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($daftar as $s)
+                                <tr>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC"><b>{{ $s->nama_peserta_didik }}</b><div style="font-size:12px;color:#667085">{{ $s->nis }}{{ $s->nisn ? ' · ' . $s->nisn : '' }} · {{ $s->kelas }}</div></td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
+                                        @if($s->foto)
+                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
+                                        @else
+                                            <span class="tag tag-mut">Belum ada</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
+                                        <form action="{{ route('admin.referensi.foto-siswa.satuan', $s) }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center">
+                                            @csrf
+                                            <input type="file" name="foto" accept=".jpeg,.jpg,.png" required style="font-size:12px;max-width:190px">
+                                            <button type="submit" class="btn btn-sm btn-ghost">Upload</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty-state">
+                    <div class="icon">📸</div>
+                    <h4>Belum ada data siswa</h4>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <script>
+        function filterFoto(keyword) {
+            keyword = keyword.toLowerCase();
+            document.querySelectorAll('#tabelFoto tbody tr').forEach(function (row) {
+                row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        }
+    </script>
 @endsection

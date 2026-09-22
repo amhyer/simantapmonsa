@@ -190,8 +190,13 @@
             font-size: 10px;
             margin-left: auto;
             opacity: .6;
+            transition: transform .2s ease;
         }
-        .sidebar-nav details.nav-submenu[open] > summary::after { content: '\f077'; }
+        .sidebar-nav details.nav-submenu[open] > summary::after { transform: rotate(180deg); }
+        .sidebar-nav details.nav-submenu[open] > summary {
+            background: rgba(255,255,255,.06);
+            color: #fff;
+        }
         .sidebar-nav .nav-subitem { padding-left: 46px; font-size: 12.5px; }
         .sidebar-nav .nav-planned { opacity: .45; cursor: not-allowed; }
         .sidebar-nav .badge-segera {

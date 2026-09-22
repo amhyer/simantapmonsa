@@ -355,6 +355,8 @@ class DapodikSyncController extends Controller
                     'semester_id' => $semester->id,
                     'nama_rombel' => $r['nama'] ?? $r['nama_rombel'] ?? '',
                     'tingkat' => $r['tingkat_pendidikan_id'] ?? $r['tingkat'] ?? null,
+                    'kurikulum' => $r['kurikulum'] ?? $r['nama_kurikulum'] ?? null,
+                    'jenis_rombel' => $r['jenis_rombel'] ?? $r['jenis_rombel_id'] ?? null,
                     'guru_id' => $guruId,
                 ];
 
