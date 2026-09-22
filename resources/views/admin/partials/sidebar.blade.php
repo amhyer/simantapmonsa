@@ -20,7 +20,7 @@
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-plug-zap', 'label' => 'Web Service Dapodik'],
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSync ? $lastSync->created_at->diffForHumans() : 'Belum sync', 'badge_type' => $lastSync ? 'ok' : 'warn'],
             ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
-            ['route' => 'admin.api-keys.index', 'icon' => 'lucide-link', 'label' => 'API Keys Bridge'],
+            ['route' => 'admin.api-keys.index', 'icon' => 'lucide-link', 'label' => 'API Keys'],
         ]],
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
@@ -74,7 +74,6 @@
         ['label' => 'SISTEM & LOG', 'items' => [
             ['route' => 'admin.sheet.index', 'icon' => 'lucide-table', 'label' => 'Penyimpanan Data'],
             ['route' => 'admin.backup.index', 'icon' => 'lucide-database', 'label' => 'Backup & Restore'],
-            ['route' => 'admin.api-keys.index', 'icon' => 'lucide-link', 'label' => 'API Keys'],
             ['route' => 'admin.log.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas'],
         ]],
     ];
