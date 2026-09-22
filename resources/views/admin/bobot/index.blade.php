@@ -34,6 +34,10 @@
                             @foreach($pengaturanGuru as $pg)
                                 @php
                                     $bobot = ($pg->pengaturan ?? [])['bobot'] ?? [];
+                                    $bobotErapot = ($pg->pengaturan ?? [])['bobot_erapor'] ?? [];
+                                    $fmtFormatif = isset($bobotErapot['formatif']) ? round($bobotErapot['formatif'] * 100) : 30;
+                                    $fmtSumatif = isset($bobotErapot['sumatif']) ? round($bobotErapot['sumatif'] * 100) : 40;
+                                    $fmtSumatifAkhir = isset($bobotErapot['sumatif_akhir']) ? round($bobotErapot['sumatif_akhir'] * 100) : 30;
                                 @endphp
                                 <tr>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
@@ -53,7 +57,7 @@
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $bobot['uts'] ?? '-' }}%</td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $bobot['uas'] ?? '-' }}%</td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:right">
-                                        <button onclick="editBobot({{ $pg->id }}, {{ $pg->kkm ?? 70 }}, {{ $bobot['tugas'] ?? 30 }}, {{ $bobot['uh'] ?? 20 }}, {{ $bobot['uts'] ?? 20 }}, {{ $bobot['uas'] ?? 30 }})" class="btn btn-ghost btn-sm">
+                                        <button onclick="editBobot({{ $pg->id }}, {{ $pg->kkm ?? 70 }}, {{ $bobot['tugas'] ?? 30 }}, {{ $bobot['uh'] ?? 20 }}, {{ $bobot['uts'] ?? 20 }}, {{ $bobot['uas'] ?? 30 }}, {{ $fmtFormatif }}, {{ $fmtSumatif }}, {{ $fmtSumatifAkhir }})" class="btn btn-ghost btn-sm">
                                             <i class="fas fa-edit"></i> Ubah
                                         </button>
                                     </td>
@@ -121,16 +125,16 @@
     </div>
 
     <script>
-        function editBobot(id, kkm, tugas, uh, uts, uas) {
+        function editBobot(id, kkm, tugas, uh, uts, uas, formatif, sumatif, sumatifAkhir) {
             document.getElementById('bobotForm').action = '/admin/bobot/' + id;
             document.getElementById('inputKkm').value = kkm;
             document.getElementById('inputTugas').value = tugas;
             document.getElementById('inputUh').value = uh;
             document.getElementById('inputUts').value = uts;
             document.getElementById('inputUas').value = uas;
-            document.getElementById('inputFormatif').value = 30;
-            document.getElementById('inputSumatif').value = 40;
-            document.getElementById('inputSumatifAkhir').value = 30;
+            document.getElementById('inputFormatif').value = formatif;
+            document.getElementById('inputSumatif').value = sumatif;
+            document.getElementById('inputSumatifAkhir').value = sumatifAkhir;
             document.getElementById('editModal').style.display = 'flex';
         }
         function closeModal() {
