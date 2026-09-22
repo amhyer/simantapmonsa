@@ -43,7 +43,7 @@
             <i class="fas fa-chart-line stat-icon"></i>
             <div class="stat-label">Rata-rata kelas</div>
             <div class="stat-value">{{ number_format($ringkasan['rata_rata'], 1) }}</div>
-            <div class="stat-change">KKM 70 · tertinggi {{ number_format($ringkasan['tertinggi'], 1) }}</div>
+            <div class="stat-change">KKM {{ getKKM(auth()->id()) }} · tertinggi {{ number_format($ringkasan['tertinggi'], 1) }}</div>
         </div>
         <div class="stat-card {{ $ringkasan['belum'] ? 'bad' : 'ok' }}">
             <i class="fas fa-check-circle stat-icon"></i>
@@ -112,7 +112,7 @@
                                             </div>
                                         </td>
                                         <td style="text-align:right"><b style="color:var(--bad)">{{ number_format($item['nilai'], 1) }}</b></td>
-                                        <td style="text-align:center"><button class="btn btn-ghost btn-sm">Telaah</button></td>
+                                        <td style="text-align:center"><a href="{{ route('guru.analisis.detail', $item['siswa']->id) }}" class="btn btn-ghost btn-sm">Telaah</a></td>
                                     </tr>
                                 @endforeach
                             </tbody>

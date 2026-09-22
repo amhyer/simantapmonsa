@@ -226,13 +226,13 @@
                     <div class="grid grid-2" style="gap:12px;font-size:13px">
                         <div>
                             <p><b>Nama Lengkap:</b> {{ $siswa->nama_peserta_didik }}</p>
-                            <p><b>NIS:</b> {{ $siswa->nis }}</p>
-                            <p><b>NISN:</b> {{ $siswa->nisn }}</p>
-                            <p><b>Kelas:</b> {{ $siswa->kelas }}</p>
-                            <p><b>Jenis Kelamin:</b> {{ $siswa->jenis_kelamin }}</p>
+                            <p><b>NIS:</b> {{ $siswa->nis ?? '-' }}</p>
+                            <p><b>NISN:</b> {{ $siswa->nisn ?? '-' }}</p>
+                            <p><b>Kelas:</b> {{ $siswa->kelas ?? '-' }}</p>
+                            <p><b>Jenis Kelamin:</b> {{ $siswa->jenis_kelamin ?? '-' }}</p>
                         </div>
                         <div>
-                            <p><b>Tempat, Tanggal Lahir:</b> {{ $siswa->tempat_lahir }}, {{ $siswa->tanggal_lahir ? \Carbon\Carbon::parse($siswa->tanggal_lahir)->translatedFormat('d M Y') : '-' }}</p>
+                            <p><b>Tempat, Tanggal Lahir:</b> {{ $siswa->tempat_lahir ?? '-' }}, {{ $siswa->tanggal_lahir ? \Carbon\Carbon::parse($siswa->tanggal_lahir)->translatedFormat('d M Y') : '-' }}</p>
                             <p><b>Agama:</b> {{ $siswa->agama ?? '-' }}</p>
                             <p><b>Alamat:</b> {{ $siswa->alamat ?? '-' }}</p>
                             <p><b>No. HP:</b> {{ $siswa->telepon ?? '-' }}</p>
