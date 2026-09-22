@@ -227,6 +227,8 @@ class DapodikSyncController extends Controller
                 $nip = trim($p['nip'] ?? '');
                 $nuptk = trim($p['nuptk'] ?? '');
                 $jenisPtk = strtolower(trim($p['jenis_ptk'] ?? $p['jenis_ptk_id'] ?? ''));
+                $jkRaw = strtoupper(substr(trim($p['jenis_kelamin'] ?? ''), 0, 1));
+                $jk = in_array($jkRaw, ['L', 'P'], true) ? $jkRaw : null;
 
                 if (empty($nama) || (empty($nip) && empty($nuptk))) {
                     $dilewati++;
@@ -246,6 +248,9 @@ class DapodikSyncController extends Controller
                     'nama' => $nama,
                     'nip' => $nip ?: null,
                     'nuptk' => $nuptk ?: null,
+                    'jk' => $jk,
+                    'gelar_depan' => isset($p['gelar_depan']) ? substr(trim($p['gelar_depan']), 0, 50) ?: null : null,
+                    'gelar_belakang' => isset($p['gelar_belakang']) ? substr(trim($p['gelar_belakang']), 0, 100) ?: null : null,
                     'jenis_ptk' => $p['jenis_ptk'] ?? 'Guru',
                     'jabatan' => $p['jabatan_ptk'] ?? $p['jabatan'] ?? null,
                 ];

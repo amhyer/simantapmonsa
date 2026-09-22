@@ -8,8 +8,18 @@ class Ptk extends Model
 {
     protected $table = 'ptk';
     protected $fillable = [
-        'dapodik_id', 'semester_id', 'nama', 'nip', 'jenis_ptk', 'jabatan',
+        'dapodik_id', 'semester_id', 'nama', 'nip', 'nuptk', 'jk',
+        'gelar_depan', 'gelar_belakang', 'jenis_ptk', 'jabatan',
     ];
+
+    public function getNamaGelarAttribute(): string
+    {
+        $nama = trim(($this->gelar_depan ? $this->gelar_depan . ' ' : '') . ($this->nama ?? ''));
+        if ($this->gelar_belakang) {
+            $nama .= ', ' . $this->gelar_belakang;
+        }
+        return $nama;
+    }
 
     public function semester()
     {

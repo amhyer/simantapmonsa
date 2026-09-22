@@ -46,7 +46,7 @@
         </div>
         <div class="card-body tight">
             @if($siswa->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse" id="tabelSiswa">
                         <thead>
                             <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">

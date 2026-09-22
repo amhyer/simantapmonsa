@@ -92,6 +92,10 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
+    // Profile (cermin menu Profile e-Rapor)
+    Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile');
+    Route::put('/profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
     
     // Kelola Pengguna
     Route::get('/users/akun-massal', [UserController::class, 'akunMassal'])->name('users.akun-massal');
@@ -123,7 +127,10 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
 
     // Data Referensi (guru & pembelajaran dari Dapodik, read-only)
     Route::get('/referensi/guru', [DataReferensiController::class, 'guru'])->name('referensi.guru');
+    Route::put('/referensi/gelar-ptk', [DataReferensiController::class, 'updateGelarPtk'])->middleware('throttle:30,1')->name('referensi.gelar-ptk.update');
     Route::get('/referensi/pembelajaran', [DataReferensiController::class, 'pembelajaran'])->name('referensi.pembelajaran');
+    Route::post('/referensi/pembelajaran', [DataReferensiController::class, 'storePembelajaran'])->middleware('throttle:30,1')->name('referensi.pembelajaran.store');
+    Route::delete('/referensi/pembelajaran/{pembelajaran}', [DataReferensiController::class, 'destroyPembelajaran'])->middleware('throttle:30,1')->name('referensi.pembelajaran.destroy');
     Route::get('/referensi/tanggal-rapor', [DataReferensiController::class, 'tanggalRapor'])->name('referensi.tanggal-rapor');
     Route::post('/referensi/tanggal-rapor', [DataReferensiController::class, 'storeTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.store');
     Route::delete('/referensi/tanggal-rapor/{tanggalRapor}', [DataReferensiController::class, 'destroyTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.destroy');
@@ -224,6 +231,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
 
     // Dapodik Push (Sync ke Dapodik Server)
     Route::prefix('dapodik/push')->name('dapodik.push.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DapodikPushController::class, 'index'])->name('index');
         Route::get('/sekolah', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
         Route::post('/peserta-didik', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');
         Route::post('/gtk', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushGtk'])->name('gtk');

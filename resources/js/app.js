@@ -49,6 +49,7 @@ Alpine.start();
         initBackToTop();
         initLiveAnimate();
         initTableSearch();
+        initSidebarAccordion();
     });
 
     function observeOnce(elements, callback, options) {
@@ -192,6 +193,25 @@ Alpine.start();
         } catch { /* abaikan: browser lama tanpa dukungan WAAPI */ }
     }
 
+    // --- Sidebar akordeon: klik induk membuka submenunya sekaligus
+    // menutup induk lain yang sedang terbuka. Berbasis <details> asli
+    // sehingga tanpa JS pun submenu tetap bisa dibuka-tutup manual.
+    function initSidebarAccordion() {
+        document.querySelectorAll('.sidebar-nav').forEach((nav) => {
+            nav.querySelectorAll('details.nav-submenu').forEach((details) => {
+                const summary = details.querySelector(':scope > summary');
+                if (!summary) return;
+                summary.addEventListener('click', () => {
+                    // 'click' jalan SEBELUM status open berubah.
+                    if (!details.open) {
+                        nav.querySelectorAll('details.nav-submenu[open]').forEach((el) => {
+                            if (el !== details) el.open = false;
+                        });
+                    }
+                });
+            });
+        });
+    }
     // --- Pencarian instan otomatis di setiap tabel data besar ---
     // Menyuntikkan kotak "Cari" ke card-header (atau atas tabel) TANPA
     // mengubah Blade. Melewati tabel kecil (<5 baris), tabel yang sudah

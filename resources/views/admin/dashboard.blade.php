@@ -36,6 +36,65 @@
             <div class="stat-value" style="color:#667085">{{ $totalUsers }}</div>
             <div class="stat-change">Termasuk admin</div>
         </div>
+        <div class="stat-card ok">
+            <i class="fas fa-signal stat-icon"></i>
+            <div class="stat-label">Online (±15 mnt)</div>
+            <div class="stat-value">{{ number_format($onlineCount) }}</div>
+            <div class="stat-change">berdasarkan login terakhir</div>
+        </div>
+        <div class="stat-card gold">
+            <i class="fas fa-calendar-days stat-icon"></i>
+            <div class="stat-label">Pembelajaran</div>
+            <div class="stat-value">{{ number_format($totalJadwal) }}</div>
+            <div class="stat-change">jadwal dari Dapodik</div>
+        </div>
+    </div>
+
+    {{-- Status Kerja Administrator (ala e-Rapor) --}}
+    <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+            <h3><i class="fas fa-list-check" style="color:var(--navy)"></i> Status Kerja Administrator</h3>
+            <span class="tag {{ $progresKerja >= 80 ? 'tag-ok' : ($progresKerja >= 50 ? 'tag-gold' : 'tag-mut') }}">{{ $progresKerja }}%</span>
+        </div>
+        <div class="card-body tight">
+            <div style="font-size:12px;color:var(--muted);margin:0 16px 10px">Rincian Kerja Utama Administrator :</div>
+            <div style="overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse">
+                    <thead>
+                        <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                            <th style="padding:10px 14px;text-align:center;font-size:11.5px;color:#667085;width:50px">No</th>
+                            <th style="padding:10px 14px;text-align:left;font-size:11.5px;color:#667085">Jenis Kegiatan Administrator</th>
+                            <th style="padding:10px 14px;text-align:center;font-size:11.5px;color:#667085">Status Pekerjaan</th>
+                            <th style="padding:10px 14px;text-align:left;font-size:11.5px;color:#667085;width:180px">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($statusKerja as $i => $kerja)
+                            <tr>
+                                <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $i + 1 }}</td>
+                                <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC">{{ $kerja['label'] }}</td>
+                                <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
+                                    @if($kerja['done'])
+                                        <span class="tag tag-ok">Sudah dikerjakan</span>
+                                    @else
+                                        <span class="tag tag-mut">Belum dikerjakan</span>
+                                    @endif
+                                </td>
+                                <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC">
+                                    <div style="background:#EEF2F6;border-radius:6px;height:16px;overflow:hidden">
+                                        <div style="width:{{ $kerja['done'] ? 100 : 0 }}%;background:{{ $kerja['done'] ? 'var(--ok)' : 'transparent' }};height:16px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">{{ $kerja['done'] ? '100%' : '' }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin:14px 16px 4px;font-size:12px;color:var(--muted)">Progres Kerja Utama Administrator :</div>
+            <div style="margin:0 16px 16px;background:#EEF2F6;border-radius:8px;height:22px;overflow:hidden">
+                <div style="width:{{ $progresKerja }}%;background:var(--gold);height:22px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">{{ $progresKerja }}%</div>
+            </div>
+        </div>
     </div>
 
     {{-- Info Sekolah --}}

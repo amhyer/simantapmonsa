@@ -29,8 +29,41 @@ class DataReferensiController extends Controller
             ->orderBy('hari')
             ->orderBy('jam_mulai')
             ->get();
+        $daftarMapel = MataPelajaran::where('aktif', true)->orderBy('nama')->get();
+        $daftarGuru = User::where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
 
-        return view('admin.referensi.pembelajaran', compact('jadwal'));
+        return view('admin.referensi.pembelajaran', compact('jadwal', 'daftarMapel', 'daftarGuru'));
+    }
+
+    /**
+     * Tambah jadwal pembelajaran manual (cermin tombol
+     * "Tambah Sub Pembelajaran" di e-Rapor).
+     */
+    public function storePembelajaran(Request $request)
+    {
+        $validated = $request->validate([
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+            'mata_pelajaran' => 'required|string|max:100',
+            'kelas' => 'required|string|max:50',
+            'guru_id' => 'nullable|exists:users,id',
+            'jam_mulai' => 'nullable|string|max:10',
+            'jam_selesai' => 'nullable|string|max:10',
+            'ruangan' => 'nullable|string|max:50',
+        ]);
+
+        JadwalPelajaran::create($validated);
+
+        return back()->with('success', 'Jadwal pembelajaran berhasil ditambahkan.');
+    }
+
+    /**
+     * Hapus jadwal pembelajaran (cermin tombol "Hapus" di e-Rapor).
+     */
+    public function destroyPembelajaran(JadwalPelajaran $pembelajaran)
+    {
+        $pembelajaran->delete();
+
+        return back()->with('success', 'Jadwal pembelajaran berhasil dihapus.');
     }
 
     public function tanggalRapor()
@@ -91,6 +124,7 @@ class DataReferensiController extends Controller
             'mapel' => 'required|array',
             'mapel.*.kelompok' => 'nullable|string|max:50',
             'mapel.*.urutan' => 'nullable|integer|min:0|max:999',
+            'mapel.*.masuk_transkrip' => 'nullable|boolean',
         ]);
 
         \Log::info('Mapel meta validated', ['validated' => $validated]);
@@ -99,10 +133,11 @@ class DataReferensiController extends Controller
             MataPelajaran::where('id', $id)->update([
                 'kelompok' => $row['kelompok'] ?? null,
                 'urutan' => $row['urutan'] ?? 0,
+                'masuk_transkrip' => (bool) ($row['masuk_transkrip'] ?? false),
             ]);
         }
 
-        return back()->with('success', 'Kelompok dan urutan mapel berhasil disimpan.');
+        return back()->with('success', 'Kelompok, urutan, dan status transkrip mapel berhasil disimpan.');
     }
 
     public function ekstrakurikuler()
@@ -125,6 +160,24 @@ class DataReferensiController extends Controller
 
         return redirect()->route('admin.referensi.ekstrakurikuler')
             ->with('success', 'Ekstrakurikuler berhasil ditambahkan.');
+    }
+
+    public function updateGelarPtk(Request $request)
+    {
+        $validated = $request->validate([
+            'ptk' => 'required|array',
+            'ptk.*.gelar_depan' => 'nullable|string|max:50',
+            'ptk.*.gelar_belakang' => 'nullable|string|max:100',
+        ]);
+
+        foreach ($validated['ptk'] as $id => $row) {
+            Ptk::where('id', $id)->update([
+                'gelar_depan' => $row['gelar_depan'] ?: null,
+                'gelar_belakang' => $row['gelar_belakang'] ?: null,
+            ]);
+        }
+
+        return back()->with('success', 'Gelar guru berhasil disimpan.');
     }
 
     public function destroyEkstrakurikuler(Ekstrakurikuler $ekstrakurikuler)

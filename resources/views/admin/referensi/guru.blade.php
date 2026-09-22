@@ -7,7 +7,7 @@
 @endsection
 
 @section('page_title', 'Data Guru')
-@section('page_subtitle', 'Data pendidik dan tenaga kependidikan dari Dapodik (read-only)')
+@section('page_subtitle', 'Data pendidik dan tenaga kependidikan dari Dapodik')
 
 @section('header_actions')
     <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Import Dapodik</a>
@@ -30,52 +30,70 @@
     <div class="card">
         <div class="card-header">
             <h3>Daftar PTK</h3>
-            <input type="text" id="searchPtk" placeholder="Cari nama atau NIP..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:200px" oninput="filterPtk(this.value)">
+            <input type="text" id="searchPtk" placeholder="Cari nama, NIP, atau NUPTK..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:220px" oninput="filterPtk(this.value)">
         </div>
         <div class="card-body tight">
             @if($ptk->count())
-                <div style="overflow-x:auto">
-                    <table style="width:100%;border-collapse:collapse" id="tabelPtk">
-                        <thead>
-                            <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nama</th>
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">NIP</th>
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Jenis PTK</th>
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Jabatan</th>
-                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Peran</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($ptk as $p)
-                                <tr>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
-                                        <div style="display:flex;align-items:center;gap:11px">
-                                            <span class="avatar">{{ substr($p->nama, 0, 2) }}</span>
-                                            <div>
-                                                <b>{{ $p->nama }}</b>
-                                                @if($p->dapodik_id)
-                                                    <span style="display:inline-block;background:#EEF2F9;color:var(--navy);font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle" title="Data dari Dapodik">DAPODIK</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->nip ?? '-' }}</td>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->jenis_ptk ?? '-' }}</td>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->jabatan ?? '-' }}</td>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
-                                        @if($p->isKepsek())
-                                            <span class="tag tag-gold">Kepsek</span>
-                                        @elseif($p->isGuru())
-                                            <span class="tag tag-ok">Guru</span>
-                                        @else
-                                            <span class="tag tag-mut">Tendik</span>
-                                        @endif
-                                    </td>
+                <form action="{{ route('admin.referensi.gelar-ptk.update') }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="table-wrapper">
+                        <table style="width:100%;border-collapse:collapse" id="tabelPtk">
+                            <thead>
+                                <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                                    <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:50px">No</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nama PTK</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">NIP</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">NUPTK</th>
+                                    <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">JK</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Jenis PTK</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Gelar Depan</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Gelar Belakang</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach($ptk as $i => $p)
+                                    <tr>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $i + 1 }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
+                                            <div style="display:flex;align-items:center;gap:11px">
+                                                <span class="avatar">{{ substr($p->nama, 0, 2) }}</span>
+                                                <div>
+                                                    <b>{{ $p->nama_gelar }}</b>
+                                                    @if($p->dapodik_id)
+                                                        <span style="display:inline-block;background:#EEF2F9;color:var(--navy);font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle" title="Data dari Dapodik">DAPODIK</span>
+                                                    @endif
+                                                    <div style="margin-top:2px">
+                                                        @if($p->isKepsek())
+                                                            <span class="tag tag-gold">Kepsek</span>
+                                                        @elseif($p->isGuru())
+                                                            <span class="tag tag-ok">Guru</span>
+                                                        @else
+                                                            <span class="tag tag-mut">Tendik</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->nip ?? '-' }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->nuptk ?? '-' }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $p->jk ?? '-' }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $p->jenis_ptk ?? '-' }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
+                                            <input type="text" name="ptk[{{ $p->id }}][gelar_depan]" value="{{ $p->gelar_depan }}" maxlength="50" placeholder="H." style="width:90px;padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px">
+                                        </td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
+                                            <input type="text" name="ptk[{{ $p->id }}][gelar_belakang]" value="{{ $p->gelar_belakang }}" maxlength="100" placeholder="S.Pd" style="width:130px;padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px">
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:12px">
+                        <button type="submit" class="btn btn-sm">Simpan Gelar Guru</button>
+                    </div>
+                </form>
             @else
                 <div class="empty-state">
                     <div class="icon">👩‍🏫</div>

@@ -1,112 +1,191 @@
 @extends('layouts.app')
 
-@section('title', 'Push Data ke Dapodik - SIMANTAP')
+@section('title', 'Kirim Nilai Ke Dapodik - SIMANTAP')
 
 @section('sidebar')
     @include('admin.partials.sidebar')
 @endsection
 
-@section('page_title', 'Push Data ke Dapodik')
-@section('page_subtitle', 'Kirim data master dari SIMANTAP ke Server Dapodik Pusat')
+@section('page_title', 'Kirim Nilai Ke Dapodik')
+@section('page_subtitle', 'Kirim data dari SIMANTAP ke server Dapodik pusat')
 
 @section('content')
-    <div class="grid grid-4" style="margin-bottom:24px">
-        <div class="stat-card">
-            <div class="stat-value">{{ $stats['configured'] ?? false ? 'Terkonfigurasi' : 'Belum Konfigurasi' }}</div>
-            <div class="stat-label">Koneksi Dapodik</div>
+    @php
+        $isConfigured = !empty($config->npsn) && !empty($config->token);
+        $modules = [
+            ['key' => 'sekolah', 'label' => 'Data Sekolah', 'icon' => 'lucide-building-2', 'desc' => 'Profil sekolah (NPSN, alamat, kepala sekolah)', 'method' => 'GET', 'needs_semester' => false],
+            ['key' => 'peserta-didik', 'label' => 'Peserta Didik', 'icon' => 'lucide-graduation-cap', 'desc' => 'Data siswa aktif per semester', 'method' => 'POST', 'needs_semester' => true],
+            ['key' => 'gtk', 'label' => 'GTK (Guru/Tendik)', 'icon' => 'lucide-presentation', 'desc' => 'Data guru & tendik terhubung Dapodik', 'method' => 'POST', 'needs_semester' => false],
+            ['key' => 'rombel', 'label' => 'Rombongan Belajar', 'icon' => 'lucide-school', 'desc' => 'Data rombel beserta wali kelas', 'method' => 'POST', 'needs_semester' => false],
+            ['key' => 'jadwal', 'label' => 'Jadwal Pelajaran', 'icon' => 'lucide-calendar-days', 'desc' => 'Jadwal pelajaran terhubung Dapodik', 'method' => 'POST', 'needs_semester' => false],
+            ['key' => 'nilai-rapor', 'label' => 'Nilai Rapor', 'icon' => 'lucide-file-text', 'desc' => 'Nilai rapor siswa per semester', 'method' => 'POST', 'needs_semester' => true],
+            ['key' => 'kehadiran', 'label' => 'Kehadiran', 'icon' => 'lucide-calendar-check', 'desc' => 'Rekap kehadiran siswa per semester', 'method' => 'POST', 'needs_semester' => true],
+        ];
+    @endphp
+
+    @if(!$isConfigured)
+        <div class="note note-warn" style="margin-bottom:16px">
+            <b>Konfigurasi belum lengkap.</b> Isi NPSN dan token di
+            <a href="{{ route('admin.dapodik.index') }}">Web Service Dapodik</a> sebelum melakukan push.
+        </div>
+    @endif
+
+    <div class="grid grid-4" style="margin-bottom:20px">
+        <div class="stat-card {{ $isConfigured ? 'ok' : 'bad' }}">
+            <div class="stat-value">{{ $isConfigured ? 'Siap' : 'Belum' }}</div>
+            <div class="stat-label">Status Koneksi</div>
+        </div>
+        <div class="stat-card primary">
+            <div class="stat-value">{{ $config->npsn ?? '-' }}</div>
+            <div class="stat-label">NPSN</div>
+        </div>
+        <div class="stat-card gold">
+            <div class="stat-value">{{ $counts['peserta_didik'] }}</div>
+            <div class="stat-label">Siswa Siap Push</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{{ $stats['last_sync'] ?? 'Belum pernah' }}</div>
+            <div class="stat-value">{{ $config->last_sync_at?->diffForHumans() ?? 'Belum pernah' }}</div>
             <div class="stat-label">Sinkron Terakhir</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ $stats['last_sync_by'] ?? '-' }}</div>
-            <div class="stat-label">Oleh</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ $stats['last_sync_at'] ?? '-' }}</div>
-            <div class="stat-label">Waktu Sync</div>
-        </div>
     </div>
 
-    <div class="grid grid-2" style="margin-bottom:24px">
-        @foreach($menus as $menu)
-            <a href="{{ $menu['route'] }}" class="card push-card" style="text-decoration:none;color:inherit;cursor:pointer">
-                <div class="card-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;text-align:center">
-                    <div class="icon-wrapper" style="width:64px;height:64px;border-radius:12px;background:var(--primary-100);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
-                        <i class="{{ $menu['icon'] }}" style="font-size:28px;color:var(--primary)"></i>
-                    </div>
-                    <h4 style="margin:0 0 8px;font-size:16px;font-weight:600">{{ $menu['label'] }}</h4>
-                    <p class="text-sm" style="color:var(--muted);margin:0">{{ $menu['description'] }}</p>
-                </div>
-            </a>
-        @endforeach
-    </div>
-
-    <div class="card" style="margin-top:24px">
+    <div class="card" style="margin-bottom:20px">
         <div class="card-header">
-            <h3><x-lucide-activity class="w-5 h-5 mr-2" /> Status Koneksi & Log</div>
+            <h3>Modul Push Data</h3>
+            <div style="display:flex;align-items:center;gap:8px">
+                <label for="pushSemester" style="font-size:12px;color:var(--muted);font-weight:600">Semester:</label>
+                <select id="pushSemester" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+                    @forelse($semesters as $s)
+                        <option value="{{ $s->semester_id }}">{{ $s->tahun_ajaran }} {{ $s->nama_semester }}</option>
+                    @empty
+                        <option value="">Belum ada semester</option>
+                    @endforelse
+                </select>
+            </div>
         </div>
         <div class="card-body">
-            <div class="grid grid-4" style="margin-bottom:16px">
-                <div class="stat-card">
-                    <div class="stat-value">{{ $status['configured'] ? 'Terkonfigurasi' : 'Belum' }}</div>
-                    <div class="stat-label">Konfigurasi</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ $status['last_sync'] ?? 'Belum pernah' }}</div>
-                    <div class="stat-label">Sinkron Terakhir</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ $status['last_sync_by'] ?? '-' }}</div>
-                    <div class="stat-label">Oleh</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ $status['configured'] ? 'Siap' : 'Belum' }}</div>
-                    <div class="stat-label">Status</div>
-                </div>
-            </div>
-            
-            <div class="card" style="margin-top:16px">
-                <div class="card-header">
-                    <h4>Log Sinkronisasi Terbaru</h4>
-                </div>
-                <div class="card-body">
-                    @if($logs->count())
-                        <div style="overflow-x:auto">
-                            <table style="width:100%;border-collapse:collapse">
-                                <thead>
-                                    <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
-                                        <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Waktu</th>
-                                        <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Tipe</th>
-                                        <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Berhasil</th>
-                                        <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Gagal</th>
-                                        <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Durasi</th>
-                                        <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Oleh</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($logs as $log)
-                                    <tr style="border-bottom:1px solid #E4E7EC">
-                                        <td style="padding:11px 14px;font-size:13px">{{ $log->created_at->diffForHumans() }}</td>
-                                        <td style="padding:11px 14px"><span class="tag {{ $log->tipe === 'siswa' ? 'tag-primary' : ($log->tipe === 'gtk' ? 'tag-primary' : ($log->tipe === 'rombel' ? 'tag-ok' : ($log->tipe === 'sekolah' ? 'tag-gold' : 'tag-mut'))) }}">{{ $log->tipe }}</span></td>
-                                        <td style="text-align:right;padding:11px 14px">{{ $log->berhasil }}</td>
-                                        <td style="padding:11px 14px;text-align:right">{{ $log->gagal }}</td>
-                                        <td style="padding:11px 14px;text-align:right">{{ $log->duration_seconds }} detik</td>
-                                        <td style="padding:11px 14px;text-align:right">{{ $log->user?->nama_lengkap ?? '-' }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+            <div class="grid grid-2" id="pushModules">
+                @foreach($modules as $m)
+                    <div class="card" style="background:#FAFBFD">
+                        <div class="card-body" style="display:flex;align-items:center;gap:14px">
+                            <span class="icon" style="width:42px;height:42px;border-radius:10px;background:#EEF2F9;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+                                <x-dynamic-component :component="$m['icon']" class="w-5 h-5" />
+                            </span>
+                            <div style="flex:1;min-width:0">
+                                <b>{{ $m['label'] }}</b>
+                                <div style="font-size:12px;color:var(--muted)">{{ $m['desc'] }}</div>
+                                <div style="font-size:12px;margin-top:2px">
+                                    Siap push: <b id="count-{{ $m['key'] }}">{{ $counts[str_replace('-', '_', $m['key'])] }}</b> data
+                                </div>
+                                <div id="result-{{ $m['key'] }}" style="font-size:12px;margin-top:4px"></div>
+                            </div>
+                            <button type="button" class="btn btn-sm"
+                                    data-push="{{ $m['key'] }}"
+                                    data-method="{{ $m['method'] }}"
+                                    data-needs-semester="{{ $m['needs_semester'] ? '1' : '0' }}"
+                                    {{ $isConfigured ? '' : 'disabled' }}>
+                                Kirim
+                            </button>
                         </div>
-                    @else
-                        <div class="empty-state">
-                            <div class="icon">📋</div>
-                            <h4>Belum ada log sinkronisasi</h4>
-                        </div>
-                    @endif
-                </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
-</section>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Log Sinkronisasi Terbaru</h3>
+        </div>
+        <div class="card-body tight">
+            @if($logs->count())
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Waktu</th><th>Tipe</th><th style="text-align:right">Berhasil</th><th style="text-align:right">Gagal</th><th style="text-align:right">Oleh</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($logs as $log)
+                                <tr>
+                                    <td>{{ $log->created_at->diffForHumans() }}</td>
+                                    <td><span class="tag tag-mut">{{ $log->tipe }}</span></td>
+                                    <td style="text-align:right">{{ $log->berhasil }}</td>
+                                    <td style="text-align:right">{{ $log->gagal }}</td>
+                                    <td style="text-align:right">{{ $log->user?->nama_lengkap ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty">
+                    <div class="icon">📋</div>
+                    <h4>Belum ada log sinkronisasi</h4>
+                </div>
+            @endif
+        </div>
+    </div>
+@endsection
+
+@push('scripts')
+<script>
+(function () {
+    const token = document.querySelector('meta[name="csrf-token"]').content;
+    // Petakan key modul ke nama route push JSON yang sudah ada.
+    const routeFor = (key) => ({
+        'sekolah': '{{ route('admin.dapodik.push.sekolah') }}',
+        'peserta-didik': '{{ route('admin.dapodik.push.peserta-didik') }}',
+        'gtk': '{{ route('admin.dapodik.push.gtk') }}',
+        'rombel': '{{ route('admin.dapodik.push.rombel') }}',
+        'jadwal': '{{ route('admin.dapodik.push.jadwal') }}',
+        'nilai-rapor': '{{ route('admin.dapodik.push.nilai-rapor') }}',
+        'kehadiran': '{{ route('admin.dapodik.push.kehadiran') }}',
+    })[key];
+
+    document.querySelectorAll('[data-push]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const key = btn.dataset.push;
+            const result = document.getElementById('result-' + key);
+            const body = {};
+            if (btn.dataset.needsSemester === '1') {
+                const semester = document.getElementById('pushSemester').value;
+                if (!semester) {
+                    showToast('Pilih semester terlebih dahulu.', 'warning');
+                    return;
+                }
+                body.semester_id = semester;
+            }
+            if (!confirm('Kirim data ' + key + ' ke Dapodik sekarang?')) return;
+            btn.disabled = true;
+            const label = btn.textContent;
+            btn.textContent = 'Mengirim...';
+            result.innerHTML = '';
+            try {
+                const res = await fetch(routeFor(key), {
+                    method: btn.dataset.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                    },
+                    body: btn.dataset.method === 'GET' ? undefined : JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (json.success) {
+                    result.innerHTML = '<span class="tag tag-ok">Berhasil: ' + (json.data.berhasil ?? 0) + ' · Gagal: ' + (json.data.gagal ?? 0) + '</span>';
+                    showToast(json.message || 'Push berhasil.', 'success');
+                } else {
+                    result.innerHTML = '<span class="tag tag-bad">' + (json.message || 'Push gagal.') + '</span>';
+                    showToast(json.message || 'Push gagal.', 'error');
+                }
+            } catch (e) {
+                result.innerHTML = '<span class="tag tag-bad">Kesalahan jaringan.</span>';
+                showToast('Kesalahan jaringan saat push.', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = label;
+        });
+    });
+})();
+</script>
+@endpush

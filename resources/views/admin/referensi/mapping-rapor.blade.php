@@ -28,13 +28,14 @@
                 <form action="{{ route('admin.referensi.mapel-meta.update') }}" method="POST">
                     @csrf
                     @method('PUT')
-                    <div style="overflow-x:auto">
+                    <div class="table-wrapper">
                         <table style="width:100%;border-collapse:collapse">
                             <thead>
                                 <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
                                     <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:90px">Urutan</th>
                                     <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Mata Pelajaran</th>
                                     <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Kelompok</th>
+                                    <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Mapel Transkrip</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -46,6 +47,12 @@
                                         </td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC"><b>{{ $m->nama }}</b> <span style="font-size:12px;color:#667085">{{ $m->kode ?? '' }}</span></td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $m->kelompok ?? '-' }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
+                                            <select name="mapel[{{ $m->id }}][masuk_transkrip]" style="padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px">
+                                                <option value="1" {{ $m->masuk_transkrip ? 'selected' : '' }}>Ya</option>
+                                                <option value="0" {{ $m->masuk_transkrip ? '' : 'selected' }}>Tidak</option>
+                                            </select>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -35,7 +35,7 @@
                 <form action="{{ route('admin.referensi.mapel-meta.update') }}" method="POST">
                     @csrf
                     @method('PUT')
-                    <div style="overflow-x:auto">
+                    <div class="table-wrapper">
                         <table style="width:100%;border-collapse:collapse">
                             <thead>
                                 <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
