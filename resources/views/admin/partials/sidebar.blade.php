@@ -8,18 +8,19 @@
     // Item 'planned' => true berarti backend belum ada (Fase 2): tampil
     // nonaktif, BUKAN link mati. Jangan beri 'route' pada item planned.
     $menuAdmin = [
-        // Urutan grup mengikuti Aplikasi e-Rapor SD (lihat docs/gambar):
-        // Dashboard, Profile, Web Service, Ambil Data, Pengguna,
-        // Referensi, Kokurikuler, Status, Perkembangan, Transkrip,
-        // Cetak, Kirim, Backup. Grup PENGATURAN & SISTEM tambahan
-        // khas SIMANTAP dipertahankan (tidak ada menu yang dihapus).
+        // Urutan grup mengikuti Aplikasi e-Rapor SD (lihat docs/gambar).
+        // Semua menu Dapodik (ambil + kirim) digabung dalam satu
+        // induk DAPODIK. Grup PENGATURAN & SISTEM tambahan khas
+        // SIMANTAP dipertahankan (tidak ada menu yang dihapus).
         ['label' => 'UTAMA', 'items' => [
             ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Sistem'],
             ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profile'],
         ]],
-        ['label' => 'INTEGRASI DAPODIK', 'items' => [
+        ['label' => 'DAPODIK', 'icon' => 'lucide-database-zap', 'children' => [
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-plug-zap', 'label' => 'Web Service Dapodik'],
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSync ? $lastSync->created_at->diffForHumans() : 'Belum sync', 'badge_type' => $lastSync ? 'ok' : 'warn'],
+            ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
+            ['route' => 'admin.api-keys.index', 'icon' => 'lucide-link', 'label' => 'API Keys Bridge'],
         ]],
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
@@ -64,9 +65,6 @@
             ['icon' => 'lucide-scroll-text', 'label' => 'Pelengkap Rapor', 'planned' => true],
             ['icon' => 'lucide-file-signature', 'label' => 'Nilai Rapor', 'planned' => true],
         ]],
-        ['label' => 'KIRIM DAPODIK', 'items' => [
-            ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
-        ]],
         ['label' => 'PENGATURAN', 'items' => [
             ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Semester'],
             ['route' => 'admin.kode-akses.index', 'icon' => 'lucide-key', 'label' => 'Kode & Akses'],
@@ -96,12 +94,11 @@
                 @if($isPlanned($child))
                     <x-sidebar-planned :icon="$child['icon']" :label="$child['label']" :sub="true" />
                 @else
-                    <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
+                    <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" :badge="$child['badge'] ?? null" :badge-type="$child['badge_type'] ?? null" />
                 @endif
             @endforeach
         </x-sidebar-submenu>
     @else
-        <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
         @foreach($group['items'] as $item)
             <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" :badge="$item['badge'] ?? null" :badge-type="$item['badge_type'] ?? null" />
         @endforeach
