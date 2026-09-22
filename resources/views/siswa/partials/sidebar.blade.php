@@ -14,12 +14,8 @@
 @endphp
 
 @foreach($menuSiswa as $group)
-    <div class="nav-label">{{ $group['label'] }}</div>
+    <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
-        <a href="{{ route($item['route']) }}"
-           class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-            <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
-            {{ $item['label'] }}
-        </a>
+        <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
     @endforeach
 @endforeach

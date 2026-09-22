@@ -45,9 +45,9 @@ class DataReferensiController extends Controller
             'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
             'mata_pelajaran' => 'required|string|max:100',
             'kelas' => 'required|string|max:50',
-            'guru_id' => 'nullable|exists:users,id',
-            'jam_mulai' => 'nullable|string|max:10',
-            'jam_selesai' => 'nullable|string|max:10',
+            'guru_id' => 'required|exists:users,id',
+            'jam_mulai' => 'required|string|max:10',
+            'jam_selesai' => 'required|string|max:10',
             'ruangan' => 'nullable|string|max:50',
         ]);
 

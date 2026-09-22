@@ -25,7 +25,7 @@ class LandingController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users',
             'kata_sandi' => 'required|string|min:8|confirmed',
-            'peran' => 'required|in:guru,siswa,ortu,kepsek',
+            'peran' => 'required|in:guru,siswa,ortu',
         ]);
 
         User::create([

@@ -49,9 +49,11 @@
             <button type="submit" class="btn">Masuk</button>
         </form>
 
-        <div class="demo">
-            <b>Demo:</b> admin / admin123
-        </div>
+        @if(app()->environment('local'))
+            <div class="demo">
+                <b>Demo:</b> admin / admin123
+            </div>
+        @endif
     </div>
 </body>
 </html>

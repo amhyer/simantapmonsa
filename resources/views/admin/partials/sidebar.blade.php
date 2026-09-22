@@ -90,40 +90,19 @@
 @foreach($menuAdmin as $group)
     @if(isset($group['children']))
         @php $childActive = collect($group['children'])->contains(fn($c) => isset($c['route']) && $isActive($c['route'])); @endphp
-        <details class="nav-submenu" {{ ($childActive || ($group['open'] ?? false)) ? 'open' : '' }}>
-            <summary class="nav-item {{ $childActive ? 'active' : '' }}">
-                <span class="icon"><x-dynamic-component :component="$group['icon']" class="w-5 h-5" /></span>
-                {{ ucwords(strtolower($group['label'])) }}
-            </summary>
-            <div>
-                @foreach($group['children'] as $child)
-                    @if($isPlanned($child))
-                        <span class="nav-item nav-subitem nav-planned" title="Segera hadir — backend Fase 2">
-                            <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
-                            {{ $child['label'] }}
-                            <span class="badge badge-segera">Segera</span>
-                        </span>
-                    @else
-                        <a href="{{ route($child['route']) }}"
-                           class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
-                            <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
-                            {{ $child['label'] }}
-                        </a>
-                    @endif
-                @endforeach
-            </div>
-        </details>
-    @else
-        <div class="nav-label">{{ $group['label'] }}</div>
-        @foreach($group['items'] as $item)
-            <a href="{{ route($item['route']) }}"
-               class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-                <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
-                {{ $item['label'] }}
-                @if(isset($item['badge']))
-                    <span class="badge" style="background:{{ ($item['badge_type'] ?? '') === 'ok' ? 'var(--ok)' : '#F59E0B' }};color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:auto;white-space:nowrap">{{ $item['badge'] }}</span>
+        <x-sidebar-submenu :icon="$group['icon']" :label="ucwords(strtolower($group['label']))" :open="$childActive || ($group['open'] ?? false)" :active="$childActive">
+            @foreach($group['children'] as $child)
+                @if($isPlanned($child))
+                    <x-sidebar-planned :icon="$child['icon']" :label="$child['label']" :sub="true" />
+                @else
+                    <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endif
-            </a>
+            @endforeach
+        </x-sidebar-submenu>
+    @else
+        <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
+        @foreach($group['items'] as $item)
+            <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" :badge="$item['badge'] ?? null" :badge-type="$item['badge_type'] ?? null" />
         @endforeach
     @endif
 @endforeach

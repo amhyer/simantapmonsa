@@ -38,31 +38,17 @@
 @endphp
 
 @foreach($menuGuru as $group)
-    <div class="nav-label">{{ $group['label'] }}</div>
+    <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @if(isset($item['children']))
             @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
-            <details class="nav-submenu" {{ ($childActive || ($item['open'] ?? false)) ? 'open' : '' }}>
-                <summary class="nav-item {{ $childActive ? 'active' : '' }}">
-                    <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
-                    {{ $item['label'] }}
-                </summary>
-                <div>
-                    @foreach($item['children'] as $child)
-                        <a href="{{ route($child['route']) }}"
-                           class="nav-item nav-subitem {{ $isActive($child['route']) ? 'active' : '' }}">
-                            <span class="icon"><x-dynamic-component :component="$child['icon']" class="w-5 h-5" /></span>
-                            {{ $child['label'] }}
-                        </a>
-                    @endforeach
-                </div>
-            </details>
+            <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">
+                @foreach($item['children'] as $child)
+                    <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
+                @endforeach
+            </x-sidebar-submenu>
         @else
-            <a href="{{ route($item['route']) }}"
-               class="nav-item {{ $isActive($item['route']) ? 'active' : '' }}">
-                <span class="icon"><x-dynamic-component :component="$item['icon']" class="w-5 h-5" /></span>
-                {{ $item['label'] }}
-            </a>
+            <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
         @endif
     @endforeach
 @endforeach
