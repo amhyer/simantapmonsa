@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\MapelController;
 use App\Http\Controllers\Admin\DataReferensiController;
 use App\Http\Controllers\Admin\KokurikulerController;
 use App\Http\Controllers\Admin\PenilaianController;
+use App\Http\Controllers\Admin\PerkembanganController;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\HasilBelajarController;
@@ -161,6 +162,10 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     // Penilaian (agregasi read-only)
     Route::get('/penilaian/status', [PenilaianController::class, 'status'])->name('penilaian.status');
     Route::get('/penilaian/statistik', [PenilaianController::class, 'statistik'])->name('penilaian.statistik');
+
+    // Perkembangan Nilai (tren + grafik, agregasi read-only)
+    Route::get('/perkembangan', [PerkembanganController::class, 'index'])->name('perkembangan.index');
+    Route::get('/perkembangan/grafik', [PerkembanganController::class, 'grafik'])->name('perkembangan.grafik');
     Route::get('/referensi/ekstrakurikuler', [DataReferensiController::class, 'ekstrakurikuler'])->name('referensi.ekstrakurikuler');
     Route::post('/referensi/ekstrakurikuler', [DataReferensiController::class, 'storeEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.store');
     Route::delete('/referensi/ekstrakurikuler/{ekstrakurikuler}', [DataReferensiController::class, 'destroyEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.destroy');

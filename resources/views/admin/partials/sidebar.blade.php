@@ -49,8 +49,8 @@
             ['route' => 'admin.penilaian.statistik', 'icon' => 'lucide-bar-chart-2', 'label' => 'Statistik Nilai Rapor'],
         ]],
         ['label' => 'PERKEMBANGAN NILAI', 'icon' => 'lucide-trending-up', 'children' => [
-            ['icon' => 'lucide-trending-up', 'label' => 'Perkembangan Nilai', 'planned' => true],
-            ['icon' => 'lucide-area-chart', 'label' => 'Grafik Nilai Rapor', 'planned' => true],
+                ['route' => 'admin.perkembangan.index', 'icon' => 'lucide-trending-up', 'label' => 'Perkembangan Nilai'],
+                ['route' => 'admin.perkembangan.grafik', 'icon' => 'lucide-area-chart', 'label' => 'Grafik Nilai Rapor'],
         ]],
         ['label' => 'TRANSKRIP IJAZAH', 'icon' => 'lucide-file-text', 'children' => [
             ['icon' => 'lucide-file-input', 'label' => 'Import Nomor Ijazah', 'planned' => true],
