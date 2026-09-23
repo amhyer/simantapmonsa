@@ -19,7 +19,11 @@ use App\Models\SekolahSettings;
 use App\Models\Aktivitas;
 use App\Jobs\ExportBackupJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BackupController extends Controller
 {
@@ -137,5 +141,62 @@ class BackupController extends Controller
 
         return redirect()->route('admin.backup.index')
             ->with('success', 'Data berhasil dipulihkan dari backup.');
+    }
+
+    public function wipeAll(Request $request)
+    {
+        $request->validate([
+            'konfirmasi' => 'required|in:HAPUS SEMUA DATA',
+            'password' => 'required|current_password',
+        ]);
+
+        // Daftar tabel data yang dikosongkan. SENGAJA dikecualikan:
+        // users (agar admin tetap bisa login), semesters, sekolah_settings,
+        // api_keys (akses bridge), dan seluruh tabel framework
+        // (migrations, jobs, cache, sessions, telescope, dsb).
+        $tabelData = [
+            'siswa', 'orang_tua_siswa', 'nilai', 'nilai_erapor', 'nilai_mapel',
+            'nilai_cp', 'capaian_pembelajaran', 'kehadiran', 'hasil_kuis',
+            'kuis', 'materi', 'catatan', 'dimensi', 'kebiasaan', 'ptk',
+            'rombel', 'jadwal_pelajaran', 'mata_pelajaran', 'pengaturan_guru',
+            'ringkasan_guru', 'dapodik_sync_logs', 'dapodik_import_logs',
+            'dapodik_data_cache', 'aktivitas', 'tanggal_rapor',
+            'ekstrakurikuler', 'siswa_ekstrakurikuler',
+            'tema_kokurikuler', 'kegiatan_kokurikuler', 'kelompok_kokurikuler',
+            'anggota_kelompok',
+        ];
+
+        $dihapus = [];
+        foreach ($tabelData as $tabel) {
+            if (!Schema::hasTable($tabel)) {
+                continue;
+            }
+            // CASCADE agar constraint FK antar tabel data ikut teratasi;
+            // RESTART IDENTITY agar ID mulai lagi dari 1. Tabel yang
+            // dikecualikan tidak tersentuh karena tak ada FK menuju ke sana
+            // dari tabel data (relasi menunjuk ke users/semesters yang dikecualikan).
+            DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
+            $dihapus[] = $tabel;
+        }
+
+        $guru = auth()->user();
+        try {
+            Aktivitas::create([
+                'uuid' => (string) Str::uuid(),
+                'guru_id' => $guru?->id,
+                'nama_guru' => $guru?->nama_lengkap ?? 'Admin',
+                'jenis' => 'pengaturan',
+                'judul' => 'Hapus Semua Data',
+                'deskripsi' => 'Mengosongkan ' . count($dihapus) . ' tabel: ' . implode(', ', $dihapus),
+                'tabel_terkait' => null,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Gagal catat aktivitas hapus data: ' . $e->getMessage());
+        }
+
+        return redirect()->route('admin.backup.index')->with(
+            'success',
+            'Berhasil mengosongkan ' . count($dihapus) . ' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.'
+        );
     }
 }

@@ -191,6 +191,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
     Route::get('/backup/export', [BackupController::class, 'export'])->name('backup.export');
     Route::post('/backup/import', [BackupController::class, 'import'])->middleware('throttle:5,1')->name('backup.import');
+    Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware('throttle:3,1')->name('backup.wipe');
     
     // Log Aktivitas
     Route::get('/log', [LogController::class, 'index'])->name('log.index');

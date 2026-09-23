@@ -96,6 +96,35 @@
         </div>
     </div>
 
+    <div class="card" style="margin-top:20px;border:2px solid #B42318">
+        <div class="card-header" style="background:#FEE9E7">
+            <h3 style="color:#991B1B"><i class="fas fa-exclamation-triangle"></i> Zona Berbahaya — Hapus Semua Data</h3>
+        </div>
+        <div class="card-body">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:12px">
+                Mengosongkan <b>seluruh tabel data</b> (siswa, nilai, kehadiran, materi, kuis, rombel, PTK, mapel, kokurikuler, log, dsb).
+                <b>Akun pengguna, semester, identitas sekolah, dan API key dipertahankan</b> agar Anda tetap bisa login.
+            </p>
+            <div class="note note-warn" style="margin-bottom:16px">
+                <i class="fas fa-exclamation-triangle"></i> Wajib <b>unduh backup dulu</b> (tombol Ekspor di atas). Tindakan ini <b>tidak bisa dibatalkan</b>.
+            </div>
+            <form action="{{ route('admin.backup.wipe') }}" method="POST" onsubmit="return confirm('YAKIN menghapus SEMUA data? Tindakan ini permanen!')">
+                @csrf
+                <div style="margin-bottom:12px">
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Ketik persis: <code>HAPUS SEMUA DATA</code></label>
+                    <input type="text" name="konfirmasi" required autocomplete="off" placeholder="HAPUS SEMUA DATA" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                </div>
+                <div style="margin-bottom:14px">
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata sandi Anda (konfirmasi identitas)</label>
+                    <input type="password" name="password" required autocomplete="current-password" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                </div>
+                <button type="submit" class="btn btn-block" style="background:#B42318;color:#fff">
+                    <i class="fas fa-trash"></i> Hapus Semua Data Sekarang
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         function previewFile(input) {
             var preview = document.getElementById('filePreview');
