@@ -20,6 +20,7 @@ class Siswa extends Model
         'semester_id',
         'nis',
         'nisn',
+        'nomor_ijazah',
         'nama_peserta_didik',
         'kelas',
         'jenis_kelamin',
@@ -125,5 +126,10 @@ class Siswa extends Model
     public function nilaiErapot()
     {
         return $this->hasMany(NilaiErapot::class, 'siswa_id');
+    }
+
+    public function transkripNilai()
+    {
+        return $this->hasMany(TranskripNilai::class, 'siswa_id');
     }
 }

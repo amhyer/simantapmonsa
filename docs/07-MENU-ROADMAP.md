@@ -6,7 +6,7 @@
 
 ## 1. Peta Menu Eksisting (ringkas)
 
-- **Admin (pohon penuh e-Rapor SD, dengan submenu lipat):** UTAMA: Dasbor Sistem · INTEGRASI DAPODIK: Web Service + Ambil Data (satu halaman, dua pintu) · PENGGUNA: Data Pengguna, Data Siswa · DATA REFERENSI (submenu): Sekolah, Guru (baru), Siswa, Kelas, Mapel, Pembelajaran (baru) + Ekskul/Kelompok/Mapping/Logo-TTD/Tanggal/Foto = label "Segera" (non-link) · DATA KOKURIKULER (3, Segera) · STATUS PENILAIAN (2, Segera) · PERKEMBANGAN NILAI (2, Segera) · TRANSKRIP IJAZAH (6, Segera) · CETAK NILAI (3, Segera) · Kirim Nilai (Segera) · PENGATURAN: Semester, Kode & Akses, Modul & Tampilan, Bobot & Ketuntasan · SISTEM & LOG: Sheet, Backup, API Keys, Log. Aturan: item "Segera" tidak punya route (bukan link mati); tombol Keluar tetap milik footer layout global.
+- **Admin (pohon penuh e-Rapor SD, dengan submenu lipat):** UTAMA: Dasbor Sistem · INTEGRASI DAPODIK: Web Service + Ambil Data (satu halaman, dua pintu) · PENGGUNA: Data Pengguna, Data Siswa · DATA REFERENSI (submenu): Sekolah, Guru (baru), Siswa, Kelas, Mapel, Pembelajaran (baru) + Ekskul/Kelompok/Mapping/Logo-TTD/Tanggal/Foto = label "Segera" (non-link) · DATA KOKURIKULER (3, Segera) · STATUS PENILAIAN (2, Segera) · PERKEMBANGAN NILAI (2) · TRANSKRIP IJAZAH (6) · CETAK NILAI (3) · Kirim Nilai (Segera) · PENGATURAN: Semester, Kode & Akses, Modul & Tampilan, Bobot & Ketuntasan · SISTEM & LOG: Sheet, Backup, API Keys, Log. Aturan: item "Segera" tidak punya route (bukan link mati); tombol Keluar tetap milik footer layout global.
 - **Guru (17 menu):** Dasbor · Materi Ajar · Profil Lulusan (Dimensi) · Kesiapan TKA · Input Nilai Cepat · Input Nilai e-Rapor · Kuis & Soal · Daftar Nilai · Analisis Belajar · Kehadiran · Catatan Siswa · 7 Kebiasaan · Laporan & Rapor · Generate e-Rapor · Data Siswa · Google Sheet · Pengaturan
 - **Siswa (5 menu):** Beranda · Materi · Kuis · Nilaiku · Profil Saya
 - **Ortu (7 menu):** Ringkasan · Isi 7 Kebiasaan · Perkembangan Nilai · Rekap Kebiasaan · Kehadiran Anak · Catatan Guru · Laporan/Rapor
@@ -52,8 +52,9 @@ Detail route→controller→view per menu ada di laporan pemetaan (arsip sesi in
 | Data Siswa, Kehadiran, Catatan Wali | ✅ | Lengkap |
 | Kenaikan kelas | ❌ | Belum ada workflow |
 | Pantau 7 Kebiasaan, rekap P3 | ✅/⚠️ | Pantau ✅; rekap lintas-mapel ⚠️ |
-| Leger, Pelengkap+Rapor PDF | ✅/⚠️ | Generate PDF ✅; leger khusus ⚠️ verifikasi |
-| Rapor P5, Transkrip Ijazah | ❌ | Belum ada |
+| Leger, Pelengkap+Rapor PDF | ✅ | Generate PDF guru ✅; Leger + Pelengkap + Nilai Rapor admin baru (menu Cetak Nilai, cetak via print browser) |
+| Transkrip Ijazah | ✅ | Modul admin lengkap: Setting, Nomor Ijazah, Input/Import Nilai, Cetak (menu Transkrip Ijazah) |
+| Rapor P5 | ❌ | Belum ada |
 | Kirim Nilai ke Dapodik (push-back) | ❌ | Sinkron saat ini satu arah (tarik); cek kapabilitas API bridge dulu |
 
 ### 2.3 Kepala Sekolah
@@ -104,7 +105,7 @@ Detail route→controller→view per menu ada di laporan pemetaan (arsip sesi in
 ## 5. Roadmap yang Disarankan
 - **Fase 0 (±1 jam):** bereskan 4 temuan teknis di §3.
 - **Fase 1 (fondasi):** flag wali kelas; flag publikasi rapor; standardisasi istilah P3; verifikasi semua sel ⚠️ di §2.
-- **Fase 2 (fitur hilang prioritas):** TKA mandiri siswa; download rapor siswa/ortu + izin rilis; Nilai P5 + Ekskul; Rapor P5; Transkrip Ijazah; Upload center; Rekap Kehadiran kepsek; Analisis TKA kepsek.
+- **Fase 2 (fitur hilang prioritas):** TKA mandiri siswa; download rapor siswa/ortu + izin rilis; Nilai P5 + Ekskul; Rapor P5; Upload center; Rekap Kehadiran kepsek; Analisis TKA kepsek. *(Transkrip Ijazah + Cetak admin — selesai 2026-10-02.)*
 - **Fase 3 (lanjutan):** grafik perkembangan multi-semester; workflow kenaikan kelas; mapping urutan mapel; tanggal rapor; push nilai ke Dapodik (jika API mendukung).
 
 ## 6. Cara Verifikasi Sel ⚠️ (untuk pemilik produk)

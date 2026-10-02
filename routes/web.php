@@ -42,6 +42,8 @@ use App\Http\Controllers\Admin\DataReferensiController;
 use App\Http\Controllers\Admin\KokurikulerController;
 use App\Http\Controllers\Admin\PenilaianController;
 use App\Http\Controllers\Admin\PerkembanganController;
+use App\Http\Controllers\Admin\TranskripController;
+use App\Http\Controllers\Admin\CetakController;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\HasilBelajarController;
@@ -166,6 +168,27 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     // Perkembangan Nilai (tren + grafik, agregasi read-only)
     Route::get('/perkembangan', [PerkembanganController::class, 'index'])->name('perkembangan.index');
     Route::get('/perkembangan/grafik', [PerkembanganController::class, 'grafik'])->name('perkembangan.grafik');
+
+    // Transkrip Ijazah
+    Route::get('/transkrip/setting', [TranskripController::class, 'setting'])->name('transkrip.setting');
+    Route::put('/transkrip/setting', [TranskripController::class, 'updateSetting'])->middleware('throttle:30,1')->name('transkrip.setting.update');
+    Route::get('/transkrip/nomor', [TranskripController::class, 'nomor'])->name('transkrip.nomor');
+    Route::put('/transkrip/nomor/{siswa}', [TranskripController::class, 'updateNomor'])->middleware('throttle:30,1')->name('transkrip.nomor.update');
+    Route::post('/transkrip/nomor/import', [TranskripController::class, 'importNomor'])->middleware('throttle:10,1')->name('transkrip.nomor.import');
+    Route::get('/transkrip/input', [TranskripController::class, 'input'])->name('transkrip.input');
+    Route::get('/transkrip/input/{siswa}', [TranskripController::class, 'formInput'])->name('transkrip.input.form');
+    Route::put('/transkrip/input/{siswa}', [TranskripController::class, 'storeInput'])->middleware('throttle:30,1')->name('transkrip.input.store');
+    Route::get('/transkrip/import', [TranskripController::class, 'importNilai'])->name('transkrip.import');
+    Route::get('/transkrip/import/template', [TranskripController::class, 'templateNilai'])->name('transkrip.import.template');
+    Route::post('/transkrip/import', [TranskripController::class, 'storeImportNilai'])->middleware('throttle:10,1')->name('transkrip.import.store');
+    Route::get('/transkrip/cetak', [TranskripController::class, 'cetak'])->name('transkrip.cetak');
+    Route::get('/transkrip/cetak/{siswa}', [TranskripController::class, 'showCetak'])->name('transkrip.cetak.show');
+
+    // Cetak Nilai (leger, pelengkap, nilai rapor — agregasi read-only)
+    Route::get('/cetak/leger', [CetakController::class, 'leger'])->name('cetak.leger');
+    Route::get('/cetak/pelengkap', [CetakController::class, 'pelengkap'])->name('cetak.pelengkap');
+    Route::get('/cetak/nilai', [CetakController::class, 'nilai'])->name('cetak.nilai');
+    Route::get('/cetak/nilai/{siswa}', [CetakController::class, 'showNilai'])->name('cetak.nilai.show');
     Route::get('/referensi/ekstrakurikuler', [DataReferensiController::class, 'ekstrakurikuler'])->name('referensi.ekstrakurikuler');
     Route::post('/referensi/ekstrakurikuler', [DataReferensiController::class, 'storeEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.store');
     Route::delete('/referensi/ekstrakurikuler/{ekstrakurikuler}', [DataReferensiController::class, 'destroyEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.destroy');
