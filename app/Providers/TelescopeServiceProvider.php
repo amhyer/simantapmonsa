@@ -53,13 +53,22 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      * Register the Telescope gate.
      *
      * This gate determines who can access Telescope in non-local environments.
+     * Tabel users tidak punya kolom email, jadi allowlist memakai nama_pengguna
+     * (daftar via TELESCOPE_ALLOWED_USERS, default: admin).
      */
     protected function gate(): void
     {
         Gate::define('viewTelescope', function (User $user) {
-            return in_array($user->email, [
-                'admin@simantap.sch.id',
-            ]) || $user->peran === 'admin';
+            if ($user->peran !== 'admin' || ! $user->aktif) {
+                return false;
+            }
+
+            $allowed = array_filter(array_map(
+                'trim',
+                explode(',', (string) env('TELESCOPE_ALLOWED_USERS', 'admin'))
+            ));
+
+            return in_array($user->nama_pengguna, $allowed, true);
         });
     }
 }

@@ -39,11 +39,18 @@ class DapodikPushTest extends TestCase
         $this->actingAs($guru)->get('/admin/dapodik/push/status')->assertForbidden();
     }
 
-    public function test_telescope_gate_mengizinkan_admin(): void
+    public function test_telescope_gate_mengizinkan_admin_terdaftar(): void
+    {
+        $admin = User::factory()->admin()->create(['nama_pengguna' => 'admin']);
+
+        $this->assertTrue(Gate::forUser($admin)->allows('viewTelescope'));
+    }
+
+    public function test_telescope_gate_menolak_admin_tak_terdaftar(): void
     {
         $admin = User::factory()->admin()->create();
 
-        $this->assertTrue(Gate::forUser($admin)->allows('viewTelescope'));
+        $this->assertFalse(Gate::forUser($admin)->allows('viewTelescope'));
     }
 
     public function test_telescope_gate_menolak_non_admin(): void

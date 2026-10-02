@@ -192,10 +192,10 @@
                     })->sortKeys()->toArray();
                 @endphp
 
-                if (Object.keys({!! json_encode($bulanData) !!}).length) {
+                if (Object.keys({!! json_encode($bulanData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}).length) {
                     const ctx2 = document.getElementById('chartBulanan').getContext('2d');
-                    const bulanLabels = {!! json_encode(array_keys($bulanData)) !!};
-                    const bulanValues = {!! json_encode(array_values($bulanData)) !!};
+                    const bulanLabels = {!! json_encode(array_keys($bulanData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+                    const bulanValues = {!! json_encode(array_values($bulanData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
                     new Chart(ctx2, {
                         type: 'bar',
                         data: {

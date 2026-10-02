@@ -160,9 +160,9 @@
         @push('scripts')
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
             <script>
-                const labels = {!! json_encode($allNilai->pluck('tanggal')->reverse()->map(fn($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'))->toArray()) !!};
-                const dataValues = {!! json_encode($allNilai->pluck('nilai')->reverse()->toArray()) !!};
-                const types = {!! json_encode($allNilai->pluck('jenis')->reverse()->toArray()) !!};
+                const labels = {!! json_encode($allNilai->pluck('tanggal')->reverse()->map(fn($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'))->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+                const dataValues = {!! json_encode($allNilai->pluck('nilai')->reverse()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+                const types = {!! json_encode($allNilai->pluck('jenis')->reverse()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                 const typeColors = {
                     'Kuis': '#1F3864',

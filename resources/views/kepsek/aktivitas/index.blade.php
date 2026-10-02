@@ -231,10 +231,10 @@
             new Chart(ctx1, {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartHariLabels ?? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']) !!},
+                    labels: {!! json_encode($chartHariLabels ?? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     datasets: [{
                         label: 'Guru',
-                        data: {!! json_encode($chartGuruData ?? [12, 15, 14, 16, 13, 5, 2]) !!},
+                        data: {!! json_encode($chartGuruData ?? [12, 15, 14, 16, 13, 5, 2], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         borderColor: '#1F3864',
                         backgroundColor: 'rgba(31,56,100,0.09)',
                         fill: true,
@@ -244,7 +244,7 @@
                         pointBackgroundColor: '#1F3864'
                     }, {
                         label: 'Siswa',
-                        data: {!! json_encode($chartSiswaData ?? [25, 30, 28, 32, 27, 8, 3]) !!},
+                        data: {!! json_encode($chartSiswaData ?? [25, 30, 28, 32, 27, 8, 3], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         borderColor: '#B8860B',
                         backgroundColor: 'rgba(184,134,11,0.09)',
                         fill: true,
@@ -254,7 +254,7 @@
                         pointBackgroundColor: '#B8860B'
                     }, {
                         label: 'Admin',
-                        data: {!! json_encode($chartAdminData ?? [3, 4, 3, 5, 4, 1, 0]) !!},
+                        data: {!! json_encode($chartAdminData ?? [3, 4, 3, 5, 4, 1, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         borderColor: '#12805C',
                         backgroundColor: 'rgba(18,128,92,0.09)',
                         fill: true,
@@ -281,7 +281,7 @@
                 data: {
                     labels: ['Guru', 'Siswa', 'Admin', 'Orang Tua', 'Kepsek'],
                     datasets: [{
-                        data: {!! json_encode($chartDistribusiData ?? [35, 40, 5, 15, 5]) !!},
+                        data: {!! json_encode($chartDistribusiData ?? [35, 40, 5, 15, 5], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         backgroundColor: ['#1F3864', '#B8860B', '#12805C', '#2B4A80', '#D4A017'],
                         borderWidth: 2,
                         borderColor: '#fff'

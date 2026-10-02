@@ -217,10 +217,10 @@
             new Chart(ctx1, {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartLabels ?? ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS']) !!},
+                    labels: {!! json_encode($chartLabels ?? ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     datasets: [{
                         label: 'Rata-rata Kelas',
-                        data: {!! json_encode($chartData ?? [72, 75, 78, 76, 80, 82]) !!},
+                        data: {!! json_encode($chartData ?? [72, 75, 78, 76, 80, 82], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         borderColor: '#1F3864',
                         backgroundColor: 'rgba(31,56,100,.09)',
                         fill: true,
@@ -230,7 +230,7 @@
                         pointBackgroundColor: '#1F3864'
                     }, {
                         label: 'KKM',
-                        data: {!! json_encode($chartKKM ?? [70, 70, 70, 70, 70, 70]) !!},
+                        data: {!! json_encode($chartKKM ?? [70, 70, 70, 70, 70, 70], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         borderColor: '#B8860B',
                         borderDash: [6, 4],
                         borderWidth: 2,
@@ -255,7 +255,7 @@
                 data: {
                     labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
                     datasets: [{
-                        data: {!! json_encode($chartPredikatData ?? [3, 5, 2, 1]) !!},
+                        data: {!! json_encode($chartPredikatData ?? [3, 5, 2, 1], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
                         borderWidth: 2,
                         borderColor: '#fff'

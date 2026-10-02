@@ -26,11 +26,21 @@ class GoogleSheetsService
         $client->setScopes([Sheets::SPREADSHEETS]);
         $client->setAccessType('offline');
 
-        $authConfig = config('google.service_account_path');
-        if (!str_starts_with($authConfig, '/') && !str_starts_with($authConfig, 'C:') && !str_starts_with($authConfig, 'D:')) {
-            $authConfig = base_path('storage/app/' . $authConfig);
+        // Prioritas: kredensial inline dari env (tanpa file kunci di disk).
+        $inline = env('GOOGLE_CREDENTIALS_JSON');
+        if ($inline) {
+            $decoded = json_decode($inline, true);
+            if (!is_array($decoded)) {
+                throw new \RuntimeException('GOOGLE_CREDENTIALS_JSON tidak valid.');
+            }
+            $client->setAuthConfig($decoded);
+        } else {
+            $authConfig = config('google.service_account_path');
+            if (!str_starts_with($authConfig, '/') && !str_starts_with($authConfig, 'C:') && !str_starts_with($authConfig, 'D:')) {
+                $authConfig = base_path('storage/app/' . $authConfig);
+            }
+            $client->setAuthConfig($authConfig);
         }
-        $client->setAuthConfig($authConfig);
 
         $cacertPath = base_path('storage/app/cacert.pem');
         if (file_exists($cacertPath)) {

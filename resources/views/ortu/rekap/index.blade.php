@@ -166,7 +166,7 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const fieldLabels = ['Bangun Pagi', 'Beribadah', 'Olahraga', 'Makan Sehat', 'Belajar', 'Bermasyarakat', 'Tidur Cepat'];
-                const fieldAvgs = {!! json_encode(array_values($rataKebiasaan)) !!};
+                const fieldAvgs = {!! json_encode(array_values($rataKebiasaan), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                 const ctx1 = document.getElementById('chartKebiasaan').getContext('2d');
                 new Chart(ctx1, {
@@ -194,13 +194,13 @@
                 });
 
                 @if($semuaKebiasaan->count())
-                    const progresiLabels = {!! json_encode($semuaKebiasaan->sortBy('tanggal')->pluck('tanggal')->map(fn($t) => \Carbon\Carbon::parse($t)->format('d/m'))->toArray()) !!};
+                    const progresiLabels = {!! json_encode($semuaKebiasaan->sortBy('tanggal')->pluck('tanggal')->map(fn($t) => \Carbon\Carbon::parse($t)->format('d/m'))->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
                     const progresiData = {!! json_encode(
                         $semuaKebiasaan->sortBy('tanggal')->map(function($item) use ($fields) {
                             $scores = collect($fields)->map(fn($f) => $item->$f)->filter()->values();
                             return $scores->count() ? round($scores->avg(), 2) : null;
                         })->filter()->values()->toArray()
-                    ) !!};
+                    , JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                     if (progresiLabels.length && progresiData.length) {
                         const ctx2 = document.getElementById('chartProgresi').getContext('2d');

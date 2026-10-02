@@ -183,10 +183,10 @@
             new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: {!! json_encode($chartKebiasaanLabels ?? ['Tepat Waktu', 'Beribadah', 'Baca Buku', ' Olahraga', 'Gotong Royong', 'Literasi', 'Peduli Lingkungan']) !!},
+                    labels: {!! json_encode($chartKebiasaanLabels ?? ['Tepat Waktu', 'Beribadah', 'Baca Buku', ' Olahraga', 'Gotong Royong', 'Literasi', 'Peduli Lingkungan'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     datasets: [{
                         label: 'Partisipasi %',
-                        data: {!! json_encode($chartKebiasaanData ?? [85, 78, 72, 80, 88, 65, 75]) !!},
+                        data: {!! json_encode($chartKebiasaanData ?? [85, 78, 72, 80, 88, 65, 75], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         backgroundColor: ['#1F3864', '#B8860B', '#12805C', '#2B4A80', '#D4A017', '#667085', '#12805C'],
                         borderWidth: 0,
                         borderRadius: 6
@@ -207,27 +207,27 @@
             new Chart(ctx2, {
                 type: 'radar',
                 data: {
-                    labels: {!! json_encode($chartKebiasaanLabels ?? ['Tepat Waktu', 'Beribadah', 'Baca Buku', 'Olahraga', 'Gotong Royong', 'Literasi', 'Peduli Lingkungan']) !!},
+                    labels: {!! json_encode($chartKebiasaanLabels ?? ['Tepat Waktu', 'Beribadah', 'Baca Buku', 'Olahraga', 'Gotong Royong', 'Literasi', 'Peduli Lingkungan'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     datasets: [
                         {
-                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 1']) !!}[0] ?? 'Kelas 1',
-                            data: {!! json_encode($chartRadarKelas1 ?? [85, 78, 72, 80, 88, 65, 75]) !!},
+                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 1'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}[0] ?? 'Kelas 1',
+                            data: {!! json_encode($chartRadarKelas1 ?? [85, 78, 72, 80, 88, 65, 75], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                             borderColor: '#1F3864',
                             backgroundColor: 'rgba(31,56,100,0.1)',
                             borderWidth: 2,
                             pointRadius: 3
                         },
                         {
-                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 2']) !!}[1] ?? 'Kelas 2',
-                            data: {!! json_encode($chartRadarKelas2 ?? [80, 75, 68, 78, 85, 60, 72]) !!},
+                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 2'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}[1] ?? 'Kelas 2',
+                            data: {!! json_encode($chartRadarKelas2 ?? [80, 75, 68, 78, 85, 60, 72], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                             borderColor: '#B8860B',
                             backgroundColor: 'rgba(184,134,11,0.1)',
                             borderWidth: 2,
                             pointRadius: 3
                         },
                         {
-                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 3']) !!}[2] ?? 'Kelas 3',
-                            data: {!! json_encode($chartRadarKelas3 ?? [78, 80, 75, 82, 90, 70, 78]) !!},
+                            label: {!! json_encode($chartKelasLabels ?? ['Kelas 3'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}[2] ?? 'Kelas 3',
+                            data: {!! json_encode($chartRadarKelas3 ?? [78, 80, 75, 82, 90, 70, 78], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                             borderColor: '#12805C',
                             backgroundColor: 'rgba(18,128,92,0.1)',
                             borderWidth: 2,

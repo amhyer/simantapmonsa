@@ -284,8 +284,8 @@
             @endphp
 
             @if($mapelAgg->count())
-                const mapelLabels = {!! json_encode($mapelAgg->keys()->toArray()) !!};
-                const mapelValues = {!! json_encode($mapelAgg->values()->toArray()) !!};
+                const mapelLabels = {!! json_encode($mapelAgg->keys()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+                const mapelValues = {!! json_encode($mapelAgg->values()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                 const ctx2 = document.getElementById('chartMapel').getContext('2d');
                 new Chart(ctx2, {

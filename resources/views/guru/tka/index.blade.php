@@ -200,7 +200,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const labels = ['Beriman & Berakhlak', 'Berkebinekaan', 'Bernalar Kritis', 'Gotong Royong', 'Mandiri', 'Kreatif'];
-            const data = {!! json_encode($dimensiRataRata ?? [0, 0, 0, 0, 0, 0]) !!};
+            const data = {!! json_encode($dimensiRataRata ?? [0, 0, 0, 0, 0, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
             const ctx = document.getElementById('chartDimensi').getContext('2d');
             new Chart(ctx, {
                 type: 'radar',

@@ -202,8 +202,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const labels = {!! json_encode($kuisLabels ?? []) !!};
-            const rataData = {!! json_encode($kuisRataRata ?? []) !!};
+            const labels = {!! json_encode($kuisLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+            const rataData = {!! json_encode($kuisRataRata ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
             const ctx1 = document.getElementById('chartPerforma').getContext('2d');
             new Chart(ctx1, {
@@ -245,7 +245,7 @@
                 data: {
                     labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
                     datasets: [{
-                        data: {!! json_encode($predikatCount ?? [0, 0, 0, 0]) !!},
+                        data: {!! json_encode($predikatCount ?? [0, 0, 0, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
                         borderWidth: 2,
                         borderColor: '#fff'

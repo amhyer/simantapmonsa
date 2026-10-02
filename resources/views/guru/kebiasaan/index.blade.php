@@ -157,8 +157,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const labels = {!! json_encode($chartLabels ?? []) !!};
-            const data = {!! json_encode($chartData ?? []) !!};
+            const labels = {!! json_encode($chartLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+            const data = {!! json_encode($chartData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
             const ctx = document.getElementById('chartKebiasaan').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',

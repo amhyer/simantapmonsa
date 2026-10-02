@@ -180,8 +180,8 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 @if($laporan['nilai_per_jenis']->count())
-                    const jenisLabels = {!! json_encode($laporan['nilai_per_jenis']->pluck('jenis')->toArray()) !!};
-                    const jenisValues = {!! json_encode($laporan['nilai_per_jenis']->map(fn($i) => round($i->rata_rata, 1))->toArray()) !!};
+                    const jenisLabels = {!! json_encode($laporan['nilai_per_jenis']->pluck('jenis')->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+                    const jenisValues = {!! json_encode($laporan['nilai_per_jenis']->map(fn($i) => round($i->rata_rata, 1))->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                     const ctx1 = document.getElementById('chartNilai').getContext('2d');
                     new Chart(ctx1, {
@@ -219,7 +219,7 @@
                 @endif
 
                 const kaihLabels = ['Bangun Pagi', 'Beribadah', 'Olahraga', 'Makan Sehat', 'Belajar', 'Bermasyarakat', 'Tidur Cepat'];
-                const kaihValues = {!! json_encode(array_values($laporan['kebiasaan_rata'])) !!};
+                const kaihValues = {!! json_encode(array_values($laporan['kebiasaan_rata']), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
                 const ctx2 = document.getElementById('chartKebiasaan').getContext('2d');
                 new Chart(ctx2, {
