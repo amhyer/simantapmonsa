@@ -77,7 +77,7 @@
                                         <div style="font-size:12px;color:#667085">
                                             {{ \Carbon\Carbon::parse($k->tanggal)->translatedFormat('d M Y') }}
                                             @if($k->batas_waktu)
-                                                · Batas: {{ \Carbon\Carbon::parse($k->batas_waktu)->translatedFormat('d M Y H:i') }}
+                                                · Durasi: {{ $k->batas_waktu }} menit
                                             @endif
                                         </div>
                                     </td>
