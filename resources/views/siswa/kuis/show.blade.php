@@ -72,7 +72,7 @@
                         <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;font-weight:700;margin-bottom:4px">Batas Waktu</div>
                         <span class="tag tag-bad">
                             <i class="fas fa-clock"></i>
-                            {{ \Carbon\Carbon::parse($kuis->batas_waktu)->translatedFormat('d M Y H:i') }}
+                            {{ $kuis->batas_waktu }} menit
                         </span>
                     </div>
                 @endif
@@ -90,6 +90,7 @@
             @csrf
             <input type="hidden" name="durasi" id="durasiInput" value="0">
             <input type="hidden" name="start_time" id="startTime" value="{{ now()->timestamp }}">
+            <input type="hidden" id="sisaDetik" value="{{ $sisaDetik ?? '' }}">
 
             @php
                 $soal = $kuis->soal ?? [];
@@ -139,7 +140,7 @@
                     <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                         <div style="font-size:13px;color:var(--muted)">
                             <i class="fas fa-clock" style="margin-right:4px"></i>
-                            Waktu: <span id="timerDisplay">00:00:00</span>
+                            {{ isset($sisaDetik) ? 'Sisa waktu' : 'Waktu' }}: <span id="timerDisplay">00:00:00</span>
                         </div>
                         <button type="submit" class="btn btn-gold" onclick="return confirm('Apakah Anda yakin ingin mengirim jawaban?')">
                             <i class="fas fa-paper-plane"></i> Kirim Jawaban
@@ -156,14 +157,28 @@
             const durasiInput = document.getElementById('durasiInput');
             const timerDisplay = document.getElementById('timerDisplay');
 
+            const sisaEl = document.getElementById('sisaDetik');
+            const sisaAwal = sisaEl && sisaEl.value !== '' ? parseInt(sisaEl.value) : null;
+            const bukaHalaman = Math.floor(Date.now() / 1000);
+            let sudahKirim = false;
+
             function updateTimer() {
                 const now = Math.floor(Date.now() / 1000);
                 const elapsed = now - startTime;
                 durasiInput.value = elapsed;
 
-                const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-                const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-                const s = String(elapsed % 60).padStart(2, '0');
+                let tampil = elapsed;
+                if (sisaAwal !== null) {
+                    tampil = Math.max(0, sisaAwal - (now - bukaHalaman));
+                    if (tampil === 0 && !sudahKirim) {
+                        sudahKirim = true;
+                        document.getElementById('formKuis').submit();
+                    }
+                }
+
+                const h = String(Math.floor(tampil / 3600)).padStart(2, '0');
+                const m = String(Math.floor((tampil % 3600) / 60)).padStart(2, '0');
+                const s = String(tampil % 60).padStart(2, '0');
                 timerDisplay.textContent = `${h}:${m}:${s}`;
             }
 

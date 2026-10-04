@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Ortu\HasAnakLookup;
+use App\Http\Controllers\Siswa\HasSiswaLookup;
 use App\Models\JadwalPelajaran;
 use App\Models\Siswa;
 use App\Models\Materi;
@@ -22,6 +24,8 @@ use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
+    use HasAnakLookup, HasSiswaLookup;
+
     public function admin()
     {
         $totalUsers = User::count();
@@ -83,12 +87,7 @@ class DashboardController extends Controller
 
     public function siswa()
     {
-        $user = auth()->user();
-        $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
-
-        if (!$siswa && !empty($user->terhubung_dengan)) {
-            $siswa = Siswa::whereIn('id', $user->terhubung_dengan)->first();
-        }
+        $siswa = $this->getSiswa();
 
         $kehadiran = 0;
         $totalHadir = 0;
@@ -104,23 +103,17 @@ class DashboardController extends Controller
 
     public function ortu()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
-        
-        if (empty($anakIds)) {
-            return view('ortu.dashboard', ['anak' => null]);
-        }
+        $anakList = $this->anakList();
+        $anak = $this->getAnak($anakList);
 
-        $anak = Siswa::whereIn('id', $anakIds)->first();
-        return view('ortu.dashboard', compact('anak'));
+        return view('ortu.dashboard', compact('anak', 'anakList'));
     }
 
     public function ortuNilai()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
-        $siswa = Siswa::whereIn('id', $anakIds)->first();
-        
-        return view('ortu.nilai.index', ['siswa' => $siswa]);
+        $anakList = $this->anakList();
+        $siswa = $this->getAnak($anakList);
+
+        return view('ortu.nilai.index', compact('siswa', 'anakList'));
     }
 }

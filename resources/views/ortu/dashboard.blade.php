@@ -16,6 +16,8 @@
         </div>
     @else
 
+    @include('ortu.partials.pilih-anak', ['route' => route('ortu.dashboard'), 'terpilih' => $anak])
+
     <div class="grid grid-4" style="margin-bottom:20px">
         <div class="stat-card primary">
             <i class="fas fa-user stat-icon"></i>

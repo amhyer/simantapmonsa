@@ -10,6 +10,10 @@ use Illuminate\Http\Request;
 
 class TKAController extends Controller
 {
+    // Skor dimensi berskala 1–4 (lihat DimensiController), selaras dengan level di analysis().
+    public const SKOR_SIAP = 2.5;
+    public const SKOR_PERLU_BIMBINGAN = 1.5;
+
     public function index()
     {
         $guruId = auth()->id();
@@ -32,7 +36,7 @@ class TKAController extends Controller
                 $avg = $dimensiSiswa->avg();
                 $totalSkor += $avg;
                 $countSkor++;
-                if ($avg >= getKKM()) $jumlahSiap++;
+                if ($avg >= self::SKOR_SIAP) $jumlahSiap++;
                 else $jumlahPerluBimbingan++;
             }
         }
@@ -41,7 +45,10 @@ class TKAController extends Controller
 
         return view('guru.tka.index', compact(
             'siswaList', 'jumlahSiap', 'jumlahPerluBimbingan', 'rataRata', 'dimensiRataRata'
-        ));
+        ) + [
+            'skorSiap' => self::SKOR_SIAP,
+            'skorPerluBimbingan' => self::SKOR_PERLU_BIMBINGAN,
+        ]);
     }
 
     public function show($id)

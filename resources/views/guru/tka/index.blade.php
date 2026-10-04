@@ -21,13 +21,13 @@
             <i class="fas fa-check-circle stat-icon"></i>
             <div class="stat-label">Siap TKA</div>
             <div class="stat-value">{{ $jumlahSiap }}</div>
-            <div class="stat-change">skor ≥ 70</div>
+            <div class="stat-change">skor ≥ {{ $skorSiap }} (skala 1–4)</div>
         </div>
         <div class="stat-card warn">
             <i class="fas fa-exclamation-triangle stat-icon"></i>
             <div class="stat-label">Perlu Pendampingan</div>
             <div class="stat-value">{{ $jumlahPerluBimbingan }}</div>
-            <div class="stat-change">skor &lt; 70</div>
+            <div class="stat-change">skor &lt; {{ $skorSiap }} (skala 1–4)</div>
         </div>
         <div class="stat-card gold">
             <i class="fas fa-chart-bar stat-icon"></i>
@@ -55,13 +55,13 @@
             <div class="card-body">
                 <div style="display:grid;gap:10px">
                     <div class="note note-ok">
-                        <b>Skor ≥ 70</b> — Siswa menunjukkan kesiapan yang baik pada dimensi terkait.
+                        <b>Skor ≥ {{ $skorSiap }}</b> — Siswa menunjukkan kesiapan yang baik pada dimensi terkait.
                     </div>
                     <div class="note note-warn">
-                        <b>Skor 50–69</b> — Siswa perlu pendampingan tambahan pada area tertentu.
+                        <b>Skor {{ $skorPerluBimbingan }} – &lt;{{ $skorSiap }}</b> — Siswa perlu pendampingan tambahan pada area tertentu.
                     </div>
                     <div class="note">
-                        <b>Skor &lt; 50</b> — Siswa memerlukan intervensi dan bimbingan intensif.
+                        <b>Skor &lt; {{ $skorPerluBimbingan }}</b> — Siswa memerlukan intervensi dan bimbingan intensif.
                     </div>
                 </div>
                 <div style="margin-top:16px">
@@ -136,7 +136,7 @@
                                     <td>{{ $i + 1 }}</td>
                                     <td>
                                         <div style="display:flex;align-items:center;gap:10px">
-                                            <span class="avatar" style="{{ $avg && $avg >= 70 ? 'background:var(--ok);color:#fff' : ($avg && $avg < 50 ? 'background:var(--bad);color:#fff' : '') }}">{{ substr($siswa->nama_peserta_didik, 0, 2) }}</span>
+                                            <span class="avatar" style="{{ $avg && $avg >= $skorSiap ? 'background:var(--ok);color:#fff' : ($avg && $avg < $skorPerluBimbingan ? 'background:var(--bad);color:#fff' : '') }}">{{ substr($siswa->nama_peserta_didik, 0, 2) }}</span>
                                             <div>
                                                 <b>{{ $siswa->nama_peserta_didik }}</b>
                                                 <div style="font-size:11px;color:var(--muted)">{{ $siswa->kelas }}</div>
@@ -147,7 +147,7 @@
                                     @for($d = 1; $d <= 6; $d++)
                                         <td style="text-align:center">
                                             @if($scores[$d] !== null)
-                                                <span class="tag {{ $scores[$d] >= 70 ? 'tag-ok' : ($scores[$d] >= 50 ? 'tag-warn' : 'tag-bad') }}">
+                                                <span class="tag {{ $scores[$d] >= $skorSiap ? 'tag-ok' : ($scores[$d] >= $skorPerluBimbingan ? 'tag-warn' : 'tag-bad') }}">
                                                     {{ number_format($scores[$d], 1) }}
                                                 </span>
                                             @else
@@ -157,16 +157,16 @@
                                     @endfor
                                     <td style="text-align:right">
                                         @if($avg)
-                                            <b style="font-size:15px;{{ $avg >= 70 ? 'color:var(--ok)' : ($avg < 50 ? 'color:var(--bad)' : '') }}">{{ number_format($avg, 1) }}</b>
+                                            <b style="font-size:15px;{{ $avg >= $skorSiap ? 'color:var(--ok)' : ($avg < $skorPerluBimbingan ? 'color:var(--bad)' : '') }}">{{ number_format($avg, 1) }}</b>
                                         @else
                                             <span style="color:var(--muted)">—</span>
                                         @endif
                                     </td>
                                     <td style="text-align:center">
                                         @if($avg)
-                                            @if($avg >= 70)
+                                            @if($avg >= $skorSiap)
                                                 <span class="tag tag-ok">Siap</span>
-                                            @elseif($avg >= 50)
+                                            @elseif($avg >= $skorPerluBimbingan)
                                                 <span class="tag tag-warn">Perlu Bimbingan</span>
                                             @else
                                                 <span class="tag tag-bad">Tidak Siap</span>
@@ -215,8 +215,8 @@
                         pointRadius: 4,
                         pointBackgroundColor: '#1F3864'
                     }, {
-                        label: 'KKM (70)',
-                        data: [70, 70, 70, 70, 70, 70],
+                        label: 'Batas Siap ({{ $skorSiap }})',
+                        data: Array(6).fill({{ $skorSiap }}),
                         borderColor: '#B8860B',
                         borderDash: [6, 4],
                         borderWidth: 1.5,
@@ -228,7 +228,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        r: { min: 0, max: 100, ticks: { stepSize: 20, font: { size: 10 } }, grid: { color: '#E4E7EC' } }
+                        r: { min: 0, max: 4, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#E4E7EC' } }
                     },
                     plugins: { legend: { labels: { boxWidth: 12, padding: 14, font: { size: 12 } } } }
                 }
