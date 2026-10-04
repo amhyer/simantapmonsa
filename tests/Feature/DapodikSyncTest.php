@@ -793,7 +793,7 @@ class DapodikSyncTest extends TestCase
         $service = new DapodikSyncService();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Non-JSON response');
+        $this->expectExceptionMessage('Sekolah Anda tidak ditemukan');
 
         $service->preview('20261');
     }

@@ -155,7 +155,7 @@
             const val = s.nilai ?? '';
             const isFilled = val !== '' && val !== null;
             if (isFilled) terisi++;
-            const predikat = getPredikat(val);
+            const predikat = s.predikat ?? getPredikat(val);
             const status = isFilled ? (val >= kkm ? 'Tuntas' : 'Remidi') : '-';
             const below = isFilled && val < kkm;
             return `<tr style="border-bottom:1px solid #F2F4F7" data-siswa="${s.siswa_id}">
@@ -213,11 +213,14 @@
         document.getElementById('progressPct').textContent = pct + '%';
     }
 
+    // Cermin rumus NilaiService::getPredikat (relatif terhadap KKM).
     function getPredikat(val) {
         if (val === null || val === '' || val === undefined) return '-';
-        if (val >= 90) return 'A';
-        if (val >= 80) return 'B';
-        if (val >= 70) return 'C';
+        const kkm = parseInt(document.getElementById('kkm').value) || 70;
+        const s = kkm * 0.1;
+        if (val >= kkm + s * 2) return 'A';
+        if (val >= kkm + s) return 'B';
+        if (val >= kkm) return 'C';
         return 'D';
     }
 
@@ -269,7 +272,13 @@
             body: JSON.stringify({ data: raw })
         }).then(r => r.json()).then(d => {
             d.parsed.forEach(item => {
-                const match = siswaData.find(s => s.nama.toLowerCase().includes(item.nama.toLowerCase()));
+                // Prioritaskan hasil pencocokan server (milik guru ini); fallback cocok nama lama.
+                let match = item.siswa_id
+                    ? siswaData.find(s => s.siswa_id === item.siswa_id)
+                    : null;
+                if (!match) {
+                    match = siswaData.find(s => s.nama.toLowerCase().includes(item.nama.toLowerCase()));
+                }
                 if (match && item.nilai !== null) {
                     const input = document.querySelector(`.input-nilai[data-siswa="${match.siswa_id}"]`);
                     if (input) {

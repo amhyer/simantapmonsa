@@ -32,14 +32,22 @@ if (!function_exists('setting')) {
 if (!function_exists('getKKM')) {
     function getKKM(?int $guruId = null): int
     {
+        // Cache 5 menit: dipanggil per-baris nilai, tanpa cache jadi N+1 query.
         if ($guruId) {
-            $pengaturan = PengaturanGuru::where('guru_id', $guruId)->first();
-            if ($pengaturan && $pengaturan->kkm) {
-                return (int) $pengaturan->kkm;
-            }
+            return Cache::remember('kkm-guru-' . $guruId, 300, function () use ($guruId) {
+                $pengaturan = PengaturanGuru::where('guru_id', $guruId)->first();
+                if ($pengaturan && $pengaturan->kkm) {
+                    return (int) $pengaturan->kkm;
+                }
+
+                $latest = PengaturanGuru::orderByDesc('id')->first();
+                return $latest && $latest->kkm ? (int) $latest->kkm : 70;
+            });
         }
 
-        $latest = PengaturanGuru::orderByDesc('id')->first();
-        return $latest && $latest->kkm ? (int) $latest->kkm : 70;
+        return Cache::remember('kkm-global', 300, function () {
+            $latest = PengaturanGuru::orderByDesc('id')->first();
+            return $latest && $latest->kkm ? (int) $latest->kkm : 70;
+        });
     }
 }

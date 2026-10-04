@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Siswa extends Model
@@ -71,6 +72,30 @@ class Siswa extends Model
         static::creating(function ($model) {
             if (!$model->uuid) $model->uuid = Str::uuid();
         });
+    }
+
+    protected static function booted(): void
+    {
+        // Bust cache foto layout saat foto berubah agar sidebar/topbar langsung update.
+        $flush = function (Siswa $siswa) {
+            $ids = User::where('nama_pengguna', $siswa->nis)->pluck('id');
+            try {
+                $linked = User::whereJsonContains('terhubung_dengan', $siswa->id)->pluck('id');
+                $ids = $ids->merge($linked);
+            } catch (\Throwable) {
+                // Driver DB tanpa dukungan JSON contains (abaikan relasi ortu di sini).
+            }
+            foreach ($ids as $id) {
+                Cache::forget('layout-foto-' . $id);
+            }
+        };
+
+        static::saved(function (Siswa $siswa) use ($flush) {
+            if ($siswa->wasChanged('foto') || $siswa->wasRecentlyCreated) {
+                $flush($siswa);
+            }
+        });
+        static::deleted($flush);
     }
 
     public function semester()

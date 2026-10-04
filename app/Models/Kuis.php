@@ -41,6 +41,7 @@ class Kuis extends Model
             'rekaman' => 'array',
             'aktif' => 'boolean',
             'tanggal' => 'date',
+            'batas_waktu' => 'datetime',
         ];
     }
 

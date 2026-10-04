@@ -11,6 +11,7 @@ use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\TanggalRapor;
+use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,6 +27,7 @@ class DataReferensiController extends Controller
     public function pembelajaran()
     {
         $jadwal = JadwalPelajaran::with(['guru', 'rombel', 'semester'])
+            ->withCount('nilaiErapot')
             ->orderBy('hari')
             ->orderBy('jam_mulai')
             ->get();
@@ -58,12 +60,24 @@ class DataReferensiController extends Controller
 
     /**
      * Hapus jadwal pembelajaran (cermin tombol "Hapus" di e-Rapor).
+     * FK nullOnDelete: nilai terkait dipertahankan, kolomnya jadi NULL
+     * (terlihat sebagai "belum terpetakan" di alignment-check).
      */
     public function destroyPembelajaran(JadwalPelajaran $pembelajaran)
     {
         $pembelajaran->delete();
 
         return back()->with('success', 'Jadwal pembelajaran berhasil dihapus.');
+    }
+
+    /**
+     * Halaman alignment-check e-Rapor vs pembelajaran (view: Fase 5).
+     */
+    public function alignmentCheck(JadwalPelajaranResolver $resolver)
+    {
+        $stats = $resolver->alignmentStats();
+
+        return view('admin.referensi.alignment-check', compact('stats'));
     }
 
     public function tanggalRapor()

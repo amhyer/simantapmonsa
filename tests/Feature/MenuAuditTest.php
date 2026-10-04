@@ -142,10 +142,10 @@ class MenuAuditTest extends TestCase
         $data = $res->viewData('kehadiranBulanan');
 
         $this->assertCount(2, $data);
-        $this->assertSame('January', $data[0]['nama']);
+        $this->assertSame('Januari', $data[0]['nama']);
         $this->assertSame(1, $data[0]['H']);
         $this->assertSame(1, $data[0]['S']);
-        $this->assertSame('February', $data[1]['nama']);
+        $this->assertSame('Februari', $data[1]['nama']);
         $this->assertSame(1, $data[1]['H']);
     }
 }

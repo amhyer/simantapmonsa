@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Cetak Transkrip Nilai - SIMANTAP')
 
@@ -19,25 +19,25 @@
             </form>
         </div>
         <div class="card-body tight">
-            <div style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <div class="table-wrapper">
+                <table>
                     <thead>
-                        <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                            <th style="padding:10px">Nama</th>
-                            <th style="padding:10px">NISN</th>
-                            <th style="padding:10px">No. Ijazah</th>
-                            <th style="padding:10px">Nilai Terisi</th>
-                            <th style="padding:10px"></th>
+                        <tr>
+                            <th>Nama</th>
+                            <th>NISN</th>
+                            <th>No. Ijazah</th>
+                            <th>Nilai Terisi</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($siswa as $row)
-                            <tr style="border-bottom:1px solid #EAECF0">
-                                <td style="padding:10px">{{ $row->nama_peserta_didik }}</td>
-                                <td style="padding:10px">{{ $row->nisn ?? '-' }}</td>
-                                <td style="padding:10px">{{ $row->nomor_ijazah ?? '-' }}</td>
-                                <td style="padding:10px">{{ $row->transkrip_nilai_count }} mapel</td>
-                                <td style="padding:10px">
+                            <tr>
+                                <td>{{ $row->nama_peserta_didik }}</td>
+                                <td>{{ $row->nisn ?? '-' }}</td>
+                                <td>{{ $row->nomor_ijazah ?? '-' }}</td>
+                                <td>{{ $row->transkrip_nilai_count }} mapel</td>
+                                <td>
                                     <a href="{{ route('admin.transkrip.cetak.show', $row) }}" target="_blank" class="btn btn-sm">Cetak</a>
                                 </td>
                             </tr>

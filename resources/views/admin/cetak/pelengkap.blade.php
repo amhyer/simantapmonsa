@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Pelengkap Rapor - SIMANTAP')
 
@@ -45,27 +45,27 @@
                 @if($siswa->isEmpty())
                     <p style="color:#667085;padding:12px 4px">Belum ada data siswa di kelas ini.</p>
                 @else
-                    <div style="overflow-x:auto">
-                        <table style="width:100%;border-collapse:collapse;font-size:14px">
+                    <div class="table-wrapper">
+                        <table>
                             <thead>
-                                <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                                    <th style="padding:10px">Nama</th>
-                                    <th style="padding:10px;text-align:center">Sakit</th>
-                                    <th style="padding:10px;text-align:center">Izin</th>
-                                    <th style="padding:10px;text-align:center">Alpa</th>
-                                    <th style="padding:10px">Tinggi / Berat</th>
-                                    <th style="padding:10px">Catatan Terakhir</th>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th style="text-align:center">Sakit</th>
+                                    <th style="text-align:center">Izin</th>
+                                    <th style="text-align:center">Alpa</th>
+                                    <th>Tinggi / Berat</th>
+                                    <th>Catatan Terakhir</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($siswa as $row)
-                                    <tr style="border-bottom:1px solid #EAECF0">
-                                        <td style="padding:10px">{{ $row->nama_peserta_didik }}</td>
-                                        <td style="padding:10px;text-align:center">{{ $row->rekap_hadir['S'] }} hari</td>
-                                        <td style="padding:10px;text-align:center">{{ $row->rekap_hadir['I'] }} hari</td>
-                                        <td style="padding:10px;text-align:center">{{ $row->rekap_hadir['A'] }} hari</td>
-                                        <td style="padding:10px">{{ $row->tinggi_badan ? $row->tinggi_badan . ' cm' : '-' }} / {{ $row->berat_badan ? $row->berat_badan . ' kg' : '-' }}</td>
-                                        <td style="padding:10px">{{ $row->catatan_terakhir->catatan ?? '-' }}</td>
+                                    <tr>
+                                        <td>{{ $row->nama_peserta_didik }}</td>
+                                        <td style="text-align:center">{{ $row->rekap_hadir['S'] }} hari</td>
+                                        <td style="text-align:center">{{ $row->rekap_hadir['I'] }} hari</td>
+                                        <td style="text-align:center">{{ $row->rekap_hadir['A'] }} hari</td>
+                                        <td>{{ $row->tinggi_badan ? $row->tinggi_badan . ' cm' : '-' }} / {{ $row->berat_badan ? $row->berat_badan . ' kg' : '-' }}</td>
+                                        <td>{{ $row->catatan_terakhir->catatan ?? '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

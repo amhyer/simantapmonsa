@@ -16,11 +16,6 @@
 @endsection
 
 @section('content')
-    @php
-        $syncedSiswa = \App\Models\Siswa::where('guru_id', auth()->id())->whereNotNull('dapodik_id')->count();
-        $totalGuruSiswa = \App\Models\Siswa::where('guru_id', auth()->id())->count();
-    @endphp
-
     @if($totalGuruSiswa > 0 && $syncedSiswa > 0)
         <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:#EEF2F9;border-radius:8px;border-left:3px solid var(--navy);margin-bottom:16px;font-size:13px">
             <i class="fas fa-link" style="color:var(--navy)"></i>
@@ -29,6 +24,13 @@
     @elseif($totalGuruSiswa == 0)
         <div class="note note-gold" style="margin-bottom:16px">
             <b>Belum ada siswa.</b> Data siswa akan masuk setelah admin melakukan sinkronisasi dari Dapodik melalui SIMANTAP Bridge.
+        </div>
+    @endif
+
+    @if(!$kkmDiatur)
+        <div class="note note-warn" style="margin-bottom:16px">
+            <b><i class="fas fa-exclamation-triangle"></i> KKM belum diatur</b> — memakai default 70 untuk semua perhitungan.
+            <a href="{{ route('guru.pengaturan.index') }}" style="font-weight:700">Atur KKM sekarang →</a>
         </div>
     @endif
 
@@ -49,7 +51,7 @@
             <i class="fas fa-check-circle stat-icon"></i>
             <div class="stat-label">Ketuntasan</div>
             <div class="stat-value">{{ $ringkasan['jumlah'] ? round($ringkasan['tuntas'] / $ringkasan['jumlah'] * 100) : 0 }}%</div>
-            <div class="stat-change">{{ $ringkasan['tuntas'] }} tuntas · {{ $ringkasan['belum'] }} belum</div>
+            <div class="stat-change">{{ $ringkasan['tuntas'] }} tuntas · {{ $ringkasan['belum'] }} belum@if($ringkasan['belum_dinilai']) · {{ $ringkasan['belum_dinilai'] }} belum dinilai@endif</div>
         </div>
         <div class="stat-card ok">
             <i class="fas fa-calendar-check stat-icon"></i>
@@ -59,12 +61,90 @@
         </div>
     </div>
 
+    <div class="grid grid-3" style="margin-bottom:20px">
+        {{-- Jadwal Hari Ini --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-day" style="margin-right:8px;color:var(--navy)"></i>Mengajar Hari Ini ({{ $namaHari }})</h3>
+                <span class="tag tag-primary">{{ $jadwalHariIni->count() }} sesi</span>
+            </div>
+            <div class="card-body tight">
+                @if($jadwalHariIni->count())
+                    @foreach($jadwalHariIni as $j)
+                        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F2F4F7">
+                            <span style="min-width:96px;font-weight:700;font-size:13px">{{ substr($j->jam_mulai, 0, 5) }}–{{ substr($j->jam_selesai, 0, 5) }}</span>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-weight:600;font-size:13px">{{ $j->mata_pelajaran }}</div>
+                                <div style="font-size:11px;color:var(--muted)">Kelas {{ $j->kelas }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="empty-state" style="padding:20px">
+                        <h4>Tidak ada jadwal hari ini</h4>
+                        <p>Jadwal ditarik dari Dapodik oleh admin.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Progres e-Rapor + Deadline --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-signature" style="margin-right:8px;color:var(--gold)"></i>Progres e-Rapor</h3>
+                <a href="{{ route('guru.nilai-erapor.index') }}" class="btn btn-ghost btn-sm">Isi Nilai</a>
+            </div>
+            <div class="card-body">
+                @php $persenErapot = $ringkasan['jumlah'] ? round($siswaErapot / $ringkasan['jumlah'] * 100) : 0; @endphp
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+                    <span style="font-size:24px;font-weight:800">{{ $siswaErapot }}/{{ $ringkasan['jumlah'] }}</span>
+                    <span style="font-size:12px;color:var(--muted)">siswa sudah terisi</span>
+                </div>
+                <div class="bar" style="margin-bottom:14px"><span class="fill" style="width:{{ $persenErapot }}%"></span></div>
+                @if($deadlineRapor)
+                    @php $sisaHari = now()->startOfDay()->diffInDays($deadlineRapor->tanggal->startOfDay(), false); @endphp
+                    <div class="note {{ $sisaHari <= 7 ? 'note-warn' : '' }}" style="font-size:13px">
+                        <b><i class="fas fa-hourglass-half"></i> Batas rapor:</b>
+                        {{ $deadlineRapor->tanggal->translatedFormat('d M Y') }}
+                        ({{ $sisaHari < 0 ? 'terlewat ' . abs($sisaHari) . ' hari' : ($sisaHari === 0 ? 'hari ini' : $sisaHari . ' hari lagi') }})
+                    </div>
+                @else
+                    <div class="note" style="font-size:13px">Belum ada tanggal rapor dari admin.</div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Google Sheets --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-table" style="margin-right:8px;color:var(--ok)"></i>Google Sheets</h3>
+                <a href="{{ route('guru.integrasi.index') }}" class="btn btn-ghost btn-sm">Kelola</a>
+            </div>
+            <div class="card-body">
+                @if($sheetStatus['terhubung'])
+                    <div style="margin-bottom:10px"><span class="tag tag-ok">Terhubung</span></div>
+                    <div style="font-size:13px;font-weight:600;margin-bottom:4px">{{ $sheetStatus['nama'] ?? 'Spreadsheet tertaut' }}</div>
+                    @if($sheetStatus['terakhir'])
+                        <div style="font-size:12px;color:var(--muted)">
+                            Sync terakhir: {{ \Carbon\Carbon::parse($sheetStatus['terakhir']['waktu'])->diffForHumans() }}
+                            · {{ $sheetStatus['terakhir']['status'] ?? '-' }} · {{ $sheetStatus['terakhir']['jumlah'] ?? 0 }} baris
+                        </div>
+                    @else
+                        <div style="font-size:12px;color:var(--muted)">Belum pernah sync.</div>
+                    @endif
+                @else
+                    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Nilai & kehadiran bisa dicadangkan otomatis ke spreadsheet Anda.</div>
+                    <a href="{{ route('guru.integrasi.index') }}" class="btn btn-ghost btn-sm btn-block"><i class="fas fa-link"></i> Hubungkan Sheet</a>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-2" style="margin-bottom:20px">
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-chart-line" style="margin-right:8px;color:var(--navy)"></i>Perkembangan Rata-rata Kelas</h3>
-            </div>
-            <div class="card-body">
+            </div>            <div class="card-body">
                 <div class="chart-container">
                     <canvas id="chartTren"></canvas>
                 </div>
@@ -195,7 +275,12 @@
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-clipboard-list" style="margin-right:8px;color:var(--gold)"></i>Kuis Berjalan</h3>
-                <a href="{{ route('guru.kuis.index') }}" class="btn btn-ghost btn-sm">Kelola</a>
+                <div style="display:flex;gap:8px;align-items:center">
+                    @if($eseiMenunggu > 0)
+                        <a href="{{ route('guru.kuis.index') }}" class="tag tag-warn" style="text-decoration:none" title="Jawaban esei dinilai otomatis — periksa sebelum final">{{ $eseiMenunggu }} esei perlu diperiksa</a>
+                    @endif
+                    <a href="{{ route('guru.kuis.index') }}" class="btn btn-ghost btn-sm">Kelola</a>
+                </div>
             </div>
             <div class="card-body">
                 @if(count($kuisAktif))
@@ -203,10 +288,10 @@
                         <div style="padding:10px 0;border-bottom:1px solid var(--line)">
                             <b style="font-size:14px">{{ $kuis->judul }}</b>
                             <div style="font-size:12px;color:var(--muted)">
-                                {{ $kuis->hasilKuis->count() }}/{{ $ringkasan['jumlah'] }} siswa
+                                {{ $kuis->hasil_kuis_count }}/{{ $ringkasan['jumlah'] }} siswa
                             </div>
                             <div class="bar" style="margin-top:6px">
-                                <div class="fill" style="width:{{ $ringkasan['jumlah'] ? $kuis->hasilKuis->count() / $ringkasan['jumlah'] * 100 : 0 }}%"></div>
+                                <div class="fill" style="width:{{ $ringkasan['jumlah'] ? $kuis->hasil_kuis_count / $ringkasan['jumlah'] * 100 : 0 }}%"></div>
                             </div>
                         </div>
                     @endforeach
@@ -227,12 +312,15 @@
                 <a href="{{ route('guru.kehadiran.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-calendar"></i> Isi Kehadiran</a>
                 <a href="{{ route('guru.materi.create') }}" class="btn btn-ghost btn-block"><i class="fas fa-book"></i> Tambah Materi</a>
                 <a href="{{ route('guru.kuis.create') }}" class="btn btn-ghost btn-block"><i class="fas fa-clipboard"></i> Susun Kuis</a>
+                <a href="{{ route('guru.nilai-erapor.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-file-text"></i> Input Nilai e-Rapor</a>
+                <a href="{{ route('guru.erapor.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-print"></i> Generate e-Rapor</a>
+                <a href="{{ route('guru.analisis.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-chart-bar"></i> Analisis Belajar</a>
             </div>
         </div>
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @vite('resources/js/guru-dashboard.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const ctx1 = document.getElementById('chartTren').getContext('2d');

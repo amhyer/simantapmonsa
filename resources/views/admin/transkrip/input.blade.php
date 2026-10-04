@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
@@ -20,27 +20,27 @@
             </form>
         </div>
         <div class="card-body tight">
-            <div style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <div class="table-wrapper">
+                <table>
                     <thead>
-                        <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                            <th style="padding:10px">Nama</th>
-                            <th style="padding:10px">NISN</th>
-                            <th style="padding:10px">Progres</th>
-                            <th style="padding:10px"></th>
+                        <tr>
+                            <th>Nama</th>
+                            <th>NISN</th>
+                            <th>Progres</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($siswa as $row)
-                            <tr style="border-bottom:1px solid #EAECF0">
-                                <td style="padding:10px">{{ $row->nama_peserta_didik }}</td>
-                                <td style="padding:10px">{{ $row->nisn ?? '-' }}</td>
-                                <td style="padding:10px">
+                            <tr>
+                                <td>{{ $row->nama_peserta_didik }}</td>
+                                <td>{{ $row->nisn ?? '-' }}</td>
+                                <td>
                                     <span class="tag {{ $jumlahMapel > 0 && $row->transkrip_nilai_count >= $jumlahMapel ? 'tag-ok' : 'tag-mut' }}">
                                         {{ $row->transkrip_nilai_count }}/{{ $jumlahMapel }} mapel
                                     </span>
                                 </td>
-                                <td style="padding:10px">
+                                <td>
                                     <a href="{{ route('admin.transkrip.input.form', $row) }}" class="btn btn-sm">Input Nilai</a>
                                 </td>
                             </tr>

@@ -35,6 +35,7 @@ class DashboardController extends Controller
                 'jumlahNilai' => 0,
                 'materiTerbaru' => collect(),
                 'kuisAktif' => collect(),
+                'hasilKuis' => collect(),
                 'nilaiPerMapel' => collect(),
                 'kehadiranBulanan' => collect(),
                 'saran' => null,
@@ -62,6 +63,8 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $hasilKuis = HasilKuis::where('siswa_id', $siswa->id)->get()->keyBy('kuis_id');
+
         $nilaiPerMapel = $nilaiData->groupBy('mata_pelajaran')->map(function ($items, $name) {
             return [
                 'nama' => $name,
@@ -80,7 +83,7 @@ class DashboardController extends Controller
             ->groupBy(fn ($k) => $k->tanggal->format('Y-m'))
             ->map(function ($items) {
                 return [
-                    'nama' => $items->first()->tanggal->format('F'),
+                    'nama' => $items->first()->tanggal->translatedFormat('F'),
                     'H' => $items->where('status', 'H')->count(),
                     'S' => $items->where('status', 'S')->count(),
                     'I' => $items->where('status', 'I')->count(),
@@ -89,42 +92,50 @@ class DashboardController extends Controller
             })
             ->values();
 
-        $saran = $this->generateSaran($siswa, $rataRata, $kehadiran, $nilaiPerMapel);
+        // KKM guru siswa — satu-satunya acuan predikat (via NilaiService).
+        $kkm = getKKM($siswa->guru_id);
+
+        $saran = $this->generateSaran($siswa, $rataRata, $kehadiran, $nilaiPerMapel, $kkm);
 
         return view('siswa.dashboard', compact(
             'siswa', 'kehadiran', 'totalHadir', 'rataRata',
-            'jumlahNilai', 'materiTerbaru', 'kuisAktif',
-            'nilaiPerMapel', 'kehadiranBulanan', 'saran'
+            'jumlahNilai', 'materiTerbaru', 'kuisAktif', 'hasilKuis',
+            'nilaiPerMapel', 'kehadiranBulanan', 'saran', 'kkm'
         ));
     }
 
-    private function generateSaran(Siswa $siswa, float $rataRata, float $kehadiran, $nilaiPerMapel): array
+    private function generateSaran(Siswa $siswa, float $rataRata, float $kehadiran, $nilaiPerMapel, int $kkm): array
     {
         $items = [];
-        $warna = '#0f766e';
+        $warna = '#7c3aed';
 
-        if ($rataRata > 0 && $rataRata < 70) {
+        // Ambang predikat selalu dari NilaiService (relatif KKM), bukan angka mati.
+        $hurufRata = $rataRata > 0
+            ? ($this->nilaiService->getPredikat($rataRata, $kkm)['huruf'] ?? 'D')
+            : null;
+
+        if ($hurufRata === 'D') {
             $items[] = [
                 'icon' => 'fa-book-reader',
                 'title' => 'Tingkatkan Belajar',
-                'text' => 'Rata-rata nilai Anda masih di bawah KKM (70). Rutin belajar setiap hari dan bertanya kepada guru jika ada yang kurang dipahami.',
+                'text' => 'Rata-rata nilai Anda masih di bawah KKM (' . $kkm . '). Rutin belajar setiap hari dan bertanya kepada guru jika ada yang kurang dipahami.',
                 'color' => '#B42318',
             ];
             $warna = '#B42318';
-        } elseif ($rataRata >= 70 && $rataRata < 80) {
+        } elseif ($hurufRata === 'C') {
             $items[] = [
                 'icon' => 'fa-arrow-up',
                 'title' => 'Pertahankan & Tingkatkan',
-                'text' => 'Nilai Anda sudah cukup baik. Untuk mencapai predikat B atau A, fokus pada mata pelajaran yang masih di bawah rata-rata.',
+                'text' => 'Nilai Anda sudah tuntas KKM (' . $kkm . '). Untuk mencapai predikat B atau A, fokus pada mata pelajaran yang masih di bawah rata-rata.',
                 'color' => '#B8860B',
             ];
             $warna = '#B8860B';
-        } elseif ($rataRata >= 80) {
+        } elseif ($hurufRata === 'A' || $hurufRata === 'B') {
             $items[] = [
                 'icon' => 'fa-star',
                 'title' => 'Prestasi Bagus!',
                 'text' => 'Rata-rata nilai Anda sangat baik. Pertahankan semangat belajar dan bantu teman yang membutuhkan.',
-                'color' => '#0f766e',
+                'color' => '#7c3aed',
             ];
         }
 
@@ -141,28 +152,34 @@ class DashboardController extends Controller
                 'icon' => 'fa-calendar-check',
                 'title' => 'Kehadiran Sangat Baik',
                 'text' => 'Tingkat kehadiran Anda ' . number_format($kehadiran, 1) . '%. Luar biasa! Konsistensi hadir adalah kunci sukses.',
-                'color' => '#0f766e',
+                'color' => '#7c3aed',
             ];
         }
 
         $terlemah = $nilaiPerMapel->sortBy('rata_rata')->first();
-        if ($terlemah && $terlemah['rata_rata'] < 75) {
+        $hurufLemah = $terlemah
+            ? ($this->nilaiService->getPredikat($terlemah['rata_rata'], $kkm)['huruf'] ?? null)
+            : null;
+        if ($terlemah && ($hurufLemah === 'C' || $hurufLemah === 'D')) {
             $items[] = [
                 'icon' => 'fa-exclamation-triangle',
                 'title' => 'Perhatikan: ' . $terlemah['nama'],
-                'text' => 'Nilai rata-rata ' . $terlemah['nama'] . ' baru ' . number_format($terlemah['rata_rata'], 1) . '. Perlu perhatian lebih untuk mata pelajaran ini.',
+                'text' => 'Nilai rata-rata ' . $terlemah['nama'] . ' baru ' . number_format($terlemah['rata_rata'], 1) . ' (predikat ' . $hurufLemah . '). Perlu perhatian lebih untuk mata pelajaran ini.',
                 'color' => '#B8860B',
             ];
             if ($warna !== '#B42318') $warna = '#B8860B';
         }
 
         $terbaik = $nilaiPerMapel->sortByDesc('rata_rata')->first();
-        if ($terbaik && $terbaik['rata_rata'] >= 85) {
+        $hurufBaik = $terbaik
+            ? ($this->nilaiService->getPredikat($terbaik['rata_rata'], $kkm)['huruf'] ?? null)
+            : null;
+        if ($terbaik && $hurufBaik === 'A') {
             $items[] = [
                 'icon' => 'fa-trophy',
                 'title' => 'Terbaik: ' . $terbaik['nama'],
                 'text' => 'Anda sangat unggul di ' . $terbaik['nama'] . ' dengan rata-rata ' . number_format($terbaik['rata_rata'], 1) . '. Teruskan!',
-                'color' => '#0f766e',
+                'color' => '#7c3aed',
             ];
         }
 

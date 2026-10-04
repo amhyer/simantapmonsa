@@ -61,7 +61,8 @@ class NilaiService
             $totalBobot += 0.20;
         }
 
-        $nilaiAkhir = $totalBobot > 0 ? round($totalNilai / $totalBobot * 100, 2) : 0;
+        // Rata-rata terbobot sudah skala 0-100 (bobot pecahan); TANPA * 100.
+        $nilaiAkhir = $totalBobot > 0 ? round($totalNilai / $totalBobot, 2) : 0;
 
         return [
             'nilai_akhir' => $nilaiAkhir,

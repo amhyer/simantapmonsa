@@ -120,9 +120,15 @@ class DapodikController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            // Jika masih ada sisa pesan teknis lama, ganti dengan pesan ramah
+            if (str_contains($msg, 'Non-JSON') || str_contains($msg, 'getSekolah') || str_contains($msg, 'after 3 attempts')) {
+                $msg = 'Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif.';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal terhubung ke Dapodik: ' . $e->getMessage(),
+                'message' => $msg,
             ], 502);
         }
     }

@@ -5,6 +5,17 @@
 @endsection
 @section('page_title', 'Perkembangan Nilai')
 @section('content')
+    @if(isset($anakList) && $anakList->count() > 1)
+        <div style="margin-bottom:16px">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pilih Anak</label>
+            <select onchange="window.location.href='{{ route('ortu.nilai.index') }}?siswa_id='+this.value" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;min-width:180px">
+                @foreach($anakList as $a)
+                    <option value="{{ $a->id }}" {{ $siswa && $a->id == $siswa->id ? 'selected' : '' }}>{{ $a->nama_peserta_didik }}</option>
+                @endforeach
+            </select>
+        </div>
+    @endif
+
     @if(!$siswa)
         <div class="card"><div class="card-body"><div class="empty"><b>Belum ada data</b></div></div></div>
     @else

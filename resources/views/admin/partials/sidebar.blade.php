@@ -1,8 +1,17 @@
 @php
     use App\Models\DapodikSyncLog;
     use App\Models\Siswa;
-    $lastSync = DapodikSyncLog::orderByDesc('created_at')->first();
-    $syncedCount = Siswa::whereNotNull('dapodik_id')->count();
+    use Illuminate\Support\Facades\Cache;
+    // Di-cache 120 dtk: sidebar dirender di SEMUA halaman admin.
+    // Hanya skalar yang di-cache (model korup saat unserialize -> 500 massal).
+    [$lastSyncAt, $syncedCount] = Cache::remember('admin-sidebar-sync:v2', 120, function () {
+        $last = DapodikSyncLog::orderByDesc('created_at')->first();
+
+        return [
+            $last?->created_at?->toIso8601String(),
+            Siswa::whereNotNull('dapodik_id')->count(),
+        ];
+    });
     // Aturan: grup yang punya 'children' dirender sebagai header lipat
     // (<details>), TANPA label grup terpisah — persis pola e-Rapor.
     // Item 'planned' => true berarti backend belum ada (Fase 2): tampil
@@ -17,7 +26,7 @@
             ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profile'],
         ]],
         ['label' => 'DAPODIK', 'icon' => 'lucide-database-zap', 'children' => [
-            ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSync ? $lastSync->created_at->diffForHumans() : 'Belum sync', 'badge_type' => $lastSync ? 'ok' : 'warn'],
+            ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
             ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
         ]],
         ['label' => 'PENGGUNA', 'items' => [
@@ -30,6 +39,7 @@
                 ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Data Kelas'],
             ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Data Mapel'],
             ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
+            ['route' => 'admin.referensi.alignment', 'icon' => 'lucide-link', 'label' => 'Cek Alignment'],
             ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Data Semester'],
             ['route' => 'admin.referensi.ekstrakurikuler', 'icon' => 'lucide-activity', 'label' => 'Data Ekstrakurikuler'],
             ['route' => 'admin.referensi.kelompok-mapel', 'icon' => 'lucide-layers', 'label' => 'Data Kelompok Mapel'],

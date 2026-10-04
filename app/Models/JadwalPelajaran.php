@@ -24,6 +24,14 @@ class JadwalPelajaran extends Model
 
     public function rombel()
     {
-        return $this->belongsTo(Rombel::class);
+        return $this->belongsTo(Rombel::class, 'rombel_id');
+    }
+
+    /**
+     * Nilai e-Rapor yang terpetakan ke pembelajaran ini.
+     */
+    public function nilaiErapot()
+    {
+        return $this->hasMany(NilaiErapot::class);
     }
 }

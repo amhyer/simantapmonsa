@@ -90,6 +90,7 @@ class CetakTest extends TestCase
         $res = $this->actingAs($admin)->get(route('admin.cetak.leger', [
             'kelas' => '6.A', 'semester' => 'Ganjil', 'tahun_ajaran' => '2025/2026',
         ]))->assertOk();
+        $res->assertSee('table-wrapper', false);
         $res->assertSee('Citra Cetak');
         $res->assertSee('Matematika');
         $res->assertSee('88,50'); // rata-rata (85+92)/2

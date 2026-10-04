@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Leger Rapor - SIMANTAP')
 
@@ -48,23 +48,23 @@
     @if($kelas)
         <div class="card">
             <div class="card-header">
-                <h3>Leger Kelas {{ $kelas }} — {{ $semester }} {{ $tahunAjaran }}</h3>
+                <h3>Leger Kelas {{ $kelas }} â€” {{ $semester }} {{ $tahunAjaran }}</h3>
                 <span class="tag tag-mut">{{ $siswa->count() }} siswa &times; {{ $mapel->count() }} mapel</span>
             </div>
             <div class="card-body tight">
                 @if($siswa->isEmpty() || $mapel->isEmpty())
                     <p style="color:#667085;padding:12px 4px">Belum ada data nilai rapor untuk filter ini.</p>
                 @else
-                    <div style="overflow-x:auto">
-                        <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <div class="table-wrapper">
+                        <table>
                             <thead>
-                                <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                                    <th style="padding:10px">No</th>
-                                    <th style="padding:10px">Nama</th>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama</th>
                                     @foreach($mapel as $m)
-                                        <th style="padding:10px;text-align:center">{{ $m }}</th>
+                                        <th style="text-align:center">{{ $m }}</th>
                                     @endforeach
-                                    <th style="padding:10px;text-align:center">Rata-rata</th>
+                                    <th style="text-align:center">Rata-rata</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -73,13 +73,13 @@
                                         $baris = array_filter(array_map(fn($m) => $matriks[$row->id][$m] ?? null, $mapel->all()));
                                         $rata = count($baris) ? round(array_sum($baris) / count($baris), 2) : null;
                                     @endphp
-                                    <tr style="border-bottom:1px solid #EAECF0">
-                                        <td style="padding:10px">{{ $i + 1 }}</td>
-                                        <td style="padding:10px">{{ $row->nama_peserta_didik }}</td>
+                                    <tr>
+                                        <td>{{ $i + 1 }}</td>
+                                        <td>{{ $row->nama_peserta_didik }}</td>
                                         @foreach($mapel as $m)
-                                            <td style="padding:10px;text-align:center">{{ isset($matriks[$row->id][$m]) ? number_format((float) $matriks[$row->id][$m], 2, ',', '.') : '-' }}</td>
+                                            <td style="text-align:center">{{ isset($matriks[$row->id][$m]) ? number_format((float) $matriks[$row->id][$m], 2, ',', '.') : '-' }}</td>
                                         @endforeach
-                                        <td style="padding:10px;text-align:center"><strong>{{ $rata !== null ? number_format($rata, 2, ',', '.') : '-' }}</strong></td>
+                                        <td style="text-align:center"><strong>{{ $rata !== null ? number_format($rata, 2, ',', '.') : '-' }}</strong></td>
                                     </tr>
                                 @endforeach
                             </tbody>

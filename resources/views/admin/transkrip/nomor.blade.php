@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Nomor Ijazah - SIMANTAP')
 
@@ -40,22 +40,22 @@
             </form>
         </div>
         <div class="card-body tight">
-            <div style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <div class="table-wrapper">
+                <table>
                     <thead>
-                        <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                            <th style="padding:10px">Nama</th>
-                            <th style="padding:10px">NISN / NIS</th>
-                            <th style="padding:10px">Nomor Ijazah</th>
-                            <th style="padding:10px"></th>
+                        <tr>
+                            <th>Nama</th>
+                            <th>NISN / NIS</th>
+                            <th>Nomor Ijazah</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($siswa as $row)
-                            <tr style="border-bottom:1px solid #EAECF0">
-                                <td style="padding:10px">{{ $row->nama_peserta_didik }}</td>
-                                <td style="padding:10px">{{ $row->nisn ?? '-' }} / {{ $row->nis ?? '-' }}</td>
-                                <td style="padding:10px">
+                            <tr>
+                                <td>{{ $row->nama_peserta_didik }}</td>
+                                <td>{{ $row->nisn ?? '-' }} / {{ $row->nis ?? '-' }}</td>
+                                <td>
                                     <form action="{{ route('admin.transkrip.nomor.update', $row) }}" method="POST" style="display:flex;gap:8px">
                                         @csrf
                                         @method('PUT')
@@ -66,7 +66,7 @@
                                         <div style="color:#B42318;font-size:12px;margin-top:4px">{{ $message }}</div>
                                     @enderror
                                 </td>
-                                <td style="padding:10px"></td>
+                                <td></td>
                             </tr>
                         @empty
                             <tr>

@@ -70,6 +70,11 @@ class TranskripTest extends TestCase
         $this->actingAs($admin)->get(route('admin.transkrip.input.form', $siswa))->assertOk();
         $this->actingAs($admin)->get(route('admin.transkrip.cetak.show', $siswa))->assertOk();
         $this->actingAs($admin)->get(route('admin.transkrip.import.template'))->assertOk();
+
+        // Konvensi global: tabel memakai .table-wrapper.
+        foreach (['admin.transkrip.nomor', 'admin.transkrip.input', 'admin.transkrip.cetak'] as $route) {
+            $this->actingAs($admin)->get(route($route))->assertOk()->assertSee('table-wrapper', false);
+        }
     }
 
     public function test_setting_tersimpan_di_pengaturan_json(): void

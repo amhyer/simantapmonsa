@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
@@ -31,27 +31,27 @@
                 <form action="{{ route('admin.transkrip.input.store', $siswa) }}" method="POST">
                     @csrf
                     @method('PUT')
-                    <div style="overflow-x:auto">
-                        <table style="width:100%;border-collapse:collapse;font-size:14px">
+                    <div class="table-wrapper">
+                        <table>
                             <thead>
-                                <tr style="text-align:left;border-bottom:2px solid #EAECF0">
-                                    <th style="padding:10px">Mata Pelajaran</th>
-                                    <th style="padding:10px">Kelompok</th>
-                                    <th style="padding:10px">Nilai Akhir (0-100)</th>
-                                    <th style="padding:10px">Predikat Tersimpan</th>
+                                <tr>
+                                    <th>Mata Pelajaran</th>
+                                    <th>Kelompok</th>
+                                    <th>Nilai Akhir (0-100)</th>
+                                    <th>Predikat Tersimpan</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($mapel as $m)
-                                    <tr style="border-bottom:1px solid #EAECF0">
-                                        <td style="padding:10px">{{ $m->nama }}</td>
-                                        <td style="padding:10px">{{ $m->kelompok ?? '-' }}</td>
-                                        <td style="padding:10px">
+                                    <tr>
+                                        <td>{{ $m->nama }}</td>
+                                        <td>{{ $m->kelompok ?? '-' }}</td>
+                                        <td>
                                             <input type="number" name="nilai[{{ $m->id }}]" min="0" max="100" step="0.01"
                                                 value="{{ old('nilai.' . $m->id, optional($nilai->get($m->id))->nilai_akhir) }}"
                                                 style="width:120px;padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px">
                                         </td>
-                                        <td style="padding:10px">{{ optional($nilai->get($m->id))->predikat ?? '-' }}</td>
+                                        <td>{{ optional($nilai->get($m->id))->predikat ?? '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

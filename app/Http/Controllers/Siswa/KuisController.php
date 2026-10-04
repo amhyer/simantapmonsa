@@ -74,8 +74,17 @@ class KuisController extends Controller
                 ->with('error', 'Anda sudah mengerjakan kuis ini.');
         }
 
+        // Enforce deadline di server: timer JS bisa dimatikan siswa.
+        // Toleransi 5 menit untuk submit yang sedang transit saat waktu habis.
+        if ($kuis->batas_waktu && now()->greaterThan($kuis->batas_waktu->copy()->addMinutes(5))) {
+            return redirect()->route('siswa.kuis.index')
+                ->with('error', 'Waktu pengerjaan kuis ini sudah berakhir.');
+        }
+
         $validated = $request->validate([
-            'jawaban' => 'required|array',
+            'jawaban' => 'required|array|max:200',
+            'jawaban.*' => 'nullable|string|max:5000',
+            'durasi' => 'nullable|integer|min:0|max:86400',
         ]);
 
         $soal = $kuis->soal ?? [];
@@ -98,7 +107,7 @@ class KuisController extends Controller
         $skor = $total > 0 ? round(($benar / $total) * 100) : 0;
         $tuntas = $skor >= $kuis->kkm;
 
-        DB::transaction(function () use ($kuis, $siswa, $benar, $total, $skor, $tuntas, $request, $jawabanDetail) {
+        DB::transaction(function () use ($kuis, $siswa, $benar, $total, $skor, $tuntas, $validated, $jawabanDetail) {
             $exists = HasilKuis::where('kuis_id', $kuis->id)
                 ->where('siswa_id', $siswa->id)
                 ->lockForUpdate()
@@ -121,7 +130,7 @@ class KuisController extends Controller
                 'total' => $total,
                 'skor' => $skor,
                 'tuntas' => $tuntas,
-                'durasi' => $request->get('durasi', 0),
+                'durasi' => $validated['durasi'] ?? 0,
                 'sumber_soal' => $kuis->sumber,
                 'diisi_oleh' => 'siswa',
                 'jawaban' => $jawabanDetail,

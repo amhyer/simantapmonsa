@@ -3,9 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\MataPelajaran;
+use App\Models\Ekstrakurikuler;
 use App\Models\JadwalPelajaran;
+use App\Models\MataPelajaran;
+use App\Models\NilaiErapot;
+use App\Models\Ptk;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\TanggalRapor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AdminReferensiTest extends TestCase
@@ -53,6 +60,56 @@ class AdminReferensiTest extends TestCase
     public function test_halaman_tabel_memakai_table_wrapper(): void
     {
         $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create();
+
+        // Seed 1 baris per sumber data agar tiap halaman benar-benar
+        // merender <div class="table-wrapper"> (bukan empty-state).
+        $semester = Semester::create([
+            'semester_id' => '20251',
+            'tahun_ajaran' => '2025/2026',
+            'nama_semester' => 'ganjil',
+        ]);
+        Ptk::create([
+            'dapodik_id' => 'PTK-SEED-1',
+            'semester_id' => $semester->id,
+            'nama' => 'Guru Seed',
+            'jenis_ptk' => 'Guru',
+        ]);
+        $siswa = Siswa::create([
+            'uuid' => (string) Str::uuid(),
+            'guru_id' => $guru->id,
+            'nama_guru' => $guru->nama_lengkap,
+            'nis' => 'T001',
+            'nisn' => '9999999999',
+            'nama_peserta_didik' => 'Siswa Tabel',
+            'kelas' => '6.A',
+            'jenis_kelamin' => 'L',
+        ]);
+        JadwalPelajaran::create([
+            'hari' => 'Senin',
+            'mata_pelajaran' => 'Matematika',
+            'kelas' => '6.A',
+            'guru_id' => $guru->id,
+            'jam_mulai' => '07:00',
+            'jam_selesai' => '08:00',
+        ]);
+        Ekstrakurikuler::create(['nama' => 'Pramuka']);
+        MataPelajaran::create(['nama' => 'Matematika', 'aktif' => true]);
+        TanggalRapor::create([
+            'tahun_ajaran' => '2025/2026',
+            'semester' => 'Ganjil',
+            'tanggal' => '2025-12-20',
+        ]);
+        NilaiErapot::create([
+            'siswa_id' => $siswa->id,
+            'guru_id' => $guru->id,
+            'mata_pelajaran' => 'Matematika',
+            'kelas' => '6.A',
+            'semester' => 'Ganjil',
+            'tahun_ajaran' => '2025/2026',
+            'nilai_akhir' => 85,
+            'predikat' => 'B',
+        ]);
 
         $routes = [
             'admin.referensi.guru',

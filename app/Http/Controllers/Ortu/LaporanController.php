@@ -8,6 +8,7 @@ use App\Models\Nilai;
 use App\Models\Kehadiran;
 use App\Models\Kebiasaan;
 use App\Services\NilaiService;
+use Illuminate\Http\Request;
 
 class LaporanController extends Controller
 {
@@ -19,7 +20,7 @@ class LaporanController extends Controller
         $this->nilaiService = $nilaiService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $anakIds = $user->terhubung_dengan ?? [];
@@ -28,14 +29,20 @@ class LaporanController extends Controller
             return view('ortu.laporan.index', ['anak' => null, 'laporan' => null]);
         }
 
-        $anak = Siswa::whereIn('id', $anakIds)->first();
+        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
+
+        if (!in_array($siswaId, $anakIds)) {
+            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
+        }
+
+        $anak = Siswa::find($siswaId);
 
         if (!$anak) {
             return view('ortu.laporan.index', ['anak' => null, 'laporan' => null]);
         }
 
         $na = $this->nilaiService->hitungNilaiAkhir($anak->id);
-        $predikat = $na['nilai_akhir'] > 0 ? $this->nilaiService->getPredikat($na['nilai_akhir'], 70) : null;
+        $predikat = $na['nilai_akhir'] > 0 ? $this->nilaiService->getPredikat($na['nilai_akhir'], getKKM($anak->guru_id)) : null;
         $kehadiranPersen = $this->nilaiService->hitungKehadiran($anak->id);
         $totalHadir = Kehadiran::where('siswa_id', $anak->id)->where('status', 'H')->count();
         $totalKehadiran = Kehadiran::where('siswa_id', $anak->id)->count();

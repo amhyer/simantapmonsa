@@ -38,9 +38,9 @@
         </div>
         <div class="stat-card ok">
             <i class="fas fa-signal stat-icon"></i>
-            <div class="stat-label">Online (±15 mnt)</div>
+            <div class="stat-label">Login 15 mnt terakhir</div>
             <div class="stat-value">{{ number_format($onlineCount) }}</div>
-            <div class="stat-change">berdasarkan login terakhir</div>
+            <div class="stat-change">login 15 mnt terakhir</div>
         </div>
         <div class="stat-card gold">
             <i class="fas fa-calendar-days stat-icon"></i>
@@ -48,6 +48,18 @@
             <div class="stat-value">{{ number_format($totalJadwal) }}</div>
             <div class="stat-change">jadwal dari Dapodik</div>
         </div>
+    </div>
+
+    {{-- Rincian Akun per Peran (5 kolom responsif) --}}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:20px">
+        @foreach($peranBreakdown as $r)
+            <div class="stat-card {{ $r['peran'] === 'guru' ? 'gold' : ($r['peran'] === 'siswa' ? 'ok' : 'primary') }}">
+                <i class="fas fa-user stat-icon"></i>
+                <div class="stat-label">{{ $r['peran'] === 'ortu' ? 'Orang Tua' : ($r['peran'] === 'kepsek' ? 'Kepsek' : ucfirst($r['peran'])) }}</div>
+                <div class="stat-value">{{ number_format($r['total']) }}</div>
+                <div class="stat-change">{{ number_format($r['aktif']) }} aktif</div>
+            </div>
+        @endforeach
     </div>
 
     {{-- Status Kerja Administrator (ala e-Rapor) --}}
@@ -138,7 +150,7 @@
                     <div class="stat-card gold">
                         <div class="stat-label">Guru dari Dapodik</div>
                         <div class="stat-value" style="font-size:22px">{{ number_format($ptk) }}</div>
-                        <div class="stat-change" style="font-size:11px;color:var(--muted)">{{ $syncedGuru }} akun aktif</div>
+                        <div class="stat-change" style="font-size:11px;color:var(--muted)">{{ $syncedGuru }} tersinkron Dapodik</div>
                     </div>
                     <div class="stat-card primary">
                         <div class="stat-label">Total PTK</div>
@@ -237,31 +249,137 @@
             </div>
         </div>
 
-        {{-- Aktivitas Terbaru --}}
+        {{-- Aktivitas Terbaru (log aktivitas sistem) --}}
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-clock" style="color:var(--gold)"></i> Aktivitas Terbaru</h3>
+                <a href="{{ route('admin.log.index') }}" class="btn btn-sm btn-ghost">Lihat Semua</a>
             </div>
             <div class="card-body tight">
-                @if($recentUsers->count())
-                    @foreach($recentUsers as $u)
+                @if($aktivitasTerbaru->count())
+                    @foreach($aktivitasTerbaru as $a)
                         <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F2F4F7">
-                            <span style="width:32px;height:32px;border-radius:50%;background:{{ $u->peran === 'guru' ? '#EEF2F9' : ($u->peran === 'siswa' ? '#D1FAE5' : '#FBF4E4') }};color:{{ $u->peran === 'guru' ? '#4338CA' : ($u->peran === 'siswa' ? '#065F46' : '#92400E') }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">{{ substr($u->nama_lengkap, 0, 2) }}</span>
+                            <span style="width:32px;height:32px;border-radius:50%;background:#EEF2F9;color:#4338CA;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">{{ substr($a->nama_guru ?? '?', 0, 2) }}</span>
                             <div style="flex:1;min-width:0">
-                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $u->nama_lengkap }}</div>
-                                <div style="font-size:11px;color:var(--muted)">{{ ucfirst($u->peran) }}</div>
+                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $a->judul }}</div>
+                                <div style="font-size:11px;color:var(--muted)">{{ $a->jenis }} · {{ $a->nama_guru ?? 'Sistem' }}</div>
                             </div>
                             <div style="text-align:right;flex-shrink:0">
-                                <div style="font-size:12px;color:var(--muted)">{{ $u->terakhir_masuk ? $u->terakhir_masuk->diffForHumans() : '-' }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ $a->created_at ? $a->created_at->diffForHumans() : '-' }}</div>
                             </div>
                         </div>
                     @endforeach
                 @else
                     <div style="text-align:center;padding:30px;color:var(--muted)">
                         <div style="font-size:32px;margin-bottom:8px"><i class="fas fa-user-clock"></i></div>
-                        <div style="font-size:13px">Belum ada aktivitas pengguna</div>
+                        <div style="font-size:13px">Belum ada aktivitas tercatat</div>
                     </div>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:20px">
+        {{-- Backup & Antrean --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-database" style="color:var(--navy)"></i> Backup & Antrean</h3>
+                <a href="{{ route('admin.backup.index') }}" class="btn btn-sm btn-ghost">Kelola</a>
+            </div>
+            <div class="card-body tight">
+                <table style="width:100%;border-collapse:collapse">
+                    <tbody>
+                        <tr style="border-bottom:1px solid #F2F4F7">
+                            <td style="padding:12px 16px;font-size:13px">File backup</td>
+                            <td style="padding:12px 16px;text-align:right;font-weight:700">{{ $backupInfo['jumlah'] }} file · {{ $backupInfo['ukuran'] }}</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #F2F4F7">
+                            <td style="padding:12px 16px;font-size:13px">Backup terakhir</td>
+                            <td style="padding:12px 16px;text-align:right;font-weight:600">{{ $backupInfo['terakhir'] ?? 'Belum ada' }}</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #F2F4F7">
+                            <td style="padding:12px 16px;font-size:13px">Antrean export</td>
+                            <td style="padding:12px 16px;text-align:right">
+                                @if($backupInfo['antre'] > 0)
+                                    <span class="tag tag-warn">{{ $backupInfo['antre'] }} menunggu</span>
+                                @else
+                                    <span class="tag tag-ok">Kosong</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:12px 16px;font-size:13px">Job gagal</td>
+                            <td style="padding:12px 16px;text-align:right">
+                                @if($backupInfo['gagal'] > 0)
+                                    <span class="tag tag-bad">{{ $backupInfo['gagal'] }} gagal</span>
+                                @else
+                                    <span class="tag tag-ok">0</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Kesehatan Sistem --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-heart-pulse" style="color:var(--ok)"></i> Kesehatan Sistem</h3>
+            </div>
+            <div class="card-body tight">
+                <table style="width:100%;border-collapse:collapse">
+                    <tbody>
+                        @foreach($health as $h)
+                            <tr style="border-bottom:1px solid #F2F4F7">
+                                <td style="padding:10px 16px;font-size:13px">{{ $h['label'] }}</td>
+                                <td style="padding:10px 16px;text-align:right">
+                                    <span class="tag {{ $h['ok'] === true ? 'tag-ok' : ($h['ok'] === false ? 'tag-bad' : 'tag-mut') }}">{{ $h['nilai'] }}</span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:20px">
+        {{-- Rekap Kelengkapan Guru --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chalkboard-teacher" style="color:var(--navy)"></i> Kelengkapan Guru</h3>
+                <span class="tag tag-primary">{{ $rekapGuru['total'] }} guru aktif</span>
+            </div>
+            <div class="card-body tight" style="padding:16px">
+                @foreach($rekapGuru['item'] as $item)
+                    @php $persen = $rekapGuru['total'] > 0 ? round($item['done'] / $rekapGuru['total'] * 100) : 0; @endphp
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+                        <span style="flex:1;font-size:13px">{{ $item['label'] }}</span>
+                        <div class="bar" style="flex:1"><span class="fill" style="width:{{ $persen }}%"></span></div>
+                        <span style="width:72px;text-align:right;font-weight:700;font-size:13px">{{ $item['done'] }}/{{ $rekapGuru['total'] }}</span>
+                    </div>
+                @endforeach
+                <div style="margin-top:8px">
+                    <a href="{{ route('admin.penilaian.status') }}" class="btn btn-sm btn-ghost btn-block">Rincian per Guru</a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Tren Pendaftaran --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line" style="color:var(--gold)"></i> Pendaftar Baru</h3>
+                <span class="tag tag-mut">6 minggu</span>
+            </div>
+            <div class="card-body tight" style="padding:16px">
+                @foreach($trenPendaftaran as $t)
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+                        <span style="width:44px;font-size:12px;color:var(--muted)">{{ $t['label'] }}</span>
+                        <div class="bar" style="flex:1"><span class="fill" style="width:{{ $trenMaks > 0 ? round($t['jumlah'] / $trenMaks * 100) : 0 }}%"></span></div>
+                        <span style="width:36px;text-align:right;font-weight:700;font-size:13px">{{ $t['jumlah'] }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>

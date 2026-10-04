@@ -17,11 +17,11 @@
     @else
 
     <div class="grid grid-4" style="margin-bottom:20px">
-        <div class="stat-card primary" style="position:relative;overflow:hidden">
+        <div class="stat-card violet" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-user"></i></div>
             <div class="stat-label">Nama</div>
             <div class="stat-value" style="font-size:15px">{{ $siswa->nama_peserta_didik }}</div>
-            <div class="stat-change" style="color:var(--navy)">NISN: {{ $siswa->nisn }}</div>
+            <div class="stat-change" style="color:var(--violet)">NISN: {{ $siswa->nisn }}</div>
         </div>
         <div class="stat-card gold" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-chart-line"></i></div>
@@ -32,16 +32,16 @@
         <div class="stat-card ok" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-check-circle"></i></div>
             <div class="stat-label">Kehadiran</div>
-            <div class="stat-value" style="color:#0f766e">{{ number_format($kehadiran, 1) }}%</div>
+            <div class="stat-value" style="color:var(--violet)">{{ number_format($kehadiran, 1) }}%</div>
             <div class="stat-change">{{ $totalHadir }} hari hadir</div>
         </div>
-        <div class="stat-card" style="position:relative;overflow:hidden;border-left:3px solid var(--navy)">
+        <div class="stat-card" style="position:relative;overflow:hidden;border-left:3px solid var(--violet)">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-trophy"></i></div>
             <div class="stat-label">Predikat</div>
             <div class="stat-value" style="font-size:28px">
                 @php
-                    $predikat = $rataRata >= 90 ? 'A' : ($rataRata >= 80 ? 'B' : ($rataRata >= 70 ? 'C' : ($rataRata > 0 ? 'D' : '-')));
-                    $predikatColor = ['A' => '#0f766e', 'B' => '#1F3864', 'C' => '#B8860B', 'D' => '#B42318'];
+                    $predikat = $rataRata > 0 ? (app(\App\Services\NilaiService::class)->getPredikat($rataRata, $kkm)['huruf'] ?? '-') : '-';
+                    $predikatColor = ['A' => 'var(--violet)', 'B' => '#1F3864', 'C' => '#B8860B', 'D' => '#B42318'];
                 @endphp
                 <span style="color:{{ $predikatColor[$predikat] ?? '#667085' }}">{{ $predikat }}</span>
             </div>
@@ -52,7 +52,7 @@
     <div class="grid grid-2" style="margin-bottom:20px">
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--navy)"></i>Perkembangan Nilai</h3>
+                <h3><i class="fas fa-chart-bar" style="margin-right:8px;color:var(--violet)"></i>Perkembangan Nilai</h3>
             </div>
             <div class="card-body">
                 @if($nilaiPerMapel->count())
@@ -70,8 +70,8 @@
                                 @foreach($nilaiPerMapel as $mapel)
                                     @php
                                         $avg = $mapel['rata_rata'];
-                                        $p = $avg >= 90 ? 'A' : ($avg >= 80 ? 'B' : ($avg >= 70 ? 'C' : 'D'));
-                                        $barColor = $avg >= 80 ? '#0f766e' : ($avg >= 70 ? '#B8860B' : '#B42318');
+                                        $p = app(\App\Services\NilaiService::class)->getPredikat($avg, $kkm)['huruf'] ?? 'D';
+                                        $barColor = in_array($p, ['A', 'B']) ? 'var(--violet)' : ($p === 'C' ? '#B8860B' : '#B42318');
                                     @endphp
                                     <tr style="border-bottom:1px solid #F2F4F7">
                                         <td style="padding:8px;font-weight:600">{{ $mapel['nama'] }}</td>
@@ -81,11 +81,11 @@
                                             </div>
                                             <span style="font-size:11px;color:#667085">{{ number_format($avg, 1) }}</span>
                                         </td>
-                                        <td style="padding:8px;text-align:center"><span class="tag {{ $p === 'A' ? 'tag-ok' : ($p === 'B' ? 'tag-mut' : ($p === 'C' ? 'tag-gold' : 'tag-bad')) }}">{{ $p }}</span></td>
+                                        <td style="padding:8px;text-align:center"><span class="tag {{ $p === 'A' ? 'tag-violet' : ($p === 'B' ? 'tag-mut' : ($p === 'C' ? 'tag-gold' : 'tag-bad')) }}">{{ $p }}</span></td>
                                         <td style="padding:8px">
-                                            @if($avg >= 80)
-                                                <span style="color:#0f766e;font-size:12px"><i class="fas fa-check"></i> Baik</span>
-                                            @elseif($avg >= 70)
+                                            @if(in_array($p, ['A', 'B']))
+                                                <span style="color:var(--violet);font-size:12px"><i class="fas fa-check"></i> Baik</span>
+                                            @elseif($p === 'C')
                                                 <span style="color:#B8860B;font-size:12px"><i class="fas fa-exclamation"></i> Cukup</span>
                                             @else
                                                 <span style="color:#B42318;font-size:12px"><i class="fas fa-times"></i> Perlu Ditingkatkan</span>
@@ -107,7 +107,7 @@
 
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-calendar-check" style="margin-right:8px;color:#0f766e"></i>Riwayat Kehadiran</h3>
+                <h3><i class="fas fa-calendar-check" style="margin-right:8px;color:var(--violet)"></i>Riwayat Kehadiran</h3>
             </div>
             <div class="card-body">
                 @if($kehadiranBulanan->count())
@@ -126,7 +126,7 @@
                                 @foreach($kehadiranBulanan as $bulan)
                                     <tr style="border-bottom:1px solid #F2F4F7">
                                         <td style="padding:8px;font-weight:600">{{ $bulan['nama'] }}</td>
-                                        <td style="padding:8px;text-align:center"><span class="tag tag-ok">{{ $bulan['H'] }}</span></td>
+                                        <td style="padding:8px;text-align:center"><span class="tag tag-violet">{{ $bulan['H'] }}</span></td>
                                         <td style="padding:8px;text-align:center"><span class="tag tag-gold">{{ $bulan['S'] }}</span></td>
                                         <td style="padding:8px;text-align:center"><span class="tag tag-mut">{{ $bulan['I'] }}</span></td>
                                         <td style="padding:8px;text-align:center"><span class="tag tag-bad">{{ $bulan['A'] }}</span></td>
@@ -169,7 +169,7 @@
         @if($materiTerbaru->count())
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-book" style="margin-right:8px;color:var(--navy)"></i>Materi Terbaru</h3>
+                <h3><i class="fas fa-book" style="margin-right:8px;color:var(--violet)"></i>Materi Terbaru</h3>
             </div>
             <div class="card-body tight">
                 @foreach($materiTerbaru as $m)
@@ -178,7 +178,7 @@
                             <div style="font-weight:600;font-size:13px">{{ $m->judul }}</div>
                             <div style="font-size:11px;color:#888">{{ $m->mata_pelajaran }} &middot; {{ \Carbon\Carbon::parse($m->tanggal)->translatedFormat('d M Y') }}</div>
                         </div>
-                        <a href="{{ route('siswa.materi.show', $m->id) }}" class="btn btn-ghost btn-sm">Lihat</a>
+                        <a href="{{ route('siswa.materi.show', $m->id) }}" class="btn btn-ghost-violet btn-sm">Lihat</a>
                     </div>
                 @endforeach
             </div>
@@ -192,12 +192,29 @@
             </div>
             <div class="card-body tight">
                 @foreach($kuisAktif as $k)
+                    @php $hk = $hasilKuis->get($k->id); @endphp
                     <div style="padding:10px 14px;border-bottom:1px solid #F2F4F7;display:flex;justify-content:space-between;align-items:center">
                         <div>
                             <div style="font-weight:600;font-size:13px">{{ $k->judul }}</div>
                             <div style="font-size:11px;color:#888">{{ $k->mata_pelajaran }} &middot; {{ $k->jumlah_soal }} soal</div>
+                            @if($k->batas_waktu)
+                                @php
+                                    $sisaHariKuis = now()->startOfDay()->diffInDays($k->batas_waktu->copy()->startOfDay(), false);
+                                @endphp
+                                <div style="font-size:11px;margin-top:2px;color:{{ $sisaHariKuis < 0 ? 'var(--bad)' : ($sisaHariKuis === 0 ? 'var(--warn)' : 'var(--muted)') }}">
+                                    <i class="fas fa-clock"></i> Tutup {{ $k->batas_waktu->translatedFormat('d M H:i') }}
+                                    ({{ $sisaHariKuis < 0 ? 'berakhir' : ($sisaHariKuis === 0 ? 'hari ini' : $sisaHariKuis . ' hari lagi') }})
+                                </div>
+                            @endif
+                            @if($hk)
+                                <div style="margin-top:4px"><span class="tag tag-violet">Sudah dikerjakan · skor {{ $hk->skor }}</span></div>
+                            @endif
                         </div>
-                        <a href="{{ route('siswa.kuis.show', $k->id) }}" class="btn btn-sm" style="background:#B8860B;color:#fff">Kerjakan</a>
+                        @if($hk)
+                            <a href="{{ route('siswa.kuis.show', $k->id) }}" class="btn btn-ghost-violet btn-sm">Lihat</a>
+                        @else
+                            <a href="{{ route('siswa.kuis.show', $k->id) }}" class="btn btn-sm" style="background:#B8860B;color:#fff">Kerjakan</a>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -207,16 +224,16 @@
 
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-id-card" style="margin-right:8px;color:var(--navy)"></i>Data Diri</h3>
-            <a href="{{ route('siswa.profil.show') }}" class="btn btn-sm btn-ghost"><i class="fas fa-eye"></i> Lihat Profil</a>
+            <h3><i class="fas fa-id-card" style="margin-right:8px;color:var(--violet)"></i>Data Diri</h3>
+            <a href="{{ route('siswa.profil.show') }}" class="btn btn-sm btn-ghost-violet"><i class="fas fa-eye"></i> Lihat Profil</a>
         </div>
         <div class="card-body">
             <div style="display:flex;gap:24px;flex-wrap:wrap">
                 <div style="flex:0 0 120px;text-align:center">
                     @if($siswa->foto)
-                        <img src="{{ asset('storage/' . $siswa->foto) }}" alt="Foto" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--navy)">
+                        <img src="{{ asset('storage/' . $siswa->foto) }}" alt="Foto" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--violet)">
                     @else
-                        <div style="width:100px;height:100px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto;font-weight:700">
+                        <div style="width:100px;height:100px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto;font-weight:700">
                             {{ substr($siswa->nama_peserta_didik, 0, 1) }}
                         </div>
                     @endif

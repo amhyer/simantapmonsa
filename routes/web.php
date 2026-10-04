@@ -110,12 +110,12 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     // Peta Kelas
     Route::get('/peta-kelas', [PetaKelasController::class, 'index'])->name('peta-kelas.index');
     Route::get('/peta-kelas/daftar', [PetaKelasController::class, 'daftar'])->name('peta-kelas.daftar');
-    Route::get('/peta-kelas/{rombel}', [PetaKelasController::class, 'detail'])->name('peta-kelas.detail');
+    Route::get('/peta-kelas/kelas-options', [PetaKelasController::class, 'getKelasOptions'])->name('peta-kelas.kelas-options');
+    Route::get('/peta-kelas/{rombel}', [PetaKelasController::class, 'detail'])->whereNumber('rombel')->name('peta-kelas.detail');
     Route::post('/peta-kelas', [PetaKelasController::class, 'store'])->name('peta-kelas.store');
     Route::delete('/peta-kelas/{id}', [PetaKelasController::class, 'destroy'])->name('peta-kelas.destroy');
     Route::post('/peta-kelas/pindah', [PetaKelasController::class, 'pindahSiswa'])->name('peta-kelas.pindah');
     Route::post('/peta-kelas/keluarkan', [PetaKelasController::class, 'keluarkanSiswa'])->name('peta-kelas.keluarkan');
-    Route::get('/peta-kelas/kelas-options', [PetaKelasController::class, 'getKelasOptions'])->name('peta-kelas.kelas-options');
     
     // Mata Pelajaran
     Route::get('/mapel', [MapelController::class, 'index'])->name('mapel.index');
@@ -140,6 +140,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::post('/referensi/tanggal-rapor', [DataReferensiController::class, 'storeTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.store');
     Route::delete('/referensi/tanggal-rapor/{tanggalRapor}', [DataReferensiController::class, 'destroyTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.destroy');
     Route::get('/referensi/kelompok-mapel', [DataReferensiController::class, 'kelompokMapel'])->name('referensi.kelompok-mapel');
+    Route::get('/referensi/alignment', [DataReferensiController::class, 'alignmentCheck'])->name('referensi.alignment');
     Route::get('/referensi/mapping-rapor', [DataReferensiController::class, 'mappingRapor'])->name('referensi.mapping-rapor');
     Route::put('/referensi/mapel-meta', [DataReferensiController::class, 'updateMapelMeta'])->middleware('throttle:30,1')->name('referensi.mapel-meta.update');
     Route::get('/referensi/logo-ttd', [DataReferensiController::class, 'logoTtd'])->name('referensi.logo-ttd');
@@ -219,7 +220,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
     Route::get('/backup/export', [BackupController::class, 'export'])->name('backup.export');
     Route::post('/backup/import', [BackupController::class, 'import'])->middleware('throttle:5,1')->name('backup.import');
-    Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware('throttle:3,1')->name('backup.wipe');
+    Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware('throttle:10,5')->name('backup.wipe');
     
     // Log Aktivitas
     Route::get('/log', [LogController::class, 'index'])->name('log.index');
@@ -396,8 +397,58 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
     Route::get('/rekap/{guruId}', [RekapController::class, 'detail'])->name('rekap.detail');
     Route::get('/rekap/unduh/csv', [RekapController::class, 'unduh'])->name('rekap.unduh');
     Route::get('/peta-kelas', [KepsekPetaKelas::class, 'index'])->name('peta-kelas.index');
-    Route::get('/peta-kelas/{guruId}', [KepsekPetaKelas::class, 'detail'])->name('peta-kelas.detail');
+    Route::get('/peta-kelas/{guruId}', [KepsekPetaKelas::class, 'detail'])->whereNumber('guruId')->name('peta-kelas.detail');
     Route::get('/hasil-belajar', [HasilBelajarController::class, 'index'])->name('hasil-belajar.index');
     Route::get('/kebiasaan', [KepsekKebiasaanController::class, 'index'])->name('kebiasaan.index');
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
+});
+
+// ==================== CBT ROUTES ====================
+Route::middleware(['auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
+    // Question Banks
+    Route::prefix('question-banks')->name('question-banks.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'store'])->name('store');
+        Route::get('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'show'])->name('show');
+        Route::get('/{bank}/edit', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'edit'])->name('edit');
+        Route::put('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'update'])->name('update');
+        Route::delete('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'destroy'])->name('destroy');
+        Route::get('/{bank}/api/questions', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'apiGetQuestions'])->name('api.questions');
+    });
+
+    // Questions
+    Route::prefix('questions')->name('questions.')->group(function () {
+        Route::post('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'store'])->name('store');
+        Route::put('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'update'])->name('update');
+        Route::delete('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Test Sessions
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'store'])->name('store');
+        Route::get('/{session}', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'show'])->name('show');
+        Route::post('/{session}/publish', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'publish'])->name('publish');
+        Route::post('/{session}/start', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'start'])->name('start');
+        Route::post('/{session}/complete', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'complete'])->name('complete');
+        Route::get('/{session}/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'monitoring'])->name('monitoring');
+        Route::get('/{session}/api/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'apiMonitoring'])->name('api.monitoring');
+    });
+
+    // Integrity (Anti-Cheat)
+    Route::prefix('integrity')->name('integrity.')->group(function () {
+        Route::post('/{result}/log', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'logViolation'])->name('log');
+        Route::get('/{result}/violations', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'getViolations'])->name('violations');
+    });
+});
+
+// CBT Student Routes
+Route::middleware(['auth', 'role:siswa'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
+    Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
+    Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
+    Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
+    Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
 });

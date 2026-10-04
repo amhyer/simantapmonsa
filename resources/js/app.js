@@ -1,5 +1,8 @@
 
 
+// Ikon dibundel via Vite (self-host) agar tidak bergantung CDN pihak ketiga.
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 import Alpine from 'alpinejs';
 import autoAnimate from '@formkit/auto-animate';
 

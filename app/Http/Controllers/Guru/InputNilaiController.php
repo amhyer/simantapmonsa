@@ -38,11 +38,13 @@ class InputNilaiController extends Controller
             ->get()
             ->keyBy('siswa_id');
 
-        $result = $siswa->map(function ($s) use ($nilaiData, $user) {
+        // Hoist: 1 query (cached) untuk semua baris, bukan 1 query per siswa.
+        $kkm = getKKM($user->id);
+
+        $result = $siswa->map(function ($s) use ($nilaiData, $kkm) {
             $n = $nilaiData->get($s->id);
             $nilai = $n ? $n->nilai : null;
-            $kkm = getKKM($user->id);
-            $predikat = $this->getPredikat($nilai);
+            $predikat = $this->getPredikat($nilai, $kkm);
             $status = $nilai !== null ? ($nilai >= $kkm ? 'Tuntas' : 'Remidi') : '-';
 
             return [
@@ -103,19 +105,56 @@ class InputNilaiController extends Controller
 
     public function pasteFromExcel(Request $request): JsonResponse
     {
-        $request->validate(['data' => 'required|string']);
+        $request->validate(['data' => 'required|string|max:20000']);
 
-        $lines = explode("\n", trim($request->data));
+        $user = Auth::user();
+        $lines = preg_split('/\r\n|\r|\n/', trim($request->data));
+        // Batas pengaman: satu kelas tidak melebihi 1000 baris per paste.
+        $lines = array_slice($lines, 0, 1000);
+
+        // Peta siswa milik guru untuk pencocokan di server (hindari salah
+        // tempel ke siswa guru lain / nama mirip). Kunci: NIS + nama lower.
+        $milik = Siswa::where('guru_id', $user->id)
+            ->get(['id', 'nis', 'nama_peserta_didik']);
+        $byNis = [];
+        $byNama = [];
+        foreach ($milik as $s) {
+            if ($s->nis) {
+                $byNis[strtolower(trim($s->nis))] = $s->id;
+            }
+            $byNama[strtolower(trim($s->nama_peserta_didik))] = $s->id;
+        }
+
         $results = [];
-
         foreach ($lines as $line) {
             $parts = preg_split('/[\t,;]/', trim($line));
-            if (count($parts) >= 2) {
-                $results[] = [
-                    'nama' => trim($parts[0]),
-                    'nilai' => is_numeric(trim($parts[1])) ? (float) trim($parts[1]) : null,
-                ];
+            if (count($parts) < 2) {
+                continue;
             }
+            $nama = trim($parts[0]);
+            $angka = trim($parts[1]);
+            $nilai = is_numeric($angka) ? (float) $angka : null;
+            if ($nilai !== null && ($nilai < 0 || $nilai > 100)) {
+                $nilai = null;
+            }
+
+            // Urutan cocok: NIS persis -> nama persis -> nama mengandung.
+            $siswaId = $byNis[strtolower($nama)] ?? $byNama[strtolower($nama)] ?? null;
+            if ($siswaId === null && $nama !== '') {
+                foreach ($byNama as $namaSiswa => $id) {
+                    if (str_contains($namaSiswa, strtolower($nama)) || str_contains(strtolower($nama), $namaSiswa)) {
+                        $siswaId = $id;
+                        break;
+                    }
+                }
+            }
+
+            $results[] = [
+                'nama' => $nama,
+                'nilai' => $nilai,
+                'siswa_id' => $siswaId,
+                'cocok' => $siswaId !== null,
+            ];
         }
 
         return response()->json(['parsed' => $results]);
@@ -124,10 +163,8 @@ class InputNilaiController extends Controller
     private function getPredikat($nilai, $kkm = null)
     {
         if ($nilai === null) return '-';
-        $kkm = $kkm ?? getKKM();
-        if ($nilai >= 90) return 'A';
-        if ($nilai >= 80) return 'B';
-        if ($nilai >= $kkm) return 'C';
-        return 'D';
+        // Satu sumber kebenaran predikat: NilaiService (relatif terhadap KKM).
+        return app(\App\Services\NilaiService::class)
+            ->getPredikat($nilai, $kkm ?? getKKM())['huruf'] ?? '-';
     }
 }

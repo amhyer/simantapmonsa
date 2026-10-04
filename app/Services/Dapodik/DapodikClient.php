@@ -65,7 +65,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Non-JSON response from {$endpoint} after {$maxAttempts} attempts"
+                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
                         );
                     }
 
@@ -252,7 +252,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Non-JSON response from {$endpoint} after {$maxAttempts} attempts"
+                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
                         );
                     }
 
@@ -371,7 +371,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Non-JSON response from {$endpoint} after {$maxAttempts} attempts"
+                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
                         );
                     }
 

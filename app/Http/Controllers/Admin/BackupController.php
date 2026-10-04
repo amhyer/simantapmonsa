@@ -63,7 +63,7 @@ class BackupController extends Controller
         $content = file_get_contents($file->getRealPath());
         $data = json_decode($content, true, 512);
 
-        if (!$data) {
+        if (!is_array($data) || json_last_error() !== JSON_ERROR_NONE) {
             return redirect()->route('admin.backup.index')
                 ->with('error', 'File backup tidak valid.');
         }
@@ -75,6 +75,18 @@ class BackupController extends Controller
                 return redirect()->route('admin.backup.index')
                     ->with('error', "Tabel '$table' tidak valid dalam backup.");
             }
+        }
+
+        // Batas pengaman agar file raksasa tidak menghabiskan memori/waktu.
+        $totalRecords = 0;
+        foreach ($data as $records) {
+            if (is_array($records)) {
+                $totalRecords += count($records);
+            }
+        }
+        if ($totalRecords > 100000) {
+            return redirect()->route('admin.backup.index')
+                ->with('error', 'File backup terlalu besar (maks 100.000 baris). Bagi menjadi beberapa file.');
         }
 
         $fillableMap = [
@@ -94,53 +106,71 @@ class BackupController extends Controller
             'aktivitas' => ['id', 'uuid', 'guru_id', 'nama_guru', 'jenis', 'judul', 'deskripsi', 'tabel_terkait', 'record_id', 'data_lama', 'data_baru', 'created_at', 'updated_at'],
         ];
 
-        foreach ($data as $table => $records) {
-            if (!is_array($records) || empty($records)) {
-                continue;
-            }
-
-            if (!isset($fillableMap[$table])) {
-                continue;
-            }
-
-            $fillable = $fillableMap[$table];
-            $modelClass = match($table) {
-                'users' => User::class,
-                'siswa' => Siswa::class,
-                'materi' => Materi::class,
-                'kuis' => Kuis::class,
-                'nilai' => Nilai::class,
-                'kehadiran' => Kehadiran::class,
-                'hasil_kuis' => HasilKuis::class,
-                'catatan' => Catatan::class,
-                'dimensi' => Dimensi::class,
-                'kebiasaan' => Kebiasaan::class,
-                'pengaturan_guru' => PengaturanGuru::class,
-                'ringkasan_guru' => RingkasanGuru::class,
-                'sekolah_settings' => SekolahSettings::class,
-                'aktivitas' => Aktivitas::class,
-                default => null,
-            };
-
-            if (!$modelClass) {
-                continue;
-            }
-
-            foreach ($records as $record) {
-                $filtered = array_intersect_key($record, array_flip($fillable));
-                if (isset($filtered['id']) && $filtered['id'] !== null) {
-                    $modelClass::updateOrCreate(
-                        ['id' => $filtered['id']],
-                        $filtered
-                    );
-                } else {
-                    $modelClass::create($filtered);
+        try {
+            DB::transaction(function () use ($data, $fillableMap) {
+                foreach ($data as $table => $records) {
+                    $this->restoreTable($table, $records, $fillableMap);
                 }
-            }
+            });
+        } catch (\Throwable $e) {
+            Log::error('Backup import gagal: ' . $e->getMessage());
+
+            return redirect()->route('admin.backup.index')
+                ->with('error', 'Restore gagal, tidak ada data yang diubah. Periksa format file backup.');
         }
 
         return redirect()->route('admin.backup.index')
             ->with('success', 'Data berhasil dipulihkan dari backup.');
+    }
+
+    /**
+     * Restore satu tabel backup. Dipanggil di dalam DB::transaction agar
+     * gagal di tengah tidak menyisakan data parcial (inkonsisten).
+     */
+    protected function restoreTable(string $table, mixed $records, array $fillableMap): void
+    {
+        if (!is_array($records) || empty($records)) {
+            return;
+        }
+
+        if (!isset($fillableMap[$table])) {
+            return;
+        }
+
+        $fillable = $fillableMap[$table];
+        $modelClass = match($table) {
+            'users' => User::class,
+            'siswa' => Siswa::class,
+            'materi' => Materi::class,
+            'kuis' => Kuis::class,
+            'nilai' => Nilai::class,
+            'kehadiran' => Kehadiran::class,
+            'hasil_kuis' => HasilKuis::class,
+            'catatan' => Catatan::class,
+            'dimensi' => Dimensi::class,
+            'kebiasaan' => Kebiasaan::class,
+            'pengaturan_guru' => PengaturanGuru::class,
+            'ringkasan_guru' => RingkasanGuru::class,
+            'sekolah_settings' => SekolahSettings::class,
+            'aktivitas' => Aktivitas::class,
+            default => null,
+        };
+
+        if (!$modelClass) {
+            return;
+        }
+
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+            $filtered = array_intersect_key($record, array_flip($fillable));
+            if (isset($filtered['id']) && $filtered['id'] !== null) {
+                $modelClass::updateOrCreate(['id' => $filtered['id']], $filtered);
+            } else {
+                $modelClass::create($filtered);
+            }
+        }
     }
 
     public function wipeAll(Request $request)
@@ -148,7 +178,14 @@ class BackupController extends Controller
         $request->validate([
             'konfirmasi' => 'required|in:HAPUS SEMUA DATA',
             'password' => 'required|current_password',
+        ], [
+            'konfirmasi.required' => 'Ketik persis HAPUS SEMUA DATA untuk konfirmasi.',
+            'konfirmasi.in' => 'Teks konfirmasi salah. Ketik persis: HAPUS SEMUA DATA.',
+            'password.required' => 'Kata sandi wajib diisi untuk konfirmasi identitas.',
+            'password.current_password' => 'Kata sandi salah. Gunakan kata sandi akun Anda yang sedang login.',
         ]);
+
+        Log::info('Wipe data diminta oleh: ' . (auth()->user()?->nama_pengguna ?? '?') . ' IP: ' . request()->ip());
 
         // Daftar tabel data yang dikosongkan. SENGAJA dikecualikan:
         // users (agar admin tetap bisa login), semesters, sekolah_settings,
@@ -167,16 +204,39 @@ class BackupController extends Controller
         ];
 
         $dihapus = [];
-        foreach ($tabelData as $tabel) {
-            if (!Schema::hasTable($tabel)) {
-                continue;
+        $gagal = [];
+        $driver = DB::getDriverName();
+        Schema::disableForeignKeyConstraints();
+        try {
+            foreach ($tabelData as $tabel) {
+                if (!Schema::hasTable($tabel)) {
+                    continue;
+                }
+                try {
+                    if ($driver === 'pgsql') {
+                        // CASCADE agar constraint FK antar tabel data ikut teratasi;
+                        // RESTART IDENTITY agar ID mulai lagi dari 1.
+                        DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
+                    } else {
+                        // MySQL / SQLite: truncate tanpa sintaks Postgres.
+                        DB::table($tabel)->truncate();
+                    }
+                    $dihapus[] = $tabel;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal truncate tabel ' . $tabel . ': ' . $e->getMessage());
+                    $gagal[] = $tabel;
+                }
             }
-            // CASCADE agar constraint FK antar tabel data ikut teratasi;
-            // RESTART IDENTITY agar ID mulai lagi dari 1. Tabel yang
-            // dikecualikan tidak tersentuh karena tak ada FK menuju ke sana
-            // dari tabel data (relasi menunjuk ke users/semesters yang dikecualikan).
-            DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
-            $dihapus[] = $tabel;
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        if (count($dihapus) === 0) {
+            return redirect()->route('admin.backup.index')->with(
+                'error',
+                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.' .
+                (count($gagal) ? ' Gagal pada: ' . implode(', ', $gagal) . '.' : '')
+            );
         }
 
         $guru = auth()->user();
@@ -194,9 +254,11 @@ class BackupController extends Controller
             Log::warning('Gagal catat aktivitas hapus data: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.backup.index')->with(
-            'success',
-            'Berhasil mengosongkan ' . count($dihapus) . ' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.'
-        );
+        $pesan = 'Berhasil mengosongkan ' . count($dihapus) . ' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
+        if (count($gagal) > 0) {
+            $pesan .= ' Sebagian gagal: ' . implode(', ', $gagal) . '.';
+        }
+
+        return redirect()->route('admin.backup.index')->with('success', $pesan);
     }
 }

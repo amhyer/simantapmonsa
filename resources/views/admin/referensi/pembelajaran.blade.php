@@ -92,6 +92,7 @@
                                 <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Kelas</th>
                                 <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Guru</th>
                                 <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Ruangan</th>
+                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nilai</th>
                                 <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Aksi</th>
                             </tr>
                         </thead>
@@ -111,6 +112,13 @@
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $j->rombel?->nama_rombel ?? $j->kelas ?? '-' }}</td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $j->guru?->nama_lengkap ?? '-' }}</td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $j->ruangan ?? '-' }}</td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
+                                        @if($j->nilai_erapot_count > 0)
+                                            <span class="tag tag-ok">{{ $j->nilai_erapot_count }} terpetakan</span>
+                                        @else
+                                            <span class="tag tag-mut">0</span>
+                                        @endif
+                                    </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:right">
                                         <form action="{{ route('admin.referensi.pembelajaran.destroy', $j) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus jadwal {{ $j->mata_pelajaran }} ({{ $j->kelas }})? Data Dapodik dapat ditarik ulang bila dibutuhkan.')">
                                             @csrf

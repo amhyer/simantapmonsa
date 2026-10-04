@@ -9,7 +9,8 @@ class NilaiErapot extends Model
 {
     protected $table = 'nilai_erapor';
     protected $fillable = [
-        'uuid', 'siswa_id', 'guru_id', 'mata_pelajaran', 'kelas',
+        'uuid', 'siswa_id', 'guru_id', 'jadwal_pelajaran_id',
+        'mata_pelajaran', 'kelas',
         'semester', 'tahun_ajaran', 'fase',
         'nilai_formatif', 'nilai_sumatif', 'nilai_sumatif_akhir',
         'nilai_akhir', 'predikat', 'deskripsi_capaian',
@@ -36,6 +37,12 @@ class NilaiErapot extends Model
 
     public function siswa() { return $this->belongsTo(Siswa::class); }
     public function guru() { return $this->belongsTo(User::class, 'guru_id'); }
+
+    /**
+     * Pembelajaran resmi (Dapodik) yang menjadi sumber nilai ini.
+     * Nullable: nilai lama/belum terpetakan mengembalikan null (bukan error).
+     */
+    public function jadwalPelajaran() { return $this->belongsTo(JadwalPelajaran::class); }
 
     public function hitungNilaiAkhir(float $bobotFormatif = 0.30, float $bobotSumatif = 0.40, float $bobotSumatifAkhir = 0.30): float
     {

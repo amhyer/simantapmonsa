@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Ortu;
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use App\Models\Kehadiran;
+use Illuminate\Http\Request;
 
 class KehadiranController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $anakIds = $user->terhubung_dengan ?? [];
@@ -20,7 +21,13 @@ class KehadiranController extends Controller
             ]);
         }
 
-        $anak = Siswa::whereIn('id', $anakIds)->first();
+        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
+
+        if (!in_array($siswaId, $anakIds)) {
+            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
+        }
+
+        $anak = Siswa::find($siswaId);
 
         if (!$anak) {
             return view('ortu.kehadiran.index', [

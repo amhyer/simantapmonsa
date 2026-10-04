@@ -101,6 +101,16 @@
             <h3 style="color:#991B1B"><i class="fas fa-exclamation-triangle"></i> Zona Berbahaya — Hapus Semua Data</h3>
         </div>
         <div class="card-body">
+            @if($errors->any())
+                <div class="note note-warn" style="margin-bottom:12px;border:1px solid #FECACA;background:#FEF2F2;border-radius:8px;padding:10px 12px">
+                    <b><i class="fas fa-exclamation-triangle"></i> Gagal menghapus data:</b>
+                    <ul style="margin:6px 0 0 18px;padding:0">
+                        @foreach($errors->all() as $err)
+                            <li style="font-size:13px">{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <p style="color:var(--muted);font-size:13px;margin-bottom:12px">
                 Mengosongkan <b>seluruh tabel data</b> (siswa, nilai, kehadiran, materi, kuis, rombel, PTK, mapel, kokurikuler, log, dsb).
                 <b>Akun pengguna, semester, identitas sekolah, dan API key dipertahankan</b> agar Anda tetap bisa login.

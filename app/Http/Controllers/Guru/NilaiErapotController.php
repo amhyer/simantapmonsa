@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
+use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -59,6 +60,11 @@ class NilaiErapotController extends Controller
         $kkm = $pengaturan->kkm ?? 70;
         $bobot = ($pengaturan->pengaturan ?? [])['bobot_erapor'] ?? ['formatif' => 0.30, 'sumatif' => 0.40, 'sumatif_akhir' => 0.30];
 
+        // Auto-resolve FK alignment sekali per request (sama untuk semua baris).
+        $jadwalId = app(JadwalPelajaranResolver::class)->resolve(
+            $guru->id, $request->mapel, $request->kelas, $request->semester, $request->tahun_ajaran
+        );
+
         DB::beginTransaction();
         try {
             $berhasil = 0;
@@ -75,6 +81,7 @@ class NilaiErapotController extends Controller
                     [
                         'guru_id' => $guru->id,
                         'kelas' => $request->kelas,
+                        'jadwal_pelajaran_id' => $jadwalId,
                         'nilai_formatif' => $item['formatif'] ?? 0,
                         'nilai_sumatif' => $item['sumatif'] ?? 0,
                         'nilai_sumatif_akhir' => $item['sumatif_akhir'] ?? 0,
@@ -127,6 +134,9 @@ class NilaiErapotController extends Controller
 
         $nilai->guru_id = $guru->id;
         $nilai->kelas = $request->kelas;
+        $nilai->jadwal_pelajaran_id = app(JadwalPelajaranResolver::class)->resolve(
+            $guru->id, $request->mapel, $request->kelas, $request->semester, $request->tahun_ajaran
+        );
         $field = 'nilai_' . $request->field;
         $nilai->$field = $request->value ?? 0;
         $nilai->save();
