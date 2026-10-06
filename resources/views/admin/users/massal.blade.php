@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Akun Massal - SIMANTAP')
 
@@ -119,3 +119,4 @@
     });
 </script>
 @endpush
+

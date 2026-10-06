@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Logo dan TTD - SIMANTAP')
 
@@ -45,3 +45,4 @@
         <span style="font-size:12px;color:#667085;margin-left:8px">File lama otomatis terhapus saat diganti.</span>
     </form>
 @endsection
+

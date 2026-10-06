@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Import Nilai Transkrip - SIMANTAP')
 
@@ -28,8 +28,8 @@
             <form action="{{ route('admin.transkrip.import.store') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File CSV (maks 2MB)</label>
-                    <input type="file" name="file" accept=".csv,.txt" required>
+                    <label class="form-label">File CSV (maks 2MB)</label>
+                    <input type="file" name="file" accept=".csv,.txt" required class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Import</button>
@@ -41,3 +41,4 @@
         </div>
     </div>
 @endsection
+

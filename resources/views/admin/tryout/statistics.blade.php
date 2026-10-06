@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Statistik Tryout - Admin')
 
@@ -211,3 +211,4 @@
     </div>
 </div>
 @endsection
+

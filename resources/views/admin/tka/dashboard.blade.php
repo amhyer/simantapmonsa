@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Dashboard TKA - Admin')
 
@@ -268,3 +268,4 @@
     </div>
 </div>
 @endsection
+

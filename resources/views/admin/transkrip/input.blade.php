@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
@@ -15,7 +15,7 @@
             <h3>Daftar Siswa</h3>
             <span class="tag tag-mut">{{ $jumlahMapel }} mapel masuk transkrip</span>
             <form method="GET" style="display:flex;gap:8px">
-                <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama / NISN" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama / NISN" class="form-control">
                 <button type="submit" class="btn btn-sm">Cari</button>
             </form>
         </div>
@@ -45,8 +45,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa.</td>
+                            <tr class="table-empty"><td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -56,3 +55,4 @@
         </div>
     </div>
 @endsection
+

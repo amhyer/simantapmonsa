@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Kelola Pengguna - SIMANTAP')
 
@@ -260,3 +260,4 @@
     }
 </style>
 @endpush
+

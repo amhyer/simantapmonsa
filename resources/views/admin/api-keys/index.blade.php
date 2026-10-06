@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'API Keys & Dapodik - SIMANTAP')
 
@@ -159,3 +159,4 @@
     }
     </script>
 @endsection
+

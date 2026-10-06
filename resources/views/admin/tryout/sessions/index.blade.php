@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Kelola Sesi Tryout - Admin')
 
@@ -272,3 +272,4 @@
     </div>
 </div>
 @endsection
+

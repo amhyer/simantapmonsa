@@ -17,6 +17,20 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
+        ['label' => 'CBT & TRYOUT', 'items' => [
+            ['label' => 'Ujian CBT', 'icon' => 'lucide-monitor', 'children' => [
+                ['route' => 'cbt.question-banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
+                ['route' => 'cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
+            ]],
+            ['label' => 'Tryout', 'icon' => 'lucide-package', 'children' => [
+                ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
+                ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
+            ]],
+            ['label' => 'Asesmen TKA', 'icon' => 'lucide-gauge', 'children' => [
+                ['route' => 'tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi TKA'],
+                ['route' => 'tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian TKA'],
+            ]],
+        ]],
         ['label' => 'PEMANTAUAN', 'items' => [
             ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran'],
             ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],

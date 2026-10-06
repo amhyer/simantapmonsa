@@ -51,3 +51,38 @@ if (!function_exists('getKKM')) {
         });
     }
 }
+
+if (!function_exists('activeAdminTab')) {
+    function activeAdminTab(): string
+    {
+        $route = request()->route()?->getName() ?? '';
+
+        // E-Rapor tab
+        if (request()->routeIs('admin.dashboard', 'admin.penilaian.*', 'admin.perkembangan.*', 
+                                 'admin.transkrip.*', 'admin.cetak.*', 'admin.referensi.*', 
+                                 'admin.profile', 'admin.sekolah.*')) {
+            return 'erapor';
+        }
+
+        // CBT tab
+        if (request()->routeIs('admin.cbt.*', 'admin.tryout.*')) {
+            return 'cbt';
+        }
+
+        // TKA tab
+        if (request()->routeIs('admin.tka.*')) {
+            return 'tka';
+        }
+
+        // Setup tab
+        if (request()->routeIs('admin.users.*', 'admin.mapel.*', 'admin.semester.*', 
+                               'admin.kode-akses.*', 'admin.modul.*', 'admin.bobot.*', 
+                               'admin.backup.*', 'admin.log.*', 'admin.sheet.*', 
+                               'admin.dapodik.*', 'admin.peta-kelas.*', 'admin.kokurikuler.*')) {
+            return 'setup';
+        }
+
+        // Fallback
+        return 'erapor';
+    }
+}

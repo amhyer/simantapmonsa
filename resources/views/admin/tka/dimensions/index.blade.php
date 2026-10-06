@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Kelola Dimensi TKA - Admin')
 
@@ -160,3 +160,4 @@
     </div>
 </div>
 @endsection
+

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Konfigurasi & Sinkronisasi Dapodik - SIMANTAP')
 
@@ -885,3 +885,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 @endpush
 @endsection
+

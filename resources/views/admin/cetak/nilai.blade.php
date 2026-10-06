@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Nilai Rapor - SIMANTAP')
 
@@ -17,23 +17,23 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas</label>
-                    <select name="kelas" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label class="form-label">Kelas</label>
+                    <select name="kelas" class="form-control">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
-                    <select name="semester" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label class="form-label">Semester</label>
+                    <select name="semester" class="form-control">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" style="width:120px;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label class="form-label">Tahun Ajaran</label>
+                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Tampilkan</button>
@@ -70,8 +70,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa di kelas ini.</td>
+                                <tr class="table-empty"><td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa di kelas ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -81,3 +80,4 @@
         </div>
     @endif
 @endsection
+

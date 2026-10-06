@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Manajemen Bank Soal CBT - Admin')
 
@@ -209,3 +209,4 @@
     </div>
 </div>
 @endsection
+
