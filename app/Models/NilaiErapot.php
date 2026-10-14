@@ -52,18 +52,24 @@ class NilaiErapot extends Model
         return round($nilai, 2);
     }
 
+    /**
+     * Predikat e-Rapor — DIDELEGASIKAN ke App\Services\NilaiService agar
+     * ambangnya sama dengan dashboard/laporan/input nilai (satu sumber
+     * kebenaran). Sebelumnya di sini dipakai ambang mati 90/80/KKM sehingga
+     * nilai yang sama bisa berpredikat berbeda antar halaman.
+     */
     public function generatePredikat(?int $kkm = null): string
     {
-        $kkm = $kkm ?? getKKM();
-        if ($this->nilai_akhir >= 90) return 'A';
-        if ($this->nilai_akhir >= 80) return 'B';
-        if ($this->nilai_akhir >= $kkm) return 'C';
-        return 'D';
+        return app(\App\Services\NilaiService::class)
+            ->getPredikat((float) $this->nilai_akhir, $kkm ?? getKKM())['huruf'];
     }
 
     public function generateDeskripsi(): string
     {
-        $predikat = $this->predikat;
+        // PERBAIKAN: bila `predikat` belum terisi (mis. baris baru atau import
+        // yang menghitung deskripsi sebelum predikat tersimpan), hitung dari
+        // nilai_akhir alih-alih jatuh ke cabang default.
+        $predikat = $this->predikat ?: $this->generatePredikat();
         $deskripsi = match($predikat) {
             'A' => "Menunjukkan penguasaan yang sangat baik dalam",
             'B' => "Menunjukkan penguasaan yang baik dalam",

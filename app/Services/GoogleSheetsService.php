@@ -294,7 +294,10 @@ class GoogleSheetsService
                 ($model->sumber ?? '') === 'luar' ? ($model->tautan_soal ?? '') : '',
                 $model->materi_id ?? '',
                 $model->kkm ?? 70,
-                $model->batas_waktu ?? 0,
+                // Header sheet tetap "Batas Waktu (menit)" (kompatibilitas GAS;
+                // catatan koordinasi penggantian ada di config/google.php),
+                // nilainya kini waktu tutup kuis dalam format tanggal-jam.
+                $model->batas_waktu ? $model->batas_waktu->format('Y-m-d H:i') : '',
                 $model->aktif ? 'Ya' : 'Tidak',
                 $model->jumlah_soal ?? 0,
                 $this->jsonAman($model->rekaman),

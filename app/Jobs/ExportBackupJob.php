@@ -2,21 +2,9 @@
 
 namespace App\Jobs;
 
-use App\Models\Aktivitas;
-use App\Models\Catatan;
-use App\Models\Dimensi;
-use App\Models\HasilKuis;
-use App\Models\Kebiasaan;
-use App\Models\Kehadiran;
-use App\Models\Kuis;
-use App\Models\Materi;
-use App\Models\Nilai;
-use App\Models\PengaturanGuru;
-use App\Models\RingkasanGuru;
-use App\Models\SekolahSettings;
-use App\Models\Siswa;
-use App\Models\User;
+use App\Support\BackupTables;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -44,26 +32,9 @@ class ExportBackupJob implements ShouldQueue
         $filename = 'backup-simantap-' . now()->format('Y-m-d-His') . '.json';
         $path = 'backups/' . $filename;
 
-        $tables = [
-            'users' => [User::class, function ($m) {
-                return collect($m->toArray())->except(['kata_sandi', 'remember_token', 'dapodik_id', 'rekaman'])->toArray();
-            }],
-            'siswa' => [Siswa::class, function ($m) {
-                return collect($m->toArray())->except(['rekaman', 'foto', 'nik', 'no_kk'])->toArray();
-            }],
-            'materi' => [Materi::class, null],
-            'kuis' => [Kuis::class, null],
-            'nilai' => [Nilai::class, null],
-            'kehadiran' => [Kehadiran::class, null],
-            'hasil_kuis' => [HasilKuis::class, null],
-            'catatan' => [Catatan::class, null],
-            'dimensi' => [Dimensi::class, null],
-            'kebiasaan' => [Kebiasaan::class, null],
-            'pengaturan_guru' => [PengaturanGuru::class, null],
-            'ringkasan_guru' => [RingkasanGuru::class, null],
-            'sekolah_settings' => [SekolahSettings::class, null],
-            'aktivitas' => [Aktivitas::class, null],
-        ];
+        // Daftar tabel terpusat (App\Support\BackupTables) supaya cakupan
+        // backup selalu seimbang dengan tabel yang dikosongkan wipeAll().
+        $tables = BackupTables::semua();
 
         $stream = fopen('php://temp', 'r+');
         if ($stream === false) {
@@ -74,7 +45,7 @@ class ExportBackupJob implements ShouldQueue
             fwrite($stream, "{\n");
 
             $firstTable = true;
-            foreach ($tables as $key => [$class, $map]) {
+            foreach ($tables as $key => $konfigurasi) {
                 if (!$firstTable) {
                     fwrite($stream, ",\n");
                 }
@@ -82,17 +53,34 @@ class ExportBackupJob implements ShouldQueue
 
                 fwrite($stream, json_encode($key) . ": [\n");
 
+                $except = $konfigurasi['except'];
                 $firstRow = true;
-                $class::chunk(200, function ($rows) use ($stream, $map, &$firstRow) {
+
+                $tulis = function ($rows) use ($stream, $except, &$firstRow) {
                     foreach ($rows as $row) {
                         if (!$firstRow) {
                             fwrite($stream, ",\n");
                         }
                         $firstRow = false;
-                        $record = $map ? $map($row) : $row->toArray();
+
+                        $record = is_array($row) ? $row : $row->toArray();
+                        if ($except !== []) {
+                            $record = array_diff_key($record, array_flip($except));
+                        }
                         fwrite($stream, json_encode($record));
                     }
-                });
+                };
+
+                $class = $konfigurasi['class'];
+
+                if ($class) {
+                    // Eloquent chunk() hemat memori untuk tabel besar.
+                    $class::chunk(200, $tulis);
+                } else {
+                    // Tabel tanpa model (pivot) → ambil langsung dari query builder.
+                    // Kedua tabel pivot punya kolom `id` (lihat migrasinya).
+                    DB::table($key)->orderBy('id')->chunk(200, $tulis);
+                }
 
                 fwrite($stream, "\n]");
             }

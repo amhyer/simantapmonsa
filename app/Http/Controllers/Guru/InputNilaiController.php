@@ -11,9 +11,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 
 class InputNilaiController extends Controller
 {
+    /**
+     * Kosakata `jenis` yang valid — HARUS sama dengan enum kolom
+     * `nilai.jenis` (migrasi create_nilai_table) dan dengan bobot di
+     * App\Services\NilaiService, agar nilai tersimpan dan ikut dihitung.
+     */
+    private const JENIS_VALID = ['Tugas', 'Ulangan Harian', 'Praktik', 'PTS', 'PAS'];
+
     public function index()
     {
         $user = Auth::user();
@@ -27,7 +35,12 @@ class InputNilaiController extends Controller
     public function getNilai(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $jenis = $request->jenis ?? 'UH';
+        // Default & normalisasi jenis: 'UH' (nilai lama dari UI lama) dipetakan
+        // ke 'Ulangan Harian' supaya cocok dengan enum DB.
+        $jenis = $request->jenis === 'UH' ? 'Ulangan Harian' : ($request->jenis ?? 'Ulangan Harian');
+        if (!in_array($jenis, self::JENIS_VALID, true)) {
+            $jenis = 'Ulangan Harian';
+        }
         $judul = $request->judul ?? '';
 
         $siswa = Siswa::where('guru_id', $user->id)->orderBy('nama_peserta_didik')->get();
@@ -66,17 +79,20 @@ class InputNilaiController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'jenis' => 'required|string',
+            // 'UH' diterima demi kompatibilitas UI lama, lalu dinormalkan.
+            'jenis' => ['required', 'string', Rule::in([...self::JENIS_VALID, 'UH'])],
             'judul_penilaian' => 'nullable|string',
             'nilai' => 'required|array',
             'nilai.*.siswa_id' => 'required|exists:siswa,id',
             'nilai.*.nilai' => 'nullable|numeric|between:0,100',
         ]);
 
+        $jenis = $validated['jenis'] === 'UH' ? 'Ulangan Harian' : $validated['jenis'];
+
         $saved = 0;
         $ownedSiswaIds = Siswa::where('guru_id', $user->id)->pluck('id')->toArray();
 
-        DB::transaction(function () use ($validated, $user, $ownedSiswaIds, &$saved) {
+        DB::transaction(function () use ($validated, $user, $ownedSiswaIds, $jenis, &$saved) {
             foreach ($validated['nilai'] as $item) {
                 if ($item['nilai'] === null || $item['nilai'] === '') continue;
                 if (!in_array($item['siswa_id'], $ownedSiswaIds)) continue;
@@ -85,7 +101,7 @@ class InputNilaiController extends Controller
                     [
                         'guru_id' => $user->id,
                         'siswa_id' => $item['siswa_id'],
-                        'jenis' => $validated['jenis'],
+                        'jenis' => $jenis,
                         'judul_penilaian' => $validated['judul_penilaian'] ?? null,
                     ],
                     [

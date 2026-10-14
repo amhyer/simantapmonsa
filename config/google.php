@@ -33,6 +33,17 @@ return [
 
     /*
     | Column headers - EXACTLY as GAS defines them (KOL_xxx)
+    |
+    | CATATAN KOORDINASI GAS (14 Okt 2026): header 'Batas Waktu (menit)' pada
+    | tab KUIS sengaja TIDAK diubah meskipun nilainya kini waktu tutup kuis
+    | dalam format tanggal-jam (lihat app/Services/GoogleSheetsService.php).
+    | Skrip GAS v4.2 mencocokkan kolom lewat konstanta KOL_xxx, sehingga
+    | penggantian nama header harus dilakukan bersamaan di dua sisi:
+    |   1) GAS  : const KOL_BATAS_WAKTU = 'Batas Waktu';   // target akhir
+    |   2) Repo : ubah 'Batas Waktu (menit)' di bawah menjadi 'Batas Waktu'
+    |   3) Sheet: perbarui judul kolom pada spreadsheet yang sudah berjalan
+    | Selama salah satu sisi belum siap, pertahankan nama lama demi
+    | kompatibilitas integrasi.
     */
     'headers' => [
         'pengguna' => [

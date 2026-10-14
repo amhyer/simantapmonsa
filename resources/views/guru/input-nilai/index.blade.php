@@ -30,7 +30,7 @@
                 <div>
                     <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jenis Penilaian</label>
                     <select id="jenisNilai" onchange="loadNilai()" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
-                        <option value="UH">Ulangan Harian</option>
+                        <option value="Ulangan Harian">Ulangan Harian</option>
                         <option value="Tugas">Tugas</option>
                         <option value="PTS">PTS</option>
                         <option value="PAS">PAS</option>

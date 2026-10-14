@@ -30,7 +30,9 @@ class BackupData extends Command
         $filename = 'backup-simantap-' . date('Y-m-d-His') . '.json';
         Storage::disk('local')->put("backups/{$filename}", json_encode($data, JSON_PRETTY_PRINT));
 
-        $this->info("✅ Backup tersimpan: storage/app/backups/{$filename}");
+        // Disk 'local' berakar di storage/app/private (config/filesystems.php),
+        // jadi tampilkan path sebenarnya agar operator tidak salah cari berkas.
+        $this->info("✅ Backup tersimpan: " . Storage::disk('local')->path("backups/{$filename}"));
         $this->info("📊 Total: " . count($data['siswa']) . " siswa");
     }
 }

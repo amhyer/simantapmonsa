@@ -28,6 +28,10 @@ class LandingController extends Controller
             'peran' => 'required|in:guru,siswa,ortu',
         ]);
 
+        // PERBAIKAN KEAMANAN: pendaftaran publik sebelumnya membuat akun
+        // berperan "guru" yang LANGSUNG aktif (siapa pun bisa mendaftar sebagai
+        // guru tanpa verifikasi). Kini akun dibuat NONAKTIF dan harus
+        // diaktifkan admin (Admin > Pengguna) sebelum bisa dipakai login.
         User::create([
             'uuid' => Str::uuid(),
             'nama_lengkap' => $validated['nama_lengkap'],
@@ -36,11 +40,12 @@ class LandingController extends Controller
             'peran' => $validated['peran'],
             'terhubung_dengan' => [],
             'kelas_mata_pelajaran' => null,
-            'aktif' => true,
+            'aktif' => false,
+            'force_password_change' => false,
         ]);
 
         return redirect()->route('login')
-            ->with('success', 'Akun berhasil dibuat. Silakan login.');
+            ->with('success', 'Pendaftaran berhasil. Akun Anda menunggu aktivasi administrator sekolah sebelum dapat digunakan.');
     }
 
     public function demo()

@@ -75,8 +75,9 @@
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Batas Waktu (menit)</label>
-                        <input type="number" name="batas_waktu" value="{{ old('batas_waktu', 0) }}" min="0" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Batas Waktu Pengumpulan</label>
+                        <input type="datetime-local" name="batas_waktu" value="{{ old('batas_waktu') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <div style="font-size:11px;color:#667085;margin-top:4px">Waktu tutup kuis. Kosongkan bila tanpa batas waktu.</div>
                     </div>
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Cara Nilai *</label>

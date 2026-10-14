@@ -20,6 +20,9 @@ yarn-error.log
 *.bak
 *.orig
 
+# Kredensial bridge Dapodik - jangan commit (pakai config.example.json + env)
+/dapodik-bridge/config.json
+
 # Build artifacts - jangan commit
 /dapodik-bridge/dist/
 /dapodik-bridge/build/

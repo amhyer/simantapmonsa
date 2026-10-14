@@ -33,15 +33,35 @@ DEFAULT_CONFIG = {
 }
 
 
+# Rahasia boleh datang dari environment variable sehingga tidak perlu
+# disimpan di config.json (berkas itu ikut ter-commit ke repositori).
+ENV_OVERRIDES = {
+    "SIMANTAP_SERVER_URL": "server_url",
+    "SIMANTAP_API_KEY": "api_key",
+    "SIMANTAP_SEMESTER_ID": "semester_id",
+    "SIMANTAP_TAHUN_AJARAN": "tahun_ajaran",
+    "SIMANTAP_NPSN": "npsn",
+    "DAPODIK_HOST": "dapodik_host",
+    "DAPODIK_PORT": "dapodik_port",
+    "DAPODIK_PROTOCOL": "dapodik_protocol",
+    "DAPODIK_TOKEN": "dapodik_token",
+}
+
+
 def load_config():
     p = Path(CONFIG_FILE)
+    cfg = DEFAULT_CONFIG.copy()
     if p.exists():
         with open(p, "r", encoding="utf-8") as f:
             saved = json.load(f)
-            cfg = DEFAULT_CONFIG.copy()
             cfg.update(saved)
-            return cfg
-    return DEFAULT_CONFIG.copy()
+
+    for env_name, key in ENV_OVERRIDES.items():
+        value = os.environ.get(env_name)
+        if value:
+            cfg[key] = int(value) if key == "dapodik_port" else value
+
+    return cfg
 
 
 def save_config(cfg):
