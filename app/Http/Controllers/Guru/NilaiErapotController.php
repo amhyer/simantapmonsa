@@ -9,6 +9,7 @@ use App\Models\PengaturanGuru;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class NilaiErapotController extends Controller
 {

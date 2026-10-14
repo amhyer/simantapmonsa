@@ -1,0 +1,697 @@
+<?php
+
+/**
+ * Verifikasi otomatis perbaikan bug SIMANTAP.
+ *
+ * Jalankan dari akar proyek:
+ *     php tools/verifikasi-perbaikan.php
+ *
+ * Skrip ini TIDAK memerlukan Composer/vendor/koneksi basis data — murni
+ * membaca berkas sumber, sehingga bisa dijalankan di mesin mana pun yang
+ * punya PHP >= 8.1. Keluaran: daftar pemeriksaan PASS/FAIL dan kode keluar
+ * non-nol bila ada yang gagal (cocok untuk CI).
+ */
+
+$root = dirname(__DIR__);
+$lulus = 0;
+$gagal = 0;
+$catatan = [];
+
+function rel(string $path, string $root): string
+{
+    return str_replace($root . '/', '', $path);
+}
+
+function baca(string $path): string
+{
+    return is_file($path) ? (string) file_get_contents($path) : '';
+}
+
+/**
+ * Buang komentar & isi string agar pencocokan kode tidak salah deteksi.
+ * Memakai tokenizer PHP (bukan regex) supaya tahan terhadap karakter aneh.
+ */
+function kodeBersih(string $kode): string
+{
+    $hasil = '';
+    foreach (token_get_all($kode) as $token) {
+        if (is_array($token)) {
+            $id = $token[0];
+            if (in_array($id, [T_COMMENT, T_DOC_COMMENT], true)) {
+                $hasil .= ' ';
+            } elseif (in_array($id, [T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE, T_INLINE_HTML], true)) {
+                $hasil .= "''";
+            } else {
+                $hasil .= $token[1];
+            }
+        } else {
+            $hasil .= $token;
+        }
+    }
+
+    return $hasil;
+}
+
+/**
+ * Kumpulan FQCN yang dideklarasikan di app/ & database/ — dipakai agar
+ * referensi yang sah di namespace yang sama (mis. User::class di App\Models)
+ * tidak dianggap "tanpa use".
+ *
+ * @return array<string, true>
+ */
+function kelasDideklarasikan(string $root): array
+{
+    $kelas = [];
+    foreach (semuaPhp($root) as $path) {
+        $relatif = rel($path, $root);
+        if (!str_starts_with($relatif, 'app/') && !str_starts_with($relatif, 'database/')) {
+            continue;
+        }
+        $kode = kodeBersih(baca($path));
+        preg_match('/^namespace\s+([^;]+);/m', $kode, $ns);
+        if (!$ns) {
+            continue;
+        }
+        if (preg_match_all('/^(?:final\s+|abstract\s+)?(?:class|interface|trait|enum)\s+(\w+)/m', $kode, $c)) {
+            foreach ($c[1] as $nama) {
+                $kelas[trim($ns[1]) . '\\' . $nama] = true;
+            }
+        }
+    }
+
+    return $kelas;
+}
+
+function semuaPhp(string $root): array
+{
+    $hasil = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $file) {
+        $path = $file->getPathname();
+        if (str_contains($path, '/vendor/') || str_contains($path, '/node_modules/') || str_contains($path, '/.git/')) {
+            continue;
+        }
+        if ($file->getExtension() === 'php') {
+            $hasil[] = $path;
+        }
+    }
+    sort($hasil);
+
+    return $hasil;
+}
+
+function periksa(string $nama, callable $uji): void
+{
+    global $lulus, $gagal, $catatan;
+
+    try {
+        $pesan = $uji();
+    } catch (Throwable $e) {
+        $pesan = 'ERROR: ' . $e->getMessage();
+    }
+
+    if ($pesan === true || $pesan === null) {
+        $lulus++;
+        echo "  [PASS] {$nama}\n";
+
+        return;
+    }
+
+    $gagal++;
+    $catatan[] = "{$nama}: {$pesan}";
+    echo "  [FAIL] {$nama}\n         {$pesan}\n";
+}
+
+echo "=== Verifikasi Perbaikan SIMANTAP ===\n";
+echo "Akar proyek: {$root}\n\n";
+
+/* ──────────────────────────────────────────────────────────────
+ * 1. Sintaks seluruh berkas PHP
+ * ────────────────────────────────────────────────────────────── */
+echo "1. Sintaks PHP\n";
+periksa('Semua berkas PHP lolos token_get_all(TOKEN_PARSE)', function () use ($root) {
+    $rusak = [];
+    foreach (semuaPhp($root) as $path) {
+        try {
+            token_get_all(baca($path), TOKEN_PARSE);
+        } catch (ParseError $e) {
+            $rusak[] = rel($path, $root) . ' → ' . $e->getMessage();
+        }
+    }
+
+    return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 2. Referensi kelas tanpa import (fatal saat runtime)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n2. Kelas global tanpa `use` di dalam namespace\n";
+periksa('Tidak ada Log::/Rombel::/Semester:: tanpa import', function () use ($root) {
+    $terlarang = [];
+    $dideklarasikan = kelasDideklarasikan($root);
+    $kelasGlobal = ['Log', 'Rombel', 'Semester', 'Siswa', 'User', 'Kuis', 'Nilai', 'Kehadiran', 'Materi', 'Dimensi', 'Kebiasaan', 'Catatan', 'Ptk', 'MataPelajaran', 'JadwalPelajaran', 'PengaturanGuru', 'RingkasanGuru', 'SekolahSettings', 'HasilKuis', 'NilaiErapot', 'OrangTuaSiswa', 'Aktivitas', 'ApiKey', 'TanggalRapor', 'Ekstrakurikuler'];
+    // Hanya nama yang memang bukan kelas (keyword) yang diizinkan tanpa import.
+    // CATATAN: 'Log' TIDAK boleh ada di sini — itulah salah satu bug yang diperiksa.
+    $izin = ['self', 'static', 'parent'];
+
+    foreach (semuaPhp($root) as $path) {
+        if (!str_starts_with(rel($path, $root), 'app/') && !str_starts_with(rel($path, $root), 'database/')) {
+            continue;
+        }
+
+        $kode = baca($path);
+        $bersih = kodeBersih($kode);
+        preg_match('/^namespace\s+([^;]+);/m', $bersih, $ns);
+        if (!$ns) {
+            continue;
+        }
+        $namespace = trim($ns[1]);
+
+        $imports = [];
+        // use A\B\C; dan use A\B\C as D;
+        if (preg_match_all('/^use\s+(?:function\s+|const\s+)?(?!.*\{)([\w\\\\]+)(?:\s+as\s+(\w+))?\s*;/m', $bersih, $m)) {
+            foreach ($m[1] as $i => $fq) {
+                $imports[] = $m[2][$i] !== '' ? $m[2][$i] : substr($fq, strrpos($fq, '\\') + 1);
+            }
+        }
+        // group use: use A\B\{C, D as E};
+        if (preg_match_all('/^use\s+(?:function\s+|const\s+)?([\w\\\\]+)\\{(.*?)\}\s*;/ms', $bersih, $g)) {
+            foreach ($g[2] as $daftar) {
+                foreach (preg_split('/[,\s]+/', $daftar) as $bagian) {
+                    $bagian = trim($bagian);
+                    if ($bagian === '') {
+                        continue;
+                    }
+                    if (preg_match('/^(.+?)\s+as\s+(\w+)$/i', $bagian, $alias)) {
+                        $imports[] = $alias[2];
+                    } else {
+                        $imports[] = $bagian;
+                    }
+                }
+            }
+        }
+
+        foreach ($kelasGlobal as $kelas) {
+            if (in_array($kelas, $imports, true) || in_array($kelas, $izin, true)) {
+                continue;
+            }
+            // kelas lain di namespace yang sama (mis. User di App\Models)
+            if (isset($dideklarasikan[$namespace . '\\' . $kelas])) {
+                continue;
+            }
+            // referensi statis: Kelas::method(
+            if (preg_match('/(?<![\w\\\\$>])' . preg_quote($kelas, '/') . '::/', $bersih)) {
+                $terlarang[] = rel($path, $root) . " memakai {$kelas}:: tanpa `use` (namespace {$namespace})";
+            }
+        }
+    }
+
+    return $terlarang === [] ? true : implode(' | ', array_slice($terlarang, 0, 5));
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 3. Route → controller & view
+ * ────────────────────────────────────────────────────────────── */
+echo "\n3. Route, controller, dan view\n";
+periksa('Semua controller pada routes/*.php memiliki berkasnya', function () use ($root) {
+    $hilang = [];
+    $routes = baca($root . '/routes/web.php') . baca($root . '/routes/api.php');
+    preg_match_all('/\\\\?(App\\\\Http\\\\Controllers\\\\[\w\\\\]+)::class/', $routes, $m);
+
+    $dalamFlagCbt = str_contains($routes, "config('simantap.cbt_enabled'");
+
+    foreach (array_unique($m[1]) as $kelas) {
+        // FQCN App\Http\... → berkas app/Http/....php (akar 'app' huruf kecil)
+        $path = $root . '/app/' . str_replace('\\', '/', substr($kelas, 4)) . '.php';
+        if (is_file($path)) {
+            continue;
+        }
+        // Controller CBT memang belum ada; boleh hanya bila route-nya
+        // dimatikan di balik feature flag.
+        if (str_contains($kelas, 'Controllers\\Cbt\\') && $dalamFlagCbt && is_file($root . '/config/simantap.php')) {
+            continue;
+        }
+        $hilang[] = $kelas;
+    }
+
+    return $hilang === [] ? true : 'controller tidak ditemukan: ' . implode(', ', $hilang);
+});
+
+periksa('Semua view(...) yang dirujuk app/ tersedia (kecuali vendor)', function () use ($root) {
+    $hasil = [];
+    foreach (semuaPhp($root . '/app') as $path) {
+        $kode = baca($path);
+        if (preg_match_all("/view\(\s*'([\w.\-]+)'/", $kode, $m)) {
+            foreach ($m[1] as $view) {
+                if (str_starts_with($view, 'vendor.')) {
+                    continue; // view paket pihak ketiga (mis. scramble)
+                }
+                $file = $root . '/resources/views/' . str_replace('.', '/', $view) . '.blade.php';
+                if (!is_file($file)) {
+                    $hasil[] = rel($path, $root) . " → {$view}";
+                }
+            }
+        }
+    }
+
+    return $hasil === [] ? true : implode(' | ', array_slice($hasil, 0, 5));
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 4. Kosakata jenis nilai (enum nilai.jenis)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n4. Konsistensi `jenis` nilai\n";
+periksa("Nilai enum DB = ['Tugas','Ulangan Harian','Praktik','PTS','PAS']", function () use ($root) {
+    $migrasi = baca($root . '/database/migrations/2026_09_09_075731_create_nilai_table.php');
+    $benar = str_contains($migrasi, "enum('jenis', ['Tugas', 'Ulangan Harian', 'Praktik', 'PTS', 'PAS'])");
+
+    return $benar ? true : 'definisi enum nilai.jenis tidak sesuai ekspektasi';
+});
+
+periksa('UI Input Nilai mengirim nilai enum yang sah (bukan "UH")', function () use ($root) {
+    $view = baca($root . '/resources/views/guru/input-nilai/index.blade.php');
+    preg_match_all('/<option value="([^"]+)">/', $view, $m);
+    $enum = ['Tugas', 'Ulangan Harian', 'Praktik', 'PTS', 'PAS'];
+    $salah = array_values(array_diff($m[1], $enum));
+
+    return $salah === [] ? true : 'opsi jenis tidak dikenal: ' . implode(', ', $salah);
+});
+
+periksa('InputNilaiController membatasi jenis ke daftar valid', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Guru/InputNilaiController.php');
+
+    return str_contains($kode, "Rule::in") && str_contains($kode, 'JENIS_VALID')
+        ? true
+        : 'validasi jenis belum dibatasi Rule::in';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 5. Semantik batas_waktu kuis
+ * ────────────────────────────────────────────────────────────── */
+echo "\n5. Batas waktu kuis\n";
+periksa('Model Kuis meng-cast batas_waktu sebagai datetime', function () use ($root) {
+    $model = baca($root . '/app/Models/Kuis.php');
+
+    return str_contains($model, "'batas_waktu' => 'datetime'")
+        ? true
+        : 'cast datetime untuk batas_waktu tidak ditemukan';
+});
+
+periksa('Ada migrasi yang mengubah batas_waktu menjadi timestamp', function () use ($root) {
+    $files = glob($root . '/database/migrations/*.php');
+    foreach ($files as $f) {
+        $isi = baca($f);
+        if (str_contains($isi, "'kuis'") && str_contains($isi, 'batas_waktu') && str_contains($isi, "timestamp('batas_waktu')")) {
+            return true;
+        }
+    }
+
+    return 'migrasi perubahan batas_waktu → timestamp tidak ditemukan';
+});
+
+periksa('Form guru memakai input datetime-local (bukan number menit)', function () use ($root) {
+    $gagal = [];
+    foreach (['create', 'edit'] as $v) {
+        $view = baca($root . "/resources/views/guru/kuis/{$v}.blade.php");
+        if (!str_contains($view, 'type="datetime-local" name="batas_waktu"')) {
+            $gagal[] = "guru/kuis/{$v}";
+        }
+        if (str_contains($view, 'Batas Waktu (menit)')) {
+            $gagal[] = "guru/kuis/{$v} masih berlabel menit";
+        }
+    }
+
+    return $gagal === [] ? true : implode(', ', $gagal);
+});
+
+periksa('Controller kuis memvalidasi batas_waktu sebagai tanggal', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Guru/KuisController.php');
+
+    return str_contains($kode, "'batas_waktu' => 'nullable|date'")
+        ? true
+        : 'validasi batas_waktu belum nullable|date';
+});
+
+periksa('Seeder tidak lagi menulis batas_waktu integer', function () use ($root) {
+    $seeder = baca($root . '/database/seeders/DatabaseSeeder.php');
+
+    return preg_match("/'batas_waktu'\s*=>\s*\d+/", $seeder) !== 1
+        ? true
+        : 'seeder masih menulis angka menit ke batas_waktu';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 6. Predikat satu sumber
+ * ────────────────────────────────────────────────────────────── */
+echo "\n6. Sumber kebenaran predikat\n";
+periksa('NilaiErapot::generatePredikat memakai NilaiService', function () use ($root) {
+    $kode = baca($root . '/app/Models/NilaiErapot.php');
+
+    return str_contains($kode, 'NilaiService') ? true : 'generatePredikat masih memakai ambang sendiri';
+});
+
+periksa('Kepsek DashboardController memakai NilaiService', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Kepsek/DashboardController.php');
+
+    return str_contains($kode, 'NilaiService') ? true : 'getPredikat kepsek masih memakai ambang sendiri';
+});
+
+periksa('Tidak ada ambang mati 90/80 di predikat e-Rapor', function () use ($root) {
+    $kode = baca($root . '/app/Models/NilaiErapot.php');
+
+    return str_contains($kode, '>= 90')
+        ? 'masih ada ambang mati >= 90'
+        : true;
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 7. e-Rapor: resolver, view alignment, dan kolom FK
+ * ────────────────────────────────────────────────────────────── */
+echo "\n7. e-Rapor (resolver & alignment)\n";
+periksa('Kelas App\\Services\\JadwalPelajaranResolver tersedia', function () use ($root) {
+    return is_file($root . '/app/Services/JadwalPelajaranResolver.php')
+        ? true
+        : 'kelas JadwalPelajaranResolver belum ada';
+});
+
+periksa('View admin/referensi/alignment-check tersedia', function () use ($root) {
+    return is_file($root . '/resources/views/admin/referensi/alignment-check.blade.php')
+        ? true
+        : 'view alignment-check belum ada';
+});
+
+periksa('Kolom nilai_erapor.jadwal_pelajaran_id dibuat oleh migrasi', function () use ($root) {
+    foreach (glob($root . '/database/migrations/*.php') as $f) {
+        $isi = baca($f);
+        if (str_contains($isi, 'nilai_erapor') && str_contains($isi, "foreignId('jadwal_pelajaran_id')")) {
+            return true;
+        }
+    }
+
+    return 'migrasi kolom jadwal_pelajaran_id pada nilai_erapor tidak ditemukan';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 8. Backup vs wipe
+ * ────────────────────────────────────────────────────────────── */
+echo "\n8. Cakupan backup vs penghapusan data\n";
+periksa('Setiap tabel yang di-wipe dicadangkan atau dikecualikan secara eksplisit', function () use ($root) {
+    $controller = baca($root . '/app/Http/Controllers/Admin/BackupController.php');
+    preg_match('/\$tabelData = \[(.*?)\];/s', $controller, $m);
+    if (!$m) {
+        return 'daftar $tabelData tidak ditemukan';
+    }
+    preg_match_all("/'([\w]+)'/", $m[1], $t);
+    $diWipe = array_values(array_unique($t[1]));
+
+    $registry = baca($root . '/app/Support/BackupTables.php');
+    preg_match('/function semua\(\).*?return \[(.*?)\n        \];/s', $registry, $r);
+    preg_match_all("/'([\w]+)' => \['class'/", $r[1] ?? '', $rt);
+    $dicadangkan = $rt[1];
+
+    preg_match('/function tidakDicadangkan\(\).*?return \[(.*?)\n        \];/s', $registry, $e);
+    preg_match_all("/'([\w]+)',/", $e[1] ?? '', $et);
+    $dikecualikan = $et[1];
+
+    $luput = array_values(array_diff($diWipe, $dicadangkan, $dikecualikan));
+
+    return $luput === []
+        ? true
+        : 'tabel di-wipe tapi tidak dicadangkan: ' . implode(', ', $luput);
+});
+
+periksa('ExportBackupJob memakai registry tabel terpusat', function () use ($root) {
+    $job = baca($root . '/app/Jobs/ExportBackupJob.php');
+
+    return str_contains($job, 'BackupTables::semua()') ? true : 'job export masih memakai daftar tabel sendiri';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 9. Kredensial
+ * ────────────────────────────────────────────────────────────── */
+echo "\n9. Kredensial di repositori\n";
+periksa('dapodik-bridge/config.json tidak memuat api_key/token', function () use ($root) {
+    $path = $root . '/dapodik-bridge/config.json';
+    if (!is_file($path)) {
+        return true; // tidak ada berkas = aman (memakai env)
+    }
+    $cfg = json_decode(baca($path), true);
+    $masalah = [];
+    foreach (['api_key', 'dapodik_token'] as $kunci) {
+        if (!empty($cfg[$kunci])) {
+            $masalah[] = $kunci;
+        }
+    }
+
+    return $masalah === [] ? true : 'masih berisi nilai rahasia: ' . implode(', ', $masalah);
+});
+
+periksa('Simpanan rahasia bridge tidak di-track git', function () use ($root) {
+    $masalah = [];
+    $ignore = baca($root . '/.gitignore');
+
+    if (!str_contains($ignore, 'dapodik-bridge/config.json')) {
+        $masalah[] = '.gitignore belum mengecualikan dapodik-bridge/config.json';
+    }
+    if (!is_file($root . '/dapodik-bridge/config.example.json')) {
+        $masalah[] = 'contoh tanpa rahasia (config.example.json) belum ada';
+    }
+
+    // Entry .gitignore saja TIDAK melepas berkas yang sudah pernah di-add;
+    // jadi bila ini checkout git, pastikan berkasnya benar-benar tak dilacak.
+    if (is_dir($root . '/.git') && function_exists('exec')) {
+        $keluaran = [];
+        $kode = 0;
+        @exec('git -C ' . escapeshellarg($root) . ' ls-files --error-unmatch dapodik-bridge/config.json 2>&1', $keluaran, $kode);
+        if ($kode === 0) {
+            $masalah[] = 'masih dilacak git — jalankan: git rm --cached dapodik-bridge/config.json';
+        }
+    }
+
+    return $masalah === [] ? true : implode('; ', $masalah);
+});
+
+periksa('setup_api_key.php tidak memuat literal API key', function () use ($root) {
+    $kode = baca($root . '/setup_api_key.php');
+    if (preg_match("/ApiKey::create/", $kode) && !preg_match('/\$apiKey\s*=/', $kode)) {
+        return 'API key masih hardcoded';
+    }
+
+    return str_contains($kode, 'nama_pengguna')
+        ? true
+        : 'setup_api_key.php masih memakai kolom yang tidak ada (email)';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 10. Modul CBT tidak boleh 500
+ * ────────────────────────────────────────────────────────────── */
+echo "\n10. Modul CBT\n";
+periksa('Route CBT dimatikan di balik feature flag', function () use ($root) {
+    $routes = baca($root . '/routes/web.php');
+    $flag = is_file($root . '/config/simantap.php');
+
+    if (!str_contains($routes, "config('simantap.cbt_enabled'")) {
+        return 'route CBT masih aktif tanpa flag';
+    }
+
+    return $flag ? true : 'config/simantap.php tidak ada';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 11. Autentikasi & sesi
+ * ────────────────────────────────────────────────────────────── */
+echo "\n11. Autentikasi, sesi, dan kunci API\n";
+periksa('Login memeriksa kolom aktif/archived_at', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Auth/LoginController.php');
+
+    if (!str_contains($kode, '$user->aktif')) {
+        return 'LoginController tidak memeriksa kolom aktif';
+    }
+
+    return str_contains($kode, 'archived_at')
+        ? true
+        : 'LoginController tidak memeriksa archived_at';
+});
+
+periksa('Pendaftaran publik tidak mengaktifkan akun otomatis', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/LandingController.php');
+
+    if (!preg_match("/'aktif'\s*=>\s*false/", $kode)) {
+        return "LandingController masih membuat akun 'aktif' => true untuk pendaftar publik";
+    }
+
+    return true;
+});
+
+periksa('Tabel sessions dibuat oleh migrasi (SESSION_DRIVER=database)', function () use ($root) {
+    foreach (glob($root . '/database/migrations/*.php') as $f) {
+        if (str_contains(baca($f), "Schema::create('sessions'")) {
+            return true;
+        }
+    }
+
+    return 'migrasi tabel sessions tidak ditemukan';
+});
+
+periksa('Kunci API tidak disimpan dalam bentuk polos', function () use ($root) {
+    $model = baca($root . '/app/Models/ApiKey.php');
+    if (!preg_match("/'key'\s*=>\s*null/", $model)) {
+        return 'ApiKey::generate masih menulis kunci polos ke kolom key';
+    }
+
+    $middleware = baca($root . '/app/Http/Middleware/ApiKeyMiddleware.php');
+
+    return str_contains($middleware, "where('key',")
+        ? 'ApiKeyMiddleware masih mencari kunci polos (fallback)'
+        : true;
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 12. Integritas data e-Rapor & Dapodik
+ * ────────────────────────────────────────────────────────────── */
+echo "\n12. Integritas data\n";
+periksa('Import e-Rapor menghitung predikat sebelum deskripsi', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Guru/ImportErapotController.php');
+    $posPredikat = strpos($kode, '$nilai->predikat = $nilai->generatePredikat');
+    $posDeskripsi = strpos($kode, '$nilai->deskripsi_capaian = $nilai->generateDeskripsi');
+
+    if ($posPredikat === false || $posDeskripsi === false) {
+        return 'urutan penulisan predikat/deskripsi tidak ditemukan';
+    }
+
+    return $posPredikat < $posDeskripsi
+        ? true
+        : 'generateDeskripsi() masih dipanggil sebelum predikat disimpan';
+});
+
+periksa('generateDeskripsi() memakai predikat baru / hitung ulang', function () use ($root) {
+    $kode = baca($root . '/app/Models/NilaiErapot.php');
+
+    return str_contains($kode, '$this->predikat ?: $this->generatePredikat()')
+        ? true
+        : 'generateDeskripsi() tidak memiliki fallback predikat';
+});
+
+periksa('sekolah_settings.guru_id nullable (sinkronisasi Dapodik)', function () use ($root) {
+    foreach (glob($root . '/database/migrations/*.php') as $f) {
+        $isi = baca($f);
+        // harus berupa PERUBAHAN kolom guru_id → nullable, bukan sekadar
+        // menyebut 'nullable' untuk kolom lain di migrasi create.
+        if (str_contains($isi, 'sekolah_settings')
+            && preg_match("/foreignId\('guru_id'\)\s*->nullable\(\)\s*->change\(\)/", $isi)) {
+            return true;
+        }
+    }
+
+    return 'belum ada migrasi yang membuat sekolah_settings.guru_id nullable';
+});
+
+periksa('Full sync Google Sheets dibatasi ke data guru yang login', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Guru/IntegrasiController.php');
+
+    if (!str_contains($kode, "where('guru_id', \$guruId)")) {
+        return 'fullSync masih mengambil data seluruh sekolah';
+    }
+
+    return str_contains($kode, 'collect($models)->sum(')
+        ? true
+        : 'perhitungan jumlah hasil sync belum diperbaiki';
+});
+
+periksa('Akun guru hasil sinkronisasi wajib ganti sandi awal', function () use ($root) {
+    $berkas = [
+        'app/Services/DapodikService.php',
+        'app/Services/Dapodik/DapodikSyncService.php',
+        'app/Http/Controllers/Api/DapodikSyncController.php',
+    ];
+
+    $luput = [];
+    foreach ($berkas as $rel) {
+        $kode = baca($root . '/' . $rel);
+        if (str_contains($kode, "'guru123'") && !str_contains($kode, 'force_password_change')) {
+            $luput[] = $rel;
+        }
+    }
+
+    return $luput === [] ? true : 'tanpa force_password_change: ' . implode(', ', $luput);
+});
+
+periksa('Rute guru.dimensi.destroy terdaftar (tombol Hapus di view berfungsi)', function () use ($root) {
+    $routes = baca($root . '/routes/web.php');
+
+    return preg_match("/Route::resource\('dimensi',\s*DimensiController::class\)->only\(\[[^\]]*'destroy'[^\]]*\]\)/", $routes) === 1
+        ? true
+        : 'resource dimensi belum memuat aksi destroy';
+});
+
+periksa('DimensiController::destroy memeriksa kepemilikan data (403)', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Guru/DimensiController.php');
+    $kurang = [];
+    if (!str_contains($kode, 'function destroy(Dimensi $dimensi)')) {
+        $kurang[] = 'method destroy';
+    }
+    if (!str_contains($kode, 'guru_id !== auth()->id()')) {
+        $kurang[] = 'cek guru_id';
+    }
+    if (!str_contains($kode, 'abort(403)')) {
+        $kurang[] = 'abort(403)';
+    }
+
+    return $kurang === [] ? true : 'belum ada: ' . implode(', ', $kurang);
+});
+
+periksa('Submit kuis ganda ditangani sebagai "sudah tersimpan"', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Siswa/KuisController.php');
+    $kurang = [];
+    if (!str_contains($kode, 'UniqueConstraintViolationException')) {
+        $kurang[] = 'catch UniqueConstraintViolationException';
+    }
+    if (!str_contains($kode, "'Jawaban Anda sudah tersimpan sebelumnya.'")) {
+        $kurang[] = 'pesan sudah tersimpan';
+    }
+
+    $adaIndex = false;
+    foreach (glob($root . '/database/migrations/*hasil_kuis*.php') as $f) {
+        if (str_contains(baca($f), "unique(['kuis_id', 'siswa_id'])")) {
+            $adaIndex = true;
+            break;
+        }
+    }
+    if (!$adaIndex) {
+        $kurang[] = 'unique index hasil_kuis (kuis_id, siswa_id)';
+    }
+
+    return $kurang === [] ? true : 'belum ada: ' . implode(', ', $kurang);
+});
+
+periksa('Header KUIS tetap kompatibel GAS + catatan koordinasi', function () use ($root) {
+    $config = baca($root . '/config/google.php');
+    $layanan = baca($root . '/app/Services/GoogleSheetsService.php');
+    $kurang = [];
+    if (!str_contains($config, "'Batas Waktu (menit)'")) {
+        $kurang[] = "header lama 'Batas Waktu (menit)' di config/google.php";
+    }
+    if (!str_contains($config, 'CATATAN KOORDINASI GAS')) {
+        $kurang[] = 'catatan koordinasi di config/google.php';
+    }
+    if (!str_contains($layanan, 'kompatibilitas GAS')) {
+        $kurang[] = 'penjelasan kompatibilitas di GoogleSheetsService';
+    }
+
+    return $kurang === [] ? true : 'belum ada: ' . implode(', ', $kurang);
+});
+
+/* ────────────────────────────────────────────────────────────── */
+echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
+if ($gagal > 0) {
+    echo "\nRincian kegagalan:\n";
+    foreach ($catatan as $c) {
+        echo "  - {$c}\n";
+    }
+    exit(1);
+}
+
+echo "Semua pemeriksaan lulus.\n";
+exit(0);

@@ -97,11 +97,35 @@ class CetakController extends Controller
                 ->where('aktif', true)
                 ->orderBy('nama_peserta_didik')
                 ->get();
+
+            // PERBAIKAN N+1: sebelumnya 2 query dijalankan per siswa
+            // (rekap kehadiran + catatan terakhir). Kini 2 query agregat
+            // untuk seluruh kelas sekaligus.
+            $siswaIds = $siswa->pluck('id');
+
+            $rekapSemua = Kehadiran::whereIn('siswa_id', $siswaIds)
+                ->selectRaw('siswa_id, status, COUNT(*) as jumlah')
+                ->groupBy('siswa_id', 'status')
+                ->get()
+                ->groupBy('siswa_id');
+
+            $catatanSemua = Catatan::whereIn('siswa_id', $siswaIds)
+                ->orderByDesc('tanggal')
+                ->get(['siswa_id', 'catatan', 'tanggal'])
+                ->groupBy('siswa_id')
+                ->map(fn ($baris) => $baris->first());
+
             foreach ($siswa as $row) {
-                $row->rekap_hadir = $this->rekapKehadiran($row->id);
-                $row->catatan_terakhir = Catatan::where('siswa_id', $row->id)
-                    ->latest('tanggal')
-                    ->first(['catatan', 'tanggal']);
+                $counts = ($rekapSemua[$row->id] ?? collect())
+                    ->pluck('jumlah', 'status')
+                    ->all();
+
+                $row->rekap_hadir = [
+                    'S' => (int) ($counts['S'] ?? 0),
+                    'I' => (int) ($counts['I'] ?? 0),
+                    'A' => (int) ($counts['A'] ?? 0),
+                ];
+                $row->catatan_terakhir = $catatanSemua[$row->id] ?? null;
             }
         }
 

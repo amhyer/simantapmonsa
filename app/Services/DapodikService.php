@@ -33,6 +33,9 @@ class DapodikService
                         'kata_sandi' => \Illuminate\Support\Facades\Hash::make('guru123'),
                         'peran' => 'guru',
                         'aktif' => true,
+                        // Sandi awal 'guru123' wajib diganti saat login pertama,
+                        // selaras dengan DapodikSyncService & Api\DapodikSyncController.
+                        'force_password_change' => true,
                         'terhubung_dengan' => [],
                         'kelas_mata_pelajaran' => $gtk['mata_pelajaran'] ?? null,
                     ]);

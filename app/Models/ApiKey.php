@@ -38,10 +38,13 @@ class ApiKey extends Model
         $plaintextKey = Str::random(64);
         $keyHash = hash('sha256', $plaintextKey);
 
+        // PERBAIKAN KEAMANAN: kunci TIDAK lagi disimpan dalam bentuk polos.
+        // Hanya hash (key_hash) yang tersimpan; kunci polos ditampilkan sekali
+        // kepada pembuatnya lalu tidak dapat diambil lagi dari basis data.
         $apiKey = self::create([
             'user_id' => $userId,
             'name' => $description,
-            'key' => $plaintextKey,
+            'key' => null,
             'key_hash' => $keyHash,
             'abilities' => ['dapodik:import'],
             'active' => true,

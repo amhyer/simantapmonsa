@@ -35,14 +35,13 @@ class ApiKeyMiddleware
             ], 401);
         }
 
-        // Find key by hash lookup
+        // Pencarian HANYA lewat hash (PERBAIKAN KEAMANAN).
+        // Fallback pencarian plaintext dihapus: kunci polos tidak lagi
+        // disimpan, dan membandingkan plaintext membuat hash tidak bermakna.
+        // Kunci lama tanpa key_hash sudah di-backfill oleh migrasi
+        // `backfill_key_hash_on_api_keys_table`.
         $keyHash = hash('sha256', $apiKey);
         $key = ApiKey::where('key_hash', $keyHash)->first();
-
-        // Fallback: try plaintext lookup for legacy keys
-        if (!$key) {
-            $key = ApiKey::where('key', $apiKey)->first();
-        }
 
         if (!$key || !$key->isValid()) {
             return response()->json([

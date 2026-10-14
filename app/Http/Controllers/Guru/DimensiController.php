@@ -54,4 +54,23 @@ class DimensiController extends Controller
 
         return back()->with('success', 'Dimensi berhasil disimpan.');
     }
+
+    /**
+     * Hapus satu baris dimensi.
+     *
+     * PERBAIKAN: view guru/dimensi/index.blade.php sudah menyediakan tombol
+     * Hapus yang memanggil route('guru.dimensi.destroy'), tetapi route dan
+     * method ini belum pernah ada — halaman Dimensi melempar
+     * RouteNotFoundException (HTTP 500) saat dirender.
+     */
+    public function destroy(Dimensi $dimensi)
+    {
+        if ($dimensi->guru_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $dimensi->delete();
+
+        return back()->with('success', 'Dimensi berhasil dihapus.');
+    }
 }

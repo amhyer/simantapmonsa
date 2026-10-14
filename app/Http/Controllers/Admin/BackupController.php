@@ -3,23 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\Materi;
-use App\Models\Kuis;
-use App\Models\Nilai;
-use App\Models\Kehadiran;
-use App\Models\HasilKuis;
-use App\Models\Catatan;
-use App\Models\Dimensi;
-use App\Models\Kebiasaan;
-use App\Models\PengaturanGuru;
-use App\Models\RingkasanGuru;
-use App\Models\SekolahSettings;
 use App\Models\Aktivitas;
 use App\Jobs\ExportBackupJob;
+use App\Support\BackupTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -68,10 +57,13 @@ class BackupController extends Controller
                 ->with('error', 'File backup tidak valid.');
         }
 
-        // Validasi struktur dasar backup
-        $validTables = ['users', 'siswa', 'materi', 'kuis', 'nilai', 'kehadiran', 'hasil_kuis', 'catatan', 'dimensi', 'kebiasaan', 'pengaturan_guru', 'ringkasan_guru', 'sekolah_settings', 'aktivitas'];
+        // Hanya tabel yang dikenal (App\Support\BackupTables) yang boleh dipulihkan.
+        $validTables = BackupTables::tabel();
         foreach (array_keys($data) as $table) {
-            if (!in_array($table, $validTables)) {
+            if ($table === 'metadata') {
+                continue; // blok metadata dari `simantap:backup` tidak diimpor
+            }
+            if (!in_array($table, $validTables, true)) {
                 return redirect()->route('admin.backup.index')
                     ->with('error', "Tabel '$table' tidak valid dalam backup.");
             }
@@ -89,27 +81,13 @@ class BackupController extends Controller
                 ->with('error', 'File backup terlalu besar (maks 100.000 baris). Bagi menjadi beberapa file.');
         }
 
-        $fillableMap = [
-            'users' => ['id', 'uuid', 'nama_lengkap', 'nama_pengguna', 'kata_sandi', 'peran', 'terhubung_dengan', 'kelas_mata_pelajaran', 'aktif', 'terakhir_masuk', 'created_at', 'updated_at'],
-            'siswa' => ['id', 'uuid', 'dapodik_id', 'guru_id', 'nama_guru', 'semester_id', 'nis', 'nisn', 'nama_peserta_didik', 'kelas', 'jenis_kelamin', 'nama_orang_tua', 'aktif', 'status_siswa', 'rekaman', 'nik', 'no_kk', 'agama', 'tempat_lahir', 'tanggal_lahir', 'alamat', 'telepon', 'penerima_kip', 'no_kip', 'created_at', 'updated_at'],
-            'materi' => ['id', 'uuid', 'guru_id', 'nama_guru', 'tanggal', 'judul', 'mata_pelajaran', 'kelas', 'tujuan_pembelajaran', 'materi_pokok', 'tautan_sumber', 'pm', 'dimensi', 'pengalaman', 'sematkan', 'rekaman', 'created_at', 'updated_at'],
-            'kuis' => ['id', 'uuid', 'guru_id', 'nama_guru', 'tanggal', 'judul', 'mata_pelajaran', 'kelas', 'mode', 'sumber', 'tautan_soal', 'materi_id', 'kkm', 'batas_waktu', 'aktif', 'jumlah_soal', 'stimulus', 'jenis', 'petunjuk', 'cara_nilai', 'soal', 'rekaman', 'created_at', 'updated_at'],
-            'nilai' => ['id', 'uuid', 'guru_id', 'siswa_id', 'nama_guru', 'nama_siswa', 'tanggal', 'jenis', 'judul_penilaian', 'mata_pelajaran', 'nilai', 'kuis_id', 'rekaman', 'created_at', 'updated_at'],
-            'kehadiran' => ['id', 'uuid', 'guru_id', 'siswa_id', 'tanggal', 'status', 'keterangan', 'rekaman', 'created_at', 'updated_at'],
-            'hasil_kuis' => ['id', 'kuis_id', 'siswa_id', 'jawaban', 'skor', 'created_at', 'updated_at'],
-            'catatan' => ['id', 'uuid', 'guru_id', 'siswa_id', 'nama_guru', 'nama_siswa', 'tanggal', 'jenis', 'catatan', 'rekaman', 'created_at', 'updated_at'],
-            'dimensi' => ['id', 'uuid', 'guru_id', 'siswa_id', 'nama_guru', 'nama_siswa', 'no_dimensi', 'dimensi', 'skor', 'predikat', 'catatan', 'rekaman', 'created_at', 'updated_at'],
-            'kebiasaan' => ['id', 'uuid', 'siswa_id', 'tanggal', 'bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat', 'catatan_orang_tua', 'diisi_oleh', 'waktu_simpan', 'rekaman', 'created_at', 'updated_at'],
-            'pengaturan_guru' => ['id', 'guru_id', 'nama_guru', 'kelas', 'kkm', 'semester', 'tahun_pelajaran', 'pembaruan', 'created_at', 'updated_at'],
-            'ringkasan_guru' => ['id', 'guru_id', 'nama_guru', 'mata_pelajaran', 'kelas', 'kkm', 'semester', 'tahun_pelajaran', 'jumlah_siswa', 'rata_rata', 'tuntas', 'belum_tuntas', 'ketuntasan_persen', 'kehadiran_persen', 'predikat_a', 'predikat_b', 'predikat_c', 'predikat_d', 'pembaruan', 'created_at', 'updated_at'],
-            'sekolah_settings' => ['id', 'guru_id', 'npsn', 'nama_sekolah', 'alamat', 'telepon', 'email', 'status', 'pengaturan', 'akreditasi', 'kecamatan', 'created_at', 'updated_at'],
-            'aktivitas' => ['id', 'uuid', 'guru_id', 'nama_guru', 'jenis', 'judul', 'deskripsi', 'tabel_terkait', 'record_id', 'data_lama', 'data_baru', 'created_at', 'updated_at'],
-        ];
-
         try {
-            DB::transaction(function () use ($data, $fillableMap) {
-                foreach ($data as $table => $records) {
-                    $this->restoreTable($table, $records, $fillableMap);
+            DB::transaction(function () use ($data) {
+                // Ikuti urutan registry (induk → anak) agar foreign key terpenuhi.
+                foreach (BackupTables::tabel() as $table) {
+                    if (array_key_exists($table, $data)) {
+                        $this->restoreTable($table, $data[$table]);
+                    }
                 }
             });
         } catch (\Throwable $e) {
@@ -124,51 +102,59 @@ class BackupController extends Controller
     }
 
     /**
-     * Restore satu tabel backup. Dipanggil di dalam DB::transaction agar
-     * gagal di tengah tidak menyisakan data parcial (inkonsisten).
+     * Restore satu tabel backup. Dipanggil di dalam DB::transaction agar gagal
+     * di tengah tidak menyisakan data parsial (inkonsisten).
+     *
+     * Kolom difilter terhadap kolom yang benar-benar ada di tabel (schema),
+     * sehingga backup dari versi lama/patch tidak menyebabkan SQL error.
      */
-    protected function restoreTable(string $table, mixed $records, array $fillableMap): void
+    protected function restoreTable(string $table, mixed $records): void
     {
         if (!is_array($records) || empty($records)) {
             return;
         }
 
-        if (!isset($fillableMap[$table])) {
+        if (!in_array($table, BackupTables::tabel(), true) || !Schema::hasTable($table)) {
             return;
         }
 
-        $fillable = $fillableMap[$table];
-        $modelClass = match($table) {
-            'users' => User::class,
-            'siswa' => Siswa::class,
-            'materi' => Materi::class,
-            'kuis' => Kuis::class,
-            'nilai' => Nilai::class,
-            'kehadiran' => Kehadiran::class,
-            'hasil_kuis' => HasilKuis::class,
-            'catatan' => Catatan::class,
-            'dimensi' => Dimensi::class,
-            'kebiasaan' => Kebiasaan::class,
-            'pengaturan_guru' => PengaturanGuru::class,
-            'ringkasan_guru' => RingkasanGuru::class,
-            'sekolah_settings' => SekolahSettings::class,
-            'aktivitas' => Aktivitas::class,
-            default => null,
-        };
-
-        if (!$modelClass) {
-            return;
-        }
+        $kolom = Schema::getColumnListing($table);
+        $modelClass = BackupTables::model($table);
 
         foreach ($records as $record) {
             if (!is_array($record)) {
                 continue;
             }
-            $filtered = array_intersect_key($record, array_flip($fillable));
-            if (isset($filtered['id']) && $filtered['id'] !== null) {
-                $modelClass::updateOrCreate(['id' => $filtered['id']], $filtered);
+
+            $row = array_intersect_key($record, array_flip($kolom));
+            if ($row === []) {
+                continue;
+            }
+
+            $id = $row['id'] ?? null;
+
+            // Export sengaja tidak menyertakan `kata_sandi`. Karena kolomnya
+            // NOT NULL, baris users yang dipulihkan tanpa sandi diberi sandi acak
+            // + wajib ganti saat login pertama (tidak ada akun tanpa sandi).
+            if ($table === 'users' && empty($row['kata_sandi'])) {
+                $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));
+                $row['force_password_change'] = true;
+            }
+
+            if ($modelClass) {
+                if ($id !== null) {
+                    $modelClass::updateOrCreate(['id' => $id], $row);
+                } else {
+                    $modelClass::create($row);
+                }
+                continue;
+            }
+
+            // Tabel tanpa model Eloquent (pivot).
+            if ($id !== null) {
+                DB::table($table)->updateOrInsert(['id' => $id], $row);
             } else {
-                $modelClass::create($filtered);
+                DB::table($table)->insert($row);
             }
         }
     }
