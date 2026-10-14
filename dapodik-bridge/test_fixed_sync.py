@@ -4,12 +4,15 @@ Auto test sync dengan API key yang sudah fixed
 """
 import csv
 import json
+import os
 import requests
 from pathlib import Path
 
 CSV_FOLDER = Path("csv_files")
 SIMANTAP_URL = "http://localhost:8000"
-API_KEY = "11jtIdsSzunH3UDSAoNywFnLAkM9pGhsaK4RQm0Jafws4HCxC5yqH31lg8ZfSthQ"
+# Kunci dibaca dari environment — JANGAN tulis kunci nyata di berkas ini
+# (kunci lama pernah ter-commit, jadi wajib dianggap bocor & dirotasi).
+API_KEY = os.environ.get("SIMANTAP_API_KEY", "")
 
 print("=" * 70)
 print("Testing Auto-Sync dengan API Key Fixed")

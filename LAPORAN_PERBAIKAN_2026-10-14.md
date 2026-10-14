@@ -11,7 +11,7 @@ Setiap perbaikan disertai bukti **SEBELUM** dan **SESUDAH**.
 
 | Ukuran | Sebelum | Sesudah |
 |---|---|---|
-| Pemeriksaan regresi otomatis (`tools/verifikasi-perbaikan.php`) | **4 lulus / 33 gagal** | **37 lulus / 0 gagal** |
+| Pemeriksaan regresi otomatis (`tools/verifikasi-perbaikan.php`) | **4 lulus / 35 gagal** | **39 lulus / 0 gagal** |
 | Larik sintaks PHP (tokenizer PHP 8.3) | 364 berkas, 0 gagal | 381 berkas, 0 gagal |
 | Controller CBT yang hilang | 5 (menyebabkan 27 URL → HTTP 500) | 0 (route dimatikan di balik flag) |
 | View `admin.referensi.alignment-check` | tidak ada (500) | ada (200) |
@@ -30,13 +30,13 @@ Perbaikan diverifikasi **sebelum dan sesudah** dengan empat cara:
    dengan `token_get_all(..., TOKEN_PARSE)` (364 → 381 berkas; 3 view vendor paket
    `scramble` di `resources/views/vendor/` dikecualikan bersama direktori vendor lain). Ini menangkap
    seluruh kelas *parse error*.
-2. **Skrip regresi `tools/verifikasi-perbaikan.php`** — 37 pemeriksaan statis
+2. **Skrip regresi `tools/verifikasi-perbaikan.php`** — 39 pemeriksaan statis
    (import kelas, route→controller, view, kosakata enum, cakupan backup,
    keamanan kredensial, autentikasi). Dijalankan pada **kode git HEAD**
    (sebelum) dan **working tree** (sesudah):
    ```
-   SEBELUM : 4 lulus, 33 gagal
-   SESUDAH : 37 lulus, 0 gagal
+   SEBELUM : 4 lulus, 35 gagal
+   SESUDAH : 39 lulus, 0 gagal
    ```
    Skrip ini juga bisa dijalankan sendiri oleh pengguna:
    `php tools/verifikasi-perbaikan.php` (keluar dengan status ≠ 0 bila gagal —
@@ -188,17 +188,58 @@ memang dimatikan di balik flag).
 Verifikasi putaran ini memakai skrip yang sama di kedua sisi:
 
 ```
-SEBELUM : 4 lulus, 33 gagal   (dari 37 pemeriksaan)
-SESUDAH : 37 lulus, 0 gagal
+SEBELUM : 4 lulus, 35 gagal   (dari 39 pemeriksaan)
+SESUDAH : 39 lulus, 0 gagal
 ```
 
-Empat pemeriksaan baru **gagal di kode lama** dan **lulus di kode baru**
+Empat pemeriksaan baru putaran 2 (ditambah dua pada putaran 3) **gagal di kode lama** dan **lulus di kode baru**
 (bukti nyata, bukan klaim). Lint sintaks PHP tetap 381 berkas → 0 gagal;
 uji logika runtime tetap 15/15 lulus.
 
 ---
 
-## 7. Yang belum dikerjakan (butuh keputusan/lingkup lanjutan)
+## 7. Perbaikan tambahan — putaran 3 (kebocoran kredensial)
+
+Saat menggabungkan PR #2 dan memindai ulang seluruh repositori, ditemukan
+**kebocoran yang belum tertutup**: kredensial lama masih tertulis harfiah di
+tujuh berkas lain — skrip uji Python bridge, dua dokumen analisis bridge, kutipan
+bukti di laporan audit, dan log perbaikan lama. Pemeriksaan putaran 2 hanya
+memeriksa `config.json` (dan hanya berkas yang berubah), sehingga kasus ini
+**lolos**.
+
+| # | Temuan | SEBELUM (bukti) | Perubahan | SESUDAH (bukti) |
+|---|---|---|---|---|
+| 5 | Kredensial lama (`api_key` bridge & `dapodik_token`) masih hardcoded di 7 berkas lain yang tidak tersentuh perbaikan sebelumnya | Pemindaian seluruh tree `main`: **8 kemunculan di 7 berkas** — `check_endpoints.py` (L36, 38), `test_fixed_sync.py` (L12), `test_fixed_sync2.py` (L12), `test_sync_api.py` (L61), `ERROR_ANALYSIS_REPORT.md` (L19), `FINAL_SOLUTION.md` (L14), `LAPORAN_AUDIT_BUG_2026-10-14.md` (L193), `docs/02-FIXES-LOG.md` (L116) | 4 skrip Python membaca dari environment (`os.environ.get("DAPODIK_TOKEN" / "SIMANTAP_API_KEY")` — nama variabel sama dengan yang dipakai `main.py`); 2 dokumen bridge memakai placeholder `<TOKEN_DAPODIK>`; nilai dihapus dari laporan audit dan log perbaikan | **2 pemeriksaan baru LULUS**; pemindaian akhir → **0 kemunculan** |
+
+Pemeriksaan regresi baru yang menjaga kelas bug ini:
+
+1. **"Kredensial lama tidak lagi tersimpan di berkas repositori"** — menelusuri
+   seluruh berkas repositori (mengecualikan `.git`, `node_modules`, `vendor`,
+   `storage`) dan menolak bila salah satu nilai lama muncul lagi. Nilai lama
+   **tidak** disimpan sebagai plaintext: skrip hanya memuat sidik jari
+   **SHA-256** dan membandingkan hash kandidat token, sehingga pemeriksaan ini
+   tidak menghidupkan kembali kredensial tersebut di dalam repositori.
+2. **"Tidak ada kunci/token hardcoded di skrip bridge & config"** — pola umum
+   `api_key|token|password|secret` yang diikuti literal ≥ 12 karakter bercampur
+   huruf besar/kecil + angka (nilai seperti nama variabel `"dapodik_token"` tidak
+   dianggap rahasia, sehingga tidak menghasilkan positif palsu).
+
+Bukti pada kode `main` sebelum perbaikan ini:
+
+```
+main (sebelum)   : 37 lulus, 2 gagal   ← kedua pemeriksaan di atas GAGAL
+workspace (sesudah): 39 lulus, 0 gagal
+```
+
+> **Tindakan wajib bagi pemilik repositori:** kedua nilai ini pernah ter-commit
+> (termasuk di riwayat git yang sudah ter-push), jadi **harus dianggap bocor**.
+> Rotasi kunci API di Admin → API Keys dan ganti `dapodik_token` di sisi Dapodik,
+> lalu isi nilai baru lewat environment (`SIMANTAP_API_KEY`, `DAPODIK_TOKEN`)
+> alih-alih menulisnya di berkas.
+
+---
+
+## 8. Yang belum dikerjakan (butuh keputusan/lingkup lanjutan)
 
 | Butir | Alasan belum dikerjakan |
 |---|---|
@@ -209,7 +250,7 @@ uji logika runtime tetap 15/15 lulus.
 
 ---
 
-## 8. Berkas baru & ringkasan perubahan
+## 9. Berkas baru & ringkasan perubahan
 
 **Baru:**
 - `app/Services/JadwalPelajaranResolver.php` — resolver + statistik alignment
@@ -218,7 +259,7 @@ uji logika runtime tetap 15/15 lulus.
 - `database/migrations/2026_10_14_000001…000005` — 5 migrasi perbaikan
 - `resources/views/admin/referensi/alignment-check.blade.php`
 - `dapodik-bridge/config.example.json`
-- `tools/verifikasi-perbaikan.php` — 37 pemeriksaan regresi
+- `tools/verifikasi-perbaikan.php` — 39 pemeriksaan regresi
 - Uji baru: `tests/Unit/{PredikatKonsistensiTest,JadwalPelajaranResolverTest}.php`,
   `tests/Feature/{KuisBatasWaktuTest,InputNilaiJenisTest,AlignmentCheckTest,LoginAktifTest}.php`
 
@@ -232,4 +273,4 @@ Perbaikan putaran 2 menyentuh `Guru/DimensiController.php`, `Siswa/KuisControlle
 ---
 
 *Verifikasi terakhir dijalankan pada 14 Oktober 2026: PHP 8.3 (WebAssembly),
-`tools/verifikasi-perbaikan.php` → 37 lulus / 0 gagal; lint 381 berkas PHP → 0 gagal.*
+`tools/verifikasi-perbaikan.php` → 39 lulus / 0 gagal; lint 381 berkas PHP → 0 gagal.*

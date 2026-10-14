@@ -11,7 +11,7 @@ Semua sudah siap digunakan. CSV reading & SIMANTAP API sudah tested working.
 ```
 Original Issue:
   main.py v3.0 coba pull data dari Dapodik via token query string
-  GET http://localhost:5774/?act=Sekolah&token=YY8j57VCCbAVdJg
+  GET http://localhost:5774/?act=Sekolah&token=<TOKEN_DAPODIK>
   
   Result: FAILED
   - Dapodik return HTML login page, bukan JSON
