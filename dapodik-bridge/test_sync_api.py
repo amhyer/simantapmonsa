@@ -3,6 +3,7 @@
 Test Dapodik Sync API (port 5437) - prefill push endpoint
 Dari config: SyncPortDikdas=5437
 """
+import os
 import requests
 import json
 
@@ -58,7 +59,7 @@ if True:
     push_data = {
         "act": "Sekolah",
         "data": [],
-        "token": "YY8j57VCCbAVdJg"
+        "token": os.environ.get("DAPODIK_TOKEN", "")
     }
     
     try:

@@ -683,6 +683,78 @@ periksa('Header KUIS tetap kompatibel GAS + catatan koordinasi', function () use
     return $kurang === [] ? true : 'belum ada: ' . implode(', ', $kurang);
 });
 
+periksa('Kredensial lama tidak lagi tersimpan di berkas repositori', function () use ($root) {
+    // Sidik jari SHA-256 dari nilai yang pernah bocor. Plaintext-nya sengaja
+    // TIDAK disimpan di repositori ini — bahkan untuk keperluan pemeriksaan —
+    // sehingga kredensial lama tidak hidup kembali di dalam kode.
+    $sidik = [
+        '17e52cacbfd9dbd5eecf63489ba97c583ba38014319890fcb6ab0ea7637fee9f', // api_key bridge lama (64 karakter)
+        '2c18fd4dfd0d86a47aefeab2af806cb6bfdc66b138d0d4210a4e5c008d88ae5e', // dapodik_token lama (15 karakter)
+    ];
+
+    $lewati = ['.git', 'node_modules', 'vendor', 'storage', '__pycache__', 'dist', 'build'];
+    $ekstensi = ['php', 'py', 'json', 'md', 'js', 'css', 'txt', 'yml', 'yaml', 'sh', 'bat', 'sql', 'html'];
+    $temuan = [];
+
+    $dir = new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS);
+    $filter = new RecursiveCallbackFilterIterator($dir, function ($item) use ($lewati) {
+        return !($item->isDir() && in_array($item->getFilename(), $lewati, true));
+    });
+
+    foreach (new RecursiveIteratorIterator($filter) as $berkas) {
+        if (!$berkas->isFile()) {
+            continue;
+        }
+        $nama = $berkas->getFilename();
+        $ekst = strtolower(pathinfo($nama, PATHINFO_EXTENSION));
+        if (!in_array($ekst, $ekstensi, true) && !str_contains($nama, '.env')) {
+            continue;
+        }
+        $isi = @file_get_contents($berkas->getPathname());
+        if ($isi === false) {
+            continue;
+        }
+        // Nilai rahasia selalu berupa deretan alfanumerik >= 15 karakter;
+        // cukup hash kandidat, bukan membandingkan plaintext.
+        preg_match_all('/[A-Za-z0-9_\-]{15,}/', $isi, $cocok);
+        foreach ($cocok[0] as $kandidat) {
+            if (in_array(hash('sha256', $kandidat), $sidik, true)) {
+                $temuan[] = rel($berkas->getPathname(), $root) . ' (panjang ' . strlen($kandidat) . ')';
+                break;
+            }
+        }
+    }
+
+    return $temuan === [] ? true : 'kredensial lama masih ada di: ' . implode(', ', array_unique($temuan));
+});
+
+periksa('Tidak ada kunci/token hardcoded di skrip bridge & config', function () use ($root) {
+    $berkas = array_merge(
+        glob($root . '/dapodik-bridge/*.py') ?: [],
+        glob($root . '/dapodik-bridge/*.json') ?: [],
+        glob($root . '/config/*.php') ?: []
+    );
+    $temuan = [];
+    foreach ($berkas as $f) {
+        $nama = basename($f);
+        if (str_contains($nama, 'example') || $nama === 'config.json') {
+            continue; // contoh memang placeholder; config.json = data lokal (di luar git)
+        }
+        foreach (preg_split('/\R/', baca($f)) as $no => $baris) {
+            if (preg_match('/\b(api_?key|token|password|secret)\b["\']?\s*[:=]\s*["\']([A-Za-z0-9_\-]{12,})["\']/i', $baris, $m) !== 1) {
+                continue;
+            }
+            // Anggap rahasia hanya bila bercampur huruf besar, huruf kecil, dan angka.
+            $nilai = $m[2];
+            if (preg_match('/[A-Z]/', $nilai) && preg_match('/[a-z]/', $nilai) && preg_match('/\d/', $nilai)) {
+                $temuan[] = rel($f, $root) . ':' . ($no + 1);
+            }
+        }
+    }
+
+    return $temuan === [] ? true : 'nilai rahasia hardcoded di: ' . implode(', ', $temuan);
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {

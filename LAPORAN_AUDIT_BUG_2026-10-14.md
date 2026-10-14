@@ -3,7 +3,7 @@
 > desain, langkah deployment, dan sisa pekerjaan ada di
 > **`LAPORAN_PERBAIKAN_2026-10-14.md`**. Ringkasan verifikasi: skrip
 > `tools/verifikasi-perbaikan.php` berubah dari **4 lulus / 33 gagal**
-> menjadi **37 lulus / 0 gagal**; 381 berkas PHP lolos pemeriksaan sintaks.
+> menjadi **39 lulus / 0 gagal**; 381 berkas PHP lolos pemeriksaan sintaks.
 
 # LAPORAN AUDIT TEKNIS — SIMANTAP
 **Tanggal audit:** 14 Oktober 2026
@@ -190,7 +190,7 @@ Sebagai pembanding, jalur lain sudah aman:
 
 ### T-6. Kredensial rahasia tersimpan di repositori
 **Lokasi:**
-- `dapodik-bridge/config.json` → memuat `api_key` (panjang, mis. `11jtIdsSzunH3UDSAoNywFnLAkM9pGhsaK4RQm0Jafws4HCxC5yqH31lg8ZfSthQ`) dan `dapodik_token` (`YY8j57VCCbAVdJg`), serta `server_url`/`dapodik_url`.
+- `dapodik-bridge/config.json` → memuat `api_key` dan `dapodik_token` (nilai sengaja **tidak ditampilkan** di sini; kredensial sudah dianggap bocor dan wajib dirotasi), serta `server_url`/`dapodik_url`.
 - `setup_api_key.php` → API key yang sama tertulis sebagai literal dan langsung dimasukkan ke tabel `api_keys`.
 - `.gitignore` **tidak** mengecualikan `dapodik-bridge/config.json`.
 
