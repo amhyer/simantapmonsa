@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\Cbt\TestResult;
+use App\Services\CbtSubmitService;
+use App\Models\Cbt\IntegrityLog;
 
 class CbtSecurityMiddleware
 {
@@ -41,8 +43,18 @@ class CbtSecurityMiddleware
 
     protected function autoSubmit(TestResult $result)
     {
-        // Calculate current score and submit
-        $controller = new \App\Http\Controllers\Cbt\CbtStudentController();
-        return $controller->submit($result);
+        $service = app(CbtSubmitService::class);
+
+        // Log auto-submit due to time expiry
+        IntegrityLog::create([
+            'test_result_id' => $result->id,
+            'siswa_id' => $result->siswa_id,
+            'jenis_pelanggaran' => 'time_expired',
+            'timestamp' => now(),
+            'deskripsi' => 'Auto-submit karena waktu ujian habis',
+            'data_tambahan' => ['time_elapsed' => now()->diffInSeconds($result->waktu_mulai)],
+        ]);
+
+        return $service->autoSubmit($result);
     }
 }

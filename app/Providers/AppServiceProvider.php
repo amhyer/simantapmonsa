@@ -26,11 +26,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register activeAdminTab Blade macro
-        \Illuminate\Support\Facades\Blade::macro('activeAdminTab', function () {
-            return activeAdminTab();
-        });
-
         // Share activeTab with all views for admin routes
         View::share('activeTab', activeAdminTab());
 

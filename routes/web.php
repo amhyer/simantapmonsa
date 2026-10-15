@@ -263,7 +263,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     });
 
     // Dapodik Push (Sync ke Dapodik Server)
-    Route::prefix('dapodik/push')->name('dapodik.push.')->group(function () {
+    Route::prefix('dapodik/push')->name('dapodik.push.')->middleware('throttle:10,1')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DapodikPushController::class, 'index'])->name('index');
         Route::get('/sekolah', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
         Route::post('/peserta-didik', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');
@@ -445,7 +445,7 @@ Route::middleware(['auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(fun
 });
 
 // CBT Student Routes
-Route::middleware(['auth', 'role:siswa'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+Route::middleware(['auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
     Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
     Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
@@ -576,7 +576,7 @@ Route::middleware(['auth', 'role:guru'])->prefix('tryout')->name('tryout.')->gro
 });
 
 // Tryout Student Routes
-Route::middleware(['auth', 'role:siswa'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
+Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'index'])->name('index');
     Route::get('/{session}/start', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'start'])->name('start');
     Route::post('/{result}/answer', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'submitAnswer'])->name('answer');
