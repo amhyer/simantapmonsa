@@ -450,45 +450,14 @@ if (config('simantap.cbt_enabled', false)) {
     });
 
     // CBT Student Routes
-    Route::middleware(['auth', 'role:siswa'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    Route::middleware(['auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
         Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
         Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
         Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
         Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
     });
-<<<<<<< HEAD
-
-    // Test Sessions
-    Route::prefix('sessions')->name('sessions.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'store'])->name('store');
-        Route::get('/{session}', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'show'])->name('show');
-        Route::post('/{session}/publish', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'publish'])->name('publish');
-        Route::post('/{session}/start', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'start'])->name('start');
-        Route::post('/{session}/complete', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'complete'])->name('complete');
-        Route::get('/{session}/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'monitoring'])->name('monitoring');
-        Route::get('/{session}/api/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'apiMonitoring'])->name('api.monitoring');
-    });
-
-    // Integrity (Anti-Cheat)
-    Route::prefix('integrity')->name('integrity.')->group(function () {
-        Route::post('/{result}/log', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'logViolation'])->name('log');
-        Route::get('/{result}/violations', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'getViolations'])->name('violations');
-    });
-});
-
-// CBT Student Routes
-Route::middleware(['auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
-    Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
-    Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
-    Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
-    Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
-});
-
-
+}
 
 // ==================== ADMIN CBT MANAGEMENT ====================
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
@@ -640,6 +609,3 @@ Route::middleware(['auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent
     Route::get('/', [\App\Http\Controllers\Tka\TkaParentController::class, 'index'])->name('index');
     Route::get('/{report}', [\App\Http\Controllers\Tka\TkaParentController::class, 'show'])->name('show');
 });
-=======
-}
->>>>>>> origin/main
