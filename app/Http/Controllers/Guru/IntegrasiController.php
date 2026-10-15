@@ -120,13 +120,19 @@ class IntegrasiController extends Controller
         $spreadsheetId = $googleSheet['spreadsheet_id'];
         $service = app(GoogleSheetsService::class);
 
+        // Batasi ke data milik guru yang login: full sync tidak boleh
+        // mengirim data guru lain ke spreadsheet pribadi.
+        $guruId = auth()->id();
+
         try {
             $types = ['nilai', 'kehadiran', 'kebiasaan', 'dimensi'];
             $models = [
-                'nilai'     => \App\Models\Nilai::with('siswa')->get(),
-                'kehadiran' => \App\Models\Kehadiran::with('siswa', 'guru')->get(),
-                'kebiasaan' => \App\Models\Kebiasaan::with('siswa')->get(),
-                'dimensi'   => \App\Models\Dimensi::with('siswa')->get(),
+                'nilai'     => \App\Models\Nilai::where('guru_id', $guruId)->with('siswa')->get(),
+                'kehadiran' => \App\Models\Kehadiran::where('guru_id', $guruId)->with('siswa', 'guru')->get(),
+                // Kebiasaan tidak punya kolom guru_id → filter lewat relasi siswa.
+                'kebiasaan' => \App\Models\Kebiasaan::whereHas('siswa', fn ($q) => $q->where('guru_id', $guruId))
+                    ->with('siswa')->get(),
+                'dimensi'   => \App\Models\Dimensi::where('guru_id', $guruId)->with('siswa')->get(),
             ];
 
             foreach ($types as $type) {
@@ -157,7 +163,8 @@ class IntegrasiController extends Controller
                     'waktu' => now()->toDateTimeString(),
                     'tipe' => 'full_sync',
                     'status' => 'berhasil',
-                    'jumlah' => $models->sum->count(),
+                    // $models adalah array koleksi → hitung via collect(), bukan $models->sum->count().
+                    'jumlah' => collect($models)->sum(fn ($koleksi) => $koleksi->count()),
                 ]);
                 $sistem['riwayat_sinkron'] = array_slice($riwayat, 0, 20);
                 $pengaturan->update(['sistem' => $sistem, 'pembaruan' => now()]);

@@ -65,7 +65,7 @@
                                 @foreach($keys as $key)
                                     <tr style="border-bottom:1px solid #F2F4F7">
                                         <td style="padding:10px 14px"><b>{{ $key->name }}</b><br><small style="color:#888">{{ $key->user->nama_lengkap ?? '-' }}</small></td>
-                                        <td style="padding:10px 14px"><code style="background:#F2F4F7;padding:2px 8px;border-radius:6px;font-size:11px">{{ substr($key->key, 0, 16) }}...</code></td>
+                                        <td style="padding:10px 14px"><code style="background:#F2F4F7;padding:2px 8px;border-radius:6px;font-size:11px">{{ $key->key_hash ? substr($key->key_hash, 0, 16) : '—' }}…</code></td>
                                         <td style="padding:10px 14px;text-align:center">
                                             <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;{{ $key->active ? 'background:#D1FAE5;color:#065F46' : 'background:#F3F4F6;color:#6B7280' }}">{{ $key->active ? 'Aktif' : 'Nonaktif' }}</span>
                                         </td>

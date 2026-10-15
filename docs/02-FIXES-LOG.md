@@ -113,7 +113,7 @@ $usersData = User::all()->map(function ($user) {
 
 ## Fix #19: Hardcoded API Key in Seeder (M8 — MEDIUM)
 - **File:** `database/seeders/ApiKeySeeder.php:31`
-- **Before:** Hardcoded `'11jtIdsSzunH3UDSAoNyw...'`
+- **Before:** Hardcoded `'<API_KEY_LAMA — sudah dirotasi>'` (nilai tidak ditampilkan)
 - **After:** `Str::random(64)`
 
 ## Fix #20: Admin Dashboard Semester Query Crash

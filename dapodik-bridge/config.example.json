@@ -1,0 +1,14 @@
+{
+  "server_url": "http://localhost:8000",
+  "api_key": "",
+  "dapodik_host": "localhost",
+  "dapodik_port": 5774,
+  "dapodik_protocol": "http",
+  "dapodik_token": "",
+  "npsn": "",
+  "semester_id": "20261",
+  "tahun_ajaran": "2026/2027",
+  "nama_semester": "ganjil",
+  "auto_sync": false,
+  "last_sync": null
+}

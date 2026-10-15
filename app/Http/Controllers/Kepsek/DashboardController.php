@@ -180,12 +180,23 @@ class DashboardController extends Controller
         return view('kepsek.pantau.index', compact('guru', 'aktivitas', 'statistikGuru', 'filterGuru', 'filterTanggal'));
     }
 
+    /**
+     * Label + kelas CSS stat-card untuk sebuah nilai.
+     * Ambang diambil dari App\Services\NilaiService (satu sumber kebenaran
+     * predikat); hanya pemetaan kelas CSS yang khas dashboard kepsek.
+     */
     protected function getPredikat($nilai, $kkm = null)
     {
-        $kkm = $kkm ?? getKKM();
-        if ($nilai >= 90) return ['label' => 'Sangat Baik', 'kelas' => 'ok'];
-        if ($nilai >= 80) return ['label' => 'Baik', 'kelas' => 'gold'];
-        if ($nilai >= $kkm) return ['label' => 'Cukup', 'kelas' => 'primary'];
-        return ['label' => 'Perlu Bimbingan', 'kelas' => 'bad'];
+        $predikat = app(\App\Services\NilaiService::class)
+            ->getPredikat((float) $nilai, $kkm ?? getKKM());
+
+        $kelas = match ($predikat['huruf']) {
+            'A' => 'ok',
+            'B' => 'gold',
+            'C' => 'primary',
+            default => 'bad',
+        };
+
+        return ['label' => $predikat['label'], 'kelas' => $kelas];
     }
 }

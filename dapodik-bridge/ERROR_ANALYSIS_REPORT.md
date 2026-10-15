@@ -16,7 +16,7 @@
 #### 1. Token Query String Method (❌ FAILED)
 ```
 Original approach:
-  GET http://localhost:5774/?act=Sekolah&token=YY8j57VCCbAVdJg
+  GET http://localhost:5774/?act=Sekolah&token=<TOKEN_DAPODIK>
   
 Result:
   - Status 200 OK

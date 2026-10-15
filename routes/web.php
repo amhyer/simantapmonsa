@@ -321,7 +321,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     });
     
     // Profil Lulusan
-    Route::resource('dimensi', DimensiController::class)->only(['index', 'store']);
+    Route::resource('dimensi', DimensiController::class)->only(['index', 'store', 'destroy']);
     
     // Daftar Nilai
     Route::resource('nilai', NilaiController::class)->except(['show']);
@@ -403,26 +403,61 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
 });
 
-// ==================== CBT ROUTES ====================
-Route::middleware(['auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
-    // Question Banks
-    Route::prefix('question-banks')->name('question-banks.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'store'])->name('store');
-        Route::get('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'show'])->name('show');
-        Route::get('/{bank}/edit', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'edit'])->name('edit');
-        Route::put('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'update'])->name('update');
-        Route::delete('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'destroy'])->name('destroy');
-        Route::get('/{bank}/api/questions', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'apiGetQuestions'])->name('api.questions');
+// ==================== CBT ROUTES (NONAKTIF) ====================
+// Modul CBT belum punya controller/view/tabel. Route dibungkus feature flag
+// `simantap.cbt_enabled` (default false) supaya tidak melempar HTTP 500.
+// Aktifkan kembali via SIMANTAP_CBT_ENABLED=true setelah modulnya lengkap.
+if (config('simantap.cbt_enabled', false)) {
+    // ==================== CBT ROUTES ====================
+    Route::middleware(['auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
+        // Question Banks
+        Route::prefix('question-banks')->name('question-banks.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'store'])->name('store');
+            Route::get('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'show'])->name('show');
+            Route::get('/{bank}/edit', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'edit'])->name('edit');
+            Route::put('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'update'])->name('update');
+            Route::delete('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'destroy'])->name('destroy');
+            Route::get('/{bank}/api/questions', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'apiGetQuestions'])->name('api.questions');
+        });
+
+        // Questions
+        Route::prefix('questions')->name('questions.')->group(function () {
+            Route::post('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'store'])->name('store');
+            Route::put('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'update'])->name('update');
+            Route::delete('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'destroy'])->name('destroy');
+        });
+
+        // Test Sessions
+        Route::prefix('sessions')->name('sessions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'store'])->name('store');
+            Route::get('/{session}', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'show'])->name('show');
+            Route::post('/{session}/publish', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'publish'])->name('publish');
+            Route::post('/{session}/start', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'start'])->name('start');
+            Route::post('/{session}/complete', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'complete'])->name('complete');
+            Route::get('/{session}/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'monitoring'])->name('monitoring');
+            Route::get('/{session}/api/monitoring', [\App\Http\Controllers\Cbt\CbtTestSessionController::class, 'apiMonitoring'])->name('api.monitoring');
+        });
+
+        // Integrity (Anti-Cheat)
+        Route::prefix('integrity')->name('integrity.')->group(function () {
+            Route::post('/{result}/log', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'logViolation'])->name('log');
+            Route::get('/{result}/violations', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'getViolations'])->name('violations');
+        });
     });
 
-    // Questions
-    Route::prefix('questions')->name('questions.')->group(function () {
-        Route::post('/{bank}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'store'])->name('store');
-        Route::put('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'update'])->name('update');
-        Route::delete('/{question}', [\App\Http\Controllers\Cbt\CbtQuestionController::class, 'destroy'])->name('destroy');
+    // CBT Student Routes
+    Route::middleware(['auth', 'role:siswa'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
+        Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
+        Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
+        Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
+        Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
     });
+<<<<<<< HEAD
 
     // Test Sessions
     Route::prefix('sessions')->name('sessions.')->group(function () {
@@ -605,3 +640,6 @@ Route::middleware(['auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent
     Route::get('/', [\App\Http\Controllers\Tka\TkaParentController::class, 'index'])->name('index');
     Route::get('/{report}', [\App\Http\Controllers\Tka\TkaParentController::class, 'show'])->name('show');
 });
+=======
+}
+>>>>>>> origin/main

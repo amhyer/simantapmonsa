@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\HasilKuis;
 use App\Models\Kuis;
 use App\Models\Siswa;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class KuisController extends Controller
@@ -107,35 +109,51 @@ class KuisController extends Controller
         $skor = $total > 0 ? round(($benar / $total) * 100) : 0;
         $tuntas = $skor >= $kuis->kkm;
 
-        DB::transaction(function () use ($kuis, $siswa, $benar, $total, $skor, $tuntas, $validated, $jawabanDetail) {
-            $exists = HasilKuis::where('kuis_id', $kuis->id)
-                ->where('siswa_id', $siswa->id)
-                ->lockForUpdate()
-                ->exists();
+        // PERBAIKAN: tabel hasil_kuis sudah memiliki unique index
+        // (kuis_id, siswa_id) sejak migrasi 2026_09_09_075733. Pada balapan
+        // submit bersamaan, request kedua melanggar index tersebut dan
+        // sebelumnya melempar QueryException -> HTTP 500 padahal jawabannya
+        // sudah tersimpan oleh request pertama. Kini pelanggaran itu ditangkap
+        // dan diperlakukan sebagai "sudah tersimpan".
+        try {
+            DB::transaction(function () use ($kuis, $siswa, $benar, $total, $skor, $tuntas, $validated, $jawabanDetail) {
+                $exists = HasilKuis::where('kuis_id', $kuis->id)
+                    ->where('siswa_id', $siswa->id)
+                    ->lockForUpdate()
+                    ->exists();
 
-            if ($exists) {
-                return;
-            }
+                if ($exists) {
+                    return;
+                }
 
-            HasilKuis::create([
-                'uuid' => Str::uuid(),
-                'guru_id' => $siswa->guru_id,
-                'kuis_id' => $kuis->id,
-                'siswa_id' => $siswa->id,
-                'nama_guru' => $kuis->nama_guru,
-                'judul_kuis' => $kuis->judul,
-                'nama_siswa' => $siswa->nama_peserta_didik,
-                'waktu' => now(),
-                'benar' => $benar,
-                'total' => $total,
-                'skor' => $skor,
-                'tuntas' => $tuntas,
-                'durasi' => $validated['durasi'] ?? 0,
-                'sumber_soal' => $kuis->sumber,
-                'diisi_oleh' => 'siswa',
-                'jawaban' => $jawabanDetail,
-            ]);
-        });
+                HasilKuis::create([
+                    'uuid' => Str::uuid(),
+                    'guru_id' => $siswa->guru_id,
+                    'kuis_id' => $kuis->id,
+                    'siswa_id' => $siswa->id,
+                    'nama_guru' => $kuis->nama_guru,
+                    'judul_kuis' => $kuis->judul,
+                    'nama_siswa' => $siswa->nama_peserta_didik,
+                    'waktu' => now(),
+                    'benar' => $benar,
+                    'total' => $total,
+                    'skor' => $skor,
+                    'tuntas' => $tuntas,
+                    'durasi' => $validated['durasi'] ?? 0,
+                    'sumber_soal' => $kuis->sumber,
+                    'diisi_oleh' => 'siswa',
+                    'jawaban' => $jawabanDetail,
+                ]);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // Hanya pelanggaran unique hasil_kuis (kuis_id, siswa_id) yang
+            // diperlakukan sebagai "sudah tersimpan" (index default:
+            // hasil_kuis_kuis_id_siswa_id_unique).
+            Log::warning('Submit kuis ganda dicegah (kuis_id ' . $kuis->id . ', siswa_id ' . $siswa->id . ', index: ' . ($e->index ?? '-') . ').');
+
+            return redirect()->route('siswa.kuis.index')
+                ->with('error', 'Jawaban Anda sudah tersimpan sebelumnya.');
+        }
 
         return redirect()->route('siswa.kuis.index')
             ->with('success', 'Kuis berhasil dikirim. Skor Anda: ' . $skor);

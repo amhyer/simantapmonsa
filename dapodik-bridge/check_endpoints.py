@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import requests
 import re
 
@@ -31,11 +32,14 @@ print()
 print("[2] Testing dengan SESSION & COOKIES")
 session = requests.Session()
 try:
-    # Coba login dengan token sebagai username/password
+    # Coba login dengan token sebagai username/password.
+    # Token dibaca dari environment — JANGAN tulis token nyata di berkas ini
+    # (token lama pernah ter-commit, jadi wajib dianggap bocor & dirotasi).
+    token_dapodik = os.environ.get("DAPODIK_TOKEN", "")
     login_data = {
-        "username": "YY8j57VCCbAVdJg",
+        "username": token_dapodik,
         "password": "",
-        "token": "YY8j57VCCbAVdJg",
+        "token": token_dapodik,
     }
     resp = session.post("http://localhost:5774/", data=login_data, timeout=5)
     print("    POST / with token: status {}".format(resp.status_code))

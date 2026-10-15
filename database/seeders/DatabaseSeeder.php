@@ -158,7 +158,8 @@ class DatabaseSeeder extends Seeder
                 'sumber' => 'lokal',
                 'materi_id' => $materiIds[$k['materi_idx']],
                 'kkm' => 70,
-                'batas_waktu' => 60,
+                // Waktu tutup kuis (timestamp), bukan durasi menit.
+                'batas_waktu' => now()->addDays(7),
                 'aktif' => true,
                 'jumlah_soal' => 10,
                 'jenis' => 'Ulangan Harian',

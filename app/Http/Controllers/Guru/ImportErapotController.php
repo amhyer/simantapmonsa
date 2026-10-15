@@ -118,12 +118,14 @@ class ImportErapotController extends Controller
                     ]
                 );
 
+                // PERBAIKAN URUTAN: sebelumnya `generateDeskripsi()` dipanggil di
+                // dalam array update() — dievaluasi SEBELUM `predikat` baru
+                // tersimpan, sehingga deskripsi memakai predikat lama.
                 $nilaiAkhir = $nilai->hitungNilaiAkhir($bobot['formatif'], $bobot['sumatif'], $bobot['sumatif_akhir']);
-                $nilai->update([
-                    'nilai_akhir' => $nilaiAkhir,
-                    'predikat' => $nilai->generatePredikat($kkm),
-                    'deskripsi_capaian' => $nilai->generateDeskripsi(),
-                ]);
+                $nilai->nilai_akhir = $nilaiAkhir;
+                $nilai->predikat = $nilai->generatePredikat($kkm);
+                $nilai->deskripsi_capaian = $nilai->generateDeskripsi();
+                $nilai->save();
                 $berhasil++;
             }
 

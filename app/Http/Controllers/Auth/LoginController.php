@@ -36,10 +36,24 @@ class LoginController extends Controller
         ]);
 
         if (Auth::attempt(['nama_pengguna' => $credentials['nama_pengguna'], 'password' => $credentials['kata_sandi']])) {
+            $user = auth()->user();
+
+            // PERBAIKAN: kolom `aktif`/`archived_at` sebelumnya tidak pernah
+            // diperiksa — akun yang dinonaktifkan admin tetap bisa login.
+            if (!$user->aktif || $user->archived_at !== null) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                RateLimiter::hit($throttleKey, 300);
+
+                return back()->withErrors([
+                    'nama_pengguna' => 'Akun Anda dinonaktifkan. Hubungi administrator sekolah.',
+                ])->onlyInput('nama_pengguna');
+            }
+
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
-            
-            $user = auth()->user();
+
             $user->update(['terakhir_masuk' => now()]);
 
             AktivitasService::login('Login sebagai ' . $user->peran . ' dari IP ' . $request->ip());

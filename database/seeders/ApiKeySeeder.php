@@ -28,14 +28,20 @@ class ApiKeySeeder extends Seeder
 
         $existing = ApiKey::where('name', 'Dapodik Bridge')->first();
         if (!$existing) {
+            // Kunci polos hanya hidup di memori lalu ditampilkan sekali;
+            // basis data menyimpan hash-nya saja.
+            $plaintextKey = Str::random(64);
+
             $apiKey = ApiKey::create([
                 'user_id' => $user->id,
                 'name' => 'Dapodik Bridge',
-                'key' => Str::random(64),
+                'key' => null,
+                'key_hash' => hash('sha256', $plaintextKey),
                 'abilities' => ['dapodik:import'],
                 'active' => true,
             ]);
-            $this->command->info("API Key created: {$apiKey->key}");
+
+            $this->command->warn("API Key (tampil sekali, simpan di bridge): {$plaintextKey}");
         } else {
             $this->command->info("API Key already exists");
         }
