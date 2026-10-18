@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Data Pembelajaran - SIMANTAP')
 
@@ -150,3 +150,4 @@
         }
     </script>
 @endsection
+

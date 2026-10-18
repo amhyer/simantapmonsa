@@ -32,6 +32,10 @@
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
         ]],
+        ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
+            ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
+            ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Pemetaan QR Kartu Siswa'],
+        ]],
         ['label' => 'DATA REFERENSI', 'icon' => 'lucide-laptop', 'children' => [
             ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
             ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru'],
@@ -52,6 +56,20 @@
             ['route' => 'admin.kokurikuler.tema', 'icon' => 'lucide-target', 'label' => 'Daftar Tema'],
             ['route' => 'admin.kokurikuler.kegiatan', 'icon' => 'lucide-list-checks', 'label' => 'Kegiatan Kokurikuler'],
             ['route' => 'admin.kokurikuler.kelompok', 'icon' => 'lucide-users', 'label' => 'Kelompok Kokurikuler'],
+        ]],
+        ['label' => 'CBT & E-LEARNING', 'icon' => 'lucide-monitor', 'children' => [
+            ['route' => 'admin.cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
+            ['route' => 'admin.cbt.banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
+            ['route' => 'admin.tryout.statistics', 'icon' => 'lucide-bar-chart-3', 'label' => 'Dashboard Tryout'],
+            ['route' => 'admin.tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
+            ['route' => 'admin.tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
+            ['route' => 'admin.tryout.results.index', 'icon' => 'lucide-chart-line', 'label' => 'Hasil Tryout'],
+        ]],
+        ['label' => 'TKA (PROFIL PELAJAR)', 'icon' => 'lucide-award', 'children' => [
+            ['route' => 'admin.tka.dashboard', 'icon' => 'lucide-gauge', 'label' => 'Dashboard TKA'],
+            ['route' => 'admin.tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi P5'],
+            ['route' => 'admin.tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Data Penilaian'],
+            ['route' => 'admin.tka.warnings.index', 'icon' => 'lucide-alert-triangle', 'label' => 'Early Warning'],
         ]],
         ['label' => 'STATUS PENILAIAN', 'icon' => 'lucide-graduation-cap', 'children' => [
             ['route' => 'admin.penilaian.status', 'icon' => 'lucide-check-circle', 'label' => 'Status per Guru'],
@@ -86,7 +104,11 @@
         ]],
     ];
     $isActive = function ($route) {
-        return request()->routeIs($route, $route . '.*');
+        try {
+            return request()->routeIs($route, $route . '.*');
+        } catch (\Exception $e) {
+            return false;
+        }
     };
     $isPlanned = function ($item) {
         return ($item['planned'] ?? false) === true || !isset($item['route']);

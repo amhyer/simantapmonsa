@@ -90,9 +90,11 @@ class InputNilaiController extends Controller
         $jenis = $validated['jenis'] === 'UH' ? 'Ulangan Harian' : $validated['jenis'];
 
         $saved = 0;
-        $ownedSiswaIds = Siswa::where('guru_id', $user->id)->pluck('id')->toArray();
+        $ownedSiswa = Siswa::where('guru_id', $user->id)->get(['id', 'nama_peserta_didik']);
+        $ownedSiswaIds = $ownedSiswa->pluck('id')->toArray();
+        $namaBySiswa = $ownedSiswa->pluck('nama_peserta_didik', 'id');
 
-        DB::transaction(function () use ($validated, $user, $ownedSiswaIds, $jenis, &$saved) {
+        DB::transaction(function () use ($validated, $user, $ownedSiswaIds, $namaBySiswa, $jenis, &$saved) {
             foreach ($validated['nilai'] as $item) {
                 if ($item['nilai'] === null || $item['nilai'] === '') continue;
                 if (!in_array($item['siswa_id'], $ownedSiswaIds)) continue;
@@ -102,11 +104,14 @@ class InputNilaiController extends Controller
                         'guru_id' => $user->id,
                         'siswa_id' => $item['siswa_id'],
                         'jenis' => $jenis,
-                        'judul_penilaian' => $validated['judul_penilaian'] ?? null,
+                        'judul_penilaian' => $validated['judul_penilaian'] ?? '',
                     ],
                     [
                         'nilai' => $item['nilai'],
                         'mata_pelajaran' => $user->kelas_mata_pelajaran ?? 'Umum',
+                        'nama_guru' => $user->nama_lengkap,
+                        'nama_siswa' => $namaBySiswa[$item['siswa_id']] ?? '',
+                        'tanggal' => now()->toDateString(),
                     ]
                 );
                 $saved++;

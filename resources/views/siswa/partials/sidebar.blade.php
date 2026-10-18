@@ -7,6 +7,9 @@
             ['route' => 'siswa.nilai.index', 'icon' => 'lucide-trending-up', 'label' => 'Nilaiku'],
             ['route' => 'siswa.profil.show', 'icon' => 'lucide-user', 'label' => 'Profil Saya'],
         ]],
+        ['label' => 'UJIAN & TRYOUT', 'items' => [
+            ['route' => 'tryout.student.index', 'icon' => 'lucide-package', 'label' => 'Tryout'],
+        ]],
     ];
     $isActive = function ($route) {
         return request()->routeIs($route, $route . '.*');

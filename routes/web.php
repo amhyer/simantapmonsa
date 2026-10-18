@@ -77,6 +77,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->name('force-password-change.update');
 });
 
+// Presensi mandiri pegawai (guru, kepala sekolah, dan tendik), dilindungi geofence sekolah.
+Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change'])
+    ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Pegawai\PresensiController::class, 'index'])->name('index');
+        Route::post('/masuk', [\App\Http\Controllers\Pegawai\PresensiController::class, 'masuk'])->middleware('throttle:10,1')->name('masuk');
+        Route::post('/pulang', [\App\Http\Controllers\Pegawai\PresensiController::class, 'pulang'])->middleware('throttle:10,1')->name('pulang');
+    });
+
 // Dashboard redirect
 Route::get('/dashboard', function () {
     if (!auth()->check()) return redirect()->route('login');
@@ -87,6 +95,7 @@ Route::get('/dashboard', function () {
         'siswa' => redirect()->route('siswa.dashboard'),
         'ortu' => redirect()->route('ortu.dashboard'),
         'kepsek' => redirect()->route('kepsek.dashboard'),
+        'tendik' => redirect()->route('presensi.pegawai.index'),
         default => redirect()->route('login'),
     };
 })->name('home');
@@ -95,6 +104,18 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
+    // Presensi pegawai, area geofence, dan pemetaan QR kartu siswa.
+    Route::prefix('presensi')->name('presensi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PresensiController::class, 'index'])->name('index');
+        Route::post('/lokasi', [\App\Http\Controllers\Admin\PresensiController::class, 'storeLocation'])->name('lokasi.store');
+        Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
+        Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
+        Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
+        Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
+        Route::post('/kartu-siswa/{siswa}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bind'])->middleware('throttle:60,1')->name('kartu.bind');
+        Route::delete('/kartu-siswa/{siswa}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'reset'])->name('kartu.reset');
+    });
 
     // Profile (cermin menu Profile e-Rapor)
     Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile');
@@ -263,7 +284,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     });
 
     // Dapodik Push (Sync ke Dapodik Server)
-    Route::prefix('dapodik/push')->name('dapodik.push.')->group(function () {
+    Route::prefix('dapodik/push')->name('dapodik.push.')->middleware('throttle:10,1')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DapodikPushController::class, 'index'])->name('index');
         Route::get('/sekolah', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
         Route::post('/peserta-didik', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');
@@ -326,7 +347,10 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     // Daftar Nilai
     Route::resource('nilai', NilaiController::class)->except(['show']);
     
-    // Kehadiran
+    // Kehadiran harian dan catatan tambahan mapel melalui QR.
+    Route::get('/kehadiran/jadwal/{jadwal}', [KehadiranController::class, 'jadwal'])->name('kehadiran.jadwal');
+    Route::post('/kehadiran/jadwal/{jadwal}/scan', [KehadiranController::class, 'scan'])->middleware('throttle:120,1')->name('kehadiran.scan');
+    Route::post('/kehadiran/jadwal/{jadwal}/siswa/{siswa}/status', [KehadiranController::class, 'setStatus'])->middleware('throttle:120,1')->name('kehadiran.status');
     Route::resource('kehadiran', KehadiranController::class)->only(['index', 'store', 'destroy']);
     
     // Catatan Siswa
@@ -457,3 +481,154 @@ if (config('simantap.cbt_enabled', false)) {
         Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
     });
 }
+
+// ==================== ADMIN CBT MANAGEMENT ====================
+Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+    // Question Banks
+    Route::prefix('banks')->name('banks.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'store'])->name('store');
+        Route::get('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'show'])->name('show');
+        Route::get('/{bank}/edit', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'edit'])->name('edit');
+        Route::put('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'update'])->name('update');
+        Route::delete('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'destroy'])->name('destroy');
+        Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('/api/statistics', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'statistics'])->name('statistics');
+    });
+    
+    // Test Sessions
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'store'])->name('store');
+        Route::get('/{session}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'show'])->name('show');
+        Route::post('/{session}/update-status', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{session}/force-complete', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'forceComplete'])->name('force-complete');
+        Route::delete('/{session}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'destroy'])->name('destroy');
+        Route::get('/{session}/export/{format}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'exportResults'])->name('export');
+    });
+});
+
+// ==================== ADMIN TRYOUT MANAGEMENT ====================
+Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
+    Route::get('/statistics', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'statistics'])->name('statistics');
+    
+    // Packages
+    Route::prefix('packages')->name('packages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'store'])->name('store');
+        Route::get('/{package}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'show'])->name('show');
+        Route::get('/{package}/edit', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'edit'])->name('edit');
+        Route::put('/{package}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'update'])->name('update');
+        Route::delete('/{package}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'destroy'])->name('destroy');
+        Route::post('/{package}/toggle-status', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/{package}/duplicate', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'duplicate'])->name('duplicate');
+    });
+    
+    // All Sessions
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'allSessions'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'createSession'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'storeSession'])->name('store');
+        Route::get('/{session}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'showSession'])->name('show');
+        Route::get('/{session}/edit', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'editSession'])->name('edit');
+        Route::put('/{session}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'updateSession'])->name('update');
+        Route::delete('/{session}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'destroySession'])->name('destroy');
+        Route::post('/{session}/force-complete', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'forceCompleteSession'])->name('force-complete');
+    });
+    
+    // All Results
+    Route::prefix('results')->name('results.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'allResults'])->name('index');
+        Route::get('/export', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'exportResults'])->name('export');
+        Route::get('/{result}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'showResult'])->name('show');
+    });
+});
+
+// ==================== ADMIN TKA MANAGEMENT ====================
+Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'index'])->name('dashboard');
+    
+    // Dimensions Management
+    Route::prefix('dimensions')->name('dimensions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'dimensions'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'createDimension'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'storeDimension'])->name('store');
+        Route::get('/{dimension}', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'showDimension'])->name('show');
+        Route::get('/{dimension}/edit', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'editDimension'])->name('edit');
+        Route::put('/{dimension}', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'updateDimension'])->name('update');
+        Route::post('/{dimension}/toggle-status', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'toggleDimensionStatus'])->name('toggle-status');
+    });
+    
+    // Assessments Management
+    Route::prefix('assessments')->name('assessments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'assessments'])->name('index');
+        Route::get('/siswa/{siswaId}/history', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'studentHistory'])->name('history');
+    });
+    
+    // Early Warnings Management
+    Route::prefix('warnings')->name('warnings.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'earlyWarnings'])->name('index');
+        Route::get('/{warning}', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'showWarning'])->name('show');
+        Route::post('/{warning}/update-status', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'updateWarningStatus'])->name('update-status');
+    });
+    
+    // Export & Reports
+    Route::post('/export', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'export'])->name('export');
+    Route::post('/generate-report', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'generateReport'])->name('generate-report');
+});
+
+// ==================== TRYOUT ROUTES ====================
+Route::middleware(['auth', 'role:guru'])->prefix('tryout')->name('tryout.')->group(function () {
+    // Categories (nonaktif sementara: controller belum ada — milik area Kiro)
+    // Route::resource('categories', \App\Http\Controllers\Tryout\TryoutCategoryController::class)->except(['show']);
+    
+    // Packages
+    Route::resource('packages', \App\Http\Controllers\Tryout\TryoutPackageController::class);
+    
+    // Sessions
+    Route::prefix('sessions')->name('sessions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'store'])->name('store');
+        Route::get('/{session}', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'show'])->name('show');
+        Route::post('/{session}/publish', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'publish'])->name('publish');
+        Route::post('/{session}/start', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'start'])->name('start');
+        Route::post('/{session}/complete', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'complete'])->name('complete');
+        Route::get('/{session}/monitoring', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'monitoring'])->name('monitoring');
+        Route::get('/{session}/api/monitoring', [\App\Http\Controllers\Tryout\TryoutSessionController::class, 'apiMonitoring'])->name('api.monitoring');
+    });
+});
+
+// Tryout Student Routes
+Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'index'])->name('index');
+    Route::get('/{session}/start', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'start'])->name('start');
+    Route::post('/{result}/answer', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'submitAnswer'])->name('answer');
+    Route::post('/{result}/complete', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'complete'])->name('complete');
+    Route::get('/{result}/result', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'result'])->name('result');
+});
+
+// ==================== TKA ENHANCED ROUTES ====================
+Route::middleware(['auth', 'role:guru'])->prefix('tka')->name('tka.')->group(function () {
+    // Dimensions
+    Route::resource('dimensions', \App\Http\Controllers\Tka\TkaDimensionController::class);
+    Route::post('/dimensions/{dimension}/item', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'addItem'])->name('dimensions.add-item');
+    Route::delete('/dimensions/{dimension}/item/{item}', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'destroyItem'])->name('dimensions.destroy-item');
+    Route::get('/dimensions/{dimension}/api/items', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'getItems'])->name('dimensions.api.items');
+    
+    // Assessments
+    Route::resource('assessments', \App\Http\Controllers\Tka\TkaAssessmentController::class);
+    Route::get('/assessments/siswa/{siswaId}', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'bySiswa'])->name('assessments.by-siswa');
+    
+    // Generate Parent Report
+    Route::post('/assessments/{assessment}/generate-report', [\App\Http\Controllers\Tka\TkaParentController::class, 'generateReport'])->name('assessments.generate-report');
+});
+
+// TKA Parent Routes
+Route::middleware(['auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Tka\TkaParentController::class, 'index'])->name('index');
+    Route::get('/{report}', [\App\Http\Controllers\Tka\TkaParentController::class, 'show'])->name('show');
+});

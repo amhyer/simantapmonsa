@@ -77,10 +77,29 @@
             </div>
             
             <div class="topbar-right">
-                <button class="topbar-btn" title="Notifikasi">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-dot"></span>
-                </button>
+                <div class="notif-wrap">
+                    <button class="topbar-btn" title="Notifikasi" onclick="document.getElementById('notifPanel').classList.toggle('show')">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="notif-panel" id="notifPanel">
+                        <div class="notif-head">Notifikasi</div>
+                        @php $notifs = $layoutNotifs ?? []; @endphp
+                        @forelse($notifs as $notif)
+                            <div class="notif-item">
+                                <i class="{{ $notif['icon'] }}"></i>
+                                <div>
+                                    <div>{{ $notif['teks'] }}</div>
+                                    <small>{{ $notif['waktu'] }}</small>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="notif-empty">
+                                <span class="icon"><i class="fas fa-bell-slash"></i></span>
+                                Belum ada notifikasi baru.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
                 
                 <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
                     @if($userFoto)
@@ -118,6 +137,16 @@
                     <i class="fas fa-exclamation-triangle"></i> {{ session('error') }}
                 </div>
             @endif
+            @if($errors->any())
+                <div class="note note-bad" style="margin-bottom:16px">
+                    <i class="fas fa-exclamation-circle"></i> Periksa kembali isian berikut:
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             @yield('content')
         </main>
     </div>
@@ -140,6 +169,11 @@
             if (dropdown && !dropdown.contains(e.target)) {
                 const menu = dropdown.querySelector('.dropdown-menu');
                 if (menu) menu.classList.remove('show');
+            }
+            const notifWrap = document.querySelector('.notif-wrap');
+            const notifPanel = document.getElementById('notifPanel');
+            if (notifWrap && notifPanel && !notifWrap.contains(e.target)) {
+                notifPanel.classList.remove('show');
             }
         });
         function showToast(message, type = 'success') {

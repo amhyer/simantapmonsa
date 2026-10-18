@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
@@ -16,15 +16,6 @@
             <a href="{{ route('admin.transkrip.input') }}" class="btn btn-sm">Kembali</a>
         </div>
         <div class="card-body">
-            @if($errors->any())
-                <div style="background:#FDECEC;border:1px solid #F5C6C6;color:#B42318;padding:10px 14px;border-radius:8px;margin-bottom:12px">
-                    <ul style="margin:0;padding-left:18px">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
             @if($mapel->isEmpty())
                 <p style="color:#667085">Belum ada mapel bertanda masuk transkrip. Atur di Data Referensi &gt; Mapping Rapor.</p>
             @else
@@ -49,7 +40,7 @@
                                         <td>
                                             <input type="number" name="nilai[{{ $m->id }}]" min="0" max="100" step="0.01"
                                                 value="{{ old('nilai.' . $m->id, optional($nilai->get($m->id))->nilai_akhir) }}"
-                                                style="width:120px;padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px">
+                                                class="form-control" style="width:120px">
                                         </td>
                                         <td>{{ optional($nilai->get($m->id))->predikat ?? '-' }}</td>
                                     </tr>
@@ -65,3 +56,4 @@
         </div>
     </div>
 @endsection
+

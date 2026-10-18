@@ -17,8 +17,19 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
+        ['label' => 'CBT & TRYOUT', 'items' => [
+            ['label' => 'Tryout', 'icon' => 'lucide-package', 'children' => [
+                ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
+                ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
+            ]],
+            ['label' => 'Asesmen TKA', 'icon' => 'lucide-gauge', 'children' => [
+                ['route' => 'tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi TKA'],
+                ['route' => 'tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian TKA'],
+            ]],
+        ]],
         ['label' => 'PEMANTAUAN', 'items' => [
-            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran'],
+            ['route' => 'presensi.pegawai.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Saya'],
+            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
             ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
             ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
         ]],

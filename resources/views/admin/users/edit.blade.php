@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Ubah Akun - SIMANTAP')
 
@@ -10,7 +10,7 @@
 @section('page_subtitle', $user->nama_lengkap)
 
 @section('header_actions')
-    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">← Kembali</a>
+    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">â† Kembali</a>
 @endsection
 
 @section('content')
@@ -23,28 +23,28 @@
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
                         <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $user->nama_lengkap) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
-                        @error('nama_lengkap') <span style="color:#dc3545;font-size:12px">{{ $message }}</span> @enderror
+                        @error('nama_lengkap') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Username *</label>
                         <input type="text" name="nama_pengguna" value="{{ old('nama_pengguna', $user->nama_pengguna) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
-                        @error('nama_pengguna') <span style="color:#dc3545;font-size:12px">{{ $message }}</span> @enderror
+                        @error('nama_pengguna') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi (kosongkan jika tidak diubah)</label>
                         <input type="password" name="kata_sandi" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
-                        @error('kata_sandi') <span style="color:#dc3545;font-size:12px">{{ $message }}</span> @enderror
+                        @error('kata_sandi') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
                         <select name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
-                            @foreach(['guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepsek'] as $val => $label)
+                            @foreach(['admin' => 'Admin', 'guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'tendik' => 'Tenaga Kependidikan'] as $val => $label)
                                 <option value="{{ $val }}" {{ $user->peran === $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
-                        @error('peran') <span style="color:#dc3545;font-size:12px">{{ $message }}</span> @enderror
+                        @error('peran') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div style="margin-bottom:16px">
@@ -52,10 +52,11 @@
                     <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran', $user->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="display:flex;gap:10px">
-                    <button type="submit" class="btn">💾 Simpan</button>
+                    <button type="submit" class="btn">ðŸ’¾ Simpan</button>
                     <a href="{{ route('admin.users.index') }}" class="btn btn-ghost">Batal</a>
                 </div>
             </form>
         </div>
     </div>
 @endsection
+

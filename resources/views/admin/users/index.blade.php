@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Kelola Pengguna - SIMANTAP')
 
@@ -21,7 +21,8 @@
         $siswaUsers = $users->where('peran', 'siswa');
         $ortuUsers = $users->where('peran', 'ortu');
         $kepsekUsers = $users->where('peran', 'kepsek');
-        $allRole = $adminUsers->merge($guruUsers)->merge($siswaUsers)->merge($ortuUsers)->merge($kepsekUsers);
+        $tendikUsers = $users->where('peran', 'tendik');
+        $allRole = $adminUsers->merge($guruUsers)->merge($siswaUsers)->merge($ortuUsers)->merge($kepsekUsers)->merge($tendikUsers);
         $siswaWithoutUser = $siswa->filter(function ($s) use ($users) {
             return !$users->contains(function ($u) use ($s) {
                 return $u->peran === 'siswa' && is_array($u->terhubung_dengan) && in_array($s->id, $u->terhubung_dengan);
@@ -42,6 +43,8 @@
         <button onclick="switchTab('guru')" id="tab-guru" class="btn btn-sm btn-ghost tab-btn">Guru ({{ $guruUsers->count() }})</button>
         <button onclick="switchTab('siswa')" id="tab-siswa" class="btn btn-sm btn-ghost tab-btn">Siswa ({{ $siswaUsers->count() }})</button>
         <button onclick="switchTab('ortu')" id="tab-ortu" class="btn btn-sm btn-ghost tab-btn">Orang Tua ({{ $ortuUsers->count() }})</button>
+        <button onclick="switchTab('kepsek')" id="tab-kepsek" class="btn btn-sm btn-ghost tab-btn">Kepala Sekolah ({{ $kepsekUsers->count() }})</button>
+        <button onclick="switchTab('tendik')" id="tab-tendik" class="btn btn-sm btn-ghost tab-btn">Tendik ({{ $tendikUsers->count() }})</button>
         <button onclick="switchTab('tanpa-akun')" id="tab-tanpa-akun" class="btn btn-sm btn-ghost tab-btn" style="border:1px dashed #B8860B;color:#B8860B">Belum Punya Akun ({{ $siswaWithoutUser->count() }})</button>
         @if($guruUsers->count())
             <button onclick="hapusSemua('guru', {{ $guruUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318;margin-left:auto">Hapus Semua Guru</button>
@@ -73,8 +76,8 @@
                     </thead>
                     <tbody id="userBody">
                         @php
-                            $peranLabels = ['admin' => 'Admin', 'guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepsek'];
-                            $peranColors = ['admin' => 'tag-bad', 'guru' => 'tag-gold', 'siswa' => 'tag-ok', 'ortu' => 'tag-mut', 'kepsek' => 'tag-gold'];
+                            $peranLabels = ['admin' => 'Admin', 'guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'tendik' => 'Tenaga Kependidikan'];
+                            $peranColors = ['admin' => 'tag-bad', 'guru' => 'tag-gold', 'siswa' => 'tag-ok', 'ortu' => 'tag-mut', 'kepsek' => 'tag-gold', 'tendik' => 'tag-primary'];
                         @endphp
                         @foreach($users as $u)
                             <tr data-role="{{ $u->peran }}" data-search="{{ strtolower($u->nama_lengkap . ' ' . $u->nama_pengguna) }}">
@@ -162,6 +165,8 @@
         'guru': 'Akun Guru',
         'siswa': 'Akun Siswa',
         'ortu': 'Akun Orang Tua',
+        'kepsek': 'Akun Kepala Sekolah',
+        'tendik': 'Akun Tenaga Kependidikan',
         'tanpa-akun': 'Siswa Belum Punya Akun'
     };
 
@@ -260,3 +265,4 @@
     }
 </style>
 @endpush
+

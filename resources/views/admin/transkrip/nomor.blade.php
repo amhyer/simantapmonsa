@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Nomor Ijazah - SIMANTAP')
 
@@ -18,8 +18,8 @@
             <form action="{{ route('admin.transkrip.nomor.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File CSV (header: nisn,nomor_ijazah)</label>
-                    <input type="file" name="file" accept=".csv,.txt" required>
+                    <label class="form-label">File CSV (header: nisn,nomor_ijazah)</label>
+                    <input type="file" name="file" accept=".csv,.txt" required class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Import</button>
@@ -35,7 +35,7 @@
         <div class="card-header">
             <h3>Daftar Siswa</h3>
             <form method="GET" style="display:flex;gap:8px">
-                <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama / NISN / NIS" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama / NISN / NIS" class="form-control">
                 <button type="submit" class="btn btn-sm">Cari</button>
             </form>
         </div>
@@ -59,7 +59,7 @@
                                     <form action="{{ route('admin.transkrip.nomor.update', $row) }}" method="POST" style="display:flex;gap:8px">
                                         @csrf
                                         @method('PUT')
-                                        <input type="text" name="nomor_ijazah" value="{{ old('nomor_ijazah', $row->nomor_ijazah) }}" maxlength="100" placeholder="DN-..." style="padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px;min-width:180px">
+                                        <input type="text" name="nomor_ijazah" value="{{ old('nomor_ijazah', $row->nomor_ijazah) }}" maxlength="100" placeholder="DN-..." class="form-control form-control-sm" style="min-width:180px">
                                         <button type="submit" class="btn btn-sm">Simpan</button>
                                     </form>
                                     @error('nomor_ijazah')
@@ -69,8 +69,7 @@
                                 <td></td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa.</td>
+                            <tr class="table-empty"><td colspan="4" style="padding:16px;text-align:center;color:#667085">Belum ada data siswa.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -80,3 +79,4 @@
         </div>
     </div>
 @endsection
+

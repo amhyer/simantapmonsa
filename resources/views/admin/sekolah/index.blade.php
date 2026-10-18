@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Identitas Sekolah - SIMANTAP')
 
@@ -275,3 +275,4 @@
     }
 </script>
 @endpush
+

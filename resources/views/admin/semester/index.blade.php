@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Semester - SIMANTAP')
 
@@ -26,14 +26,14 @@
                         <input type="text" name="semester_id" placeholder="20261" required
                             style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px"
                             value="{{ old('semester_id') }}">
-                        @error('semester_id') <span style="color:#DC2626;font-size:11px">{{ $message }}</span> @enderror
+                        @error('semester_id') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label style="font-size:12px;color:#667085;display:block;margin-bottom:4px">Tahun Ajaran</label>
                         <input type="text" name="tahun_ajaran" placeholder="2025/2026" required
                             style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px"
                             value="{{ old('tahun_ajaran') }}">
-                        @error('tahun_ajaran') <span style="color:#DC2626;font-size:11px">{{ $message }}</span> @enderror
+                        @error('tahun_ajaran') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label style="font-size:12px;color:#667085;display:block;margin-bottom:4px">Semester</label>
@@ -42,7 +42,7 @@
                             <option value="ganjil" {{ old('nama_semester') == 'ganjil' ? 'selected' : '' }}>Ganjil</option>
                             <option value="genap" {{ old('nama_semester') == 'genap' ? 'selected' : '' }}>Genap</option>
                         </select>
-                        @error('nama_semester') <span style="color:#DC2626;font-size:11px">{{ $message }}</span> @enderror
+                        @error('nama_semester') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
@@ -120,3 +120,4 @@
     </div>
 </div>
 @endsection
+

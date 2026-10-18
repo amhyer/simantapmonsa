@@ -2,6 +2,8 @@
 
 // Ikon dibundel via Vite (self-host) agar tidak bergantung CDN pihak ketiga.
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import './presensi-qr.js';
+import './presensi-pegawai.js';
 
 import Alpine from 'alpinejs';
 import autoAnimate from '@formkit/auto-animate';

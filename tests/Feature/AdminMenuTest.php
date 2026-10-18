@@ -89,7 +89,9 @@ class AdminMenuTest extends TestCase
         $this->assertNotEmpty($m, 'Blok sidebar-nav tidak ditemukan.');
         $sidebar = $m[1];
 
-        foreach (['Data Referensi', 'Data Kokurikuler', 'Status Penilaian', 'Transkrip Ijazah', 'Cetak Nilai'] as $label) {
+        // Grup lipat di sidebar e-Rapor (tab aktif untuk admin.dashboard):
+        // PERKEMBANGAN NILAI dicek terpisah di bawah (muncul 2x: induk + anak).
+        foreach (['Data Referensi', 'Status Penilaian', 'Transkrip Ijazah', 'Cetak Nilai'] as $label) {
             $this->assertSame(1, substr_count($sidebar, $label), "Label '{$label}' muncul lebih dari sekali di sidebar.");
         }
 
