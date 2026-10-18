@@ -77,7 +77,7 @@ if (!function_exists('activeAdminTab')) {
         // Setup tab
         if (request()->routeIs('admin.users.*', 'admin.mapel.*', 'admin.semester.*', 
                                'admin.kode-akses.*', 'admin.modul.*', 'admin.bobot.*', 
-                               'admin.backup.*', 'admin.log.*', 'admin.sheet.*', 
+                               'admin.backup.*', 'admin.log.*', 'admin.sheet.*', 'admin.presensi.*',
                                'admin.dapodik.*', 'admin.peta-kelas.*', 'admin.kokurikuler.*')) {
             return 'setup';
         }

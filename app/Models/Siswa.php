@@ -11,7 +11,7 @@ class Siswa extends Model
 {
     use SoftDeletes;
     protected $table = 'siswa';
-    protected $hidden = ['rekaman', 'nik', 'alamat'];
+    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash'];
     protected $fillable = [
         'uuid',
         'dapodik_id',

@@ -26,10 +26,11 @@ class MapelController extends Controller
         $query = MataPelajaran::query()->where('jenjang', $jenjangSekolah);
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('nama', 'ilike', "%{$search}%")
-                  ->orWhere('kode', 'ilike', "%{$search}%");
+            $search = mb_strtolower(trim((string) $request->search));
+            $pattern = '%' . $search . '%';
+            $query->where(function ($q) use ($pattern) {
+                $q->whereRaw('LOWER(nama) LIKE ?', [$pattern])
+                  ->orWhereRaw('LOWER(kode) LIKE ?', [$pattern]);
             });
         }
 
