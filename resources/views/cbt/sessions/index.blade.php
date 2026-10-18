@@ -1,52 +1,15 @@
 @extends('layouts.app')
-
 @section('title', 'Sesi Ujian CBT - SIMANTAP')
-
 @section('sidebar')
     @include('guru.partials.sidebar')
 @endsection
-
 @section('page_title', 'Sesi Ujian CBT')
-@section('page_subtitle', 'Jadwal dan pantau ujian Anda')
-
+@section('page_subtitle', 'Computer Based Test • Pilihan ganda')
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <h3>Daftar Sesi Ujian</h3>
-            <a href="{{ route('cbt.sessions.create') }}" class="btn btn-sm">Buat Sesi</a>
-        </div>
-        <div class="card-body tight">
-            @if($sessions->isEmpty())
-                <div class="empty-state">
-                    <div class="icon">🖥️</div>
-                    <h4>Belum ada sesi ujian</h4>
-                    <p>Buat sesi ujian dari bank soal yang sudah berisi pertanyaan.</p>
-                </div>
-            @else
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nama Sesi</th>
-                                <th>Bank Soal</th>
-                                <th>Status</th>
-                                <th>Mulai</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($sessions as $session)
-                                <tr>
-                                    <td>{{ $session->nama_sesi }}</td>
-                                    <td>{{ $session->questionBank->nama_bank ?? '-' }}</td>
-                                    <td><span class="tag tag-mut">{{ ucfirst($session->status ?? '-') }}</span></td>
-                                    <td>{{ $session->tanggal_mulai?->format('d/m H:i') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top:12px">{{ $sessions->links() }}</div>
-            @endif
-        </div>
-    </div>
+@include('cbt.feedback')
+<div class="cbt-actions"><a class="btn btn-primary" href="{{ route('cbt.sessions.create') }}">+ Sesi ujian</a><a class="btn" href="{{ route('cbt.question-banks.index') }}">Bank soal</a></div>
+<div class="card"><div class="card-body"><table class="cbt-list"><thead><tr><th>Ujian</th><th>Kelas</th><th>Status</th><th>Mulai</th><th>Peserta mulai</th></tr></thead><tbody>
+@forelse($sessions as $session)<tr><td><a href="{{ route('cbt.sessions.show', $session) }}">{{ $session->title }}</a></td><td>{{ $session->kelas }}</td><td>{{ $session->status }}</td><td>{{ $session->opens_at->format('d/m/Y H:i') }}</td><td>{{ $session->results_count }}</td></tr>
+@empty<tr><td colspan="5">Belum ada sesi ujian.</td></tr>@endforelse
+</tbody></table>{{ $sessions->links() }}</div></div>
 @endsection

@@ -27,6 +27,15 @@ class BackupData extends Command
             'kebiasaan' => \App\Models\Kebiasaan::all()->toArray(),
         ];
 
+        // Sertakan seluruh CBT dalam backup terjadwal, termasuk snapshot privat.
+        foreach (\App\Support\BackupTables::semua() as $table => $definition) {
+            if (str_starts_with($table, 'cbt_') && \Illuminate\Support\Facades\Schema::hasTable($table)) {
+                $data[$table] = $definition['class']::all()->map(function ($row) {
+                    return $row->makeVisible($row->getHidden())->toArray();
+                })->all();
+            }
+        }
+
         $filename = 'backup-simantap-' . date('Y-m-d-His') . '.json';
         Storage::disk('local')->put("backups/{$filename}", json_encode($data, JSON_PRETTY_PRINT));
 
