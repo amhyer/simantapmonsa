@@ -16,6 +16,10 @@ class Kehadiran extends Model
         'siswa_id',
         'tanggal',
         'status',
+        'waktu_masuk',
+        'jadwal_pelajaran_id',
+        'dicatat_oleh',
+        'metode',
         'keterangan',
         'rekaman',
     ];
@@ -25,6 +29,7 @@ class Kehadiran extends Model
         return [
             'rekaman' => 'array',
             'tanggal' => 'date',
+            'waktu_masuk' => 'datetime',
         ];
     }
 

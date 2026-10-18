@@ -32,6 +32,10 @@
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
         ]],
+        ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
+            ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
+            ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Pemetaan QR Kartu Siswa'],
+        ]],
         ['label' => 'DATA REFERENSI', 'icon' => 'lucide-laptop', 'children' => [
             ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
             ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru'],

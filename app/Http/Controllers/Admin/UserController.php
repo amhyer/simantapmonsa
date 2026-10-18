@@ -34,7 +34,7 @@ class UserController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users',
             'kata_sandi' => 'required|string|min:8',
-            'peran' => 'required|in:admin,guru,siswa,ortu,kepsek',
+            'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
             'aktif' => 'boolean',
@@ -87,7 +87,7 @@ class UserController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,' . $user->id,
             'kata_sandi' => 'nullable|string|min:8',
-            'peran' => 'required|in:admin,guru,siswa,ortu,kepsek',
+            'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
             'aktif' => 'boolean',
@@ -149,7 +149,7 @@ class UserController extends Controller
 
     public function destroyAll(Request $request, string $peran)
     {
-        $allowed = ['guru', 'siswa', 'ortu'];
+        $allowed = ['guru', 'siswa', 'ortu', 'tendik'];
         if (!in_array($peran, $allowed)) {
             return response()->json(['success' => false, 'message' => 'Peran tidak valid.'], 400);
         }
@@ -161,7 +161,7 @@ class UserController extends Controller
             return response()->json(['success' => true, 'message' => 'Tidak ada akun ' . $peran . ' yang perlu dihapus.']);
         }
 
-        $labels = ['guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepsek'];
+        $labels = ['guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'tendik' => 'Tenaga Kependidikan'];
 
         DB::transaction(function () use ($users) {
             foreach ($users as $user) {

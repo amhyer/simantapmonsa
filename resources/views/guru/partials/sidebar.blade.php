@@ -32,7 +32,8 @@
             ]],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
-            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran'],
+            ['route' => 'presensi.pegawai.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Saya'],
+            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
             ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
             ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
         ]],

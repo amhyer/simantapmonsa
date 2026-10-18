@@ -66,6 +66,14 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function tendik(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'peran' => 'tendik',
+            'nama_pengguna' => 'tendik_' . Str::random(5),
+        ]);
+    }
+
     public function forcePasswordChange(): static
     {
         return $this->state(fn (array $attributes) => [

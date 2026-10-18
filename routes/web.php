@@ -77,6 +77,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->name('force-password-change.update');
 });
 
+// Presensi mandiri pegawai (guru, kepala sekolah, dan tendik), dilindungi geofence sekolah.
+Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change'])
+    ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Pegawai\PresensiController::class, 'index'])->name('index');
+        Route::post('/masuk', [\App\Http\Controllers\Pegawai\PresensiController::class, 'masuk'])->middleware('throttle:10,1')->name('masuk');
+        Route::post('/pulang', [\App\Http\Controllers\Pegawai\PresensiController::class, 'pulang'])->middleware('throttle:10,1')->name('pulang');
+    });
+
 // Dashboard redirect
 Route::get('/dashboard', function () {
     if (!auth()->check()) return redirect()->route('login');
@@ -87,6 +95,7 @@ Route::get('/dashboard', function () {
         'siswa' => redirect()->route('siswa.dashboard'),
         'ortu' => redirect()->route('ortu.dashboard'),
         'kepsek' => redirect()->route('kepsek.dashboard'),
+        'tendik' => redirect()->route('presensi.pegawai.index'),
         default => redirect()->route('login'),
     };
 })->name('home');
@@ -95,6 +104,18 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
+    // Presensi pegawai, area geofence, dan pemetaan QR kartu siswa.
+    Route::prefix('presensi')->name('presensi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PresensiController::class, 'index'])->name('index');
+        Route::post('/lokasi', [\App\Http\Controllers\Admin\PresensiController::class, 'storeLocation'])->name('lokasi.store');
+        Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
+        Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
+        Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
+        Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
+        Route::post('/kartu-siswa/{siswa}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bind'])->middleware('throttle:60,1')->name('kartu.bind');
+        Route::delete('/kartu-siswa/{siswa}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'reset'])->name('kartu.reset');
+    });
 
     // Profile (cermin menu Profile e-Rapor)
     Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile');
@@ -326,7 +347,10 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     // Daftar Nilai
     Route::resource('nilai', NilaiController::class)->except(['show']);
     
-    // Kehadiran
+    // Kehadiran harian dan catatan tambahan mapel melalui QR.
+    Route::get('/kehadiran/jadwal/{jadwal}', [KehadiranController::class, 'jadwal'])->name('kehadiran.jadwal');
+    Route::post('/kehadiran/jadwal/{jadwal}/scan', [KehadiranController::class, 'scan'])->middleware('throttle:120,1')->name('kehadiran.scan');
+    Route::post('/kehadiran/jadwal/{jadwal}/siswa/{siswa}/status', [KehadiranController::class, 'setStatus'])->middleware('throttle:120,1')->name('kehadiran.status');
     Route::resource('kehadiran', KehadiranController::class)->only(['index', 'store', 'destroy']);
     
     // Catatan Siswa

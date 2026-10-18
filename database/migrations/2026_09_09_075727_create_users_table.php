@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('nama_lengkap', 255);
             $table->string('nama_pengguna', 100)->unique();
             $table->string('kata_sandi');
-            $table->enum('peran', ['admin', 'guru', 'siswa', 'ortu', 'kepsek'])->default('guru');
+            $table->enum('peran', ['admin', 'guru', 'siswa', 'ortu', 'kepsek', 'tendik'])->default('guru');
             $table->json('terhubung_dengan')->nullable();
             $table->string('kelas_mata_pelajaran', 255)->nullable();
             $table->boolean('aktif')->default(true);
