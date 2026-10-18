@@ -19,3 +19,7 @@
         <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
     @endforeach
 @endforeach
+@if(config('simantap.cbt_enabled', false))
+    <x-sidebar-label>UJIAN CBT</x-sidebar-label>
+    <x-sidebar-link :href="route('cbt.student.index')" icon="lucide-clipboard-check" label="Ujian CBT" :active="request()->routeIs('cbt.*')" />
+@endif
