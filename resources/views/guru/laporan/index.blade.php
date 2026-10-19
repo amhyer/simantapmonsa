@@ -179,7 +179,11 @@
                     </table>
                 </div>
 
-                @if(count($dataLaporan) > 0 && collect($dataLaporan)->first()['nilai_per_mapel']->count() > 0)
+                @php
+                    $firstLaporan = collect($dataLaporan)->first();
+                    $detailNilai = $firstLaporan !== null ? ($firstLaporan['nilai_per_mapel'] ?? collect()) : collect();
+                @endphp
+                @if(count($dataLaporan) > 0 && $detailNilai->count() > 0)
                     <div style="margin-top:20px">
                         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--navy)">
                             <i class="fas fa-layer-group" style="margin-right:6px"></i>Detail Nilai per Mata Pelajaran

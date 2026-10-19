@@ -227,9 +227,10 @@
                                     </td>
                                     <td style="text-align:right">
                                         <div style="display:flex;gap:6px;justify-content:flex-end">
-                                            <a href="{{ route('cbt.questions.edit', [$bank, $question]) }}" class="btn btn-sm btn-ghost-violet" title="Edit">
+                                            <!-- Edit soal tidak terimplementasi (route+method+view belum ada) -->
+                                            <!-- <a href="{{ route('cbt.questions.edit', [$bank, $question]) }}" class="btn btn-sm btn-ghost-violet" title="Edit">
                                                 <i class="fas fa-edit"></i>
-                                            </a>
+                                            </a> -->
                                             <form method="POST" action="{{ route('cbt.questions.destroy', $question) }}" style="display:inline" onsubmit="return confirm('Hapus soal ini?')">
                                                 @csrf
                                                 @method('DELETE')
