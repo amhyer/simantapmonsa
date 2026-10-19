@@ -133,20 +133,21 @@
                     <tbody>
                         @foreach($ringkasan['cbt_results'] as $result)
                         <tr>
-                            <td>{{ $result->testSession->nama_sesi ?? '-' }}</td>
-                            <td>{{ $result->testSession->mataPelajaran->nama ?? '-' }}</td>
-                            <td>{{ $result->created_at->format('d M Y H:i') }}</td>
-                            <td><strong>{{ number_format($result->nilai_akhir, 1) }}</strong></td>
+                            <td>{{ $result->session->title ?? '-' }}</td>
+                            <td>{{ $result->session->bank?->subject ?? '-' }}</td>
+                            <td>{{ ($result->submitted_at ?? $result->created_at)->format('d M Y H:i') }}</td>
+                            <td><strong>{{ number_format($result->score ?? 0, 1) }}</strong></td>
                             <td>
                                 @php
-                                    $predikat = $result->predikat ?? '-';
+                                    $skor = $result->score ?? 0;
+                                    $predikat = $skor >= 90 ? 'A' : ($skor >= 80 ? 'B' : ($skor >= 70 ? 'C' : 'D'));
                                     $colors = ['A' => 'green', 'B' => 'blue', 'C' => 'yellow', 'D' => 'red'];
                                     $color = $colors[$predikat] ?? 'gray';
                                 @endphp
                                 <span class="tag tag-{{ $color }}">{{ $predikat }}</span>
                             </td>
                             <td>
-                                @if($result->nilai_akhir >= ($result->testSession->passing_grade ?? 70))
+                                @if(($result->score ?? 0) >= 70)
                                     <span class="tag tag-green">LULUS</span>
                                 @else
                                     <span class="tag tag-red">BELUM LULUS</span>

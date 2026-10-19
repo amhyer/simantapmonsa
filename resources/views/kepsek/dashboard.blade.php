@@ -105,19 +105,20 @@
 </div>
 
 
-{{-- CBT Analytics Section --}}
+@if(config('simantap.cbt_enabled', false))
+{{-- CBT Analytics Section (kartu disembunyikan selama modul CBT mati) --}}
 <div class="card" style="margin-bottom:16px">
     <div class="card-header">
         <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--navy)"></i>Analisis CBT Sekolah</h3>
     </div>
     <div class="card-body">
         @php
-            $cbtTotalSessions = App\Models\Cbt\TestSession::count();
-            $cbtOngoing = App\Models\Cbt\TestSession::where('status', 'ongoing')->count();
-            $cbtCompleted = App\Models\Cbt\TestSession::where('status', 'completed')->count();
-            $cbtTotalParticipants = App\Models\Cbt\TestResult::count();
-            $cbtAvgScore = App\Models\Cbt\TestResult::avg('nilai_akhir') ?? 0;
-            $cbtPassRate = App\Models\Cbt\TestResult::whereRaw('nilai_akhir >= 70')->count() / max($cbtTotalParticipants, 1) * 100;
+            $cbtTotalSessions = App\Models\CbtTestSession::count();
+            $cbtOngoing = App\Models\CbtTestSession::whereIn('status', ['published', 'running'])->count();
+            $cbtCompleted = App\Models\CbtTestSession::where('status', 'completed')->count();
+            $cbtTotalParticipants = App\Models\CbtResult::count();
+            $cbtAvgScore = App\Models\CbtResult::avg('score') ?? 0;
+            $cbtPassRate = App\Models\CbtResult::where('score', '>=', 70)->count() / max($cbtTotalParticipants, 1) * 100;
         @endphp
         <div class="grid grid-5" style="margin-bottom:16px">
             <div class="stat" style="text-align:center;padding:12px;background:#F8F6FC;border-radius:8px">
@@ -151,6 +152,7 @@
             </div>
         </div>
     </div>
+@endif
 </div>
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

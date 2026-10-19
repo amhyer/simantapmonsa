@@ -7,7 +7,6 @@ use App\Models\Siswa;
 use App\Models\Kehadiran;
 use App\Models\Catatan;
 use App\Models\Kebiasaan;
-use App\Models\Cbt\TestResult;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -41,12 +40,15 @@ class DashboardController extends Controller
             $totalKehadiran = Kehadiran::where('siswa_id', $anak->id)->count();
             $hadir = Kehadiran::where('siswa_id', $anak->id)->where('status', 'H')->count();
             
-            // CBT results
-            $cbtResults = TestResult::where('siswa_id', $anak->id)
-                ->with('testSession')
-                ->orderByDesc('created_at')
-                ->limit(5)
-                ->get();
+            // Hasil CBT (hanya saat modul asesmen aktif; skema baru cbt_results)
+            $cbtResults = config('simantap.cbt_enabled', false)
+                ? \App\Models\CbtResult::where('siswa_id', $anak->id)
+                    ->with('session.bank')
+                    ->whereNotNull('submitted_at')
+                    ->orderByDesc('submitted_at')
+                    ->limit(5)
+                    ->get()
+                : collect();
             
             $ringkasan = [
                 'nilai_akhir' => $na['nilai_akhir'],

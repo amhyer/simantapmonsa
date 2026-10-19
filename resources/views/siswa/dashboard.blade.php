@@ -261,7 +261,8 @@
         </div>
     </div>
     
-    {{-- CBT Ujian Section --}}
+    @if(config('simantap.cbt_enabled', false) && Route::has('cbt.student.index'))
+    {{-- CBT Ujian Section (modul mati / rute tak terdaftar: kartu disembunyikan) --}}
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--violet)"></i>Ujian CBT</h3>
@@ -269,19 +270,22 @@
         </div>
         <div class="card-body">
             @php
-                $cbtAvailable = App\Models\Cbt\TestSession::where('status', 'ongoing')
-                    ->where(function($q) use ($siswa) {
-                        $q->whereNull('rombel_id')
-                          ->orWhere('rombel_id', $siswa->rombel_id);
-                    })
-                    ->where('tanggal_selesai', '>', now())
-                    ->orderBy('tanggal_mulai')
-                    ->limit(3)
-                    ->get();
-                    
-                $cbtResults = App\Models\Cbt\TestResult::where('siswa_id', $siswa->id)
-                    ->with('testSession')
-                    ->orderByDesc('created_at')
+                $now = now();
+                $cbtAvailable = App\Models\CbtTestSession::with('bank')
+                    ->whereIn('status', ['published', 'running'])
+                    ->where('opens_at', '<=', $now)
+                    ->where('closes_at', '>', $now)
+                    ->orderBy('opens_at')
+                    ->limit(50)
+                    ->get()
+                    ->filter(fn ($s) => in_array($siswa->id, $s->participant_ids ?? []))
+                    ->take(3)
+                    ->values();
+
+                $cbtResults = App\Models\CbtResult::where('siswa_id', $siswa->id)
+                    ->with('session')
+                    ->whereNotNull('submitted_at')
+                    ->orderByDesc('submitted_at')
                     ->limit(5)
                     ->get();
             @endphp
@@ -292,8 +296,8 @@
                     @foreach($cbtAvailable as $session)
                         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#F8F6FC;border-radius:8px;margin-bottom:8px">
                             <div>
-                                <div style="font-weight:600">{{ $session->nama_sesi }}</div>
-                                <div style="font-size:12px;color:var(--muted)">{{ $session->mata_pelajaran }} · Selesai: {{ $session->tanggal_selesai->format('d M H:i') }}</div>
+                                <div style="font-weight:600">{{ $session->title }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ $session->bank?->subject ?? '-' }} · Selesai: {{ $session->closes_at->format('d M H:i') }}</div>
                             </div>
                             <a href="{{ route('cbt.student.start', $session->id) }}" class="btn btn-violet btn-sm">Mulai</a>
                         </div>
@@ -317,11 +321,11 @@
                             <tbody>
                                 @foreach($cbtResults as $result)
                                     <tr>
-                                        <td>{{ $result->testSession->nama_sesi ?? '-' }}</td>
-                                        <td>{{ $result->created_at->format('d M Y') }}</td>
-                                        <td><strong>{{ number_format($result->nilai_akhir, 1) }}</strong></td>
+                                        <td>{{ $result->session->title ?? '-' }}</td>
+                                        <td>{{ ($result->submitted_at ?? $result->created_at)->format('d M Y') }}</td>
+                                        <td><strong>{{ number_format($result->score ?? 0, 1) }}</strong></td>
                                         <td>
-                                            @if($result->nilai_akhir >= ($result->testSession->passing_grade ?? 70))
+                                            @if(($result->score ?? 0) >= 70)
                                                 <span class="tag tag-green">LULUS</span>
                                             @else
                                                 <span class="tag tag-red">BELUM LULUS</span>
@@ -341,6 +345,7 @@
             @endif
         </div>
     </div>
+    @endif
 @endif
 @endsection
 

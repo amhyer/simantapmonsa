@@ -63,7 +63,7 @@
         @endif
     @endforeach
 @endforeach
-@if(config('simantap.cbt_enabled', false))
+@if(config('simantap.cbt_enabled', false) && Route::has('cbt.sessions.index'))
     <x-sidebar-label>UJIAN CBT</x-sidebar-label>
     <x-sidebar-link :href="route('cbt.sessions.index')" icon="lucide-clipboard-check" label="CBT • Sesi Ujian" :active="request()->routeIs('cbt.*')" />
     <x-sidebar-link :href="route('cbt.question-banks.index')" icon="lucide-book-open" label="CBT • Bank Soal" :active="request()->routeIs('cbt.question-banks.*')" />
