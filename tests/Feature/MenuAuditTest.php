@@ -115,7 +115,13 @@ class MenuAuditTest extends TestCase
         if ($errors) {
             $out .= "\nERRORS:\n" . implode("\n", $errors) . "\n";
         }
-        file_put_contents('C:/Users/USER/AppData/Local/Temp/opencode/menu_audit.txt', $out);
+        // Laporan audit ditulis ke storage aplikasi, bukan path Windows absolut:
+        // path tetap membuat seluruh suite gagal di Linux/CI.
+        $tujuan = storage_path('app/menu_audit.txt');
+        if (! is_dir(dirname($tujuan))) {
+            mkdir(dirname($tujuan), 0775, true);
+        }
+        file_put_contents($tujuan, $out);
 
         $this->assertSame([], $errors, 'Ada halaman error: ' . implode('; ', $errors));
     }

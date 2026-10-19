@@ -3,36 +3,21 @@
 namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
 use App\Models\Kebiasaan;
-use Illuminate\Http\Request;
 
 class RekapController extends Controller
 {
+    use HasAnakLookup;
     use HasPredikatKaih;
-    public function index(Request $request)
+
+    public function index()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
+        $anakList = $this->anakList();
+        $anak = $this->getAnak($anakList);
 
-        if (empty($anakIds)) {
+        if (! $anak) {
             return view('ortu.rekap.index', [
-                'anak' => null, 'semuaKebiasaan' => collect(),
-                'hari' => 0, 'rataKebiasaan' => [], 'rata' => 0, 'predikat' => null, 'fields' => [],
-            ]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $anak = Siswa::find($siswaId);
-
-        if (!$anak) {
-            return view('ortu.rekap.index', [
-                'anak' => null, 'semuaKebiasaan' => collect(),
+                'anak' => null, 'anakList' => $anakList, 'semuaKebiasaan' => collect(),
                 'hari' => 0, 'rataKebiasaan' => [], 'rata' => 0, 'predikat' => null, 'fields' => [],
             ]);
         }
@@ -49,7 +34,6 @@ class RekapController extends Controller
 
         $rata = round(collect($rataKebiasaan)->avg(), 2);
         $predikat = $this->getPredikatKaih($rata);
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
 
         return view('ortu.rekap.index', compact(
             'anak', 'anakList', 'semuaKebiasaan', 'hari', 'rataKebiasaan', 'rata', 'predikat', 'fields'

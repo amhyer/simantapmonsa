@@ -47,16 +47,7 @@
         </div>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-            @if(isset($anakList) && $anakList->count() > 1)
-                <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pilih Anak</label>
-                    <select onchange="window.location.href='{{ route('ortu.kebiasaan.index') }}?siswa_id='+this.value+'&tanggal={{ $tanggal }}'" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;min-width:180px">
-                        @foreach($anakList as $a)
-                            <option value="{{ $a->id }}" {{ $a->id == $siswa->id ? 'selected' : '' }}>{{ $a->nama_peserta_didik }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
+            @include('ortu.partials.pilih-anak', ['route' => 'ortu.kebiasaan.index', 'terpilih' => $siswa, 'anakList' => $anakList, 'query' => ['tanggal' => $tanggal]])
             <div>
                 <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tanggal</label>
                 <input type="date" value="{{ $tanggal }}" max="{{ date('Y-m-d') }}" onchange="window.location.href='{{ route('ortu.kebiasaan.index') }}?siswa_id={{ $siswa->id }}&tanggal='+this.value" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">

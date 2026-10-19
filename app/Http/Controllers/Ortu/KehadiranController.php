@@ -3,41 +3,25 @@
 namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
 use App\Models\Kehadiran;
-use Illuminate\Http\Request;
 
 class KehadiranController extends Controller
 {
-    public function index(Request $request)
+    use HasAnakLookup;
+
+    public function index()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
+        $anakList = $this->anakList();
+        $anak = $this->getAnak($anakList);
 
-        if (empty($anakIds)) {
+        if (! $anak) {
             return view('ortu.kehadiran.index', [
                 'anak' => null, 'kehadiran' => collect(),
-                'anakList' => collect(), 'totalHadir' => 0, 'total' => 0, 'persentase' => 0,
-            ]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $anak = Siswa::find($siswaId);
-
-        if (!$anak) {
-            return view('ortu.kehadiran.index', [
-                'anak' => null, 'kehadiran' => collect(),
-                'anakList' => collect(), 'totalHadir' => 0, 'total' => 0, 'persentase' => 0,
+                'anakList' => $anakList, 'totalHadir' => 0, 'total' => 0, 'persentase' => 0,
             ]);
         }
 
         $kehadiran = Kehadiran::where('siswa_id', $anak->id)->orderBy('tanggal', 'desc')->get();
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
 
         $totalHadir = $kehadiran->where('status', 'H')->count();
         $total = $kehadiran->count();

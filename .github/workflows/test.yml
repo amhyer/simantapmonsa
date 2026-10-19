@@ -10,6 +10,11 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  # Dipakai untuk menempelkan ringkasan log bila instalasi gagal.
+  pull-requests: write
+
 jobs:
   phpunit:
     name: PHPUnit (PHP 8.4)
@@ -24,8 +29,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp, dom, fileinfo, iconv, curl
           coverage: none
+          tools: composer:v2
           ini-values: sys_temp_dir=/tmp
 
       - name: Setup Node 22
@@ -41,13 +47,34 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Prepare environment
+      # .env dibuat dan direktori storage dipastikan ada SEBELUM composer install.
+      # Skrip post-autoload-dump menjalankan `artisan package:discover`, yang
+      # mengompilasi Blade dan gagal dengan "Please provide a valid cache path."
+      # bila storage/framework/views tidak ada.
+      - name: Siapkan .env dan direktori storage
         run: |
           cp .env.example .env
-          php artisan key:generate
+          mkdir -p storage/framework/views \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/logs \
+                   bootstrap/cache
+
+      # composer.lock menyimpan dist URL berbentuk
+      # https://api.github.com/repos/<owner>/<repo>/zipball/<sha>.
+      # Tanpa token, unduhan itu memakai kuota anonim 60 permintaan/jam per IP
+      # dan runner GitHub berbagi IP -> "API rate limit exceeded".
+      # COMPOSER_AUTH menaikkan kuota ke 5.000/jam dan menghindari kegagalan.
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: |
+          set -o pipefail
+          composer install --no-interaction --prefer-dist --no-progress 2>&1 \
+            | tee /tmp/composer-install.log
+
+      - name: Generate app key
+        run: php artisan key:generate
 
       - name: Build frontend assets
         run: |
@@ -55,7 +82,9 @@ jobs:
           npm run build
 
       - name: Run test suite (wajib hijau)
-        run: php artisan test --exclude-group baseline
+        run: |
+          set -o pipefail
+          php artisan test --exclude-group baseline 2>&1 | tee /tmp/phpunit.log
 
       # Test baseline (AuditCbtProofTest, RouteHealthAuditTest) sengaja MERAH
       # sampai Fase 1-2 selesai. Dijalankan sebagai laporan, tidak memblokir CI.
@@ -71,3 +100,28 @@ jobs:
           name: route-health-report
           path: storage/logs/route-health-report.txt
           if-no-files-found: ignore
+
+      # Log runner Actions hanya bisa diunduh lewat blob storage; beberapa
+      # jaringan/agen tidak bisa membukanya. Menempelkan potongan log ke PR
+      # membuat kegagalan tetap terbaca dari mana saja.
+      - name: Tempel log kegagalan ke PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "CI \`Tests\` gagal. Potongan log diagnostik:"
+            echo
+            echo '```'
+            php -v 2>&1 | head -2 || true
+            echo
+            composer --version 2>&1 | head -2 || true
+            echo
+            echo "--- composer-install.log (40 baris terakhir) ---"
+            tail -n 40 /tmp/composer-install.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo
+            echo "--- phpunit.log (150 baris terakhir) ---"
+            tail -n 150 /tmp/phpunit.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo '```'
+          } > /tmp/ci-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/ci-report.md

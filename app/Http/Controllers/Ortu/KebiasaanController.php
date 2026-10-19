@@ -4,42 +4,24 @@ namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kebiasaan;
-use App\Models\Siswa;
 use App\Traits\SyncableToSheet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class KebiasaanController extends Controller
 {
-    use HasPredikatKaih, SyncableToSheet;
+    use HasAnakLookup, HasPredikatKaih, SyncableToSheet;
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
+        $anakList = $this->anakList();
+        $siswa = $this->getAnak($anakList);
 
-        if (empty($anakIds)) {
+        if (! $siswa) {
             return view('ortu.kebiasaan.index', [
                 'anak' => null, 'hariIni' => null, 'kebiasaan' => null,
                 'hari' => 0, 'rata' => 0, 'predikat' => ['huruf' => '-', 'label' => '-', 'kelas' => 'tag-mut'],
-                'siswa' => null, 'anakList' => collect(), 'rataKebiasaan' => [], 'fields' => [],
+                'siswa' => null, 'anakList' => $anakList, 'rataKebiasaan' => [], 'fields' => [],
                 'semuaKebiasaan' => collect(),
-            ]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $siswa = Siswa::find($siswaId);
-
-        if (!$siswa) {
-            return view('ortu.kebiasaan.index', [
-                'anak' => null, 'hariIni' => null, 'kebiasaan' => null,
-                'hari' => 0, 'rata' => 0, 'predikat' => ['huruf' => '-', 'label' => '-', 'kelas' => 'tag-mut'],
-                'siswa' => null, 'anakList' => Siswa::whereIn('id', $anakIds)->get(),
-                'rataKebiasaan' => [], 'fields' => [], 'semuaKebiasaan' => collect(),
             ]);
         }
 
@@ -57,7 +39,6 @@ class KebiasaanController extends Controller
 
         $rata = collect($rataKebiasaan)->avg();
         $predikat = $this->getPredikatKaih($rata);
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
 
         return view('ortu.kebiasaan.index', compact(
             'siswa', 'anakList', 'tanggal', 'kebiasaan', 'semuaKebiasaan',
@@ -80,10 +61,7 @@ class KebiasaanController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
-
-        if (!in_array($validated['siswa_id'], $anakIds)) {
+        if (! in_array((int) $validated['siswa_id'], $this->anakIds(), true)) {
             abort(403, 'Anda tidak memiliki akses ke siswa ini.');
         }
 

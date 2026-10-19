@@ -3,15 +3,14 @@
 namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
 use App\Models\Nilai;
 use App\Models\Kehadiran;
 use App\Models\Kebiasaan;
 use App\Services\NilaiService;
-use Illuminate\Http\Request;
 
 class LaporanController extends Controller
 {
+    use HasAnakLookup;
     use HasPredikatKaih;
     protected $nilaiService;
 
@@ -20,25 +19,15 @@ class LaporanController extends Controller
         $this->nilaiService = $nilaiService;
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
+        $anakList = $this->anakList();
+        $anak = $this->getAnak($anakList);
 
-        if (empty($anakIds)) {
-            return view('ortu.laporan.index', ['anak' => null, 'laporan' => null]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $anak = Siswa::find($siswaId);
-
-        if (!$anak) {
-            return view('ortu.laporan.index', ['anak' => null, 'laporan' => null]);
+        if (! $anak) {
+            return view('ortu.laporan.index', [
+                'anak' => null, 'anakList' => $anakList, 'laporan' => null,
+            ]);
         }
 
         $na = $this->nilaiService->hitungNilaiAkhir($anak->id);
@@ -74,8 +63,6 @@ class LaporanController extends Controller
             'predikat_kebiasaan' => $predikatKebiasaan,
             'nilai_per_jenis' => $nilaiPerJenis,
         ];
-
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
 
         return view('ortu.laporan.index', compact('anak', 'anakList', 'laporan'));
     }

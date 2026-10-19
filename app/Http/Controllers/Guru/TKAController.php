@@ -10,6 +10,14 @@ use Illuminate\Http\Request;
 
 class TKAController extends Controller
 {
+    /**
+     * Skor dimensi Profil Lulusan berskala 1–4 (lihat validasi di DimensiController),
+     * bukan skala 0–100. Ambang di bawah diselaraskan dengan getLevelKognitif()
+     * agar angka "Siap TKA" tidak selalu 0 seperti saat memakai getKKM() (~70).
+     */
+    public const SKOR_SIAP = 2.5;
+    public const SKOR_PERLU_BIMBINGAN = 1.5;
+
     public function index()
     {
         $guruId = auth()->id();
@@ -32,15 +40,19 @@ class TKAController extends Controller
                 $avg = $dimensiSiswa->avg();
                 $totalSkor += $avg;
                 $countSkor++;
-                if ($avg >= getKKM()) $jumlahSiap++;
+                if ($avg >= self::SKOR_SIAP) $jumlahSiap++;
                 else $jumlahPerluBimbingan++;
             }
         }
 
         $rataRata = $countSkor > 0 ? $totalSkor / $countSkor : 0;
 
-        return view('guru.tka.index', compact(
-            'siswaList', 'jumlahSiap', 'jumlahPerluBimbingan', 'rataRata', 'dimensiRataRata'
+        return view('guru.tka.index', array_merge(
+            compact('siswaList', 'jumlahSiap', 'jumlahPerluBimbingan', 'rataRata', 'dimensiRataRata'),
+            [
+                'skorSiap' => self::SKOR_SIAP,
+                'skorPerluBimbingan' => self::SKOR_PERLU_BIMBINGAN,
+            ]
         ));
     }
 

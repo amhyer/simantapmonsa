@@ -25,17 +25,7 @@
             </div>
         </div>
     @else
-        @if(isset($anakList) && $anakList->count() > 1)
-            <div style="margin-bottom:16px">
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pilih Anak</label>
-                <select onchange="window.location.href='{{ route('ortu.laporan.index') }}?siswa_id='+this.value" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;min-width:180px">
-                    @foreach($anakList as $a)
-                        <option value="{{ $a->id }}" {{ $a->id == $anak->id ? 'selected' : '' }}>{{ $a->nama_peserta_didik }}</option>
-                    @endforeach
-                </select>
-            </div>
-        @endif
-
+        @include('ortu.partials.pilih-anak', ['route' => 'ortu.laporan.index', 'terpilih' => $anak, 'anakList' => $anakList])
         <div class="card" style="margin-bottom:20px" id="rapor-header">
             <div class="card-body" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
                 <span class="avatar avatar-lg" style="background:var(--navy);color:#fff">{{ substr($anak->nama_peserta_didik, 0, 2) }}</span>
