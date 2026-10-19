@@ -18,10 +18,6 @@
             ]],
         ]],
         ['label' => 'CBT & TRYOUT', 'items' => [
-            ['label' => 'Ujian CBT', 'icon' => 'lucide-monitor', 'children' => [
-                ['route' => 'cbt.question-banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
-                ['route' => 'cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
-            ]],
             ['label' => 'Tryout', 'icon' => 'lucide-package', 'children' => [
                 ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
@@ -32,7 +28,8 @@
             ]],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
-            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran'],
+            ['route' => 'presensi.pegawai.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Saya'],
+            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
             ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
             ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
         ]],
@@ -66,3 +63,8 @@
         @endif
     @endforeach
 @endforeach
+@if(config('simantap.cbt_enabled', false))
+    <x-sidebar-label>UJIAN CBT</x-sidebar-label>
+    <x-sidebar-link :href="route('cbt.sessions.index')" icon="lucide-clipboard-check" label="CBT • Sesi Ujian" :active="request()->routeIs('cbt.*')" />
+    <x-sidebar-link :href="route('cbt.question-banks.index')" icon="lucide-book-open" label="CBT • Bank Soal" :active="request()->routeIs('cbt.question-banks.*')" />
+@endif

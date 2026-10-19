@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Support\BackupTables;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -46,6 +47,10 @@ class ExportBackupJob implements ShouldQueue
 
             $firstTable = true;
             foreach ($tables as $key => $konfigurasi) {
+                // CBT belum tentu sudah dimigrasikan saat flag masih nonaktif.
+                if (str_starts_with($key, 'cbt_') && !Schema::hasTable($key)) {
+                    continue;
+                }
                 if (!$firstTable) {
                     fwrite($stream, ",\n");
                 }
@@ -56,13 +61,18 @@ class ExportBackupJob implements ShouldQueue
                 $except = $konfigurasi['except'];
                 $firstRow = true;
 
-                $tulis = function ($rows) use ($stream, $except, &$firstRow) {
+                $tulis = function ($rows) use ($stream, $except, $key, &$firstRow) {
                     foreach ($rows as $row) {
                         if (!$firstRow) {
                             fwrite($stream, ",\n");
                         }
                         $firstRow = false;
 
+                        // Backup privat harus menyertakan kunci/snapshot CBT;
+                        // hidden hanya untuk serialisasi HTTP, bukan pemulihan data.
+                        if (str_starts_with($key, 'cbt_') && $row instanceof \Illuminate\Database\Eloquent\Model) {
+                            $row->makeVisible($row->getHidden());
+                        }
                         $record = is_array($row) ? $row : $row->toArray();
                         if ($except !== []) {
                             $record = array_diff_key($record, array_flip($except));

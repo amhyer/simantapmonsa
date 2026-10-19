@@ -92,7 +92,7 @@ class DashboardController extends Controller
                 ->get()
                 ->keyBy('peran');
             $peranBreakdown = [];
-            foreach (['admin', 'guru', 'siswa', 'ortu', 'kepsek'] as $peran) {
+            foreach (['admin', 'guru', 'siswa', 'ortu', 'kepsek', 'tendik'] as $peran) {
                 $row = $peranRows->get($peran);
                 $peranBreakdown[] = [
                     'peran' => $peran,

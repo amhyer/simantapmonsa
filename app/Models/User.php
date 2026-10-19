@@ -74,6 +74,11 @@ class User extends Authenticatable
         return $this->hasMany(Kuis::class, 'guru_id');
     }
 
+    public function presensiPegawai()
+    {
+        return $this->hasMany(PresensiPegawai::class, 'user_id');
+    }
+
     public function pengaturanGuru()
     {
         return $this->hasOne(PengaturanGuru::class, 'guru_id');

@@ -91,6 +91,13 @@ class BackupTables
             'kelompok_kokurikuler' => ['class' => KelompokKokurikuler::class, 'except' => []],
             'anggota_kelompok' => ['class' => null, 'except' => []],
 
+            // CBT: urutan induk -> anak; snapshot/kunci disertakan dalam backup privat.
+            'cbt_question_banks' => ['class' => \App\Models\CbtQuestionBank::class, 'except' => []],
+            'cbt_questions' => ['class' => \App\Models\CbtQuestion::class, 'except' => []],
+            'cbt_test_sessions' => ['class' => \App\Models\CbtTestSession::class, 'except' => []],
+            'cbt_results' => ['class' => \App\Models\CbtResult::class, 'except' => []],
+            'cbt_violations' => ['class' => \App\Models\CbtViolation::class, 'except' => []],
+
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],
             'aktivitas' => ['class' => Aktivitas::class, 'except' => []],

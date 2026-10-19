@@ -43,6 +43,7 @@
                             <option value="siswa">Siswa</option>
                             <option value="ortu">Orang Tua</option>
                             <option value="kepsek">Kepala Sekolah</option>
+                            <option value="tendik">Tenaga Kependidikan</option>
                         </select>
                         @error('peran') <span class="field-error">{{ $message }}</span> @enderror
                     </div>

@@ -3,45 +3,29 @@
 namespace App\Http\Controllers\Cbt;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cbt\TestResult;
-use App\Models\Cbt\IntegrityLog;
+use App\Models\CbtResult;
+use App\Models\Siswa;
+use App\Services\CbtExamService;
 use Illuminate\Http\Request;
 
 class CbtIntegrityController extends Controller
 {
-    public function logViolation(Request $request, TestResult $result)
+    public function __construct(private CbtExamService $exam) {}
+
+    // Telemetri bersifat indikasi, BUKAN bukti kecurangan atau alasan nilai nol.
+    public function logViolation(Request $request, CbtResult $result)
     {
-        $validated = $request->validate([
-            'jenis_pelanggaran' => 'required|in:tab_switch,copy_paste,screen_capture,focus_lost,multiple_tabs,suspicious_activity',
-            'deskripsi' => 'nullable|string',
-            'data_tambahan' => 'nullable|array',
-        ]);
-
-        IntegrityLog::create([
-            'test_result_id' => $result->id,
-            'siswa_id' => $result->siswa_id,
-            'jenis_pelanggaran' => $validated['jenis_pelanggaran'],
-            'timestamp' => now(),
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'data_tambahan' => $validated['data_tambahan'] ?? null,
-        ]);
-
-        // Update integrity score
-        $violations = $result->integrityLogs()->count();
-        $score = max(0, 100 - ($violations * 10)); // 10 points per violation
-
-        $result->update([
-            'integrity_score' => $score,
-            'integrity_violations' => $result->integrity_violations ?? [],
-        ]);
-
-        return response()->json(['success' => true, 'integrity_score' => $score]);
+        abort_unless((int) $result->user_id === (int) auth()->id(), 403);
+        $student = Siswa::find($result->siswa_id);
+        abort_unless($student && $this->exam->eligible($result->session, $student), 403);
+        $data = $request->validate(['type' => 'required|in:tab_hidden,fullscreen_exit']);
+        $this->exam->recordViolation($result, $student, $data['type']);
+        return response()->json(['recorded' => true]);
     }
 
-    public function getViolations(TestResult $result)
+    public function getViolations(CbtResult $result)
     {
-        $violations = $result->integrityLogs()->latest()->get();
-
-        return response()->json(['violations' => $violations]);
+        abort_unless((int) $result->session->guru_id === (int) auth()->id(), 403);
+        return response()->json($result->violations()->latest('id')->paginate(50));
     }
 }

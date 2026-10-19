@@ -78,6 +78,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->name('force-password-change.update');
 });
 
+// Presensi mandiri pegawai (guru, kepala sekolah, dan tendik), dilindungi geofence sekolah.
+Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change'])
+    ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Pegawai\PresensiController::class, 'index'])->name('index');
+        Route::post('/masuk', [\App\Http\Controllers\Pegawai\PresensiController::class, 'masuk'])->middleware('throttle:10,1')->name('masuk');
+        Route::post('/pulang', [\App\Http\Controllers\Pegawai\PresensiController::class, 'pulang'])->middleware('throttle:10,1')->name('pulang');
+    });
+
 // Dashboard redirect
 Route::get('/dashboard', function () {
     if (!auth()->check()) return redirect()->route('login');
@@ -88,6 +96,7 @@ Route::get('/dashboard', function () {
         'siswa' => redirect()->route('siswa.dashboard'),
         'ortu' => redirect()->route('ortu.dashboard'),
         'kepsek' => redirect()->route('kepsek.dashboard'),
+        'tendik' => redirect()->route('presensi.pegawai.index'),
         default => redirect()->route('login'),
     };
 })->name('home');
@@ -96,6 +105,18 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
+    // Presensi pegawai, area geofence, dan pemetaan QR kartu siswa.
+    Route::prefix('presensi')->name('presensi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PresensiController::class, 'index'])->name('index');
+        Route::post('/lokasi', [\App\Http\Controllers\Admin\PresensiController::class, 'storeLocation'])->name('lokasi.store');
+        Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
+        Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
+        Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
+        Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
+        Route::post('/kartu-siswa/{siswa}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bind'])->middleware('throttle:60,1')->name('kartu.bind');
+        Route::delete('/kartu-siswa/{siswa}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'reset'])->name('kartu.reset');
+    });
 
     // Profile (cermin menu Profile e-Rapor)
     Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile');
@@ -327,7 +348,10 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     // Daftar Nilai
     Route::resource('nilai', NilaiController::class)->except(['show']);
     
-    // Kehadiran
+    // Kehadiran harian dan catatan tambahan mapel melalui QR.
+    Route::get('/kehadiran/jadwal/{jadwal}', [KehadiranController::class, 'jadwal'])->name('kehadiran.jadwal');
+    Route::post('/kehadiran/jadwal/{jadwal}/scan', [KehadiranController::class, 'scan'])->middleware('throttle:120,1')->name('kehadiran.scan');
+    Route::post('/kehadiran/jadwal/{jadwal}/siswa/{siswa}/status', [KehadiranController::class, 'setStatus'])->middleware('throttle:120,1')->name('kehadiran.status');
     Route::resource('kehadiran', KehadiranController::class)->only(['index', 'store', 'destroy']);
     
     // Catatan Siswa
@@ -404,11 +428,11 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
 });
 
-// ==================== CBT ROUTES ====================
-// Kill switch modul asesmen: route tetap terdaftar (agar `route()` di view tidak
-// melempar RouteNotFoundException), tetapi middleware `module.asesmen` membalas
-// 404 selama SIMANTAP_CBT_ENABLED=false. Lihat config/simantap.php.
-    Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
+// ==================== CBT (PILIHAN GANDA) ====================
+// Aktifkan setelah migrasi + pengujian integrasi; tetap false secara default.
+if (config('simantap.cbt_enabled', false)) {
+    // ==================== CBT ROUTES ====================
+    Route::middleware(['auth', 'role:guru', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt')->name('cbt.')->group(function () {
         // Question Banks
         Route::prefix('question-banks')->name('question-banks.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
@@ -443,22 +467,24 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
 
         // Integrity (Anti-Cheat)
         Route::prefix('integrity')->name('integrity.')->group(function () {
-            Route::post('/{result}/log', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'logViolation'])->name('log');
             Route::get('/{result}/violations', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'getViolations'])->name('violations');
         });
     });
 
     // CBT Student Routes
-    Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    Route::middleware(['auth', 'role:siswa', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt/student')->name('cbt.student.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
         Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
-        Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
+        Route::post('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'begin'])->name('begin');
+        Route::post('/{result}/integrity', [\App\Http\Controllers\Cbt\CbtIntegrityController::class, 'logViolation'])->middleware('throttle:30,1')->name('integrity');
+        Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->middleware('throttle:120,1')->name('answer');
         Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
         Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
     });
+}
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
     // Question Banks
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');

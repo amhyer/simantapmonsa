@@ -8,7 +8,6 @@
             ['route' => 'siswa.profil.show', 'icon' => 'lucide-user', 'label' => 'Profil Saya'],
         ]],
         ['label' => 'UJIAN & TRYOUT', 'items' => [
-            ['route' => 'cbt.student.index', 'icon' => 'lucide-monitor', 'label' => 'Ujian CBT'],
             ['route' => 'tryout.student.index', 'icon' => 'lucide-package', 'label' => 'Tryout'],
         ]],
     ];
@@ -23,3 +22,7 @@
         <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
     @endforeach
 @endforeach
+@if(config('simantap.cbt_enabled', false))
+    <x-sidebar-label>UJIAN CBT</x-sidebar-label>
+    <x-sidebar-link :href="route('cbt.student.index')" icon="lucide-clipboard-check" label="Ujian CBT" :active="request()->routeIs('cbt.*')" />
+@endif

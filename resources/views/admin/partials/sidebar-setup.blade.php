@@ -27,6 +27,10 @@
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
         ]],
+        ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
+            ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
+            ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Pemetaan QR Kartu Siswa'],
+        ]],
         ['label' => 'DAPODIK', 'icon' => 'lucide-database-zap', 'children' => [
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
             ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],

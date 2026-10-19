@@ -3,6 +3,7 @@
         ['label' => 'MENU KEPSEK', 'items' => [
             ['route' => 'kepsek.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dashboard'],
             ['route' => 'kepsek.rekap.index', 'icon' => 'lucide-school', 'label' => 'Rekap Sekolah'],
+            ['route' => 'presensi.pegawai.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Saya'],
         ]],
         ['label' => 'PEMETAAN', 'items' => [
             ['route' => 'kepsek.peta-kelas.index', 'icon' => 'lucide-map', 'label' => 'Peta Kelas'],

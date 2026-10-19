@@ -34,4 +34,9 @@ class JadwalPelajaran extends Model
     {
         return $this->hasMany(NilaiErapot::class);
     }
+
+    public function kehadiranMapel()
+    {
+        return $this->hasMany(KehadiranMapel::class, 'jadwal_pelajaran_id');
+    }
 }

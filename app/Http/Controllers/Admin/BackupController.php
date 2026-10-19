@@ -142,11 +142,14 @@ class BackupController extends Controller
             }
 
             if ($modelClass) {
-                if ($id !== null) {
-                    $modelClass::updateOrCreate(['id' => $id], $row);
-                } else {
-                    $modelClass::create($row);
-                }
+                \Illuminate\Database\Eloquent\Model::unguarded(function () use ($modelClass, $id, $row) {
+                    $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
+                    if ($id !== null) {
+                        $query->updateOrCreate(['id' => $id], $row);
+                    } else {
+                        $modelClass::create($row);
+                    }
+                });
                 continue;
             }
 
@@ -155,6 +158,14 @@ class BackupController extends Controller
                 DB::table($table)->updateOrInsert(['id' => $id], $row);
             } else {
                 DB::table($table)->insert($row);
+            }
+        }
+
+        if (DB::getDriverName() === 'pgsql' && in_array('id', $kolom, true)) {
+            $seq = DB::selectOne('SELECT pg_get_serial_sequence(?, ?) AS seq', [$table, 'id'])?->seq;
+            if ($seq) {
+                $maxId = (int) DB::table($table)->max('id');
+                DB::statement('SELECT setval(?, ?, ?)', [$seq, max($maxId, 1), $maxId > 0]);
             }
         }
     }
@@ -178,6 +189,7 @@ class BackupController extends Controller
         // api_keys (akses bridge), dan seluruh tabel framework
         // (migrations, jobs, cache, sessions, telescope, dsb).
         $tabelData = [
+            'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
             'siswa', 'orang_tua_siswa', 'nilai', 'nilai_erapor', 'nilai_mapel',
             'nilai_cp', 'capaian_pembelajaran', 'kehadiran', 'hasil_kuis',
             'kuis', 'materi', 'catatan', 'dimensi', 'kebiasaan', 'ptk',

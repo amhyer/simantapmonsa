@@ -40,7 +40,7 @@
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
                         <select name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
-                            @foreach(['guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepsek'] as $val => $label)
+                            @foreach(['admin' => 'Admin', 'guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'tendik' => 'Tenaga Kependidikan'] as $val => $label)
                                 <option value="{{ $val }}" {{ $user->peran === $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
