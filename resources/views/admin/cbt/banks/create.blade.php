@@ -1,90 +1,72 @@
 @extends('layouts.admin-with-tabs')
 
-@section('title', 'Tambah Bank Soal - SIMANTAP')
+@section('title', 'Buat Bank Soal CBT - Admin')
 
 @section('sidebar')
     @include('admin.partials.sidebar')
 @endsection
 
-@section('page_title', 'Tambah Bank Soal')
-@section('page_subtitle', 'Bank soal CBT baru')
+@section('page_title', 'Buat Bank Soal CBT')
+@section('page_subtitle', 'Bank soal baru untuk seluruh guru')
 
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <h3>Form Bank Soal</h3>
-            <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-sm">Kembali</a>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">➕ Buat Bank Soal CBT</h2>
+            <p class="text-muted mb-0">Isi data dasar bank soal; soal diisi guru pemilik setelahnya</p>
         </div>
+    </div>
+
+    @if($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <div class="card">
         <div class="card-body">
-            <form action="{{ route('admin.cbt.banks.store') }}" method="POST" style="display:grid;gap:12px;max-width:640px">
+            <form method="POST" action="{{ route('admin.cbt.banks.store') }}">
                 @csrf
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <div>
-                        <label class="form-label">Kode Bank</label>
-                        <input type="text" name="kode_bank" value="{{ old('kode_bank') }}" maxlength="50" required class="form-control">
-                        @error('kode_bank')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div>
-                        <label class="form-label">Nama Bank</label>
-                        <input type="text" name="nama_bank" value="{{ old('nama_bank') }}" maxlength="255" required class="form-control">
-                        @error('nama_bank')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Judul Bank <span class="text-danger">*</span></label>
+                    <input type="text" name="title" class="form-control" maxlength="200"
+                           value="{{ old('title') }}" required>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-                    <div>
-                        <label class="form-label">Mata Pelajaran</label>
-                        <select name="mata_pelajaran_id" required class="form-control">
-                            <option value="">— Pilih —</option>
-                            @foreach($mataPelajarans as $m)
-                                <option value="{{ $m->id }}" @selected(old('mata_pelajaran_id') == $m->id)>{{ $m->nama }}</option>
-                            @endforeach
-                        </select>
-                        @error('mata_pelajaran_id')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div>
-                        <label class="form-label">Semester</label>
-                        <select name="semester_id" required class="form-control">
-                            <option value="">— Pilih —</option>
-                            @foreach($semesters as $s)
-                                <option value="{{ $s->id }}" @selected(old('semester_id') == $s->id)>{{ $s->label }}</option>
-                            @endforeach
-                        </select>
-                        @error('semester_id')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
-                    <div>
-                        <label class="form-label">Guru Pengampu</label>
-                        <select name="guru_id" required class="form-control">
-                            <option value="">— Pilih —</option>
-                            @foreach($gurus as $g)
-                                <option value="{{ $g->id }}" @selected(old('guru_id') == $g->id)>{{ $g->nama_lengkap }}</option>
-                            @endforeach
-                        </select>
-                        @error('guru_id')<span class="field-error">{{ $message }}</span>@enderror
-                    </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
+                    <input type="text" name="subject" class="form-control" maxlength="100"
+                           value="{{ old('subject') }}" required>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <div>
-                        <label class="form-label">Tingkat Kesulitan</label>
-                        <select name="tingkat_kesulitan" required class="form-control">
-                            @foreach(['mudah', 'sedang', 'sulit'] as $t)
-                                <option value="{{ $t }}" @selected(old('tingkat_kesulitan', 'sedang') === $t)>{{ ucfirst($t) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Kategori Soal</label>
-                        <input type="text" name="kategori_soal" value="{{ old('kategori_soal') }}" maxlength="100" class="form-control">
-                    </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Guru Pemilik <span class="text-danger">*</span></label>
+                    <select name="guru_id" class="form-select" required>
+                        <option value="">— Pilih Guru —</option>
+                        @foreach($gurus as $guru)
+                        <option value="{{ $guru->id }}" {{ old('guru_id') == $guru->id ? 'selected' : '' }}>
+                            {{ $guru->nama_lengkap }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="3" class="form-control">{{ old('deskripsi') }}</textarea>
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-sm">Simpan Bank Soal</button>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan
+                    </button>
+                    <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Kembali
+                    </a>
                 </div>
             </form>
         </div>
     </div>
+</div>
 @endsection
-
