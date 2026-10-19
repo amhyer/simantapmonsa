@@ -85,12 +85,15 @@ class PresensiTest extends TestCase
             ->assertJsonPath('mapel.status', 'H');
 
         $this->assertDatabaseCount('kehadiran', 1);
-        $this->assertDatabaseHas('kehadiran', [
-            'siswa_id' => $this->siswa->id,
-            'tanggal' => now()->toDateString(),
-            'status' => 'H',
-            'metode' => 'qr',
-        ]);
+        // DB-agnostik: kolom date diserialisasi 'Y-m-d H:i:s' oleh cast 'date',
+        // sehingga pencocokan string mentah ('2026-10-19') hanya lolos di PostgreSQL.
+        $this->assertTrue(
+            \DB::table('kehadiran')
+                ->where(['siswa_id' => $this->siswa->id, 'status' => 'H', 'metode' => 'qr'])
+                ->whereDate('tanggal', now()->toDateString())
+                ->exists(),
+            'Baris kehadiran harian (metode QR) tidak ditemukan.'
+        );
         $this->assertDatabaseHas('kehadiran_mapel', [
             'jadwal_pelajaran_id' => $jadwal->id,
             'siswa_id' => $this->siswa->id,
@@ -242,11 +245,14 @@ class PresensiTest extends TestCase
             'accuracy' => 8,
         ])->assertOk()->assertJsonPath('record.lokasi_masuk', $zone->nama);
 
-        $this->assertDatabaseHas('presensi_pegawai', [
-            'user_id' => $tendik->id,
-            'tanggal' => now()->toDateString(),
-            'metode' => 'gps',
-        ]);
+        // DB-agnostik (lihat catatan pada test QR): cocokkan via whereDate.
+        $this->assertTrue(
+            \DB::table('presensi_pegawai')
+                ->where(['user_id' => $tendik->id, 'metode' => 'gps'])
+                ->whereDate('tanggal', now()->toDateString())
+                ->exists(),
+            'Baris presensi pegawai (metode GPS) tidak ditemukan.'
+        );
 
         $this->postJson(route('presensi.pegawai.masuk'), [
             'latitude' => -5.147665,

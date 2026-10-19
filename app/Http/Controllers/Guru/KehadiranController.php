@@ -249,10 +249,13 @@ class KehadiranController extends Controller
         $time = $status === 'H' ? now() : null;
 
         if ($validated['cakupan'] === 'harian') {
-            $record = Kehadiran::withTrashed()->firstOrNew([
-                'siswa_id' => $siswa->id,
-                'tanggal' => $today,
-            ]);
+            // whereDate: cast 'date' menyimpan 'Y-m-d H:i:s' di SQLite, sehingga
+            // kecocokan string persis ('Y-m-d') meleset (pola konsisten dgn scan()).
+            $record = Kehadiran::withTrashed()
+                ->where('siswa_id', $siswa->id)
+                ->whereDate('tanggal', $today)
+                ->first()
+                ?? new Kehadiran(['siswa_id' => $siswa->id, 'tanggal' => $today]);
             if ($record->trashed()) {
                 $record->restore();
             }
@@ -270,11 +273,15 @@ class KehadiranController extends Controller
             }
             $record->save();
         } else {
-            $record = KehadiranMapel::firstOrNew([
-                'jadwal_pelajaran_id' => $jadwal->id,
-                'tanggal' => $today,
-                'siswa_id' => $siswa->id,
-            ]);
+            $record = KehadiranMapel::where('jadwal_pelajaran_id', $jadwal->id)
+                ->where('siswa_id', $siswa->id)
+                ->whereDate('tanggal', $today)
+                ->first()
+                ?? new KehadiranMapel([
+                    'jadwal_pelajaran_id' => $jadwal->id,
+                    'tanggal' => $today,
+                    'siswa_id' => $siswa->id,
+                ]);
             $record->fill([
                 'guru_id' => auth()->id(),
                 'mata_pelajaran' => $jadwal->mata_pelajaran,
@@ -319,10 +326,16 @@ class KehadiranController extends Controller
         $siswa = Siswa::findOrFail($validated['siswa_id']);
         abort_unless($this->siswaTerdaftarPadaJadwal($siswa, $jadwal, $policy), 403);
 
-        $record = Kehadiran::withTrashed()->firstOrNew([
-            'siswa_id' => $siswa->id,
-            'tanggal' => now()->toDateString(),
-        ]);
+        // whereDate: lihat catatan pada setStatus() — pencocokan tanggal harus
+        // kebal terhadap serialisasi 'Y-m-d H:i:s' dari cast 'date' di SQLite.
+        $record = Kehadiran::withTrashed()
+            ->where('siswa_id', $siswa->id)
+            ->whereDate('tanggal', now()->toDateString())
+            ->first()
+            ?? new Kehadiran([
+                'siswa_id' => $siswa->id,
+                'tanggal' => now()->toDateString(),
+            ]);
         if ($record->trashed()) {
             $record->restore();
         }

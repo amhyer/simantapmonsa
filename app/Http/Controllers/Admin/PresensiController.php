@@ -135,10 +135,15 @@ class PresensiController extends Controller
         }
 
         $record = DB::transaction(function () use ($validated, $user) {
-            $record = PresensiPegawai::firstOrNew([
-                'user_id' => $user->id,
-                'tanggal' => $validated['tanggal'],
-            ]);
+            // whereDate: cast 'date' menyimpan 'Y-m-d H:i:s' di SQLite sehingga
+            // kecocokan string persis meleset (pola konsisten dgn Pegawai\PresensiController).
+            $record = PresensiPegawai::where('user_id', $user->id)
+                ->whereDate('tanggal', $validated['tanggal'])
+                ->first()
+                ?? new PresensiPegawai([
+                    'user_id' => $user->id,
+                    'tanggal' => $validated['tanggal'],
+                ]);
             $before = $record->exists ? $record->only(['status', 'waktu_masuk', 'waktu_pulang']) : null;
             $record->status = $validated['status'];
             $record->waktu_masuk = $this->tanggalDanWaktu($validated['tanggal'], $validated['jam_masuk'] ?? null);
