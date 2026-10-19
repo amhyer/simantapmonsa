@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Ortu\HasAnakLookup;
 use App\Models\JadwalPelajaran;
 use App\Models\Siswa;
 use App\Models\Materi;
@@ -21,8 +22,6 @@ use App\Models\Aktivitas;
 use App\Models\Semester;
 use App\Models\TanggalRapor;
 use App\Models\TemaKokurikuler;
-use App\Models\Catatan;
-use App\Models\Kebiasaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +30,8 @@ use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
+    use HasAnakLookup;
+
     public function admin()
     {
         // Seluruh angka dashboard di-cache 120 detik: ~30 query + scan
@@ -255,65 +256,20 @@ class DashboardController extends Controller
         return number_format($bytes) . ' B';
     }
 
-    public function ortu(Request $request)
+    /**
+     * @deprecated Route `ortu.dashboard` kini ditangani Ortu\DashboardController::index().
+     *             Method ini dipertahankan sebagai delegasi agar tidak ada dua
+     *             implementasi otorisasi anak yang bisa menyimpang.
+     */
+    public function ortu()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
-
-        if (empty($anakIds)) {
-            return view('ortu.dashboard', ['anak' => null, 'anakList' => collect()]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $anak = Siswa::find($siswaId);
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
-
-        // Ringkasan pantauan: nilai, kehadiran, kebiasaan minggu ini, catatan terbaru.
-        $ringkasan = null;
-        if ($anak) {
-            $nilaiService = app(\App\Services\NilaiService::class);
-            $na = $nilaiService->hitungNilaiAkhir($anak->id);
-            $totalKehadiran = Kehadiran::where('siswa_id', $anak->id)->count();
-            $hadir = Kehadiran::where('siswa_id', $anak->id)->where('status', 'H')->count();
-            $ringkasan = [
-                'nilai_akhir' => $na['nilai_akhir'],
-                'predikat' => $na['nilai_akhir'] > 0
-                    ? $nilaiService->getPredikat($na['nilai_akhir'], getKKM($anak->guru_id))
-                    : null,
-                'hadir_persen' => $totalKehadiran > 0 ? round($hadir / $totalKehadiran * 100, 1) : null,
-                'kebiasaan_minggu' => Kebiasaan::where('siswa_id', $anak->id)
-                    ->where('tanggal', '>=', now()->startOfWeek()->toDateString())
-                    ->count(),
-                'catatan' => Catatan::where('siswa_id', $anak->id)
-                    ->orderByDesc('tanggal')->limit(3)->get(),
-            ];
-        }
-
-        return view('ortu.dashboard', compact('anak', 'anakList', 'ringkasan'));
+        return app(\App\Http\Controllers\Ortu\DashboardController::class)->index();
     }
 
-    public function ortuNilai(Request $request)
+    public function ortuNilai()
     {
-        $user = auth()->user();
-        $anakIds = $user->terhubung_dengan ?? [];
-
-        if (empty($anakIds)) {
-            return view('ortu.nilai.index', ['siswa' => null, 'anakList' => collect()]);
-        }
-
-        $siswaId = $request->get('siswa_id') ?? $anakIds[0];
-
-        if (!in_array($siswaId, $anakIds)) {
-            abort(403, 'Anda tidak memiliki akses ke data siswa ini.');
-        }
-
-        $siswa = Siswa::find($siswaId);
-        $anakList = Siswa::whereIn('id', $anakIds)->get();
+        $anakList = $this->anakList();
+        $siswa = $this->getAnak($anakList);
 
         return view('ortu.nilai.index', compact('siswa', 'anakList'));
     }
