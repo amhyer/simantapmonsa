@@ -10,6 +10,11 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  # Dipakai untuk menempelkan ringkasan log bila instalasi gagal.
+  pull-requests: write
+
 jobs:
   phpunit:
     name: PHPUnit (PHP 8.4)
@@ -24,8 +29,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp, dom, fileinfo, iconv, curl
           coverage: none
+          tools: composer:v2
           ini-values: sys_temp_dir=/tmp
 
       - name: Setup Node 22
@@ -41,13 +47,26 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      # .env dibuat SEBELUM composer install supaya skrip post-autoload-dump
+      # (artisan package:discover) tidak bergantung pada env yang belum ada.
+      - name: Siapkan .env
+        run: cp .env.example .env
 
-      - name: Prepare environment
+      # composer.lock menyimpan dist URL berbentuk
+      # https://api.github.com/repos/<owner>/<repo>/zipball/<sha>.
+      # Tanpa token, unduhan itu memakai kuota anonim 60 permintaan/jam per IP
+      # dan runner GitHub berbagi IP -> "API rate limit exceeded".
+      # COMPOSER_AUTH menaikkan kuota ke 5.000/jam dan menghindari kegagalan.
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
         run: |
-          cp .env.example .env
-          php artisan key:generate
+          set -o pipefail
+          composer install --no-interaction --prefer-dist --no-progress 2>&1 \
+            | tee /tmp/composer-install.log
+
+      - name: Generate app key
+        run: php artisan key:generate
 
       - name: Build frontend assets
         run: |
@@ -71,3 +90,25 @@ jobs:
           name: route-health-report
           path: storage/logs/route-health-report.txt
           if-no-files-found: ignore
+
+      # Log runner Actions hanya bisa diunduh lewat blob storage; beberapa
+      # jaringan/agen tidak bisa membukanya. Menempelkan potongan log ke PR
+      # membuat kegagalan tetap terbaca dari mana saja.
+      - name: Tempel log kegagalan ke PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "CI \`Tests\` gagal. Potongan log diagnostik:"
+            echo
+            echo '```'
+            php -v 2>&1 | head -2 || true
+            echo
+            composer --version 2>&1 | head -2 || true
+            echo
+            echo "--- composer-install.log (100 baris terakhir) ---"
+            tail -n 100 /tmp/composer-install.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo '```'
+          } > /tmp/ci-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/ci-report.md
