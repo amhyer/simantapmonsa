@@ -47,10 +47,18 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      # .env dibuat SEBELUM composer install supaya skrip post-autoload-dump
-      # (artisan package:discover) tidak bergantung pada env yang belum ada.
-      - name: Siapkan .env
-        run: cp .env.example .env
+      # .env dibuat dan direktori storage dipastikan ada SEBELUM composer install.
+      # Skrip post-autoload-dump menjalankan `artisan package:discover`, yang
+      # mengompilasi Blade dan gagal dengan "Please provide a valid cache path."
+      # bila storage/framework/views tidak ada.
+      - name: Siapkan .env dan direktori storage
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/views \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/logs \
+                   bootstrap/cache
 
       # composer.lock menyimpan dist URL berbentuk
       # https://api.github.com/repos/<owner>/<repo>/zipball/<sha>.
