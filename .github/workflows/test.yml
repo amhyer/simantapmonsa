@@ -82,7 +82,9 @@ jobs:
           npm run build
 
       - name: Run test suite (wajib hijau)
-        run: php artisan test --exclude-group baseline
+        run: |
+          set -o pipefail
+          php artisan test --exclude-group baseline 2>&1 | tee /tmp/phpunit.log
 
       # Test baseline (AuditCbtProofTest, RouteHealthAuditTest) sengaja MERAH
       # sampai Fase 1-2 selesai. Dijalankan sebagai laporan, tidak memblokir CI.
@@ -115,8 +117,11 @@ jobs:
             echo
             composer --version 2>&1 | head -2 || true
             echo
-            echo "--- composer-install.log (100 baris terakhir) ---"
-            tail -n 100 /tmp/composer-install.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo "--- composer-install.log (40 baris terakhir) ---"
+            tail -n 40 /tmp/composer-install.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo
+            echo "--- phpunit.log (150 baris terakhir) ---"
+            tail -n 150 /tmp/phpunit.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'
           } > /tmp/ci-report.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/ci-report.md
