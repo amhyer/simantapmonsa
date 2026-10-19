@@ -1,0 +1,509 @@
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.25
+Configuration: E:\Project\simantap\phpunit.xml
+
+............................................[31;1mE[0m[31;1mE[0m[41;37mF[0m[41;37mF[0m...............  63 / 127 ( 49%)
+...........................................................[31;1mE[0m[31;1mE[0m[31;1mE[0m. 126 / 127 ( 99%)
+.                                                               127 / 127 (100%)
+
+Time: 00:32.611, Memory: 116.00 MB
+
+[4mAdmin Menu (Tests\Feature\AdminMenu)[0m
+[32m Γ£ö [0mAdmin dapat membuka halaman profile
+[32m Γ£ö [0mNon admin ditolak membuka halaman profile
+[32m Γ£ö [0mAdmin dapat mengubah password dari profile
+[32m Γ£ö [0mUbag password ditolak jika password lama salah
+[32m Γ£ö [0mAdmin dapat membuka halaman kirim nilai
+[32m Γ£ö [0mNon admin ditolak membuka halaman kirim nilai
+[32m Γ£ö [0mSidebar tanpa label ganda dan submenu tertutup default
+
+[4mAdmin Referensi (Tests\Feature\AdminReferensi)[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36msekolah[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mguru[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36msiswa[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mkelas[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mmapel[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mpembelajaran[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mekstrakurikuler[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mkelompok[2m┬╖[22mmapel[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mmapping[2m┬╖[22mrapor[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mlogo[2m┬╖[22mttd[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mtanggal[2m┬╖[22mrapor[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mfoto[2m┬╖[22msiswa[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mstatus[2m┬╖[22mpenilaian[0m
+[32m Γ£ö [0mHalaman merespons 200 untuk admin[2m with [22m[36mstatistik[2m┬╖[22mnilai[0m
+[32m Γ£ö [0mHalaman tabel memakai table wrapper
+[32m Γ£ö [0mMapel meta menyimpan flag transkrip
+[32m Γ£ö [0mAdmin dapat menambah pembelajaran
+[32m Γ£ö [0mTambah pembelajaran memvalidasi input
+[32m Γ£ö [0mAdmin dapat menghapus pembelajaran
+[32m Γ£ö [0mNon admin ditolak mengubah pembelajaran
+
+[4mAlignment (Tests\Feature\Alignment)[0m
+[33m Γ£ÿ [0mResolver memetakan dan menolak
+   [33mΓöÉ[0m
+   [33mΓö£[0m [43;30mTypeError: App\Services\JadwalPelajaranResolver::resolve(): Argument #1 ($nilai) must be of type App\Models\NilaiErapot, int given, called in E:\Project\simantap\tests\Feature\AlignmentTest.php on line 56[0m
+   [33mΓöé[0m
+   [33mΓöé[0m E:\Project\simantap\app\Services\JadwalPelajaranResolver.php:27
+   [33mΓöé[0m E:\Project\simantap\tests\Feature\AlignmentTest.php:56
+   [33mΓö┤[0m
+[33m Γ£ÿ [0mJadwal ambigu dimenangkan id terkecil
+   [33mΓöÉ[0m
+   [33mΓö£[0m [43;30mTypeError: App\Services\JadwalPelajaranResolver::resolve(): Argument #1 ($nilai) must be of type App\Models\NilaiErapot, int given, called in E:\Project\simantap\tests\Feature\AlignmentTest.php on line 74[0m
+   [33mΓöé[0m
+   [33mΓöé[0m E:\Project\simantap\app\Services\JadwalPelajaranResolver.php:27
+   [33mΓöé[0m E:\Project\simantap\tests\Feature\AlignmentTest.php:74
+   [33mΓö┤[0m
+[31m Γ£ÿ [0mSimpan dan autosave mengisi fk
+   [31mΓöÉ[0m
+   [31mΓö£[0m [41;37mExpected response status code [200] but received 500.                    [0m
+   [31mΓö£[0m [41;37mFailed asserting that 500 is identical to 200.                           [0m
+   [31mΓö£[0m                                                                          
+   [31mΓö£[0m [41;37mThe following exception occurred during the last request:                [0m
+   [31mΓö£[0m                                                                          
+   [31mΓö£[0m [41;37mTypeError: App\Services\JadwalPelajaranResolver::resolve(): Argument #1 ($nilai) must be of type App\Models\NilaiErapot, int given, called in E:\Project\simantap\app\Http\Controllers\Guru\NilaiErapotController.php on line 65 and defined in E:\Project\simantap\app\Services\JadwalPelajaranResolver.php:27[0m
+   [31mΓö£[0m [41;37mStack trace:                                                             [0m
+   [31mΓö£[0m [41;37m#0 E:\Project\simantap\app\Http\Controllers\Guru\NilaiErapotController.php(65): App\Services\JadwalPelajaranResolver->resolve(1, 'Matematika', '6.A', 'Ganjil', '2025/2026')[0m
+   [31mΓö£[0m [41;37m#1 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\ControllerDispatcher.php(46): App\Http\Controllers\Guru\NilaiErapotController->simpan(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#2 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Route.php(276): Illuminate\Routing\ControllerDispatcher->dispatch(Object(Illuminate\Routing\Route), Object(App\Http\Controllers\Guru\NilaiErapotController), 'simpan')[0m
+   [31mΓö£[0m [41;37m#3 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Route.php(216): Illuminate\Routing\Route->runController()[0m
+   [31mΓö£[0m [41;37m#4 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Router.php(822): Illuminate\Routing\Route->run()[0m
+   [31mΓö£[0m [41;37m#5 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Routing\Router->{closure:Illuminate\Routing\Router::runRouteWithinStack():821}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#6 E:\Project\simantap\app\Http\Middleware\ForcePasswordChange.php(30): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#7 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): App\Http\Middleware\ForcePasswordChange->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#8 E:\Project\simantap\app\Http\Middleware\RoleMiddleware.php(23): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#9 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): App\Http\Middleware\RoleMiddleware->handle(Object(Illuminate\Http\Request), Object(Closure), 'guru')[0m
+   [31mΓö£[0m [41;37m#10 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Middleware\SubstituteBindings.php(52): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#11 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\SubstituteBindings->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#12 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(168): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#13 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(93): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest(Object(Illuminate\Http\Request), Object(Closure), Array)[0m
+   [31mΓö£[0m [41;37m#14 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\ThrottleRequests->handle(Object(Illuminate\Http\Request), Object(Closure), '60', '1')[0m
+   [31mΓö£[0m [41;37m#15 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Auth\Middleware\Authenticate.php(63): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#16 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Auth\Middleware\Authenticate->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#17 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestForgery.php(104): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#18 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestForgery->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#19 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\View\Middleware\ShareErrorsFromSession.php(48): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#20 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\View\Middleware\ShareErrorsFromSession->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#21 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Session\Middleware\StartSession.php(120): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#22 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Session\Middleware\StartSession.php(63): Illuminate\Session\Middleware\StartSession->handleStatefulRequest(Object(Illuminate\Http\Request), Object(Illuminate\Session\EncryptedStore), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#23 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Session\Middleware\StartSession->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#24 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse.php(36): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#25 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#26 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\EncryptCookies.php(74): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#27 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Cookie\Middleware\EncryptCookies->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#28 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#29 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Router.php(821): Illuminate\Pipeline\Pipeline->then(Object(Closure))[0m
+   [31mΓö£[0m [41;37m#30 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Router.php(800): Illuminate\Routing\Router->runRouteWithinStack(Object(Illuminate\Routing\Route), Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#31 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Router.php(764): Illuminate\Routing\Router->runRoute(Object(Illuminate\Http\Request), Object(Illuminate\Routing\Route))[0m
+   [31mΓö£[0m [41;37m#32 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Routing\Router.php(753): Illuminate\Routing\Router->dispatchToRoute(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#33 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(200): Illuminate\Routing\Router->dispatch(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#34 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Foundation\Http\Kernel->{closure:Illuminate\Foundation\Http\Kernel::dispatchToRouter():197}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#35 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#36 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#37 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#38 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#39 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#40 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\TrimStrings->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#41 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#42 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePostSize->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#43 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance.php(110): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#44 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#45 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Middleware\HandleCors.php(61): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#46 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\HandleCors->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#47 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Middleware\TrustProxies.php(58): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#48 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\TrustProxies->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#49 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#50 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#51 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php(28): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#52 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePathEncoding->handle(Object(Illuminate\Http\Request), Object(Closure))[0m
+   [31mΓö£[0m [41;37m#53 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#54 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(175): Illuminate\Pipeline\Pipeline->then(Object(Closure))[0m
+   [31mΓö£[0m [41;37m#55 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(144): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#56 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(638): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))[0m
+   [31mΓö£[0m [41;37m#57 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(604): Illuminate\Foundation\Testing\TestCase->call('POST', 'http://localhos...', Array, Array, Array, Array, '{"kelas":"6.A",...')[0m
+   [31mΓö£[0m [41;37m#58 E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(411): Illuminate\Foundation\Testing\TestCase->json('POST', 'http://localhos...', Array, Array, 0)[0m
+   [31mΓö£[0m [41;37m#59 E:\Project\simantap\tests\Feature\AlignmentTest.php(83): Illuminate\Foundation\Testing\TestCase->postJson('http://localhos...', Array)[0m
+   [31mΓö£[0m [41;37m#60 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestCase.php(1318): Tests\Feature\AlignmentTest->test_simpan_dan_autosave_mengisi_fk()[0m
+   [31mΓö£[0m [41;37m#61 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestCase.php(1355): PHPUnit\Framework\TestCase->invokeTestMethod('test_simpan_dan...', Array)[0m
+   [31mΓö£[0m [41;37m#62 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestCase.php(521): PHPUnit\Framework\TestCase->runTest()[0m
+   [31mΓö£[0m [41;37m#63 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestRunner\TestRunner.php(99): PHPUnit\Framework\TestCase->runBare()[0m
+   [31mΓö£[0m [41;37m#64 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestCase.php(361): PHPUnit\Framework\TestRunner->run(Object(Tests\Feature\AlignmentTest))[0m
+   [31mΓö£[0m [41;37m#65 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestSuite.php(374): PHPUnit\Framework\TestCase->run()[0m
+   [31mΓö£[0m [41;37m#66 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestSuite.php(374): PHPUnit\Framework\TestSuite->run()[0m
+   [31mΓö£[0m [41;37m#67 E:\Project\simantap\vendor\phpunit\phpunit\src\Framework\TestSuite.php(374): PHPUnit\Framework\TestSuite->run()[0m
+   [31mΓö£[0m [41;37m#68 E:\Project\simantap\vendor\phpunit\phpunit\src\TextUI\TestRunner.php(64): PHPUnit\Framework\TestSuite->run()[0m
+   [31mΓö£[0m [41;37m#69 E:\Project\simantap\vendor\phpunit\phpunit\src\TextUI\Application.php(229): PHPUnit\TextUI\TestRunner->run(Object(PHPUnit\TextUI\Configuration\Configuration), Object(PHPUnit\Runner\ResultCache\DefaultResultCache), Object(PHPUnit\Framework\TestSuite))[0m
+   [31mΓö£[0m [41;37m#70 E:\Project\simantap\vendor\phpunit\phpunit\phpunit(104): PHPUnit\TextUI\Application->run(Array)[0m
+   [31mΓö£[0m [41;37m#71 E:\Project\simantap\vendor\bin\phpunit(122): include('E:\\Project\\sima...')[0m
+   [31mΓö£[0m [41;37m#72 {main}                                                               [0m
+   [31mΓö£[0m                                                                          
+   [31mΓö£[0m [41;37m----------------------------------------------------------------------------------[0m
+   [31mΓö£[0m                                                                          
+   [31mΓö£[0m [41;37mApp\Services\JadwalPelajaranResolver::resolve(): Argument #1 ($nilai) must be of type App\Models\NilaiErapot, int given, called in E:\Project\simantap\app\Http\Controllers\Guru\NilaiErapotController.php on line 65[0m
+   [31mΓöé[0m
+   [31mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:46
+   [31mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:183
+   [31mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Testing\Concerns\AssertsStatusCodes.php:16
+   [31mΓöé[0m E:\Project\simantap\tests\Feature\AlignmentTest.php:87
+   [31mΓö┤[0m
+[31m Γ£ÿ [0mHalaman alignment dan badge pembelajaran
+   [31mΓöÉ[0m
+   [31mΓö£[0m [41;37mFailed asserting that '<!DOCTYPE html>\n                                 [0m
+   [31mΓö£[0m [41;37m<html lang="id">\n                                                       [0m
+   [31mΓö£[0m [41;37m<head>\n                                                                 [0m
+   [31mΓö£[0m [41;37m    <meta charset="UTF-8">\n                                             [0m
+   [31mΓö£[0m [41;37m    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n[0m
+   [31mΓö£[0m [41;37m    <meta name="csrf-token" content="poB9srKM5PnPPrCf6jAXKlUD1fHCej6QgjcaWadg">\n[0m
+   [31mΓö£[0m [41;37m    <title>Cek Alignment E-Rapor</title>\n                               [0m
+   [31mΓö£[0m [41;37m    <link rel="preload" as="style" href="http://localhost:8000/build/assets/app-BGJTuAua.css" /><link rel="preload" as="style" href="http://localhost:8000/build/assets/app-DabbrMnI.css" /><link rel="modulepreload" as="script" href="http://localhost:8000/build/assets/app-Dg5_vcLh.js" /><link rel="stylesheet" href="http://localhost:8000/build/assets/app-BGJTuAua.css" /><link rel="stylesheet" href="http://localhost:8000/build/assets/app-DabbrMnI.css" /><script type="module" src="http://localhost:8000/build/assets/app-Dg5_vcLh.js"></script>    <script>document.documentElement.classList.add('js')</script>\n[0m
+   [31mΓö£[0m [41;37m    </head>\n                                                            [0m
+   [31mΓö£[0m [41;37m<body>\n                                                                 [0m
+   [31mΓö£[0m [41;37m    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>\n[0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <aside class="sidebar" id="sidebar">\n                               [0m
+   [31mΓö£[0m [41;37m        <div class="sidebar-brand">\n                                    [0m
+   [31mΓö£[0m [41;37m            <a href="http://localhost:8000/dashboard">\n                 [0m
+   [31mΓö£[0m [41;37m                <div class="logo-icon">SM</div>\n                        [0m
+   [31mΓö£[0m [41;37m                <div>\n                                                  [0m
+   [31mΓö£[0m [41;37m                    <div class="brand-text">SIMANTAP</div>\n             [0m
+   [31mΓö£[0m [41;37m                    <div class="brand-sub">Situs Mandiri Terintegrasi</div>\n[0m
+   [31mΓö£[0m [41;37m                </div>\n                                                 [0m
+   [31mΓö£[0m [41;37m            </a>\n                                                       [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m                <div class="sidebar-user">\n                             [0m
+   [31mΓö£[0m [41;37m                            <div class="avatar">Le</div>\n               [0m
+   [31mΓö£[0m [41;37m                        <div class="user-info">\n                        [0m
+   [31mΓö£[0m [41;37m                <div class="user-name">Leslie Feest</div>\n              [0m
+   [31mΓö£[0m [41;37m                <div class="user-role">admin</div>\n                     [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <nav class="sidebar-nav">\n                                      [0m
+   [31mΓö£[0m [41;37m                    </nav>\n                                             [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <div class="sidebar-footer">\n                                   [0m
+   [31mΓö£[0m [41;37m            <form method="POST" action="http://localhost:8000/logout">\n [0m
+   [31mΓö£[0m [41;37m                <input type="hidden" name="_token" value="poB9srKM5PnPPrCf6jAXKlUD1fHCej6QgjcaWadg" autocomplete="off">                <button type="submit" class="logout-btn">\n[0m
+   [31mΓö£[0m [41;37m                    <i class="fas fa-sign-out-alt"></i>\n                [0m
+   [31mΓö£[0m [41;37m                    Keluar\n                                             [0m
+   [31mΓö£[0m [41;37m                </button>\n                                              [0m
+   [31mΓö£[0m [41;37m            </form>\n                                                    [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m    </aside>\n                                                           [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <div class="main-content">\n                                         [0m
+   [31mΓö£[0m [41;37m        <header class="topbar">\n                                        [0m
+   [31mΓö£[0m [41;37m            <div class="topbar-left">\n                                  [0m
+   [31mΓö£[0m [41;37m                <button class="topbar-toggle" onclick="toggleSidebar()">\n[0m
+   [31mΓö£[0m [41;37m                    <i class="fas fa-bars"></i>\n                        [0m
+   [31mΓö£[0m [41;37m                </button>\n                                              [0m
+   [31mΓö£[0m [41;37m                <div class="topbar-title">\n                             [0m
+   [31mΓö£[0m [41;37m                    <h1>Dashboard</h1>\n                                 [0m
+   [31mΓö£[0m [41;37m                    <div class="subtitle"></div>\n                       [0m
+   [31mΓö£[0m [41;37m                </div>\n                                                 [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m            \n                                                           [0m
+   [31mΓö£[0m [41;37m            <div class="topbar-right">\n                                 [0m
+   [31mΓö£[0m [41;37m                <div class="notif-wrap">\n                               [0m
+   [31mΓö£[0m [41;37m                    <button class="topbar-btn" title="Notifikasi" onclick="document.getElementById('notifPanel').classList.toggle('show')">\n[0m
+   [31mΓö£[0m [41;37m                        <i class="fas fa-bell"></i>\n                    [0m
+   [31mΓö£[0m [41;37m                    </button>\n                                          [0m
+   [31mΓö£[0m [41;37m                    <div class="notif-panel" id="notifPanel">\n          [0m
+   [31mΓö£[0m [41;37m                        <div class="notif-head">Notifikasi</div>\n       [0m
+   [31mΓö£[0m [41;37m                                                                            <div class="notif-empty">\n[0m
+   [31mΓö£[0m [41;37m                                <span class="icon"><i class="fas fa-bell-slash"></i></span>\n[0m
+   [31mΓö£[0m [41;37m                                Belum ada notifikasi baru.\n             [0m
+   [31mΓö£[0m [41;37m                            </div>\n                                     [0m
+   [31mΓö£[0m [41;37m                                            </div>\n                     [0m
+   [31mΓö£[0m [41;37m                </div>\n                                                 [0m
+   [31mΓö£[0m [41;37m                \n                                                       [0m
+   [31mΓö£[0m [41;37m                <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">\n[0m
+   [31mΓö£[0m [41;37m                                            <div class="avatar-sm">Le</div>\n[0m
+   [31mΓö£[0m [41;37m                                        <span class="user-name">Leslie Feest</span>\n[0m
+   [31mΓö£[0m [41;37m                    <i class="fas fa-chevron-down chevron"></i>\n        [0m
+   [31mΓö£[0m [41;37m                    <div class="dropdown-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:180px;z-index:200;overflow:hidden">\n[0m
+   [31mΓö£[0m [41;37m                        <a href="http://localhost:8000/dashboard" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>\n[0m
+   [31mΓö£[0m [41;37m                                                <div style="border-top:1px solid var(--line)"></div>\n[0m
+   [31mΓö£[0m [41;37m                        <form method="POST" action="http://localhost:8000/logout">\n[0m
+   [31mΓö£[0m [41;37m                            <input type="hidden" name="_token" value="poB9srKM5PnPPrCf6jAXKlUD1fHCej6QgjcaWadg" autocomplete="off">                            <button type="submit" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--bad);text-decoration:none;background:none;border:none;width:100%;cursor:pointer;text-align:left"><i class="fas fa-sign-out-alt" style="width:16px"></i> Keluar</button>\n[0m
+   [31mΓö£[0m [41;37m                        </form>\n                                        [0m
+   [31mΓö£[0m [41;37m                    </div>\n                                             [0m
+   [31mΓö£[0m [41;37m                </div>\n                                                 [0m
+   [31mΓö£[0m [41;37m                \n                                                       [0m
+   [31mΓö£[0m [41;37m                            </div>\n                                     [0m
+   [31mΓö£[0m [41;37m        </header>\n                                                      [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <main class="page-content">\n                                    [0m
+   [31mΓö£[0m [41;37m                                                <div class="container mx-auto px-4 py-6">\n[0m
+   [31mΓö£[0m [41;37m    <h1 class="text-2xl font-bold mb-6">Cek Alignment E-Rapor</h1>\n     [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <!-- Stats Cards -->\n                                               [0m
+   [31mΓö£[0m [41;37m    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">\n           [0m
+   [31mΓö£[0m [41;37m        <div class="card">\n                                             [0m
+   [31mΓö£[0m [41;37m            <div class="card-body">\n                                    [0m
+   [31mΓö£[0m [41;37m                <h3 class="text-sm text-gray-500">Total Nilai E-Rapor</h3>\n[0m
+   [31mΓö£[0m [41;37m                <p class="text-3xl font-bold">2</p>\n                    [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <div class="card">\n                                             [0m
+   [31mΓö£[0m [41;37m            <div class="card-body">\n                                    [0m
+   [31mΓö£[0m [41;37m                <h3 class="text-sm text-gray-500">Matched</h3>\n         [0m
+   [31mΓö£[0m [41;37m                <p class="text-3xl font-bold text-green-600">1</p>\n     [0m
+   [31mΓö£[0m [41;37m                <p class="text-sm text-gray-400">50%</p>\n               [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <div class="card">\n                                             [0m
+   [31mΓö£[0m [41;37m            <div class="card-body">\n                                    [0m
+   [31mΓö£[0m [41;37m                <h3 class="text-sm text-gray-500">Unmatched</h3>\n       [0m
+   [31mΓö£[0m [41;37m                <p class="text-3xl font-bold text-red-600">1</p>\n       [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        \n                                                               [0m
+   [31mΓö£[0m [41;37m        <div class="card">\n                                             [0m
+   [31mΓö£[0m [41;37m            <div class="card-body">\n                                    [0m
+   [31mΓö£[0m [41;37m                <h3 class="text-sm text-gray-500">Alignment Health</h3>\n[0m
+   [31mΓö£[0m [41;37m                                <p class="text-3xl font-bold text-red-600">50%</p>\n[0m
+   [31mΓö£[0m [41;37m                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">\n [0m
+   [31mΓö£[0m [41;37m                    <div class="bg-red-600 h-2 rounded-full" style="width: 50%"></div>\n[0m
+   [31mΓö£[0m [41;37m                </div>\n                                                 [0m
+   [31mΓö£[0m [41;37m            </div>\n                                                     [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m    </div>\n                                                             [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <!-- Action Buttons -->\n                                            [0m
+   [31mΓö£[0m [41;37m    <div class="flex gap-2 mb-6">\n                                      [0m
+   [31mΓö£[0m [41;37m        <button onclick="alert('Fitur refresh alignment akan segera tersedia')" class="btn btn-primary">\n[0m
+   [31mΓö£[0m [41;37m            Refresh Alignment\n                                          [0m
+   [31mΓö£[0m [41;37m        </button>\n                                                      [0m
+   [31mΓö£[0m [41;37m        <button onclick="alert('Fitur export akan segera tersedia')" class="btn btn-secondary">\n[0m
+   [31mΓö£[0m [41;37m            Export Unmatched\n                                           [0m
+   [31mΓö£[0m [41;37m        </button>\n                                                      [0m
+   [31mΓö£[0m [41;37m    </div>\n                                                             [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <!-- Info Box -->\n                                                  [0m
+   [31mΓö£[0m [41;37m    <div class="card">\n                                                 [0m
+   [31mΓö£[0m [41;37m        <div class="card-header">\n                                      [0m
+   [31mΓö£[0m [41;37m            <h3 class="font-bold">Tentang Alignment</h3>\n               [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m        <div class="card-body">\n                                        [0m
+   [31mΓö£[0m [41;37m            <p class="text-sm text-gray-600 mb-4">\n                     [0m
+   [31mΓö£[0m [41;37m                Alignment mencocokkan nilai e-Rapor dengan jadwal pelajaran dari Dapodik. \n[0m
+   [31mΓö£[0m [41;37m                Jika ada unmatched, cek: (1) Nama mata pelajaran sesuai, (2) Nama kelas sesuai, \n[0m
+   [31mΓö£[0m [41;37m                (3) Semester dan tahun ajaran benar, (4) Guru terdaftar di jadwal.\n[0m
+   [31mΓö£[0m [41;37m            </p>\n                                                       [0m
+   [31mΓö£[0m [41;37m            <p class="text-sm text-gray-600">\n                          [0m
+   [31mΓö£[0m [41;37m                <strong>Target:</strong> Minimal 90% matched untuk integrasi e-Rapor optimal.\n[0m
+   [31mΓö£[0m [41;37m            </p>\n                                                       [0m
+   [31mΓö£[0m [41;37m        </div>\n                                                         [0m
+   [31mΓö£[0m [41;37m    </div>\n                                                             [0m
+   [31mΓö£[0m [41;37m</div>\n                                                                 [0m
+   [31mΓö£[0m [41;37m        </main>\n                                                        [0m
+   [31mΓö£[0m [41;37m    </div>\n                                                             [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <div class="toast-container" id="toastContainer"></div>\n            [0m
+   [31mΓö£[0m [41;37m    \n                                                                   [0m
+   [31mΓö£[0m [41;37m    <script>\n                                                           [0m
+   [31mΓö£[0m [41;37m        function toggleSidebar() {\n                                     [0m
+   [31mΓö£[0m [41;37m            document.getElementById('sidebar').classList.toggle('open');\n[0m
+   [31mΓö£[0m [41;37m            document.getElementById('sidebarOverlay').classList.toggle('active');\n[0m
+   [31mΓö£[0m [41;37m        }\n                                                              [0m
+   [31mΓö£[0m [41;37m        window.addEventListener('resize', function() {\n                 [0m
+   [31mΓö£[0m [41;37m            if (window.innerWidth > 768) {\n                             [0m
+   [31mΓö£[0m [41;37m                document.getElementById('sidebar').classList.remove('open');\n[0m
+   [31mΓö£[0m [41;37m                document.getElementById('sidebarOverlay').classList.remove('active');\n[0m
+   [31mΓö£[0m [41;37m            }\n                                                          [0m
+   [31mΓö£[0m [41;37m        });\n                                                            [0m
+   [31mΓö£[0m [41;37m        document.addEventListener('click', function(e) {\n               [0m
+   [31mΓö£[0m [41;37m            const dropdown = document.querySelector('.user-dropdown');\n [0m
+   [31mΓö£[0m [41;37m            if (dropdown && !dropdown.contains(e.target)) {\n            [0m
+   [31mΓö£[0m [41;37m                const menu = dropdown.querySelector('.dropdown-menu');\n [0m
+   [31mΓö£[0m [41;37m                if (menu) menu.classList.remove('show');\n               [0m
+   [31mΓö£[0m [41;37m            }\n                                                          [0m
+   [31mΓö£[0m [41;37m            const notifWrap = document.querySelector('.notif-wrap');\n   [0m
+   [31mΓö£[0m [41;37m            const notifPanel = document.getElementById('notifPanel');\n  [0m
+   [31mΓö£[0m [41;37m            if (notifWrap && notifPanel && !notifWrap.contains(e.target)) {\n[0m
+   [31mΓö£[0m [41;37m                notifPanel.classList.remove('show');\n                   [0m
+   [31mΓö£[0m [41;37m            }\n                                                          [0m
+   [31mΓö£[0m [41;37m        });\n                                                            [0m
+   [31mΓö£[0m [41;37m        function showToast(message, type = 'success') {\n                [0m
+   [31mΓö£[0m [41;37m            const container = document.getElementById('toastContainer');\n[0m
+   [31mΓö£[0m [41;37m            const toast = document.createElement('div');\n               [0m
+   [31mΓö£[0m [41;37m            toast.className = `toast toast-${type}`;\n                   [0m
+   [31mΓö£[0m [41;37m            const icons = { success: 'Γ£à', error: 'Γ¥î', warning: 'ΓÜá∩╕Å' };\n[0m
+   [31mΓö£[0m [41;37m            toast.innerHTML = `${icons[type] || '≡ƒôó'} ${message}`;\n   [0m
+   [31mΓö£[0m [41;37m            container.appendChild(toast);\n                              [0m
+   [31mΓö£[0m [41;37m            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(() => toast.remove(), 300); }, 3000);\n[0m
+   [31mΓö£[0m [41;37m        }\n                                                              [0m
+   [31mΓö£[0m [41;37m    </script>\n                                                          [0m
+   [31mΓö£[0m [41;37m    </body>\n                                                            [0m
+   [31mΓö£[0m [41;37m</html>\n                                                                [0m
+   [31mΓö£[0m [41;37m' [UTF-8](length: 9539) contains "Nama mapel tak cocok" [ASCII](length: 20).[0m
+   [31mΓöé[0m
+   [31mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:46
+   [31mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:720
+   [31mΓöé[0m E:\Project\simantap\tests\Feature\AlignmentTest.php:115
+   [31mΓö┤[0m
+[32m Γ£ö [0mHapus jadwal menullkan fk bukan hapus nilai
+[32m Γ£ö [0mMigrasi fk rollback dan maju lagi
+
+[4mAlignment Check (Tests\Feature\AlignmentCheck)[0m
+[32m Γ£ö [0mAdmin dapat membuka halaman cek alignment
+[32m Γ£ö [0mGuest dialihkan ke login
+[32m Γ£ö [0mNon admin ditolak
+
+[4mAuthentication (Tests\Feature\Auth\Authentication)[0m
+[32m Γ£ö [0mLogin screen can be rendered
+[32m Γ£ö [0mUsers can authenticate using the login screen
+[32m Γ£ö [0mUsers can not authenticate with invalid password
+[32m Γ£ö [0mUsers can logout
+
+[4mCetak (Tests\Feature\Cetak)[0m
+[32m Γ£ö [0mGuest dialihkan ke login
+[32m Γ£ö [0mGuru ditolak akses cetak
+[32m Γ£ö [0mAdmin dapat membuka halaman kosong
+[32m Γ£ö [0mLeger menampilkan matriks nilai
+[32m Γ£ö [0mPelengkap menampilkan rekap hadir dan fisik
+[32m Γ£ö [0mNilai show menampilkan deskripsi dan ketidakhadiran
+
+[4mDapodik Push (Tests\Feature\DapodikPush)[0m
+[32m Γ£ö [0mAdmin dapat mengakses status dapodik push tanpa server error
+[32m Γ£ö [0mGuest dialihkan ke login saat akses push status
+[32m Γ£ö [0mNon admin ditolak akses push status
+[32m Γ£ö [0mTelescope gate mengizinkan admin terdaftar
+[32m Γ£ö [0mTelescope gate menolak admin tak terdaftar
+[32m Γ£ö [0mTelescope gate menolak non admin
+
+[4mDapodik Sync (Tests\Feature\DapodikSync)[0m
+[32m Γ£ö [0mConfig save and retrieve
+[32m Γ£ö [0mConnection to dapodik returns data
+[32m Γ£ö [0mPreview returns data without writing db
+[32m Γ£ö [0mPreview sample data is limited to five
+[32m Γ£ö [0mDry run calculates changes without writing
+[32m Γ£ö [0mDry run detects existing records as updates
+[32m Γ£ö [0mCommit syncs all entities correctly
+[32m Γ£ö [0mCommit is idempotent no duplicates
+[32m Γ£ö [0mCommit updates existing records
+[32m Γ£ö [0mCommit creates sync log with timing
+[32m Γ£ö [0mArchive removes old students not in remote
+[32m Γ£ö [0mArchive removes old gtk not in remote
+[32m Γ£ö [0mArchive skipped when disabled
+[32m Γ£ö [0mConnection failure throws runtime exception
+[32m Γ£ö [0mHttp 500 after retries throws runtime exception
+[32m Γ£ö [0mHttp 400 client error throws runtime exception
+[32m Γ£ö [0mAccess denied response throws runtime exception
+[32m Γ£ö [0mNon json response throws runtime exception
+[32m Γ£ö [0mDapodik api error response throws runtime exception
+
+[4mEmail Verification (Tests\Feature\Auth\EmailVerification)[0m
+[32m Γ£ö [0mEmail verification is not available
+
+[4mExample (Tests\Feature\Example)[0m
+[32m Γ£ö [0mThe application returns a successful response
+
+[4mExample (Tests\Unit\Example)[0m
+[32m Γ£ö [0mThat true is true
+
+[4mInput Nilai Jenis (Tests\Feature\InputNilaiJenis)[0m
+[32m Γ£ö [0mJenis uh dinormalkan menjadi ulangan harian
+[32m Γ£ö [0mJenis di luar enum ditolak validasi
+[32m Γ£ö [0mGuru tidak dapat menyimpan nilai siswa guru lain
+
+[4mJadwal Pelajaran Resolver (Tests\Unit\JadwalPelajaranResolver)[0m
+[32m Γ£ö [0mMemilih jadwal sesuai semester
+[32m Γ£ö [0mAbaikan besar kecil huruf dan spasi ganda
+[32m Γ£ö [0mFallback ke baris tanpa semester
+[32m Γ£ö [0mNull bila tidak ada yang cocok
+[32m Γ£ö [0mTanpa semester memilih kandidat pertama
+
+[4mKuis Batas Waktu (Tests\Feature\KuisBatasWaktu)[0m
+[32m Γ£ö [0mKuis tanpa batas waktu bisa dikumpulkan
+[32m Γ£ö [0mKuis dengan batas waktu masa depan bisa dikumpulkan
+[32m Γ£ö [0mKuis yang sudah kedaluwarsa ditolak server
+[32m Γ£ö [0mBatas waktu disimpan sebagai tanggal waktu
+
+[4mLogin Aktif (Tests\Feature\LoginAktif)[0m
+[32m Γ£ö [0mAkun nonaktif tidak dapat login
+[32m Γ£ö [0mAkun aktif tetap dapat login
+[32m Γ£ö [0mAkun terarsip tidak dapat login
+[32m Γ£ö [0mPendaftaran publik menghasilkan akun nonaktif
+
+[4mMenu Audit (Tests\Feature\MenuAudit)[0m
+[32m Γ£ö [0mAudit semua menu
+[32m Γ£ö [0mDashboard siswa menampilkan rekap bulanan
+
+[4mNilai Erapot (Tests\Unit\Models\NilaiErapot)[0m
+[32m Γ£ö [0mFillable memuat fk alignment
+[32m Γ£ö [0mRelasi jadwal pelajaran belongs to
+[32m Γ£ö [0mRelasi balik has many
+[32m Γ£ö [0mHitung nilai akhir skala 100
+[32m Γ£ö [0mGenerate predikat relatif kkm
+
+[4mPassword Confirmation (Tests\Feature\Auth\PasswordConfirmation)[0m
+[32m Γ£ö [0mConfirm password screen is not available
+
+[4mPassword Reset (Tests\Feature\Auth\PasswordReset)[0m
+[32m Γ£ö [0mForgot password is not available
+[32m Γ£ö [0mReset password is not available
+
+[4mPassword Update (Tests\Feature\Auth\PasswordUpdate)[0m
+[32m Γ£ö [0mForce password change screen can be rendered
+[32m Γ£ö [0mPassword can be changed via force password change
+[32m Γ£ö [0mNew password must be different from old
+[32m Γ£ö [0mPassword confirmation must match
+
+[4mPredikat Konsistensi (Tests\Unit\PredikatKonsistensi)[0m
+[32m Γ£ö [0mAmbang predikat relatif terhadap kkm
+[32m Γ£ö [0mKkm yang berbeda menggeser ambang
+[32m Γ£ö [0mLabel dan kelas css konsisten
+
+[4mProfile (Tests\Feature\Profile)[0m
+[32m Γ£ö [0mAdmin can access admin dashboard
+[32m Γ£ö [0mGuru can access guru dashboard
+[32m Γ£ö [0mUser is redirected by role
+[32m Γ£ö [0mUnauthenticated user is redirected to login
+
+[4mRegistration (Tests\Feature\Auth\Registration)[0m
+[32m Γ£ö [0mRegistration screen can be rendered
+[32m Γ£ö [0mNew users can register
+[32m Γ£ö [0mRegistration rejects kepsek role
+[32m Γ£ö [0mLogin page hides demo credentials outside local
+
+[4mTranskrip (Tests\Feature\Transkrip)[0m
+[32m Γ£ö [0mGuest dialihkan ke login
+[32m Γ£ö [0mGuru ditolak akses transkrip
+[32m Γ£ö [0mAdmin dapat membuka semua halaman
+[32m Γ£ö [0mSetting tersimpan di pengaturan json
+[32m Γ£ö [0mNomor ijazah tersimpan dan unik
+[32m Γ£ö [0mInput nilai upsert dan predikat otomatis
+[32m Γ£ö [0mInput nilai menolak di luar rentang
+[33m Γ£ÿ [0mImport nilai csv upsert
+   [33mΓöÉ[0m
+   [33mΓö£[0m [43;30mTypeError: fwrite(): Argument #1 ($stream) must be of type resource, false given[0m
+   [33mΓöé[0m
+   [33mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Testing\FileFactory.php:40
+   [33mΓöé[0m E:\Project\simantap\tests\Feature\TranskripTest.php:154
+   [33mΓö┤[0m
+[33m Γ£ÿ [0mImport nilai csv menolak header salah
+   [33mΓöÉ[0m
+   [33mΓö£[0m [43;30mTypeError: fwrite(): Argument #1 ($stream) must be of type resource, false given[0m
+   [33mΓöé[0m
+   [33mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Testing\FileFactory.php:40
+   [33mΓöé[0m E:\Project\simantap\tests\Feature\TranskripTest.php:168
+   [33mΓö┤[0m
+[33m Γ£ÿ [0mImport nomor csv
+   [33mΓöÉ[0m
+   [33mΓö£[0m [43;30mTypeError: fwrite(): Argument #1 ($stream) must be of type resource, false given[0m
+   [33mΓöé[0m
+   [33mΓöé[0m E:\Project\simantap\vendor\laravel\framework\src\Illuminate\Http\Testing\FileFactory.php:40
+   [33mΓöé[0m E:\Project\simantap\tests\Feature\TranskripTest.php:181
+   [33mΓö┤[0m
+[32m Γ£ö [0mCetak menampilkan nama dan rata rata
+[32m Γ£ö [0mTentukan predikat mengikuti kkm
+
+[37;41mERRORS![0m
+[37;41mTests: 127[0m[37;41m, Assertions: 371[0m[37;41m, Errors: 5[0m[37;41m, Failures: 2[0m[37;41m.[0m

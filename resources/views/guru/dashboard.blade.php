@@ -319,7 +319,40 @@
         </div>
     </div>
 
-    @push('scripts')
+    
+    {{-- CBT Management Section --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--navy)"></i>Manajemen Ujian CBT</h3>
+            <a href="{{ route('cbt.sessions.index') }}" class="btn btn-primary btn-sm">Kelola Ujian</a>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-4" style="margin-bottom:16px">
+                <div class="stat">
+                    <div class="label">Total Bank Soal</div>
+                    <div class="value">{{ App\Models\Cbt\QuestionBank::where('guru_id', auth()->id())->count() }}</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Sesi Ujian Aktif</div>
+                    <div class="value">{{ App\Models\Cbt\TestSession::where('guru_id', auth()->id())->where('status', 'ongoing')->count() }}</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Sesi Selesai</div>
+                    <div class="value">{{ App\Models\Cbt\TestSession::where('guru_id', auth()->id())->where('status', 'completed')->count() }}</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Total Peserta Ujian</div>
+                    <div class="value">{{ App\Models\Cbt\TestResult::whereHas('testSession', function($q) { $q->where('guru_id', auth()->id()); })->count() }}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <a href="{{ route('cbt.question-banks.create') }}" class="btn btn-ghost"><i class="fas fa-plus"></i> Buat Bank Soal</a>
+                <a href="{{ route('cbt.sessions.create') }}" class="btn btn-ghost"><i class="fas fa-calendar-plus"></i> Buat Sesi Ujian</a>
+                <a href="{{ route('cbt.sessions.index') }}?status=ongoing" class="btn btn-ghost"><i class="fas fa-eye"></i> Monitoring</a>
+            </div>
+        </div>
+    </div>
+@push('scripts')
     @vite('resources/js/guru-dashboard.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -382,3 +415,4 @@
     </script>
     @endpush
 @endsection
+

@@ -474,7 +474,7 @@ periksa('Simpanan rahasia bridge tidak di-track git', function () use ($root) {
 });
 
 periksa('setup_api_key.php tidak memuat literal API key', function () use ($root) {
-    $kode = baca($root . '/setup_api_key.php');
+    $kode = baca($root . '/tools/setup_api_key.php');
     if (preg_match("/ApiKey::create/", $kode) && !preg_match('/\$apiKey\s*=/', $kode)) {
         return 'API key masih hardcoded';
     }

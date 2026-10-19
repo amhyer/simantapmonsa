@@ -1,3 +1,7 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Klaim "Semua temuan sudah diperbaiki" tidak
+> terbukti pada audit eksekusi berikutnya. Acuan tunggal:
+> **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**.
+
 # LAPORAN PERBAIKAN BUG SIMANTAP — 14 Oktober 2026
 
 Dokumen ini adalah **tindak lanjut** dari `LAPORAN_AUDIT_BUG_2026-10-14.md`.

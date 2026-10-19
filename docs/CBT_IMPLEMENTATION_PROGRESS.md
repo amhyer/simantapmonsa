@@ -1,5 +1,9 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Status "Backend Selesai" tidak akurat: modul
+> CBT belum pernah bisa dijalankan end-to-end (18 bug terkonfirmasi eksekusi).
+> Acuan tunggal: **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**.
+
 # CBT IMPLEMENTATION PROGRESS
-## Status: Backend Selesai - Frontend Pending
+## Status: Backend Selesai - Frontend Pending *(klaim lama — tidak valid)*
 
 ---
 

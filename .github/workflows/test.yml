@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    name: PHPUnit (PHP 8.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp
+          coverage: none
+          ini-values: sys_temp_dir=/tmp
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Run test suite (wajib hijau)
+        run: php artisan test --exclude-group baseline
+
+      # Test baseline (AuditCbtProofTest, RouteHealthAuditTest) sengaja MERAH
+      # sampai Fase 1-2 selesai. Dijalankan sebagai laporan, tidak memblokir CI.
+      - name: Laporan baseline (tidak memblokir)
+        if: always()
+        continue-on-error: true
+        run: php artisan test --group baseline
+
+      - name: Simpan laporan endpoint 5xx
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-health-report
+          path: storage/logs/route-health-report.txt
+          if-no-files-found: ignore

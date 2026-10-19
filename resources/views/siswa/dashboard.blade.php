@@ -260,5 +260,87 @@
             </div>
         </div>
     </div>
-    @endif
+    
+    {{-- CBT Ujian Section --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--violet)"></i>Ujian CBT</h3>
+            <a href="{{ route('cbt.student.index') }}" class="btn btn-violet btn-sm">Lihat Semua</a>
+        </div>
+        <div class="card-body">
+            @php
+                $cbtAvailable = App\Models\Cbt\TestSession::where('status', 'ongoing')
+                    ->where(function($q) use ($siswa) {
+                        $q->whereNull('rombel_id')
+                          ->orWhere('rombel_id', $siswa->rombel_id);
+                    })
+                    ->where('tanggal_selesai', '>', now())
+                    ->orderBy('tanggal_mulai')
+                    ->limit(3)
+                    ->get();
+                    
+                $cbtResults = App\Models\Cbt\TestResult::where('siswa_id', $siswa->id)
+                    ->with('testSession')
+                    ->orderByDesc('created_at')
+                    ->limit(5)
+                    ->get();
+            @endphp
+            
+            @if($cbtAvailable->count() > 0)
+                <div style="margin-bottom:16px">
+                    <div style="font-size:12px;font-weight:700;color:var(--violet);margin-bottom:8px">UJIAN TERSEDIA</div>
+                    @foreach($cbtAvailable as $session)
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#F8F6FC;border-radius:8px;margin-bottom:8px">
+                            <div>
+                                <div style="font-weight:600">{{ $session->nama_sesi }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ $session->mata_pelajaran }} · Selesai: {{ $session->tanggal_selesai->format('d M H:i') }}</div>
+                            </div>
+                            <a href="{{ route('cbt.student.start', $session->id) }}" class="btn btn-violet btn-sm">Mulai</a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            
+            @if($cbtResults->count() > 0)
+                <div>
+                    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">HASIL UJIAN TERBARU</div>
+                    <div class="table-wrapper">
+                        <table style="font-size:13px">
+                            <thead>
+                                <tr>
+                                    <th>Ujian</th>
+                                    <th>Tanggal</th>
+                                    <th>Nilai</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($cbtResults as $result)
+                                    <tr>
+                                        <td>{{ $result->testSession->nama_sesi ?? '-' }}</td>
+                                        <td>{{ $result->created_at->format('d M Y') }}</td>
+                                        <td><strong>{{ number_format($result->nilai_akhir, 1) }}</strong></td>
+                                        <td>
+                                            @if($result->nilai_akhir >= ($result->testSession->passing_grade ?? 70))
+                                                <span class="tag tag-green">LULUS</span>
+                                            @else
+                                                <span class="tag tag-red">BELUM LULUS</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @else
+                <div style="text-align:center;color:var(--muted);padding:20px">
+                    <i class="fas fa-clipboard" style="font-size:32px;opacity:0.3"></i>
+                    <p style="margin-top:8px">Belum ada ujian CBT</p>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
 @endsection
+

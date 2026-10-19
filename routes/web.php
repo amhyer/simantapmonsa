@@ -24,6 +24,7 @@ use App\Http\Controllers\Ortu\RekapController as OrtuRekapController;
 use App\Http\Controllers\Ortu\KehadiranController as OrtuKehadiranController;
 use App\Http\Controllers\Ortu\CatatanController as OrtuCatatanController;
 use App\Http\Controllers\Ortu\LaporanController as OrtuLaporanController;
+use App\Http\Controllers\Ortu\DashboardController as OrtuDashboard;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboard;
 use App\Http\Controllers\Siswa\MateriController as SiswaMateriController;
 use App\Http\Controllers\Siswa\KuisController as SiswaKuisController;
@@ -379,7 +380,7 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('sisw
 
 // ==================== ORANG TUA ROUTES ====================
 Route::middleware(['auth', 'role:ortu', 'force.password.change'])->prefix('ortu')->name('ortu.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'ortu'])->name('dashboard');
+    Route::get('/dashboard', [OrtuDashboard::class, 'index'])->name('dashboard');
     Route::get('/kebiasaan', [OrtuKebiasaanController::class, 'index'])->name('kebiasaan.index');
     Route::post('/kebiasaan', [OrtuKebiasaanController::class, 'store'])->name('kebiasaan.store');
     Route::get('/nilai', [DashboardController::class, 'ortuNilai'])->name('nilai.index');
@@ -403,13 +404,11 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
 });
 
-// ==================== CBT ROUTES (NONAKTIF) ====================
-// Modul CBT belum punya controller/view/tabel. Route dibungkus feature flag
-// `simantap.cbt_enabled` (default false) supaya tidak melempar HTTP 500.
-// Aktifkan kembali via SIMANTAP_CBT_ENABLED=true setelah modulnya lengkap.
-if (config('simantap.cbt_enabled', false)) {
-    // ==================== CBT ROUTES ====================
-    Route::middleware(['auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
+// ==================== CBT ROUTES ====================
+// Kill switch modul asesmen: route tetap terdaftar (agar `route()` di view tidak
+// melempar RouteNotFoundException), tetapi middleware `module.asesmen` membalas
+// 404 selama SIMANTAP_CBT_ENABLED=false. Lihat config/simantap.php.
+    Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('cbt')->name('cbt.')->group(function () {
         // Question Banks
         Route::prefix('question-banks')->name('question-banks.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
@@ -450,17 +449,16 @@ if (config('simantap.cbt_enabled', false)) {
     });
 
     // CBT Student Routes
-    Route::middleware(['auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.change', 'cbt.session.lock', 'cbt.security'])->prefix('cbt/student')->name('cbt.student.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
         Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
         Route::post('/{result}/answer', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submitAnswer'])->name('answer');
         Route::post('/{result}/submit', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'submit'])->name('submit');
         Route::get('/{result}/result', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'result'])->name('result');
     });
-}
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
     // Question Banks
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');
@@ -488,7 +486,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
 });
 
 // ==================== ADMIN TRYOUT MANAGEMENT ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
     Route::get('/statistics', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'statistics'])->name('statistics');
     
     // Packages
@@ -525,7 +523,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
 });
 
 // ==================== ADMIN TKA MANAGEMENT ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'index'])->name('dashboard');
     
     // Dimensions Management
@@ -558,7 +556,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
 });
 
 // ==================== TRYOUT ROUTES ====================
-Route::middleware(['auth', 'role:guru'])->prefix('tryout')->name('tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tryout')->name('tryout.')->group(function () {
     // Categories (nonaktif sementara: controller belum ada — milik area Kiro)
     // Route::resource('categories', \App\Http\Controllers\Tryout\TryoutCategoryController::class)->except(['show']);
     
@@ -580,7 +578,7 @@ Route::middleware(['auth', 'role:guru'])->prefix('tryout')->name('tryout.')->gro
 });
 
 // Tryout Student Routes
-Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'index'])->name('index');
     Route::get('/{session}/start', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'start'])->name('start');
     Route::post('/{result}/answer', [\App\Http\Controllers\Tryout\TryoutStudentController::class, 'submitAnswer'])->name('answer');
@@ -589,7 +587,7 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('tryo
 });
 
 // ==================== TKA ENHANCED ROUTES ====================
-Route::middleware(['auth', 'role:guru'])->prefix('tka')->name('tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tka')->name('tka.')->group(function () {
     // Dimensions
     Route::resource('dimensions', \App\Http\Controllers\Tka\TkaDimensionController::class);
     Route::post('/dimensions/{dimension}/item', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'addItem'])->name('dimensions.add-item');
@@ -605,7 +603,8 @@ Route::middleware(['auth', 'role:guru'])->prefix('tka')->name('tka.')->group(fun
 });
 
 // TKA Parent Routes
-Route::middleware(['auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Tka\TkaParentController::class, 'index'])->name('index');
     Route::get('/{report}', [\App\Http\Controllers\Tka\TkaParentController::class, 'show'])->name('show');
 });
+

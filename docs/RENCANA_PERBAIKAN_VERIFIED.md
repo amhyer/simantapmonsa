@@ -1,0 +1,316 @@
+# RENCANA PERBAIKAN VERIFIED — SIMANTAP
+
+### Acuan pembenahan gabungan, diverifikasi langsung terhadap kode
+
+**Basis verifikasi:** working tree pada commit `56f7922` (15 Okt 2026) + perubahan belum di-commit.
+**Tanggal verifikasi:** 17 Oktober 2026.
+**Metode:** pembacaan kode + pemeriksaan file/folder satu per satu (bukan klaim dari laporan lain).
+**Sumber digabung:**
+- `docs/Audit_Mendalam_SIMANTAPMONSA.md` (audit statis, snapshot `56f7922`)
+- `docs/AUDIT_SIMANTAP_MENDALAM_2026-10-17.md` (audit + eksekusi, klaim 19 temuan)
+
+Dokumen ini adalah **satu-satunya acuan kerja**. Laporan lain yang mengklaim "100% FIXED" atau
+"Production-Ready" dinyatakan **kedaluwarsa** dan tidak boleh dipakai sebagai dasar keputusan.
+
+---
+
+## 1. RINGKASAN EKSEKUTIF
+
+| Metrik | Angka (terverifikasi 17 Okt) |
+|---|---|
+| Temuan CBT/Tryout kritis yang **masih rusak** | **18 dari 19** (semua kecuali BUG-12 yang sebagian) |
+| Endpoint berpotensi HTTP 500 | **±20** (13 view hilang + jalur 500 lain) → terverifikasi GET: **2** (§1b); sisanya butuh data uji |
+| Kerentanan IDOR yang **masih terbuka** | **11 endpoint** (0 Policy di aplikasi) |
+| View yang hilang | **13** (dicek satu per satu: semua `False`) |
+| `app/Policies/` | **tidak ada** (0 file) |
+| CI (`.github/workflows`) | **ADA** (`.github/workflows/test.yml`, 17 Okt) |
+| Artefak regression test dari audit 17 Okt | **hilang dari tree** (`AuditCbtProofTest`, `RouteHealthAuditTest`, `authz_sweep.py` tidak ada) |
+| Test suite CBT/Tryout/TKA/Backup | **0 file test** |
+
+### Tiga kesimpulan
+
+1. **Modul CBT, Tryout, dan TKA belum pernah bisa dijalankan end-to-end.** Alur siswa mati di
+   3 titik 500 berurutan (start → autosave → anti-cheat), plus penilaian salah, plus IDOR lintas akun.
+2. **Verifikasi sebelumnya tidak pernah mengeksekusi kode.** Klaim "127/127 hijau", "95% confidence",
+   "CLEARED FOR DEPLOYMENT" tidak terbukti; test suite sendiri punya 1 ERROR dan bergantung
+   `npm run build` yang tidak pernah dijalankan di clone segar.
+3. **CBT dan Tryout adalah dua implementasi duplikat** dengan nama tabel/kolom berbeda dan dua set
+   bug berbeda. Memperbaiki terpisah = dua kali kerja. Disatukan setelah P0 tertutup.
+
+**Aturan mutlak:** setiap klaim "sudah diperbaiki" WAJIB dibuktikan dengan test/eksekusi yang
+menyala hijau — bukan pembacaan kode, bukan laporan Markdown.
+
+---
+
+## 1b. STATUS EKSEKUSI FASE 0 (17 Okt 2026)
+
+| # | Status | Bukti eksekusi |
+|---|---|---|
+| 0.1 | ✅ SELESAI | `tests/TestCase.php` memanggil `withoutVite()`; suite jalan tanpa `npm run build` |
+| 0.2 | ✅ SELESAI (baseline merah) | `tests/Feature/Cbt/AuditCbtProofTest.php` — **16 dari 18 GAGAL**, 2 lulus (perlu ditelaah, lihat di bawah) |
+| 0.3 | ✅ SELESAI | `tests/Feature/RouteHealthAuditTest.php` — 1035 kombinasi (207 GET × 5 peran) → **2 endpoint 5xx** (`storage/logs/route-health-report.txt`) |
+| 0.4 | ✅ SELESAI | `.github/workflows/test.yml`; langkah wajib `php artisan test --exclude-group baseline` → lokal **127 test, 0 error, 0 gagal (61,5 s)** |
+| 0.5 | ✅ SELESAI (ubah pendekatan) | flag `cbt_enabled=false` + middleware `EnsureModuleEnabled` (alias `module.asesmen`) → 404. **Route tetap terdaftar** (bukan dihapus) agar `route()` di view tidak melempar `RouteNotFoundException` |
+| 0.6 | ✅ SELESAI | `git rm routes/web.php.remote all_routes.txt api.json`; `git mv setup_api_key.php tools/`; path di `tools/verifikasi-perbaikan.php` diperbaiki |
+| 0.7 | ✅ SELESAI | Header "⚠️ KEDALUWARSA (17 Okt 2026)" di 6 dokumen. `00_START_HERE.txt` dilewati (penulisan ulang merusak encoding; sudah direvert) |
+
+### Temuan baru dari eksekusi Fase 0
+
+1. **Klaim "±20 endpoint 500" TIDAK TERBUKTI untuk GET.** Smoke test menemukan **hanya 2**:
+   `guru GET /guru/laporan/pdf` (`guru.laporan.pdf`) dan `guru GET /tka/assessments/1/edit`
+   (`tka.assessments.edit`). **Caveat penting:** parameter diisi `1`, sehingga banyak route
+   `show/edit` berhenti di **404** (model tidak ada) sebelum merender view → angka 2 adalah **batas
+   bawah**. View hilang (§2.4) tetap wajib ditutup; verifikasinya butuh data uji nyata.
+2. **Docblock `@group` tidak lagi didukung di PHPUnit 12.5** (proyek memakai `phpunit/phpunit ^12.5`).
+   Tag eksklusi baseline memakai atribut `#[Group('baseline')]`.
+3. **2 test baseline yang LULUS — jangan dianggap "tidak ada bug":**
+   `test_api_bank_soal_tidak_mengirim_kunci_jawaban` (kemungkinan route menolak lebih dulu, bukan
+   bukti anti-bocor) dan `test_percobaan_kedua_tidak_menghitung_jawaban_percobaan_pertama`
+   (skenario multi-attempt belum benar-benar terbentuk). Wajib dikaji ulang di Fase 2.
+4. **Lingkungan lokal (SUDAH DIPERBAIKI 17 Okt).** `php.ini` Herd menyetel `sys_temp_dir` /
+   `upload_tmp_dir` ke `D:\Project\simantap\storage\app\phptmp` (drive D: basi; proyek pindah ke E:).
+   Akibatnya `tmpfile()` gagal → 3 error `TranskripTest` dan `php artisan test` gagal di Windows
+   (`WindowsPipes`: "temporary file could not be opened"). Sudah diarahkan ke
+   `E:\Project\simantap\storage\app\phptmp` (mempertahankan maksud asli: `artisan serve` child `-S`
+   mewarisi TEMP). **CI (Linux) tidak pernah terpengaruh.**
+5. **Perintah verifikasi lokal resmi:** `php artisan test --exclude-group baseline`
+   (lulus 127 test, 390 assertion, ~51 s). Baseline merah: `php artisan test --group baseline`.
+
+---
+
+## 2. MATRIKS VERIFIKASI (ID ↔ Status ↔ Bukti)
+
+Kode: **RUSAK** = masih belum diperbaiki · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
+
+### 2.1 CBT (dari AUDIT_SIMANTAP_MENDALAM, §1)
+
+| ID | Temuan | Status | Bukti verifikasi (file:baris) |
+|---|---|---|---|
+| K-01 | `waktu_selesai` NOT NULL saat insert null → 500 saat Mulai Ujian | **RUSAK** | `database/migrations/2026_10_04_210653_create_cbt_test_results_table.php:28` (`dateTime` tanpa `nullable`); `Cbt/CbtStudentController.php:67` insert `'waktu_selesai' => null`. Belum ada migrasi perbaikan |
+| K-02 | Middleware `find(route param)` menerima model → Collection → 500 | **RUSAK** | `app/Http/Middleware/CbtSessionLock.php:17` masih `TestResult::find($request->route('result'))` |
+| K-03 | `submitAnswer` pakai `test_result_id` yang tidak ada di skema → 500 | **RUSAK** | `CbtStudentController.php:106,122` memakai `test_result_id`; migrasi `cbt_student_answers` (2026_10_04_210643) hanya punya `test_session_id` (baris 17). Kolom `test_result_id` tidak ada |
+| K-04 | JS CBT 404 → timer/auto-save/anti-cheat mati total | **RUSAK** | `vite.config.js:7` hanya 3 entry (app.css, app.js, guru-dashboard.js); `take.blade.php:387-389` masih `asset("js/cbt/...")`; `public/js/` **tidak ada**; `resources/js/cbt/{timer,auto-save,integrity-checker}.js` ada tapi tak pernah dibangun |
+| K-05 | IDOR siswa: siswa A bisa tulis/tutup/buka hasil siswa B | **RUSAK** | `CbtStudentController::submitAnswer/submit/result` nol cek `siswa_id` vs login |
+| K-06 | IDOR guru: guru B ubah/hapus bank soal & soal milik guru A | **RUSAK** | `CbtQuestionBankController` hanya `index()` yang filter `guru_id` (baris ±); `show/edit/update/destroy/apiGetQuestions` tanpa guard. `app/Policies/` tidak ada |
+| K-07 | Kebocoran kunci jawaban lintas guru via `api/questions` (`adalah_benar: true`) | **RUSAK** | `CbtQuestionBankController::apiGetQuestions` tanpa filter guru + mengembalikan field `adalah_benar` |
+| K-08 | IDOR guru: ubah status sesi ujian guru lain (publish/start/complete/monitoring) | **RUSAK** | `CbtTestSessionController::{show,publish,start,complete,monitoring,apiMonitoring}` tanpa cek `guru_id` |
+| K-09 | `nilai_maksimal` dihitung dari SELURUH bank, bukan soal tampil → status lulus salah | **RUSAK** | `CbtStudentController.php:178` `$result->testSession->questionBank->questions->sum('poin')` |
+| K-10 | Attempt ke-2 menghitung jawaban attempt ke-1 | **RUSAK** | `app/Models/Cbt/TestResult.php:55-59` relasi `studentAnswers()` hanya join `test_session_id`+`siswa_id`, tanpa `attempt_number`/`test_result_id` |
+| K-11 | Halaman nilai terkunci `CbtSecurityMiddleware` setelah submit | **RUSAK** | Perlu dipastikan di `CbtSecurityMiddleware`; route `GET /cbt/student/{result}/result` masih lewat middleware `cbt.security` (routes/web.php:454) |
+| K-12a | Endpoint pelaporan anti-cheat di grup `role:guru` → siswa selalu 403 | **RUSAK** | `routes/web.php:445-448` route `cbt.integrity.log` di grup `role:guru`; pemanggil: siswa via `integrity-checker.js` |
+| K-12b | Enum `jenis_pelanggaran` JS ≠ validasi controller → 422 senyap | **RUSAK** | JS kirim `context_menu`, `screenshot` (`integrity-checker.js`); controller `in:tab_switch,copy_paste,screen_capture,focus_lost,multiple_tabs,suspicious_activity` |
+| K-12c | `data_tambahan` dikirim string JSON, divalidasi `array` → 422 senyap | **RUSAK** | JS: `payload.append('data_tambahan', JSON.stringify(...))`; controller: `'nullable|array'` |
+| — | Grading `benar_salah` keliru: selalu cek `'benar'`, bukan kunci soal | **RUSAK** | `CbtStudentController.php:159-160` `strtolower($answer->jawaban) === 'benar'` |
+| — | `isian_singkat`/`menjodohkan`/`essay` tidak ditangani grader → jatuh "salah" | **RUSAK** | `CbtStudentController.php:156-161` hanya 2 tipe soal |
+| — | Randomisasi setelah `limit()` → soal teratas selalu terpilih | **RUSAK** | `CbtStudentController.php:76-83` |
+| — | XSS sinkrip soal: `json_encode($questions)` tanpa `JSON_HEX_TAG` | **RUSAK** | `take.blade.php:300` `{!! json_encode($questions) !!}` |
+
+### 2.2 Tryout (AUDIT §2)
+
+| ID | Temuan | Status | Bukti |
+|---|---|---|---|
+| T-01 | `start` 500: `tryout_results.waktu_selesai` NOT NULL | **RUSAK** | Migrasi `2026_10_04_222414:30` tanpa nullable; `TryoutStudentController.php:65` insert null |
+| T-02 | IDOR: submit/complete/result tanpa cek kepemilikan | **RUSAK** | `TryoutStudentController` tanpa guard `siswa_id` |
+| T-03 | `submitAnswer` bocorkan `is_correct` + `poin` ke siswa saat tes berjalan | **RUSAK** | `TryoutStudentController.php:120` `return ... ['is_correct' => $isCorrect, 'poin' => $poin]` |
+| T-04 | `start()` tidak cek `$siswa` null | **RUSAK** | Berbeda dari CBT yang sudah cek |
+| T-05 | `updateOrCreate` paksa `attempt_number => 1` → percobaan ulang menimpa | **RUSAK** | `TryoutStudentController.php:58,106` |
+| T-06 | `admin/tryout/sessions/{id}` 500: relasi `participants` tidak ada | **RUSAK** | `TryoutPackageAdminController.php:272`; model `Tryout\Session` tanpa `participants()` |
+| T-07 | `admin/tryout/sessions` index 500: `count() on null` | **RUSAK** | View `admin/tryout/sessions/index.blade.php` |
+
+### 2.3 TKA & e-Rapor (AUDIT §3)
+
+| ID | Temuan | Status | Catatan |
+|---|---|---|---|
+| TKA-01 | Route `resource` `tka/assessments` daftarkan 7 method, controller punya 5 (`edit` hilang) → 500 | **RUSAK** | `routes/web.php:601` `Route::resource('assessments', ...)` |
+| TKA-02 | View `tka.assessments.by-siswa` hilang | **RUSAK** | Cek: file tidak ada |
+| TKA-03 | View `admin.tka.students.history` hilang | **RUSAK** | Cek: file tidak ada |
+| TKA-04 | `guru/erapor/excel` 500: `SekolahSettings` null tak dicek | **RUSAK** | `ErapotGeneratorController.php:110` |
+| TKA-05 | `cbt/question-banks/{id}` 500: `$tingkat_kesulitan` undefined (relasi semester → stdClass) | **RUSAK** | View `cbt/question-banks/show.blade.php` |
+
+### 2.4 13 View yang hilang (semua terverifikasi `False`)
+
+| Controller | View hilang |
+|---|---|
+| `Admin\Cbt\CbtBankController` | `admin.cbt.banks.show`, `admin.cbt.banks.edit` |
+| `Admin\Cbt\CbtSessionController` | `admin.cbt.sessions.show` |
+| `Cbt\CbtTestSessionController` | `cbt.sessions.show` |
+| `Admin\Tryout\TryoutPackageAdminController` | `admin.tryout.packages.show`, `admin.tryout.packages.edit`, `admin.tryout.sessions.edit` |
+| `Tryout\TryoutPackageController` | `tryout.packages.show`, `tryout.packages.edit` |
+| `Tryout\TryoutSessionController` | `tryout.sessions.show`, `tryout.sessions.monitoring` |
+| `Tka\TkaAssessmentController` | `tka.assessments.by-siswa` |
+| `Admin\Tka\TkaAdminController` | `admin.tka.students.history` |
+
+### 2.5 Infrastruktur & mutu (gabungan M-01..M-16 + P1/P2 dokumen statis)
+
+| Temuan | Status | Bukti |
+|---|---|---|
+| Tidak ada CI | **RUSAK** | `.github/` tidak berisi workflows |
+| 0 Policy | **RUSAK** | `app/Policies/` tidak ada |
+| `TestCase` tanpa `withoutVite()` | **RUSAK** | `tests/TestCase.php` kosong |
+| Artefak regression test audit hilang | **HILANG** | `tests/Feature/Cbt/`, `AuditCbtProofTest`, `RouteHealthAuditTest`, `tools/authz_sweep.py` tidak ada di tree. Hanya `tools/verifikasi-perbaikan.php` yang ada |
+| `routes/web.php.remote` (71 KB sisa merge) masih ada | **RUSAK** | Ada di root `routes/` |
+| `all_routes.txt` berisi pesan error | **RUSAK** | Ada |
+| `api.json` OpenAPI generic belum dikustom | **RUSAK** | Ada |
+| `setup_api_key.php` di root repo | **RUSAK** | Ada (seharusnya di `tools/`) |
+| `tools/verify.sh` & `diagnose.sh` | **TIDAK ADA** | Audit lama klaim ada — ternyata tidak (koreksi terhadap M-15) |
+| `composer.json` PHP `^8.3` vs lock `>=8.4.1` | **TIDAK TERKONFIRMASI** | Lock `platform.php` = `^8.3` sama; perlu cek ulang saat install di lingkungan bersih |
+| Feature flag `cbt_enabled` default `true` + route admin/tryout/tka DI LUAR flag | **RUSAK** | `config/simantap.php:16` default `true`; `routes/web.php:464,492,532,563,585,594` di luar blok `if (config('simantap.cbt_enabled'))` |
+| Backup terjadwal ≠ backup panel (5 tabel vs registry luas) | **RUSAK** | `app/Console/Commands/BackupData.php` vs `BackupController::export` |
+| Registry backup belum termasuk tabel CBT/tryout/TKA; wipe juga tidak | **RUSAK** | `app/Support/BackupTables.php` |
+| Google Sheets sync: `clearSheet()` tab pusat + subset 1 guru | **RUSAK** | `Guru/IntegrasiController.php::fullSync` |
+| Hanya 1 FormRequest di 355 route | **RUSAK** | `app/Http/Requests/` = `ProfileUpdateRequest.php` saja |
+| `nama_guru` NOT NULL denormalisasi di `kuis`/`nilai`/`nilai_erapor` | **RUSAK** | Sumber bug insert |
+| Dokumen "100% FIXED"/"Completion rate 100%" | **KEDALUWARSA** | `docs/03-REMAINING-ISSUES.md`, `docs/IMPROVEMENT_BACKLOG.md` |
+| README masih boilerplate Laravel | **RUSAK** | `README.md` |
+| Commit `56f7922` klaim "127/127 hijau" | **SALAH** | Suite bergantung `public/build/manifest.json`; `MenuAuditTest` pernah ERROR memory |
+
+---
+
+## 3. BACKLOG PERBAIKAN BERURUTAN
+
+Setiap item punya **kriteria lulus** berbasis eksekusi. Urutan wajib dijaga.
+
+### Fase 0 — Pagar pengaman (½ hari) — SEBELUM PERBAIKAN APAPUN
+
+> ✅ **SELESAI 17 Okt 2026** — bukti eksekusi di §1b.
+
+| # | Langkah | Kriteria lulus |
+|---|---|---|
+| 0.1 | `tests/TestCase.php`: tambah `withoutVite()` | `php artisan test` bisa jalan di clone segar tanpa `npm run build` |
+| 0.2 | Tulis ulang `tests/Feature/Cbt/AuditCbtProofTest.php` (19 test pembuktian dari audit) — saat ini HARUS gagal merah | Test gagal sesuai prediksi bug (bukti baseline) |
+| 0.3 | Tulis ulang `tests/Feature/RouteHealthAuditTest.php` (smoke rute × peran, deteksi 5xx) | Report daftar endpoint 500 tersimpan |
+| 0.4 | CI `.github/workflows/test.yml`: PHP 8.4, `composer install`, `npm ci && npm run build`, `php artisan test` (SQLite) | Workflow hijau di push/PR |
+| 0.5 | Set `SIMANTAP_CBT_ENABLED` default **`false`**; bungkus route `admin/cbt`, `admin/tryout`, `admin/tka`, `tryout.*`, `tka.*` dalam blok flag yang sama | Dengan flag=false, seluruh rute CBT/tryout/TKA 404 (bukan 500) |
+| 0.6 | Hapus artefak: `routes/web.php.remote`, `all_routes.txt`, `api.json`; pindah `setup_api_key.php` ke `tools/` | File tidak ada; `php artisan route:list` tetap jalan |
+| 0.7 | Tandai dokumen kedaluwarsa (`03-REMAINING-ISSUES.md`, `IMPROVEMENT_BACKLOG.md`, laporan audit lama) dengan header "KEDALUWARSA — lihat RENCANA_PERBAIKAN_VERIFIED.md" | Header ada |
+
+### Fase 1 — Nyalakan CBT & Tryout (2–3 hari)
+
+| # | Langkah | Kriteria lulus |
+|---|---|---|
+| 1.1 | Migrasi baru: `cbt_test_results.waktu_selesai` + `durasi_detik` nullable; `tryout_results.waktu_selesai` nullable (JANGAN edit migrasi lama) | Test `start` CBT & tryout → HTTP 200, record tercipta |
+| 1.2 | Migrasi: tambah `test_result_id` (FK → `cbt_test_results`) + unique constraint ke `cbt_student_answers`; controller isi `test_result_id` + `test_session_id` | Autosave sukses; jawaban tercatat benar |
+| 1.3 | Fix `CbtSessionLock`/`CbtSecurityMiddleware`: pakai route param yang sudah di-bound (`instanceof TestResult`), jangan `find()` ulang | Semua request `/cbt/student/{result}/*` tidak 500 |
+| 1.4 | Vite: daftarkan entry `resources/js/cbt/index.js` (bundle timer+autosave+integrity); ubah `take.blade.php` ke `@vite` | `npm run build` menghasilkan aset; timer jalan di browser |
+| 1.5 | Tulis 13 view yang hilang (acu: view `index`/`create` yang sudah ada) | Route-health test: endpoint terkait bukan 500 |
+| 1.6 | `TkaAssessmentController`: tambah `edit`/`update`/`destroy` ATAU ubah route jadi non-resource | `tka/assessments/{id}/edit` bukan 500 |
+| 1.7 | `ErapotGeneratorController`: null-safe `SekolahSettings` | `guru/erapor/excel` tanpa settings tetap aman |
+| 1.8 | `Tryout\Session`: tambah relasi `participants()`; fix view admin sessions | Halaman admin tryout sessions bukan 500 |
+| 1.9 | Hapus `is_correct`/`poin` dari respons `submitAnswer` Tryout (hanya `{success:true}`) | Respons tidak berisi kunci |
+| 1.10 | `take.blade.php:300`: `json_encode(..., JSON_HEX_TAG\|JSON_HEX_APOS\|JSON_HEX_QUOT\|JSON_HEX_AMP)` | Soal berisi `</script>` tidak menembus |
+| 1.11 | Pindahkan endpoint `cbt.integrity.log` ke grup siswa + samakan enum `jenis_pelanggaran` JS↔controller + terima `data_tambahan` sebagai string-JSON yang di-decode | Siswa bisa laporkan pelanggaran; log masuk DB |
+
+### Fase 2 — Tutup semua IDOR & benarkan penilaian (2 hari)
+
+| # | Langkah | Kriteria lulus |
+|---|---|---|
+| 2.1 | Buat `app/Policies/`: `CbtQuestionBankPolicy`, `CbtQuestionPolicy`, `CbtTestSessionPolicy`, `CbtTestResultPolicy`, `TryoutSessionPolicy`, `TryoutResultPolicy`; registrasikan | File ada; `Gate::resolve` tidak error |
+| 2.2 | `Gate::authorize()`/`$this->authorize()` di SETIAP action guru (bank, soal, sesi) & siswa (result/answer) | Tes negatif 2-guru & 2-siswa: semua dapat **403**, DB tidak berubah |
+| 2.3 | **Hapus `adalah_benar` dari semua respons API** (`api/questions` dsb.) — skor dihitung server saja | Respons API guru tidak memuat kunci jawaban |
+| 2.4 | Relasi jawaban per attempt: `studentAnswers()` filter `test_result_id` + `attempt_number` | Attempt 2 tidak menghitung jawaban attempt 1 (test numerik) |
+| 2.5 | `nilai_maksimal` dihitung dari snapshot soal yang ditampilkan (simpan `AttemptQuestion`/snapshot saat `start`) | Bank 10 soal, tampil 2 → `nilai_maksimal` = 20 |
+| 2.6 | Grader: kunci `benar_salah` eksplisit dari soal; `isian_singkat` dengan normalisasi; `essay` status "menunggu penilaian" | Unit test per tipe soal |
+| 2.7 | `CbtSecurityMiddleware`: izinkan route `GET .../result` (kunci read-only, jangan tolak) | Siswa lihat nilai setelah submit |
+| 2.8 | `canStudentTake()`: cek kelas/rombel + cek `$siswa` null di tryout juga | Siswa kelas lain ditolak |
+
+### Fase 3 — Satukan engine asesmen (3–5 hari) — setelah Fase 1–2 hijau
+
+Skema target:
+
+```
+exam_engines  (id, nama, jenis: cbt|tryout)
+exam_banks    (id, engine_id, ...)
+exam_questions / exam_question_options
+exam_sessions (id, bank_id, ...)
+exam_attempts (id, session_id, siswa_id, attempt_number, ...)
+exam_answers  (id, attempt_id, question_id, jawaban, ...)
+exam_results  (id, attempt_id, ...)
+```
+
+Langkah: (1) tabel baru → (2) backfill dari `cbt_*` + `tryout_*` → (3) satu `ExamGradingService` →
+(4) parity test lulus → (5) arahkan route/view ke engine baru → (6) drop tabel lama (rikonsiliasi data).
+Kriteria lulus: satu attempt bisa dibuat → dijawab → dilanjutkan → dikumpulkan sekali → dinilai benar
+→ direview → hanya terlihat pihak berwenang; skor konsisten di UI, laporan, ekspor.
+
+### Fase 4 — Kebersihan & mutu (2 hari)
+
+| # | Langkah |
+|---|---|
+| 4.1 | Pindahkan validasi ke FormRequest (mulai CBT/Tryout) |
+| 4.2 | `laravel/pint` di CI |
+| 4.3 | Satu registry backup (`BackupTables`) dipakai export panel, `BackupData` terjadwal, restore, DAN wipe — termasuk tabel CBT/tryout/TKA. nama file dibedakan penuh vs parsial |
+| 4.4 | Streaming export benar (tulis ke disk, jangan `stream_get_contents` seluruh JSON ke memori) |
+| 4.5 | README proper (ganti boilerplate Laravel) |
+| 4.6 | Tulis ulang laporan status dengan bukti eksekusi (jumlah test, jumlah lulus, timestamp) |
+
+### Fase 5 — Fitur baru (hanya setelah Fase 0–4 stabil)
+
+Lihat §5. Rilis per modul dengan feature flag + acceptance criteria.
+
+---
+
+## 4. MATRIKS TES MINIMUM SEBELUM RILIS
+
+| Modul/alur | Skenario sukses | Skenario negatif wajib |
+|---|---|---|
+| Login/role | Setiap role masuk ke dashboardnya | Akun nonaktif, gagal login berulang, role salah |
+| CBT | Mulai → autosave → resume → submit → nilai → review | ID result siswa lain, ID sesi/bank guru lain, waktu habis, submit ganda, soal di luar sesi |
+| Tryout | Mulai → simpan semua jawaban → selesai → rekap | Result orang lain, paket lain, bocor nilai sebelum selesai, akun tanpa record siswa |
+| TKA | Guru menilai siswa cakupannya; ortu lihat laporan anak | Guru kirim siswa/asesmen di luar cakupan; ortu ganti ID anak |
+| e-Rapor | Import → hitung → cetak → ekspor konsisten | Jenis nilai tidak valid, jadwal tak terpetakan, duplikasi import |
+| Google Sheets | Sync sesuai model personal/pusat | Guru A hapus data guru B; kegagalan API di tengah sync |
+| Dapodik | Preview → sinkron → log hasil | Duplikat, referensi invalid, key tak valid, timeout/retry, partial failure |
+| Backup/restore | Backup lengkap → restore staging → row counts + relasi terverifikasi | Backup parsial, checksum salah, skema beda, restore gagal di tengah |
+| Wipe | Dry-run + konfirmasi kuat setelah backup valid | Pembatalan, password salah, tabel gagal, cascade tak diharapkan |
+| Route health | 0 endpoint 5xx pada semua kombinasi rute × peran | Regresi view/route hilang terdeteksi CI |
+
+Tes negatif wajib memeriksa: status HTTP **dan** DB tidak berubah **dan** tidak ada info rahasia di respons/log.
+
+---
+
+## 5. FITUR INOVATIF (Fase 5) — Diprioritaskan
+
+Urut berdasarkan nilai ÷ risiko untuk sekolah dasar.
+
+| Prioritas | Fitur | Ringkasan | Prasyarat |
+|---|---|---|---|
+| 1 | **Satu mesin asesmen** | Konsolidasi CBT+Tryout+kuis; menghapus duplikasi & dua set bug | Fase 1–2 lulus |
+| 2 | **Audit trail akademik** | Log hash-chain perubahan nilai rapor (`prev_hash→hash`), status draft→disahkan→terbit, snapshot saat publish | Fase 4 |
+| 3 | **Item analysis otomatis** | Difficulty index (P), discrimination index (D), deteksi distraktor lemah, laporan per bank soal | Mesin asesmen |
+| 4 | **Portal orang tua (PWA-first)** | Ringkasan mingguan kehadiran/tugas/nilai, push notification, mode data hemat | Mesin asesmen + data lengkap |
+| 5 | **Notifikasi WhatsApp gateway** | Info ujian, pengumuman, rekap kehadiran ke WA ortu; two-way ack | Portal ortu |
+| 6 | **AI deskripsi rapor (berpagar)** | LLM bantu narasi rapor Kurikulum Merdeka dari nilai+CP; guru edit sebelum terbit; **tanpa data pribadi ke cloud tanpa izin** | Audit trail |
+| 7 | **Early-warning akademik transparan** | Aturan terbuka (penurunan rata-rata 2 periode, absen berulang) + alasan + tindakan; hindari label otomatis menghakimi | Data 2+ semester |
+| 8 | **Adiwiyata / Eco-School tracker** | Pencatatan kebersihan, bank sampah, efisiensi energi, indikator KLHK, rapor Adiwiyata | Modul mandiri (risiko rendah) |
+| 9 | **Dapodik sync center** | Panel status koneksi, preview/dry-run, retry+checkpoint, laporan konflik, idempotency key | Fase 4 |
+| 10 | **Mode ujian offline** | Service Worker + IndexedDB, sync queue, token HMAC per soal, konflik server-side | Mesin asesmen |
+| 11 | **Multi-sekolah (SaaS)** | `schools` + `school_id`, plan/limit, billing Midtrans/Xendit, isolasi policy global | Semua fase stabil |
+
+---
+
+## 6. CATATAN KOORDINASI & METODOLOGI
+
+1. **Pembagian kerja (diperbarui 17 Okt):** sesuai keputusan pemilik project, **Opencode
+   mengerjakan perbaikan CBT/Tryout juga** (melonggarkan pembagian lama AGENTS.md di mana CBT
+   = Kiro). Pembagian lain tetap: Kiro = alignment e-Rapor (docs 09-12); Opencode = Transkrip,
+   Cetak, sidebar, security, test `TranskripTest`/`CetakTest`. File bersama (`routes/web.php`,
+   `sidebar.blade.php`, `MenuAuditTest.php`, `layouts/app.blade.php`): baca dulu, edit seperlunya,
+   wajib phpunit hijau sebelum commit.
+2. **PHP wajib** `C:\Users\USER\.config\herd\bin\php84\php.exe` (jangan `php` polos). Test =
+   sqlite in-memory → hindari `ilike`/`to_char` di query yang kena test.
+3. **Jangan cache model Eloquent** (korup saat unserialize). Cache skalar/array saja.
+4. **Tabel di Blade** pakai `.table-wrapper`.
+5. **Commit kecil + pesan jelas.** Jangan commit kecuali diminta. Setiap commit perbaikan
+   menyertakan test yang membuktikannya.
+6. **Metodologi verifikasi (pelajaran dari laporan palsu):** test yang assertion-nya merepresentasikan
+   perilaku BENAR sementara kode masih salah → saat ini merah (bukti baseline) → setelah diperbaiki
+   hijau (regression guard). Dilarang menandai item "selesai" tanpa eksekusi.
+7. **Jangan jalankan `wipeAll` pada database produksi** selama cakupan backup belum terbukti lengkap
+   (tabel CBT/tryout/TKA belum masuk registry).
+8. **Kredensial Dapodik lama** yang pernah ada di riwayat git: cabut/rotasi sebelum fitur sync
+   diaktifkan kembali; hapus dari HEAD ≠ hilang dari riwayat.
+
+---
+
+*Dokumen ini dibuat 17 Okt 2026 dari verifikasi langsung kode. Perbarui tabel §2 setiap kali satu
+item selesai diperbaiki — ganti status RUSAK → DIPERBAKI + tambahkan baris bukti test.*

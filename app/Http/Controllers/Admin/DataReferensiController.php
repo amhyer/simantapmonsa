@@ -10,6 +10,7 @@ use App\Models\Ptk;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Models\NilaiErapot;
 use App\Models\TanggalRapor;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
@@ -70,14 +71,19 @@ class DataReferensiController extends Controller
         return back()->with('success', 'Jadwal pembelajaran berhasil dihapus.');
     }
 
-    /**
+        /**
      * Halaman alignment-check e-Rapor vs pembelajaran (view: Fase 5).
      */
     public function alignmentCheck(JadwalPelajaranResolver $resolver)
     {
         $stats = $resolver->alignmentStats();
+        $unmatched = NilaiErapot::whereNull('jadwal_pelajaran_id')
+            ->with('siswa:id,nama_peserta_didik')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
 
-        return view('admin.referensi.alignment-check', compact('stats'));
+        return view('admin.referensi.alignment-check', compact('stats', 'unmatched'));
     }
 
     public function tanggalRapor()

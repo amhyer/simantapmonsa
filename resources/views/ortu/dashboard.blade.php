@@ -110,5 +110,56 @@
             @endif
         </div>
     </div>
+    
+    {{-- CBT Results Section --}}
+    @if($ringkasan && isset($ringkasan['cbt_results']) && $ringkasan['cbt_results']->count() > 0)
+    <div class="card" style="margin-top:20px">
+        <div class="card-header">
+            <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--navy)"></i>Hasil Ujian CBT Terbaru</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Ujian</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Tanggal</th>
+                            <th>Nilai</th>
+                            <th>Predikat</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($ringkasan['cbt_results'] as $result)
+                        <tr>
+                            <td>{{ $result->testSession->nama_sesi ?? '-' }}</td>
+                            <td>{{ $result->testSession->mataPelajaran->nama ?? '-' }}</td>
+                            <td>{{ $result->created_at->format('d M Y H:i') }}</td>
+                            <td><strong>{{ number_format($result->nilai_akhir, 1) }}</strong></td>
+                            <td>
+                                @php
+                                    $predikat = $result->predikat ?? '-';
+                                    $colors = ['A' => 'green', 'B' => 'blue', 'C' => 'yellow', 'D' => 'red'];
+                                    $color = $colors[$predikat] ?? 'gray';
+                                @endphp
+                                <span class="tag tag-{{ $color }}">{{ $predikat }}</span>
+                            </td>
+                            <td>
+                                @if($result->nilai_akhir >= ($result->testSession->passing_grade ?? 70))
+                                    <span class="tag tag-green">LULUS</span>
+                                @else
+                                    <span class="tag tag-red">BELUM LULUS</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     @endif
+@endif
 @endsection
+

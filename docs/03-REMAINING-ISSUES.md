@@ -1,7 +1,12 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Klaim "SEMUA SELESAI" pada dokumen ini **tidak
+> terverifikasi** dan bertentangan dengan hasil audit eksekusi. Acuan tunggal
+> yang berlaku: **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**. Jangan pakai dokumen ini
+> sebagai dasar keputusan.
+
 # SIMANTAP — Isu Tersisa yang Perlu Diperbaiki
 
 **Tanggal:** 13 September 2026
-**Status:** ✅ SEMUA SELESAI
+**Status:** ✅ SEMUA SELESAI *(klaim lama — tidak valid)*
 
 ---
 

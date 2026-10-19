@@ -104,6 +104,54 @@
     </div>
 </div>
 
+
+{{-- CBT Analytics Section --}}
+<div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+        <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--navy)"></i>Analisis CBT Sekolah</h3>
+    </div>
+    <div class="card-body">
+        @php
+            $cbtTotalSessions = App\Models\Cbt\TestSession::count();
+            $cbtOngoing = App\Models\Cbt\TestSession::where('status', 'ongoing')->count();
+            $cbtCompleted = App\Models\Cbt\TestSession::where('status', 'completed')->count();
+            $cbtTotalParticipants = App\Models\Cbt\TestResult::count();
+            $cbtAvgScore = App\Models\Cbt\TestResult::avg('nilai_akhir') ?? 0;
+            $cbtPassRate = App\Models\Cbt\TestResult::whereRaw('nilai_akhir >= 70')->count() / max($cbtTotalParticipants, 1) * 100;
+        @endphp
+        <div class="grid grid-5" style="margin-bottom:16px">
+            <div class="stat" style="text-align:center;padding:12px;background:#F8F6FC;border-radius:8px">
+                <div class="value" style="font-size:24px;color:var(--navy)">{{ $cbtTotalSessions }}</div>
+                <div class="label" style="font-size:11px">Total Sesi</div>
+            </div>
+            <div class="stat" style="text-align:center;padding:12px;background:#FEF3C7;border-radius:8px">
+                <div class="value" style="font-size:24px;color:#92400E">{{ $cbtOngoing }}</div>
+                <div class="label" style="font-size:11px">Sedang Berlangsung</div>
+            </div>
+            <div class="stat" style="text-align:center;padding:12px;background:#D1FAE5;border-radius:8px">
+                <div class="value" style="font-size:24px;color:#065F46">{{ $cbtCompleted }}</div>
+                <div class="label" style="font-size:11px">Selesai</div>
+            </div>
+            <div class="stat" style="text-align:center;padding:12px;background:#DBEAFE;border-radius:8px">
+                <div class="value" style="font-size:24px;color:#1E40AF">{{ $cbtTotalParticipants }}</div>
+                <div class="label" style="font-size:11px">Peserta</div>
+            </div>
+            <div class="stat" style="text-align:center;padding:12px;background:#EEF2FF;border-radius:8px">
+                <div class="value" style="font-size:24px;color:#4338CA">{{ number_format($cbtAvgScore, 1) }}</div>
+                <div class="label" style="font-size:11px">Rata-rata Nilai</div>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+                <span style="font-size:12px;color:var(--muted)">Tingkat Kelulusan:</span>
+                <span class="tag tag-{{ $cbtPassRate >= 80 ? 'ok' : ($cbtPassRate >= 60 ? 'warn' : 'bad') }}">{{ number_format($cbtPassRate, 1) }}%</span>
+            </div>
+            <div style="display:flex;gap:8px">
+                <a href="{{ route('admin.cbt.sessions.index') }}" class="btn btn-ghost btn-sm">Detail Ujian</a>
+            </div>
+        </div>
+    </div>
+</div>
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -140,3 +188,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+

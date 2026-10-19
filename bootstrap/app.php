@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
             'cbt.security' => \App\Http\Middleware\CbtSecurityMiddleware::class,
             'cbt.session.lock' => \App\Http\Middleware\CbtSessionLock::class,
+            'module.asesmen' => \App\Http\Middleware\EnsureModuleEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

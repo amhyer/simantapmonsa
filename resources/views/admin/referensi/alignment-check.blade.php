@@ -1,76 +1,118 @@
-@extends('layouts.admin-with-tabs')
+@extends('layouts.app')
 
-@section('title', 'Cek Alignment E-Rapor - SIMANTAP')
-
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
-@section('page_title', 'Cek Alignment E-Rapor')
-@section('page_subtitle', 'Keterpetakan nilai_erapor ke jadwal_pelajaran (pembelajaran resmi)')
-
-@section('header_actions')
-    <a href="{{ route('admin.referensi.pembelajaran') }}" class="btn btn-sm btn-ghost">Data Pembelajaran</a>
-@endsection
+@section('title', 'Cek Alignment E-Rapor')
 
 @section('content')
-    <div class="grid grid-4" style="margin-bottom:16px">
-        <div class="stat"><div class="label">Total nilai e-Rapor</div><div class="value">{{ number_format($stats['total']) }}</div></div>
-        <div class="stat ok"><div class="label">Terpetakan</div><div class="value">{{ number_format($stats['mapped']) }}</div></div>
-        <div class="stat {{ $stats['unmapped'] ? 'bad' : 'ok' }}"><div class="label">Belum terpetakan</div><div class="value">{{ number_format($stats['unmapped']) }}</div></div>
-        <div class="stat gold"><div class="label">Persentase</div><div class="value">{{ $stats['persen'] }}%</div></div>
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6">Cek Alignment E-Rapor</h1>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-sm text-gray-500">Total Nilai E-Rapor</h3>
+                <p class="text-3xl font-bold">{{ $stats['total'] ?? 0 }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-sm text-gray-500">Matched</h3>
+                <p class="text-3xl font-bold text-green-600">{{ $stats['matched'] ?? 0 }}</p>
+                <p class="text-sm text-gray-400">{{ $stats['persen'] ?? 0 }}%</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-sm text-gray-500">Unmatched</h3>
+                <p class="text-3xl font-bold text-red-600">{{ $stats['unmatched'] ?? 0 }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-sm text-gray-500">Alignment Health</h3>
+                @php
+                    $persen = $stats['persen'] ?? 0;
+                    $color = $persen >= 90 ? 'green' : ($persen >= 70 ? 'yellow' : 'red');
+                @endphp
+                <p class="text-3xl font-bold text-{{ $color }}-600">{{ $persen }}%</p>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div class="bg-{{ $color }}-600 h-2 rounded-full" style="width: {{ $persen }}%"></div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="card" style="margin-bottom:16px">
+    
+    <!-- Action Buttons -->
+    <div class="flex gap-2 mb-6">
+        <button onclick="alert('Fitur refresh alignment akan segera tersedia')" class="btn btn-primary">
+            Refresh Alignment
+        </button>
+        <button onclick="alert('Fitur export akan segera tersedia')" class="btn btn-secondary">
+            Export Unmatched
+        </button>
+    </div>
+    
+    @if(isset($unmatched) && $unmatched->count() > 0)
+    <!-- Unmatched List -->
+    <div class="card mb-6">
         <div class="card-header">
-            <h3>Rincian Belum Terpetakan</h3>
+            <h3 class="font-bold">Nilai Tidak Terpetakan ({{ $unmatched->count() }})</h3>
         </div>
-        <div class="card-body tight">
-            @if($stats['unmapped'] > 0)
-                <div class="table-wrapper">
-                    <table style="width:100%;border-collapse:collapse">
-                        <thead>
-                            <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Sebab</th>
-                                <th style="padding:11px 14px;text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Jumlah</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                $labelKategori = [
-                                    'semester_tak_cocok' => 'Semester/tahun ajaran tak cocok',
-                                    'guru_tak_punya_jadwal' => 'Guru tak punya jadwal sama sekali',
-                                    'mapel_tak_cocok' => 'Nama mapel tak cocok',
-                                    'kelas_tak_cocok' => 'Nama kelas tak cocok',
-                                ];
-                            @endphp
-                            @foreach($stats['kategori'] as $kunci => $jumlah)
-                                <tr>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">{{ $labelKategori[$kunci] ?? $kunci }}</td>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:right;font-weight:700">{{ number_format($jumlah) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="note note-gold" style="margin:16px">
-                    Nilai baru yang disimpan guru dipetakan otomatis. Untuk nilai lama, jalankan ulang populate atau perbaiki data master (mapel/kelas/semester) lalu simpan ulang nilai.
-                </div>
-            @else
-                <div class="empty-state">
-                    <div class="icon">✅</div>
-                    <h4>Semua nilai terpetakan</h4>
-                    <p>Tidak ada nilai e-Rapor yang belum punya pasangan pembelajaran.</p>
-                </div>
-            @endif
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Siswa</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th>Semester</th>
+                            <th>Alasan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($unmatched as $nilai)
+                        <tr>
+                            <td>{{ $nilai->siswa->nama_peserta_didik ?? '-' }}</td>
+                            <td>{{ $nilai->mata_pelajaran }}</td>
+                            <td>{{ $nilai->kelas }}</td>
+                            <td>{{ $nilai->semester }} {{ $nilai->tahun_ajaran }}</td>
+                            <td>
+                                @if(!$nilai->jadwal_pelajaran_id)
+                                    @if(empty($nilai->mata_pelajaran))
+                                        Nama mapel kosong
+                                    @else
+                                        Nama mapel tak cocok
+                                    @endif
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-
-    @if($stats['jadwal_ambigu'] > 0)
-        <div class="note note-warn">
-            <b>{{ number_format($stats['jadwal_ambigu']) }} baris jadwal ambigu</b> (kombinasi guru+mapel+kelas+semester yang sama di beberapa hari).
-            Nilai dipetakan ke jadwal ber-ID terkecil; rapikan jadwal ganda bila perlu.
-        </div>
     @endif
+    
+    <!-- Info Box -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="font-bold">Tentang Alignment</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-sm text-gray-600 mb-4">
+                Alignment mencocokkan nilai e-Rapor dengan jadwal pelajaran dari Dapodik. 
+                Jika ada unmatched, cek: (1) Nama mata pelajaran sesuai, (2) Nama kelas sesuai, 
+                (3) Semester dan tahun ajaran benar, (4) Guru terdaftar di jadwal.
+            </p>
+            <p class="text-sm text-gray-600">
+                <strong>Target:</strong> Minimal 90% matched untuk integrasi e-Rapor optimal.
+            </p>
+        </div>
+    </div>
+</div>
 @endsection
-

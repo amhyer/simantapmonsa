@@ -1,3 +1,7 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Klaim "seluruh temuan sudah diperbaiki dan
+> diverifikasi" tidak terbukti: audit eksekusi 17 Okt menemukan 18 bug CBT
+> terkonfirmasi masih ada. Acuan tunggal: **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**.
+>
 > **STATUS PER 14 OKTOBER 2026 (malam):** seluruh temuan pada laporan ini sudah
 > diperbaiki dan diverifikasi (sebelum → sesudah). Rincian bukti, keputusan
 > desain, langkah deployment, dan sisa pekerjaan ada di

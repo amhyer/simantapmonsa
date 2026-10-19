@@ -1,6 +1,10 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Dokumen ini menyebut "Completion rate 100%"
+> dan Laravel 11; keduanya tidak sesuai kenyataan (Laravel 13, banyak temuan
+> kritis masih terbuka). Acuan tunggal: **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**.
+
 # Improvement Backlog — Status Update
 
-_Terakhir diperbarui: 13 September 2026_
+_Terakhir diperbarui: 13 September 2026 (kedaluwarsa)_
 
 ---
 

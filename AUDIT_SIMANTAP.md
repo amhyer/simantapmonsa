@@ -1,3 +1,6 @@
+> ⚠️ **KEDALUWARSA (17 Okt 2026).** Audit statis tanpa eksekusi. Acuan tunggal
+> yang berlaku: **`docs/RENCANA_PERBAIKAN_VERIFIED.md`**.
+
 # AUDIT SIMANTAP — Laporan Komprehensif
 > Tanggal: 17 September 2026
 > Versi: v2.0 (audit menyeluruh kedua)
