@@ -48,3 +48,6 @@ Desktop.ini
 docs/gambar/*.mp4
 docs/*.mp4
 *.mp4
+
+# Artefak graphify (knowledge graph lokal, 12MB+, bisa dibangun ulang via graphify)
+graphify-out/
