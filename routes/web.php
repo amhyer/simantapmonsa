@@ -494,7 +494,6 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::get('/{bank}/edit', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'edit'])->name('edit');
         Route::put('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'update'])->name('update');
         Route::delete('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'destroy'])->name('destroy');
-        Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'toggleStatus'])->name('toggle-status');
         Route::get('/api/statistics', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'statistics'])->name('statistics');
     });
     
@@ -621,7 +620,13 @@ Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tka')->name(
     Route::get('/dimensions/{dimension}/api/items', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'getItems'])->name('dimensions.api.items');
     
     // Assessments
-    Route::resource('assessments', \App\Http\Controllers\Tka\TkaAssessmentController::class);
+    // Resource diganti eksplisit: TkaAssessmentController hanya punya
+    // index/create/store/show — route edit/update/destroy dari resource
+    // melempar BadMethodCallException (HTTP 500) saat dipanggil.
+    Route::get('/assessments', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'index'])->name('assessments.index');
+    Route::get('/assessments/create', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'create'])->name('assessments.create');
+    Route::post('/assessments', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'store'])->name('assessments.store');
+    Route::get('/assessments/{assessment}', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'show'])->name('assessments.show');
     Route::get('/assessments/siswa/{siswaId}', [\App\Http\Controllers\Tka\TkaAssessmentController::class, 'bySiswa'])->name('assessments.by-siswa');
     
     // Generate Parent Report

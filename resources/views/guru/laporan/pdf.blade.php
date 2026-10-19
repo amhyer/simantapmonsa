@@ -83,9 +83,14 @@
             </tbody>
         </table>
 
-        @if(collect($dataLaporan)->first()['nilai_per_mapel']->count() ?? false)
+        @php
+            // first() bisa null (tanpa siswa) -> akses offset array pada null = 500.
+            $firstLaporan = collect($dataLaporan)->first();
+            $detailNilai = $firstLaporan !== null ? ($firstLaporan['nilai_per_mapel'] ?? collect()) : collect();
+        @endphp
+        @if($detailNilai->count())
             @php
-                $allMapels = collect($dataLaporan)->flatMap(fn($d) => $d['nilai_per_mapel']->pluck('nama'))->unique()->sort()->values();
+                $allMapels = collect($dataLaporan)->flatMap(fn($d) => ($d['nilai_per_mapel'] ?? collect())->pluck('nama'))->unique()->sort()->values();
             @endphp
             <div class="section-title">B. DETAIL NILAI PER MATA PELAJARAN</div>
             <table>

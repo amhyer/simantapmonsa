@@ -191,13 +191,11 @@
                             </td>
                             <td>{{ $assessment->semester->tahun_ajaran ?? '-' }}</td>
                             <td>
-                                <a href="{{ route('admin.tka.assessments.show', $assessment) }}" 
-                                   class="btn btn-sm btn-info" title="Detail">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.tka.assessments.edit', $assessment) }}" 
-                                   class="btn btn-sm btn-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
+                                {{-- Rute admin.tka.assessments.show/edit tidak ada (hanya index+history);
+                                     tautkan ke riwayat penilaian per siswa. --}}
+                                <a href="{{ route('admin.tka.assessments.history', ['siswaId' => $assessment->siswa_id]) }}"
+                                   class="btn btn-sm btn-info" title="Riwayat Siswa">
+                                    <i class="fas fa-history"></i>
                                 </a>
                             </td>
                         </tr>
