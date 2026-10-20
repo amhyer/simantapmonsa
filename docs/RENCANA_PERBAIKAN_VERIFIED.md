@@ -78,6 +78,81 @@ menyala hijau — bukan pembacaan kode, bukan laporan Markdown.
 
 ---
 
+## 1c. REKONSILIASI 19–20 OKT 2026 — CBT DITULIS ULANG
+
+Antara Fase 0 dan Fase 1, implementasi CBT lama dihapus dan diganti (commit `68a2eea`, `6912c9c`,
+`4fcbef1`, `20115de`, `3e98367`). Konsekuensi:
+
+| Item lama | Status baru |
+|---|---|
+| K-01..K-12 (CBT lama), `CbtStudentController`, `CbtSessionLock`, `CbtSecurityMiddleware`, model `App\Models\Cbt\*`, migrasi `2026_10_04_*cbt*` | **OBSOLETE / DIHAPUS** — diganti `CbtExamService` + `CbtScoring`, model `CbtQuestionBank/CbtQuestion/CbtTestSession/CbtResult/CbtViolation`, migrasi `2026_10_18_000001_create_cbt_tables` |
+| `AuditCbtProofTest` (baseline merah Fase 0.2) | **DIHAPUS** (commit `6912c9c`) karena menguji skema lama; digantikan `tests/Feature/CbtExamTest.php` (28 test) + `CbtDisabledTest.php` |
+| 13 view hilang (termasuk CBT) | Sebagian dibuat (commit `20115de`); sisa **17 view Tryout/TKA** (Fase 1.5) |
+| `cbt.security` / `cbt.session.lock` | Dihapus; akses CBT via `CbtAccessMiddleware` (aktif + force_password_change) |
+
+**Bukti:** `php artisan test --exclude-group baseline` → **177 lulus, 0 gagal** (20 Okt 2026).
+`CbtExamTest` mencakup autosave, snapshot, IDOR siswa/guru, integritas, finalisasi, dan backup/restore.
+
+**Yang benar-benar tersisa dari Fase 1:** modul **Tryout** (masih implementasi lama) dan **17 view**
+Tryout/TKA. Itulah yang dikerjakan pada 20 Okt.
+
+### Status Fase 1 (20 Okt 2026)
+
+| # | Status | Bukti |
+|---|---|---|
+| 1.1 | ✅ CBT / ✅ Tryout | CBT baru tidak memakai `waktu_selesai` NOT NULL; migrasi `2026_10_20_000001_fix_tryout_schema` membuat `tryout_results.waktu_selesai` nullable |
+| 1.2 | ✅ OBSOLETE (CBT) | skema CBT baru memakai `cbt_results` + snapshot; tidak ada `test_result_id` |
+| 1.3 | ✅ OBSOLETE | middleware lama dihapus |
+| 1.4 | ✅ | CBT baru tidak lagi memakai `asset('js/cbt')` |
+| 1.5 | ✅ | 17 view Tryout/TKA dibuat (admin/guru TKA & Tryout); `view:cache` bersih; `RouteHealthAuditTest` hijau |
+| 1.6 | ✅ | route TKA assessments eksplisit (commit `4fcbef1`) |
+| 1.7 | ✅ | null-guard laporan PDF (commit `3e98367`) |
+| 1.8 | ✅ | `Session::participants()` ditambahkan; `forceCompleteSession` tidak lagi menulis kolom `status` yang tidak ada |
+| 1.9 | ✅ | `TryoutStudentController::submitAnswer` hanya mengembalikan `{success: true}` |
+| 1.10 | ✅ OBSOLETE | CBT baru meng-escape soal (CbtExamTest: `test_html_soal_di_escape...`) |
+| 1.11 | ✅ OBSOLETE | route baru `cbt.student.integrity` + `cbt.integrity.violations` |
+
+Test regresi Tryout baru: `tests/Feature/TryoutTest.php` — **9 test lulus** (mulai tanpa 500, tanpa
+bocor kunci, skor benar, 409 setelah selesai, IDOR 403, percobaan ulang terisolasi, soal asing 422,
+siswa tanpa data, admin tanpa 500). Perbaikan tambahan: `tryout_sessions.durasi_menit`/`instruksi`
+(kolom yang dipakai form tapi belum ada) dan `semester_id` nullable.
+
+Bug 500 lain yang ditemukan saat membuat view dan sudah diperbaiki:
+- `TryoutPackageAdminController::showResult()` memuat relasi `answers` yang tidak ada → ditambahkan
+  `Result::answers()` (difilter sesi+siswa+attempt).
+- `TkaAdminController::earlyWarnings()/showWarning()` memuat relasi `element`/`assessment` yang tidak
+  ada → dihapus.
+- Validasi status early warning memakai `notified/in_progress/resolved` padahal enum DB
+  `pending/sedang_diproses/selesai` → diselaraskan (controller + 2 view).
+
+**Verifikasi akhir 20 Okt 2026:** `php artisan test` → **191 test lulus, 0 gagal, 636 assertion,
+~104 s**. `RouteHealthAuditTest` (flag CBT aktif) → **1050 kombinasi, 0 endpoint 5xx**.
+`phpunit.xml` diberi `memory_limit=512M` (sebelumnya fatal 128 MB di dompdf/MenuAudit).
+CI kini menjalankan **seluruh** suite sebagai langkah wajib (bukan lagi dua tahap).
+
+---
+
+## 1d. STATUS FASE 2 — IDOR & PENILAIAN (20 Okt 2026)
+
+| # | Status | Bukti |
+|---|---|---|
+| 2.1 | ✅ | 6 policy dibuat: `CbtQuestionBankPolicy`, `CbtQuestionPolicy`, `CbtTestSessionPolicy`, `CbtResultPolicy`, `TryoutSessionPolicy`, `TryoutResultPolicy`; didaftarkan eksplisit lewat `Gate::policy()` di `AppServiceProvider` |
+| 2.2 | ✅ | `AuthorizesRequests` ditambahkan ke `App\Http\Controllers\Controller`. CBT guru (bank/soal/sesi/integritas), Tryout guru (sesi), dan Tryout siswa memakai `$this->authorize()`. `CbtAuthorizationTest` (6 test) + 2 test IDOR baru di `TryoutTest`: semua **403**, status/jumlah baris tidak berubah |
+| 2.3 | ✅ | `CbtQuestion::$hidden = ['correct_answer']`; test `test_api_soal_guru_pemilik_tidak_memuat_kunci_jawaban`. `TryoutStudentController::submitAnswer` hanya `{success:true}` |
+| 2.4 | ✅ | CBT: jawaban menempel pada `cbt_results.answers` (unique `session_id+siswa_id`), bukan tabel global. Tryout: filter `attempt_number` (test isolasi attempt 1 vs 2) |
+| 2.5 | ✅ CBT / ⏳ Tryout | CBT membekukan `question_snapshot` saat publish dan menilai dari snapshot (`CbtExamTest::test_snapshot_tidak_berubah_saat_bank_diedit`). Tryout belum punya snapshot → Fase 3 |
+| 2.6 | ✅ | `App\Services\TryoutScoring` menilai `pilihan_ganda`, `benar_salah`, `isian_singkat` (normalisasi spasi/huruf); `isian_singkat` kini punya input di `take.blade.php`. Kunci tipe non-PG = opsi `adalah_benar`; tanpa kunci → 0, bukan benar. Unit test Tryout 4; unit test `CbtScoring` lama (6) dipertahankan. CBT hanya pilihan ganda A–D sesuai desain |
+| 2.7 | ✅ OBSOLETE | `CbtSecurityMiddleware` sudah dihapus; route `GET .../result` dapat diakses (CbtExamTest) |
+| 2.8 | ✅ | `Session::canStudentTake()` mengecek `kelas`/`rombel` dan siswa null; test `test_siswa_kelas_lain_tidak_bisa_memulai` |
+
+Tambahan: grup route `admin/cbt` kini juga memakai middleware `module.asesmen` (sebelumnya lolos
+kill-switch). Tidak ada migrasi baru di Fase 2.
+
+**Verifikasi Fase 2:** `php artisan test` → **203 test lulus, 0 gagal, 674 assertion, ~179 s**
+(termasuk `RouteHealthAuditTest`: 0 endpoint 5xx).
+
+---
+
 ## 2. MATRIKS VERIFIKASI (ID ↔ Status ↔ Bukti)
 
 Kode: **RUSAK** = masih belum diperbaiki · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
