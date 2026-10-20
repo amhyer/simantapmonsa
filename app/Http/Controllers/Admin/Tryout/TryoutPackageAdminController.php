@@ -334,7 +334,6 @@ class TryoutPackageAdminController extends Controller
         // End all active results
         $session->results()->whereNull('waktu_selesai')->update([
             'waktu_selesai' => now(),
-            'status' => 'completed',
         ]);
         
         $session->update(['status' => 'completed']);

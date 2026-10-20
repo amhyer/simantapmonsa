@@ -16,7 +16,7 @@ class Session extends Model
     protected $fillable = [
         'uuid', 'kode_sesi', 'nama_sesi', 'package_id',
         'semester_id', 'guru_id', 'kelas', 'rombel_id',
-        'tanggal_mulai', 'tanggal_selesai', 'status'
+        'tanggal_mulai', 'tanggal_selesai', 'durasi_menit', 'instruksi', 'status'
     ];
 
     protected $casts = [
@@ -62,20 +62,36 @@ class Session extends Model
         return $this->hasMany(Result::class, 'tryout_session_id');
     }
 
+    /**
+     * Peserta = percobaan yang benar-benar dibuat siswa pada sesi ini.
+     * (Relasi ini dipakai `showSession()`/view; tanpa ini `count() on null` -> 500.)
+     */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(Result::class, 'tryout_session_id');
+    }
+
     public function isOngoing(): bool
     {
         return $this->status === 'ongoing' &&
                now()->between($this->tanggal_mulai, $this->tanggal_selesai);
     }
 
+    /**
+     * Siswa boleh memulai selama sesi berjalan dan ia berada pada kelas/rombel
+     * sasaran. Percobaan yang belum selesai dilanjutkan (resume); percobaan baru
+     * setelah selesai menjadi attempt berikutnya (tidak menimpa).
+     */
     public function canStudentTake($siswaId): bool
     {
         if (!$this->isOngoing()) return false;
 
-        $attempts = Result::where('tryout_session_id', $this->id)
-                         ->where('siswa_id', $siswaId)
-                         ->count();
+        $siswa = \App\Models\Siswa::find($siswaId);
+        if (!$siswa) return false;
 
-        return $attempts === 0;
+        if ($this->kelas && $siswa->kelas !== $this->kelas) return false;
+        if ($this->rombel_id && (int) $siswa->rombel_id !== (int) $this->rombel_id) return false;
+
+        return true;
     }
 }

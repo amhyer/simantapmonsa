@@ -124,6 +124,13 @@
                                         </label>
                                     </div>
                                 </div>
+                                @elseif($question->tipe_soal === 'isian_singkat')
+                                <div class="options">
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="Tulis jawaban singkat"
+                                           onchange="saveAnswer({{ $result->id }}, {{ $subject->id }}, {{ $question->id }}, this.value)">
+                                </div>
                                 @endif
                             </div>
                             <hr>

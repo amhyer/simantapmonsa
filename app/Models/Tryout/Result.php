@@ -4,6 +4,7 @@ namespace App\Models\Tryout;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Result extends Model
@@ -47,5 +48,16 @@ class Result extends Model
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Siswa::class);
+    }
+
+    /**
+     * Jawaban milik percobaan ini (sesi + siswa + attempt), bukan seluruh
+     * jawaban siswa pada sesi tersebut.
+     */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(StudentAnswer::class, 'tryout_session_id')
+            ->where('siswa_id', $this->siswa_id)
+            ->where('attempt_number', $this->attempt_number);
     }
 }

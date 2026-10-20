@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tryout\Session;
 use App\Models\Tryout\Result;
+use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\Siswa;
+use App\Services\TryoutScoring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -15,8 +16,8 @@ class TryoutStudentController extends Controller
 {
     public function index()
     {
-        $siswa = Siswa::where('nis', auth()->user()->nama_pengguna)->first();
-        
+        $siswa = $this->siswaSaya();
+
         if (!$siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan');
         }
@@ -44,29 +45,44 @@ class TryoutStudentController extends Controller
 
     public function start(Session $session)
     {
-        $siswa = Siswa::where('nis', auth()->user()->nama_pengguna)->first();
+        $siswa = $this->siswaSaya();
+
+        if (!$siswa) {
+            return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan');
+        }
 
         if (!$session->canStudentTake($siswa->id)) {
             return back()->with('error', 'Anda tidak dapat mengikuti tryout ini');
         }
 
-        // Create result record
-        $result = Result::create([
-            'uuid' => Str::uuid(),
-            'tryout_session_id' => $session->id,
-            'siswa_id' => $siswa->id,
-            'attempt_number' => 1,
-            'nilai_total' => 0,
-            'nilai_maksimal' => 0,
-            'persentase' => 0,
-            'lulus' => false,
-            'detail_nilai_mapel' => [],
-            'waktu_mulai' => now(),
-            'waktu_selesai' => null,
-            'durasi_total_detik' => 0,
-        ]);
+        // Lanjutkan percobaan yang belum selesai; kalau tidak ada, buat baru.
+        $result = Result::where('tryout_session_id', $session->id)
+                        ->where('siswa_id', $siswa->id)
+                        ->whereNull('waktu_selesai')
+                        ->latest('id')
+                        ->first();
 
-        // Get all subjects with questions
+        if (!$result) {
+            $attemptNumber = (int) Result::where('tryout_session_id', $session->id)
+                        ->where('siswa_id', $siswa->id)
+                        ->max('attempt_number') + 1;
+
+            $result = Result::create([
+                'uuid' => Str::uuid(),
+                'tryout_session_id' => $session->id,
+                'siswa_id' => $siswa->id,
+                'attempt_number' => $attemptNumber,
+                'nilai_total' => 0,
+                'nilai_maksimal' => 0,
+                'persentase' => 0,
+                'lulus' => false,
+                'detail_nilai_mapel' => [],
+                'waktu_mulai' => now(),
+                'waktu_selesai' => null,
+                'durasi_total_detik' => 0,
+            ]);
+        }
+
         $subjects = $session->package->subjects()->with(['questions.options'])->get();
 
         return view('tryout.student.take', compact('session', 'result', 'subjects'));
@@ -74,36 +90,41 @@ class TryoutStudentController extends Controller
 
     public function submitAnswer(Request $request, Result $result)
     {
+        $this->authorize('answer', $result);
+
+        if ($result->waktu_selesai !== null) {
+            return response()->json(['success' => false, 'message' => 'Tryout sudah diselesaikan'], 409);
+        }
+
+        if (!$result->session->isOngoing()) {
+            return response()->json(['success' => false, 'message' => 'Sesi tryout sudah berakhir'], 409);
+        }
+
         $validated = $request->validate([
             'subject_id' => 'required|exists:tryout_subjects,id',
             'question_id' => 'required|exists:tryout_questions,id',
             'jawaban' => 'required|string',
         ]);
 
-        $question = TryoutQuestion::with('options')->findOrFail($validated['question_id']);
-        
-        // Check if correct
-        $isCorrect = false;
-        $poin = 0;
-        
-        if ($question->tipe_soal === 'pilihan_ganda') {
-            $correctOption = $question->options->where('adalah_benar', true)->first();
-            $isCorrect = $correctOption && $validated['jawaban'] === $correctOption->huruf;
-        } elseif ($question->tipe_soal === 'benar_salah') {
-            $isCorrect = strtolower($validated['jawaban']) === 'benar';
-        }
-        
-        if ($isCorrect) {
-            $poin = $question->poin;
+        // Soal & mapel harus milik paket sesi ini (cegah menyisipkan ID asing).
+        $question = TryoutQuestion::with('options')
+            ->whereKey($validated['question_id'])
+            ->where('tryout_subject_id', $validated['subject_id'])
+            ->whereHas('subject', fn ($q) => $q->where('package_id', $result->session->package_id))
+            ->first();
+
+        if (!$question) {
+            return response()->json(['success' => false, 'message' => 'Soal bukan bagian dari tryout ini'], 422);
         }
 
-        // Save or update answer
+        [$isCorrect, $poin] = TryoutScoring::grade($question, $validated['jawaban']);
+
         StudentAnswer::updateOrCreate(
             [
                 'tryout_session_id' => $result->tryout_session_id,
                 'siswa_id' => $result->siswa_id,
                 'question_id' => $question->id,
-                'attempt_number' => 1,
+                'attempt_number' => $result->attempt_number,
             ],
             [
                 'uuid' => Str::uuid(),
@@ -117,16 +138,18 @@ class TryoutStudentController extends Controller
             ]
         );
 
-        return response()->json(['success' => true, 'is_correct' => $isCorrect, 'poin' => $poin]);
+        // Jangan pernah bocorkan kunci/poin selama ujian berjalan.
+        return response()->json(['success' => true]);
     }
 
     public function complete(Request $request, Result $result)
     {
+        $this->authorize('complete', $result);
+
         if ($result->waktu_selesai) {
             return back()->with('error', 'Tryout sudah diselesaikan');
         }
 
-        // Calculate scores per subject
         $subjects = $result->session->package->subjects()->with(['questions'])->get();
         $detailNilaiMapel = [];
         $totalScore = 0;
@@ -135,6 +158,7 @@ class TryoutStudentController extends Controller
         foreach ($subjects as $subject) {
             $answers = StudentAnswer::where('tryout_session_id', $result->tryout_session_id)
                                    ->where('siswa_id', $result->siswa_id)
+                                   ->where('attempt_number', $result->attempt_number)
                                    ->where('tryout_subject_id', $subject->id)
                                    ->get();
 
@@ -158,13 +182,11 @@ class TryoutStudentController extends Controller
         $persentase = $maxScore > 0 ? ($totalScore / $maxScore * 100) : 0;
         $lulus = $persentase >= $result->session->package->passing_grade;
 
-        // Calculate ranking
         $ranking = Result::where('tryout_session_id', $result->tryout_session_id)
                         ->whereNotNull('waktu_selesai')
                         ->where('nilai_total', '>', $totalScore)
                         ->count() + 1;
 
-        // Analyze weaknesses
         $weakSubjects = collect($detailNilaiMapel)
             ->where('persentase', '<', 60)
             ->sortBy('persentase')
@@ -190,8 +212,15 @@ class TryoutStudentController extends Controller
 
     public function result(Result $result)
     {
+        $this->authorize('view', $result);
+
         $result->load(['session.package.subjects.mataPelajaran', 'siswa']);
-        
+
         return view('tryout.student.result', compact('result'));
+    }
+
+    private function siswaSaya(): ?Siswa
+    {
+        return Siswa::where('nis', auth()->user()->nama_pengguna)->first();
     }
 }
