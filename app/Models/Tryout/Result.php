@@ -60,4 +60,50 @@ class Result extends Model
             ->where('siswa_id', $this->siswa_id)
             ->where('attempt_number', $this->attempt_number);
     }
+
+    // ---------------------------------------------------- nama lama (tampilan)
+    // Halaman admin (`admin.tryout.results.index`) memakai nama kolom lama:
+    // skor_total, jumlah_benar/salah/kosong, waktu_pengerjaan_detik. Sebelumnya
+    // atribut itu tidak ada sehingga tabel & kartu statistik selalu tampil 0.0.
+    // Disajikan sebagai accessor agar skema baru tetap rapi.
+    //
+    // `skor_total` sengaja memetakan **persentase**, bukan poin mentah: kolom
+    // Skor berdampingan dengan badge Lulus/Tidak Lulus yang ambangnya 60, dan
+    // kartu Rata-rata/Tertinggi/Terendah Skor memakai angka yang sama.
+
+    public function getSkorTotalAttribute(): float
+    {
+        return (float) $this->persentase;
+    }
+
+    public function getJumlahBenarAttribute(): int
+    {
+        return $this->hitungJawaban('benar');
+    }
+
+    public function getJumlahSalahAttribute(): int
+    {
+        return $this->hitungJawaban('salah');
+    }
+
+    public function getJumlahKosongAttribute(): int
+    {
+        return $this->hitungJawaban('kosong');
+    }
+
+    public function getWaktuPengerjaanDetikAttribute(): ?int
+    {
+        return $this->durasi_total_detik !== null ? (int) $this->durasi_total_detik : null;
+    }
+
+    private function hitungJawaban(string $jenis): int
+    {
+        $answers = $this->answers()->get(['adalah_benar']);
+
+        return match ($jenis) {
+            'benar' => $answers->where('adalah_benar', true)->count(),
+            'salah' => $answers->where('adalah_benar', false)->count(),
+            default => $answers->whereNull('adalah_benar')->count(),
+        };
+    }
 }

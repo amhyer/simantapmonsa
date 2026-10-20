@@ -20,6 +20,7 @@ class CbtTestSession extends Model
     }
 
     protected $hidden = ['question_snapshot', 'participant_ids'];
+    public function guru() { return $this->belongsTo(User::class, 'guru_id'); }
     public function bank() { return $this->belongsTo(CbtQuestionBank::class, 'bank_id'); }
     public function results() { return $this->hasMany(CbtResult::class, 'session_id'); }
 }

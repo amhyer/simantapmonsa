@@ -1,0 +1,239 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\CbtQuestionBank;
+use App\Models\CbtResult;
+use App\Models\CbtTestSession;
+use App\Models\MataPelajaran;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\Tryout\Category;
+use App\Models\Tryout\Package;
+use App\Models\Tryout\Result as TryoutResult;
+use App\Models\Tryout\Session as TryoutSession;
+use App\Models\Tryout\StudentAnswer;
+use App\Models\Tryout\Subject;
+use App\Models\Tryout\TryoutQuestion;
+use App\Models\User;
+use App\Services\CbtExamService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Fase 3, langkah 5b: mengunci keluaran pembaca lama (laporan/ekspor/dasbor).
+ *
+ * Pembaca ini sebelumnya tanpa test. Sebelum dipindahkan ke engine terpadu,
+ * keluarannya harus dibekukan lebih dulu supaya perubahan tidak bisa
+ * menyelundupkan regresi diam-diam.
+ */
+class ExamReaderTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $guru;
+    private User $admin;
+    private User $akun;
+    private Siswa $siswa;
+    private array $previousFlag;
+
+    protected function setUp(): void
+    {
+        $this->previousFlag = [getenv('SIMANTAP_CBT_ENABLED'), $_ENV['SIMANTAP_CBT_ENABLED'] ?? null, $_SERVER['SIMANTAP_CBT_ENABLED'] ?? null];
+        putenv('SIMANTAP_CBT_ENABLED=true');
+        $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
+        \Illuminate\Support\Env::enablePutenv();
+
+        parent::setUp();
+        config(['simantap.cbt_enabled' => true, 'simantap.exam_engine_cbt' => true, 'simantap.exam_engine_tryout' => true]);
+
+        $this->guru = User::factory()->guru()->create();
+        $this->admin = User::factory()->admin()->create();
+        $this->siswa = Siswa::create([
+            'guru_id' => $this->guru->id, 'nama_guru' => $this->guru->nama_lengkap,
+            'nis' => 'RDR001', 'nama_peserta_didik' => 'Siswa Pembaca', 'kelas' => '6A',
+            'jenis_kelamin' => 'L', 'aktif' => true,
+        ]);
+        $this->akun = User::factory()->siswa()->create(['nama_pengguna' => $this->siswa->nis]);
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        [$env, $arrayEnv, $server] = $this->previousFlag;
+        $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
+        if ($arrayEnv === null) { unset($_ENV['SIMANTAP_CBT_ENABLED']); } else { $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv; }
+        if ($server === null) { unset($_SERVER['SIMANTAP_CBT_ENABLED']); } else { $_SERVER['SIMANTAP_CBT_ENABLED'] = $server; }
+        \Illuminate\Support\Env::enablePutenv();
+    }
+
+    /** Selesaikan satu ujian CBT penuh (2 soal, 1 benar) → skor 50. */
+    private function selesaikanCbt(): CbtTestSession
+    {
+        $bank = CbtQuestionBank::create(['guru_id' => $this->guru->id, 'title' => 'IPA', 'subject' => 'IPA']);
+        $bank->questions()->createMany([
+            ['prompt' => 'Soal satu', 'options' => ['A' => 'a', 'B' => 'b', 'C' => 'c', 'D' => 'd'], 'correct_answer' => 'A'],
+            ['prompt' => 'Soal dua', 'options' => ['A' => 'a', 'B' => 'b', 'C' => 'c', 'D' => 'd'], 'correct_answer' => 'B'],
+        ]);
+
+        $session = CbtTestSession::create([
+            'guru_id' => $this->guru->id, 'bank_id' => $bank->id, 'title' => 'Ujian IPA',
+            'kelas' => '6A', 'opens_at' => now()->subMinute(), 'closes_at' => now()->addHours(2),
+            'duration_minutes' => 60,
+        ]);
+        $exam = app(CbtExamService::class);
+        $exam->publish($session);
+        $exam->open($session);
+
+        $this->actingAs($this->akun)->post(route('cbt.student.begin', $session));
+        $result = CbtResult::firstOrFail();
+        [$q1, $q2] = $session->fresh()->question_snapshot;
+        $this->actingAs($this->akun)->postJson(route('cbt.student.answer', $result), ['question_id' => $q1['id'], 'answer' => 'A']);
+        $this->actingAs($this->akun)->postJson(route('cbt.student.answer', $result), ['question_id' => $q2['id'], 'answer' => 'A']);
+        $this->actingAs($this->akun)->post(route('cbt.student.submit', $result));
+
+        return $session->fresh();
+    }
+
+    /** Selesaikan satu tryout penuh (1 soal, benar) → 100%. */
+    private function selesaikanTryout(): TryoutResult
+    {
+        $semester = Semester::create([
+            'semester_id' => '2026-1', 'tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil',
+        ]);
+        $mapel = MataPelajaran::create(['nama' => 'Matematika', 'jenjang' => 'SD']);
+        $kategori = Category::create(['nama_kategori' => 'Akademik']);
+        $paket = Package::create([
+            'category_id' => $kategori->id, 'kode_paket' => 'PKT-R', 'nama_paket' => 'Paket Pembaca',
+            'jenjang' => 'SD', 'tahun_paket' => 2026, 'durasi_total_menit' => 60, 'passing_grade' => 60,
+        ]);
+        $subject = Subject::create([
+            'package_id' => $paket->id, 'mata_pelajaran_id' => $mapel->id, 'durasi_menit' => 30,
+        ]);
+        $soal = TryoutQuestion::create([
+            'tryout_subject_id' => $subject->id, 'tipe_soal' => 'pilihan_ganda',
+            'pertanyaan' => 'Dua tambah dua?', 'poin' => 1,
+        ]);
+        $soal->options()->createMany([
+            ['huruf' => 'A', 'isi_opsi' => 'Empat', 'adalah_benar' => true],
+            ['huruf' => 'B', 'isi_opsi' => 'Lima', 'adalah_benar' => false],
+        ]);
+
+        $sesi = TryoutSession::create([
+            'kode_sesi' => 'SESI-R', 'nama_sesi' => 'Tryout Pembaca', 'package_id' => $paket->id,
+            'semester_id' => $semester->id, 'guru_id' => $this->guru->id, 'kelas' => '6A',
+            'tanggal_mulai' => now()->subMinute(), 'tanggal_selesai' => now()->addHour(),
+            'durasi_menit' => 30, 'status' => 'ongoing',
+        ]);
+
+        $this->actingAs($this->akun)->get(route('tryout.student.start', $sesi));
+        $result = TryoutResult::where('tryout_session_id', $sesi->id)->firstOrFail();
+        $this->actingAs($this->akun)->postJson(route('tryout.student.answer', $result), [
+            'subject_id' => $subject->id, 'question_id' => $soal->id, 'jawaban' => 'A',
+        ]);
+        $this->actingAs($this->akun)->post(route('tryout.student.complete', $result));
+
+        return $result->fresh();
+    }
+
+    // ------------------------------------------------------------- pembaca
+
+    public function test_ekspor_csv_cbt_memuat_nilai_dan_pelanggaran(): void
+    {
+        $session = $this->selesaikanCbt();
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.cbt.sessions.export', [$session, 'csv']))
+            ->assertOk();
+
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString('Sesi', $csv);
+        $this->assertStringContainsString('Siswa Pembaca', $csv);
+        $this->assertStringContainsString('RDR001', $csv);
+        // 1 benar dari 2 → 50.
+        $this->assertStringContainsString('50', $csv);
+    }
+
+    public function test_halaman_hasil_tryout_admin_menampilkan_nilai_benar(): void
+    {
+        $result = $this->selesaikanTryout();
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.index'))
+            ->assertOk()
+            ->assertSee('Siswa Pembaca')
+            ->assertSee('Paket Pembaca');
+
+        // Nilai sebenarnya (persentase 100%) & hitungan jawaban harus tampil,
+        // bukan 0.0 dan kosong seperti sebelum accessor ditambahkan.
+        $html = $response->getContent();
+        $this->assertStringContainsString('100.0', $html);
+        $this->assertSame(100.0, $result->skor_total);
+        $this->assertSame(100.0, $result->persentase);
+        $this->assertSame(1.0, $result->nilai_total);
+        $this->assertSame(1, $result->jumlah_benar);
+        $this->assertSame(0, $result->jumlah_salah);
+        $this->assertSame(0, $result->jumlah_kosong);
+        $this->assertNotNull($result->waktu_pengerjaan_detik);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.show', $result))
+            ->assertOk();
+    }
+
+    public function test_dasbor_ortu_menampilkan_hasil_cbt_anak(): void
+    {
+        $this->selesaikanCbt();
+
+        $ortu = User::factory()->ortu()->create(['terhubung_dengan' => [$this->siswa->id]]);
+
+        $this->actingAs($ortu)
+            ->get(route('ortu.dashboard'))
+            ->assertOk()
+            ->assertSee('Ujian IPA');
+    }
+
+    /**
+     * Langkah 5b: pembaca pengganti murni `exam_*` harus menghasilkan laporan
+     * yang sama dengan jalur lama, supaya tabel `cbt_*` boleh dihapus (langkah 6).
+     */
+    public function test_ekspor_dari_engine_sama_dengan_ekspor_lama(): void
+    {
+        $session = $this->selesaikanCbt();
+
+        $lama = $this->parseCsv($this->actingAs($this->admin)
+            ->get(route('admin.cbt.sessions.export', [$session, 'csv']))
+            ->assertOk()
+            ->streamedContent());
+
+        $baru = $this->parseCsv($this->actingAs($this->admin)
+            ->get(route('admin.cbt.sessions.export-engine', [$session, 'csv']))
+            ->assertOk()
+            ->streamedContent());
+
+        $this->assertCount(2, $baru); // header + 1 peserta
+        $this->assertSame($lama[0], $baru[0]);
+
+        // Bandingkan seluruh kolom kecuali "Pelanggaran" (kolom terakhir) yang
+        // belum dipetakan ke engine.
+        $this->assertSame(
+            array_slice($lama[1], 0, -1),
+            array_slice($baru[1], 0, -1),
+            'Laporan engine harus identik dengan laporan lama.'
+        );
+        $this->assertSame('Siswa Pembaca', $baru[1][1]);
+        $this->assertSame('50', (string) $baru[1][6]);
+    }
+
+    /** @return array<int, array<int, string|null>> */
+    private function parseCsv(string $csv): array
+    {
+        $rows = [];
+        foreach (array_filter(explode("\n", trim($csv))) as $line) {
+            $rows[] = str_getcsv($line);
+        }
+
+        return $rows;
+    }
+}
