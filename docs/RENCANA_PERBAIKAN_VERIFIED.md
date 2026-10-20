@@ -153,6 +153,28 @@ kill-switch). Tidak ada migrasi baru di Fase 2.
 
 ---
 
+## 1e. STATUS FASE 3 — FONDASI ENGINE TERPADU (20 Okt 2026)
+
+Lingkup sesi ini: **langkah 1–3 + parity test**. Langkah memindahkan rute/tampilan
+dan menghapus tabel lama sengaja **belum** dikerjakan (butuh keputusan produk +
+rikonsiliasi data produksi).
+
+| Langkah dokumen | Status | Bukti |
+|---|---|---|
+| (1) Tabel baru `exam_*` | ✅ | migrasi `2026_10_20_000002_create_exam_engine_tables.php`: `exam_engines`, `exam_banks`, `exam_sections`, `exam_questions`, `exam_question_options`, `exam_sessions`, `exam_attempts`, `exam_answers`, `exam_results` (+ model & relasi di `App\Models\Exam`) |
+| (2) Backfill dari `cbt_*` + `tryout_*` | ✅ | `php artisan exam:backfill [--only=cbt|tryout]`, idempoten lewat jejak `sumber_tabel`+`sumber_id`; **tidak pernah menulis/menghapus tabel lama** |
+| (3) Satu `ExamGradingService` | ✅ | `app/Services/ExamGradingService.php` menyatukan aturan `CbtScoring` (pilihan ganda) & `TryoutScoring` (benar_salah/isian_singkat + normalisasi); `essay` = menunggu penilaian manual; kunci eksplisit (`exam_questions.kunci_jawaban`) diutamakan di atas opsi `adalah_benar` |
+| (4) Parity test | ✅ | `tests/Unit/ExamGradingParityTest.php` (5 test: parity vs kedua penilai lama, prioritas kunci, essay, normalisasi) + `tests/Feature/ExamEngineFoundationTest.php` (4 test: skema, relasi, kunci tak ikut serialisasi, backfill idempoten) |
+| (5) Arahkan rute/tampilan | ⏳ belum | menunggu langkah berikutnya |
+| (6) Drop tabel lama | ⏳ belum | menunggu (4) + (5) hijau di produksi |
+
+Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
+dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
+
+**Verifikasi Fase 3:** `php artisan test` → **218 test lulus, 0 gagal, 800 assertion, ~136 s**.
+
+---
+
 ## 2. MATRIKS VERIFIKASI (ID ↔ Status ↔ Bukti)
 
 Kode: **RUSAK** = masih belum diperbaiki · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
