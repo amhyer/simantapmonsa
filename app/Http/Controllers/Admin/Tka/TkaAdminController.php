@@ -221,7 +221,7 @@ class TkaAdminController extends Controller
      */
     public function earlyWarnings(Request $request)
     {
-        $query = EarlyWarning::with(['siswa', 'semester', 'dimension', 'element', 'handler']);
+        $query = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -267,7 +267,7 @@ class TkaAdminController extends Controller
      */
     public function showWarning(EarlyWarning $warning)
     {
-        $warning->load(['siswa', 'dimension', 'element', 'handler', 'assessment']);
+        $warning->load(['siswa', 'dimension', 'handler']);
         
         return view('admin.tka.warnings.show', compact('warning'));
     }
@@ -278,14 +278,14 @@ class TkaAdminController extends Controller
     public function updateWarningStatus(Request $request, EarlyWarning $warning)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,notified,in_progress,resolved',
+            'status' => 'required|in:pending,sedang_diproses,selesai',
             'ditangani_oleh' => 'nullable|exists:users,id',
         ]);
 
         $warning->update([
             'status' => $validated['status'],
             'ditangani_oleh' => $validated['ditangani_oleh'] ?? auth()->id(),
-            'tanggal_selesai' => $validated['status'] === 'resolved' ? now() : null,
+            'tanggal_selesai' => $validated['status'] === 'selesai' ? now() : null,
         ]);
 
         return back()->with('success', 'Status early warning berhasil diperbarui');

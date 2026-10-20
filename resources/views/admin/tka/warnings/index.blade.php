@@ -34,9 +34,8 @@
                     <select name="status" class="form-select">
                         <option value="">Semua Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="notified" {{ request('status') == 'notified' ? 'selected' : '' }}>Notified</option>
-                        <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                        <option value="sedang_diproses" {{ request('status') == 'sedang_diproses' ? 'selected' : '' }}>Sedang Diproses</option>
+                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
                 </div>
                 
@@ -111,24 +110,24 @@
         <div class="col-md-2 mb-2">
             <div class="card bg-info text-white">
                 <div class="card-body py-2">
-                    <small>Notified</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'notified')->count() }}</h4>
+                    <small>Sedang Diproses</small>
+                    <h4 class="mb-0">{{ $warnings->where('status', 'sedang_diproses')->count() }}</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-2 mb-2">
             <div class="card bg-primary text-white">
                 <div class="card-body py-2">
-                    <small>In Progress</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'in_progress')->count() }}</h4>
+                    <small>Sedang Diproses</small>
+                    <h4 class="mb-0">{{ $warnings->where('status', 'sedang_diproses')->count() }}</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-2 mb-2">
             <div class="card bg-success text-white">
                 <div class="card-body py-2">
-                    <small>Resolved</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'resolved')->count() }}</h4>
+                    <small>Selesai</small>
+                    <h4 class="mb-0">{{ $warnings->where('status', 'selesai')->count() }}</h4>
                 </div>
             </div>
         </div>
@@ -171,15 +170,13 @@
                         @php
                         $statusColors = [
                             'pending' => 'warning',
-                            'notified' => 'info',
-                            'in_progress' => 'primary',
-                            'resolved' => 'success',
+                            'sedang_diproses' => 'info',
+                            'selesai' => 'success',
                         ];
                         $statusLabels = [
                             'pending' => 'Pending',
-                            'notified' => 'Notified',
-                            'in_progress' => 'In Progress',
-                            'resolved' => 'Resolved',
+                            'sedang_diproses' => 'Sedang Diproses',
+                            'selesai' => 'Selesai',
                         ];
                         $tingkatColors = [
                             'ringan' => 'info',
@@ -212,12 +209,12 @@
                                    class="btn btn-sm btn-info" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                @if($warning->status !== 'resolved')
+                                @if($warning->status !== 'selesai')
                                 <form action="{{ route('admin.tka.warnings.update-status', $warning) }}" 
                                       method="POST" style="display:inline">
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="status" value="{{ $warning->status === 'pending' ? 'notified' : ($warning->status === 'notified' ? 'in_progress' : 'resolved') }}">
+                                    <input type="hidden" name="status" value="{{ $warning->status === 'pending' ? 'sedang_diproses' : 'selesai' }}">
                                     <button type="submit" class="btn btn-sm btn-success" title="Update Status">
                                         <i class="fas fa-arrow-right"></i>
                                     </button>
