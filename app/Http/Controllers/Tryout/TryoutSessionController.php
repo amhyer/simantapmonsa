@@ -65,6 +65,7 @@ class TryoutSessionController extends Controller
 
     public function show(Session $session)
     {
+        $this->authorize('view', $session);
         $session->load(['package.subjects.mataPelajaran', 'semester', 'guru', 'rombel']);
         $results = $session->results()->with('siswa')->paginate(20);
         
@@ -73,24 +74,28 @@ class TryoutSessionController extends Controller
 
     public function publish(Session $session)
     {
+        $this->authorize('publish', $session);
         $session->update(['status' => 'published']);
         return back()->with('success', 'Sesi tryout dipublikasikan');
     }
 
     public function start(Session $session)
     {
+        $this->authorize('start', $session);
         $session->update(['status' => 'ongoing']);
         return back()->with('success', 'Sesi tryout dimulai');
     }
 
     public function complete(Session $session)
     {
+        $this->authorize('complete', $session);
         $session->update(['status' => 'completed']);
         return back()->with('success', 'Sesi tryout selesai');
     }
 
     public function monitoring(Session $session)
     {
+        $this->authorize('monitoring', $session);
         $session->load(['package.subjects', 'results.siswa']);
         
         $activeStudents = $session->results()
@@ -109,6 +114,7 @@ class TryoutSessionController extends Controller
 
     public function apiMonitoring(Session $session)
     {
+        $this->authorize('monitoring', $session);
         $active = $session->results()
                          ->whereNull('waktu_selesai')
                          ->with('siswa')

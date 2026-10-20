@@ -4,9 +4,16 @@ namespace App\Providers;
 
 use App\Models\DapodikSyncLog;
 use App\Models\Siswa;
+use App\Policies\CbtQuestionBankPolicy;
+use App\Policies\CbtQuestionPolicy;
+use App\Policies\CbtResultPolicy;
+use App\Policies\CbtTestSessionPolicy;
+use App\Policies\TryoutResultPolicy;
+use App\Policies\TryoutSessionPolicy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +33,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Policies modul asesmen (Fase 2). Didaftarkan eksplisit agar model
+        // bernamespace (Tryout\*) tidak bergantung pada auto-discovery.
+        Gate::policy(\App\Models\CbtQuestionBank::class, CbtQuestionBankPolicy::class);
+        Gate::policy(\App\Models\CbtQuestion::class, CbtQuestionPolicy::class);
+        Gate::policy(\App\Models\CbtTestSession::class, CbtTestSessionPolicy::class);
+        Gate::policy(\App\Models\CbtResult::class, CbtResultPolicy::class);
+        Gate::policy(\App\Models\Tryout\Session::class, TryoutSessionPolicy::class);
+        Gate::policy(\App\Models\Tryout\Result::class, TryoutResultPolicy::class);
+
         // Share activeTab with all views for admin routes
         View::share('activeTab', activeAdminTab());
 

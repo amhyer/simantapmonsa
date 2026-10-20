@@ -15,11 +15,6 @@ class CbtTestSessionController extends Controller
 {
     public function __construct(private CbtExamService $exam) {}
 
-    private function own(CbtTestSession $session): void
-    {
-        abort_unless((int) $session->guru_id === (int) auth()->id(), 403);
-    }
-
     public function index()
     {
         $sessions = CbtTestSession::where('guru_id', auth()->id())->withCount('results')->latest()->paginate(20);
@@ -51,41 +46,41 @@ class CbtTestSessionController extends Controller
 
     public function show(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('view', $session);
         return view('cbt.sessions.show', compact('session'));
     }
 
     public function publish(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('publish', $session);
         $this->exam->publish($session);
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dipublikasikan; soal dan peserta telah dibekukan.');
     }
 
     public function start(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('start', $session);
         $this->exam->open($session);
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dibuka. Siswa dapat mulai sesuai jadwal.');
     }
 
     public function complete(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('complete', $session);
         $this->exam->complete($session);
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi ditutup dan jawaban tersimpan dinilai.');
     }
 
     public function monitoring(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('monitoring', $session);
         $results = $session->results()->with('siswa')->withCount('violations')->orderBy('id')->paginate(50);
         return view('cbt.sessions.monitoring', compact('session', 'results'));
     }
 
     public function apiMonitoring(CbtTestSession $session)
     {
-        $this->own($session);
+        $this->authorize('monitoring', $session);
         $results = $session->results()->with('siswa')->withCount('violations')->orderBy('id')->paginate(50);
         return response()->json([
             'status' => $session->status,

@@ -15,7 +15,7 @@ class CbtIntegrityController extends Controller
     // Telemetri bersifat indikasi, BUKAN bukti kecurangan atau alasan nilai nol.
     public function logViolation(Request $request, CbtResult $result)
     {
-        abort_unless((int) $result->user_id === (int) auth()->id(), 403);
+        $this->authorize('recordViolation', $result);
         $student = Siswa::find($result->siswa_id);
         abort_unless($student && $this->exam->eligible($result->session, $student), 403);
         $data = $request->validate(['type' => 'required|in:tab_hidden,fullscreen_exit']);
@@ -25,7 +25,7 @@ class CbtIntegrityController extends Controller
 
     public function getViolations(CbtResult $result)
     {
-        abort_unless((int) $result->session->guru_id === (int) auth()->id(), 403);
+        $this->authorize('viewViolations', $result);
         return response()->json($result->violations()->latest('id')->paginate(50));
     }
 }

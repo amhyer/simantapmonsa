@@ -29,9 +29,7 @@ class CbtStudentController extends Controller
 
     private function own(CbtResult $result): void
     {
-        $student = $this->student();
-        abort_unless((int) $result->siswa_id === (int) $student->id && (int) $result->user_id === (int) auth()->id(), 403);
-        abort_unless($this->exam->eligible($result->session, $student), 403);
+        $this->authorize('answer', $result);
     }
 
     public function index()
@@ -91,7 +89,7 @@ class CbtStudentController extends Controller
 
     public function result(CbtResult $result)
     {
-        $this->own($result);
+        $this->authorize('view', $result);
         $result = $this->exam->syncResult($result);
         $session = $result->session;
         return view('cbt.student.result', compact('result', 'session'));

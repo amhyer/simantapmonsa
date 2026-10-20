@@ -23,7 +23,6 @@ class CbtQuestionController extends Controller
 
     private function mutate(CbtQuestionBank $bank, callable $callback): void
     {
-        abort_unless((int) $bank->guru_id === (int) auth()->id(), 403);
         DB::transaction(function () use ($bank, $callback) {
             $locked = CbtQuestionBank::whereKey($bank->id)->lockForUpdate()->firstOrFail();
             $callback($locked);
@@ -32,7 +31,7 @@ class CbtQuestionController extends Controller
 
     public function store(Request $request, CbtQuestionBank $bank)
     {
-        abort_unless((int) $bank->guru_id === (int) auth()->id(), 403);
+        $this->authorize('update', $bank);
         $data = $this->data($request);
         $this->mutate($bank, function ($locked) use ($data) {
             abort_if($locked->questions()->count() >= 200, 422, 'Maksimal 200 soal per bank.');
@@ -43,8 +42,8 @@ class CbtQuestionController extends Controller
 
     public function update(Request $request, CbtQuestion $question)
     {
+        $this->authorize('update', $question);
         $bank = $question->bank;
-        abort_unless((int) $bank->guru_id === (int) auth()->id(), 403);
         $data = $this->data($request);
         $this->mutate($bank, fn () => $question->update($data));
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal diperbarui.');
@@ -52,6 +51,7 @@ class CbtQuestionController extends Controller
 
     public function destroy(CbtQuestion $question)
     {
+        $this->authorize('delete', $question);
         $bank = $question->bank;
         $this->mutate($bank, fn () => $question->delete());
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal dihapus.');

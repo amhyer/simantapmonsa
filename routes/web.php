@@ -484,7 +484,7 @@ if (config('simantap.cbt_enabled', false)) {
 }
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
     // Question Banks
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');
