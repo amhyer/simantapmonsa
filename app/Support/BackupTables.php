@@ -98,6 +98,21 @@ class BackupTables
             'cbt_results' => ['class' => \App\Models\CbtResult::class, 'except' => []],
             'cbt_violations' => ['class' => \App\Models\CbtViolation::class, 'except' => []],
 
+            // Engine ujian terpadu (Fase 3): urutan induk -> anak. Tanpa entri
+            // ini, hasil ujian baru hilang permanen setelah wipe + restore,
+            // karena `exam_*` tidak masuk backup sedangkan `cbt_*`/`tryout_*`
+            // hanyalah cermin yang bisa kosong pada alur engine.
+            'exam_engines' => ['class' => \App\Models\Exam\Engine::class, 'except' => []],
+            'exam_banks' => ['class' => \App\Models\Exam\Bank::class, 'except' => []],
+            'exam_sections' => ['class' => \App\Models\Exam\Section::class, 'except' => []],
+            'exam_questions' => ['class' => \App\Models\Exam\Question::class, 'except' => []],
+            'exam_question_options' => ['class' => \App\Models\Exam\QuestionOption::class, 'except' => []],
+            'exam_sessions' => ['class' => \App\Models\Exam\Session::class, 'except' => []],
+            'exam_attempts' => ['class' => \App\Models\Exam\Attempt::class, 'except' => []],
+            'exam_answers' => ['class' => \App\Models\Exam\Answer::class, 'except' => []],
+            'exam_results' => ['class' => \App\Models\Exam\Result::class, 'except' => []],
+            'exam_violations' => ['class' => \App\Models\Exam\Violation::class, 'except' => []],
+
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],
             'aktivitas' => ['class' => Aktivitas::class, 'except' => []],

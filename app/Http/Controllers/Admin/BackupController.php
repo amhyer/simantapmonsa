@@ -190,6 +190,11 @@ class BackupController extends Controller
         // (migrations, jobs, cache, sessions, telescope, dsb).
         $tabelData = [
             'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
+            // Engine ujian terpadu (Fase 3) kini sumber kebenaran; tabel cbt_*/
+            // tryout_* hanya cermin, jadi keduanya harus ikut dikosongkan agar
+            // tidak tersisa keadaan setengah (engine kosong, cermin terisi).
+            'exam_violations', 'exam_results', 'exam_answers', 'exam_attempts', 'exam_sessions',
+            'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks', 'exam_engines',
             'siswa', 'orang_tua_siswa', 'nilai', 'nilai_erapor', 'nilai_mapel',
             'nilai_cp', 'capaian_pembelajaran', 'kehadiran', 'hasil_kuis',
             'kuis', 'materi', 'catatan', 'dimensi', 'kebiasaan', 'ptk',

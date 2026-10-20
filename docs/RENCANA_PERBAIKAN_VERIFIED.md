@@ -168,7 +168,9 @@ sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produks
 | (5) Arahkan rute/tampilan — **Tryout** | ✅ | alur siswa Tryout (`start`→`answer`→`resume`→`complete`) kini menulis ke `exam_*` lewat `TryoutEngineBridge`; tabel `tryout_*` tetap ditulis sebagai **cermin** agar laporan/ekspor/admin yang belum dipindahkan tetap benar. Bukti: `tests/Feature/TryoutEngineParityTest.php` (4 test) + 12 test `TryoutTest` lama tetap hijau tanpa perubahan assertion |
 | (5) Arahkan rute/tampilan — **CBT** | ✅ | `CbtExamService` tetap pemilik siklus (kunci, kedaluwarsa, deadline, idempotensi) lalu menulis lewat `CbtEngineBridge` ke `exam_*`; tabel `cbt_*` tetap dicerminkan. Kunci dibekukan dari `question_snapshot` ke `exam_questions.kunci_jawaban` agar mengedit bank setelah publikasi tidak menggeser nilai. Bukti: `tests/Feature/CbtEngineParityTest.php` (5 test) + 28 test `CbtExamTest` lama tetap hijau |
 | (5b) Sisa tampilan lain (ekspor/laporan) | ✅ | pembaca lama dikunci lebih dulu dengan `tests/Feature/ExamReaderTest.php` (ekspor CSV CBT, halaman hasil Tryout admin, dasbor ortu) — sebelumnya **tanpa test sama sekali**. Disusul pembaca pengganti murni `exam_*` (`ExamReportService` + rute `admin.cbt.sessions.export-engine`) yang keluarannya **identik** dengan jalur lama (diuji parity). Jalur lama tetap dipakai di produksi sebagai pembanding. |
-| (6) Drop tabel lama | ⏳ belum | pembaca pengganti sudah terbukti setara; menunggu rikonsiliasi data produksi |
+| (5c) Pelanggaran CBT ke engine | ✅ | tabel `exam_violations` baru (migrasi aditif, jejak `sumber_tabel`/`sumber_id`), ditulis lewat `CbtEngineBridge::catatPelanggaran` di alur langsung dan dipetakan ulang oleh `exam:backfill`. Kolom **Pelanggaran** pada ekspor engine kini terisi dan ikut diuji parity penuh (seluruh kolom identik). |
+| (5d) Cakupan backup `exam_*` | ✅ | seluruh 10 tabel `exam_*` didaftarkan di `BackupTables` **dan** daftar wipe `$tabelData`, sehingga backup/restore tidak lagi kehilangan data engine (sebelumnya tidak tercadang maupun terhapus → keadaan setengah saat wipe). Diperiksa rule cakupan: 46 tabel di-wipe, semuanya tercakup. |
+| (6) Drop tabel lama | ⏳ belum | pembaca pengganti sudah terbukti setara & `exam_*` sudah tercadang; menunggu rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
@@ -191,7 +193,18 @@ lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
 desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
 (diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
 
-**Verifikasi Fase 3:** `php artisan test` → **231 test lulus, 0 gagal, 886 assertion, ~138 s**.
+**Verifikasi Fase 3:** `php artisan test` → **233 test lulus, 0 gagal, 898 assertion, ~220 s**.
+
+Pelanggaran CBT kini juga bermukim di engine (`exam_violations`, ditulis di alur
+langsung lewat `CbtEngineBridge::catatPelanggaran` dan dipetakan ulang oleh
+`exam:backfill`), sehingga ekspor pengganti murni `exam_*` identik dengan jalur
+lama **pada seluruh kolom**, termasuk kolom Pelanggaran.
+
+Seluruh 10 tabel `exam_*` juga didaftarkan di `App\Support\BackupTables` **dan**
+daftar wipe `$tabelData`. Sebelumnya keduanya luput: backup tidak memuat data
+engine, dan "Hapus Semua Data" tidak mengosongkannya — sehingga wipe + restore
+kehilangan hasil ujian. Aturan cakupan (`tools/verifikasi-perbaikan.php` §8)
+memverifikasi 46 tabel di-wipe semuanya tercadang atau dikecualikan.
 
 Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
 
