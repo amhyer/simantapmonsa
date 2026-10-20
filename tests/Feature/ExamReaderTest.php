@@ -67,8 +67,8 @@ class ExamReaderTest extends TestCase
         \Illuminate\Support\Env::enablePutenv();
     }
 
-    /** Selesaikan satu ujian CBT penuh (2 soal, 1 benar) → skor 50. */
-    private function selesaikanCbt(): CbtTestSession
+    /** Mulai satu ujian CBT dan jawab 2 soal (1 benar). Belum disubmit. */
+    private function mulaiCbt(): CbtTestSession
     {
         $bank = CbtQuestionBank::create(['guru_id' => $this->guru->id, 'title' => 'IPA', 'subject' => 'IPA']);
         $bank->questions()->createMany([
@@ -90,9 +90,17 @@ class ExamReaderTest extends TestCase
         [$q1, $q2] = $session->fresh()->question_snapshot;
         $this->actingAs($this->akun)->postJson(route('cbt.student.answer', $result), ['question_id' => $q1['id'], 'answer' => 'A']);
         $this->actingAs($this->akun)->postJson(route('cbt.student.answer', $result), ['question_id' => $q2['id'], 'answer' => 'A']);
-        $this->actingAs($this->akun)->post(route('cbt.student.submit', $result));
 
         return $session->fresh();
+    }
+
+    /** Selesaikan satu ujian CBT penuh (2 soal, 1 benar) → skor 50. */
+    private function selesaikanCbt(): CbtTestSession
+    {
+        $session = $this->mulaiCbt();
+        $this->actingAs($this->akun)->post(route('cbt.student.submit', CbtResult::firstOrFail()));
+
+        return $session;
     }
 
     /** Selesaikan satu tryout penuh (1 soal, benar) → 100%. */
@@ -200,7 +208,15 @@ class ExamReaderTest extends TestCase
      */
     public function test_ekspor_dari_engine_sama_dengan_ekspor_lama(): void
     {
-        $session = $this->selesaikanCbt();
+        $session = $this->mulaiCbt();
+
+        // Catat satu pelanggaran (sebelum submit) agar kolomnya juga dibandingkan.
+        $result = CbtResult::firstOrFail();
+        $this->actingAs($this->akun)
+            ->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])
+            ->assertOk();
+
+        $this->actingAs($this->akun)->post(route('cbt.student.submit', $result));
 
         $lama = $this->parseCsv($this->actingAs($this->admin)
             ->get(route('admin.cbt.sessions.export', [$session, 'csv']))
@@ -215,15 +231,43 @@ class ExamReaderTest extends TestCase
         $this->assertCount(2, $baru); // header + 1 peserta
         $this->assertSame($lama[0], $baru[0]);
 
-        // Bandingkan seluruh kolom kecuali "Pelanggaran" (kolom terakhir) yang
-        // belum dipetakan ke engine.
-        $this->assertSame(
-            array_slice($lama[1], 0, -1),
-            array_slice($baru[1], 0, -1),
-            'Laporan engine harus identik dengan laporan lama.'
-        );
+        // Seluruh kolom (termasuk Pelanggaran) harus identik.
+        $this->assertSame($lama[1], $baru[1], 'Laporan engine harus identik dengan laporan lama.');
         $this->assertSame('Siswa Pembaca', $baru[1][1]);
         $this->assertSame('50', (string) $baru[1][6]);
+        $this->assertSame('1', (string) $baru[1][7]);
+    }
+
+    /** Pelanggaran harus tercermin ke `exam_violations`. */
+    public function test_pelanggaran_cbt_masuk_engine(): void
+    {
+        $this->mulaiCbt();
+        $result = CbtResult::firstOrFail();
+
+        $this->actingAs($this->akun)
+            ->postJson(route('cbt.student.integrity', $result), ['type' => 'fullscreen_exit'])
+            ->assertOk();
+
+        $this->assertSame(1, \App\Models\Exam\Violation::count());
+        $violation = \App\Models\Exam\Violation::firstOrFail();
+        $this->assertSame('fullscreen_exit', $violation->tipe);
+        $this->assertSame('cbt_violations', $violation->sumber_tabel);
+        $this->assertSame('cbt_results', $violation->attempt->sumber_tabel);
+    }
+
+    /** Flag mati: pelanggaran tidak boleh menyentuh `exam_violations`. */
+    public function test_pelanggaran_tidak_masuk_engine_saat_flag_mati(): void
+    {
+        config(['simantap.exam_engine_cbt' => false]);
+        $this->mulaiCbt();
+        $result = CbtResult::firstOrFail();
+
+        $this->actingAs($this->akun)
+            ->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])
+            ->assertOk();
+
+        $this->assertSame(1, \App\Models\CbtViolation::count());
+        $this->assertSame(0, \App\Models\Exam\Violation::count());
     }
 
     /** @return array<int, array<int, string|null>> */

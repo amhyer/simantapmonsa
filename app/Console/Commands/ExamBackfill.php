@@ -12,6 +12,7 @@ use App\Models\Exam\Question;
 use App\Models\Exam\Result;
 use App\Models\Exam\Section;
 use App\Models\Exam\Session;
+use App\Models\Exam\Violation;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
@@ -158,6 +159,15 @@ class ExamBackfill extends Command
                     'sumber_tabel' => 'cbt_results',
                     'sumber_id' => $cbtResult->id,
                 ]
+            );
+        }
+
+        // Pelanggaran ikut dipetakan agar laporan engine lengkap dan tabel
+        // `cbt_violations` dapat dihapus (langkah 6). Idempoten lewat jejak.
+        foreach ($cbtResult->violations()->orderBy('id')->get() as $cbtViolation) {
+            Violation::updateOrCreate(
+                ['sumber_tabel' => 'cbt_violations', 'sumber_id' => $cbtViolation->id],
+                ['attempt_id' => $attempt->id, 'tipe' => $cbtViolation->type]
             );
         }
     }

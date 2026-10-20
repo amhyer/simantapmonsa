@@ -58,4 +58,9 @@ class Attempt extends Model
     {
         return $this->hasOne(Result::class, 'attempt_id');
     }
+
+    public function violations(): HasMany
+    {
+        return $this->hasMany(Violation::class, 'attempt_id');
+    }
 }

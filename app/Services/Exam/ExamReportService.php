@@ -34,6 +34,7 @@ class ExamReportService
 
         return ExamAttempt::where('session_id', $examSession->id)
             ->with(['siswa', 'result'])
+            ->withCount('violations')
             ->orderBy('id')
             ->get()
             ->map(function (ExamAttempt $attempt) {
@@ -44,6 +45,7 @@ class ExamReportService
                     'selesai' => $attempt->selesai_at,
                     'benar' => $this->jumlahBenar($attempt),
                     'skor' => $attempt->result?->persentase ?? $attempt->nilai_total,
+                    'pelanggaran' => $attempt->violations_count,
                 ];
             })
             ->all();

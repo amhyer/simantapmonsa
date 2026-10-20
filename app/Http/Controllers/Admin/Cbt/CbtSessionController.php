@@ -169,8 +169,7 @@ class CbtSessionController extends Controller
                 $r['selesai']?->format('Y-m-d H:i:s') ?? 'belum',
                 $r['benar'],
                 $r['skor'] ?? '-',
-                // Pelanggaran tetap dari tabel lama (tablonya belum dipetakan).
-                0,
+                $r['pelanggaran'],
             ]);
         }
         rewind($handle);

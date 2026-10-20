@@ -140,7 +140,11 @@ class CbtExamService
             abort_unless($this->eligible($session, $siswa), 403);
             abort_if($locked->submitted_at || $this->expired($session, $locked), 409);
             if ($locked->violations()->count() < 100) {
-                $locked->violations()->create(['type' => $type]);
+                $violation = $locked->violations()->create(['type' => $type]);
+
+                if ($this->pakaiEngineBaru()) {
+                    $this->bridge->catatPelanggaran($violation);
+                }
             }
         });
     }

@@ -13,6 +13,7 @@ use App\Models\Exam\Question;
 use App\Models\Exam\Result;
 use App\Models\Exam\Section;
 use App\Models\Exam\Session;
+use App\Models\Exam\Violation;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -93,6 +94,9 @@ class ExamEngineFoundationTest extends TestCase
         // 1 hasil CBT + 1 hasil Tryout.
         $this->assertSame(2, Attempt::count());
         $this->assertSame(2, Result::count());
+        // 1 pelanggaran CBT ikut dipetakan, dan tidak berlipat setelah 2 kali.
+        $this->assertSame(1, Violation::count());
+        $this->assertSame('tab_hidden', Violation::firstOrFail()->tipe);
 
         // Kunci CBT ikut tersalin ke opsi.
         $cbtExam = Question::where('sumber_tabel', 'cbt_questions')->orderBy('sumber_id')->first();
@@ -143,6 +147,7 @@ class ExamEngineFoundationTest extends TestCase
             'started_at' => now()->subMinutes(30), 'deadline_at' => now()->subMinute(),
             'submitted_at' => now(), 'answers' => [$q1->id => 'C'], 'correct_count' => 1, 'score' => 100.0,
         ]);
+        CbtResult::firstOrFail()->violations()->create(['type' => 'tab_hidden']);
     }
 
     private function buatDataTryout(): void

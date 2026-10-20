@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\CbtViolation;
 use App\Models\Exam\Attempt as ExamAttempt;
 use App\Models\Exam\Question as ExamQuestion;
 use App\Models\Exam\Result as ExamResult;
 use App\Models\Exam\Session as ExamSession;
+use App\Models\Exam\Violation as ExamViolation;
 use App\Services\Exam\LegacyExamMapper;
 
 /**
@@ -148,5 +150,28 @@ class CbtEngineBridge
         return ExamAttempt::where('sumber_tabel', 'cbt_results')
             ->where('sumber_id', $cbtResult->id)
             ->first();
+    }
+
+    /**
+     * Cerminkan catatan pelanggaran CBT ke `exam_violations`.
+     *
+     * Idempoten lewat jejak `sumber_tabel`/`sumber_id`, jadi memanggil ulang
+     * tidak menggandakan baris.
+     */
+    public function catatPelanggaran(CbtViolation $violation): void
+    {
+        $attempt = $this->attempt($violation->result);
+
+        if (! $attempt) {
+            return;
+        }
+
+        ExamViolation::updateOrCreate(
+            ['sumber_tabel' => 'cbt_violations', 'sumber_id' => $violation->id],
+            [
+                'attempt_id' => $attempt->id,
+                'tipe' => $violation->type,
+            ]
+        );
     }
 }
