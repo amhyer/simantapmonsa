@@ -8,12 +8,20 @@ use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\Siswa;
+use App\Services\TryoutEngineBridge;
 use App\Services\TryoutScoring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TryoutStudentController extends Controller
 {
+    public function __construct(private TryoutEngineBridge $bridge) {}
+
+    private function pakaiEngineBaru(): bool
+    {
+        return (bool) config('simantap.exam_engine_tryout', true);
+    }
+
     public function index()
     {
         $siswa = $this->siswaSaya();
@@ -56,31 +64,35 @@ class TryoutStudentController extends Controller
         }
 
         // Lanjutkan percobaan yang belum selesai; kalau tidak ada, buat baru.
-        $result = Result::where('tryout_session_id', $session->id)
-                        ->where('siswa_id', $siswa->id)
-                        ->whereNull('waktu_selesai')
-                        ->latest('id')
-                        ->first();
+        if ($this->pakaiEngineBaru()) {
+            $result = $this->bridge->mulai($session, $siswa);
+        } else {
+            $result = Result::where('tryout_session_id', $session->id)
+                            ->where('siswa_id', $siswa->id)
+                            ->whereNull('waktu_selesai')
+                            ->latest('id')
+                            ->first();
 
-        if (!$result) {
-            $attemptNumber = (int) Result::where('tryout_session_id', $session->id)
-                        ->where('siswa_id', $siswa->id)
-                        ->max('attempt_number') + 1;
+            if (!$result) {
+                $attemptNumber = (int) Result::where('tryout_session_id', $session->id)
+                            ->where('siswa_id', $siswa->id)
+                            ->max('attempt_number') + 1;
 
-            $result = Result::create([
-                'uuid' => Str::uuid(),
-                'tryout_session_id' => $session->id,
-                'siswa_id' => $siswa->id,
-                'attempt_number' => $attemptNumber,
-                'nilai_total' => 0,
-                'nilai_maksimal' => 0,
-                'persentase' => 0,
-                'lulus' => false,
-                'detail_nilai_mapel' => [],
-                'waktu_mulai' => now(),
-                'waktu_selesai' => null,
-                'durasi_total_detik' => 0,
-            ]);
+                $result = Result::create([
+                    'uuid' => Str::uuid(),
+                    'tryout_session_id' => $session->id,
+                    'siswa_id' => $siswa->id,
+                    'attempt_number' => $attemptNumber,
+                    'nilai_total' => 0,
+                    'nilai_maksimal' => 0,
+                    'persentase' => 0,
+                    'lulus' => false,
+                    'detail_nilai_mapel' => [],
+                    'waktu_mulai' => now(),
+                    'waktu_selesai' => null,
+                    'durasi_total_detik' => 0,
+                ]);
+            }
         }
 
         $subjects = $session->package->subjects()->with(['questions.options'])->get();
@@ -117,6 +129,23 @@ class TryoutStudentController extends Controller
             return response()->json(['success' => false, 'message' => 'Soal bukan bagian dari tryout ini'], 422);
         }
 
+        $this->simpanJawaban($result, $question, $validated);
+
+        // Jangan pernah bocorkan kunci/poin selama ujian berjalan.
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Simpan jawaban ke engine yang aktif. Penilaian selalu di server.
+     */
+    private function simpanJawaban(Result $result, TryoutQuestion $question, array $validated): void
+    {
+        if ($this->pakaiEngineBaru()) {
+            $this->bridge->simpanJawabanSoal($result, $question, $validated['jawaban']);
+
+            return;
+        }
+
         [$isCorrect, $poin] = TryoutScoring::grade($question, $validated['jawaban']);
 
         StudentAnswer::updateOrCreate(
@@ -137,9 +166,6 @@ class TryoutStudentController extends Controller
                 'durasi_detik' => 0,
             ]
         );
-
-        // Jangan pernah bocorkan kunci/poin selama ujian berjalan.
-        return response()->json(['success' => true]);
     }
 
     public function complete(Request $request, Result $result)
@@ -148,6 +174,13 @@ class TryoutStudentController extends Controller
 
         if ($result->waktu_selesai) {
             return back()->with('error', 'Tryout sudah diselesaikan');
+        }
+
+        if ($this->pakaiEngineBaru()) {
+            $this->bridge->selesaikan($result, (float) $result->session->package->passing_grade);
+
+            return redirect()->route('tryout.student.result', $result->fresh())
+                ->with('success', 'Tryout berhasil diselesaikan');
         }
 
         $subjects = $result->session->package->subjects()->with(['questions'])->get();

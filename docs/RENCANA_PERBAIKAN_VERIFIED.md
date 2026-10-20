@@ -155,8 +155,8 @@ kill-switch). Tidak ada migrasi baru di Fase 2.
 
 ## 1e. STATUS FASE 3 — FONDASI ENGINE TERPADU (20 Okt 2026)
 
-Lingkup sesi ini: **langkah 1–3 + parity test**. Langkah memindahkan rute/tampilan
-dan menghapus tabel lama sengaja **belum** dikerjakan (butuh keputusan produk +
+Lingkup sesi ini: **langkah 1–4 tuntas, langkah 5 dimulai untuk Tryout**.
+Menghapus tabel lama (langkah 6) sengaja **belum** dikerjakan (butuh keputusan produk +
 rikonsiliasi data produksi).
 
 | Langkah dokumen | Status | Bukti |
@@ -165,13 +165,21 @@ rikonsiliasi data produksi).
 | (2) Backfill dari `cbt_*` + `tryout_*` | ✅ | `php artisan exam:backfill [--only=cbt|tryout]`, idempoten lewat jejak `sumber_tabel`+`sumber_id`; **tidak pernah menulis/menghapus tabel lama** |
 | (3) Satu `ExamGradingService` | ✅ | `app/Services/ExamGradingService.php` menyatukan aturan `CbtScoring` (pilihan ganda) & `TryoutScoring` (benar_salah/isian_singkat + normalisasi); `essay` = menunggu penilaian manual; kunci eksplisit (`exam_questions.kunci_jawaban`) diutamakan di atas opsi `adalah_benar` |
 | (4) Parity test | ✅ | `tests/Unit/ExamGradingParityTest.php` (5 test: parity vs kedua penilai lama, prioritas kunci, essay, normalisasi) + `tests/Feature/ExamEngineFoundationTest.php` (4 test: skema, relasi, kunci tak ikut serialisasi, backfill idempoten) |
-| (5) Arahkan rute/tampilan | ⏳ belum | menunggu langkah berikutnya |
-| (6) Drop tabel lama | ⏳ belum | menunggu (4) + (5) hijau di produksi |
+| (5) Arahkan rute/tampilan — **Tryout** | ✅ | alur siswa Tryout (`start`→`answer`→`resume`→`complete`) kini menulis ke `exam_*` lewat `TryoutEngineBridge`; tabel `tryout_*` tetap ditulis sebagai **cermin** agar laporan/ekspor/admin yang belum dipindahkan tetap benar. Bukti: `tests/Feature/TryoutEngineParityTest.php` (4 test) + 12 test `TryoutTest` lama tetap hijau tanpa perubahan assertion |
+| (5b) CBT & sisa tampilan lain | ⏳ belum | CBT masih memakai engine lama (`CbtExamService`); tinggal mengulang pola bridge yang sama |
+| (6) Drop tabel lama | ⏳ belum | menunggu (5) tuntas untuk CBT/ekspor + rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
 
-**Verifikasi Fase 3:** `php artisan test` → **218 test lulus, 0 gagal, 800 assertion, ~136 s**.
+Catatan langkah 5: `config('simantap.exam_engine_tryout')` (default `true`, dapat
+dimatikan lewat `SIMANTAP_EXAM_ENGINE_TRYOUT=false`) memilih engine. Pemetaan
+bank/section/soal dipusatkan di `App\Services\Exam\LegacyExamMapper` dan dipakai
+baik oleh `exam:backfill` maupun alur ujian langsung, sehingga aturan keduanya
+tidak dapat berbeda. Soal yang dibuat **setelah** ujian dimulai tetap dipetakan
+saat dijawab/dinilai (uji cakupan di `TryoutEngineParityTest`).
+
+**Verifikasi Fase 3:** `php artisan test` → **222 test lulus, 0 gagal, 834 assertion, ~134 s**.
 
 ---
 
