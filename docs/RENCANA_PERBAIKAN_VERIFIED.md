@@ -155,9 +155,9 @@ kill-switch). Tidak ada migrasi baru di Fase 2.
 
 ## 1e. STATUS FASE 3 — FONDASI ENGINE TERPADU (20 Okt 2026)
 
-Lingkup sesi ini: **langkah 1–4 tuntas, langkah 5 dimulai untuk Tryout**.
-Menghapus tabel lama (langkah 6) sengaja **belum** dikerjakan (butuh keputusan produk +
-rikonsiliasi data produksi).
+Lingkup sesi ini: **langkah 1–5 tuntas untuk Tryout dan CBT**. Memindahkan
+pembaca lama (ekspor/laporan) ke `exam_*` dan menghapus tabel lama (langkah 6)
+sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produksi).
 
 | Langkah dokumen | Status | Bukti |
 |---|---|---|
@@ -166,20 +166,32 @@ rikonsiliasi data produksi).
 | (3) Satu `ExamGradingService` | ✅ | `app/Services/ExamGradingService.php` menyatukan aturan `CbtScoring` (pilihan ganda) & `TryoutScoring` (benar_salah/isian_singkat + normalisasi); `essay` = menunggu penilaian manual; kunci eksplisit (`exam_questions.kunci_jawaban`) diutamakan di atas opsi `adalah_benar` |
 | (4) Parity test | ✅ | `tests/Unit/ExamGradingParityTest.php` (5 test: parity vs kedua penilai lama, prioritas kunci, essay, normalisasi) + `tests/Feature/ExamEngineFoundationTest.php` (4 test: skema, relasi, kunci tak ikut serialisasi, backfill idempoten) |
 | (5) Arahkan rute/tampilan — **Tryout** | ✅ | alur siswa Tryout (`start`→`answer`→`resume`→`complete`) kini menulis ke `exam_*` lewat `TryoutEngineBridge`; tabel `tryout_*` tetap ditulis sebagai **cermin** agar laporan/ekspor/admin yang belum dipindahkan tetap benar. Bukti: `tests/Feature/TryoutEngineParityTest.php` (4 test) + 12 test `TryoutTest` lama tetap hijau tanpa perubahan assertion |
-| (5b) CBT & sisa tampilan lain | ⏳ belum | CBT masih memakai engine lama (`CbtExamService`); tinggal mengulang pola bridge yang sama |
-| (6) Drop tabel lama | ⏳ belum | menunggu (5) tuntas untuk CBT/ekspor + rikonsiliasi data produksi |
+| (5) Arahkan rute/tampilan — **CBT** | ✅ | `CbtExamService` tetap pemilik siklus (kunci, kedaluwarsa, deadline, idempotensi) lalu menulis lewat `CbtEngineBridge` ke `exam_*`; tabel `cbt_*` tetap dicerminkan. Kunci dibekukan dari `question_snapshot` ke `exam_questions.kunci_jawaban` agar mengedit bank setelah publikasi tidak menggeser nilai. Bukti: `tests/Feature/CbtEngineParityTest.php` (5 test) + 28 test `CbtExamTest` lama tetap hijau |
+| (5b) Sisa tampilan lain (ekspor/laporan) | ⏳ belum | pembaca lama sudah benar karena cermin; memindahkan pembaca ke `exam_*` menyusul |
+| (6) Drop tabel lama | ⏳ belum | menunggu (5b) + rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
 
-Catatan langkah 5: `config('simantap.exam_engine_tryout')` (default `true`, dapat
-dimatikan lewat `SIMANTAP_EXAM_ENGINE_TRYOUT=false`) memilih engine. Pemetaan
-bank/section/soal dipusatkan di `App\Services\Exam\LegacyExamMapper` dan dipakai
-baik oleh `exam:backfill` maupun alur ujian langsung, sehingga aturan keduanya
-tidak dapat berbeda. Soal yang dibuat **setelah** ujian dimulai tetap dipetakan
-saat dijawab/dinilai (uji cakupan di `TryoutEngineParityTest`).
+Catatan langkah 5: `config('simantap.exam_engine_tryout')` dan
+`config('simantap.exam_engine_cbt')` (keduanya default `true`, dapat dimatikan
+lewat `SIMANTAP_EXAM_ENGINE_TRYOUT=false` / `SIMANTAP_EXAM_ENGINE_CBT=false`)
+memilih engine. Pemetaan bank/section/soal dipusatkan di
+`App\Services\Exam\LegacyExamMapper` dan dipakai baik oleh `exam:backfill`
+maupun alur ujian langsung, sehingga aturan keduanya tidak dapat berbeda. Soal
+yang dibuat **setelah** ujian dimulai tetap dipetakan saat dijawab/dinilai (uji
+cakupan di `TryoutEngineParityTest`).
 
-**Verifikasi Fase 3:** `php artisan test` → **222 test lulus, 0 gagal, 834 assertion, ~134 s**.
+Catatan CBT: `CbtExamService` sengaja **tidak** ditulis ulang — ia tetap pemilik
+semantik siklus yang rumit (kunci baris, deadline dipotong `closes_at`,
+finalisasi kedaluwarsa, idempotensi submit) dan hanya menambah tiga titik tulis
+lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
+`exam_questions.kunci_jawaban`, dan `ExamGradingService` kini mengutamakan
+`kunci_jawaban` di atas opsi `adalah_benar` untuk soal pilihan ganda — sesuai
+desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
+(diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
+
+**Verifikasi Fase 3:** `php artisan test` → **227 test lulus, 0 gagal, 860 assertion, ~123 s**.
 
 ---
 

@@ -11,6 +11,13 @@ use Illuminate\Validation\ValidationException;
 
 class CbtExamService
 {
+    public function __construct(private CbtEngineBridge $bridge) {}
+
+    private function pakaiEngineBaru(): bool
+    {
+        return (bool) config('simantap.exam_engine_cbt', true);
+    }
+
     public function publish(CbtTestSession $session): void
     {
         DB::transaction(function () use ($session) {
@@ -71,10 +78,16 @@ class CbtExamService
             abort_if(now()->lessThan($session->opens_at) || now()->greaterThanOrEqualTo($session->closes_at), 409, 'Di luar jadwal ujian.');
             $deadline = now()->addMinutes($session->duration_minutes)->min($session->closes_at);
 
-            return $session->results()->create([
+            $result = $session->results()->create([
                 'siswa_id' => $siswa->id, 'user_id' => $userId,
                 'started_at' => now(), 'deadline_at' => $deadline, 'answers' => [],
             ]);
+
+            if ($this->pakaiEngineBaru()) {
+                $this->bridge->catatAttempt($result);
+            }
+
+            return $result;
         }, 3);
     }
 
@@ -98,6 +111,15 @@ class CbtExamService
         if (!$result->submitted_at) {
             $result->update(CbtScoring::grade($session->question_snapshot, $result->answers) + ['submitted_at' => now()]);
         }
+
+        if ($this->pakaiEngineBaru()) {
+            // Pastikan attempt ada (mis. hasil yang dibuat sebelum flag aktif),
+            // lalu catat jawaban & nilainya ke engine terpadu.
+            $this->bridge->catatAttempt($result);
+            $this->bridge->catatJawaban($result, is_array($result->answers) ? $result->answers : []);
+            $this->bridge->catatPenilaian($result);
+        }
+
         return $result;
     }
 
@@ -145,6 +167,11 @@ class CbtExamService
             $answers = $result->answers;
             $answers[$questionId] = $answer;
             $result->update(['answers' => $answers]);
+
+            if ($this->pakaiEngineBaru()) {
+                $this->bridge->catatJawaban($result, [$questionId => $answer]);
+            }
+
             return true;
         });
     }

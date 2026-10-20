@@ -10,4 +10,8 @@ return [
     // sementara tabel `tryout_*` tetap dicerminkan agar laporan/ekspor/admin
     // yang belum dipindahkan tetap benar. Set false untuk kembali ke alur lama.
     'exam_engine_tryout' => env('SIMANTAP_EXAM_ENGINE_TRYOUT', true),
+
+    // Sama untuk CBT: attempt/jawaban ditulis ke `exam_*` lalu dicerminkan ke
+    // `cbt_*`. Set false untuk kembali ke penulisan langsung engine lama.
+    'exam_engine_cbt' => env('SIMANTAP_EXAM_ENGINE_CBT', true),
 ];
