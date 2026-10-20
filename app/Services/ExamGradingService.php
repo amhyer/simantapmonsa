@@ -125,6 +125,13 @@ class ExamGradingService
 
     private static function benarPilihanGanda(Question $question, string $jawaban): bool
     {
+        // Kunci eksplisit diutamakan (mis. snapshot CBT yang dibekukan saat
+        // publikasi), sehingga mengubah bank di belakang tidak menggeser nilai.
+        $kunciEksplisit = $question->kunci_jawaban;
+        if ($kunciEksplisit !== null && trim($kunciEksplisit) !== '') {
+            return strtoupper(trim($jawaban)) === strtoupper(trim($kunciEksplisit));
+        }
+
         $kunci = $question->options->firstWhere('adalah_benar', true);
 
         return $kunci !== null && strtoupper(trim($jawaban)) === strtoupper(trim($kunci->huruf));
