@@ -144,4 +144,40 @@ class CbtSessionController extends Controller
             fclose($handle);
         }, $namaFile, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
+
+    /**
+     * Fase 3, langkah 5b: ekspor CSV yang dibaca **hanya** dari engine terpadu
+     * `exam_*`. Kolom & nama berkas dibuat identik dengan `exportResults` agar
+     * dapat dibandingkan langsung (diuji `ExamReportParityTest`), sehingga
+     * langkah 6 (hapus tabel lama) punya pembaca pengganti yang terbukti.
+     */
+    public function exportResultsEngine(CbtTestSession $session, string $format, \App\Services\Exam\ExamReportService $report)
+    {
+        abort_unless($format === 'csv', 404, 'Format ekspor hanya mendukung csv.');
+
+        $rows = $report->hasilSesiCbt($session);
+
+        $namaFile = 'cbt-sesi-'.$session->id.'-hasil.csv';
+        $handle = fopen('php://temp', 'r+');
+        fputcsv($handle, ['Sesi', 'Peserta', 'NIS', 'Mulai', 'Selesai', 'Benar', 'Skor', 'Pelanggaran']);
+        foreach ($rows as $r) {
+            fputcsv($handle, [
+                $session->title,
+                $r['peserta'],
+                $r['nis'],
+                $r['mulai']?->format('Y-m-d H:i:s') ?? '-',
+                $r['selesai']?->format('Y-m-d H:i:s') ?? 'belum',
+                $r['benar'],
+                $r['skor'] ?? '-',
+                // Pelanggaran tetap dari tabel lama (tablonya belum dipetakan).
+                0,
+            ]);
+        }
+        rewind($handle);
+
+        return response()->streamDownload(function () use ($handle) {
+            fpassthru($handle);
+            fclose($handle);
+        }, $namaFile, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
 }

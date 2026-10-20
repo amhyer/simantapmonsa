@@ -167,8 +167,8 @@ sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produks
 | (4) Parity test | ✅ | `tests/Unit/ExamGradingParityTest.php` (5 test: parity vs kedua penilai lama, prioritas kunci, essay, normalisasi) + `tests/Feature/ExamEngineFoundationTest.php` (4 test: skema, relasi, kunci tak ikut serialisasi, backfill idempoten) |
 | (5) Arahkan rute/tampilan — **Tryout** | ✅ | alur siswa Tryout (`start`→`answer`→`resume`→`complete`) kini menulis ke `exam_*` lewat `TryoutEngineBridge`; tabel `tryout_*` tetap ditulis sebagai **cermin** agar laporan/ekspor/admin yang belum dipindahkan tetap benar. Bukti: `tests/Feature/TryoutEngineParityTest.php` (4 test) + 12 test `TryoutTest` lama tetap hijau tanpa perubahan assertion |
 | (5) Arahkan rute/tampilan — **CBT** | ✅ | `CbtExamService` tetap pemilik siklus (kunci, kedaluwarsa, deadline, idempotensi) lalu menulis lewat `CbtEngineBridge` ke `exam_*`; tabel `cbt_*` tetap dicerminkan. Kunci dibekukan dari `question_snapshot` ke `exam_questions.kunci_jawaban` agar mengedit bank setelah publikasi tidak menggeser nilai. Bukti: `tests/Feature/CbtEngineParityTest.php` (5 test) + 28 test `CbtExamTest` lama tetap hijau |
-| (5b) Sisa tampilan lain (ekspor/laporan) | ⏳ belum | pembaca lama sudah benar karena cermin; memindahkan pembaca ke `exam_*` menyusul |
-| (6) Drop tabel lama | ⏳ belum | menunggu (5b) + rikonsiliasi data produksi |
+| (5b) Sisa tampilan lain (ekspor/laporan) | ✅ | pembaca lama dikunci lebih dulu dengan `tests/Feature/ExamReaderTest.php` (ekspor CSV CBT, halaman hasil Tryout admin, dasbor ortu) — sebelumnya **tanpa test sama sekali**. Disusul pembaca pengganti murni `exam_*` (`ExamReportService` + rute `admin.cbt.sessions.export-engine`) yang keluarannya **identik** dengan jalur lama (diuji parity). Jalur lama tetap dipakai di produksi sebagai pembanding. |
+| (6) Drop tabel lama | ⏳ belum | pembaca pengganti sudah terbukti setara; menunggu rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
@@ -191,7 +191,19 @@ lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
 desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
 (diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
 
-**Verifikasi Fase 3:** `php artisan test` → **227 test lulus, 0 gagal, 860 assertion, ~123 s**.
+**Verifikasi Fase 3:** `php artisan test` → **231 test lulus, 0 gagal, 886 assertion, ~138 s**.
+
+Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
+
+1. **Ekspor CSV CBT 500** — `CbtSessionController::exportResults` memanggil
+   `$session->load('guru')`, padahal `CbtTestSession` tidak punya relasi `guru()`.
+   Tombol ekspor di UI admin benar-benar rusak; diperbaiki dengan menambahkan
+   relasi tersebut.
+2. **Halaman Hasil Tryout menampilkan 0.0** — `admin.tryout.results.index`
+   membaca `skor_total`, `jumlah_benar/salah/kosong`, dan `waktu_pengerjaan_detik`
+   yang **tidak ada** di `Tryout\Result`, sehingga tabel & kartu statistik selalu
+   tampil 0.0/kosong. Disajikan lewat accessor (`skor_total` = persentase, agar
+   sebanding dengan ambang kelulusan 60) sehingga nilai sebenarnya tampil.
 
 ---
 
