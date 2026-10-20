@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
-use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
@@ -19,15 +18,49 @@ use Tests\TestCase;
  * Rujukan: docs/RENCANA_PERBAIKAN_VERIFIED.md (§4, Fase 0.3).
  * Laporan disimpan di storage/logs/route-health-report.txt.
  */
-#[Group('baseline')]
 class RouteHealthAuditTest extends TestCase
 {
     use RefreshDatabase;
 
+    private array $flagSebelumnya;
+
+    protected function setUp(): void
+    {
+        // Route CBT didaftarkan lewat `if (config(...))` saat boot, jadi flag
+        // harus diset SEBELUM aplikasi dibuat (bukan config() di dalam test).
+        $this->flagSebelumnya = [
+            getenv('SIMANTAP_CBT_ENABLED'),
+            $_ENV['SIMANTAP_CBT_ENABLED'] ?? null,
+            $_SERVER['SIMANTAP_CBT_ENABLED'] ?? null,
+        ];
+        putenv('SIMANTAP_CBT_ENABLED=true');
+        $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
+        \Illuminate\Support\Env::enablePutenv();
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        [$env, $arrayEnv, $server] = $this->flagSebelumnya;
+        $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
+        if ($arrayEnv === null) {
+            unset($_ENV['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv;
+        }
+        if ($server === null) {
+            unset($_SERVER['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
+        }
+        \Illuminate\Support\Env::enablePutenv();
+    }
+
     public function test_tidak_ada_route_get_yang_menghasilkan_http_5xx(): void
     {
-        // Aktifkan modul asesmen agar route CBT/Tryout/TKA benar-benar diuji,
-        // bukan sekadar 404 karena kill switch.
         config(['simantap.cbt_enabled' => true]);
 
         $peran = [

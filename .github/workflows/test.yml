@@ -81,17 +81,11 @@ jobs:
           npm ci
           npm run build
 
+      # Seluruh suite wajib hijau, termasuk RouteHealthAuditTest (0 endpoint 5xx).
       - name: Run test suite (wajib hijau)
         run: |
           set -o pipefail
-          php artisan test --exclude-group baseline 2>&1 | tee /tmp/phpunit.log
-
-      # Test baseline (AuditCbtProofTest, RouteHealthAuditTest) sengaja MERAH
-      # sampai Fase 1-2 selesai. Dijalankan sebagai laporan, tidak memblokir CI.
-      - name: Laporan baseline (tidak memblokir)
-        if: always()
-        continue-on-error: true
-        run: php artisan test --group baseline
+          php artisan test 2>&1 | tee /tmp/phpunit.log
 
       - name: Simpan laporan endpoint 5xx
         if: always()
