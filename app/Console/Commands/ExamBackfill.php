@@ -4,13 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
-use App\Models\CbtTestSession;
 use App\Models\Exam\Answer;
 use App\Models\Exam\Attempt;
 use App\Models\Exam\Bank;
 use App\Models\Exam\Engine;
 use App\Models\Exam\Question;
-use App\Models\Exam\QuestionOption;
 use App\Models\Exam\Result;
 use App\Models\Exam\Section;
 use App\Models\Exam\Session;
@@ -18,7 +16,7 @@ use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
 use App\Models\Tryout\StudentAnswer;
-use App\Models\Tryout\TryoutQuestion;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -28,6 +26,9 @@ use Illuminate\Support\Facades\DB;
  * Idempoten: setiap baris baru menyimpan jejak asal (`sumber_tabel` +
  * `sumber_id`), sehingga perintah boleh dijalankan berulang tanpa menggandakan.
  * Tabel lama tidak pernah diubah maupun dihapus di sini.
+ *
+ * Pemetaan bank/section/soal didelegasikan ke `LegacyExamMapper` supaya sama
+ * persis dengan yang dipakai alur ujian langsung.
  */
 class ExamBackfill extends Command
 {
@@ -35,19 +36,21 @@ class ExamBackfill extends Command
 
     protected $description = 'Salin data CBT & Tryout ke tabel exam_* (idempoten, read-only terhadap tabel lama)';
 
+    public function __construct(private LegacyExamMapper $mapper)
+    {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
         $only = $this->option('only');
 
         DB::transaction(function () use ($only) {
-            $cbt = $this->engine(Engine::CBT, 'CBT (pilihan ganda)');
-            $tryout = $this->engine(Engine::TRYOUT, 'Tryout');
-
             if ($only !== Engine::TRYOUT) {
-                $this->backfillCbt($cbt);
+                $this->backfillCbt();
             }
             if ($only !== Engine::CBT) {
-                $this->backfillTryout($tryout);
+                $this->backfillTryout();
             }
         });
 
@@ -69,87 +72,38 @@ class ExamBackfill extends Command
         return self::SUCCESS;
     }
 
-    private function engine(string $kode, string $nama): Engine
-    {
-        return Engine::updateOrCreate(['kode' => $kode], ['nama' => $nama, 'jenis' => $kode, 'aktif' => true]);
-    }
-
-    private function backfillCbt(Engine $engine): void
+    private function backfillCbt(): void
     {
         $this->info('CBT: bank soal → soal → sesi → attempt → hasil jawaban JSON');
 
-        CbtQuestionBank::query()->chunkById(100, function ($banks) use ($engine) {
+        CbtQuestionBank::query()->chunkById(100, function ($banks) {
             foreach ($banks as $cbtBank) {
-                $bank = Bank::updateOrCreate(
-                    ['sumber_tabel' => 'cbt_question_banks', 'sumber_id' => $cbtBank->id],
-                    [
-                        'engine_id' => $engine->id,
-                        'guru_id' => $cbtBank->guru_id,
-                        'nama' => $cbtBank->title,
-                        'mata_pelajaran' => $cbtBank->subject,
-                    ]
-                );
+                $bank = $this->mapper->bankCbt($cbtBank);
 
-                foreach ($cbtBank->questions()->orderBy('id')->get() as $cbtQuestion) {
-                    $question = Question::updateOrCreate(
-                        ['sumber_tabel' => 'cbt_questions', 'sumber_id' => $cbtQuestion->id],
-                        [
-                            'bank_id' => $bank->id,
-                            'tipe' => 'pilihan_ganda',
-                            'pertanyaan' => $cbtQuestion->prompt,
-                            'poin' => 1,
-                            'aktif' => true,
-                        ]
-                    );
+                foreach ($cbtBank->sessions()->orderBy('id')->get() as $cbtSession) {
+                    $session = $this->mapper->sesiCbt($bank, $cbtSession);
 
-                    foreach ((array) $cbtQuestion->options as $huruf => $isi) {
-                        QuestionOption::updateOrCreate(
-                            ['question_id' => $question->id, 'huruf' => (string) $huruf],
-                            [
-                                'isi_opsi' => (string) $isi,
-                                'adalah_benar' => (string) $huruf === (string) $cbtQuestion->correct_answer,
-                                'urutan' => is_numeric($huruf) ? (int) $huruf : ord((string) $huruf) - 64,
-                            ]
-                        );
+                    $peta = $this->petaSoalCbt($bank);
+
+                    foreach ($cbtSession->results()->orderBy('id')->get() as $cbtResult) {
+                        $this->backfillCbtResult($session, $peta, $cbtResult);
                     }
-                }
-
-                foreach ($cbtBank->sessions ?? [] as $cbtSession) {
-                    $this->backfillCbtSession($bank, $cbtSession);
                 }
             }
         });
     }
 
-    private function backfillCbtSession(Bank $bank, CbtTestSession $cbtSession): void
+    /**
+     * @return array<int, Question>
+     */
+    private function petaSoalCbt(Bank $bank): array
     {
-        $session = Session::updateOrCreate(
-            ['sumber_tabel' => 'cbt_test_sessions', 'sumber_id' => $cbtSession->id],
-            [
-                'bank_id' => $bank->id,
-                'guru_id' => $cbtSession->guru_id,
-                'nama' => $cbtSession->title,
-                'kelas' => $cbtSession->kelas,
-                'mulai_at' => $cbtSession->opens_at,
-                'selesai_at' => $cbtSession->closes_at,
-                'durasi_menit' => $cbtSession->duration_minutes,
-                'status' => $cbtSession->status,
-                'soal_snapshot' => $cbtSession->question_snapshot,
-                'peserta_ids' => $cbtSession->participant_ids,
-            ]
-        );
-
-        // Peta id soal CBT -> id soal exam, dari snapshot sesi ini.
-        $peta = [];
-        foreach (Question::where('bank_id', $bank->id)->get() as $examQuestion) {
-            if ($examQuestion->sumber_tabel === 'cbt_questions') {
-                $peta[(int) $examQuestion->sumber_id] = $examQuestion;
-            }
-        }
-
-        foreach ($cbtSession->results as $cbtResult) {
-            $this->backfillCbtResult($session, $peta, $cbtResult);
-        }
+        return Question::where('bank_id', $bank->id)
+            ->with('options')
+            ->where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SOAL)
+            ->get()
+            ->keyBy(fn (Question $q) => (int) $q->sumber_id)
+            ->all();
     }
 
     /**
@@ -208,109 +162,30 @@ class ExamBackfill extends Command
         }
     }
 
-    private function backfillTryout(Engine $engine): void
+    private function backfillTryout(): void
     {
         $this->info('Tryout: paket → mapel (section) → soal → sesi → attempt → hasil');
 
-        Package::withTrashed()->chunkById(100, function ($packages) use ($engine) {
+        Package::withTrashed()->chunkById(100, function ($packages) {
             foreach ($packages as $package) {
-                $bank = Bank::updateOrCreate(
-                    ['sumber_tabel' => 'tryout_packages', 'sumber_id' => $package->id],
-                    [
-                        'engine_id' => $engine->id,
-                        'kode' => $package->kode_paket,
-                        'nama' => $package->nama_paket,
-                        'meta' => [
-                            'category_id' => $package->category_id,
-                            'jenjang' => $package->jenjang,
-                            'tahun_paket' => $package->tahun_paket,
-                            'durasi_total_menit' => $package->durasi_total_menit,
-                            'passing_grade' => $package->passing_grade,
-                        ],
-                    ]
-                );
+                $bank = $this->mapper->bankTryout($package);
 
-                $petaSection = [];
-                foreach ($package->subjects as $subject) {
-                    $section = Section::updateOrCreate(
-                        ['sumber_tabel' => 'tryout_subjects', 'sumber_id' => $subject->id],
-                        [
-                            'bank_id' => $bank->id,
-                            'nama' => $subject->mataPelajaran?->nama,
-                            'mata_pelajaran_id' => $subject->mata_pelajaran_id,
-                            'urutan' => $subject->urutan,
-                            'bobot' => $subject->bobot,
-                            'durasi_menit' => $subject->durasi_menit,
-                            'passing_grade' => $subject->passing_grade_mapel,
-                        ]
-                    );
-                    $petaSection[$subject->id] = $section;
-
+                foreach ($package->subjects()->with('mataPelajaran')->get() as $subject) {
+                    $section = $this->mapper->sectionTryout($bank, $subject);
                     foreach ($subject->questions as $tryoutQuestion) {
-                        $this->backfillTryoutQuestion($bank, $section, $tryoutQuestion);
+                        $this->mapper->soalTryout($bank, $section, $tryoutQuestion);
                     }
                 }
 
-                foreach ($package->sessions as $tryoutSession) {
-                    $this->backfillTryoutSession($bank, $tryoutSession);
+                foreach ($package->sessions()->orderBy('id')->get() as $tryoutSession) {
+                    $session = $this->mapper->pastikanSesiTryout($tryoutSession);
+
+                    foreach ($tryoutSession->results()->orderBy('id')->get() as $tryoutResult) {
+                        $this->backfillTryoutResult($session, $tryoutResult);
+                    }
                 }
             }
         });
-    }
-
-    private function backfillTryoutQuestion(Bank $bank, Section $section, TryoutQuestion $tryoutQuestion): void
-    {
-        $question = Question::updateOrCreate(
-            ['sumber_tabel' => 'tryout_questions', 'sumber_id' => $tryoutQuestion->id],
-            [
-                'bank_id' => $bank->id,
-                'section_id' => $section->id,
-                'urutan' => $tryoutQuestion->urutan,
-                'tipe' => $tryoutQuestion->tipe_soal,
-                'pertanyaan' => $tryoutQuestion->pertanyaan,
-                'media_type' => $tryoutQuestion->media_type ?? 'text',
-                'media_url' => $tryoutQuestion->media_url,
-                'poin' => $tryoutQuestion->poin,
-                'tingkat_kesulitan' => $tryoutQuestion->tingkat_kesulitan,
-                'pembahasan' => $tryoutQuestion->pembahasan,
-                'aktif' => (bool) $tryoutQuestion->aktif,
-            ]
-        );
-
-        foreach ($tryoutQuestion->options as $option) {
-            QuestionOption::updateOrCreate(
-                ['question_id' => $question->id, 'huruf' => $option->huruf],
-                [
-                    'isi_opsi' => $option->isi_opsi,
-                    'adalah_benar' => (bool) $option->adalah_benar,
-                    'urutan' => $option->urutan,
-                ]
-            );
-        }
-    }
-
-    private function backfillTryoutSession(Bank $bank, TryoutSession $tryoutSession): void
-    {
-        $session = Session::updateOrCreate(
-            ['sumber_tabel' => 'tryout_sessions', 'sumber_id' => $tryoutSession->id],
-            [
-                'bank_id' => $bank->id,
-                'guru_id' => $tryoutSession->guru_id,
-                'semester_id' => $tryoutSession->semester_id,
-                'rombel_id' => $tryoutSession->rombel_id,
-                'kode' => $tryoutSession->kode_sesi,
-                'nama' => $tryoutSession->nama_sesi,
-                'kelas' => $tryoutSession->kelas,
-                'mulai_at' => $tryoutSession->tanggal_mulai,
-                'selesai_at' => $tryoutSession->tanggal_selesai,
-                'status' => $tryoutSession->status,
-                'instruksi' => $tryoutSession->instruksi ?? null,
-            ]
-        );
-
-        foreach ($tryoutSession->results as $tryoutResult) {
-            $this->backfillTryoutResult($session, $tryoutResult);
-        }
     }
 
     private function backfillTryoutResult(Session $session, TryoutResult $tryoutResult): void
@@ -346,8 +221,7 @@ class ExamBackfill extends Command
         );
 
         // Jawaban Tryout sudah tersimpan per soal; petakan lewat sumber_id.
-        $petaSoal = Question::where('sumber_tabel', 'tryout_questions')
-            ->pluck('id', 'sumber_id');
+        $petaSoal = $this->mapper->petaSoalTryout();
 
         $answers = StudentAnswer::where('tryout_session_id', $tryoutResult->tryout_session_id)
             ->where('siswa_id', $tryoutResult->siswa_id)
@@ -355,13 +229,13 @@ class ExamBackfill extends Command
             ->get();
 
         foreach ($answers as $studentAnswer) {
-            $examQuestionId = $petaSoal[$studentAnswer->question_id] ?? null;
-            if (! $examQuestionId) {
+            $examQuestion = $petaSoal[(int) $studentAnswer->question_id] ?? null;
+            if (! $examQuestion) {
                 continue;
             }
 
             Answer::updateOrCreate(
-                ['attempt_id' => $attempt->id, 'question_id' => $examQuestionId],
+                ['attempt_id' => $attempt->id, 'question_id' => $examQuestion->id],
                 [
                     'jawaban' => $studentAnswer->jawaban,
                     'adalah_benar' => $studentAnswer->adalah_benar,
