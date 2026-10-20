@@ -204,7 +204,7 @@
                             </td>
                             <td>{{ $session->durasi_menit }} mnt</td>
                             <td>
-                                <span class="badge bg-secondary">{{ $session->participants->count() }}</span>
+                                <span class="badge bg-secondary">{{ $session->results->pluck('siswa_id')->unique()->count() }}</span>
                             </td>
                             <td>
                                 <span class="badge bg-info">{{ $session->results->count() }}</span>
