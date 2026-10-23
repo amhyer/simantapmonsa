@@ -135,10 +135,15 @@ class DashboardController extends Controller
             ];
         });
 
+        // Modul CBT: analisis sekolah dari provider (engine `exam_*` atau `cbt_*`).
+        $cbtRingkasan = config('simantap.cbt_enabled', false)
+            ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanSekolah()
+            : null;
+
         return view('kepsek.dashboard', compact(
             'stats', 'rataNilai', 'predikatSekolah', 'persenHadir',
             'partisipasiOrtu', 'aktivitasGuru', 'topGuru',
-            'distribusiPredikat', 'perKelas'
+            'distribusiPredikat', 'perKelas', 'cbtRingkasan'
         ));
     }
 

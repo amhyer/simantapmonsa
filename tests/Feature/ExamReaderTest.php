@@ -389,6 +389,110 @@ class ExamReaderTest extends TestCase
         $this->assertTrue($baris[0]['lulus']);
     }
 
+    // ---------------------------------- langkah 6b: provider dasbor berflag
+
+    /**
+     * Provider dasbor harus mengembalikan bentuk & angka yang sama dari kedua
+     * sumber data, supaya flag `exam_engine_readers` bisa dinyalakan tanpa
+     * mengubah tampilan.
+     */
+    public function test_provider_dasbor_parity_legacy_vs_engine(): void
+    {
+        $this->selesaikanCbt();
+
+        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+
+        config(['simantap.exam_engine_readers' => false]);
+        $lama = $this->potretDasbor($provider);
+
+        config(['simantap.exam_engine_readers' => true]);
+        $baru = $this->potretDasbor($provider);
+
+        $this->assertSame($lama, $baru, 'Provider dasbor harus identik pada kedua sumber data.');
+        $this->assertCount(1, $baru['ujian']);
+        $this->assertSame('Ujian IPA', $baru['hasil'][0]['judul']);
+    }
+
+    /**
+     * Bukti pembaca benar-benar lepas dari tabel lama: kosongkan `cbt_*`,
+     * data dasbor harus tetap tampil dari `exam_*`.
+     */
+    public function test_provider_dasbor_tetap_benar_setelah_tabel_lama_dikosongkan(): void
+    {
+        $this->selesaikanCbt();
+
+        \App\Models\CbtResult::query()->delete();
+        \App\Models\CbtTestSession::query()->delete();
+        \App\Models\CbtQuestionBank::query()->delete();
+
+        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+        config(['simantap.exam_engine_readers' => true]);
+
+        $potret = $this->potretDasbor($provider);
+
+        $this->assertCount(1, $potret['ujian']);
+        $this->assertSame('Ujian IPA', $potret['ujian'][0]['judul']);
+        $this->assertSame('IPA', $potret['ujian'][0]['mapel']);
+        $this->assertSame('Ujian IPA', $potret['hasil'][0]['judul']);
+        $this->assertSame(50.0, $potret['hasil'][0]['score']);
+        $this->assertSame(1, $potret['guru']['total_bank']);
+        $this->assertSame(1, $potret['sekolah']['total_participants']);
+        $this->assertSame(50.0, $potret['sekolah']['avg_score']);
+    }
+
+    /** Keempat dasbor peran harus tetap tampil saat reader engine aktif. */
+    public function test_dasbor_peran_tampil_dengan_reader_engine(): void
+    {
+        $this->selesaikanCbt();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $this->actingAs($this->akun)
+            ->get(route('siswa.dashboard'))
+            ->assertOk()
+            ->assertSee('Ujian IPA');
+
+        $this->actingAs($this->guru)
+            ->get(route('guru.dashboard'))
+            ->assertOk()
+            ->assertSee('Manajemen Ujian CBT');
+
+        $this->actingAs(User::factory()->kepsek()->create())
+            ->get(route('kepsek.dashboard'))
+            ->assertOk()
+            ->assertSee('Analisis CBT Sekolah');
+
+        $this->actingAs(User::factory()->ortu()->create(['terhubung_dengan' => [$this->siswa->id]]))
+            ->get(route('ortu.dashboard'))
+            ->assertOk()
+            ->assertSee('Ujian IPA');
+    }
+
+    /**
+     * Potret ternormalisasi dari provider (tanggal diformat agar dua cabang
+     * bisa dibandingkan tanpa peduli objek Carbon).
+     *
+     * @return array<string, mixed>
+     */
+    private function potretDasbor(\App\Services\Exam\CbtDashboardProvider $provider): array
+    {
+        $waktu = fn ($nilai) => $nilai instanceof \DateTimeInterface
+            ? $nilai->format('Y-m-d H:i')
+            : $nilai;
+
+        return [
+            'ujian' => array_map(
+                fn (array $u) => [...$u, 'closes_at' => $waktu($u['closes_at'])],
+                $provider->ujianTersedia($this->siswa)
+            ),
+            'hasil' => array_map(
+                fn (array $h) => [...$h, 'submitted_at' => $waktu($h['submitted_at'])],
+                $provider->hasilTerbaru($this->siswa->id)
+            ),
+            'guru' => $provider->ringkasanGuru($this->guru->id),
+            'sekolah' => $provider->ringkasanSekolah(),
+        ];
+    }
+
     /** @return array<int, array<int, string|null>> */
     private function parseCsv(string $csv): array
     {

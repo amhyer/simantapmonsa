@@ -269,43 +269,22 @@
             <a href="{{ route('cbt.student.index') }}" class="btn btn-violet btn-sm">Lihat Semua</a>
         </div>
         <div class="card-body">
-            @php
-                $now = now();
-                $cbtAvailable = App\Models\CbtTestSession::with('bank')
-                    ->whereIn('status', ['published', 'running'])
-                    ->where('opens_at', '<=', $now)
-                    ->where('closes_at', '>', $now)
-                    ->orderBy('opens_at')
-                    ->limit(50)
-                    ->get()
-                    ->filter(fn ($s) => in_array($siswa->id, $s->participant_ids ?? []))
-                    ->take(3)
-                    ->values();
-
-                $cbtResults = App\Models\CbtResult::where('siswa_id', $siswa->id)
-                    ->with('session')
-                    ->whereNotNull('submitted_at')
-                    ->orderByDesc('submitted_at')
-                    ->limit(5)
-                    ->get();
-            @endphp
-            
-            @if($cbtAvailable->count() > 0)
+            @if(count($cbtUjian) > 0)
                 <div style="margin-bottom:16px">
                     <div style="font-size:12px;font-weight:700;color:var(--violet);margin-bottom:8px">UJIAN TERSEDIA</div>
-                    @foreach($cbtAvailable as $session)
+                    @foreach($cbtUjian as $ujian)
                         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#F8F6FC;border-radius:8px;margin-bottom:8px">
                             <div>
-                                <div style="font-weight:600">{{ $session->title }}</div>
-                                <div style="font-size:12px;color:var(--muted)">{{ $session->bank?->subject ?? '-' }} · Selesai: {{ $session->closes_at->format('d M H:i') }}</div>
+                                <div style="font-weight:600">{{ $ujian['judul'] }}</div>
+                                <div style="font-size:12px;color:var(--muted)">{{ $ujian['mapel'] }} · Selesai: {{ \Illuminate\Support\Carbon::parse($ujian['closes_at'])->format('d M H:i') }}</div>
                             </div>
-                            <a href="{{ route('cbt.student.start', $session->id) }}" class="btn btn-violet btn-sm">Mulai</a>
+                            <a href="{{ route('cbt.student.start', $ujian['id']) }}" class="btn btn-violet btn-sm">Mulai</a>
                         </div>
                     @endforeach
                 </div>
             @endif
             
-            @if($cbtResults->count() > 0)
+            @if(count($cbtHasil) > 0)
                 <div>
                     <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">HASIL UJIAN TERBARU</div>
                     <div class="table-wrapper">
@@ -319,13 +298,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($cbtResults as $result)
+                                @foreach($cbtHasil as $hasil)
                                     <tr>
-                                        <td>{{ $result->session->title ?? '-' }}</td>
-                                        <td>{{ ($result->submitted_at ?? $result->created_at)->format('d M Y') }}</td>
-                                        <td><strong>{{ number_format($result->score ?? 0, 1) }}</strong></td>
+                                        <td>{{ $hasil['judul'] }}</td>
+                                        <td>{{ \Illuminate\Support\Carbon::parse($hasil['submitted_at'])->format('d M Y') }}</td>
+                                        <td><strong>{{ number_format($hasil['score'], 1) }}</strong></td>
                                         <td>
-                                            @if(($result->score ?? 0) >= 70)
+                                            @if($hasil['score'] >= 70)
                                                 <span class="tag tag-green">LULUS</span>
                                             @else
                                                 <span class="tag tag-red">BELUM LULUS</span>

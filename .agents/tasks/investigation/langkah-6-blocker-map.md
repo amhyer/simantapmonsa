@@ -129,8 +129,15 @@ keluaran lama yang bisa dipakai sebagai pembanding.
 - ✅ **6a (sebagian)** — pembaca engine murni untuk 4 dasbor CBT + statistik
   Tryout sudah ada (`ExamDashboardService`, `ExamReportService::ringkasanTryout`),
   dengan 4 test parity di `ExamReaderTest`.
-- ⏭️ **6b** — alihkan view/controller ke pembaca engine (di balik flag), lalu
-  parity HTTP kedua jalur.
+- ✅ **6b (dasbor)** — `CbtDashboardProvider` (flag `simantap.exam_engine_readers`,
+  default **false**) kini menyuplai dasbor siswa/guru/kepsek/ortu; view tidak lagi
+  memanggil model `cbt_*` langsung. Parity diuji dua arah: potret provider identik
+  pada kedua cabang, dan data tetap benar setelah tabel `cbt_*` dikosongkan.
+  Bukti: `ExamReaderTest::test_provider_dasbor_*`, `test_dasbor_peran_tampil_dengan_reader_engine`.
+- ⏭️ **6b (sisa)** — statistik/hasil/ekspor Tryout admin masih membaca `tryout_*`
+  (halaman detail memakai route-model binding `Tryout\Result`, jadi perlu rute
+  engine tersendiri); flag reader untuk jalur ini belum dipasang.
+- ⏭️ **6c** — balik kepemilikan tulis (CRUD bank/soal/sesi), lalu 6d alur siswa.
 
 ## Urutan pengerjaan yang disarankan
 

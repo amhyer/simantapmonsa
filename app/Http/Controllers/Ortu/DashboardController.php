@@ -31,15 +31,11 @@ class DashboardController extends Controller
         $totalKehadiran = Kehadiran::where('siswa_id', $anak->id)->count();
         $hadir = Kehadiran::where('siswa_id', $anak->id)->where('status', 'H')->count();
 
-        // Hasil CBT (hanya saat modul asesmen aktif; skema baru cbt_results)
+        // Hasil CBT (hanya saat modul asesmen aktif). Sumber data dipilih
+        // provider: engine `exam_*` atau tabel lama `cbt_*`.
         $cbtResults = config('simantap.cbt_enabled', false)
-            ? \App\Models\CbtResult::where('siswa_id', $anak->id)
-                ->with('session.bank')
-                ->whereNotNull('submitted_at')
-                ->orderByDesc('submitted_at')
-                ->limit(5)
-                ->get()
-            : collect();
+            ? app(\App\Services\Exam\CbtDashboardProvider::class)->hasilTerbaru($anak->id)
+            : [];
 
         $ringkasan = [
             'nilai_akhir' => $na['nilai_akhir'],

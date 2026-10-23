@@ -170,7 +170,8 @@ sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produks
 | (5b) Sisa tampilan lain (ekspor/laporan) | ✅ | pembaca lama dikunci lebih dulu dengan `tests/Feature/ExamReaderTest.php` (ekspor CSV CBT, halaman hasil Tryout admin, dasbor ortu) — sebelumnya **tanpa test sama sekali**. Disusul pembaca pengganti murni `exam_*` (`ExamReportService` + rute `admin.cbt.sessions.export-engine`) yang keluarannya **identik** dengan jalur lama (diuji parity). Jalur lama tetap dipakai di produksi sebagai pembanding. |
 | (5c) Pelanggaran CBT ke engine | ✅ | tabel `exam_violations` baru (migrasi aditif, jejak `sumber_tabel`/`sumber_id`), ditulis lewat `CbtEngineBridge::catatPelanggaran` di alur langsung dan dipetakan ulang oleh `exam:backfill`. Kolom **Pelanggaran** pada ekspor engine kini terisi dan ikut diuji parity penuh (seluruh kolom identik). |
 | (5d) Cakupan backup `exam_*` | ✅ | seluruh 10 tabel `exam_*` didaftarkan di `BackupTables` **dan** daftar wipe `$tabelData`, sehingga backup/restore tidak lagi kehilangan data engine (sebelumnya tidak tercadang maupun terhapus → keadaan setengah saat wipe). Diperiksa rule cakupan: 46 tabel di-wipe, semuanya tercakup. |
-| (6) Drop tabel lama | ⏳ belum | pembaca pengganti sudah terbukti setara & `exam_*` sudah tercadang; menunggu rikonsiliasi data produksi |
+| (6b) Pembaca dasbor dari engine | ✅ | `App\Services\Exam\CbtDashboardProvider` menyatukan 4 dasbor peran (siswa, ortu, guru, kepsek) dengan flag `simantap.exam_engine_readers` (default **false** sampai rekonsiliasi produksi). View tidak lagi memanggil model `cbt_*` langsung. Parity diuji dua arah: potret provider identik pada kedua cabang **dan** data tetap benar setelah seluruh `cbt_*` dikosongkan (`ExamReaderTest`, 3 test baru). |
+| (6) Drop tabel lama | ⏳ belum | pembaca dasbor sudah terbukti setara & `exam_*` sudah tercadang; pembaca admin Tryout + CRUD masih memakai tabel lama, menunggu rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
@@ -193,7 +194,7 @@ lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
 desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
 (diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
 
-**Verifikasi Fase 3:** `php artisan test` → **233 test lulus, 0 gagal, 898 assertion, ~220 s**.
+**Verifikasi Fase 3:** `php artisan test` → **242 test lulus, 0 gagal, 983 assertion, ~114 s**.
 
 Pelanggaran CBT kini juga bermukim di engine (`exam_violations`, ditulis di alur
 langsung lewat `CbtEngineBridge::catatPelanggaran` dan dipetakan ulang oleh
@@ -217,6 +218,13 @@ Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
    yang **tidak ada** di `Tryout\Result`, sehingga tabel & kartu statistik selalu
    tampil 0.0/kosong. Disajikan lewat accessor (`skor_total` = persentase, agar
    sebanding dengan ambang kelulusan 60) sehingga nilai sebenarnya tampil.
+
+Catatan langkah 6b: pembaca dasbor (siswa/guru/kepsek/ortu) dialihkan lewat
+`App\Services\Exam\CbtDashboardProvider`. Flag `simantap.exam_engine_readers`
+(`SIMANTAP_EXAM_ENGINE_READERS`) sengaja **default `false`**: produksi tetap
+membaca `cbt_*` sampai `exam:backfill` dijalankan dan jumlah barisnya
+direkonsiliasi. Saat flag dinyalakan, dasbor membaca `exam_*` saja — diuji
+dengan mengosongkan seluruh `cbt_*` dan memastikan angka tetap benar.
 
 ---
 
