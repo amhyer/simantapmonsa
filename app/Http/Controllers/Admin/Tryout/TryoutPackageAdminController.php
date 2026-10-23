@@ -173,14 +173,21 @@ class TryoutPackageAdminController extends Controller
      */
     public function statistics()
     {
-        $stats = [
-            'total_packages' => Package::count(),
-            'total_sessions' => Session::count(),
-            'active_sessions' => Session::where('status', 'ongoing')->count(),
-            'total_results' => \App\Models\Tryout\Result::count(),
-            'average_pass_rate' => \App\Models\Tryout\Result::whereNotNull('waktu_selesai')
-                                                           ->selectRaw('AVG(CASE WHEN lulus THEN 100 ELSE 0 END) as pass_rate')
-                                                           ->value('pass_rate') ?? 0,
+        // Angka agregat hasil bisa dibaca dari engine (flag 6b); daftar paket &
+        // sesi terbaru masih katalog lama sampai langkah 6c (CRUD).
+        $agregat = config('simantap.exam_engine_readers', false)
+            ? app(\App\Services\Exam\ExamReportService::class)->ringkasanTryout()
+            : [
+                'total_packages' => Package::count(),
+                'total_sessions' => Session::count(),
+                'active_sessions' => Session::where('status', 'ongoing')->count(),
+                'total_results' => \App\Models\Tryout\Result::count(),
+                'average_pass_rate' => \App\Models\Tryout\Result::whereNotNull('waktu_selesai')
+                    ->selectRaw('AVG(CASE WHEN lulus THEN 100 ELSE 0 END) as pass_rate')
+                    ->value('pass_rate') ?? 0,
+            ];
+
+        $stats = array_merge($agregat, [
             'packages_by_jenjang' => Package::selectRaw('jenjang, count(*) as count')
                                            ->groupBy('jenjang')
                                            ->pluck('count', 'jenjang'),
@@ -188,7 +195,7 @@ class TryoutPackageAdminController extends Controller
                                        ->latest()
                                        ->take(5)
                                        ->get(),
-        ];
+        ]);
 
         return view('admin.tryout.statistics', compact('stats'));
     }
@@ -346,41 +353,19 @@ class TryoutPackageAdminController extends Controller
      */
     public function allResults(Request $request)
     {
-        $query = \App\Models\Tryout\Result::with(['session.package', 'siswa']);
-
-        // Filter by pass/fail
-        if ($request->filled('lulus')) {
-            $query->where('lulus', $request->lulus === 'true');
-        }
-
-        // Filter by session
-        if ($request->filled('session_id')) {
-            $query->where('tryout_session_id', $request->session_id);
-        }
-
-        // Filter by date
-        if ($request->filled('tanggal_from')) {
-            $query->whereDate('waktu_mulai', '>=', $request->tanggal_from);
-        }
-        if ($request->filled('tanggal_to')) {
-            $query->whereDate('waktu_mulai', '<=', $request->tanggal_to);
-        }
-
-        // Search by student name
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('siswa', function ($q) use ($search) {
-                $q->where('nama_peserta_didik', 'like', "%{$search}%");
-            });
-        }
-
-        $results = $query->latest()
-                        ->paginate(30);
+        $hasil = app(\App\Services\Exam\TryoutResultProvider::class)->daftar(
+            $request->only(['lulus', 'session_id', 'tanggal_from', 'tanggal_to', 'search'])
+        );
 
         $sessions = Session::with('package')->orderBy('tanggal_mulai', 'desc')->get();
         $packages = Package::where('aktif', true)->orderBy('nama_paket')->get();
 
-        return view('admin.tryout.results.index', compact('results', 'sessions', 'packages'));
+        return view('admin.tryout.results.index', [
+            'hasil' => $hasil['hasil'],
+            'ringkasan' => $hasil['ringkasan'],
+            'sessions' => $sessions,
+            'packages' => $packages,
+        ]);
     }
     
     /**
@@ -389,8 +374,27 @@ class TryoutPackageAdminController extends Controller
     public function showResult(Result $result)
     {
         $result->load(['session.package.subjects.questions', 'siswa', 'answers.question']);
-        
-        return view('admin.tryout.results.show', compact('result'));
+
+        return view('admin.tryout.results.show', [
+            'rincian' => app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariLegacy($result),
+        ]);
+    }
+
+    /**
+     * Rincian hasil dari engine terpadu (flag pembaca `exam_*` aktif).
+     */
+    public function showEngineResult(\App\Models\Exam\Attempt $attempt)
+    {
+        $attempt->load(['session.bank', 'siswa', 'result']);
+
+        abort_unless(
+            $attempt->session?->sumber_tabel === \App\Services\Exam\LegacyExamMapper::SUMBER_TRYOUT_SESI,
+            404
+        );
+
+        return view('admin.tryout.results.show', [
+            'rincian' => app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariEngine($attempt),
+        ]);
     }
     
     /**

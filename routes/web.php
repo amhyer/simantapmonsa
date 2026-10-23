@@ -544,6 +544,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
     Route::prefix('results')->name('results.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'allResults'])->name('index');
         Route::get('/export', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'exportResults'])->name('export');
+        Route::get('/engine/{attempt}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'showEngineResult'])->name('engine.show');
         Route::get('/{result}', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'showResult'])->name('show');
     });
 });

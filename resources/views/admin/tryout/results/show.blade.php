@@ -7,9 +7,13 @@
 @endsection
 
 @section('page_title', 'Detail Hasil Tryout')
-@section('page_subtitle', $result->siswa->nama_peserta_didik ?? 'Hasil peserta')
+@section('page_subtitle', $rincian['siswa_nama'])
 
 @section('content')
+    @php
+        $waktu = fn ($nilai) => $nilai ? \Illuminate\Support\Carbon::parse($nilai)->format('d/m/Y H:i') : null;
+    @endphp
+
     <div class="card" style="margin-bottom:16px">
         <div class="card-header">
             <h3>Informasi Hasil</h3>
@@ -18,30 +22,30 @@
         <div class="card-body">
             <div style="display:grid;grid-template-columns:160px 1fr;gap:8px 16px;font-size:13px">
                 <div style="color:var(--muted)">Siswa</div>
-                <div><strong>{{ $result->siswa->nama_peserta_didik ?? '-' }}</strong></div>
+                <div><strong>{{ $rincian['siswa_nama'] }}</strong></div>
 
                 <div style="color:var(--muted)">NIS / Kelas</div>
-                <div>{{ $result->siswa->nis ?? '-' }} / {{ $result->siswa->kelas ?? '-' }}</div>
+                <div>{{ $rincian['siswa_nis'] }} / {{ $rincian['siswa_kelas'] }}</div>
 
                 <div style="color:var(--muted)">Sesi</div>
-                <div>{{ $result->session->nama_sesi ?? '-' }}</div>
+                <div>{{ $rincian['sesi_nama'] }}</div>
 
                 <div style="color:var(--muted)">Paket</div>
-                <div>{{ $result->session->package->nama_paket ?? '-' }}</div>
+                <div>{{ $rincian['paket_nama'] }}</div>
 
                 <div style="color:var(--muted)">Percobaan</div>
-                <div>Ke-{{ $result->attempt_number ?? 1 }}</div>
+                <div>Ke-{{ $rincian['attempt_number'] }}</div>
 
                 <div style="color:var(--muted)">Waktu Mulai</div>
-                <div>{{ $result->waktu_mulai?->format('d/m/Y H:i') ?? '-' }}</div>
+                <div>{{ $waktu($rincian['waktu_mulai']) ?? '-' }}</div>
 
                 <div style="color:var(--muted)">Waktu Selesai</div>
-                <div>{{ $result->waktu_selesai?->format('d/m/Y H:i') ?? 'Belum selesai' }}</div>
+                <div>{{ $waktu($rincian['waktu_selesai']) ?? 'Belum selesai' }}</div>
 
                 <div style="color:var(--muted)">Durasi</div>
                 <div>
-                    @if($result->durasi_total_detik)
-                        {{ floor($result->durasi_total_detik / 60) }} menit {{ $result->durasi_total_detik % 60 }} detik
+                    @if($rincian['durasi_detik'])
+                        {{ floor($rincian['durasi_detik'] / 60) }} menit {{ $rincian['durasi_detik'] % 60 }} detik
                     @else
                         -
                     @endif
@@ -49,8 +53,8 @@
 
                 <div style="color:var(--muted)">Status</div>
                 <div>
-                    <span class="tag {{ $result->lulus ? 'tag-ok' : 'tag-bad' }}">
-                        {{ $result->lulus ? 'Lulus' : 'Tidak Lulus' }}
+                    <span class="tag {{ $rincian['lulus'] ? 'tag-ok' : 'tag-bad' }}">
+                        {{ $rincian['lulus'] ? 'Lulus' : 'Tidak Lulus' }}
                     </span>
                 </div>
             </div>
@@ -60,19 +64,19 @@
     <div class="grid grid-4" style="margin-bottom:16px">
         <div class="stat">
             <div class="label">Nilai Total</div>
-            <div class="value">{{ number_format($result->nilai_total ?? 0, 1) }}</div>
+            <div class="value">{{ number_format($rincian['nilai_total'], 1) }}</div>
         </div>
         <div class="stat gold">
             <div class="label">Nilai Maksimal</div>
-            <div class="value">{{ number_format($result->nilai_maksimal ?? 0, 1) }}</div>
+            <div class="value">{{ number_format($rincian['nilai_maksimal'], 1) }}</div>
         </div>
         <div class="stat ok">
             <div class="label">Persentase</div>
-            <div class="value">{{ number_format($result->persentase ?? 0, 1) }}%</div>
+            <div class="value">{{ number_format($rincian['persentase'], 1) }}%</div>
         </div>
         <div class="stat">
             <div class="label">Peringkat</div>
-            <div class="value">{{ $result->peringkat ?? '-' }}</div>
+            <div class="value">{{ $rincian['peringkat'] ?? '-' }}</div>
         </div>
     </div>
 
@@ -81,7 +85,7 @@
             <h3>Nilai per Mata Pelajaran</h3>
         </div>
         <div class="card-body tight">
-            @php $detailMapel = $result->detail_nilai_mapel ?? []; @endphp
+            @php $detailMapel = $rincian['detail_mapel']; @endphp
             @if(empty($detailMapel))
                 <div class="empty-state">
                     <div class="icon">📚</div>
@@ -131,12 +135,11 @@
             <div style="font-size:13px;display:grid;gap:12px">
                 <div>
                     <div style="color:var(--muted);margin-bottom:4px">Mata pelajaran terlemah</div>
-                    @php $kelemahan = $result->analisis_kelemahan ?? []; @endphp
-                    @if(empty($kelemahan))
+                    @if(empty($rincian['kelemahan']))
                         <span class="tag tag-mut">Tidak ada data</span>
                     @else
                         <div style="display:flex;flex-wrap:wrap;gap:6px">
-                            @foreach($kelemahan as $lemah)
+                            @foreach($rincian['kelemahan'] as $lemah)
                                 <span class="tag tag-warn">
                                     {{ $lemah['nama_mapel'] ?? '-' }} ({{ number_format($lemah['persentase'] ?? 0, 1) }}%)
                                 </span>
@@ -146,7 +149,7 @@
                 </div>
                 <div>
                     <div style="color:var(--muted);margin-bottom:4px">Rekomendasi pembelajaran</div>
-                    <div>{{ $result->rekomendasi_pembelajaran ?: '-' }}</div>
+                    <div>{{ $rincian['rekomendasi'] ?: '-' }}</div>
                 </div>
             </div>
         </div>

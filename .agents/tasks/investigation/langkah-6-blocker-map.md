@@ -134,9 +134,16 @@ keluaran lama yang bisa dipakai sebagai pembanding.
   memanggil model `cbt_*` langsung. Parity diuji dua arah: potret provider identik
   pada kedua cabang, dan data tetap benar setelah tabel `cbt_*` dikosongkan.
   Bukti: `ExamReaderTest::test_provider_dasbor_*`, `test_dasbor_peran_tampil_dengan_reader_engine`.
-- ⏭️ **6b (sisa)** — statistik/hasil/ekspor Tryout admin masih membaca `tryout_*`
-  (halaman detail memakai route-model binding `Tryout\Result`, jadi perlu rute
-  engine tersendiri); flag reader untuk jalur ini belum dipasang.
+- ✅ **6b (hasil & statistik Tryout admin)** — `TryoutResultProvider` menyatukan
+  daftar hasil (filter, paginasi, kartu statistik) + rincian hasil ke bentuk array
+  yang sama untuk `tryout_*` dan `exam_*`; rute engine
+  `admin.tryout.results.engine.show` ditambahkan. Angka agregat statistik ikut
+  flag. Bukti: `ExamReaderTest::test_daftar_hasil_tryout_*`, `test_rincian_hasil_tryout_engine_*`,
+  `test_statistik_tryout_engine_tetap_benar_*`.
+- ⏭️ **6b (sisa)** — katalog (daftar paket/sesi untuk dropdown filter dan
+  "sesi terbaru" statistik) masih dari `tryout_*`; itu menunggu 6c karena
+  kepemilikan tulis paket/sesi belum dibalik. Ekspor Tryout admin masih stub
+  (tidak ada pembanding lama).
 - ⏭️ **6c** — balik kepemilikan tulis (CRUD bank/soal/sesi), lalu 6d alur siswa.
 
 ## Urutan pengerjaan yang disarankan

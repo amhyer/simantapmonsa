@@ -98,7 +98,7 @@
             <div class="card bg-primary text-white">
                 <div class="card-body py-2">
                     <small>Total Hasil</small>
-                    <h4 class="mb-0">{{ $results->total() }}</h4>
+                    <h4 class="mb-0">{{ $ringkasan['total'] }}</h4>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body py-2">
                     <small>Lulus</small>
-                    <h4 class="mb-0">{{ $results->where('lulus', true)->count() }}</h4>
+                    <h4 class="mb-0">{{ $ringkasan['lulus'] }}</h4>
                 </div>
             </div>
         </div>
@@ -114,7 +114,7 @@
             <div class="card bg-danger text-white">
                 <div class="card-body py-2">
                     <small>Tidak Lulus</small>
-                    <h4 class="mb-0">{{ $results->where('lulus', false)->count() }}</h4>
+                    <h4 class="mb-0">{{ $ringkasan['tidak_lulus'] }}</h4>
                 </div>
             </div>
         </div>
@@ -122,7 +122,7 @@
             <div class="card bg-info text-white">
                 <div class="card-body py-2">
                     <small>Rata-rata Skor</small>
-                    <h4 class="mb-0">{{ number_format($results->avg('skor_total') ?? 0, 1) }}</h4>
+                    <h4 class="mb-0">{{ number_format($ringkasan['rata'], 1) }}</h4>
                 </div>
             </div>
         </div>
@@ -130,7 +130,7 @@
             <div class="card bg-warning">
                 <div class="card-body py-2">
                     <small>Skor Tertinggi</small>
-                    <h4 class="mb-0">{{ number_format($results->max('skor_total') ?? 0, 1) }}</h4>
+                    <h4 class="mb-0">{{ number_format($ringkasan['tertinggi'], 1) }}</h4>
                 </div>
             </div>
         </div>
@@ -138,7 +138,7 @@
             <div class="card bg-secondary text-white">
                 <div class="card-body py-2">
                     <small>Skor Terendah</small>
-                    <h4 class="mb-0">{{ number_format($results->min('skor_total') ?? 0, 1) }}</h4>
+                    <h4 class="mb-0">{{ number_format($ringkasan['terendah'], 1) }}</h4>
                 </div>
             </div>
         </div>
@@ -174,45 +174,45 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($results as $index => $result)
+                        @forelse($hasil as $index => $baris)
                         <tr>
-                            <td>{{ ($results->currentPage() - 1) * $results->perPage() + $index + 1 }}</td>
+                            <td>{{ ($hasil->currentPage() - 1) * $hasil->perPage() + $index + 1 }}</td>
                             <td>
-                                <strong>{{ $result->siswa->nama_peserta_didik ?? '-' }}</strong><br>
-                                <small class="text-muted">{{ $result->siswa->kelas ?? '-' }}</small>
+                                <strong>{{ $baris['siswa_nama'] }}</strong><br>
+                                <small class="text-muted">{{ $baris['siswa_kelas'] }}</small>
                             </td>
-                            <td>{{ $result->session->nama_sesi ?? '-' }}</td>
-                            <td>{{ $result->session->package->nama_paket ?? '-' }}</td>
+                            <td>{{ $baris['sesi_nama'] }}</td>
+                            <td>{{ $baris['paket_nama'] }}</td>
                             <td>
-                                <span class="badge bg-{{ $result->lulus ? 'success' : 'danger' }}">
-                                    {{ number_format($result->skor_total, 1) }}
+                                <span class="badge bg-{{ $baris['lulus'] ? 'success' : 'danger' }}">
+                                    {{ number_format($baris['skor_total'], 1) }}
                                 </span>
                             </td>
                             <td>
-                                <span class="badge bg-success">{{ $result->jumlah_benar }}</span>
+                                <span class="badge bg-success">{{ $baris['jumlah_benar'] }}</span>
                             </td>
                             <td>
-                                <span class="badge bg-danger">{{ $result->jumlah_salah }}</span>
+                                <span class="badge bg-danger">{{ $baris['jumlah_salah'] }}</span>
                             </td>
                             <td>
-                                <span class="badge bg-secondary">{{ $result->jumlah_kosong }}</span>
+                                <span class="badge bg-secondary">{{ $baris['jumlah_kosong'] }}</span>
                             </td>
                             <td>
-                                @if($result->waktu_pengerjaan_detik)
-                                {{ floor($result->waktu_pengerjaan_detik / 60) }} m {{ $result->waktu_pengerjaan_detik % 60 }} d
+                                @if($baris['waktu_detik'])
+                                {{ floor($baris['waktu_detik'] / 60) }} m {{ $baris['waktu_detik'] % 60 }} d
                                 @else
                                 -
                                 @endif
                             </td>
                             <td>
-                                @if($result->lulus)
+                                @if($baris['lulus'])
                                 <span class="badge bg-success">Lulus</span>
                                 @else
                                 <span class="badge bg-danger">Tidak Lulus</span>
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.tryout.results.show', $result) }}" 
+                                <a href="{{ $baris['detail_url'] }}"
                                    class="btn btn-sm btn-info" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -229,7 +229,7 @@
                 </table>
             </div>
             
-            {{ $results->links() }}
+            {{ $hasil->links() }}
         </div>
     </div>
 </div>

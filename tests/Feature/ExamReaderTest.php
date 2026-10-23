@@ -493,6 +493,88 @@ class ExamReaderTest extends TestCase
         ];
     }
 
+    /** Provider daftar hasil Tryout harus identik pada kedua sumber data. */
+    public function test_daftar_hasil_tryout_provider_parity_legacy_vs_engine(): void
+    {
+        $this->selesaikanTryout();
+
+        $provider = app(\App\Services\Exam\TryoutResultProvider::class);
+
+        config(['simantap.exam_engine_readers' => false]);
+        $lama = $provider->daftar([]);
+
+        config(['simantap.exam_engine_readers' => true]);
+        $baru = $provider->daftar([]);
+
+        $this->assertSame($lama['ringkasan'], $baru['ringkasan']);
+        $this->assertCount(1, $baru['hasil']->items());
+
+        $lamaBaris = $lama['hasil']->items()[0];
+        $baruBaris = $baru['hasil']->items()[0];
+
+        foreach (['siswa_nama', 'siswa_kelas', 'sesi_nama', 'paket_nama', 'skor_total', 'jumlah_benar', 'jumlah_salah', 'jumlah_kosong', 'lulus'] as $kolom) {
+            $this->assertSame($lamaBaris[$kolom], $baruBaris[$kolom], "Kolom {$kolom} harus sama.");
+        }
+        $this->assertEqualsWithDelta($lamaBaris['waktu_detik'], $baruBaris['waktu_detik'], 2);
+    }
+
+    /**
+     * Daftar hasil harus tetap benar saat `tryout_results` dikosongkan, asal
+     * katalog sesi/paket (masih dibaca filter) tetap ada.
+     */
+    public function test_daftar_hasil_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $this->assertSame(1, app(\App\Services\Exam\TryoutResultProvider::class)->daftar([])['ringkasan']['total']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.index'))
+            ->assertOk()
+            ->assertSee('Siswa Pembaca')
+            ->assertSee('Paket Pembaca')
+            ->assertSee('100.0');
+    }
+
+    /** Halaman rincian versi engine menampilkan nilai yang sama. */
+    public function test_rincian_hasil_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $attempt = \App\Models\Exam\Attempt::firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.engine.show', $attempt))
+            ->assertOk()
+            ->assertSee('Siswa Pembaca')
+            ->assertSee('Paket Pembaca')
+            ->assertSee('100.0')
+            ->assertSee('Lulus');
+    }
+
+    /** Statistik Tryout dari engine tetap benar tanpa tabel hasil lama. */
+    public function test_statistik_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $stats = $this->actingAs($this->admin)
+            ->get(route('admin.tryout.statistics'))
+            ->assertOk()
+            ->assertSee('100.0%')
+            ->viewData('stats');
+
+        $this->assertSame(1, $stats['total_packages']);
+        $this->assertSame(1, $stats['total_sessions']);
+        $this->assertSame(1, $stats['total_results']);
+        $this->assertEqualsWithDelta(100.0, (float) $stats['average_pass_rate'], 0.01);
+    }
+
     /** @return array<int, array<int, string|null>> */
     private function parseCsv(string $csv): array
     {
