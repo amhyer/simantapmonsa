@@ -47,8 +47,9 @@ class ExportBackupJob implements ShouldQueue
 
             $firstTable = true;
             foreach ($tables as $key => $konfigurasi) {
-                // CBT belum tentu sudah dimigrasikan saat flag masih nonaktif.
-                if (str_starts_with($key, 'cbt_') && !Schema::hasTable($key)) {
+                // Tabel opsional (mis. modul CBT/Tryout belum pernah dimigrasikan
+                // pada instalasi lama) dilewati agar backup tetap berjalan.
+                if (!Schema::hasTable($key)) {
                     continue;
                 }
                 if (!$firstTable) {

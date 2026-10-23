@@ -184,27 +184,11 @@ class BackupController extends Controller
 
         Log::info('Wipe data diminta oleh: ' . (auth()->user()?->nama_pengguna ?? '?') . ' IP: ' . request()->ip());
 
-        // Daftar tabel data yang dikosongkan. SENGAJA dikecualikan:
-        // users (agar admin tetap bisa login), semesters, sekolah_settings,
-        // api_keys (akses bridge), dan seluruh tabel framework
-        // (migrations, jobs, cache, sessions, telescope, dsb).
-        $tabelData = [
-            'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
-            // Engine ujian terpadu (Fase 3) kini sumber kebenaran; tabel cbt_*/
-            // tryout_* hanya cermin, jadi keduanya harus ikut dikosongkan agar
-            // tidak tersisa keadaan setengah (engine kosong, cermin terisi).
-            'exam_violations', 'exam_results', 'exam_answers', 'exam_attempts', 'exam_sessions',
-            'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks', 'exam_engines',
-            'siswa', 'orang_tua_siswa', 'nilai', 'nilai_erapor', 'nilai_mapel',
-            'nilai_cp', 'capaian_pembelajaran', 'kehadiran', 'hasil_kuis',
-            'kuis', 'materi', 'catatan', 'dimensi', 'kebiasaan', 'ptk',
-            'rombel', 'jadwal_pelajaran', 'mata_pelajaran', 'pengaturan_guru',
-            'ringkasan_guru', 'dapodik_sync_logs', 'dapodik_import_logs',
-            'dapodik_data_cache', 'aktivitas', 'tanggal_rapor',
-            'ekstrakurikuler', 'siswa_ekstrakurikuler',
-            'tema_kokurikuler', 'kegiatan_kokurikuler', 'kelompok_kokurikuler',
-            'anggota_kelompok',
-        ];
+        // Daftar tabel data yang dikosongkan. Diturunkan dari registry backup
+        // (App\Support\BackupTables) supaya tabel yang dicadangkan selalu ikut
+        // dikosongkan; hanya identitas yang benar-benar dipertahankan yang
+        // dikecualikan (lihat BackupTables::tidakDikosongkan()).
+        $tabelData = BackupTables::dikosongkan();
 
         $dihapus = [];
         $gagal = [];

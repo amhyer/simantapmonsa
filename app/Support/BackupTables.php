@@ -113,10 +113,59 @@ class BackupTables
             'exam_results' => ['class' => \App\Models\Exam\Result::class, 'except' => []],
             'exam_violations' => ['class' => \App\Models\Exam\Violation::class, 'except' => []],
 
+            // Tryout: urutan induk -> anak. Sebelumnya seluruh tabel ini luput
+            // dari backup DAN dari wipe, sehingga "Hapus Semua Data" menyisakan
+            // data Tryout sementara engine-nya kosong.
+            'tryout_categories' => ['class' => \App\Models\Tryout\Category::class, 'except' => []],
+            'tryout_packages' => ['class' => \App\Models\Tryout\Package::class, 'except' => []],
+            'tryout_subjects' => ['class' => \App\Models\Tryout\Subject::class, 'except' => []],
+            'tryout_questions' => ['class' => \App\Models\Tryout\TryoutQuestion::class, 'except' => []],
+            'tryout_question_options' => ['class' => \App\Models\Tryout\TryoutQuestionOption::class, 'except' => []],
+            'tryout_sessions' => ['class' => \App\Models\Tryout\Session::class, 'except' => []],
+            'tryout_results' => ['class' => \App\Models\Tryout\Result::class, 'except' => []],
+            'tryout_student_answers' => ['class' => \App\Models\Tryout\StudentAnswer::class, 'except' => []],
+
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],
             'aktivitas' => ['class' => Aktivitas::class, 'except' => []],
         ];
+    }
+
+    /**
+     * Tabel yang dicadangkan dan TIDAK dikosongkan oleh "Hapus Semua Data".
+     *
+     * Daftar ini harus tetap kecil dan disengaja: akun, semester, dan identitas
+     * sekolah dipertahankan agar admin masih bisa login dan aplikasi tetap tahu
+     * konteks tahun ajar setelah wipe.
+     *
+     * Diperiksa oleh tools/verifikasi-perbaikan.php.
+     *
+     * @return array<int, string>
+     */
+    public static function tidakDikosongkan(): array
+    {
+        return [
+            'users',
+            'semesters',
+            'sekolah_settings',
+        ];
+    }
+
+    /**
+     * Tabel data yang dikosongkan tombol "Hapus Semua Data".
+     *
+     * Diturunkan dari registry yang sama agar cakupan backup dan wipe tidak
+     * pernah menyimpang (bug lama: tryout_* dan transkrip_nilai tercadang/terisi
+     * tetapi tidak pernah dikosongkan).
+     *
+     * @return array<int, string>
+     */
+    public static function dikosongkan(): array
+    {
+        return array_values(array_diff(
+            array_merge(self::tabel(), self::tidakDicadangkan()),
+            self::tidakDikosongkan()
+        ));
     }
 
     /**
