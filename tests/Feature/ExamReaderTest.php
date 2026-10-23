@@ -17,6 +17,8 @@ use App\Models\Tryout\Subject;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\User;
 use App\Services\CbtExamService;
+use App\Services\Exam\ExamReportService;
+use App\Services\ExamDashboardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -268,6 +270,123 @@ class ExamReaderTest extends TestCase
 
         $this->assertSame(1, \App\Models\CbtViolation::count());
         $this->assertSame(0, \App\Models\Exam\Violation::count());
+    }
+
+    // ------------------------------------------- dasbor: parity ke engine
+
+    public function test_ringkasan_cbt_guru_dan_sekolah_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->selesaikanCbt();
+
+        $engineGuru = app(ExamDashboardService::class)->ringkasanCbtGuru($this->guru->id);
+
+        $this->assertSame(
+            \App\Models\CbtQuestionBank::where('guru_id', $this->guru->id)->count(),
+            $engineGuru['total_bank']
+        );
+        $this->assertSame(
+            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)
+                ->whereIn('status', ['published', 'running'])->count(),
+            $engineGuru['sesi_aktif']
+        );
+        $this->assertSame(
+            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)->where('status', 'completed')->count(),
+            $engineGuru['sesi_selesai']
+        );
+        $this->assertSame(
+            \App\Models\CbtResult::whereHas('session', fn ($q) => $q->where('guru_id', $this->guru->id))->count(),
+            $engineGuru['total_peserta']
+        );
+
+        $legacyTotal = \App\Models\CbtResult::count();
+        $legacyAvg = (float) (\App\Models\CbtResult::avg('score') ?? 0);
+        $legacyPass = \App\Models\CbtResult::where('score', '>=', 70)->count() / max($legacyTotal, 1) * 100;
+
+        $engine = app(ExamDashboardService::class)->ringkasanCbtSekolah();
+
+        $this->assertSame(\App\Models\CbtTestSession::count(), $engine['total_sessions']);
+        $this->assertSame(
+            \App\Models\CbtTestSession::whereIn('status', ['published', 'running'])->count(),
+            $engine['ongoing']
+        );
+        $this->assertSame(\App\Models\CbtTestSession::where('status', 'completed')->count(), $engine['completed']);
+        $this->assertSame($legacyTotal, $engine['total_participants']);
+        $this->assertEqualsWithDelta($legacyAvg, $engine['avg_score'], 0.01);
+        $this->assertEqualsWithDelta($legacyPass, $engine['pass_rate'], 0.01);
+    }
+
+    public function test_hasil_cbt_terbaru_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->selesaikanCbt();
+
+        $legacy = \App\Models\CbtResult::where('siswa_id', $this->siswa->id)
+            ->with('session.bank')
+            ->whereNotNull('submitted_at')
+            ->orderByDesc('submitted_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'judul' => $r->session?->title ?? '-',
+                'mata_pelajaran' => $r->session?->bank?->subject ?? '-',
+                'score' => (float) ($r->score ?? 0),
+                'lulus' => (float) ($r->score ?? 0) >= 70,
+            ])
+            ->values();
+
+        $engine = app(ExamDashboardService::class)->hasilCbtTerbaru($this->siswa->id);
+
+        $this->assertSame($legacy->count(), $engine->count());
+        $this->assertSame($legacy[0]['judul'], $engine[0]['judul']);
+        $this->assertSame($legacy[0]['mata_pelajaran'], $engine[0]['mata_pelajaran']);
+        $this->assertSame($legacy[0]['score'], $engine[0]['score']);
+        $this->assertSame($legacy[0]['lulus'], $engine[0]['lulus']);
+        $this->assertNotNull($engine[0]['submitted_at']);
+    }
+
+    public function test_ujian_tersedia_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->mulaiCbt();
+
+        $legacy = \App\Models\CbtTestSession::with('bank')
+            ->whereIn('status', ['published', 'running'])
+            ->where('opens_at', '<=', now())
+            ->where('closes_at', '>', now())
+            ->orderBy('opens_at')
+            ->limit(50)
+            ->get()
+            ->filter(fn ($s) => in_array($this->siswa->id, $s->participant_ids ?? []))
+            ->take(3)
+            ->values();
+
+        $engine = app(ExamDashboardService::class)->ujianTersedia($this->siswa);
+
+        $this->assertSame($legacy->count(), $engine->count());
+        $this->assertSame($legacy[0]->title, $engine[0]->nama);
+        $this->assertSame($legacy[0]->bank?->subject, $engine[0]->bank?->mata_pelajaran);
+    }
+
+    public function test_statistik_tryout_engine_sama_dengan_halaman_statistik_lama(): void
+    {
+        $result = $this->selesaikanTryout();
+
+        $legacy = $this->actingAs($this->admin)
+            ->get(route('admin.tryout.statistics'))
+            ->assertOk()
+            ->viewData('stats');
+
+        $engine = app(ExamReportService::class)->ringkasanTryout();
+
+        $this->assertSame($legacy['total_packages'], $engine['total_packages']);
+        $this->assertSame($legacy['total_sessions'], $engine['total_sessions']);
+        $this->assertSame($legacy['active_sessions'], $engine['active_sessions']);
+        $this->assertSame($legacy['total_results'], $engine['total_results']);
+        $this->assertEqualsWithDelta((float) $legacy['average_pass_rate'], (float) $engine['average_pass_rate'], 0.01);
+
+        $baris = app(ExamReportService::class)->hasilSesiTryout($result->session);
+        $this->assertCount(1, $baris);
+        $this->assertSame('Siswa Pembaca', $baris[0]['peserta']);
+        $this->assertSame(100.0, $baris[0]['persentase']);
+        $this->assertTrue($baris[0]['lulus']);
     }
 
     /** @return array<int, array<int, string|null>> */
