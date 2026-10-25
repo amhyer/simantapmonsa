@@ -1170,6 +1170,116 @@ periksa('Root repositori hanya berisi dokumen aktif', function () use ($root) {
         : 'docs/arsip/README.md (indeks arsip) tidak ada';
 });
 
+/**
+ * Kumpulkan berkas dokumen (.md/.txt) untuk pemeriksaan integritas tautan.
+ * `public/` dilewati karena berisi artefak build hasil Vite.
+ *
+ * @return list<string>
+ */
+function berkasDokumen(string $root): array
+{
+    $lewati = ['.git', 'node_modules', 'vendor', 'public', '.arena'];
+    $hasil = [];
+    $tumpuk = [$root];
+
+    while ($tumpuk !== []) {
+        $dir = array_pop($tumpuk);
+        foreach (scandir($dir) ?: [] as $nama) {
+            if ($nama === '.' || $nama === '..') {
+                continue;
+            }
+
+            $penuh = $dir . '/' . $nama;
+
+            if (is_dir($penuh)) {
+                if (! in_array($nama, $lewati, true)) {
+                    $tumpuk[] = $penuh;
+                }
+
+                continue;
+            }
+
+            if (preg_match('/\.(md|txt)$/i', $nama)) {
+                $hasil[] = $penuh;
+            }
+        }
+    }
+
+    sort($hasil);
+
+    return $hasil;
+}
+
+periksa('Tautan Markdown relatif menunjuk berkas yang ada', function () use ($root) {
+    $rusak = [];
+    $diperiksa = 0;
+
+    foreach (berkasDokumen($root) as $berkas) {
+        $isi = baca($berkas);
+        $dir = dirname($berkas);
+
+        if (! preg_match_all('/\[[^\]]*\]\(([^)\s]+)\)/', $isi, $m)) {
+            continue;
+        }
+
+        foreach ($m[1] as $tautan) {
+            // Tautan eksternal, jangkar, dan placeholder bukan urusan check ini.
+            if (preg_match('#^(https?://|mailto:|\#|<)#i', $tautan)) {
+                continue;
+            }
+
+            $diperiksa++;
+            $target = preg_split('/[#?]/', $tautan)[0];
+
+            if ($target === '') {
+                continue;
+            }
+
+            if (! file_exists($dir . '/' . $target)) {
+                $rusak[] = rel($berkas, $root) . ' -> ' . $tautan;
+            }
+        }
+    }
+
+    if ($diperiksa === 0) {
+        return 'tidak ada tautan relatif yang diperiksa — check ini tidak membuktikan apa pun';
+    }
+
+    return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
+});
+
+periksa('URL GitHub absolut menunjuk berkas yang ada', function () use ($root) {
+    $rusak = [];
+    $diperiksa = 0;
+
+    // Kasus nyata yang pernah lolos: dokumen dipindah ke docs/arsip/, tetapi
+    // URL absolut `.../blob/main/<berkas>` tetap menunjuk lokasi lama.
+    $pola = '#github\.com/amhyer/simantapmonsa/(?:blob|tree)/([^/\s)]+)/([^\s)"\']+)#i';
+
+    foreach (berkasDokumen($root) as $berkas) {
+        $isi = baca($berkas);
+
+        if (! preg_match_all($pola, $isi, $m, PREG_SET_ORDER)) {
+            continue;
+        }
+
+        foreach ($m as $cocok) {
+            $diperiksa++;
+            $jalur = $cocok[2];
+
+            if (! file_exists($root . '/' . $jalur)) {
+                $rusak[] = rel($berkas, $root) . ' -> ' . $jalur;
+            }
+        }
+    }
+
+    if ($diperiksa === 0) {
+        return 'tidak ada URL GitHub yang diperiksa — check ini tidak membuktikan apa pun';
+    }
+
+    return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {

@@ -383,14 +383,16 @@ Setiap tes negatif harus memeriksa bukan hanya status HTTP, tetapi juga bahwa da
 ## 9. Dokumentasi dan sumber kode yang menjadi acuan
 
 - [README](https://github.com/amhyer/simantapmonsa/blob/main/README.md)
-- [Laporan audit 14 Oktober](https://github.com/amhyer/simantapmonsa/blob/main/LAPORAN_AUDIT_BUG_2026-10-14.md)
-- [Laporan perbaikan 14 Oktober](https://github.com/amhyer/simantapmonsa/blob/main/LAPORAN_PERBAIKAN_2026-10-14.md)
+- [Laporan audit 14 Oktober](https://github.com/amhyer/simantapmonsa/blob/main/docs/arsip/LAPORAN_AUDIT_BUG_2026-10-14.md)
+- [Laporan perbaikan 14 Oktober](https://github.com/amhyer/simantapmonsa/blob/main/docs/arsip/LAPORAN_PERBAIKAN_2026-10-14.md)
 - [Routes web](https://github.com/amhyer/simantapmonsa/blob/main/routes/web.php)
 - [CBT Student Controller](https://github.com/amhyer/simantapmonsa/blob/main/app/Http/Controllers/Cbt/CbtStudentController.php)
 - [CBT Session Controller](https://github.com/amhyer/simantapmonsa/blob/main/app/Http/Controllers/Cbt/CbtTestSessionController.php)
 - [CBT Question Bank Controller](https://github.com/amhyer/simantapmonsa/blob/main/app/Http/Controllers/Cbt/CbtQuestionBankController.php)
-- [CBT result migration](https://github.com/amhyer/simantapmonsa/blob/main/database/migrations/2026_10_04_210653_create_cbt_test_results_table.php)
-- [CBT answer migration](https://github.com/amhyer/simantapmonsa/blob/main/database/migrations/2026_10_04_210643_create_cbt_student_answers_table.php)
+<!-- Kedua migrasi CBT terpisah yang dirujuk audit ini sudah dikonsolidasi
+     menjadi satu berkas pada 18 Oktober 2026. Tautan diarahkan ke berkas
+     penggantinya agar tidak menggantung. -->
+- [Migrasi tabel CBT (pengganti kedua migrasi terpisah di atas)](https://github.com/amhyer/simantapmonsa/blob/main/database/migrations/2026_10_18_000001_create_cbt_tables.php)
 - [Tryout student controller](https://github.com/amhyer/simantapmonsa/blob/main/app/Http/Controllers/Tryout/TryoutStudentController.php)
 - [Tryout result migration](https://github.com/amhyer/simantapmonsa/blob/main/database/migrations/2026_10_04_222414_create_tryout_results_table.php)
 - [Google Sheets integration](https://github.com/amhyer/simantapmonsa/blob/main/app/Http/Controllers/Guru/IntegrasiController.php)

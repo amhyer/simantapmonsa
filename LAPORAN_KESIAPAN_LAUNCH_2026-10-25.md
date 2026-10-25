@@ -54,7 +54,8 @@ baru sudah diuji lewat *mutation test* (lihat §10 dan §11).
 | P4 Dokumen menumpuk | ✅ **Selesai** | Root 20 → 5 dokumen; 15 diarsipkan ke `docs/arsip/` |
 
 Detail, keputusan desain, dan batas verifikasinya ada di **§12**. Verifier naik lagi
-menjadi **56 pemeriksaan, 0 gagal**.
+menjadi **58 pemeriksaan, 0 gagal** (56 saat pertama dikerjakan, lalu +2 check
+integritas tautan setelah koreksi di §12.5).
 
 ---
 
@@ -595,7 +596,7 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
 | P1 | `git rm resources/css/landing.css resources/js/landing.js` | **1.588 baris kode mati dihapus** (956 + 632). `grep -rn "landing.css\|landing.js"` seluruh repositori → kosong. |
 | P2 | Hapus `<link>` Google Fonts + 2 baris `preconnect` dari `resources/views/auth/register.blade.php`, diganti komentar penjelas berbahasa Indonesia | Ketiga halaman gerbang auth (`login`, `register`, `force-change-password`) kini konsisten: **nol permintaan font eksternal**, `'Inter'` tetap ada di awal tumpukan `font-family` sebagai *progressive enhancement*. |
 | P3 | Impor statis `Html5Qrcode` di `resources/js/presensi-qr.js` diganti pemuatan malas `await import('html5-qrcode')` di dalam handler tombol "Mulai Kamera" | Bundle utama **444,73 kB → 76,98 kB** (gzip **134,95 → 27,08 kB**), turun **82,7 %**. `html5-qrcode` kini terpisah ke `esm-k8a5Y8M6.js` (369,11 kB / 108,72 kB gzip) dan **hanya diunduh saat pemindaian QR benar-benar dibuka**. |
-| P4 | 15 dokumen warisan dipindah `git mv` ke `docs/arsip/` + indeks `docs/arsip/README.md`; 8 referensi silang diperbarui | Root turun dari **20 dokumen → 5** (`README.md`, `DEPLOYMENT.md`, `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`, `AGENTS.md`, `CLAUDE.md`). `grep -rnP` atas 10 nama berkas arsip di luar `docs/arsip/` → **nol referensi menggantung**. |
+| P4 | 15 dokumen warisan dipindah `git mv` ke `docs/arsip/` + indeks `docs/arsip/README.md`; 8 referensi silang diperbarui | Root turun dari **20 dokumen → 5** (`README.md`, `DEPLOYMENT.md`, `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`, `AGENTS.md`, `CLAUDE.md`). 17 tautan Markdown relatif + 16 URL absolut GitHub diperiksa, **semuanya menunjuk berkas yang ada**. *(Klaim awal "nol referensi menggantung" di sini ternyata salah — lihat §12.5.)* |
 
 ### 12.2 Keputusan desain
 
@@ -618,7 +619,7 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
 
 ### 12.3 Verifikasi
 
-- **Verifier dinaikkan ke 56 pemeriksaan** (dari 53) — bagian 15 baru mengunci
+- **Verifier dinaikkan ke 58 pemeriksaan** (dari 53) — bagian 15 baru mengunci
   ketiganya: tidak ada aset mati di `resources/`, `html5-qrcode` wajib dimuat
   dinamis, dan root hanya boleh berisi 5 dokumen aktif + indeks arsip wajib ada.
 - **Mutation test — setiap check baru dibuktikan tidak lolos kosong.** Mutasi M2
@@ -649,6 +650,42 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
   efek visualnya perlu mata Anda.
 - `docs/AUDIT-FUNGSI-HALAMAN-2026-10-25.md` menyebut "244 tests / 1.069 assertions".
   Angka itu tidak saya jalankan ulang — tidak ada PHPUnit lokal di lingkungan ini.
+
+### 12.5 Koreksi: klaim "nol referensi menggantung" itu salah
+
+Pada §12.1 di atas saya menulis bahwa setelah pemindahan P4 tidak ada referensi yang
+menggantung. **Klaim itu tidak benar**, dan baru ketahuan saat verifikasi ulang
+26 Oktober 2026.
+
+**Akar masalahnya ada dua.**
+
+1. **Regex penulis-ulang saya menolak awalan `/`.** Pola `(?<![\w/.-])NAMA_BERKAS`
+   sengaja dibuat agar tidak menulis ulang referensi yang sudah berprefiks `arsip/`,
+   tetapi efek sampingnya ia juga **melewati URL absolut** seperti
+   `https://github.com/.../blob/main/LAPORAN_AUDIT_BUG_2026-10-14.md` — karena karakter
+   sebelum nama berkas adalah `/`. Dua tautan di `docs/Audit_Mendalam_SIMANTAPMONSA.md`
+   tetap menunjuk lokasi lama di root.
+2. **Pemeriksaan verifikasi saya memakai substring polos.** `grep -rlF "NAMA_BERKAS"`
+   mencocokkan `arsip/NAMA_BERKAS` juga, sehingga ia melaporkan 7 "referensi menggantung"
+   palsu sekaligus menyembunyikan 2 yang asli. Pemeriksaan yang menghasilkan positif
+   palsu tidak bisa dipercaya untuk menemukan negatif palsu.
+
+**Yang ditemukan dan diperbaiki.**
+
+| Temuan | Sumber | Tindakan |
+|---|---|---|
+| 2 URL absolut GitHub → `blob/main/LAPORAN_AUDIT_BUG_2026-10-14.md` dan `.../LAPORAN_PERBAIKAN_2026-10-14.md` | Akibat pemindahan P4 | Diarahkan ke `blob/main/docs/arsip/…` |
+| 2 URL absolut GitHub → `database/migrations/2026_10_04_210653_create_cbt_test_results_table.php` dan `…_210643_create_cbt_student_answers_table.php` | **Sudah rusak sebelum P4** — kedua migrasi itu dikonsolidasi menjadi `2026_10_18_000001_create_cbt_tables.php` pada 18 Okt 2026 | Tautan diarahkan ke berkas pengganti, dengan komentar penjelas |
+
+**Pencegahan.** Dua pemeriksaan baru ditambahkan ke verifier (bagian 15), sehingga
+kasus ini tidak bisa terulang diam-diam:
+
+- *Tautan Markdown relatif menunjuk berkas yang ada* — 17 tautan diperiksa.
+- *URL GitHub absolut menunjuk berkas yang ada* — 16 URL diperiksa.
+
+Keduanya menolak lolos bila tidak menemukan apa pun untuk diperiksa, dan keduanya
+sudah diuji: menyisipkan tautan relatif rusak (M6) dan mengembalikan URL GitHub rusak
+(M7) masing-masing membuat check-nya **gagal**. Verifier kini **58 lulus, 0 gagal**.
 
 ## Lampiran: Perintah yang Saya Jalankan
 
