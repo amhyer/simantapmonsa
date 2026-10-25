@@ -238,7 +238,7 @@ Direktori ada, file-nya tidak pernah dibuat:
 | M-02 | **Commit message berbohong** | `56f7922` menulis *"phpunit: 127/127 hijau"*. Kenyataannya **127 test, 1 ERROR** (`MenuAuditTest` kehabisan memory 128 MB). |
 | M-03 | Test suite **tidak bisa hijau di clone fresh** | 27 test gagal karena `public/build/manifest.json` tidak ada -> wajib `npm run build` dulu. Tidak ada `withoutVite()` di `TestCase`. |
 | M-04 | `composer.json` PHP `^8.3` vs lock butuh `>=8.4.1` | `composer install` gagal di versi minimum yang dideklarasikan sendiri. |
-| M-05 | `README.md` masih **README default Laravel** | Proyek tidak punya README sendiri; `00_START_HERE.txt` (17 KB) menggantikannya. |
+| M-05 | `README.md` masih **README default Laravel** | Proyek tidak punya README sendiri; `arsip/00_START_HERE.txt` (17 KB) menggantikannya. |
 | M-06 | `routes/web.php.remote` (71 KB) tertinggal | Sisa resolusi konflik. 0 route, tapi ada di root `routes/` -> rawan ikut ter-*include* atau memicu konflik merge. |
 | M-07 | `all_routes.txt` berisi **pesan error**, bukan data | Isinya `"The --columns option does not exist."` — artefak command gagal. |
 | M-08 | `api.json` = OpenAPI generic | `"title": "Laravel", "version": "0.0.1"` — belum dikustomisasi, 30 KB artefak generated yang di-commit. |

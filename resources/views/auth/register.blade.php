@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar - SIMANTAP</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {{--
+        Webfont Google Fonts dilepas (P2). Halaman login dan ganti-sandi memang
+        tidak memuatnya, jadi halaman pendaftaran tampak berbeda dari keduanya
+        padahal ketiganya halaman gerbang yang sama. Tautan font juga menambah
+        permintaan ke pihak ketiga di jalur pendaftaran.
+
+        'Inter' tetap ada di font-family sebagai progressive enhancement: bila
+        font itu terpasang di perangkat, ia dipakai; bila tidak, browser jatuh ke
+        font sistem — sama seperti dua halaman gerbang lainnya.
+    --}}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {

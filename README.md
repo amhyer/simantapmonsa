@@ -76,9 +76,10 @@ PHPUnit di SQLite, PHPUnit di PostgreSQL 16, dan browser smoke test Chromium.
 | Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
 | Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |
 | Modul CBT | [`docs/CBT.md`](docs/CBT.md) |
-| Menu & peran | [`MENU_AND_ROLES_DOCUMENTATION.md`](MENU_AND_ROLES_DOCUMENTATION.md) |
-| Model & relasi database | [`DATABASE_MODELS_AND_RELATIONSHIPS.md`](DATABASE_MODELS_AND_RELATIONSHIPS.md) |
+| Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
+| Model & relasi database | [`docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md`](docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md) |
 | Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
+| Arsip dokumentasi lama | [`docs/arsip/`](docs/arsip/README.md) |
 
 ---
 

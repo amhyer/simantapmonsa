@@ -53,7 +53,7 @@ menyala hijau — bukan pembacaan kode, bukan laporan Markdown.
 | 0.4 | ✅ SELESAI | `.github/workflows/test.yml`; langkah wajib `php artisan test --exclude-group baseline` → lokal **127 test, 0 error, 0 gagal (61,5 s)** |
 | 0.5 | ✅ SELESAI (ubah pendekatan) | flag `cbt_enabled=false` + middleware `EnsureModuleEnabled` (alias `module.asesmen`) → 404. **Route tetap terdaftar** (bukan dihapus) agar `route()` di view tidak melempar `RouteNotFoundException` |
 | 0.6 | ✅ SELESAI | `git rm routes/web.php.remote all_routes.txt api.json`; `git mv setup_api_key.php tools/`; path di `tools/verifikasi-perbaikan.php` diperbaiki |
-| 0.7 | ✅ SELESAI | Header "⚠️ KEDALUWARSA (17 Okt 2026)" di 6 dokumen. `00_START_HERE.txt` dilewati (penulisan ulang merusak encoding; sudah direvert) |
+| 0.7 | ✅ SELESAI | Header "⚠️ KEDALUWARSA (17 Okt 2026)" di 6 dokumen. `arsip/00_START_HERE.txt` dilewati (penulisan ulang merusak encoding; sudah direvert) |
 
 ### Temuan baru dari eksekusi Fase 0
 
