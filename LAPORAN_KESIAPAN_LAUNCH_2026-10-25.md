@@ -27,8 +27,20 @@ bukan soal kode. Estimasi penyelesaian blocker: **0,5–1 hari kerja**.
 | B5 Keputusan CBT | ⏳ **Menunggu keputusan Anda** | Celah middleware-nya sudah ditutup di `routes/web.php` |
 | — | 🔎 **Temuan baru** | 5 grup route ber-auth ternyata tanpa `force.password.change` — semuanya sudah ditutup |
 
-Verifikasi: verifier proyek naik dari **39 → 46 pemeriksaan, 0 gagal**, dan empat
-pemeriksaan baru sudah diuji lewat *mutation test* (lihat §10).
+Verifikasi: verifier proyek naik dari **39 → 53 pemeriksaan, 0 gagal**, dan pemeriksaan
+baru sudah diuji lewat *mutation test* (lihat §10 dan §11).
+
+### ✅ PEMBARUAN 25 Okt 2026 (tahap 2) — S1, S2, S3, S5, S7 sudah dikerjakan
+
+| Temuan | Status | Bukti |
+|---|---|---|
+| S1 Rotasi backup | ✅ **Selesai** | `BackupData` merotasi otomatis; `config/backup.php` |
+| S2 Salinan offsite | ✅ **Selesai** | `BACKUP_COPY_DISK`; kegagalan salinan tidak membatalkan cadangan utama |
+| S3 Security headers | ✅ **Selesai** | `App\Http\Middleware\SecurityHeaders` (global) + `config/security.php` |
+| S5 Halaman error | ✅ **Selesai** | `resources/views/errors/` 403, 404, 419, 429, 500, 503 |
+| S7 Favicon | ✅ **Selesai** | `public/favicon.ico` 0 byte → 4.286 byte (32×32, glyph "SM") |
+| S4 SRI pada CDN | ⏳ **Ditunda** | Alasan teknis di §11.4 — tidak bisa dikerjakan dengan jujur dari sandbox ini |
+| S6 SOP reset sandi | 🟡 **Sebagian** | SOP tertulis sudah ada di `DEPLOYMENT.md` §6; reset mandiri tetap tidak ada |
 
 ---
 
@@ -267,13 +279,13 @@ launching bisa jalan sekarang dengan CBT tetap mati — flag off **tidak** mengh
 
 | # | Temuan | Bukti | Dampak |
 |---|---|---|---|
-| S1 | **Backup tanpa rotasi** | `BackupData.php` menulis `backups/backup-simantap-<ts>.json` tiap hari 02:00, tidak ada penghapusan berkas lama | Disk membengkak tanpa batas; semua data siswa menumpuk di `storage/app/private/backups` |
-| S2 | **Backup hanya di disk lokal** | `Storage::disk('local')` | Server rusak = data hilang. Belum ada salinan offsite |
-| S3 | **Tanpa security headers** | `grep -icE "Strict-Transport\|X-Frame\|X-Content-Type\|Content-Security" public/.htaccess` → `0` | Belum ada HSTS, X-Frame-Options, X-Content-Type-Options, CSP |
-| S4 | **22 tag CDN di 17 berkas, tanpa satu pun SRI** | `grep -rn "integrity=" resources/views` → `0`. Rincian: 17 tag `cdn.jsdelivr.net` (Chart.js, Bootstrap), 4 `unpkg.com` (AOS), 2 `cdnjs.cloudflare.com` (Font Awesome), plus Google Fonts | Jika CDN down/diblokir jaringan sekolah, grafik & ikon hilang; tanpa SRI, CDN yang disusupi bisa menyuntik skrip |
-| S5 | **Tidak ada halaman error kustom** | `resources/views/errors/` tidak ada | Siswa melihat halaman 404/500 default Laravel saat ada masalah |
-| S6 | **Tidak ada SOP reset sandi** (lanjutan B4) | Tidak ada route reset, tidak ada kolom `email` | Beban dukungan manual |
-| S7 | **`favicon.ico` berukuran 0 byte** | `ls -la public/` → `favicon.ico` 0 byte | Tab browser kosong. Landing sudah pakai favicon SVG inline, tapi `/favicon.ico` tetap diminta browser |
+| S1 | ✅ **Selesai** — **Backup tanpa rotasi** | `BackupData.php` menulis `backups/backup-simantap-<ts>.json` tiap hari 02:00, tidak ada penghapusan berkas lama | Disk membengkak tanpa batas; semua data siswa menumpuk di `storage/app/private/backups` |
+| S2 | ✅ **Selesai** — **Backup hanya di disk lokal** | `Storage::disk('local')` | Server rusak = data hilang. Belum ada salinan offsite |
+| S3 | ✅ **Selesai** — **Tanpa security headers** | `grep -icE "Strict-Transport\|X-Frame\|X-Content-Type\|Content-Security" public/.htaccess` → `0` | Belum ada HSTS, X-Frame-Options, X-Content-Type-Options, CSP |
+| S4 | ⏳ **Ditunda** — **22 tag CDN di 17 berkas, tanpa satu pun SRI** | `grep -rn "integrity=" resources/views` → `0`. Rincian: 17 tag `cdn.jsdelivr.net` (Chart.js, Bootstrap), 4 `unpkg.com` (AOS), 2 `cdnjs.cloudflare.com` (Font Awesome), plus Google Fonts | Jika CDN down/diblokir jaringan sekolah, grafik & ikon hilang; tanpa SRI, CDN yang disusupi bisa menyuntik skrip |
+| S5 | ✅ **Selesai** — **Tidak ada halaman error kustom** | `resources/views/errors/` tidak ada | Siswa melihat halaman 404/500 default Laravel saat ada masalah |
+| S6 | 🟡 **Sebagian** — **Tidak ada SOP reset sandi** (lanjutan B4) | Tidak ada route reset, tidak ada kolom `email` | Beban dukungan manual |
+| S7 | ✅ **Selesai** — **`favicon.ico` berukuran 0 byte** | `ls -la public/` → `favicon.ico` 0 byte | Tab browser kosong. Landing sudah pakai favicon SVG inline, tapi `/favicon.ico` tetap diminta browser |
 
 ---
 
@@ -447,6 +459,118 @@ Canary sudah dicabut di commit berikutnya.
 
 ---
 
+
+## 11. Hardening Operasional — Tahap 2 (25 Okt 2026)
+
+### 11.1 Yang berubah
+
+| Berkas | Perubahan |
+|---|---|
+| `config/backup.php` *(baru)* | `BACKUP_DISK`, `BACKUP_COPY_DISK`, `BACKUP_DIRECTORY`, `BACKUP_RETENTION_DAYS` (default 30) |
+| `app/Console/Commands/BackupData.php` | Rotasi otomatis (hanya berkas `backup-simantap-*`), salinan ke disk offsite, opsi `--tanpa-rotasi`. Kegagalan salinan **tidak** membatalkan cadangan utama |
+| `app/Jobs/ExportBackupJob.php` | Disk & folder mengikuti `config/backup.php`, bukan `local` hardcoded |
+| `app/Http/Controllers/Admin/BackupController.php` | Daftar cadangan membaca disk yang sama dengan yang ditulis perintah |
+| `config/security.php` *(baru)* | Nilai header keamanan, dapat diubah lewat `.env` |
+| `app/Http/Middleware/SecurityHeaders.php` *(baru)* | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS (hanya lewat HTTPS), CSP opsional |
+| `bootstrap/app.php` | Middleware didaftarkan global lewat `$middleware->append(...)` |
+| `resources/views/errors/` *(baru)* | `layout` + 403, 404, 419, 429, 500, 503 — mandiri, tanpa Vite/CDN |
+| `public/favicon.ico` | 0 byte → 4.286 byte, ICO 32×32 32-bit, glyph "SM" emas di atas navy |
+| 6 layout/halaman auth | `<link rel="icon" href="{{ asset('favicon.ico') }}">` |
+| `.env.production.example` | Variabel cadangan & keamanan |
+| `DEPLOYMENT.md` | §11 ditulis ulang (rotasi kini otomatis), §8 tidak lagi menduplikasi header di Nginx |
+| `tools/verifikasi-perbaikan.php` | Bagian 14: 7 pemeriksaan statis baru |
+| `tests/Feature/HardeningOperasionalTest.php` *(baru)* | 18 test regresi |
+
+### 11.2 Keputusan desain yang perlu Anda ketahui
+
+**Permissions-Policy tidak mematikan geolokasi dan kamera.** Presensi pegawai memakai
+`navigator.geolocation` (`resources/js/presensi-pegawai.js`) dan pemindaian QR memakai
+`Html5Qrcode` (`resources/js/presensi-qr.js`). Memakai `geolocation=()` atau `camera=()`
+akan mematikan dua fitur itu. Nilainya `(self)`.
+
+**Content-Security-Policy sengaja TIDAK dipasang.** Alasannya di §11.4. Keputusan ini
+dikunci test (`test_csp_tidak_dipasang_secara_bawaan`) supaya tidak ada yang memasangnya
+tanpa memindahkan aset CDN lebih dulu.
+
+**HSTS hanya dikirim lewat HTTPS**, dan `includeSubDomains` sengaja tidak dinyalakan —
+bila ada subdomain yang belum ber-HTTPS, subdomain itu akan ikut terkunci selama setahun.
+
+**Halaman error mandiri.** Tidak memakai Vite maupun CDN: halaman ini bisa diminta
+sebelum aset frontend selesai dibangun, dan justru saat server sedang bermasalah.
+
+### 11.3 Verifikasi
+
+**Dijalankan lokal:**
+
+```
+npm ci + npm run build              → 164 paket, ✓ built in 1.32s
+php -l 9 berkas PHP yang berubah    → semuanya "No syntax errors detected"
+php tools/verifikasi-perbaikan.php  → 53 lulus, 0 gagal   (naik dari 46)
+public/favicon.ico                  → struktur ICO valid (reserved=0, type=1, count=1, 32x32, 32bpp)
+```
+
+**Mutation test** — 9 mutasi, semuanya tertangkap:
+
+| Mutasi | Hasil |
+|---|---|
+| Lepas `SecurityHeaders` dari `bootstrap/app.php` | ❌ FAIL |
+| Ganti `geolocation=(self)` → `geolocation=()` | ❌ FAIL |
+| Hapus `errors/500.blade.php` | ❌ FAIL |
+| Sisipkan `@vite(` ke `errors/404.blade.php` | ❌ FAIL |
+| Kosongkan `public/favicon.ico` | ❌ FAIL |
+| Buang `config('backup.retensi_hari')` | ❌ FAIL |
+| Buang `$disk->delete($berkas)` | ❌ FAIL |
+| Buang `config('backup.salinan_disk')` | ❌ FAIL |
+| Kembalikan disk hardcoded di `ExportBackupJob` | ❌ FAIL |
+| Restore semua | ✅ 53 lulus, 0 gagal |
+
+**CI menangkap satu test yang salah tulis.** Pada run pertama PR #12, dari 300 test
+hanya satu yang gagal: `test_hsts_dikirim_lewat_https` —
+`Failed asserting that null is identical to 'max-age=31536000'`. Penyebabnya bukan
+middleware-nya, melainkan harness-nya: `$this->withServerVariables(['HTTPS' => 'on'])`
+tidak sampai ke `$request->secure()`. Test-nya diganti memanggil `SecurityHeaders`
+langsung dengan request yang server bag-nya dibangun eksplisit, plus assertion prekondisi
+agar kondisi HTTPS benar-benar terpasang sebelum diuji.
+
+**Dua pemeriksaan statis baru juga sempat salah dan sudah diperbaiki:**
+
+1. Pemeriksaan "halaman error mandiri" mencari teks bebas `@vite`, sehingga ikut cocok
+   dengan **kata `@vite` di dalam komentar** `errors/layout.blade.php` → FAIL palsu.
+   Polanya diubah menjadi pemanggilan `@vite(`.
+2. Pemeriksaan rotasi mencari teks bebas `retensi_hari`, yang masih muncul di komentar dan
+   pesan konsol setelah kodenya dibuang → **lulus palsu** (mutasi M6 lolos pada percobaan
+   pertama). Polanya diperketat menjadi pembacaan konfigurasi nyata
+   (`config('backup.retensi_hari'`), lalu ketiga lengan mutasinya baru benar-benar gagal.
+
+### 11.4 S4 (SRI pada CDN) — ditunda, dan mengapa
+
+Menambahkan `integrity="sha384-..."` **tidak bisa** saya lakukan dengan jujur dari sini:
+hash SRI harus dihitung dari isi berkas CDN yang sebenarnya, sedangkan `cdn.jsdelivr.net`,
+`cdnjs.cloudflare.com`, dan `unpkg.com` berada di luar host yang dapat diakses sandbox ini.
+Hash karangan akan membuat browser **memblokir** skripnya — grafik dan ikon hilang di
+seluruh aplikasi, jauh lebih parah daripada kondisi sekarang.
+
+Jalur yang benar (butuh jaringan penuh, bukan sandbox):
+
+1. **Utama — self-host.** `chart.js` dan `@fortawesome/fontawesome-free` **sudah** menjadi
+   dependensi npm dan sudah ter-bundle Vite (`resources/js/guru-dashboard.js` sudah
+   `import Chart from 'chart.js/auto'`). Pindahkan 17 pemakaian CDN Chart.js dan 2 Font
+   Awesome ke aset ter-bundle. Setelah itu SRI tidak lagi relevan karena asetnya lokal.
+2. **Alternatif — kunci versi + SRI.** Hitung hash dari berkas yang benar-benar diunduh,
+   lalu pasang bersamaan dengan versi yang dipatok (saat ini `unpkg.com/aos@2.3.1` sudah
+   dipatok, tetapi `cdn.jsdelivr.net/npm/chart.js` **tidak**).
+3. Baru setelah itu CSP (§11.2) layak dipasang.
+
+### 11.5 S6 — sebagian
+
+SOP reset sandi tertulis sudah ada di `DEPLOYMENT.md` §6, dan sejak tahap 1 sandi hasil
+reset admin memicu ganti sandi wajib. Yang **belum** ada: reset mandiri oleh pengguna
+(tabel `users` tidak punya kolom `email`, jadi reset lewat email tidak mungkin tanpa
+perubahan skema). Untuk aplikasi dengan ratusan orang tua ini tetap beban dukungan nyata.
+
+---
+
+## Lampiran: Perintah yang Saya Jalankan
 
 ```bash
 npm ci --no-audit --no-fund && npm run build          # → exit 0, 164 paket, 37 modul
