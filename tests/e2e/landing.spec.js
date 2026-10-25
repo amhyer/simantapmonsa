@@ -8,6 +8,9 @@ test('landing memakai CTA yang jujur dan interaksi FAQ bekerja di Chromium', asy
 
     const aksesNav = page.getByRole('link', { name: 'Akses', exact: true });
     await expect(aksesNav).toHaveAttribute('href', '#demo');
+    await expect(page.getByRole('link', { name: 'Coba Demo', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Akses Aplikasi', exact: true }))
+        .toHaveAttribute('href', '#demo');
     await aksesNav.click();
     await expect(page).toHaveURL(/#demo$/);
     await expect(page.getByRole('heading', { name: 'Akses Aplikasi SIMANTAP' })).toBeVisible();

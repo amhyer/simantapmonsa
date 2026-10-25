@@ -242,6 +242,7 @@ class AuditHalamanRegressionTest extends TestCase
             ->assertSee('Video demo belum tersedia')
             ->assertSee('Akses Aplikasi SIMANTAP')
             ->assertSee('Lihat repositori dan rilis')
+            ->assertDontSee('Coba Demo')
             ->assertDontSee('videoTrigger')
             ->assertDontSee('videoModal')
             ->assertDontSee('dQw4w9WgXcQ')

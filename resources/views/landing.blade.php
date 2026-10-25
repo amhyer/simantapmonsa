@@ -385,7 +385,7 @@
             <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Instalasi sekolah dapat mengaktifkan integrasi Google Sheet sesuai konfigurasi.</p>
             <div class="cta-group">
                 <a href="{{ route('register') }}" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai Sekarang</a>
-                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-play-circle"></i> Coba Demo</a>
+                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Akses Aplikasi</a>
             </div>
             <div class="trust">
                 <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>
