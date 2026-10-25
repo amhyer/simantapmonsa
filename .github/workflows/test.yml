@@ -84,7 +84,7 @@ jobs:
       - name: Compile all Blade views
         run: php artisan view:cache
 
-      # Seluruh suite wajib hijau, termasuk RouteHealthAuditTest (0 endpoint 5xx).
+      # Seluruh suite wajib hijau, termasuk RouteSweepTest (core-status, no-mutation, dan 0 endpoint 5xx).
       - name: Run test suite (wajib hijau)
         run: |
           set -o pipefail
@@ -264,10 +264,10 @@ jobs:
           npm run build
           npx playwright install --with-deps chromium
 
-      - name: Run Chromium smoke tests
+      - name: Run unauthenticated Chromium smoke test
         run: |
           set -o pipefail
-          npm run test:e2e 2>&1 | tee /tmp/playwright.log
+          npx playwright test --config=playwright.smoke.config.js tests/e2e/landing.spec.js 2>&1 | tee /tmp/playwright.log
 
       - name: Upload browser traces on failure
         if: failure()
@@ -292,3 +292,106 @@ jobs:
             echo '```'
           } > /tmp/browser-ci-report.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/browser-ci-report.md
+
+  e2e:
+    name: Authenticated E2E (CBT, Tryout, TKA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_ENV: e2e
+      APP_DEBUG: 'false'
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/database/e2e.sqlite
+      DB_FOREIGN_KEYS: 'true'
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      SIMANTAP_CBT_ENABLED: 'true'
+      SIMANTAP_EXAM_ENGINE_CBT: 'true'
+      SIMANTAP_EXAM_ENGINE_TRYOUT: 'true'
+      E2E_BASE_URL: http://127.0.0.1:8000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp, dom, fileinfo, iconv, curl
+          coverage: none
+          tools: composer:v2
+          ini-values: sys_temp_dir=/tmp
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Prepare .env and Laravel writable directories
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/views \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/logs \
+                   bootstrap/cache
+
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Generate ephemeral fixture passwords
+        run: |
+          for account in ADMIN GURU_A GURU_B SISWA_A1 SISWA_A2 SISWA_B1 ORTU_A1 ORTU_B1; do
+            printf 'E2E_%s_PASSWORD=%s\n' "$account" "$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          done
+
+      - name: Build frontend and install Chromium
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Migrate and seed the isolated E2E database
+        run: |
+          touch "$DB_DATABASE"
+          php artisan migrate:fresh --force
+          php artisan db:seed --class='Database\Seeders\E2eFixtureSeeder' --force
+
+      - name: Run authenticated Playwright journeys
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee /tmp/playwright-e2e.log
+
+      - name: Retain Playwright traces, screenshots, videos, and logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-failure-artifacts
+          path: |
+            test-results/
+            playwright-report/
+            /tmp/playwright-e2e.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Comment E2E failure summary on pull request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "Authenticated Playwright E2E failed. The full traces/screenshots/videos are attached as the playwright-e2e-failure-artifacts workflow artifact."
+            echo
+            echo '```'
+            tail -n 180 /tmp/playwright-e2e.log 2>/dev/null || echo "(log unavailable)"
+            echo '```'
+          } > /tmp/e2e-ci-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/e2e-ci-report.md

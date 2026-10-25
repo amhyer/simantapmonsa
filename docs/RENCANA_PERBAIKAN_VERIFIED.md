@@ -266,7 +266,18 @@ landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI sel
 - Engine CBT/Tryout sudah memiliki bridge ke `exam_*` (lihat §1e); tabel legacy tetap dicerminkan
   dan belum boleh dihapus sebelum rekonsiliasi data produksi.
 
-## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat status terkini §1f)
+## 1g. IMPLEMENTASI E2E CBT / TRYOUT / TKA PADA BRANCH ARENA (25 OKT 2026)
+
+Bagian ini menambahkan status kerja setelah snapshot §1f; ia **tidak mengubah** angka historis atau bukti CI yang dicatat pada §1f.
+
+- Checklist terskop: `docs/CHECKLIST_E2E_CBT_TRYOUT_TKA.md`.
+- Fixture stabil: `database/seeders/E2eFixtureSeeder.php`; browser job memakai SQLite file terpisah dan password dari `E2E_*_PASSWORD` yang dibuat acak di runtime.
+- Core-route registry dan route sweep GET/no-5xx + assertion tanpa-mutasi: `tests/Feature/Support/RouteExpectationRegistry.php` dan `tests/Feature/RouteSweepTest.php`. File lama `RouteHealthAuditTest.php` digantikan oleh sweep berbasis fixture; angka 1035/1050 pada §1b–§1f tetap klaim historis, bukan hasil sweep baru ini.
+- Playwright CBT/Tryout/TKA ditambahkan; smoke Chromium landing/FAQ tetap job terpisah. CI job E2E mengunggah trace/screenshot/video jika gagal.
+- Temuan UI Tryout: controller kini memasok jawaban tersimpan keyed by Tryout question ID; `Tryout\Result::answers()` mengikat foreign key ke `tryout_session_id` sesi (bukan ID baris hasil) sekaligus filter siswa/attempt. Blade memulihkan kontrol/state dan progress saat reload; browser dan feature test memeriksa radio `checked`.
+- **Verifikasi saat catatan ini ditulis: pending CI.** Sintaks PHP/JavaScript dan format YAML diperiksa secara statis; PHPUnit, migrasi/seeding Laravel, serta journey browser belum dieksekusi di sandbox ini. Jangan nyatakan rangkaian baru hijau atau produksi siap sebelum hasil CI dicatat.
+
+## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
 
 > Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status
 > **RUSAK** di snapshot lama tidak mengalahkan bukti eksekusi lebih baru di §1f.

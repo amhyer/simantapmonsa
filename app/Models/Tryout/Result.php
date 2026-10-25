@@ -56,7 +56,7 @@ class Result extends Model
      */
     public function answers(): HasMany
     {
-        return $this->hasMany(StudentAnswer::class, 'tryout_session_id')
+        return $this->hasMany(StudentAnswer::class, 'tryout_session_id', 'tryout_session_id')
             ->where('siswa_id', $this->siswa_id)
             ->where('attempt_number', $this->attempt_number);
     }
