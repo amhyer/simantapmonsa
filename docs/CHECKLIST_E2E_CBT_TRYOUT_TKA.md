@@ -3,7 +3,7 @@
 **Lingkup:** otomasi browser dan pemeriksaan route untuk tiga alur asesmen.
 **Master audit/work plan tetap:** [`RENCANA_PERBAIKAN_VERIFIED.md`](RENCANA_PERBAIKAN_VERIFIED.md). Dokumen ini hanya checklist pengujian terskop, bukan pengganti atau ringkasan kesiapan produksi.
 
-> **Status implementasi:** test, fixture, route registry, dan CI wiring telah ditambahkan. **Status verifikasi akhir: menunggu hasil CI**; runtime PHP/Composer lokal tidak tersedia di sandbox saat pekerjaan ini dibuat. Jangan menafsirkan checklist implementasi sebagai klaim bahwa pipeline sudah lulus atau aplikasi siap produksi.
+> **Status verifikasi:** CI run [40174270016](https://github.com/amhyer/simantapmonsa/actions/runs/40174270016) lulus pada PHPUnit SQLite, PHPUnit PostgreSQL 16, smoke Chromium, dan authenticated CBT/Tryout/TKA E2E. Ini membuktikan hasil suite pada commit tersebut saja, bukan kesiapan produksi atau seluruh variasi data/environment.
 
 ## 1. Cakupan dan artefak
 
@@ -14,7 +14,7 @@
 - [x] Login browser menggunakan password `E2E_*_PASSWORD` dari environment di `tests/e2e/global-setup.js`; password tidak ditanam di source.
 - [x] CI job E2E memakai SQLite persisten tersendiri (`database/e2e.sqlite`), terpisah dari smoke job SQLite `:memory:`.
 - [x] Trace, screenshot, video, serta log Playwright diunggah sebagai artefak jika job E2E gagal.
-- [ ] Pipeline CI pada commit implementasi ini hijau (isi setelah run selesai; jangan mengganti dengan asumsi).
+- [x] CI run 40174270016 lulus pada keempat job; detail dan batas cakupan tetap dicatat di atas serta §1g master work plan.
 
 ## 2. Peta fixture
 
@@ -47,7 +47,7 @@ CI menghasilkan nilai acak baru per run. Untuk uji lokal, gunakan password acak/
 
 ## 3. Browser journeys
 
-Kotak `[x]` di bagian ini menandakan assertion telah ditulis dalam test source. Itu **bukan** pernyataan bahwa browser/CI sudah menjalankannya dengan sukses; hasil eksekusi tetap menunggu CI dan harus dicatat terpisah.
+Kotak `[x]` di bagian ini menandakan assertion telah ditulis dalam test source. Hasil eksekusi CI dicatat terpisah pada §1 dan di master work plan; jangan menyimpulkan cakupan di luar test/run yang benar-benar tercantum.
 
 ### CBT (`tests/e2e/cbt.spec.js`)
 
