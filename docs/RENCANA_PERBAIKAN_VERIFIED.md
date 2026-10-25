@@ -223,8 +223,8 @@ Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
 
 ## 1f. VERIFIKASI ULANG KEADAAN TERKINI (25 OKT 2026)
 
-**Basis:** commit `b5ff237a6a6c099704eaa4257047038e8b0ab7ec` pada PR #9.
-Bukti CI: [run 40171284749](https://github.com/amhyer/simantapmonsa/actions/runs/40171284749).
+**Basis:** commit `6088244edbc3ff986f3ba3aceaca62dc23bc5321` pada PR #9.
+Bukti CI: [run 40171614678](https://github.com/amhyer/simantapmonsa/actions/runs/40171614678).
 Hasil: PHPUnit PHP 8.4 (SQLite) **lulus**, PHPUnit PostgreSQL 16 **lulus**, smoke Chromium
 landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI selesai sukses.
 
@@ -234,6 +234,7 @@ landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI sel
 |---|---|---|
 | `GET /ortu/dashboard` tanpa anak terhubung | **200; pesan aman** | `CriticalRoutesRegressionTest::test_dashboard_ortu_tanpa_anak_tetap_merender_pesan_yang_aman` |
 | `GET /guru/laporan/pdf` tanpa pengaturan, dengan 12 siswa | **200; PDF `%PDF-` valid** | `CriticalRoutesRegressionTest::test_pdf_laporan_guru_berhasil_tanpa_pengaturan_dan_tanpa_query_kehadiran_n_plus_satu` |
+| `GET /guru/erapor/excel` tanpa pengaturan, dengan siswa | **200; stream XLSX `PK` valid**; semester/tahun ajaran fallback ditetapkan bila pengaturan guru belum dibuat | `CriticalRoutesRegressionTest::test_export_erapor_excel_berhasil_tanpa_pengaturan_dan_dengan_siswa` |
 | N+1 kehadiran pada laporan guru | **Diperbaiki**: persentase dihitung dari agregat yang sudah diambil sekaligus; filter semester berulang per baris nilai dihapus karena siswa sudah difilter pada query awal | Dua test laporan memeriksa tidak ada query `COUNT` kehadiran per siswa; index juga mempertahankan hasil 50% pada fixture H/S |
 | `GET /tka/assessments/1/edit` | **404 terencana, bukan 500** | Route edit tidak didaftarkan karena controller tidak mendukung edit; `CriticalRoutesRegressionTest::test_edit_assessment_yang_tidak_didukung_tidak_melempar_500` |
 | Alur TKA: input skor berbobot → hasil → laporan orang tua | **Berjalan; skor terverifikasi** (13/16 = 81,25%, rerata berbobot 3,25 → `siap`) | `TkaAssessmentFlowTest::test_alur_tka_menilai_menghitung_membuat_dan_membaca_laporan_orang_tua` |
