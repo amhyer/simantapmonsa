@@ -74,4 +74,17 @@ class TkaAdminPagesTest extends TestCase
             ->post(route('admin.tka.warnings.update-status', $this->warning), ['status' => 'resolved'])
             ->assertSessionHasErrors('status');
     }
+
+    public function test_filter_tingkat_peringatan_mengikuti_enum_database(): void
+    {
+        $this->warning->update(['tingkat_peringatan' => 'rendah']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tka.warnings.index', ['tingkat_peringatan' => 'rendah']))
+            ->assertOk()
+            ->assertSee('Rendah')
+            ->assertSee('Tinggi')
+            ->assertDontSee('Ringan')
+            ->assertDontSee('Berat');
+    }
 }

@@ -8,6 +8,8 @@ use App\Models\Tka\StudentAssessment;
 use App\Models\Tka\EarlyWarning;
 use App\Models\Siswa;
 use App\Models\Semester;
+use App\Services\ExcelExportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class TkaAdminController extends Controller
@@ -45,7 +47,9 @@ class TkaAdminController extends Controller
                                               ->get(),
         ];
 
-        return view('admin.tka.dashboard', compact('stats'));
+        $semesters = Semester::orderByDesc('tahun_ajaran')->orderBy('nama_semester')->get();
+
+        return view('admin.tka.dashboard', compact('stats', 'semesters'));
     }
 
     /**
@@ -221,6 +225,15 @@ class TkaAdminController extends Controller
      */
     public function earlyWarnings(Request $request)
     {
+        $request->validate([
+            'status' => 'nullable|in:pending,sedang_diproses,selesai',
+            'tingkat_peringatan' => 'nullable|in:rendah,sedang,tinggi,kritis',
+            'dimension_id' => 'nullable|integer|exists:tka_dimensions_enhanced,id',
+            'tanggal_from' => 'nullable|date',
+            'tanggal_to' => 'nullable|date',
+            'search' => 'nullable|string|max:150',
+        ]);
+
         $query = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler']);
 
         // Filter by status
@@ -255,11 +268,22 @@ class TkaAdminController extends Controller
         }
 
         $warnings = $query->latest()
-                         ->paginate(25);
+                         ->paginate(25)
+                         ->withQueryString();
 
         $dimensions = Dimension::where('aktif', true)->orderBy('nama_dimensi')->get();
+        $statusCounts = EarlyWarning::query()
+            ->select('status')
+            ->selectRaw('COUNT(*) AS total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $levelCounts = EarlyWarning::query()
+            ->select('tingkat_peringatan')
+            ->selectRaw('COUNT(*) AS total')
+            ->groupBy('tingkat_peringatan')
+            ->pluck('total', 'tingkat_peringatan');
 
-        return view('admin.tka.warnings.index', compact('warnings', 'dimensions'));
+        return view('admin.tka.warnings.index', compact('warnings', 'dimensions', 'statusCounts', 'levelCounts'));
     }
     
     /**
@@ -292,18 +316,41 @@ class TkaAdminController extends Controller
     }
 
     /**
-     * Generate bulk report for all students.
+     * Generate a semester report containing every student assessment recorded
+     * for that semester.
      */
-    public function generateReport(Request $request)
+    public function generateReport(Request $request, ExcelExportService $excel)
     {
         $validated = $request->validate([
-            'semester_id' => 'required|exists:semesters,id',
+            'semester_id' => 'required|integer|exists:semesters,id',
             'format' => 'required|in:pdf,excel',
         ]);
 
-        // Implementation depends on your reporting library
-        // This is a placeholder
-        return back()->with('info', 'Fitur laporan massal akan segera tersedia');
+        $semester = Semester::findOrFail($validated['semester_id']);
+        $assessments = StudentAssessment::with(['siswa', 'semester', 'guru'])
+            ->where('semester_id', $semester->id)
+            ->orderBy('tanggal_penilaian')
+            ->orderBy('id')
+            ->get();
+
+        if ($assessments->isEmpty()) {
+            return back()->with('error', 'Belum ada penilaian TKA pada semester yang dipilih.');
+        }
+
+        $rows = $this->assessmentRows($assessments);
+        $filename = 'laporan-tka-semester-' . $semester->id . '-' . now()->format('Y-m-d');
+        $subtitle = 'Semester ' . $semester->label . ' • ' . $assessments->count() . ' penilaian';
+
+        return $this->downloadTable(
+            $excel,
+            $validated['format'],
+            $filename,
+            'Laporan Massal TKA',
+            'Laporan TKA',
+            $this->assessmentHeaders(),
+            $rows,
+            $subtitle,
+        );
     }
 
     /**
@@ -328,17 +375,193 @@ class TkaAdminController extends Controller
     }
 
     /**
-     * Export TKA data.
+     * Export the selected TKA dataset as XLSX or PDF.
      */
-    public function export(Request $request)
+    public function export(Request $request, ExcelExportService $excel)
     {
         $validated = $request->validate([
             'type' => 'required|in:assessments,warnings,dimensions',
             'format' => 'required|in:excel,pdf',
-            'semester_id' => 'nullable|exists:semesters,id',
+            'semester_id' => 'nullable|integer|exists:semesters,id',
         ]);
 
-        // Implementation depends on your export library
-        return back()->with('info', 'Fitur export akan segera tersedia');
+        $semesterId = isset($validated['semester_id']) ? (int) $validated['semester_id'] : null;
+        [$title, $sheetTitle, $headers, $rows] = $this->exportDataset($validated['type'], $semesterId);
+
+        if ($rows === []) {
+            return back()->with('error', 'Tidak ada data TKA yang cocok untuk diekspor.');
+        }
+
+        $semester = $semesterId === null ? null : Semester::find($semesterId);
+        $subtitle = $semester ? 'Semester ' . $semester->label : 'Semua semester';
+        $subtitle .= ' • ' . count($rows) . ' baris';
+        $filename = 'tka-' . $validated['type'] . '-' . now()->format('Y-m-d');
+
+        return $this->downloadTable(
+            $excel,
+            $validated['format'],
+            $filename,
+            $title,
+            $sheetTitle,
+            $headers,
+            $rows,
+            $subtitle,
+        );
+    }
+
+    /** @return list<string> */
+    private function assessmentHeaders(): array
+    {
+        return [
+            'No', 'Nama siswa', 'NIS', 'NISN', 'Kelas', 'Semester',
+            'Tanggal penilaian', 'Total skor', 'Skor maksimal', 'Persentase (%)',
+            'Status kesiapan', 'Skor per dimensi',
+        ];
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, StudentAssessment> $assessments
+     * @return list<list<mixed>>
+     */
+    private function assessmentRows($assessments): array
+    {
+        return $assessments->values()->map(function (StudentAssessment $assessment, int $index): array {
+            return [
+                $index + 1,
+                $assessment->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
+                $assessment->siswa?->nis ?? '-',
+                $assessment->siswa?->nisn ?? '-',
+                $assessment->siswa?->kelas ?? '-',
+                $assessment->semester?->label ?? '-',
+                $assessment->tanggal_penilaian?->format('Y-m-d') ?? '-',
+                $assessment->total_score,
+                $assessment->max_score,
+                $assessment->persentase,
+                $this->readinessLabel($assessment->status_kesiapan),
+                $this->dimensionScoreSummary($assessment->skor_per_dimensi),
+            ];
+        })->all();
+    }
+
+    /** @param array<int, array<string, mixed>>|null $scores */
+    private function dimensionScoreSummary(?array $scores): string
+    {
+        return collect($scores ?? [])->map(function ($score): ?string {
+            if (! is_array($score)) {
+                return null;
+            }
+
+            $name = (string) ($score['nama_dimensi'] ?? 'Dimensi');
+            $earned = number_format((float) ($score['total_skor'] ?? 0), 1, '.', '');
+            $maximum = number_format((float) ($score['maksimal'] ?? 0), 1, '.', '');
+
+            return "{$name}: {$earned}/{$maximum}";
+        })->filter()->implode('; ');
+    }
+
+    private function readinessLabel(?string $status): string
+    {
+        return match ($status) {
+            'sangat_siap' => 'Sangat siap',
+            'siap' => 'Siap',
+            'perlu_bimbingan' => 'Perlu bimbingan',
+            'belum_siap' => 'Belum siap',
+            default => $status ?? '-',
+        };
+    }
+
+    /**
+     * @return array{0: string, 1: string, 2: list<string>, 3: list<list<mixed>>}
+     */
+    private function exportDataset(string $type, ?int $semesterId): array
+    {
+        if ($type === 'assessments') {
+            $assessments = StudentAssessment::with(['siswa', 'semester', 'guru'])
+                ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId))
+                ->orderByDesc('tanggal_penilaian')
+                ->orderByDesc('id')
+                ->get();
+
+            return ['Penilaian TKA', 'Penilaian TKA', $this->assessmentHeaders(), $this->assessmentRows($assessments)];
+        }
+
+        if ($type === 'warnings') {
+            $warnings = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler'])
+                ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId))
+                ->latest('created_at')
+                ->get();
+
+            $headers = [
+                'No', 'Nama siswa', 'NIS', 'Kelas', 'Semester', 'Dimensi',
+                'Tingkat peringatan', 'Status', 'Alasan', 'Rekomendasi tindakan',
+                'Ditangani oleh', 'Dibuat pada', 'Selesai pada',
+            ];
+            $rows = $warnings->values()->map(fn (EarlyWarning $warning, int $index): array => [
+                $index + 1,
+                $warning->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
+                $warning->siswa?->nis ?? '-',
+                $warning->siswa?->kelas ?? '-',
+                $warning->semester?->label ?? '-',
+                $warning->dimension?->nama_dimensi ?? '-',
+                ucfirst($warning->tingkat_peringatan),
+                str_replace('_', ' ', ucfirst($warning->status)),
+                $warning->alasan_peringatan,
+                $warning->rekomendasi_tindakan,
+                $warning->handler?->nama_lengkap ?? '-',
+                $warning->created_at?->format('Y-m-d H:i:s') ?? '-',
+                $warning->tanggal_selesai?->format('Y-m-d H:i:s') ?? '-',
+            ])->all();
+
+            return ['Early Warning TKA', 'Early Warning', $headers, $rows];
+        }
+
+        $dimensions = Dimension::with('semester')
+            ->withCount('assessmentItems')
+            ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId))
+            ->orderBy('nama_dimensi')
+            ->get();
+
+        $headers = [
+            'No', 'Kode dimensi', 'Nama dimensi', 'Kategori', 'Semester',
+            'Bobot', 'Ambang siap', 'Jumlah indikator', 'Status', 'Deskripsi',
+        ];
+        $rows = $dimensions->values()->map(fn (Dimension $dimension, int $index): array => [
+            $index + 1,
+            $dimension->kode_dimensi,
+            $dimension->nama_dimensi,
+            str_replace('_', ' ', ucfirst($dimension->kategori)),
+            $dimension->semester?->label ?? '-',
+            $dimension->bobot,
+            $dimension->threshold_siap,
+            $dimension->assessment_items_count,
+            $dimension->aktif ? 'Aktif' : 'Nonaktif',
+            $dimension->deskripsi ?? '-',
+        ])->all();
+
+        return ['Dimensi TKA', 'Dimensi TKA', $headers, $rows];
+    }
+
+    /** @param list<string> $headers @param list<list<mixed>> $rows */
+    private function downloadTable(
+        ExcelExportService $excel,
+        string $format,
+        string $fileName,
+        string $title,
+        string $sheetTitle,
+        array $headers,
+        array $rows,
+        string $subtitle,
+    ) {
+        if ($format === 'excel') {
+            return $excel->download($fileName . '.xlsx', $sheetTitle, $headers, $rows);
+        }
+
+        return Pdf::loadView('admin.exports.table', [
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'headers' => $headers,
+            'rows' => $rows,
+            'generatedAt' => now()->format('d-m-Y H:i'),
+        ])->setPaper('a4', 'landscape')->download($fileName . '.pdf');
     }
 }

@@ -22,7 +22,9 @@ class AlignmentCheckTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.referensi.alignment'))
             ->assertOk()
-            ->assertSee('Cek Alignment');
+            ->assertSee('Cek Alignment')
+            ->assertSee(route('admin.referensi.alignment.refresh'))
+            ->assertSee(route('admin.referensi.alignment.export'));
     }
 
     public function test_guest_dialihkan_ke_login(): void

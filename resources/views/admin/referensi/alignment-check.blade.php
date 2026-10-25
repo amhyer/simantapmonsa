@@ -46,20 +46,27 @@
     </div>
     
     <!-- Action Buttons -->
-    <div class="flex gap-2 mb-6">
-        <button onclick="alert('Fitur refresh alignment akan segera tersedia')" class="btn btn-primary">
-            Refresh Alignment
-        </button>
-        <button onclick="alert('Fitur export akan segera tersedia')" class="btn btn-secondary">
-            Export Unmatched
-        </button>
+    <div class="flex gap-2 mb-2">
+        <form method="POST" action="{{ route('admin.referensi.alignment.refresh') }}">
+            @csrf
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sync-alt" aria-hidden="true"></i> Coba Cocokkan Ulang
+            </button>
+        </form>
+        <a href="{{ route('admin.referensi.alignment.export') }}" class="btn btn-secondary">
+            <i class="fas fa-download" aria-hidden="true"></i> Ekspor Semua Belum Terpetakan (CSV)
+        </a>
     </div>
+    <p class="text-sm text-gray-500 mb-6">Pencocokan ulang hanya mengisi nilai yang belum memiliki jadwal; tautan yang sudah ada tidak diubah.</p>
     
     @if(isset($unmatched) && $unmatched->count() > 0)
     <!-- Unmatched List -->
     <div class="card mb-6">
         <div class="card-header">
-            <h3 class="font-bold">Nilai Tidak Terpetakan ({{ $unmatched->count() }})</h3>
+            <h3 class="font-bold">Nilai Tidak Terpetakan ({{ $stats['unmatched'] ?? $unmatched->count() }})</h3>
+            @if(($stats['unmatched'] ?? $unmatched->count()) > $unmatched->count())
+                <p class="text-sm text-gray-500">Daftar menampilkan 50 nilai terbaru; ekspor mencakup seluruhnya.</p>
+            @endif
         </div>
         <div class="card-body">
             <div class="table-wrapper">
@@ -81,13 +88,7 @@
                             <td>{{ $nilai->kelas }}</td>
                             <td>{{ $nilai->semester }} {{ $nilai->tahun_ajaran }}</td>
                             <td>
-                                @if(!$nilai->jadwal_pelajaran_id)
-                                    @if(empty($nilai->mata_pelajaran))
-                                        Nama mapel kosong
-                                    @else
-                                        Nama mapel tak cocok
-                                    @endif
-                                @endif
+                                Belum terpetakan — periksa nama mapel, kelas, semester, dan jadwal guru.
                             </td>
                         </tr>
                         @endforeach
