@@ -92,6 +92,93 @@ class DataReferensiController extends Controller
         return view('admin.referensi.alignment-check', compact('stats', 'unmatched'));
     }
 
+    /** Retry the resolver for every score that is still not linked to a schedule. */
+    public function refreshAlignment(JadwalPelajaranResolver $resolver)
+    {
+        $checked = 0;
+        $matched = 0;
+
+        NilaiErapot::query()
+            ->whereNull('jadwal_pelajaran_id')
+            ->orderBy('id')
+            ->chunkById(250, function ($scores) use ($resolver, &$checked, &$matched): void {
+                foreach ($scores as $score) {
+                    $checked++;
+                    $jadwalId = $resolver->resolve($score);
+
+                    if ($jadwalId === null) {
+                        continue;
+                    }
+
+                    $matched += NilaiErapot::query()
+                        ->whereKey($score->getKey())
+                        ->whereNull('jadwal_pelajaran_id')
+                        ->update([
+                            'jadwal_pelajaran_id' => $jadwalId,
+                            'updated_at' => now(),
+                        ]);
+                }
+            });
+
+        $remaining = $resolver->alignmentStats()['unmatched'];
+
+        return back()->with(
+            'success',
+            "Alignment selesai: {$matched} nilai baru terpetakan dari {$checked} yang diperiksa; {$remaining} masih belum terpetakan."
+        );
+    }
+
+    /** Stream all unmatched scores as an Excel-friendly CSV file. */
+    public function exportUnmatchedAlignment()
+    {
+        return response()->streamDownload(function (): void {
+            $output = fopen('php://output', 'w');
+            if ($output === false) {
+                return;
+            }
+
+            // BOM helps Excel detect UTF-8 text such as Indonesian names.
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Nama siswa', 'NIS', 'Mata pelajaran', 'Kelas', 'Semester', 'Tahun ajaran', 'Status pemetaan',
+            ], ',', '"', '');
+
+            NilaiErapot::query()
+                ->whereNull('jadwal_pelajaran_id')
+                ->with('siswa:id,nama_peserta_didik,nis')
+                ->orderBy('id')
+                ->chunkById(500, function ($scores) use ($output): void {
+                    foreach ($scores as $score) {
+                        $cells = [
+                            $score->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
+                            $score->siswa?->nis ?? '-',
+                            $score->mata_pelajaran ?: '(kosong)',
+                            $score->kelas ?: '-',
+                            $score->semester ?: '-',
+                            $score->tahun_ajaran ?: '-',
+                            'Belum terpetakan',
+                        ];
+
+                        fputcsv($output, array_map(fn ($cell) => $this->safeCsvCell($cell), $cells), ',', '"', '');
+                    }
+                });
+
+            fclose($output);
+        }, 'nilai-erapor-unmatched-' . now()->format('Y-m-d') . '.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
+    }
+
+    private function safeCsvCell(mixed $value): string
+    {
+        $value = (string) ($value ?? '');
+
+        return preg_match('/^[\\x00-\\x20]*[=+\\-@]/', $value) === 1
+            ? "'" . $value
+            : $value;
+    }
+
     public function tanggalRapor()
     {
         $daftar = TanggalRapor::orderByDesc('tahun_ajaran')->orderBy('semester')->get();

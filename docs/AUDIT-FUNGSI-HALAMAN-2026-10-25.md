@@ -229,3 +229,34 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 `siswa/kuis/show`, `siswa/nilai/index`, `tryout/student/result`, `landing`, `auth/register`.
 
 **Perkakas (2):** `tools/verifikasi-perbaikan.php`, `verify.sh`.
+
+---
+
+## 9. Tindak Lanjut Verifikasi (setelah merge audit)
+
+Pemeriksaan lanjutan menemukan beberapa aksi yang masih berupa placeholder serta
+ketidakcocokan tampilan/filter TKA. Tindak lanjut pada PR #8:
+
+- Tombol ekspor hasil Tryout kini menghasilkan **XLSX** dan memakai filter yang
+  sama dengan halaman daftar (kelulusan, paket, sesi, tanggal, pencarian).
+- Dashboard TKA kini menyediakan laporan massal per semester dan ekspor data
+  **penilaian, early warning, dan dimensi** ke XLSX/PDF. Ekspor ditolak dengan
+  pesan jelas ketika tidak ada data yang sesuai.
+- Halaman alignment e-Rapor kini dapat mencoba memetakan ulang nilai yang masih
+  belum terhubung dan mengunduh seluruh nilai unmatched sebagai CSV UTF-8.
+- Filter tingkat early warning disesuaikan dengan enum DB (`rendah`, `sedang`,
+  `tinggi`, `kritis`); kartu hitungan memakai agregat seluruh data dan tidak
+  mengulang status yang sama.
+- Kolom tabel penilaian TKA dirapikan agar jumlah sel cocok dengan header.
+- Halaman bank soal CBT yang aktif memakai `resources/views/cbt/banks/show.blade.php`,
+  yang sudah memiliki form edit soal. File `resources/views/cbt/question-banks/show.blade.php`
+  adalah view lama yang tidak dipanggil controller aktif; placeholder di file
+  lama itu tidak menjadi tombol pada halaman aktif.
+
+**Verifikasi tindak lanjut:** PHP lint PHP-WASM untuk sembilan file PHP yang
+berubah lulus; job CI **PHPUnit (PHP 8.4)** pada PR #8 juga lulus. File dependensi
+`vendor/` tidak tersedia di sandbox sehingga PHPUnit tidak dijalankan lokal.
+
+**Masih perlu verifikasi di lingkungan target:** PostgreSQL produksi, integrasi
+langsung TKA/Google Sheets/Dapodik dengan kredensial asli, dan browser Chromium
+serta uji aksesibilitas lintas-browser. Periksa hasil PR #8 sebelum deploy.

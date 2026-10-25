@@ -163,6 +163,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::delete('/referensi/tanggal-rapor/{tanggalRapor}', [DataReferensiController::class, 'destroyTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.destroy');
     Route::get('/referensi/kelompok-mapel', [DataReferensiController::class, 'kelompokMapel'])->name('referensi.kelompok-mapel');
     Route::get('/referensi/alignment', [DataReferensiController::class, 'alignmentCheck'])->name('referensi.alignment');
+    Route::post('/referensi/alignment/refresh', [DataReferensiController::class, 'refreshAlignment'])->middleware('throttle:5,1')->name('referensi.alignment.refresh');
+    Route::get('/referensi/alignment/export', [DataReferensiController::class, 'exportUnmatchedAlignment'])->name('referensi.alignment.export');
     Route::get('/referensi/mapping-rapor', [DataReferensiController::class, 'mappingRapor'])->name('referensi.mapping-rapor');
     Route::put('/referensi/mapel-meta', [DataReferensiController::class, 'updateMapelMeta'])->middleware('throttle:30,1')->name('referensi.mapel-meta.update');
     Route::get('/referensi/logo-ttd', [DataReferensiController::class, 'logoTtd'])->name('referensi.logo-ttd');

@@ -43,9 +43,9 @@
                     <label class="form-label">Tingkat Peringatan</label>
                     <select name="tingkat_peringatan" class="form-select">
                         <option value="">Semua Tingkat</option>
-                        <option value="ringan" {{ request('tingkat_peringatan') == 'ringan' ? 'selected' : '' }}>Ringan</option>
+                        <option value="rendah" {{ request('tingkat_peringatan') == 'rendah' ? 'selected' : '' }}>Rendah</option>
                         <option value="sedang" {{ request('tingkat_peringatan') == 'sedang' ? 'selected' : '' }}>Sedang</option>
-                        <option value="berat" {{ request('tingkat_peringatan') == 'berat' ? 'selected' : '' }}>Berat</option>
+                        <option value="tinggi" {{ request('tingkat_peringatan') == 'tinggi' ? 'selected' : '' }}>Tinggi</option>
                         <option value="kritis" {{ request('tingkat_peringatan') == 'kritis' ? 'selected' : '' }}>Kritis</option>
                     </select>
                 </div>
@@ -89,13 +89,13 @@
         </div>
     </div>
 
-    <!-- Statistics -->
+    <!-- Statistics: totals are global, not limited to the current pagination page or filters. -->
     <div class="row mb-3">
         <div class="col-md-2 mb-2">
             <div class="card bg-secondary text-white">
                 <div class="card-body py-2">
                     <small>Total</small>
-                    <h4 class="mb-0">{{ $warnings->total() }}</h4>
+                    <h4 class="mb-0">{{ $statusCounts->sum() }}</h4>
                 </div>
             </div>
         </div>
@@ -103,7 +103,7 @@
             <div class="card bg-warning">
                 <div class="card-body py-2">
                     <small>Pending</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'pending')->count() }}</h4>
+                    <h4 class="mb-0">{{ $statusCounts->get('pending', 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -111,15 +111,15 @@
             <div class="card bg-info text-white">
                 <div class="card-body py-2">
                     <small>Sedang Diproses</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'sedang_diproses')->count() }}</h4>
+                    <h4 class="mb-0">{{ $statusCounts->get('sedang_diproses', 0) }}</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-2 mb-2">
             <div class="card bg-primary text-white">
                 <div class="card-body py-2">
-                    <small>Sedang Diproses</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'sedang_diproses')->count() }}</h4>
+                    <small>Tinggi</small>
+                    <h4 class="mb-0">{{ $levelCounts->get('tinggi', 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -127,7 +127,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body py-2">
                     <small>Selesai</small>
-                    <h4 class="mb-0">{{ $warnings->where('status', 'selesai')->count() }}</h4>
+                    <h4 class="mb-0">{{ $statusCounts->get('selesai', 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -135,7 +135,7 @@
             <div class="card bg-danger text-white">
                 <div class="card-body py-2">
                     <small>Kritis</small>
-                    <h4 class="mb-0">{{ $warnings->where('tingkat_peringatan', 'kritis')->count() }}</h4>
+                    <h4 class="mb-0">{{ $levelCounts->get('kritis', 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -179,9 +179,9 @@
                             'selesai' => 'Selesai',
                         ];
                         $tingkatColors = [
-                            'ringan' => 'info',
+                            'rendah' => 'info',
                             'sedang' => 'warning',
-                            'berat' => 'danger',
+                            'tinggi' => 'danger',
                             'kritis' => 'danger',
                         ];
                         @endphp
@@ -223,7 +223,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted">
+                            <td colspan="7" class="text-center text-muted">
                                 Tidak ada data early warning
                             </td>
                         </tr>
