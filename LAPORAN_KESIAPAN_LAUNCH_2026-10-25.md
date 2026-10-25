@@ -423,19 +423,27 @@ Pemeriksaan pertama sempat **lulus palsu** pada percobaan awal — pola yang men
 method. Polanya diperketat menjadi "penetapan `$data['force_password_change'] = true` harus
 mengikuti `Hash::make(...)`", lalu mutation test di atas baru benar-benar gagal.
 
-**Tidak bisa saya jalankan di sini:**
+**Dijalankan CI (PR #11) — dan dibuktikan benar-benar dieksekusi:**
 
-`tests/Feature/KesiapanLaunchTest.php` (10 test) **belum pernah dieksekusi**. Sandbox ini
-tidak punya Composer/Packagist sehingga `vendor/` tidak ada dan PHPUnit tidak bisa boot.
-Test itu hanya lolos `php -l` dan pemeriksaan statis. **CI yang akan menjalankannya** —
-kalau ada yang merah, perbaikannya ada di sisi test, bukan di sisi logika aplikasi.
+```
+PHPUnit (PHP 8.4)                  → pass  (52s)
+PHPUnit (PHP 8.4, PostgreSQL 16)   → pass  (1m21s)
+Browser smoke (Chromium)           → pass  (49s)
+Sourcery review                    → pass
+```
 
-Dua catatan runtime PHP-WASM yang perlu diketahui:
-- Wrapper `@php-wasm/cli` **selalu mengembalikan exit code 0**, jadi `exit(1)` milik
-  `tools/verifikasi-perbaikan.php` tidak terdeteksi di sini. Saya membaca baris
-  "N lulus, M gagal", bukan exit code.
-- Ekstensi `zip` dan `intl` tidak ada di build WASM itu, jadi ekspor Excel tidak bisa
-  diuji di sandbox ini.
+`tests/Feature/KesiapanLaunchTest.php` (10 test) tidak bisa dijalankan di sandbox ini
+(tidak ada `vendor/`). Karena itu hijau saja tidak cukup — file itu bisa saja terlewat
+PHPUnit. Untuk membuktikannya saya menyisipkan **canary** yang sengaja gagal:
+
+| Kondisi | PHPUnit (SQLite) | PHPUnit (PostgreSQL) | Browser smoke |
+|---|---|---|---|
+| Canary `$this->fail(...)` disisipkan | ❌ **fail** | ❌ **fail** | ✅ pass |
+| Canary dicabut | ✅ pass | ✅ pass | ✅ pass |
+
+Kegagalan canary membuktikan berkas itu benar-benar dimuat dan dijalankan, sehingga
+hasil hijau setelahnya berarti **10 test baru itu lulus di SQLite maupun PostgreSQL**.
+Canary sudah dicabut di commit berikutnya.
 
 ---
 
