@@ -1077,6 +1077,99 @@ periksa('Variabel cadangan & keamanan terdokumentasi di template env', function 
     return $kurang === [] ? true : 'belum ada di .env.production.example: ' . implode(', ', $kurang);
 });
 
+/* ──────────────────────────────────────────────────────────────
+ * 15. Kebersihan aset & dokumen (P1, P3, P4)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n15. Kebersihan aset & dokumen\n";
+
+periksa('Tidak ada aset frontend mati', function () use ($root) {
+    // Berkas di resources/ yang tidak dirujuk view mana pun dan tidak masuk
+    // input Vite adalah kode mati — pernah ada 1.588 baris semacam ini.
+    $input = [];
+    if (preg_match_all("/['\"]([^'\"]+\\.(?:js|css))['\"]/", baca($root . '/vite.config.js'), $m)) {
+        $input = $m[1];
+    }
+
+    $dipakai = [];
+    foreach (array_merge(
+        glob($root . '/resources/views/**/*.blade.php') ?: [],
+        glob($root . '/resources/views/*.blade.php') ?: [],
+        glob($root . '/resources/views/**/**/*.blade.php') ?: []
+    ) as $view) {
+        $isi = baca($view);
+        if (preg_match_all('/resources\/(?:js|css)\/[\w.-]+\.(?:js|css)/', $isi, $mv)) {
+            $dipakai = array_merge($dipakai, $mv[0]);
+        }
+    }
+    $dipakai = array_unique($dipakai);
+
+    // app.css meng-@import layout.css, dan app.js mengimpor presensi-*.js,
+    // jadi berkas yang di-@import/diimpor sesama aset juga terhitung terpakai.
+    $diimport = [];
+    foreach (glob($root . '/resources/css/*.css') ?: [] as $css) {
+        if (preg_match_all('/@import\s+["\']\.\/([\w.-]+\.css)["\']/', baca($css), $mi)) {
+            foreach ($mi[1] as $nama) {
+                $diimport[] = 'resources/css/' . $nama;
+            }
+        }
+    }
+
+    $dirujukJs = [];
+    foreach (glob($root . '/resources/js/*.js') ?: [] as $js) {
+        if (preg_match_all('/[\'"]\.\/([\w.-]+\.js)[\'"]/', baca($js), $mj)) {
+            foreach ($mj[1] as $nama) {
+                $dirujukJs[] = 'resources/js/' . $nama;
+            }
+        }
+    }
+
+    $terpakai = array_unique(array_merge($input, $dipakai, $diimport, $dirujukJs));
+
+    $mati = [];
+    foreach (array_merge(glob($root . '/resources/js/*.js') ?: [], glob($root . '/resources/css/*.css') ?: []) as $berkas) {
+        $relatif = 'resources/' . basename(dirname($berkas)) . '/' . basename($berkas);
+        if (! in_array($relatif, $terpakai, true)) {
+            $mati[] = $relatif;
+        }
+    }
+
+    return $mati === [] ? true : 'aset tidak dirujuk: ' . implode(', ', $mati);
+});
+
+periksa('html5-qrcode dimuat secara malas, bukan di bundle utama', function () use ($root) {
+    $kode = baca($root . '/resources/js/presensi-qr.js');
+
+    // Impor statis di tingkat atas akan menyeret ~369 kB ke app.js yang
+    // diunduh di setiap halaman, padahal QR hanya dipakai di satu halaman.
+    if (preg_match('/^\s*import\s.*html5-qrcode/m', $kode)) {
+        return 'masih ada `import ... from \'html5-qrcode\'` statis di presensi-qr.js';
+    }
+
+    return str_contains($kode, "import('html5-qrcode')")
+        ? true
+        : "tidak ditemukan import('html5-qrcode') dinamis";
+});
+
+periksa('Root repositori hanya berisi dokumen aktif', function () use ($root) {
+    $izinkan = ['README.md', 'DEPLOYMENT.md', 'AGENTS.md', 'CLAUDE.md', 'LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md'];
+
+    $lebih = [];
+    foreach (array_merge(glob($root . '/*.md') ?: [], glob($root . '/*.txt') ?: []) as $berkas) {
+        $nama = basename($berkas);
+        if (! in_array($nama, $izinkan, true)) {
+            $lebih[] = $nama;
+        }
+    }
+
+    if ($lebih !== []) {
+        return 'dokumen yang sebaiknya dipindah ke docs/: ' . implode(', ', $lebih);
+    }
+
+    return is_file($root . '/docs/arsip/README.md')
+        ? true
+        : 'docs/arsip/README.md (indeks arsip) tidak ada';
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {

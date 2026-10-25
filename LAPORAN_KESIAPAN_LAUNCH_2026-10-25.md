@@ -44,6 +44,20 @@ baru sudah diuji lewat *mutation test* (lihat §10 dan §11).
 
 ---
 
+### ✅ PEMBARUAN 25 Okt 2026 (tahap 3) — P1, P2, P3, P4 sudah dikerjakan
+
+| Temuan | Status | Bukti |
+|---|---|---|
+| P1 Kode mati | ✅ **Selesai** | 1.588 baris dihapus (`landing.css` + `landing.js`) |
+| P2 Font Inter | ✅ **Selesai** | `register.blade.php` tidak lagi memanggil Google Fonts |
+| P3 Bundle 444 kB | ✅ **Selesai** | 444,73 kB → **76,98 kB** (gzip 134,95 → 27,08 kB); QR dimuat malas |
+| P4 Dokumen menumpuk | ✅ **Selesai** | Root 20 → 5 dokumen; 15 diarsipkan ke `docs/arsip/` |
+
+Detail, keputusan desain, dan batas verifikasinya ada di **§12**. Verifier naik lagi
+menjadi **56 pemeriksaan, 0 gagal**.
+
+---
+
 | Dimensi | Nilai | Catatan |
 |---|---|---|
 | Kualitas kode & stabilitas | 🟢 Baik | Verifier proyek 39/39 lulus, CI hijau 3/3 job |
@@ -293,10 +307,10 @@ launching bisa jalan sekarang dengan CBT tetap mati — flag off **tidak** mengh
 
 | # | Temuan | Bukti |
 |---|---|---|
-| P1 | **1.588 baris kode mati** — `resources/css/landing.css` (956 baris) dan `resources/js/landing.js` (632 baris) tidak dirujuk di view mana pun dan tidak masuk `input` di `vite.config.js` | `grep -rn "landing.css\|landing.js" resources/views vite.config.js` → kosong |
-| P2 | **Halaman login menyebut font Inter tanpa memuatnya** — `login.blade.php` memakai `font-family: 'Inter'` tapi tidak punya `<link>` ke Google Fonts dan tidak memanggil `@vite` | `sed -n '1,25p' resources/views/auth/login.blade.php` |
-| P3 | **Bundle utama 444 kB (135 kB gzip)** dalam satu berkas | `npm run build` output |
-| P4 | **26 dokumen audit/perencanaan menumpuk di root** (`AUDIT_*.md`, `LAPORAN_*.md`, `QUICK_REFERENCE_CARD.txt`, `00_START_HERE.txt` yang masih menyebut path `D:\Project\simantap\`) | `ls -la` root |
+| P1 ✅ | **1.588 baris kode mati** — `resources/css/landing.css` (956 baris) dan `resources/js/landing.js` (632 baris) tidak dirujuk di view mana pun dan tidak masuk `input` di `vite.config.js` | `grep -rn "landing.css\|landing.js" resources/views vite.config.js` → kosong |
+| P2 ✅ | **Halaman login menyebut font Inter tanpa memuatnya** — `login.blade.php` memakai `font-family: 'Inter'` tapi tidak punya `<link>` ke Google Fonts dan tidak memanggil `@vite` | `sed -n '1,25p' resources/views/auth/login.blade.php` |
+| P3 ✅ | **Bundle utama 444 kB (135 kB gzip)** dalam satu berkas | `npm run build` output |
+| P4 ✅ | **26 dokumen audit/perencanaan menumpuk di root** (`AUDIT_*.md`, `LAPORAN_*.md`, `docs/arsip/QUICK_REFERENCE_CARD.txt`, `docs/arsip/00_START_HERE.txt` yang masih menyebut path `D:\Project\simantap\`) | `ls -la` root |
 
 > Catatan koreksi: saya sempat menduga `guru-dashboard.js` dan `layout.css` tidak terpakai.
 > Keduanya **terpakai** — `guru-dashboard.js` dimuat di `resources/views/guru/dashboard.blade.php:358`,
@@ -367,7 +381,7 @@ php artisan down && php artisan up         # uji maintenance mode
 | 5 | S1 + S2 — rotasi backup + salinan offsite | 2 jam |
 | 6 | S3 + S5 — security headers + halaman 404/500 kustom | 1–2 jam |
 | 7 | **LAUNCH** | — |
-| 8 | S4, S6, S7, P1–P4 | backlog minggu ke-1/2 |
+| 8 | ~~S7, P1–P4~~ → **sudah dikerjakan**; tersisa S4 (SRI) dan S6 (reset sandi mandiri) | backlog minggu ke-1/2 |
 
 **Perkiraan total sampai layak launching: 1–1,5 hari kerja**, dengan asumsi server target
 sudah tersedia.
@@ -569,6 +583,72 @@ reset admin memicu ganti sandi wajib. Yang **belum** ada: reset mandiri oleh pen
 perubahan skema). Untuk aplikasi dengan ratusan orang tua ini tetap beban dukungan nyata.
 
 ---
+
+## 12. Poles P1–P4 — Tahap 3 (25 Okt 2026)
+
+Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
+
+### 12.1 Yang berubah
+
+| # | Yang dilakukan | Hasil terukur |
+|---|---|---|
+| P1 | `git rm resources/css/landing.css resources/js/landing.js` | **1.588 baris kode mati dihapus** (956 + 632). `grep -rn "landing.css\|landing.js"` seluruh repositori → kosong. |
+| P2 | Hapus `<link>` Google Fonts + 2 baris `preconnect` dari `resources/views/auth/register.blade.php`, diganti komentar penjelas berbahasa Indonesia | Ketiga halaman gerbang auth (`login`, `register`, `force-change-password`) kini konsisten: **nol permintaan font eksternal**, `'Inter'` tetap ada di awal tumpukan `font-family` sebagai *progressive enhancement*. |
+| P3 | Impor statis `Html5Qrcode` di `resources/js/presensi-qr.js` diganti pemuatan malas `await import('html5-qrcode')` di dalam handler tombol "Mulai Kamera" | Bundle utama **444,73 kB → 76,98 kB** (gzip **134,95 → 27,08 kB**), turun **82,7 %**. `html5-qrcode` kini terpisah ke `esm-k8a5Y8M6.js` (369,11 kB / 108,72 kB gzip) dan **hanya diunduh saat pemindaian QR benar-benar dibuka**. |
+| P4 | 15 dokumen warisan dipindah `git mv` ke `docs/arsip/` + indeks `docs/arsip/README.md`; 8 referensi silang diperbarui | Root turun dari **20 dokumen → 5** (`README.md`, `DEPLOYMENT.md`, `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`, `AGENTS.md`, `CLAUDE.md`). `grep -rnP` atas 10 nama berkas arsip di luar `docs/arsip/` → **nol referensi menggantung**. |
+
+### 12.2 Keputusan desain
+
+- **P2 — font tidak dibundel, melainkan dilepas.** Ada tiga pilihan: memuat Inter
+  via Google Fonts (menambah permintaan eksternal di halaman login), membundelnya ke
+  Vite (menambah ~100 kB ke aset yang diunduh semua orang), atau membiarkan
+  `font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif` sebagai
+  progressive enhancement. Pilihan ketiga yang dipakai — **sudah menjadi perilaku
+  `login.blade.php` dan `force-change-password.blade.php`**, jadi register sekadar
+  disamakan. Kalau Anda memang ingin Inter tampil persis, ini keputusan visual yang
+  perlu Anda ambil, bukan perbaikan bug.
+- **P3 — pemuatan malas, bukan penghapusan fitur.** `html5-qrcode` tetap dipakai;
+  yang berubah hanya *kapan* ia diunduh. Konsekuensinya: saat operator menekan
+  "Mulai Kamera" ada jeda pendek (~109 kB gzip) untuk mengambil chunk QR. Ini
+  terjadi sekali per sesi dan di-cache browser setelahnya.
+- **P4 — arsip, bukan hapus.** Dokumen-dokumen itu punya nilai sejarah dan masih
+  dirujuk silang oleh beberapa audit, jadi diarsipkan beserta indeks yang
+  menegaskan statusnya sebagai rekaman historis. `docs/arsip/README.md` mengarahkan
+  pembaca ke dokumen yang masih berlaku.
+
+### 12.3 Verifikasi
+
+- **Verifier dinaikkan ke 56 pemeriksaan** (dari 53) — bagian 15 baru mengunci
+  ketiganya: tidak ada aset mati di `resources/`, `html5-qrcode` wajib dimuat
+  dinamis, dan root hanya boleh berisi 5 dokumen aktif + indeks arsip wajib ada.
+- **Mutation test — setiap check baru dibuktikan tidak lolos kosong.** Mutasi M2
+  pertama saya *gagal mendeteksi apa pun* karena perintah `sed` saya tidak cocok
+  dengan isi berkas sehingga impor statisnya tidak pernah tersisip; setelah disisipkan
+  lewat Python, check-nya baru terbukti bekerja. Dicatat agar jujur.
+
+| Mutasi | Check yang diharapkan gagal | Hasil |
+|---|---|---|
+| M1 · kembalikan `resources/css/landing.css` | Tidak ada aset frontend mati | ❌ gagal (terdeteksi) |
+| M2 · sisipkan `import { Html5Qrcode } from 'html5-qrcode'` | html5-qrcode dimuat secara malas | ❌ gagal (terdeteksi) |
+| M3 · ganti `import('html5-qrcode')` jadi pemanggilan biasa | html5-qrcode dimuat secara malas | ❌ gagal (terdeteksi) |
+| M4 · tambah `CATATAN_LAMA.md` di root | Root hanya berisi dokumen aktif | ❌ gagal (terdeteksi) |
+| M5 · hapus `docs/arsip/README.md` | Root hanya berisi dokumen aktif | ❌ gagal (terdeteksi) |
+| restore | — | ✅ 56 lulus, 0 gagal |
+
+- `npm run build` → exit 0, `✓ built in 2.74s`. `php -l tools/verifikasi-perbaikan.php`
+  → tidak ada galat sintaks.
+
+### 12.4 Yang TIDAK saya verifikasi
+
+- **Perilaku pemindai QR setelah refactor impor malas.** Saya tidak bisa membuka
+  kamera di lingkungan ini, dan Playwright di CI hanya menyentuh halaman landing.
+  Impor dinamisnya benar secara statis dan build-nya sukses, tetapi **klik tombol
+  "Mulai Kamera" sekali di staging sebelum Hari-H** adalah pemeriksaan 30 detik
+  yang tidak bisa saya gantikan.
+- **Tampilan halaman register tanpa webfont Inter.** Perubahan ini sengaja, tapi
+  efek visualnya perlu mata Anda.
+- `docs/AUDIT-FUNGSI-HALAMAN-2026-10-25.md` menyebut "244 tests / 1.069 assertions".
+  Angka itu tidak saya jalankan ulang — tidak ada PHPUnit lokal di lingkungan ini.
 
 ## Lampiran: Perintah yang Saya Jalankan
 

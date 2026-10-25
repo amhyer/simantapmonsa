@@ -222,7 +222,7 @@ Repository berisi screenshot dan dokumentasi UI. Belum dilakukan tinjauan visual
 
 - `README.md` masih berisi boilerplate Laravel, bukan panduan SIMANTAP.
 - `docs/CBT_IMPLEMENTATION_PROGRESS.md` menyatakan frontend CBT pending meskipun tree saat ini sudah memuat view dan JavaScript CBT.
-- `LAPORAN_AUDIT_BUG_2026-10-14.md` menjelaskan CBT belum tersedia/nonaktif di snapshot yang lebih lama; commit 15 Oktober mengubah situasi itu dan `config/simantap.php` kini default CBT aktif.
+- `arsip/LAPORAN_AUDIT_BUG_2026-10-14.md` menjelaskan CBT belum tersedia/nonaktif di snapshot yang lebih lama; commit 15 Oktober mengubah situasi itu dan `config/simantap.php` kini default CBT aktif.
 - `docs/IMPROVEMENT_BACKLOG.md` masih bertanggal 13 September dan menyebut Laravel 11, sementara composer saat ini mensyaratkan Laravel 13.
 
 **Perbaikan:** jadikan README sebagai sumber onboarding yang hidup: tujuan, fitur, role, versi runtime, instalasi, `.env`, migrasi, queue, scheduler, storage, test, deployment, recovery, dan status setiap modul. Tambahkan tanggal/snapshot pada laporan audit dan tandai dokumen kedaluwarsa.

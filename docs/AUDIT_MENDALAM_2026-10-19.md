@@ -5,7 +5,7 @@
 **Status suite:** ✅ **178 test, 580 assertion, semua hijau**
 
 > Dokumen ini fokus pada temuan **baru** yang terungkap saat sinkronisasi & audit teknis.
-> Rekomendasi umum lintas aspek yang sudah terdokumentasi di `AUDIT_MENDALAM_SIMANTAP.md`
+> Rekomendasi umum lintas aspek yang sudah terdokumentasi di `arsip/AUDIT_MENDALAM_SIMANTAP.md`
 > (CI/CD, monitoring, backup, dokumentasi API, dst.) tetap berlaku dan tidak diulang di sini.
 
 ---
