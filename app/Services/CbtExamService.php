@@ -109,7 +109,12 @@ class CbtExamService
     private function finish(CbtTestSession $session, CbtResult $result): CbtResult
     {
         if (!$result->submitted_at) {
-            $result->update(CbtScoring::grade($session->question_snapshot, $result->answers) + ['submitted_at' => now()]);
+            // Sesi lama/rusak bisa punya snapshot atau jawaban NULL; jangan
+            // sampai scheduler finalisasi berhenti dengan TypeError.
+            $result->update(CbtScoring::grade(
+                is_array($session->question_snapshot) ? $session->question_snapshot : [],
+                is_array($result->answers) ? $result->answers : []
+            ) + ['submitted_at' => now()]);
         }
 
         if ($this->pakaiEngineBaru()) {

@@ -31,10 +31,17 @@ ROUTES=$(php artisan route:list --json 2>/dev/null | php -r 'echo count(json_dec
                       || { echo -e "${YLW}⚠${NC} Hanya $ROUTES route (target 187)"; FAIL=$((FAIL+1)); }
 
 # 3. Config
+# Timezone tidak di-hardcode: .env.example memakai Asia/Makassar (WITA),
+# jadi bandingkan config aktif dengan nilai APP_TIMEZONE yang dipakai.
 echo "[3] Config produksi"
+EXPECTED_TZ=$(grep -E '^APP_TIMEZONE=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+EXPECTED_TZ=${EXPECTED_TZ:-Asia/Makassar}
 TZ=$(php artisan tinker --execute="echo config('app.timezone');" 2>/dev/null | tail -1)
-[[ "$TZ" == "Asia/Jakarta" ]] && { echo -e "${GRN}✓${NC} Timezone: $TZ"; PASS=$((PASS+1)); } \
-                              || { echo -e "${RED}✗${NC} Timezone salah: $TZ"; FAIL=$((FAIL+1)); }
+if [[ -n "$TZ" && "$TZ" == "$EXPECTED_TZ" ]]; then
+    echo -e "${GRN}✓${NC} Timezone: $TZ"; PASS=$((PASS+1))
+else
+    echo -e "${RED}✗${NC} Timezone salah: '$TZ' (diharapkan '$EXPECTED_TZ')"; FAIL=$((FAIL+1))
+fi
 
 # 4. Test suite
 echo "[4] PHPUnit Tests"

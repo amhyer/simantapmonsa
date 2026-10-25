@@ -100,7 +100,7 @@
             <div class="form-group">
                 <label for="kata_sandi">Kata Sandi</label>
                 <input type="password" id="kata_sandi" name="kata_sandi" required>
-                <div class="hint">Minimal 6 karakter.</div>
+                <div class="hint">Minimal 8 karakter.</div>
             </div>
 
             <div class="form-group">
@@ -114,8 +114,8 @@
                     <option value="guru" {{ old('peran') == 'guru' ? 'selected' : '' }}>Guru</option>
                     <option value="siswa" {{ old('peran') == 'siswa' ? 'selected' : '' }}>Siswa</option>
                     <option value="ortu" {{ old('peran') == 'ortu' ? 'selected' : '' }}>Orang Tua</option>
-                    <option value="kepsek" {{ old('peran') == 'kepsek' ? 'selected' : '' }}>Kepala Sekolah</option>
                 </select>
+                <div class="hint">Pendaftaran baru menunggu aktivasi administrator sekolah. Akun kepala sekolah dibuat oleh administrator.</div>
             </div>
 
             <button type="submit" class="btn-register">Daftar Sekarang</button>
@@ -126,7 +126,7 @@
         </div>
 
         <div class="terms">
-            Dengan mendaftar, Anda menyetujui <a href="#">Syarat & Ketentuan</a> dan <a href="#">Kebijakan Privasi</a>.
+            Pendaftaran akan mengirim nama, nama pengguna, dan peran untuk ditinjau administrator sekolah. Akun baru tidak aktif sampai disetujui. Tanyakan kepada administrator sekolah mengenai kebijakan privasi yang berlaku.
         </div>
     </div>
 </body>

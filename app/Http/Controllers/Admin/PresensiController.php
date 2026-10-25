@@ -130,7 +130,7 @@ class PresensiController extends Controller
             ->whereIn('peran', self::PERAN_PEGAWAI)
             ->firstOrFail();
 
-        if ($validated['jam_pulang'] && !$validated['jam_masuk']) {
+        if (($validated['jam_pulang'] ?? null) && !($validated['jam_masuk'] ?? null)) {
             return back()->withInput()->with('error', 'Jam masuk harus diisi jika jam pulang dicatat.');
         }
 
