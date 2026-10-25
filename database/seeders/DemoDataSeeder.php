@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Support\SeedGuard;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Siswa;
@@ -16,6 +17,11 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // Sama seperti DatabaseSeeder: kredensial contoh tidak boleh masuk production.
+        if (! SeedGuard::bolehJalan($this->command)) {
+            return;
+        }
+
         $guru = User::firstOrCreate(
             ['nama_pengguna' => 'guru'],
             [
@@ -26,6 +32,7 @@ class DemoDataSeeder extends Seeder
                 'terhubung_dengan' => [],
                 'kelas_mata_pelajaran' => 'V A · Matematika',
                 'aktif' => true,
+                'force_password_change' => SeedGuard::paksaGantiSandi(),
             ]
         );
 

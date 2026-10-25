@@ -49,6 +49,11 @@ class UserController extends Controller
             'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,
             'aktif' => $validated['aktif'] ?? true,
+            // PERBAIKAN KEAMANAN (kesiapan launching): sandi diketik oleh admin,
+            // bukan oleh pemilik akun. Tanpa penanda ini sandi sementara berlaku
+            // selamanya. Middleware `force.password.change` akan mengarahkan
+            // pemilik akun ke halaman ganti sandi pada login berikutnya.
+            'force_password_change' => true,
         ]);
 
         if ($validated['peran'] === 'guru') {
@@ -104,6 +109,15 @@ class UserController extends Controller
 
         if (!empty($validated['kata_sandi'])) {
             $data['kata_sandi'] = Hash::make($validated['kata_sandi']);
+
+            // PERBAIKAN KEAMANAN (kesiapan launching): sebelumnya sandi yang
+            // direset admin berlaku selamanya karena `force_password_change`
+            // tidak pernah ikut di-set. Sekarang pemilik akun dipaksa mengganti
+            // sandi sementara itu pada login berikutnya — kecuali admin
+            // mengubah sandinya sendiri (ia sudah tahu sandi barunya).
+            if ($user->id !== $request->user()?->id) {
+                $data['force_password_change'] = true;
+            }
         }
 
         $user->update($data);
@@ -114,11 +128,24 @@ class UserController extends Controller
             'users',
             $user->id,
             null,
-            ['nama_lengkap' => $validated['nama_lengkap'], 'peran' => $validated['peran']]
+            ['nama_lengkap' => $user->nama_lengkap, 'peran' => $user->peran]
         );
 
+        if (!empty($validated['kata_sandi'])) {
+            // Dicatat terpisah dan TANPA nilai sandi, agar jejak audit menunjukkan
+            // siapa mereset sandi siapa tanpa membocorkan rahasia.
+            AktivitasService::ubah(
+                'Reset Sandi: ' . $user->nama_lengkap,
+                'Sandi akun ' . $user->peran . ' direset oleh administrator',
+                'users',
+                $user->id
+            );
+        }
+
         return redirect()->route('admin.users.index')
-            ->with('success', 'Akun berhasil diperbarui.');
+            ->with('success', !empty($validated['kata_sandi']) && $user->force_password_change
+                ? 'Akun berhasil diperbarui. Pengguna wajib mengganti sandi saat login berikutnya.'
+                : 'Akun berhasil diperbarui.');
     }
 
     public function destroy(User $user)
