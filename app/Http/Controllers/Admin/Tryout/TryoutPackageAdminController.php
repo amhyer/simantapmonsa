@@ -11,6 +11,7 @@ use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Tryout\StudentAnswer;
 use App\Services\ExcelExportService;
+use App\Services\TryoutResultDetailService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -412,11 +413,13 @@ class TryoutPackageAdminController extends Controller
     /**
      * Display the specified result.
      */
-    public function showResult(Result $result)
+    public function showResult(Result $result, TryoutResultDetailService $details)
     {
         $result->load(['session.package.subjects.questions', 'siswa', 'answers.question']);
-        
-        return view('admin.tryout.results.show', compact('result'));
+        $detailNilaiMapel = $details->forResult($result);
+        $analisisKelemahan = $details->weaknesses($result, $detailNilaiMapel);
+
+        return view('admin.tryout.results.show', compact('result', 'detailNilaiMapel', 'analisisKelemahan'));
     }
     
     /**

@@ -248,15 +248,14 @@ ketidakcocokan tampilan/filter TKA. Tindak lanjut pada PR #8:
   `tinggi`, `kritis`); kartu hitungan memakai agregat seluruh data dan tidak
   mengulang status yang sama.
 - Kolom tabel penilaian TKA dirapikan agar jumlah sel cocok dengan header.
-- Halaman bank soal CBT yang aktif memakai `resources/views/cbt/banks/show.blade.php`,
-  yang sudah memiliki form edit soal. File `resources/views/cbt/question-banks/show.blade.php`
-  adalah view lama yang tidak dipanggil controller aktif; placeholder di file
-  lama itu tidak menjadi tombol pada halaman aktif.
+- Halaman bank soal CBT aktif memakai `resources/views/cbt/banks/show.blade.php`.
+  Empat view duplikat lama di `resources/views/cbt/question-banks/` sudah dihapus;
+  halaman aktif tetap menyediakan form tambah/edit soal.
 
-**Verifikasi tindak lanjut:** PHP lint PHP-WASM untuk sembilan file PHP yang
-berubah lulus; job CI **PHPUnit (PHP 8.4)** pada PR #8 juga lulus. File dependensi
-`vendor/` tidak tersedia di sandbox sehingga PHPUnit tidak dijalankan lokal.
+**Verifikasi tindak lanjut PR #8:** PHP lint PHP-WASM untuk sembilan file PHP yang
+berubah lulus; job CI **PHPUnit (PHP 8.4)** pada PR #8 lulus. `vendor/` tidak
+tersedia di sandbox sehingga PHPUnit tidak dijalankan lokal.
 
-**Masih perlu verifikasi di lingkungan target:** PostgreSQL produksi, integrasi
-langsung TKA/Google Sheets/Dapodik dengan kredensial asli, dan browser Chromium
-serta uji aksesibilitas lintas-browser. Periksa hasil PR #8 sebelum deploy.
+**Masih perlu verifikasi di lingkungan target:** PostgreSQL produksi dan integrasi
+langsung TKA/Google Sheets/Dapodik dengan kredensial asli. PR #8 sudah di-merge;
+verifikasi rilis dan aksesibilitas lintas-browser tetap diperlukan.

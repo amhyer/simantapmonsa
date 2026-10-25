@@ -54,7 +54,7 @@ class AdminExportTest extends TestCase
     {
         $result = $this->createTryoutResult('Paket A', true);
 
-        $this->actingAs($this->admin)
+        $response = $this->actingAs($this->admin)
             ->get(route('admin.tryout.results.export', [
                 'package_id' => $result->session->package_id,
                 'session_id' => $result->tryout_session_id,
@@ -62,6 +62,10 @@ class AdminExportTest extends TestCase
             ]))
             ->assertOk()
             ->assertDownload('hasil-tryout-' . now()->format('Y-m-d') . '.xlsx');
+
+        $xlsx = $response->streamedContent();
+        $this->assertStringStartsWith('PK', $xlsx, 'Ekspor hasil Tryout harus berupa berkas XLSX yang valid.');
+        $this->assertGreaterThan(100, strlen($xlsx));
     }
 
     public function test_tryout_export_reports_no_matching_rows_without_server_error(): void
@@ -81,21 +85,23 @@ class AdminExportTest extends TestCase
     {
         $this->createAssessment();
 
-        $this->actingAs($this->admin)
+        $excelResponse = $this->actingAs($this->admin)
             ->post(route('admin.tka.generate-report'), [
                 'semester_id' => $this->semester->id,
                 'format' => 'excel',
             ])
             ->assertOk()
             ->assertDownload('laporan-tka-semester-' . $this->semester->id . '-' . now()->format('Y-m-d') . '.xlsx');
+        $this->assertStringStartsWith('PK', $excelResponse->streamedContent());
 
-        $this->actingAs($this->admin)
+        $pdfResponse = $this->actingAs($this->admin)
             ->post(route('admin.tka.generate-report'), [
                 'semester_id' => $this->semester->id,
                 'format' => 'pdf',
             ])
             ->assertOk()
             ->assertDownload('laporan-tka-semester-' . $this->semester->id . '-' . now()->format('Y-m-d') . '.pdf');
+        $this->assertStringStartsWith('%PDF-', $pdfResponse->getContent());
     }
 
     public function test_tka_data_export_supports_assessments_warnings_and_dimensions(): void

@@ -264,7 +264,11 @@ class CbtExamTest extends TestCase
         $this->post(route('cbt.questions.store', $bank), [
             'prompt' => 'Pilih A', 'options' => ['A' => 'Satu', 'B' => 'Dua', 'C' => 'Tiga', 'D' => 'Empat'], 'correct_answer' => 'A',
         ])->assertRedirect();
-        $this->get(route('cbt.question-banks.show', $bank))->assertOk()->assertSee('Pilih A');
+        $this->get(route('cbt.question-banks.show', $bank))
+            ->assertOk()
+            ->assertSee('Pilih A')
+            ->assertSee('name="prompt"', false)
+            ->assertDontSee('Fitur tambah soal inline');
         $this->get(route('cbt.sessions.create'))->assertOk();
         $this->post(route('cbt.sessions.store'), [
             'title' => 'Bahasa kelas 6', 'bank_id' => $bank->id, 'kelas' => '6A',

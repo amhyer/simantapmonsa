@@ -118,11 +118,18 @@ class AlignmentTest extends TestCase
         $guru = User::factory()->guru()->create(['aktif' => true]);
         [, , $siswa] = $this->seedDasar($guru);
         $this->buatNilai($siswa, $guru, 'Mapel Belum Terpetakan');
+        $this->buatNilai($siswa, $guru, '=HYPERLINK("https://example.invalid")');
 
-        $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->get(route('admin.referensi.alignment.export'))
             ->assertOk()
             ->assertDownload('nilai-erapor-unmatched-' . now()->format('Y-m-d') . '.csv');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Nama siswa', $csv);
+        $this->assertStringContainsString('Mapel Belum Terpetakan', $csv);
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertStringContainsString('Siswa Align', $csv);
     }
 
     public function test_halaman_alignment_dan_badge_pembelajaran(): void
