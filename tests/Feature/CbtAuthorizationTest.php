@@ -99,8 +99,12 @@ class CbtAuthorizationTest extends TestCase
         \Illuminate\Support\Env::enablePutenv();
     }
 
-    public function test_guru_lain_tidak_bisa_mengubah_atau_menghapus_bank(): void
+    public function test_guru_lain_tidak_bisa_membaca_atau_mengubah_bank(): void
     {
+        $this->actingAs($this->guruA)->get(route('cbt.question-banks.show', $this->bankB))->assertForbidden();
+        $this->actingAs($this->guruA)->get(route('cbt.question-banks.edit', $this->bankB))->assertForbidden();
+        $this->actingAs($this->guruA)->getJson(route('cbt.question-banks.api.questions', $this->bankB))->assertForbidden();
+
         $this->actingAs($this->guruA)
             ->put(route('cbt.question-banks.update', $this->bankB), ['title' => 'Dibajak', 'subject' => 'X'])
             ->assertForbidden();
@@ -137,6 +141,7 @@ class CbtAuthorizationTest extends TestCase
     {
         $this->actingAs($this->guruA)->get(route('cbt.sessions.show', $this->sesiB))->assertForbidden();
         $this->actingAs($this->guruA)->get(route('cbt.sessions.monitoring', $this->sesiB))->assertForbidden();
+        $this->actingAs($this->guruA)->getJson(route('cbt.sessions.api.monitoring', $this->sesiB))->assertForbidden();
         $this->actingAs($this->guruA)->post(route('cbt.sessions.publish', $this->sesiB))->assertForbidden();
         $this->actingAs($this->guruA)->post(route('cbt.sessions.start', $this->sesiB))->assertForbidden();
         $this->actingAs($this->guruA)->post(route('cbt.sessions.complete', $this->sesiB))->assertForbidden();

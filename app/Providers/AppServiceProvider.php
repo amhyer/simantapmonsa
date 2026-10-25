@@ -10,6 +10,7 @@ use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
 use App\Policies\TryoutResultPolicy;
 use App\Policies\TryoutSessionPolicy;
+use App\Policies\TkaAssessmentPolicy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\CbtResult::class, CbtResultPolicy::class);
         Gate::policy(\App\Models\Tryout\Session::class, TryoutSessionPolicy::class);
         Gate::policy(\App\Models\Tryout\Result::class, TryoutResultPolicy::class);
+        Gate::policy(\App\Models\Tka\StudentAssessment::class, TkaAssessmentPolicy::class);
 
         // Share activeTab with all views for admin routes
         View::share('activeTab', activeAdminTab());

@@ -141,22 +141,6 @@
         .stat-item .number { font-size: 48px; font-weight: 900; color: var(--gold); }
         .stat-item .label { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 4px; }
 
-        /* VIDEO DEMO */
-        .video-demo { background: #fff; }
-        .video-wrapper { max-width: 800px; margin: 0 auto; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); }
-        .video-placeholder { position: relative; width: 100%; background: var(--navy); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 0; font: inherit; color: inherit; }
-        .video-placeholder:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
-        .video-placeholder .play-button { width: 80px; height: 80px; background: var(--gold-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32px; transition: var(--transition); }
-        .video-wrapper:hover .play-button { transform: scale(1.1); box-shadow: 0 8px 30px rgba(184,134,11,0.4); }
-        .video-placeholder .video-duration { position: absolute; bottom: 16px; right: 16px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-        .video-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .video-modal.active { display: flex; }
-        .video-modal .close-video { position: absolute; top: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: #fff; font-size: 24px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
-        .video-modal .close-video:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
-        .video-modal .video-message { width: 100%; max-width: 680px; padding: 48px 32px; border-radius: var(--radius); background: var(--white); color: var(--text); text-align: center; box-shadow: var(--shadow-lg); }
-        .video-message h3 { color: var(--navy); font-size: 24px; margin-bottom: 12px; }
-        .video-message p { color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
-
         /* DEMO */
         .demo-section { background: var(--bg); }
         .demo-card { max-width: 800px; margin: 0 auto; padding: 48px 40px; background: var(--white); border-radius: var(--radius); border: 2px dashed var(--gold); text-align: center; box-shadow: var(--shadow); transition: var(--transition); }
@@ -239,13 +223,13 @@
         .blog-more summary::-webkit-details-marker { display: none; }
         .blog-more p { margin: 10px 0 0 !important; }
 
-        /* NEWSLETTER */
-        .newsletter { background: var(--navy); color: #fff; padding: 60px 40px; }
-        .newsletter-content { text-align: center; max-width: 600px; margin: 0 auto; }
-        .newsletter-content h3 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
-        .newsletter-content p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
-        .newsletter-link { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 99px; background: var(--gold-gradient); color: #fff; font-weight: 700; text-decoration: none; transition: var(--transition); }
-        .newsletter-link:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(184, 134, 11, 0.3); color: #fff; }
+        /* PEMBARUAN PROYEK */
+        .project-updates { background: var(--navy); color: #fff; padding: 60px 40px; }
+        .project-updates-content { text-align: center; max-width: 600px; margin: 0 auto; }
+        .project-updates-content h3 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .project-updates-content p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+        .project-updates-link { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 99px; background: var(--gold-gradient); color: #fff; font-weight: 700; text-decoration: none; transition: var(--transition); }
+        .project-updates-link:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(184, 134, 11, 0.3); color: #fff; }
 
         /* CTA */
         .cta-section { background: linear-gradient(135deg, var(--navy), var(--navy-dark)); color: #fff; text-align: center; padding: 80px 40px; }
@@ -376,7 +360,7 @@
         </a>
         <ul class="nav-links" id="navLinks">
             <li><a href="#features">Fitur</a></li>
-            <li><a href="#video">Demo</a></li>
+            <li><a href="#demo">Akses</a></li>
             <li><a href="#modules">Modul</a></li>
             <li><a href="#testimonials">Testimoni</a></li>
             <li><a href="#blog">Blog</a></li>
@@ -401,7 +385,7 @@
             <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Instalasi sekolah dapat mengaktifkan integrasi Google Sheet sesuai konfigurasi.</p>
             <div class="cta-group">
                 <a href="{{ route('register') }}" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai Sekarang</a>
-                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-play-circle"></i> Coba Demo</a>
+                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Akses Aplikasi</a>
             </div>
             <div class="trust">
                 <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>
@@ -437,42 +421,15 @@
     </div>
 </section>
 
-<!-- VIDEO DEMO -->
-<section class="video-demo" id="video">
-    <div class="container">
-        <div class="section-header" data-aos="fade-up">
-            <div class="section-label"><i class="fas fa-circle-info"></i> Pratinjau Demo</div>
-            <h2 class="section-title">Lihat Cara Kerja <span class="highlight">SIMANTAP</span></h2>
-            <p class="section-subtitle">Video demo belum tersedia. Lihat cara kerja SIMANTAP atau masuk menggunakan akun sekolah Anda.</p>
-        </div>
-        <div class="video-wrapper" data-aos="fade-up">
-            <button type="button" class="video-placeholder" id="videoTrigger" aria-haspopup="dialog" aria-controls="videoModal">
-                <span class="play-button"><i class="fas fa-circle-info"></i></span>
-                <span class="video-duration">Informasi demo</span>
-            </button>
-        </div>
-    </div>
-</section>
-
-<!-- Video Modal -->
-<div class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle" aria-hidden="true">
-    <button type="button" class="close-video" id="closeVideo" aria-label="Tutup"><i class="fas fa-times"></i></button>
-    <div class="video-message">
-        <h3 id="videoModalTitle">Video demo belum tersedia</h3>
-        <p>Untuk melihat fitur, masuk menggunakan akun sekolah Anda. Pendaftaran baru perlu disetujui administrator.</p>
-        <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Login</a>
-    </div>
-</div>
-
-<!-- LIVE DEMO -->
+<!-- AKSES APLIKASI -->
 <section class="demo-section" id="demo">
     <div class="container">
         <div class="demo-card" data-aos="fade-up">
-            <div style="font-size:48px;margin-bottom:16px">🎯</div>
-            <h3>Masuk ke SIMANTAP</h3>
-            <p>Gunakan akun yang dibuat administrator sekolah. Akun yang didaftarkan sendiri menunggu aktivasi sebelum dapat digunakan.</p>
-            <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Login</a>
-            <span class="demo-note"><i class="fas fa-info-circle"></i> Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a>.</span>
+            <div style="font-size:48px;margin-bottom:16px" aria-hidden="true">🎯</div>
+            <h3>Akses Aplikasi SIMANTAP</h3>
+            <p>Video demo belum tersedia. Untuk mencoba aplikasi, masuk dengan akun sekolah. Akun yang baru didaftarkan perlu diaktifkan administrator.</p>
+            <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Masuk ke aplikasi</a>
+            <span class="demo-note"><i class="fas fa-info-circle" aria-hidden="true"></i> Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a>.</span>
         </div>
     </div>
 </section>
@@ -652,11 +609,7 @@
 
 <!-- TKA STATISTIK -->
 @php
-    $tkaData = \Illuminate\Support\Facades\Cache::get('tka_statistik');
-    if (!$tkaData) {
-        $tkaService = app(\App\Services\TkaStatistikService::class);
-        $tkaData = $tkaService->get();
-    }
+    $tkaData = app(\App\Services\TkaStatistikService::class)->getCached();
     $peserta = $tkaData['peserta'] ?? null;
     $total = $peserta['total'] ?? [];
     $rekap = $peserta['rekap'] ?? [];
@@ -1119,14 +1072,14 @@
     </div>
 </section>
 
-<!-- NEWSLETTER -->
-<section class="newsletter" id="newsletter">
+<!-- PEMBARUAN PROYEK -->
+<section class="project-updates" id="updates">
     <div class="container">
-        <div class="newsletter-content" data-aos="fade-up">
-            <h3>📬 Ikuti Pembaruan SIMANTAP</h3>
-            <p>Layanan newsletter belum tersedia. Informasi dan perubahan proyek dapat dilihat di repositori resmi.</p>
-            <a class="newsletter-link" href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">
-                <i class="fab fa-github"></i> Lihat repositori SIMANTAP
+        <div class="project-updates-content" data-aos="fade-up">
+            <h3>📬 Pembaruan Proyek SIMANTAP</h3>
+            <p>Newsletter email belum tersedia. Pantau perubahan dan rilis proyek melalui repositori resmi.</p>
+            <a class="project-updates-link" href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-github" aria-hidden="true"></i> Lihat repositori dan rilis
             </a>
         </div>
     </div>
@@ -1226,34 +1179,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveBrowserPreference(key, value) {
         try { window.localStorage.setItem(key, value); } catch (error) { /* storage may be disabled */ }
     }
-
-    // Informasi demo (video asli belum tersedia). Modal dapat ditutup dengan
-    // tombol, klik backdrop, atau tombol Escape dan mengembalikan fokus.
-    const videoTrigger = document.getElementById('videoTrigger');
-    const videoModal = document.getElementById('videoModal');
-    const closeVideo = document.getElementById('closeVideo');
-    function closeVideoModal() {
-        if (!videoModal) return;
-        videoModal.classList.remove('active');
-        videoModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        videoTrigger?.focus();
-    }
-    if (videoTrigger && videoModal) {
-        videoTrigger.addEventListener('click', function() {
-            videoModal.classList.add('active');
-            videoModal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            closeVideo?.focus();
-        });
-        videoModal.addEventListener('click', function(e) {
-            if (e.target === videoModal) closeVideoModal();
-        });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && videoModal.classList.contains('active')) closeVideoModal();
-        });
-    }
-    closeVideo?.addEventListener('click', closeVideoModal);
 
     // Quiz
     const registrationUrl = @json(route('register'));

@@ -3,8 +3,9 @@
 ### Acuan pembenahan gabungan, diverifikasi langsung terhadap kode
 
 **Basis verifikasi:** working tree pada commit `56f7922` (15 Okt 2026) + perubahan belum di-commit.
-**Tanggal verifikasi:** 17 Oktober 2026.
-**Metode:** pembacaan kode + pemeriksaan file/folder satu per satu (bukan klaim dari laporan lain).
+**Tanggal verifikasi awal:** 17 Oktober 2026.
+**Metode awal:** pembacaan kode + pemeriksaan file/folder satu per satu (bukan klaim dari laporan lain).
+**Status mutakhir:** §1b dan matriks §2 adalah snapshot awal; §§1c–1e mencatat fase perbaikan setelahnya. §1f berisi eksekusi terbaru dan mengalahkan status historis yang belum direkonsiliasi.
 **Sumber digabung:**
 - `docs/Audit_Mendalam_SIMANTAPMONSA.md` (audit statis, snapshot `56f7922`)
 - `docs/AUDIT_SIMANTAP_MENDALAM_2026-10-17.md` (audit + eksekusi, klaim 19 temuan)
@@ -220,9 +221,57 @@ Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
 
 ---
 
-## 2. MATRIKS VERIFIKASI (ID ↔ Status ↔ Bukti)
+## 1f. VERIFIKASI ULANG KEADAAN TERKINI (25 OKT 2026)
 
-Kode: **RUSAK** = masih belum diperbaiki · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
+**Basis:** commit `6088244edbc3ff986f3ba3aceaca62dc23bc5321` pada PR #9.
+Bukti CI: [run 40171614678](https://github.com/amhyer/simantapmonsa/actions/runs/40171614678).
+Hasil: PHPUnit PHP 8.4 (SQLite) **lulus**, PHPUnit PostgreSQL 16 **lulus**, smoke Chromium
+landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI selesai sukses.
+
+### Temuan yang diperiksa ulang
+
+| Temuan | Status aktual | Bukti yang dijalankan |
+|---|---|---|
+| `GET /ortu/dashboard` tanpa anak terhubung | **200; pesan aman** | `CriticalRoutesRegressionTest::test_dashboard_ortu_tanpa_anak_tetap_merender_pesan_yang_aman` |
+| `GET /guru/laporan/pdf` tanpa pengaturan, dengan 12 siswa | **200; PDF `%PDF-` valid** | `CriticalRoutesRegressionTest::test_pdf_laporan_guru_berhasil_tanpa_pengaturan_dan_tanpa_query_kehadiran_n_plus_satu` |
+| `GET /guru/erapor/excel` tanpa pengaturan, dengan siswa | **200; stream XLSX `PK` valid**; semester/tahun ajaran fallback ditetapkan bila pengaturan guru belum dibuat | `CriticalRoutesRegressionTest::test_export_erapor_excel_berhasil_tanpa_pengaturan_dan_dengan_siswa` |
+| N+1 kehadiran pada laporan guru | **Diperbaiki**: persentase dihitung dari agregat yang sudah diambil sekaligus; filter semester berulang per baris nilai dihapus karena siswa sudah difilter pada query awal | Dua test laporan memeriksa tidak ada query `COUNT` kehadiran per siswa; index juga mempertahankan hasil 50% pada fixture H/S |
+| `GET /tka/assessments/1/edit` | **404 terencana, bukan 500** | Route edit tidak didaftarkan karena controller tidak mendukung edit; `CriticalRoutesRegressionTest::test_edit_assessment_yang_tidak_didukung_tidak_melempar_500` |
+| Alur TKA: input skor berbobot → hasil → laporan orang tua | **Berjalan; skor terverifikasi** (13/16 = 81,25%, rerata berbobot 3,25 → `siap`) | `TkaAssessmentFlowTest::test_alur_tka_menilai_menghitung_membuat_dan_membaca_laporan_orang_tua` |
+| Rekomendasi orang tua TKA untuk dimensi lemah | **Berjalan**; filter closure yang sebelumnya tak dievaluasi diperbaiki | `TkaAssessmentFlowTest::test_laporan_tka_menyertakan_saran_untuk_dimensi_yang_lemah` |
+| IDOR asesmen TKA guru | **Ditutup untuk catatan siswa**: form hanya menampilkan siswa guru yang login; create/show/riwayat/generate report memeriksa kepemilikan via `TkaAssessmentPolicy` | `TkaAssessmentFlowTest::test_guru_tidak_dapat_melihat_membuat_atau_menerbitkan_laporan_untuk_siswa_guru_lain` |
+| ID item lintas-dimensi TKA | **Ditolak 404** saat ID item tidak termasuk dimensi parent pada route nested; tidak ada penghapusan | `TkaAssessmentFlowTest::test_item_dimensi_lain_tidak_dapat_dihapus_melalui_route_nested` |
+| Akses orang tua ke laporan TKA | **Hanya akun yang terhubung dapat membaca**; ID siswa string/integer dinormalisasi; akses orang tua lain 403 | Test alur TKA di atas menguji akses benar, penandaan dibaca, dan penolakan parent lain |
+| 13 view yang pernah dilaporkan hilang | **Semua tersedia** | `CriticalRoutesRegressionTest::test_view_yang_pernah_dilaporkan_hilang_semuanya_tersedia` + kompilasi seluruh Blade di CI |
+| Ekspor CSV CBT | **Berjalan** | `ExamReaderTest::test_ekspor_csv_cbt_memuat_nilai_dan_pelanggaran` membuat ujian, memanggil ekspor, dan memeriksa isi CSV |
+| Start → autosave → anti-cheat → submit → hasil CBT | **Berjalan** | `CbtExamTest::test_alur_siswa_end_to_end_mulai_autosave_anti_cheat_submit_hasil` |
+| Start → autosave → complete → hasil Tryout | **Berjalan** | `TryoutTest::test_alur_siswa_tryout_end_to_end_mulai_autosave_complete_hasil` |
+| IDOR lintas akun CBT, Tryout, dan asesmen TKA | **Policy terdaftar; aksi baca/tulis/telemetri diperiksa** | 7 Policy di `app/Policies` (4 CBT, 2 Tryout, 1 TKA); `CbtAuthorizationTest`, `CbtExamTest`, `TryoutTest`, dan `TkaAssessmentFlowTest` menguji akses ditolak/data tetap utuh |
+| Smoke route GET | **Semua route GET terdaftar, >1.000 kombinasi route × peran, tanpa 5xx** | `RouteHealthAuditTest` menjalankan enam peran (admin, guru, siswa, ortu, kepsek, tendik) dan gagal jika menemukan HTTP 5xx |
+
+### Batas cakupan yang tetap harus dinyatakan
+
+- Route-health mengisi parameter dinamis dengan nilai contoh `1`; binding yang datanya tidak
+  ada dapat berakhir 404 sebelum view dijalankan. Untuk itu, 13 view lama dan endpoint kritis
+  di atas diberi pemeriksaan khusus dengan fixture yang benar. Angka 0 5xx tidak berarti setiap
+  kombinasi ID/data produksi telah diuji.
+- Perbaikan laporan guru membuktikan tidak adanya query kehadiran per siswa pada dua halaman
+  yang diuji; belum ada benchmark waktu nyata atau pengukuran ulang skor performa 60%/cold-start.
+- PHPUnit PostgreSQL CI memakai database sementara, bukan PostgreSQL produksi. Layanan langsung
+  Dapodik/Google Sheets dan staging sekolah tetap belum diuji; Chromium hanya menguji landing/FAQ,
+  bukan keseluruhan UI CBT/Tryout/TKA.
+- `AuditCbtProofTest` lama memang tidak dikembalikan karena menargetkan skema CBT yang sudah
+  dihapus. Penjaga aktifnya adalah `CbtExamTest`, `CbtAuthorizationTest`, `TryoutTest`, test parity
+  engine, dan `RouteHealthAuditTest`.
+- Engine CBT/Tryout sudah memiliki bridge ke `exam_*` (lihat §1e); tabel legacy tetap dicerminkan
+  dan belum boleh dihapus sebelum rekonsiliasi data produksi.
+
+## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat status terkini §1f)
+
+> Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status
+> **RUSAK** di snapshot lama tidak mengalahkan bukti eksekusi lebih baru di §1f.
+
+Kode historis: **RUSAK** = masih belum diperbaiki pada 17 Okt · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
 
 ### 2.1 CBT (dari AUDIT_SIMANTAP_MENDALAM, §1)
 

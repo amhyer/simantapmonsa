@@ -238,8 +238,13 @@ class AuditHalamanRegressionTest extends TestCase
     {
         $response = $this->get(route('landing'))
             ->assertOk()
-            ->assertSee('Layanan newsletter belum tersedia')
+            ->assertSee('Newsletter email belum tersedia')
             ->assertSee('Video demo belum tersedia')
+            ->assertSee('Akses Aplikasi SIMANTAP')
+            ->assertSee('Lihat repositori dan rilis')
+            ->assertDontSee('Coba Demo')
+            ->assertDontSee('videoTrigger')
+            ->assertDontSee('videoModal')
             ->assertDontSee('dQw4w9WgXcQ')
             ->assertDontSee('6281234567890')
             ->assertDontSee('newsletterForm');

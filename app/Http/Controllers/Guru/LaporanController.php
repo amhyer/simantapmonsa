@@ -68,23 +68,17 @@ class LaporanController extends Controller
             if ($mapelFilter) {
                 $nilai = $nilai->where('mata_pelajaran', $mapelFilter);
             }
-            if ($semesterId) {
-                // Filter by siswa's semester_id
-                $nilai = $nilai->filter(function ($n) use ($semesterId) {
-                    return $n->siswa_id && Siswa::where('id', $n->siswa_id)->where('semester_id', $semesterId)->exists();
-                });
-            }
 
             $na = $this->nilaiService->hitungNilaiAkhirBatch($nilai, $hasilKuis);
             $predikat = $na['nilai_akhir'] > 0 ? $this->nilaiService->getPredikat($na['nilai_akhir'], getKKM($guruId)) : null;
-            $kehadiranPersen = $this->nilaiService->hitungKehadiran($s->id);
-
+            // Reuse the batched attendance aggregate instead of issuing two queries per student.
             $kehadiranData = $allKehadiran->get($s->id, collect());
             $totalHadir = $kehadiranData->where('status', 'H')->sum('jumlah');
             $totalSakit = $kehadiranData->where('status', 'S')->sum('jumlah');
             $totalIzin = $kehadiranData->where('status', 'I')->sum('jumlah');
             $totalAlpa = $kehadiranData->where('status', 'A')->sum('jumlah');
             $totalKehadiran = $kehadiranData->sum('jumlah');
+            $kehadiranPersen = $totalKehadiran > 0 ? round($totalHadir / $totalKehadiran * 100, 1) : 0;
 
             $nilaiPerMapel = $nilai->groupBy('mata_pelajaran')->map(function ($items, $mapel) use ($guruId) {
                 $rata = round($items->avg('nilai'), 1);
@@ -185,14 +179,14 @@ class LaporanController extends Controller
 
             $na = $this->nilaiService->hitungNilaiAkhirBatch($nilai, $hasilKuis);
             $predikat = $na['nilai_akhir'] > 0 ? $this->nilaiService->getPredikat($na['nilai_akhir'], getKKM($guruId)) : null;
-            $kehadiranPersen = $this->nilaiService->hitungKehadiran($s->id);
-
+            // Reuse the batched attendance aggregate instead of issuing two queries per student.
             $kehadiranData = $allKehadiran->get($s->id, collect());
             $totalHadir = $kehadiranData->where('status', 'H')->sum('jumlah');
             $totalSakit = $kehadiranData->where('status', 'S')->sum('jumlah');
             $totalIzin = $kehadiranData->where('status', 'I')->sum('jumlah');
             $totalAlpa = $kehadiranData->where('status', 'A')->sum('jumlah');
             $totalKehadiran = $kehadiranData->sum('jumlah');
+            $kehadiranPersen = $totalKehadiran > 0 ? round($totalHadir / $totalKehadiran * 100, 1) : 0;
 
             $nilaiPerMapel = $nilai->groupBy('mata_pelajaran')->map(function ($items, $mapel) use ($guruId) {
                 $rata = round($items->avg('nilai'), 1);

@@ -91,6 +91,25 @@ class CbtExamTest extends TestCase
         $this->get(route('cbt.student.result', $result))->assertOk()->assertSee('100.00');
     }
 
+    public function test_alur_siswa_end_to_end_mulai_autosave_anti_cheat_submit_hasil(): void
+    {
+        $session = $this->createSession();
+        $result = $this->attempt($session);
+        $questionId = $session->question_snapshot[0]['id'];
+
+        $this->postJson(route('cbt.student.answer', $result), [
+            'question_id' => $questionId, 'answer' => 'A',
+        ])->assertOk()->assertJson(['saved' => true]);
+        $this->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])
+            ->assertOk()->assertJson(['recorded' => true]);
+        $this->post(route('cbt.student.submit', $result))
+            ->assertRedirect(route('cbt.student.result', $result));
+
+        $this->assertSame(100.0, $result->fresh()->score);
+        $this->assertSame(1, $result->violations()->count());
+        $this->get(route('cbt.student.result', $result))->assertOk()->assertSee('100.00');
+    }
+
     public function test_post_mulai_ganda_tetap_satu_percobaan_dan_deadline_tetap(): void
     {
         $session = $this->createSession();
@@ -182,6 +201,8 @@ class CbtExamTest extends TestCase
         $other = User::factory()->siswa()->create(['terhubung_dengan' => [$this->student->id]]);
         $this->actingAs($other)->get(route('cbt.student.result', $result))->assertForbidden();
         $this->postJson(route('cbt.student.answer', $result), ['question_id' => $session->question_snapshot[0]['id'], 'answer' => 'A'])->assertForbidden();
+        $this->post(route('cbt.student.submit', $result))->assertForbidden();
+        $this->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])->assertForbidden();
     }
 
     public function test_guru_lain_tidak_bisa_membaca_bank_atau_monitoring(): void
@@ -264,7 +285,11 @@ class CbtExamTest extends TestCase
         $this->post(route('cbt.questions.store', $bank), [
             'prompt' => 'Pilih A', 'options' => ['A' => 'Satu', 'B' => 'Dua', 'C' => 'Tiga', 'D' => 'Empat'], 'correct_answer' => 'A',
         ])->assertRedirect();
-        $this->get(route('cbt.question-banks.show', $bank))->assertOk()->assertSee('Pilih A');
+        $this->get(route('cbt.question-banks.show', $bank))
+            ->assertOk()
+            ->assertSee('Pilih A')
+            ->assertSee('name="prompt"', false)
+            ->assertDontSee('Fitur tambah soal inline');
         $this->get(route('cbt.sessions.create'))->assertOk();
         $this->post(route('cbt.sessions.store'), [
             'title' => 'Bahasa kelas 6', 'bank_id' => $bank->id, 'kelas' => '6A',

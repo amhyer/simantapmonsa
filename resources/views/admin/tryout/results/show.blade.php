@@ -81,12 +81,12 @@
             <h3>Nilai per Mata Pelajaran</h3>
         </div>
         <div class="card-body tight">
-            @php $detailMapel = $result->detail_nilai_mapel ?? []; @endphp
+            @php $detailMapel = $detailNilaiMapel ?? []; @endphp
             @if(empty($detailMapel))
                 <div class="empty-state">
                     <div class="icon">📚</div>
-                    <h4>Belum ada rincian nilai</h4>
-                    <p>Rincian nilai per mata pelajaran belum tersedia.</p>
+                    <h4>Rincian nilai tidak tersedia</h4>
+                    <p>Ringkasan historis dan jawaban untuk percobaan ini tidak tersedia untuk menghitung ulang nilai per mata pelajaran.</p>
                 </div>
             @else
                 <div class="table-wrapper">
@@ -131,7 +131,7 @@
             <div style="font-size:13px;display:grid;gap:12px">
                 <div>
                     <div style="color:var(--muted);margin-bottom:4px">Mata pelajaran terlemah</div>
-                    @php $kelemahan = $result->analisis_kelemahan ?? []; @endphp
+                    @php $kelemahan = $analisisKelemahan ?? ($result->analisis_kelemahan ?? []); @endphp
                     @if(empty($kelemahan))
                         <span class="tag tag-mut">Tidak ada data</span>
                     @else

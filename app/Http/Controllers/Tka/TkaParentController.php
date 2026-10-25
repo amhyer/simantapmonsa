@@ -38,7 +38,8 @@ class TkaParentController extends Controller
         $siswa = $report->siswa;
         
         $terhubung = $user->terhubung_dengan;
-        $isParent = is_array($terhubung) && in_array($siswa->id, $terhubung, true);
+        $linkedStudentIds = is_array($terhubung) ? array_map('intval', $terhubung) : [];
+        $isParent = in_array((int) $siswa->id, $linkedStudentIds, true);
         
         if (!$isParent) {
             abort(403, 'Anda tidak memiliki akses ke laporan ini');
@@ -60,11 +61,13 @@ class TkaParentController extends Controller
 
     public function generateReport(StudentAssessment $assessment)
     {
+        $this->authorize('generateParentReport', $assessment);
+
         // Check if report already exists
         $existingReport = ParentReport::where('assessment_id', $assessment->id)->first();
         
         if ($existingReport) {
-            return redirect()->route('tka.parent.show', $existingReport);
+            return redirect()->route('tka.assessments.show', $assessment);
         }
 
         // Generate suggested activities based on weak dimensions
@@ -72,7 +75,10 @@ class TkaParentController extends Controller
         $aktivitasSuggested = [];
 
         foreach ($skorPerDimensi as $dimensi) {
-            if ($dimensi['total_skor'] / $dimensi['maksimal'] < 0.75) {
+            $maksimal = (float) ($dimensi['maksimal'] ?? 0);
+            $totalSkor = (float) ($dimensi['total_skor'] ?? 0);
+
+            if ($maksimal > 0 && $totalSkor / $maksimal < 0.75) {
                 $aktivitasSuggested[] = [
                     'dimension' => $dimensi['nama_dimensi'],
                     'kategori' => $dimensi['kategori'],
@@ -91,7 +97,7 @@ class TkaParentController extends Controller
             'dibaca_oleh_ortu' => false,
         ]);
 
-        return redirect()->route('tka.parent.show', $report)
+        return redirect()->route('tka.assessments.show', $assessment)
             ->with('success', 'Laporan untuk orang tua berhasil dibuat');
     }
 
@@ -144,8 +150,10 @@ class TkaParentController extends Controller
         $skorPerDimensi = $assessment->skor_per_dimensi;
         
         $weakDimensions = collect($skorPerDimensi)
-            ->where('total_skor', '<', function ($item) {
-                return $item['maksimal'] * 0.75;
+            ->filter(function ($item) {
+                $maksimal = (float) ($item['maksimal'] ?? 0);
+
+                return $maksimal > 0 && (float) ($item['total_skor'] ?? 0) < $maksimal * 0.75;
             })
             ->pluck('nama_dimensi')
             ->toArray();

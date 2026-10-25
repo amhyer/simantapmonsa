@@ -9,6 +9,7 @@ use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\Siswa;
 use App\Services\TryoutEngineBridge;
+use App\Services\TryoutResultDetailService;
 use App\Services\TryoutScoring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -243,13 +244,15 @@ class TryoutStudentController extends Controller
             ->with('success', 'Tryout berhasil diselesaikan');
     }
 
-    public function result(Result $result)
+    public function result(Result $result, TryoutResultDetailService $details)
     {
         $this->authorize('view', $result);
 
         $result->load(['session.package.subjects.mataPelajaran', 'siswa']);
+        $detailNilaiMapel = $details->forResult($result);
+        $analisisKelemahan = $details->weaknesses($result, $detailNilaiMapel);
 
-        return view('tryout.student.result', compact('result'));
+        return view('tryout.student.result', compact('result', 'detailNilaiMapel', 'analisisKelemahan'));
     }
 
     private function siswaSaya(): ?Siswa

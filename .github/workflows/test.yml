@@ -81,6 +81,9 @@ jobs:
           npm ci
           npm run build
 
+      - name: Compile all Blade views
+        run: php artisan view:cache
+
       # Seluruh suite wajib hijau, termasuk RouteHealthAuditTest (0 endpoint 5xx).
       - name: Run test suite (wajib hijau)
         run: |
@@ -119,3 +122,173 @@ jobs:
             echo '```'
           } > /tmp/ci-report.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/ci-report.md
+
+  phpunit-postgres:
+    name: PHPUnit (PHP 8.4, PostgreSQL 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: simantap_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d simantap_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: simantap_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_SSLMODE: disable
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp, dom, fileinfo, iconv, curl
+          coverage: none
+          tools: composer:v2
+          ini-values: sys_temp_dir=/tmp
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Siapkan .env dan direktori storage
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/views \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/logs \
+                   bootstrap/cache
+
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Run test suite against PostgreSQL
+        run: |
+          set -o pipefail
+          php artisan test 2>&1 | tee /tmp/phpunit-postgres.log
+
+      - name: Simpan laporan endpoint 5xx PostgreSQL
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-health-report-postgres
+          path: storage/logs/route-health-report.txt
+          if-no-files-found: ignore
+
+  browser-smoke:
+    name: Browser smoke (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath, gd, zip, xml, intl, gmp, dom, fileinfo, iconv, curl
+          coverage: none
+          tools: composer:v2
+          ini-values: sys_temp_dir=/tmp
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Siapkan .env dan direktori storage
+        run: |
+          cp .env.example .env
+          mkdir -p storage/framework/views \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/logs \
+                   bootstrap/cache
+
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Build frontend and install browser test dependencies
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Run Chromium smoke tests
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee /tmp/playwright.log
+
+      - name: Upload browser traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: |
+            test-results/
+            /tmp/playwright.log
+          if-no-files-found: ignore
+
+      - name: Tempel log browser gagal ke PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "CI Browser smoke (Chromium) gagal. Potongan log diagnostik:"
+            echo
+            echo '```'
+            tail -n 180 /tmp/playwright.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo '```'
+          } > /tmp/browser-ci-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/browser-ci-report.md
