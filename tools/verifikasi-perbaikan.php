@@ -758,6 +758,178 @@ periksa('Tidak ada kunci/token hardcoded di skrip bridge & config', function () 
     return $temuan === [] ? true : 'nilai rahasia hardcoded di: ' . implode(', ', $temuan);
 });
 
+/* ──────────────────────────────────────────────────────────────
+ * 13. Kesiapan launching (LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n13. Kesiapan launching\n";
+
+periksa('Admin yang mereset sandi memicu force_password_change', function () use ($root) {
+    // Sengaja memakai sumber mentah (bukan kodeBersih): `force_password_change`
+    // di sini adalah KUNCI ARRAY berupa string literal, dan kodeBersih() menghapus
+    // seluruh literal string sehingga pemeriksaannya tidak akan pernah cocok.
+    $kode = baca($root . '/app/Http/Controllers/Admin/UserController.php');
+
+    if (! preg_match(
+        "/if\\s*\\(\\s*!\\s*empty\\s*\\(\\s*\\\$validated\\s*\\[\\s*'kata_sandi'\\s*\\]\\s*\\)/",
+        $kode,
+        $m,
+        PREG_OFFSET_CAPTURE
+    )) {
+        return "pola if (!empty(\$validated['kata_sandi'])) tidak ditemukan di UserController";
+    }
+
+    // Pola ini menuntut penetapan `$data['force_password_change'] = true` benar-benar
+    // mengikuti `Hash::make(...)`. Mencari teks `force_password_change` saja tidak
+    // cukup: pesan flash di akhir method juga menyebut nama yang sama.
+    if (preg_match(
+        "/Hash::make\\(\\s*\\\$validated\\s*\\[\\s*'kata_sandi'\\s*\\]\\s*\\)\\s*;(?:.|\\n){0,800}?\\\$data\\s*\\[\\s*'force_password_change'\\s*\\]\\s*=\\s*true/",
+        $kode
+    ) === 1) {
+        return true;
+    }
+
+    return 'UserController::update mereset sandi tanpa menandai force_password_change';
+});
+
+periksa('Akun baru buatan admin ditandai force_password_change', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Admin/UserController.php');
+
+    if (! preg_match('/public function store\((.*?)\n    \}/s', $kode, $m)) {
+        return 'method store() tidak ditemukan di UserController';
+    }
+
+    return str_contains($m[1], "'force_password_change' => true")
+        ? true
+        : 'UserController::store tidak membuat akun dengan force_password_change';
+});
+
+periksa('Seeder kredensial contoh dijaga SeedGuard', function () use ($root) {
+    if (! is_file($root . '/database/seeders/Support/SeedGuard.php')) {
+        return 'database/seeders/Support/SeedGuard.php tidak ada';
+    }
+
+    $kurang = [];
+    foreach (['DatabaseSeeder', 'DemoDataSeeder', 'ApiKeySeeder'] as $seeder) {
+        $kode = baca("{$root}/database/seeders/{$seeder}.php");
+        if (! str_contains($kode, 'SeedGuard::bolehJalan')) {
+            $kurang[] = $seeder;
+        }
+    }
+
+    return $kurang === [] ? true : 'seeder tanpa penjaga: ' . implode(', ', $kurang);
+});
+
+periksa('Semua grup route CBT memasang force.password.change', function () use ($root) {
+    $sumber = baca($root . '/routes/web.php');
+
+    if (! preg_match_all(
+        '/Route::middleware\(\[([^\]]*)\]\)->prefix\(\'cbt[^\']*\'\)/',
+        $sumber,
+        $cocok
+    )) {
+        return 'tidak ada grup route CBT yang cocok dengan pola';
+    }
+
+    $tanpa = [];
+    foreach ($cocok[1] as $middleware) {
+        if (! str_contains($middleware, 'force.password.change')) {
+            $tanpa[] = '[' . trim($middleware) . ']';
+        }
+    }
+
+    return $tanpa === [] ? true : 'grup CBT tanpa middleware: ' . implode(' | ', $tanpa);
+});
+
+periksa('Setiap grup route ber-auth memasang force.password.change', function () use ($root) {
+    $sumber = baca($root . '/routes/web.php');
+
+    if (! preg_match_all(
+        '/Route::middleware\((\[[^\]]*\])\)/',
+        $sumber,
+        $cocok,
+        PREG_OFFSET_CAPTURE
+    )) {
+        return 'tidak ada Route::middleware([...]) yang cocok dengan pola';
+    }
+
+    $tanpa = [];
+    foreach ($cocok[1] as $i => $pair) {
+        $middleware = $pair[0];
+
+        // Hanya grup yang memang memakai middleware auth.
+        if (! preg_match("/['\"]auth['\"]/", $middleware)) {
+            continue;
+        }
+
+        if (str_contains($middleware, 'force.password.change')) {
+            continue;
+        }
+
+        // Pengecualian: grup yang MENDAFTARKAN route ganti sandi itu sendiri.
+        // Memasang middleware di sana akan menimbulkan redirect melingkar.
+        $setelah = substr($sumber, $pair[1], 400);
+        if (str_contains($setelah, 'force-password-change')) {
+            continue;
+        }
+
+        $tanpa[] = trim($middleware);
+    }
+
+    return $tanpa === []
+        ? true
+        : 'grup auth tanpa force.password.change: ' . implode(' | ', $tanpa);
+});
+
+periksa('Template .env produksi mematikan debug & mengamankan sesi', function () use ($root) {
+    $path = $root . '/.env.production.example';
+    if (! is_file($path)) {
+        return '.env.production.example tidak ada';
+    }
+
+    $isi = baca($path);
+    $wajib = [
+        'APP_ENV=production',
+        'APP_DEBUG=false',
+        'SESSION_SECURE_COOKIE=true',
+        'TELESCOPE_ENABLED=false',
+    ];
+
+    $kurang = array_values(array_filter($wajib, fn ($k) => ! str_contains($isi, $k)));
+    if ($kurang !== []) {
+        return 'nilai wajib tidak ada: ' . implode(', ', $kurang);
+    }
+
+    return preg_match('/^APP_KEY=.+$/m', $isi) === 1
+        ? 'APP_KEY terisi di template — harus kosong'
+        : true;
+});
+
+periksa('Panduan deployment tersedia dan README bukan template Laravel', function () use ($root) {
+    if (! is_file($root . '/DEPLOYMENT.md')) {
+        return 'DEPLOYMENT.md tidak ada';
+    }
+
+    $deploy = baca($root . '/DEPLOYMENT.md');
+    $kurang = [];
+    foreach (['schedule:run', 'queue:work', 'npm run build', 'migrate --force'] as $frasa) {
+        if (! str_contains($deploy, $frasa)) {
+            $kurang[] = $frasa;
+        }
+    }
+    if ($kurang !== []) {
+        return 'DEPLOYMENT.md tidak menyebut: ' . implode(', ', $kurang);
+    }
+
+    $readme = baca($root . '/README.md');
+    if (str_contains($readme, 'Laravel is accessible, powerful, and provides tools')) {
+        return 'README.md masih memakai teks template Laravel';
+    }
+
+    return str_contains($readme, 'DEPLOYMENT.md')
+        ? true
+        : 'README.md tidak menautkan DEPLOYMENT.md';
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {

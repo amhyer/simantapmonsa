@@ -1,58 +1,121 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIMANTAP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Situs Mandiri Terintegrasi Aplikasi Pembelajaran** — satu ekosistem untuk tiga agenda
+sekolah: **TKA**, **Pembelajaran Mendalam**, dan **Manajemen Kelas**.
 
-## About Laravel
+Dipakai oleh enam peran: **Admin**, **Guru**, **Siswa**, **Orang Tua**, **Kepala Sekolah**,
+dan **Tenaga Kependidikan**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| | |
+|---|---|
+| **Stack** | Laravel 13 · PHP 8.3+ · PostgreSQL 16 · Blade + Tailwind CSS · Alpine.js |
+| **Integrasi** | Dapodik (sinkron dua arah), Google Sheets, e-Rapor Kemdikbud, DomPDF, PhpSpreadsheet |
+| **Modul** | Penilaian & e-Rapor, Presensi (geofence + QR), 7 Kebiasaan, Kokurikuler, Kuis, Tryout/TKA, CBT (opsional) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 🚀 Mulai cepat (pengembangan)
 
 ```bash
-composer require laravel/boost --dev
+composer install
+cp .env.example .env
+php artisan key:generate
 
-php artisan boost:install
+# PostgreSQL lokal, atau pakai SQLite untuk coba cepat:
+#   DB_CONNECTION=sqlite
+php artisan migrate --seed
+
+npm install
+npm run build          # atau: npm run dev
+
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Akun hasil seed (hanya untuk pengembangan): `admin/admin123`, `guru/guru123`,
+`kepsek/kepsek123`.
 
-## Contributing
+> Di luar lingkungan `local`, akun hasil seed dipaksa mengganti sandi pada login pertama,
+> dan `DatabaseSeeder` menolak berjalan saat `APP_ENV=production`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 📦 Deploy ke produksi
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Lihat **[`DEPLOYMENT.md`](DEPLOYMENT.md)** — berisi prasyarat server, konfigurasi `.env`
+produksi, hak akses PostgreSQL, cron & queue worker, sampai prosedur backup.
 
-## Security Vulnerabilities
+Ringkasan langkah yang paling sering terlewat:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. **`npm run build`** — `public/build/` di-gitignore; tanpa ini halaman tampil tanpa CSS/JS.
+2. **Cron `schedule:run` tiap menit** — tanpa ini backup harian dan finalisasi CBT tidak jalan.
+3. **Queue worker** — `QUEUE_CONNECTION=database`, butuh `php artisan queue:work` permanen.
+4. **`php artisan migrate --force`** — **tanpa** `--seed`.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## ✅ Verifikasi
+
+```bash
+php tools/verifikasi-perbaikan.php   # pemeriksaan statis, tanpa Composer/vendor/DB
+./verify.sh                          # gerbang pra-deploy: lint + route + PHPUnit + cache
+composer test                        # PHPUnit (SQLite)
+npm run test:e2e                     # Playwright (Chromium)
+```
+
+CI (`.github/workflows/test.yml`) menjalankan tiga job pada setiap push/PR ke `main`:
+PHPUnit di SQLite, PHPUnit di PostgreSQL 16, dan browser smoke test Chromium.
+
+---
+
+## 📚 Dokumentasi
+
+| Topik | Berkas |
+|---|---|
+| Deployment produksi | [`DEPLOYMENT.md`](DEPLOYMENT.md) |
+| Kesiapan launching | [`LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
+| Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
+| Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |
+| Modul CBT | [`docs/CBT.md`](docs/CBT.md) |
+| Menu & peran | [`MENU_AND_ROLES_DOCUMENTATION.md`](MENU_AND_ROLES_DOCUMENTATION.md) |
+| Model & relasi database | [`DATABASE_MODELS_AND_RELATIONSHIPS.md`](DATABASE_MODELS_AND_RELATIONSHIPS.md) |
+| Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
+
+---
+
+## 🔐 Keamanan
+
+- Sandi di-hash dengan bcrypt (`BCRYPT_ROUNDS=12`); kolom `kata_sandi` ada di `$hidden`.
+- Login dibatasi 5 percobaan per IP (decay 300 detik); akun nonaktif/terarsip ditolak.
+- Pendaftaran publik membuat akun **nonaktif** — admin yang mengaktifkan.
+- Sandi yang dibuat/direset admin memicu `force_password_change` pada pemilik akun.
+- API key disimpan sebagai hash SHA-256; kunci polos hanya tampil sekali saat dibuat.
+- Telescope dikunci ke admin yang namanya ada di `TELESCOPE_ALLOWED_USERS`.
+- API docs Scramble (`/docs/api`) hanya dapat diakses di lingkungan `local`.
+
+Laporkan celah keamanan secara pribadi ke pengelola proyek — jangan lewat issue publik.
+
+---
+
+## 🗂 Struktur ringkas
+
+```
+app/
+  Http/Controllers/   87 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Cbt, Tka)
+  Models/             64 model Eloquent
+  Services/           Dapodik, Nilai, Google Sheets, CBT/Exam engine, Presensi
+  Support/            BackupTables (satu sumber kebenaran cakupan backup/restore)
+database/
+  migrations/         83 migrasi
+  seeders/            DatabaseSeeder, DemoDataSeeder, ApiKeySeeder (+ Support/SeedGuard)
+dapodik-bridge/       Bridge Python yang berjalan di komputer operator sekolah
+docs/                 Audit, rencana perbaikan, desain CBT/Tryout/TKA
+routes/web.php        377 pendaftaran route
+tools/                Skrip verifikasi statis & pemeriksaan runtime
+```
+
+---
+
+## Lisensi
+
+Proprietary — hak cipta milik pengelola SIMANTAP. Kerangka Laravel yang mendasarinya
+berlisensi MIT.
