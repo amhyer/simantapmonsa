@@ -1357,7 +1357,6 @@ periksa('Pustaka self-host terkunci di package.json', function () use ($root) {
         'aos',                             // animasi scroll halaman landing
         'bootstrap',                       // tata letak /tka-statistik
         '@fontsource/inter',               // font halaman landing
-        '@fontsource/figtree',             // font utama aplikasi (Tailwind sans)
         '@fortawesome/fontawesome-free',   // ikon
         'html5-qrcode',                    // pemindai presensi (dimuat malas)
     ];
@@ -1392,6 +1391,30 @@ periksa('Semua input Vite ada di disk', function () use ($root) {
     ));
 
     return $hilang === [] ? true : 'input tidak ditemukan: ' . implode(', ', $hilang);
+});
+
+periksa('Font Tailwind `sans` cocok dengan yang dirender layout.css', function () use ($root) {
+    // Kasus nyata yang lolos sampai ke CI: tailwind.config.js mendeklarasikan
+    // 'Figtree' (bawaan scaffolding Breeze) sedangkan body di layout.css memakai
+    // 'Inter'. Preflight Tailwind menerapkan Figtree ke <html>, jadi peramban
+    // mengunduh ~80 kB font yang tidak pernah dirender.
+    $css = baca($root . '/resources/css/layout.css');
+
+    if (! preg_match('/font-family:\s*([^\;]+);/', $css, $mCss)) {
+        return 'font-family tidak ditemukan di layout.css';
+    }
+
+    $pertama = trim(preg_split('/,/', trim($mCss[1]))[0], " \t\n\r\0\x0B'\"");
+
+    $config = baca($root . '/tailwind.config.js');
+
+    if (! preg_match('/sans:\s*\[\s*[\'"]([^\'"]+)[\'"]/', $config, $mCfg)) {
+        return 'fontFamily.sans tidak ditemukan di tailwind.config.js';
+    }
+
+    return $mCfg[1] === $pertama
+        ? true
+        : "tailwind.config.js memakai '{$mCfg[1]}' tetapi layout.css merender '{$pertama}'";
 });
 
 /* ────────────────────────────────────────────────────────────── */

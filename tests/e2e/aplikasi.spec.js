@@ -17,12 +17,27 @@ async function masukSebagaiAdmin(page) {
     await page.waitForURL(/\/admin\/dashboard$/, { timeout: 20_000 });
 }
 
-test('font Figtree benar-benar dimuat di area dalam aplikasi', async ({ page }) => {
+/**
+ * Mengunci keputusan font di area dalam aplikasi.
+ *
+ * Temuan dari test ini (CI, 26 Okt 2026): `body` dirender dengan tumpukan
+ * `'Inter', -apple-system, BlinkMacSystemFont, sans-serif` dari layout.css:30,
+ * BUKAN Figtree yang dideklarasikan tailwind.config.js. Figtree adalah font
+ * bawaan scaffolding Breeze yang tidak dipakai satu view hidup pun, tetapi
+ * preflight Tailwind menerapkannya ke <html> sehingga peramban benar-benar
+ * mengunduh ~80 kB berkas font di setiap halaman tanpa mengubah tampilan.
+ * Sudah dibuang; test ini memastikan ia tidak kembali.
+ */
+test('area dalam aplikasi tidak mengunduh font yang tidak dirender', async ({ page }) => {
     const eksternal = [];
+    const berkasFont = [];
     page.on('request', (r) => {
         const u = new URL(r.url());
         if (u.protocol === 'http:' || u.protocol === 'https:') {
             eksternal.push(r.url());
+        }
+        if (/\.(woff2?|ttf|otf)(\?|$)/.test(r.url())) {
+            berkasFont.push(r.url());
         }
     });
 
@@ -33,27 +48,21 @@ test('font Figtree benar-benar dimuat di area dalam aplikasi', async ({ page }) 
     const lintasAsal = eksternal.filter((u) => !u.startsWith(origin));
     expect(lintasAsal, `ada permintaan keluar: ${lintasAsal.join(', ')}`).toEqual([]);
 
-    // Ini inti perbaikannya: tailwind.config.js mendeklarasikan
-    // fontFamily.sans = ['Figtree', ...], tetapi sebelum perbaikan tidak ada satu
-    // pun halaman dalam aplikasi yang memuat Figtree — jadi seluruh area dalam
-    // jatuh ke font sistem tanpa ada yang menyadarinya.
-    const figtree = await page.evaluate(async () => {
-        await document.fonts.load("400 16px 'Figtree'");
-        await document.fonts.ready;
+    const font = await page.evaluate(() => ({
+        fontFamilyBody: getComputedStyle(document.body).fontFamily,
+        adaFigtree: Array.from(document.fonts)
+            .some((f) => f.family.replace(/['"]/g, '') === 'Figtree'),
+    }));
 
-        const milik = Array.from(document.fonts)
-            .filter((f) => f.family.replace(/['"]/g, '') === 'Figtree');
+    // Yang benar-benar dirender: tumpukan Inter dari layout.css.
+    expect(font.fontFamilyBody).toMatch(/^"?Inter"?/);
 
-        return {
-            jumlah: milik.length,
-            adaLoaded: milik.some((f) => f.status === 'loaded'),
-            fontFamilyBody: getComputedStyle(document.body).fontFamily,
-        };
-    });
-
-    expect(figtree.jumlah, '@font-face Figtree tidak ada — fontsource tidak terbundel').toBeGreaterThan(0);
-    expect(figtree.adaLoaded, 'Figtree terdaftar tetapi tidak pernah termuat').toBe(true);
-    expect(figtree.fontFamilyBody).toMatch(/Figtree/);
+    // Figtree tidak boleh kembali — ia diunduh tanpa pernah dirender.
+    expect(font.adaFigtree, '@font-face Figtree muncul lagi — font terbuang').toBe(false);
+    expect(
+        berkasFont.filter((u) => /figtree/i.test(u)),
+        'berkas font Figtree masih diunduh',
+    ).toEqual([]);
 });
 
 /**
