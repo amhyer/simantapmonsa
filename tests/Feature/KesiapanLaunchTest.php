@@ -177,7 +177,6 @@ class KesiapanLaunchTest extends TestCase
 
     public function test_seed_guard_mengizinkan_lingkungan_pengembangan(): void
     {
-        $this->fail('CANARY: membuktikan KesiapanLaunchTest benar-benar dieksekusi CI');
         $this->app->detectEnvironment(fn () => 'local');
 
         $this->assertTrue(SeedGuard::bolehJalan());
