@@ -1,4 +1,21 @@
 @import "./layout.css";
+
+/*
+ * Figtree — dibundel sendiri via Vite, bukan dari fonts.bunny.net.
+ *
+ * `tailwind.config.js` mendeklarasikan fontFamily.sans = ['Figtree', ...], jadi
+ * font ini memang font utama aplikasi. Sebelumnya hanya layouts/guest.blade.php
+ * yang memuatnya (lewat CDN), sedangkan layouts/app.blade.php mendeklarasikannya
+ * tanpa pernah memuatnya — sehingga seluruh area dalam aplikasi jatuh ke font
+ * sistem. Sekarang dimuat sekali di sini untuk semua halaman.
+ *
+ * Bobot 400/500/600 dipertahankan sama persis dengan yang dulu diminta dari CDN,
+ * agar tampilan tidak berubah. Hanya subset `latin` yang diambil.
+ */
+@import "@fontsource/figtree/latin-400.css";
+@import "@fontsource/figtree/latin-500.css";
+@import "@fontsource/figtree/latin-600.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

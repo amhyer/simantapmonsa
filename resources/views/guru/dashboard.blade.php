@@ -355,7 +355,7 @@
     </div>
     @endif
 @push('scripts')
-    @vite('resources/js/guru-dashboard.js')
+    @vite('resources/js/charts.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const ctx1 = document.getElementById('chartTren').getContext('2d');

@@ -1280,6 +1280,120 @@ periksa('URL GitHub absolut menunjuk berkas yang ada', function () use ($root) {
     return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
 });
 
+/* ──────────────────────────────────────────────────────────────
+ * 16. Tidak ada aset pihak ketiga dari CDN (S4)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n16. Aset pihak ketiga di-self-host, bukan CDN\n";
+
+/**
+ * Kumpulkan seluruh berkas Blade, tanpa resources/views/vendor/ (milik paket).
+ *
+ * @return list<string>
+ */
+function berkasBlade(string $root): array
+{
+    $hasil = [];
+    $tumpuk = [$root . '/resources/views'];
+
+    while ($tumpuk !== []) {
+        $dir = array_pop($tumpuk);
+
+        foreach (scandir($dir) ?: [] as $nama) {
+            if ($nama === '.' || $nama === '..') {
+                continue;
+            }
+
+            $penuh = $dir . '/' . $nama;
+
+            if (is_dir($penuh)) {
+                // View terbitan paket (scramble, telescope) akan tertimpa saat
+                // paket diperbarui, jadi di luar cakupan perbaikan ini.
+                if ($nama !== 'vendor') {
+                    $tumpuk[] = $penuh;
+                }
+
+                continue;
+            }
+
+            if (str_ends_with($nama, '.blade.php')) {
+                $hasil[] = $penuh;
+            }
+        }
+    }
+
+    sort($hasil);
+
+    return $hasil;
+}
+
+periksa('Tidak ada aset pihak ketiga yang dimuat dari CDN', function () use ($root) {
+    $temuan = [];
+
+    foreach (berkasBlade($root) as $berkas) {
+        $isi = baca($berkas);
+
+        // Hanya tag yang MEMUAT aset: <script src>, <link href>, <img src>.
+        // Tautan navigasi <a href="https://..."> jelas boleh.
+        $pola = '#<(script|link|img)\b[^>]*\b(?:src|href)\s*=\s*["\']https?://#i';
+
+        if (preg_match_all($pola, $isi, $m)) {
+            foreach ($m[0] as $tag) {
+                $temuan[] = rel($berkas, $root) . ': ' . substr(trim($tag), 0, 70);
+            }
+        }
+    }
+
+    return $temuan === [] ? true : implode(' | ', array_slice($temuan, 0, 4));
+});
+
+periksa('Pustaka self-host terkunci di package.json', function () use ($root) {
+    $pkg = json_decode(baca($root . '/package.json'), true);
+    $deps = array_merge($pkg['dependencies'] ?? [], $pkg['devDependencies'] ?? []);
+
+    // Semua ini dulu dimuat dari CDN; kini dibundel Vite. Kalau salah satu
+    // hilang dari package.json, build akan gagal diam-diam atau jatuh ke CDN lagi.
+    $wajib = [
+        'chart.js',                        // grafik di 15 halaman
+        'aos',                             // animasi scroll halaman landing
+        'bootstrap',                       // tata letak /tka-statistik
+        '@fontsource/inter',               // font halaman landing
+        '@fontsource/figtree',             // font utama aplikasi (Tailwind sans)
+        '@fortawesome/fontawesome-free',   // ikon
+        'html5-qrcode',                    // pemindai presensi (dimuat malas)
+    ];
+
+    $kurang = array_values(array_filter($wajib, fn ($p) => ! isset($deps[$p])));
+
+    if ($kurang !== []) {
+        return 'tidak terdaftar di package.json: ' . implode(', ', $kurang);
+    }
+
+    // Versi harus spesifik, bukan "*" atau "" yang bisa berubah sendiri.
+    $longgar = [];
+    foreach ($wajib as $p) {
+        if (in_array($deps[$p], ['*', '', 'latest'], true)) {
+            $longgar[] = "{$p}={$deps[$p]}";
+        }
+    }
+
+    return $longgar === [] ? true : 'versi tidak terkunci: ' . implode(', ', $longgar);
+});
+
+periksa('Semua input Vite ada di disk', function () use ($root) {
+    $config = baca($root . '/vite.config.js');
+
+    if (! preg_match_all("/['\"](resources\/[^'\"]+\.(?:js|css))['\"]/", $config, $m)) {
+        return 'tidak ada input yang terbaca dari vite.config.js';
+    }
+
+    $hilang = array_values(array_filter(
+        array_unique($m[1]),
+        fn ($relatif) => ! is_file($root . '/' . $relatif)
+    ));
+
+    return $hilang === [] ? true : 'input tidak ditemukan: ' . implode(', ', $hilang);
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {
