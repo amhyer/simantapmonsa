@@ -128,11 +128,14 @@ class TkaDimensionController extends Controller
 
     public function destroyItem(Dimension $dimension, AssessmentItem $item)
     {
+        // Nested route: reject an item ID that belongs to another dimension.
+        $item = $dimension->assessmentItems()->findOrFail($item->id);
+        $urutan = $item->urutan;
         $item->delete();
 
         // Reorder remaining items
         $dimension->assessmentItems()
-                 ->where('urutan', '>', $item->urutan)
+                 ->where('urutan', '>', $urutan)
                  ->decrement('urutan');
 
         return back()->with('success', 'Item penilaian berhasil dihapus');

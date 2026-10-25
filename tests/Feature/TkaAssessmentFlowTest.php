@@ -155,6 +155,36 @@ class TkaAssessmentFlowTest extends TestCase
         $this->assertStringContainsString($this->dimension->nama_dimensi, $report->rekomendasi_rumah);
     }
 
+    public function test_item_dimensi_lain_tidak_dapat_dihapus_melalui_route_nested(): void
+    {
+        $otherDimension = Dimension::create([
+            'semester_id' => $this->semester->id,
+            'kode_dimensi' => 'TKA-DIM-2',
+            'nama_dimensi' => 'Gotong Royong',
+            'kategori' => 'gotong_royong',
+            'rubrik_penilaian' => [1 => 'belum', 2 => 'berkembang', 3 => 'baik', 4 => 'sangat baik'],
+            'threshold_siap' => 3,
+            'aktif' => true,
+        ]);
+        $foreignItem = AssessmentItem::create([
+            'dimension_id' => $otherDimension->id,
+            'urutan' => 1,
+            'indikator' => 'Kerja sama',
+            'pertanyaan_penilaian' => 'Apakah siswa bekerja sama?',
+            'tipe_jawaban' => 'skala_1_4',
+            'bobot_item' => 1,
+        ]);
+
+        $this->actingAs($this->guruA)
+            ->delete(route('tka.dimensions.destroy-item', [
+                'dimension' => $this->dimension->id,
+                'item' => $foreignItem->id,
+            ]))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('tka_assessment_items', ['id' => $foreignItem->id]);
+    }
+
     public function test_guru_tidak_dapat_melihat_membuat_atau_menerbitkan_laporan_untuk_siswa_guru_lain(): void
     {
         $assessment = StudentAssessment::create([
