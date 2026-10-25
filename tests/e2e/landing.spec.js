@@ -61,23 +61,37 @@ test('aset pihak ketiga dimuat dari bundle sendiri, tanpa satu pun permintaan CD
     const lintasAsal = eksternal.filter((u) => !u.startsWith(origin));
     expect(lintasAsal, `masih ada permintaan keluar: ${lintasAsal.join(', ')}`).toEqual([]);
 
-    // 2. Chart.js tersedia sebagai konstruktor global, dan grafik benar-benar
-    //    dibuat — bukan sekadar pustakanya ada.
+    // 2. Chart.js tersedia sebagai konstruktor global DAN benar-benar bisa
+    //    menggambar — bukan sekadar objeknya ada.
     const chartSiap = await page.evaluate(() => typeof window.Chart === 'function');
     expect(chartSiap, 'window.Chart tidak tersedia — modul charts.js gagal dimuat').toBe(true);
 
-    const grafikDibuat = await page.evaluate(() => {
-        const kanvas = document.querySelectorAll('canvas');
-        let ada = 0;
-        kanvas.forEach((el) => {
-            if (window.Chart && window.Chart.getChart(el)) {
-                ada += 1;
-            }
-        });
-        return { totalKanvas: kanvas.length, ada };
+    // Grafiknya diuji dengan kanvas sintetis, bukan dengan <canvas> milik halaman.
+    // Alasannya: kanvas statistik di landing berada di dalam `@if($lastUpdate)`,
+    // sehingga di CI (basis data kosong, tanpa data TKA) jumlahnya nol dan
+    // assertion semacam itu akan gagal bukan karena Chart.js rusak.
+    const grafikBerfungsi = await page.evaluate(() => {
+        const kanvas = document.createElement('canvas');
+        kanvas.width = 20;
+        kanvas.height = 20;
+        document.body.appendChild(kanvas);
+
+        try {
+            const grafik = new window.Chart(kanvas, {
+                type: 'bar',
+                data: { labels: ['a'], datasets: [{ data: [1] }] },
+                options: { animation: false, responsive: false },
+            });
+
+            const terdaftar = Boolean(window.Chart.getChart(kanvas));
+            grafik.destroy();
+
+            return terdaftar;
+        } finally {
+            kanvas.remove();
+        }
     });
-    expect(grafikDibuat.totalKanvas).toBeGreaterThan(0);
-    expect(grafikDibuat.ada, 'tidak ada satu pun instance Chart yang terbentuk').toBeGreaterThan(0);
+    expect(grafikBerfungsi, 'Chart.js termuat tetapi tidak bisa membuat grafik').toBe(true);
 
     // 3. AOS terinisialisasi: setiap elemen [data-aos] diberi kelas `aos-init`.
     //    Bila init dipanggil terlalu dini (sebelum modul deferred jalan),
@@ -102,11 +116,18 @@ test('aset pihak ketiga dimuat dari bundle sendiri, tanpa satu pun permintaan CD
     const lebarIkon = await ikon.evaluate((el) => el.getBoundingClientRect().width);
     expect(lebarIkon, 'ikon Font Awesome tidak terender (glyph kosong)').toBeGreaterThan(0);
 
-    // 5. Font Inter dimuat dari berkas woff2 lokal dan statusnya `loaded`.
-    await page.evaluate(() => document.fonts.ready);
-    const statusInter = await page.evaluate(() => Array.from(document.fonts)
-        .filter((f) => f.family.replace(/['"]/g, '') === 'Inter')
-        .map((f) => f.status));
-    expect(statusInter.length, 'tidak ada @font-face Inter — fontsource tidak terbundel').toBeGreaterThan(0);
-    expect(statusInter).toContain('loaded');
+    // 5. Font Inter dimuat dari berkas woff2 lokal. `document.fonts.load()`
+    //    dipakai agar pemuatannya dipaksa dan hasilnya deterministik — tanpa itu
+    //    bobot yang tidak terpakai di halaman tetap berstatus `unloaded`.
+    const interSiap = await page.evaluate(async () => {
+        await document.fonts.load("400 16px 'Inter'");
+        await document.fonts.ready;
+
+        const milik = Array.from(document.fonts)
+            .filter((f) => f.family.replace(/['"]/g, '') === 'Inter');
+
+        return { jumlah: milik.length, adaLoaded: milik.some((f) => f.status === 'loaded') };
+    });
+    expect(interSiap.jumlah, 'tidak ada @font-face Inter — fontsource tidak terbundel').toBeGreaterThan(0);
+    expect(interSiap.adaLoaded, 'font Inter terdaftar tetapi tidak pernah termuat').toBe(true);
 });

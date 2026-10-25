@@ -800,6 +800,19 @@ dipindahkan ke dalam `resources/js/halaman-publik.js` bersama impornya.
   halaman tahan tanpa CDN — tetapi tidak membuktikan penggantinya bekerja. Test baru
   ini yang menutup celah tersebut.
 
+  **Test ini gagal pada percobaan pertama di CI, dan itu berguna.** Assertion saya
+  `expect(grafikDibuat.totalKanvas).toBeGreaterThan(0)` menerima **0** — bukan karena
+  Chart.js rusak (`window.Chart` terbukti berupa fungsi, assertion sebelumnya lolos),
+  melainkan karena kanvas statistik di landing berada di dalam `@if($lastUpdate)`, dan
+  CI menjalankan basis data kosong tanpa data TKA. **Asumsi test saya yang salah.**
+
+  Diperbaiki dengan menguji Chart.js lewat **kanvas sintetis** — membuat `<canvas>`
+  sendiri, menggambar, memverifikasi `Chart.getChart()` mengenalinya, lalu membersihkannya.
+  Cara ini justru lebih kuat: membuktikan pustakanya benar-benar berfungsi tanpa
+  bergantung pada ada-tidaknya data di halaman. Assertion Inter juga dibuat
+  deterministik dengan `document.fonts.load()`; tanpa itu bobot yang tidak terpakai di
+  halaman tetap berstatus `unloaded` dan hasilnya bisa berubah-ubah.
+
 ### 13.5 Yang tetap tidak saya verifikasi
 
 - **Test Playwright baru belum pernah saya jalankan sendiri** — tidak ada PHP/vendor
