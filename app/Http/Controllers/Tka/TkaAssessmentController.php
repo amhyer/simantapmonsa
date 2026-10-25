@@ -29,7 +29,8 @@ class TkaAssessmentController extends Controller
 
     public function create()
     {
-        $siswas = Siswa::where('aktif', true)
+        $siswas = Siswa::where('guru_id', auth()->id())
+                      ->where('aktif', true)
                       ->orderBy('kelas')
                       ->orderBy('nama_peserta_didik')
                       ->get();
@@ -56,6 +57,9 @@ class TkaAssessmentController extends Controller
             'responses.*.catatan_guru' => 'nullable|string',
         ]);
 
+        $siswa = Siswa::findOrFail($validated['siswa_id']);
+        $this->authorize('createForStudent', [new StudentAssessment(), $siswa]);
+
         // Check if assessment already exists
         $existing = StudentAssessment::where('siswa_id', $validated['siswa_id'])
                                     ->where('semester_id', $validated['semester_id'])
@@ -70,13 +74,16 @@ class TkaAssessmentController extends Controller
             // Calculate total score
             $totalScore = 0;
             $maxScore = 0;
+            $totalWeight = 0;
             $skorPerDimensi = [];
 
             foreach ($validated['responses'] as $response) {
                 $item = AssessmentItem::with('dimension')->find($response['assessment_item_id']);
-                $weightedScore = $response['skor'] * $item->bobot_item;
+                $bobotItem = (float) $item->bobot_item;
+                $weightedScore = $response['skor'] * $bobotItem;
                 $totalScore += $weightedScore;
-                $maxScore += 4 * $item->bobot_item;
+                $maxScore += 4 * $bobotItem;
+                $totalWeight += $bobotItem;
 
                 // Group by dimension
                 $dimId = $item->dimension_id;
@@ -94,7 +101,7 @@ class TkaAssessmentController extends Controller
             }
 
             $persentase = $maxScore > 0 ? ($totalScore / $maxScore * 100) : 0;
-            $avgScore = $maxScore > 0 ? ($totalScore / count($validated['responses'])) : 0;
+            $avgScore = $totalWeight > 0 ? ($totalScore / $totalWeight) : 0;
 
             // Determine status
             $statusKesiapan = 'belum_siap';
@@ -193,6 +200,7 @@ class TkaAssessmentController extends Controller
 
     public function show(StudentAssessment $assessment)
     {
+        $this->authorize('view', $assessment);
         $assessment->load(['siswa', 'semester', 'guru', 'responses.assessmentItem.dimension']);
         
         return view('tka.assessments.show', compact('assessment'));
@@ -201,7 +209,9 @@ class TkaAssessmentController extends Controller
     public function bySiswa($siswaId)
     {
         $siswa = Siswa::findOrFail($siswaId);
+        $this->authorize('viewStudentHistory', [new StudentAssessment(), $siswa]);
         $assessments = StudentAssessment::where('siswa_id', $siswaId)
+                                       ->where('guru_id', auth()->id())
                                        ->with(['semester', 'guru'])
                                        ->latest('tanggal_penilaian')
                                        ->get();
