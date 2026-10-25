@@ -9,17 +9,17 @@ async function tracedContext(browser, account) {
         baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:8000',
         storageState: authState(account),
     });
-    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
     return context;
 }
 
-async function saveTraceAndClose(context, testInfo, name) {
+async function saveTraceAndClose(context) {
     if (!context) return;
-    await context.tracing.stop({ path: testInfo.outputPath(`${name}.zip`) });
+    // Playwright Test owns tracing for contexts created during the test; do not
+    // start/stop a second trace, which raises "Tracing has already been started".
     await context.close();
 }
 
-test('E2E-TKA-01..06: ownership, weighted scoring/readiness, nested-item protection, dan laporan orang tua', async ({ browser, page }, testInfo) => {
+test('E2E-TKA-01..06: ownership, weighted scoring/readiness, nested-item protection, dan laporan orang tua', async ({ browser, page }) => {
     test.setTimeout(120_000);
 
     let parentAContext;
@@ -91,7 +91,7 @@ test('E2E-TKA-01..06: ownership, weighted scoring/readiness, nested-item protect
         const teacherParentResponse = await page.goto('/tka/parent/9561', { waitUntil: 'domcontentloaded' });
         expect(teacherParentResponse?.status()).toBe(403);
     } finally {
-        await saveTraceAndClose(parentAContext, testInfo, 'tka-parent-a1');
-        await saveTraceAndClose(parentBContext, testInfo, 'tka-parent-b1');
+        await saveTraceAndClose(parentAContext);
+        await saveTraceAndClose(parentBContext);
     }
 });

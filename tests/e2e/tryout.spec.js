@@ -9,17 +9,17 @@ async function tracedContext(browser, account) {
         baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:8000',
         storageState: authState(account),
     });
-    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
     return context;
 }
 
-async function saveTraceAndClose(context, testInfo, name) {
+async function saveTraceAndClose(context) {
     if (!context) return;
-    await context.tracing.stop({ path: testInfo.outputPath(`${name}.zip`) });
+    // Playwright Test owns tracing for contexts created during the test; do not
+    // start/stop a second trace, which raises "Tracing has already been started".
     await context.close();
 }
 
-test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan ownership', async ({ browser, page }, testInfo) => {
+test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan ownership', async ({ browser, page }) => {
     test.setTimeout(90_000);
 
     let otherStudentContext;
@@ -101,7 +101,7 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
         const parentResponse = await unrelatedParentContext.newPage().goto('/tryout/student/9411/result', { waitUntil: 'domcontentloaded' });
         expect(parentResponse?.status()).toBe(403);
     } finally {
-        await saveTraceAndClose(otherStudentContext, testInfo, 'tryout-siswa-a2');
-        await saveTraceAndClose(unrelatedParentContext, testInfo, 'tryout-ortu-b1');
+        await saveTraceAndClose(otherStudentContext);
+        await saveTraceAndClose(unrelatedParentContext);
     }
 });
