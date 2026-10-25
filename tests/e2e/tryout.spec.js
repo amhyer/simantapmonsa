@@ -98,7 +98,8 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
         expect(deniedStatuses).toEqual([403, 403]);
 
         unrelatedParentContext = await tracedContext(browser, 'ortu_b1');
-        const parentResponse = await unrelatedParentContext.newPage().goto('/tryout/student/9411/result', { waitUntil: 'domcontentloaded' });
+        const unrelatedParentPage = await unrelatedParentContext.newPage();
+        const parentResponse = await unrelatedParentPage.goto('/tryout/student/9411/result', { waitUntil: 'domcontentloaded' });
         expect(parentResponse?.status()).toBe(403);
     } finally {
         await saveTraceAndClose(otherStudentContext);
