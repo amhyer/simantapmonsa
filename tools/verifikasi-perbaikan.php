@@ -930,6 +930,153 @@ periksa('Panduan deployment tersedia dan README bukan template Laravel', functio
         : 'README.md tidak menautkan DEPLOYMENT.md';
 });
 
+/* ──────────────────────────────────────────────────────────────
+ * 14. Hardening operasional (S1, S2, S3, S5, S7)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n14. Hardening operasional\n";
+
+periksa('Middleware SecurityHeaders terdaftar global', function () use ($root) {
+    if (! is_file($root . '/app/Http/Middleware/SecurityHeaders.php')) {
+        return 'app/Http/Middleware/SecurityHeaders.php tidak ada';
+    }
+
+    $bootstrap = baca($root . '/bootstrap/app.php');
+
+    return str_contains($bootstrap, 'SecurityHeaders::class')
+        ? true
+        : 'SecurityHeaders tidak didaftarkan di bootstrap/app.php';
+});
+
+periksa('Config keamanan ada dan CSP sengaja kosong', function () use ($root) {
+    if (! is_file($root . '/config/security.php')) {
+        return 'config/security.php tidak ada';
+    }
+
+    $isi = baca($root . '/config/security.php');
+
+    if (! str_contains($isi, "'content_security_policy'")) {
+        return 'kunci content_security_policy tidak ada di config/security.php';
+    }
+
+    // Presensi memakai geolokasi & QR memakai kamera — jangan dimatikan.
+    return str_contains($isi, 'geolocation=(self)') && str_contains($isi, 'camera=(self)')
+        ? true
+        : 'Permissions-Policy mematikan geolokasi/kamera yang dipakai presensi & QR';
+});
+
+periksa('Halaman error kustom lengkap', function () use ($root) {
+    $kurang = [];
+    foreach ([403, 404, 419, 429, 500, 503] as $kode) {
+        if (! is_file("{$root}/resources/views/errors/{$kode}.blade.php")) {
+            $kurang[] = $kode;
+        }
+    }
+
+    if ($kurang !== []) {
+        return 'halaman error tidak ada: ' . implode(', ', $kurang);
+    }
+
+    // Halaman error tidak boleh bergantung pada aset build maupun CDN.
+    // Dicocokkan sebagai PEMANGGILAN (`@vite(`, `<script src=...`), bukan teks
+    // bebas — kata "@vite" di dalam komentar pernah membuat pemeriksaan ini
+    // melaporkan kegagalan palsu.
+    $bergantung = [];
+    $pola = ['@vite(', '@vite (', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'];
+    foreach (glob($root . '/resources/views/errors/*.blade.php') ?: [] as $f) {
+        $isi = baca($f);
+        foreach ($pola as $jarum) {
+            if (str_contains($isi, $jarum)) {
+                $bergantung[] = basename($f) . " ({$jarum})";
+            }
+        }
+    }
+
+    return $bergantung === []
+        ? true
+        : 'halaman error bergantung aset eksternal: ' . implode(', ', $bergantung);
+});
+
+periksa('favicon.ico berisi ikon valid', function () use ($root) {
+    $path = $root . '/public/favicon.ico';
+
+    if (! is_file($path)) {
+        return 'public/favicon.ico tidak ada';
+    }
+
+    $ukuran = filesize($path);
+    if ($ukuran < 100) {
+        return "public/favicon.ico berukuran {$ukuran} byte (kosong?)";
+    }
+
+    $isi = (string) file_get_contents($path);
+    $kepala = unpack('vreserved/vtype/vcount', substr($isi, 0, 6));
+
+    return ($kepala['reserved'] === 0 && $kepala['type'] === 1 && $kepala['count'] >= 1)
+        ? true
+        : 'struktur ICO tidak valid (reserved/type/count salah)';
+});
+
+periksa('Backup terjadwal punya rotasi dan salinan offsite', function () use ($root) {
+    $kode = baca($root . '/app/Console/Commands/BackupData.php');
+
+    // Dicocokkan sebagai PEMBACAAN KONFIGURASI & PEMANGGILAN nyata, bukan teks
+    // bebas: nama "retensi_hari" juga muncul di komentar dan pesan konsol,
+    // sehingga pencocokan teks polos pernah membuat pemeriksaan ini lolos palsu.
+    $wajib = [
+        "config('backup.retensi_hari'" => 'pembacaan konfigurasi retensi',
+        "config('backup.salinan_disk'" => 'pembacaan konfigurasi disk salinan',
+        '->delete(' => 'pemanggilan penghapusan berkas',
+        'POLA_BERKAS' => 'pembatasan pola berkas yang dihapus',
+    ];
+
+    $kurang = [];
+    foreach ($wajib as $jarum => $label) {
+        if (! str_contains($kode, $jarum)) {
+            $kurang[] = $label;
+        }
+    }
+
+    if ($kurang !== []) {
+        return 'BackupData tanpa: ' . implode(', ', $kurang);
+    }
+
+    return is_file($root . '/config/backup.php')
+        ? true
+        : 'config/backup.php tidak ada';
+});
+
+periksa('Job & daftar cadangan memakai disk yang sama dengan konfigurasi', function () use ($root) {
+    $salah = [];
+
+    foreach ([
+        '/app/Jobs/ExportBackupJob.php',
+        '/app/Http/Controllers/Admin/BackupController.php',
+        '/app/Console/Commands/BackupData.php',
+    ] as $relatif) {
+        $kode = baca($root . $relatif);
+        if (! str_contains($kode, "config('backup.disk'")) {
+            $salah[] = ltrim($relatif, '/');
+        }
+    }
+
+    return $salah === []
+        ? true
+        : 'masih memakai disk hardcoded: ' . implode(', ', $salah);
+});
+
+periksa('Variabel cadangan & keamanan terdokumentasi di template env', function () use ($root) {
+    $template = baca($root . '/.env.production.example');
+
+    $kurang = [];
+    foreach (['BACKUP_RETENTION_DAYS', 'BACKUP_COPY_DISK', 'SECURITY_HSTS_MAX_AGE'] as $var) {
+        if (! str_contains($template, $var)) {
+            $kurang[] = $var;
+        }
+    }
+
+    return $kurang === [] ? true : 'belum ada di .env.production.example: ' . implode(', ', $kurang);
+});
+
 /* ────────────────────────────────────────────────────────────── */
 echo "\n=== Ringkasan: {$lulus} lulus, {$gagal} gagal ===\n";
 if ($gagal > 0) {

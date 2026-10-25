@@ -211,9 +211,10 @@ server {
     root /var/www/simantap/public;
     index index.php;
 
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Header keamanan (X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
+    # Permissions-Policy, HSTS) dipasang oleh aplikasi lewat
+    # App\Http\Middleware\SecurityHeaders — lihat config/security.php.
+    # Jangan menduplikasinya di sini agar browser tidak menerima dua nilai.
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -296,23 +297,52 @@ php artisan up
 
 ## 11. Backup & pemulihan
 
-Backup otomatis menulis JSON ke `storage/app/private/backups/backup-simantap-<timestamp>.json`
+Backup otomatis menulis JSON ke `<disk>/backups/backup-simantap-<timestamp>.json`
 setiap hari pukul 02:00. Kolom `kata_sandi` dan `remember_token` **tidak** ikut
 (`User::$hidden`).
 
-**Yang belum ada dan harus ditambahkan operator:**
+### Rotasi (sudah otomatis)
 
-1. **Rotasi** — tidak ada penghapusan berkas lama; disk akan membengkak. Tambahkan cron:
-   ```cron
-   30 2 * * * find /var/www/simantap/storage/app/private/backups -name "backup-*.json" -mtime +30 -delete
-   ```
-2. **Salinan offsite** — backup satu disk tidak melindungi dari server rusak. Sinkronkan
-   ke lokasi lain (rclone / rsync / object storage).
-3. **Backup level database** — untuk pemulihan cepat pakai `pg_dump`:
-   ```bash
-   pg_dump -U simantap_admin -F c -f backup-$(date +%F).dump simantap_db
-   pg_restore --list backup-<tanggal>.dump   # verifikasi file bisa dibaca
-   ```
+`simantap:backup` menghapus sendiri berkas `backup-simantap-*.json` yang lebih tua dari
+`BACKUP_RETENTION_DAYS` (default **30 hari**). Berkas lain di folder itu tidak disentuh.
+
+```env
+BACKUP_RETENTION_DAYS=30     # 0 = rotasi dimatikan
+```
+
+Lewati rotasi sekali jalan bila perlu: `php artisan simantap:backup --tanpa-rotasi`.
+
+### Salinan offsite
+
+Cadangan satu disk **tidak** melindungi dari server yang rusak. Ada dua cara:
+
+**a) Lewat aplikasi** — set disk kedua; setiap cadangan disalin ke sana. Kegagalan
+penyalinan tidak membatalkan cadangan utama, hanya dicatat ke log.
+
+```env
+BACKUP_DISK=local
+BACKUP_COPY_DISK=s3          # disk lain di config/filesystems.php
+```
+
+**b) Di luar aplikasi** (sering lebih tangguh) — rclone / rsync / snapshot volume:
+
+```cron
+30 2 * * * rclone copy /var/www/simantap/storage/app/private/backups remote:simantap/
+```
+
+### Backup level database
+
+Untuk pemulihan cepat dan utuh, cadangan JSON saja tidak cukup — pakai `pg_dump` juga:
+
+```bash
+pg_dump -U simantap_admin -F c -f backup-$(date +%F).dump simantap_db
+pg_restore --list backup-<tanggal>.dump   # verifikasi file bisa dibaca
+```
+
+### Uji pemulihan
+
+Cadangan yang belum pernah dipulihkan bukan cadangan. Sekali sebulan, pulihkan ke
+**staging** (bukan produksi) dan pastikan aplikasi bisa dipakai.
 
 Prosedur rollback lengkap untuk perubahan skema: `docs/12-ALIGNMENT-DEPLOYMENT-CHECKLIST.md`.
 
