@@ -260,12 +260,30 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run Chromium smoke tests
-        run: npm run test:e2e
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee /tmp/playwright.log
 
       - name: Upload browser traces on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
-          path: test-results/
+          path: |
+            test-results/
+            /tmp/playwright.log
           if-no-files-found: ignore
+
+      - name: Tempel log browser gagal ke PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "CI Browser smoke (Chromium) gagal. Potongan log diagnostik:"
+            echo
+            echo '```'
+            tail -n 180 /tmp/playwright.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo '```'
+          } > /tmp/browser-ci-report.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/browser-ci-report.md
