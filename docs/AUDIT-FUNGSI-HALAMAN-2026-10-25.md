@@ -259,3 +259,27 @@ tersedia di sandbox sehingga PHPUnit tidak dijalankan lokal.
 **Masih perlu verifikasi di lingkungan target:** PostgreSQL produksi dan integrasi
 langsung TKA/Google Sheets/Dapodik dengan kredensial asli. PR #8 sudah di-merge;
 verifikasi rilis dan aksesibilitas lintas-browser tetap diperlukan.
+
+---
+
+## 10. Tindak Lanjut PR #9 — 25 Oktober 2026
+
+- Rincian nilai Tryout historis kini memakai ringkasan tersimpan, hasil exam engine,
+  atau perhitungan dari jawaban lama; jika sumber nilainya memang tidak ada,
+  halaman menyatakan rincian tidak tersedia alih-alih mengarang skor.
+- Uji ekspor kini memeriksa signature dan isi hasil XLSX/PDF/CSV, termasuk
+  mitigasi formula injection pada baris CSV yang tidak terpetakan.
+- Hapus empat view CBT lama yang tidak dipakai; form aktif tambah soal tetap ada
+  dan diuji. CTA video/newsletter menjelaskan keterbatasan layanan tanpa modal
+  atau formulir sukses palsu.
+- Halaman utama membaca snapshot statistik TKA saja dan tetap merespons ketika
+  cache kosong atau API eksternal lambat. Perintah terjadwal `tka:refresh` tetap
+  memperbarui cache; `TkaStatistikService::get()` juga tidak lagi mengeksekusi
+  pemanggilan API secara eager ketika snapshot sudah tersedia.
+- CI menambahkan PHPUnit dengan PostgreSQL 16 serta smoke test landing/FAQ pada
+  Chromium. Pada commit `4b7843484076c88e7be934fb0900a28ce68cf602`, PHPUnit
+  SQLite dan PostgreSQL 16, browser Chromium, serta Sourcery review **lulus**.
+- Batas verifikasi tetap: database CI bukan PostgreSQL produksi; smoke browser
+  mencakup landing/FAQ, bukan seluruh UI atau uji aksesibilitas lintas-browser.
+  Dapodik dan Google Sheets langsung belum diuji dengan kredensial/layanan
+  staging nyata.
