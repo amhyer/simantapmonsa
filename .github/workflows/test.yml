@@ -81,6 +81,9 @@ jobs:
           npm ci
           npm run build
 
+      - name: Compile all Blade views
+        run: php artisan view:cache
+
       # Seluruh suite wajib hijau, termasuk RouteHealthAuditTest (0 endpoint 5xx).
       - name: Run test suite (wajib hijau)
         run: |

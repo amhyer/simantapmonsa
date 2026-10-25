@@ -69,6 +69,7 @@ class RouteHealthAuditTest extends TestCase
             'siswa' => User::factory()->siswa()->create(),
             'ortu' => User::factory()->ortu()->create(),
             'kepsek' => User::factory()->kepsek()->create(),
+            'tendik' => User::factory()->tendik()->create(),
         ];
 
         // Route auth/aset/diagnostik yang tidak relevan untuk smoke test.
@@ -125,6 +126,8 @@ class RouteHealthAuditTest extends TestCase
             : "Ditemukan ".count($laporan)." endpoint 5xx dari {$jumlahDiuji} kombinasi:\n".implode(PHP_EOL, $laporan);
 
         file_put_contents(storage_path('logs/route-health-report.txt'), $isi);
+        fwrite(STDOUT, $isi.PHP_EOL);
+        $this->assertGreaterThan(1000, $jumlahDiuji, 'Smoke test harus memeriksa semua route GET pada seluruh peran yang dipilih.');
 
         $this->assertSame(
             [],

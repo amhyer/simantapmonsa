@@ -119,6 +119,22 @@ class TryoutTest extends TestCase
         $this->assertNotNull($result->waktu_selesai);
     }
 
+    public function test_alur_siswa_tryout_end_to_end_mulai_autosave_complete_hasil(): void
+    {
+        $result = $this->mulai();
+        $this->jawab($result, 'A');
+
+        $this->post(route('tryout.student.complete', $result))
+            ->assertRedirect(route('tryout.student.result', $result));
+
+        $this->assertSame(100.0, $result->fresh()->persentase);
+        $this->actingAs($this->akun)
+            ->get(route('tryout.student.result', $result->fresh()))
+            ->assertOk()
+            ->assertSee('Matematika')
+            ->assertSee('100.0%');
+    }
+
     public function test_jawaban_setelah_selesai_ditolak_409(): void
     {
         $result = $this->mulai();
