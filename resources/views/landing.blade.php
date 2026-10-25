@@ -609,11 +609,7 @@
 
 <!-- TKA STATISTIK -->
 @php
-    $tkaData = \Illuminate\Support\Facades\Cache::get('tka_statistik');
-    if (!$tkaData) {
-        $tkaService = app(\App\Services\TkaStatistikService::class);
-        $tkaData = $tkaService->get();
-    }
+    $tkaData = app(\App\Services\TkaStatistikService::class)->getCached();
     $peserta = $tkaData['peserta'] ?? null;
     $total = $peserta['total'] ?? [];
     $rekap = $peserta['rekap'] ?? [];

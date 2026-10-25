@@ -213,8 +213,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      APP_ENV: testing
       DB_CONNECTION: sqlite
       DB_DATABASE: ':memory:'
+      CACHE_STORE: file
       SESSION_DRIVER: file
 
     steps:

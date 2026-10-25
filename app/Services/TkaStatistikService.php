@@ -46,11 +46,27 @@ class TkaStatistikService
     }
 
     /**
-     * Get cached TKA statistics (fetch if not cached).
+     * Get TKA statistics, fetching them only when the cache is actually empty.
      */
     public function get(): array
     {
-        return Cache::get('tka_statistik', $this->fetchAll());
+        $cached = Cache::get('tka_statistik');
+
+        return $cached ?? $this->fetchAll();
+    }
+
+    /**
+     * Read the cached snapshot without making a request to the external TKA API.
+     * This is used by the public landing page, which should remain available even
+     * when the external service is slow or unreachable.
+     */
+    public function getCached(): array
+    {
+        return Cache::get('tka_statistik', [
+            'error' => true,
+            'message' => 'Data TKA belum tersedia.',
+            'last_update' => null,
+        ]);
     }
 
     /**
