@@ -85,15 +85,15 @@
                     <table class="table table-sm table-borderless">
                         <tr>
                             <td width="40%">Mulai</td>
-                            <td>{{ $result->waktu_mulai->format('d M Y H:i') }}</td>
+                            <td>{{ $result->waktu_mulai?->format('d M Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
                             <td>Selesai</td>
-                            <td>{{ $result->waktu_selesai->format('d M Y H:i') }}</td>
+                            <td>{{ $result->waktu_selesai?->format('d M Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
                             <td>Durasi</td>
-                            <td><strong>{{ floor($result->durasi_total_detik / 60) }} menit</strong></td>
+                            <td><strong>{{ floor(($result->durasi_total_detik ?? 0) / 60) }} menit</strong></td>
                         </tr>
                         <tr>
                             <td>Passing Grade</td>
@@ -157,7 +157,7 @@
     </div>
 
     <!-- Analisis Kelemahan -->
-    @if(count($result->analisis_kelemahan) > 0)
+    @if(count($result->analisis_kelemahan ?? []) > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-warning">
@@ -166,7 +166,7 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
-                        @foreach($result->analisis_kelemahan as $weak)
+                        @foreach($result->analisis_kelemahan ?? [] as $weak)
                         <li class="list-group-item">
                             <strong>{{ $weak['nama_mapel'] }}</strong>
                             <span class="badge bg-warning text-dark float-end">

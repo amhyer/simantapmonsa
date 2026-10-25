@@ -95,7 +95,7 @@ class SiswaController extends Controller
             'nis' => $validated['nis'],
             'jenis_kelamin' => $validated['jenis_kelamin'],
             'kelas' => $validated['kelas'],
-            'nama_orang_tua' => $validated['nama_orang_tua'],
+            'nama_orang_tua' => $validated['nama_orang_tua'] ?? null,
             'aktif' => $validated['aktif'] ?? true,
         ]);
 

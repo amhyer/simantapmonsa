@@ -17,14 +17,18 @@
     @else
 
     @php
-        $allNilai = $nilai->merge($hasilKuis->map(fn($h) => (object)[
-            'jenis' => 'Kuis',
-            'judul_penilaian' => $h->judul_kuis,
-            'mata_pelajaran' => $h->sumber_soal,
-            'nilai' => $h->skor,
-            'tanggal' => $h->waktu,
-            'nama_guru' => $h->nama_guru,
-        ]))->sortByDesc('tanggal');
+        // $nilai adalah Eloquent\Collection: merge() akan memanggil getKey()
+        // pada setiap item, sementara hasil kuis sengaja dibuat stdClass.
+        // Gunakan Collection biasa agar dua sumber data bisa digabung aman.
+        $allNilai = collect($nilai->all())
+            ->concat($hasilKuis->map(fn($h) => (object)[
+                'jenis' => 'Kuis',
+                'judul_penilaian' => $h->judul_kuis,
+                'mata_pelajaran' => $h->sumber_soal,
+                'nilai' => $h->skor,
+                'tanggal' => $h->waktu,
+                'nama_guru' => $h->nama_guru,
+            ]))->sortByDesc('tanggal');
 
         $rataNilai = $allNilai->count() ? round($allNilai->avg('nilai'), 1) : 0;
         $nilaiTertinggi = $allNilai->count() ? $allNilai->max('nilai') : 0;

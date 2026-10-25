@@ -9,7 +9,7 @@
 @include('cbt.feedback')
 <div class="card"><div class="card-body"><h2>{{ $session->title }}</h2>
 @if($result->submitted_at)
-<p>Jawaban terkumpul: {{ $result->submitted_at->format('d/m/Y H:i:s') }}</p><h3>Nilai {{ number_format($result->score, 2) }}</h3><p>Benar {{ $result->correct_count }} dari {{ count($session->question_snapshot) }} soal.</p>
+<p>Jawaban terkumpul: {{ $result->submitted_at?->format('d/m/Y H:i:s') ?? '—' }}</p><h3>Nilai {{ number_format($result->score ?? 0, 2) }}</h3><p>Benar {{ $result->correct_count ?? 0 }} dari {{ count($session->question_snapshot ?? []) }} soal.</p>
 @else
 <p class="cbt-note">Ujian belum difinalisasi. Setelah deadline, hanya jawaban yang sudah tersimpan yang dinilai.</p>
 <form method="POST" action="{{ route('cbt.student.submit', $result) }}">@csrf<button class="btn btn-primary">Kumpulkan / finalisasi jawaban tersimpan</button></form>

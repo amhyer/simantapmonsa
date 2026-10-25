@@ -86,7 +86,7 @@ class TranskripController extends Controller
             'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,' . $siswa->id,
         ]);
 
-        $siswa->nomor_ijazah = $validated['nomor_ijazah'] ?: null;
+        $siswa->nomor_ijazah = ($validated['nomor_ijazah'] ?? null) ?: null;
         $siswa->save();
 
         return back()->with('success', 'Nomor ijazah berhasil disimpan.');

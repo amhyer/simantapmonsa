@@ -144,7 +144,8 @@
         /* VIDEO DEMO */
         .video-demo { background: #fff; }
         .video-wrapper { max-width: 800px; margin: 0 auto; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); }
-        .video-placeholder { position: relative; background: var(--navy); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .video-placeholder { position: relative; width: 100%; background: var(--navy); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 0; font: inherit; color: inherit; }
+        .video-placeholder:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
         .video-placeholder .play-button { width: 80px; height: 80px; background: var(--gold-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32px; transition: var(--transition); }
         .video-wrapper:hover .play-button { transform: scale(1.1); box-shadow: 0 8px 30px rgba(184,134,11,0.4); }
         .video-placeholder .video-duration { position: absolute; bottom: 16px; right: 16px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
@@ -152,7 +153,9 @@
         .video-modal.active { display: flex; }
         .video-modal .close-video { position: absolute; top: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: #fff; font-size: 24px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
         .video-modal .close-video:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
-        .video-modal iframe { width: 100%; max-width: 900px; aspect-ratio: 16/9; border: none; border-radius: var(--radius); }
+        .video-modal .video-message { width: 100%; max-width: 680px; padding: 48px 32px; border-radius: var(--radius); background: var(--white); color: var(--text); text-align: center; box-shadow: var(--shadow-lg); }
+        .video-message h3 { color: var(--navy); font-size: 24px; margin-bottom: 12px; }
+        .video-message p { color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
 
         /* DEMO */
         .demo-section { background: var(--bg); }
@@ -223,8 +226,8 @@
         .blog-card { background: var(--white); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); transition: var(--transition); box-shadow: var(--shadow); }
         .blog-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
         .blog-card .blog-image { position: relative; aspect-ratio: 16/9; overflow: hidden; }
-        .blog-card .blog-image img { width: 100%; height: 100%; object-fit: cover; transition: var(--transition); }
-        .blog-card:hover .blog-image img { transform: scale(1.05); }
+        .blog-card .blog-image { display: flex; align-items: center; justify-content: center; }
+        .blog-card .blog-art { color: rgba(255,255,255,0.88); font-size: 52px; }
         .blog-card .blog-tag { position: absolute; top: 12px; left: 12px; padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--gold); color: #fff; }
         .blog-card .blog-content { padding: 20px; }
         .blog-card .blog-content .blog-date { font-size: 12px; color: var(--text-muted); }
@@ -232,19 +235,17 @@
         .blog-card .blog-content p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
         .blog-card .read-more { color: var(--gold); font-weight: 600; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition); }
         .blog-card .read-more:hover { gap: 8px; }
+        .blog-more summary { cursor: pointer; list-style: none; }
+        .blog-more summary::-webkit-details-marker { display: none; }
+        .blog-more p { margin: 10px 0 0 !important; }
 
         /* NEWSLETTER */
         .newsletter { background: var(--navy); color: #fff; padding: 60px 40px; }
         .newsletter-content { text-align: center; max-width: 600px; margin: 0 auto; }
         .newsletter-content h3 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
         .newsletter-content p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
-        .newsletter-form { display: flex; gap: 12px; max-width: 500px; margin: 0 auto; }
-        .newsletter-form input { flex: 1; padding: 14px 20px; border: none; border-radius: 99px; font-size: 15px; background: rgba(255,255,255,0.1); color: #fff; backdrop-filter: blur(8px); }
-        .newsletter-form input::placeholder { color: rgba(255,255,255,0.5); }
-        .newsletter-form input:focus { outline: none; background: rgba(255,255,255,0.2); }
-        .newsletter-form .btn-newsletter { padding: 14px 28px; border: none; border-radius: 99px; background: var(--gold-gradient); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; transition: var(--transition); white-space: nowrap; }
-        .newsletter-form .btn-newsletter:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(184, 134, 11, 0.3); }
-        .newsletter-note { display: block; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.5); }
+        .newsletter-link { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 99px; background: var(--gold-gradient); color: #fff; font-weight: 700; text-decoration: none; transition: var(--transition); }
+        .newsletter-link:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(184, 134, 11, 0.3); color: #fff; }
 
         /* CTA */
         .cta-section { background: linear-gradient(135deg, var(--navy), var(--navy-dark)); color: #fff; text-align: center; padding: 80px 40px; }
@@ -271,8 +272,9 @@
         .faq { background: var(--bg); }
         .faq-list { max-width: 768px; margin: 0 auto; display: grid; gap: 12px; }
         .faq-item { background: #fff; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; }
-        .faq-item .question { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; transition: var(--transition); }
-        .faq-item .question:hover { background: var(--bg); }
+        .faq-item .question { width: 100%; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font: inherit; font-weight: 600; font-size: 15px; text-align: left; color: inherit; background: transparent; border: 0; transition: var(--transition); }
+        .faq-item .question:hover, .faq-item .question:focus-visible { background: var(--bg); }
+        .faq-item .question:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
         .faq-item .question .icon { font-size: 18px; transition: var(--transition); color: var(--gold); }
         .faq-item .question.open .icon { transform: rotate(180deg); }
         .faq-item .answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 20px; }
@@ -301,13 +303,11 @@
         .footer-bottom .socials a { color: rgba(255,255,255,0.4); font-size: 16px; transition: var(--transition); }
         .footer-bottom .socials a:hover { color: #fff; }
 
-        /* WHATSAPP FLOAT */
-        .whatsapp-float { position: fixed; bottom: 30px; right: 30px; z-index: 999; display: flex; align-items: center; gap: 12px; text-decoration: none; background: #25D366; color: #fff; padding: 12px 20px 12px 16px; border-radius: 99px; box-shadow: 0 4px 24px rgba(37, 211, 102, 0.4); transition: var(--transition); }
-        .whatsapp-float:hover { transform: scale(1.05); box-shadow: 0 8px 36px rgba(37, 211, 102, 0.5); color: #fff; }
-        .whatsapp-float .wa-icon { font-size: 28px; }
-        .whatsapp-float .wa-text { font-size: 14px; font-weight: 600; }
-        .whatsapp-float .wa-tooltip { position: absolute; right: calc(100% + 16px); background: var(--white); color: var(--text); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); white-space: nowrap; opacity: 0; pointer-events: none; transition: var(--transition); }
-        .whatsapp-float:hover .wa-tooltip { opacity: 1; transform: translateX(-8px); }
+        /* FAQ floating shortcut (no hard-coded contact number). */
+        .help-float { position: fixed; bottom: 30px; right: 30px; z-index: 999; display: flex; align-items: center; gap: 10px; text-decoration: none; background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 99px; box-shadow: var(--shadow-lg); transition: var(--transition); }
+        .help-float:hover { transform: translateY(-2px); color: #fff; }
+        .help-float i { font-size: 22px; }
+        .help-text { font-size: 13px; font-weight: 700; }
 
         /* DARK TOGGLE */
         .dark-toggle { position: fixed; bottom: 100px; right: 30px; z-index: 999; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: var(--white); color: var(--text); font-size: 20px; cursor: pointer; transition: var(--transition); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
@@ -350,10 +350,8 @@
             .section-title { font-size: 30px; }
             .features-grid, .stats-grid, .steps-grid, .modules-grid, .testimonials-grid, .footer-grid, .blog-grid { grid-template-columns: 1fr; }
             .cta-section h2 { font-size: 30px; }
-            .newsletter-form { flex-direction: column; }
-            .newsletter-form input, .newsletter-form .btn-newsletter { width: 100%; }
-            .whatsapp-float .wa-text { display: none; }
-            .whatsapp-float { padding: 12px; }
+            .help-text { display: none; }
+            .help-float { padding: 12px; }
             .dark-toggle { bottom: 90px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
             .cookie-consent { flex-direction: column; text-align: center; }
         }
@@ -378,7 +376,7 @@
         </a>
         <ul class="nav-links" id="navLinks">
             <li><a href="#features">Fitur</a></li>
-            <li><a href="#video">Video</a></li>
+            <li><a href="#video">Demo</a></li>
             <li><a href="#modules">Modul</a></li>
             <li><a href="#testimonials">Testimoni</a></li>
             <li><a href="#blog">Blog</a></li>
@@ -400,15 +398,15 @@
         <div class="hero-content" data-aos="fade-up" data-aos-duration="800">
             <div class="badge"><span class="dot"></span>Platform Pembelajaran Terintegrasi</div>
             <h1>Satu Ekosistem untuk <br><span class="highlight">Tiga Agenda</span> Sekolah</h1>
-            <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong> dalam satu aplikasi berbasis Google Sheet.</p>
+            <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Instalasi sekolah dapat mengaktifkan integrasi Google Sheet sesuai konfigurasi.</p>
             <div class="cta-group">
                 <a href="{{ route('register') }}" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai Sekarang</a>
-                <a href="#video" class="btn-hero btn-hero-secondary"><i class="fas fa-play-circle"></i> Lihat Demo</a>
+                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-play-circle"></i> Coba Demo</a>
             </div>
             <div class="trust">
-                <span class="item"><i class="fas fa-check-circle"></i> Gratis untuk sekolah</span>
-                <span class="item"><i class="fas fa-check-circle"></i> Data di Google Sheet</span>
-                <span class="item"><i class="fas fa-check-circle"></i> Tanpa server pihak ketiga</span>
+                <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>
+                <span class="item"><i class="fas fa-check-circle"></i> Integrasi Google Sheet opsional</span>
+                <span class="item"><i class="fas fa-check-circle"></i> Akses berbasis peran</span>
             </div>
         </div>
         <div class="hero-image" data-aos="fade-left" data-aos-duration="800" data-aos-delay="200">
@@ -433,7 +431,7 @@
             </div>
             <div class="floating-badge floating-badge-2">
                 <div class="icon navy-bg">☁️</div>
-                <div class="text"><div class="title">Google Sheet</div><div class="sub">Data aman dan portabel</div></div>
+                <div class="text"><div class="title">Google Sheet</div><div class="sub">Integrasi sesuai konfigurasi</div></div>
             </div>
         </div>
     </div>
@@ -443,34 +441,38 @@
 <section class="video-demo" id="video">
     <div class="container">
         <div class="section-header" data-aos="fade-up">
-            <div class="section-label"><i class="fas fa-play-circle"></i> Video Demo</div>
+            <div class="section-label"><i class="fas fa-circle-info"></i> Pratinjau Demo</div>
             <h2 class="section-title">Lihat Cara Kerja <span class="highlight">SIMANTAP</span></h2>
-            <p class="section-subtitle">Tonton video singkat untuk melihat bagaimana SIMANTAP dapat membantu sekolah Anda.</p>
+            <p class="section-subtitle">Video demo belum tersedia. Lihat cara kerja SIMANTAP atau masuk menggunakan akun sekolah Anda.</p>
         </div>
         <div class="video-wrapper" data-aos="fade-up">
-            <div class="video-placeholder">
-                <div class="play-button"><i class="fas fa-play"></i></div>
-                <div class="video-duration">2:30</div>
-            </div>
+            <button type="button" class="video-placeholder" id="videoTrigger" aria-haspopup="dialog" aria-controls="videoModal">
+                <span class="play-button"><i class="fas fa-circle-info"></i></span>
+                <span class="video-duration">Informasi demo</span>
+            </button>
         </div>
     </div>
 </section>
 
 <!-- Video Modal -->
-<div class="video-modal" id="videoModal">
-    <button class="close-video" id="closeVideo" aria-label="Tutup"><i class="fas fa-times"></i></button>
-    <iframe id="videoIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+<div class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle" aria-hidden="true">
+    <button type="button" class="close-video" id="closeVideo" aria-label="Tutup"><i class="fas fa-times"></i></button>
+    <div class="video-message">
+        <h3 id="videoModalTitle">Video demo belum tersedia</h3>
+        <p>Untuk melihat fitur, masuk menggunakan akun sekolah Anda. Pendaftaran baru perlu disetujui administrator.</p>
+        <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Login</a>
+    </div>
 </div>
 
 <!-- LIVE DEMO -->
-<section class="demo-section">
+<section class="demo-section" id="demo">
     <div class="container">
         <div class="demo-card" data-aos="fade-up">
             <div style="font-size:48px;margin-bottom:16px">🎯</div>
-            <h3>Coba Demo Gratis</h3>
-            <p>Jelajahi semua fitur SIMANTAP tanpa perlu registrasi. Coba sebagai guru, siswa, orang tua, atau kepala sekolah.</p>
-            <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-laptop"></i> Buka Demo Interaktif</a>
-            <span class="demo-note"><i class="fas fa-magic"></i> Login dengan akun demo · Semua fitur bisa dicoba</span>
+            <h3>Masuk ke SIMANTAP</h3>
+            <p>Gunakan akun yang dibuat administrator sekolah. Akun yang didaftarkan sendiri menunggu aktivasi sebelum dapat digunakan.</p>
+            <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <span class="demo-note"><i class="fas fa-info-circle"></i> Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a>.</span>
         </div>
     </div>
 </section>
@@ -488,8 +490,8 @@
             <div class="feature-card" data-aos="fade-up" data-aos-delay="100"><div class="icon navy">🌱</div><h3>Pembelajaran Mendalam</h3><p>8 dimensi Profil Lulusan dengan skala 1-4. Rancangan pembelajaran berkesadaran, bermakna, dan menggembirakan.</p><span class="tag">📋 Penilaian Karakter</span></div>
             <div class="feature-card" data-aos="fade-up" data-aos-delay="200"><div class="icon green">📚</div><h3>Manajemen Kelas</h3><p>Nilai, kehadiran, materi, kuis, catatan, dan laporan dalam satu dashboard yang terintegrasi.</p><span class="tag">📊 Dashboard Guru</span></div>
             <div class="feature-card" data-aos="fade-up" data-aos-delay="300"><div class="icon purple">👨‍👩‍👧</div><h3>Orang Tua Terlibat</h3><p>Laporan 7 Kebiasaan Anak Indonesia Hebat dari rumah. Orang tua memantau perkembangan anak secara real-time.</p><span class="tag">🏡 Kolaborasi Keluarga</span></div>
-            <div class="feature-card" data-aos="fade-up" data-aos-delay="400"><div class="icon orange">🏫</div><h3>Multi Akun & Role</h3><p>Guru, siswa, orang tua, kepala sekolah, dan administrator — masing-masing dengan akses sesuai kewenangannya.</p><span class="tag">🔐 Keamanan Data</span></div>
-            <div class="feature-card" data-aos="fade-up" data-aos-delay="500"><div class="icon blue">☁️</div><h3>Google Sheet Integration</h3><p>Data tersimpan di Google Sheet milik Anda. Tidak perlu server mahal — cukup Spreadsheet dan Apps Script.</p><span class="tag">📤 Portabel & Aman</span></div>
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="400"><div class="icon orange">🏫</div><h3>Multi Akun & Role</h3><p>Guru, siswa, orang tua, kepala sekolah, dan administrator — masing-masing dengan akses sesuai kewenangannya.</p><span class="tag">🔐 Akses berbasis peran</span></div>
+            <div class="feature-card" data-aos="fade-up" data-aos-delay="500"><div class="icon blue">☁️</div><h3>Integrasi Google Sheet</h3><p>Integrasikan data ke Google Sheet sesuai modul dan konfigurasi sekolah. Aplikasi tetap memerlukan layanan hosting dan database.</p><span class="tag">📤 Integrasi opsional</span></div>
         </div>
     </div>
 </section>
@@ -498,10 +500,10 @@
 <section class="stats-section" id="stats">
     <div class="container">
         <div class="stats-grid">
-            <div class="stat-item" data-aos="fade-up"><div class="number" data-count="500" data-suffix="+">0</div><div class="label">Sekolah Terdaftar</div></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="100"><div class="number" data-count="5000" data-suffix="+">0</div><div class="label">Guru Aktif</div></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="200"><div class="number" data-count="50000" data-suffix="+">0</div><div class="label">Siswa Terdata</div></div>
-            <div class="stat-item" data-aos="fade-up" data-aos-delay="300"><div class="number" data-count="98" data-suffix="%">0</div><div class="label">Kepuasan Pengguna</div></div>
+            <div class="stat-item" data-aos="fade-up"><div class="number" data-count="7" data-suffix="">0</div><div class="label">Modul Utama</div></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="100"><div class="number" data-count="6" data-suffix="">0</div><div class="label">Peran Pengguna</div></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="200"><div class="number" data-count="7" data-suffix="">0</div><div class="label">Kebiasaan Harian</div></div>
+            <div class="stat-item" data-aos="fade-up" data-aos-delay="300"><div class="number" data-count="8" data-suffix="">0</div><div class="label">Dimensi Profil Lulusan</div></div>
         </div>
     </div>
 </section>
@@ -529,7 +531,7 @@
             <p class="section-subtitle">Siapkan SIMANTAP di sekolah Anda dalam hitungan menit.</p>
         </div>
         <div class="steps-grid">
-            <div class="step-card" data-aos="fade-up"><div class="step-number">1</div><h3>Pasang Google Sheet</h3><p>Buka Spreadsheet baru, tempel kode Apps Script, dan deploy sebagai Web App.</p></div>
+            <div class="step-card" data-aos="fade-up"><div class="step-number">1</div><h3>Siapkan Instalasi</h3><p>Administrator menyiapkan aplikasi, database, dan integrasi spreadsheet sesuai kebutuhan sekolah.</p></div>
             <div class="step-card" data-aos="fade-up" data-aos-delay="200"><div class="step-number">2</div><h3>Buat Akun</h3><p>Administrator membuat akun guru, siswa, orang tua, dan kepala sekolah.</p></div>
             <div class="step-card" data-aos="fade-up" data-aos-delay="400"><div class="step-number">3</div><h3>Mulai Mengajar</h3><p>Guru mengisi data, siswa mengerjakan kuis, orang tua melapor, kepsek merekap.</p></div>
         </div>
@@ -572,18 +574,17 @@
     <div class="container">
         <div class="section-header" data-aos="fade-up">
             <div class="section-label"><i class="fas fa-quote-left"></i> Testimoni</div>
-            <h2 class="section-title">Apa Kata <span class="highlight">Pengguna</span></h2>
-            <p class="section-subtitle">Pengalaman sekolah dan guru yang telah menggunakan SIMANTAP.</p>
+            <h2 class="section-title">Dirancang untuk <span class="highlight">Kolaborasi Sekolah</span></h2>
+            <p class="section-subtitle">Contoh alur kerja untuk peran yang menggunakan SIMANTAP.</p>
         </div>
         <div class="testimonials-grid">
             @foreach([
-                ['DR', 'Dra. Hj. Siti Rahmah, M.Pd.', 'Kepala SD Negeri 1 Harapan Bangsa', 'SIMANTAP mengubah cara kami mengelola pembelajaran. Semua data terintegrasi, laporan otomatis, dan orang tua bisa terlibat langsung.'],
-                ['SN', 'Dra. Sartika Ningsih, M.Pd.', 'Guru Matematika', 'Saya bisa memantau perkembangan setiap siswa dengan mudah. Fitur TKA sangat membantu memetakan kesiapan anak-anak.'],
-                ['AW', 'Andi Wijaya', 'Orang Tua Siswa', 'Sebagai orang tua, saya bisa mengisi laporan 7 Kebiasaan dan melihat nilai anak secara real-time. Sangat membantu!'],
+                ['GU', 'Guru', 'Pengelolaan kelas', 'Kelola materi, kuis, nilai, kehadiran, dan catatan siswa melalui modul yang tersedia pada instalasi sekolah.'],
+                ['KS', 'Kepala Sekolah', 'Pemantauan sekolah', 'Tinjau ringkasan akademik dan aktivitas sesuai peran serta hak akses yang diberikan administrator.'],
+                ['OT', 'Orang Tua', 'Kolaborasi keluarga', 'Ikuti laporan kebiasaan dan informasi perkembangan yang dibagikan sekolah kepada akun orang tua.'],
             ] as $i => $testi)
                 <div class="testimonial-card" data-aos="fade-up" data-aos-delay="{{ $i * 200 }}">
-                    <div class="stars">⭐⭐⭐⭐⭐</div>
-                    <blockquote>"{{ $testi[3] }}"</blockquote>
+                    <blockquote>{{ $testi[3] }}</blockquote>
                     <div class="author">
                         <div class="avatar">{{ $testi[0] }}</div>
                         <div class="info">
@@ -607,20 +608,23 @@
         </div>
         <div class="blog-grid">
             @foreach([
-                ['Tips', '5 Cara Membuat Pembelajaran Menyenangkan', 'Strategi praktis untuk menciptakan suasana belajar yang menggembirakan dan bermakna bagi siswa.', '10 Jan 2026', '1F3864'],
-                ['Panduan', 'Mengenal 8 Dimensi Profil Lulusan', 'Panduan lengkap untuk memahami dan menilai 8 dimensi Profil Lulusan dalam Pembelajaran Mendalam.', '8 Jan 2026', 'B8860B'],
-                ['Teknologi', 'Mengapa Google Sheet untuk Data Sekolah?', 'Alasan mengapa Google Sheet menjadi pilihan tepat untuk penyimpanan data sekolah yang aman dan portabel.', '5 Jan 2026', '12805C'],
+                ['Tips', '5 Cara Membuat Pembelajaran Menyenangkan', 'Strategi praktis untuk menciptakan suasana belajar yang menggembirakan dan bermakna bagi siswa.', '10 Jan 2026', '1F3864', 'Mulailah dengan tujuan belajar yang jelas, hubungkan materi dengan pengalaman siswa, beri ruang untuk bertanya, selingi penjelasan dengan aktivitas, dan tutup dengan refleksi singkat. Sesuaikan cara belajar dengan kebutuhan kelas.','fa-lightbulb'],
+                ['Panduan', 'Mengenal 8 Dimensi Profil Lulusan', 'Panduan untuk memahami dan membahas 8 dimensi Profil Lulusan dalam Pembelajaran Mendalam.', '8 Jan 2026', 'B8860B', 'Gunakan dimensi Profil Lulusan sebagai lensa untuk merancang pengalaman belajar dan percakapan reflektif. Pilih indikator yang relevan dengan tujuan pembelajaran; hindari menyimpulkan karakter siswa dari satu tugas atau satu pengamatan saja.','fa-compass'],
+                ['Teknologi', 'Mengelola Spreadsheet Sekolah', 'Pertimbangan saat memakai spreadsheet sebagai bagian dari alur data sekolah.', '5 Jan 2026', '12805C', 'Spreadsheet dapat membantu kolaborasi dan ekspor data. Tetapkan pemilik file, batasi izin berbagi, siapkan pencadangan, dan hindari tautan publik untuk data siswa. Integrasi Google Sheet di SIMANTAP bergantung pada konfigurasi instalasi sekolah.','fa-table'],
             ] as $i => $blog)
                 <div class="blog-card" data-aos="fade-up" data-aos-delay="{{ $i * 200 }}">
-                    <div class="blog-image">
-                        <img src="https://via.placeholder.com/600x338/{{ $blog[4] }}/FFFFFF?text=Blog+{{ $i + 1 }}" alt="{{ $blog[1] }}">
+                    <div class="blog-image" style="background:linear-gradient(135deg,#{{ $blog[4] }},#101828)" aria-hidden="true">
+                        <span class="blog-art"><i class="fas {{ $blog[6] }}"></i></span>
                         <span class="blog-tag">{{ $blog[0] }}</span>
                     </div>
                     <div class="blog-content">
                         <div class="blog-date">{{ $blog[3] }}</div>
                         <h4>{{ $blog[1] }}</h4>
                         <p>{{ $blog[2] }}</p>
-                        <a href="#" class="read-more">Baca Selengkapnya →</a>
+                        <details class="blog-more">
+                            <summary class="read-more">Baca selengkapnya <span aria-hidden="true">→</span></summary>
+                            <p>{{ $blog[5] }}</p>
+                        </details>
                     </div>
                 </div>
             @endforeach
@@ -632,16 +636,16 @@
 <section class="cta-section" id="cta">
     <div class="container">
         <h2 data-aos="fade-up">Siap Mewujudkan <span class="highlight">Pembelajaran</span> yang Terintegrasi?</h2>
-        <p data-aos="fade-up" data-aos-delay="100">Mulai gunakan SIMANTAP di sekolah Anda sekarang. Gratis, tanpa instalasi server, dan data aman di Google Sheet.</p>
+        <p data-aos="fade-up" data-aos-delay="100">Mulai gunakan SIMANTAP di sekolah Anda. Pengelolaan hosting, database, dan integrasi spreadsheet mengikuti konfigurasi sekolah.</p>
         <div class="cta-buttons" data-aos="fade-up" data-aos-delay="200">
             <a href="{{ route('register') }}" class="btn-cta btn-cta-primary"><i class="fas fa-rocket"></i> Daftar Sekarang</a>
             <a href="{{ route('login') }}" class="btn-cta btn-cta-secondary"><i class="fas fa-sign-in-alt"></i> Login</a>
         </div>
         <div class="trust-badges" data-aos="fade-up" data-aos-delay="300">
-            <div class="badge-item"><i class="fas fa-shield-alt"></i><span>Data Aman</span></div>
-            <div class="badge-item"><i class="fab fa-google"></i><span>Google Workspace</span></div>
+            <div class="badge-item"><i class="fas fa-user-shield"></i><span>Akses berbasis peran</span></div>
+            <div class="badge-item"><i class="fab fa-google"></i><span>Integrasi opsional</span></div>
             <div class="badge-item"><i class="fas fa-graduation-cap"></i><span>Kurikulum Merdeka</span></div>
-            <div class="badge-item"><i class="fas fa-award"></i><span>Gratis Selamanya</span></div>
+            <div class="badge-item"><i class="fas fa-sliders-h"></i><span>Dapat dikonfigurasi</span></div>
         </div>
     </div>
 </section>
@@ -1119,14 +1123,11 @@
 <section class="newsletter" id="newsletter">
     <div class="container">
         <div class="newsletter-content" data-aos="fade-up">
-            <h3>📬 Dapatkan Update Terbaru</h3>
-            <p>Berlangganan newsletter untuk mendapatkan tips pendidikan dan update fitur SIMANTAP.</p>
-            <form class="newsletter-form" id="newsletterForm">
-                @csrf
-                <input type="email" placeholder="Email Anda" required>
-                <button type="submit" class="btn-newsletter"><i class="fas fa-paper-plane"></i> Berlangganan</button>
-            </form>
-            <span class="newsletter-note">🔒 Privasi Anda aman. Tidak ada spam.</span>
+            <h3>📬 Ikuti Pembaruan SIMANTAP</h3>
+            <p>Layanan newsletter belum tersedia. Informasi dan perubahan proyek dapat dilihat di repositori resmi.</p>
+            <a class="newsletter-link" href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-github"></i> Lihat repositori SIMANTAP
+            </a>
         </div>
     </div>
 </section>
@@ -1141,16 +1142,16 @@
         </div>
         <div class="faq-list">
             @foreach([
-                ['Apa itu SIMANTAP?', 'SIMANTAP adalah platform pembelajaran terintegrasi yang menyatukan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam (8 dimensi Profil Lulusan), dan Manajemen Kelas (nilai, kehadiran, materi, kuis, catatan) dalam satu aplikasi berbasis Google Sheet.'],
-                ['Apakah SIMANTAP gratis?', 'Ya, SIMANTAP sepenuhnya gratis untuk sekolah. Anda hanya perlu memiliki akun Google dan Spreadsheet untuk menyimpan data.'],
-                ['Bagaimana cara menyimpan data?', 'Data tersimpan di Google Sheet milik Anda. Setiap guru dapat menyambungkan Spreadsheet-nya sendiri, atau sekolah dapat menggunakan satu Spreadsheet bersama dengan skrip sekolah.'],
-                ['Siapa saja yang bisa menggunakan SIMANTAP?', 'SIMANTAP dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Setiap peran memiliki akses sesuai kewenangannya.'],
-                ['Apakah data aman?', 'Data disimpan di Google Sheet Anda dan hanya dapat diakses melalui aplikasi dengan kode rahasia. Tidak ada data yang melewati server pihak ketiga.'],
-                ['Bagaimana cara memulai?', 'Daftar akun, lalu ikuti panduan di menu Penyimpanan Data untuk memasang Google Sheet. Setelah itu, buat akun guru dan mulai mengelola pembelajaran.'],
+                ['Apa itu SIMANTAP?', 'SIMANTAP adalah aplikasi pembelajaran yang menggabungkan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam, serta manajemen kelas seperti nilai, kehadiran, materi, kuis, dan catatan. Integrasi Google Sheet bersifat opsional dan bergantung pada konfigurasi sekolah.'],
+                ['Berapa biaya menggunakan SIMANTAP?', 'Biaya hosting, database, dan layanan eksternal bergantung pada cara sekolah memasang dan mengoperasikan aplikasi. Tanyakan kepada administrator tentang biaya instalasi sekolah Anda.'],
+                ['Bagaimana cara menyimpan data?', 'Data inti disimpan pada database instalasi aplikasi. Integrasi Google Sheet dapat digunakan jika dikonfigurasi oleh administrator sekolah.'],
+                ['Siapa saja yang bisa menggunakan SIMANTAP?', 'SIMANTAP dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Pendaftaran publik hanya menyediakan peran tertentu; akun kepala sekolah dibuat administrator.'],
+                ['Bagaimana data dikelola?', 'Akses aplikasi dibatasi berdasarkan peran. Integrasi dapat mengirim data ke layanan eksternal seperti Google Sheet jika diaktifkan. Administrator sekolah bertanggung jawab mengatur izin dan kebijakan privasi instalasinya.'],
+                ['Bagaimana cara memulai?', 'Daftar dengan peran yang tersedia dan tunggu aktivasi administrator. Akun kepala sekolah dibuat oleh administrator. Setelah aktif, administrator dapat menghubungkan akun siswa dan orang tua dengan data yang sesuai.'],
             ] as $i => $faq)
                 <div class="faq-item" data-aos="fade-up" data-aos-delay="{{ $i * 100 }}">
-                    <div class="question">{{ $faq[0] }}<span class="icon">▼</span></div>
-                    <div class="answer"><p>{{ $faq[1] }}</p></div>
+                    <button type="button" class="question" id="faq-question-{{ $i }}" aria-expanded="false" aria-controls="faq-answer-{{ $i }}">{{ $faq[0] }}<span class="icon" aria-hidden="true">▼</span></button>
+                    <div class="answer" id="faq-answer-{{ $i }}" role="region" aria-labelledby="faq-question-{{ $i }}"><p>{{ $faq[1] }}</p></div>
                 </div>
             @endforeach
         </div>
@@ -1173,28 +1174,25 @@
         <div class="footer-grid">
             <div class="footer-brand">
                 <div class="logo"><div class="icon">SM</div><span class="text">SIMANTAP</span></div>
-                <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — Platform pembelajaran terintegrasi untuk sekolah berbasis Google Sheet.</p>
+                <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — platform untuk pembelajaran dan pengelolaan kelas. Integrasi spreadsheet dapat diaktifkan sesuai konfigurasi sekolah.</p>
             </div>
             <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
-            <div class="footer-col"><h4>Untuk</h4><a href="#">Guru</a><a href="#">Siswa</a><a href="#">Orang Tua</a><a href="#">Kepala Sekolah</a></div>
-            <div class="footer-col"><h4>Bantuan</h4><a href="#">Panduan</a><a href="#">Dokumentasi</a><a href="#">Kontak</a><a href="#">GitHub</a></div>
+            <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Guru · Login</a><a href="{{ route('login') }}">Siswa · Login</a><a href="{{ route('login') }}">Orang Tua · Login</a><a href="{{ route('login') }}">Kepala Sekolah · Login</a></div>
+            <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="{{ route('register') }}">Buat Akun</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
         </div>
         <div class="footer-bottom">
             <span>&copy; {{ date('Y') }} SIMANTAP — Tim Kerja 4 BBGTK Sulawesi Selatan</span>
             <div class="socials">
-                <a href="#"><i class="fab fa-github"></i></a>
-                <a href="#"><i class="fab fa-youtube"></i></a>
-                <a href="#"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer" aria-label="Repositori GitHub SIMANTAP"><i class="fab fa-github"></i></a>
             </div>
         </div>
     </div>
 </footer>
 
 <!-- WHATSAPP FLOAT -->
-<a href="https://wa.me/6281234567890?text=Halo%20saya%20ingin%20tanya%20tentang%20SIMANTAP" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat WhatsApp">
-    <i class="fab fa-whatsapp wa-icon"></i>
-    <span class="wa-text">Chat dengan Kami</span>
-    <span class="wa-tooltip">💬 Ada yang bisa dibantu?</span>
+<a href="#faq" class="help-float" aria-label="Buka pertanyaan umum">
+    <i class="fas fa-circle-question" aria-hidden="true"></i>
+    <span class="help-text">Lihat FAQ</span>
 </a>
 
 <!-- DARK MODE TOGGLE -->
@@ -1204,49 +1202,61 @@
 <button class="scroll-top" id="scrollTop" aria-label="Scroll to Top"><i class="fas fa-arrow-up"></i></button>
 
 <!-- COOKIE CONSENT -->
-<div class="cookie-consent" id="cookieConsent">
-    <p>🍪 Kami menggunakan cookie untuk meningkatkan pengalaman Anda. Dengan melanjutkan, Anda menyetujui penggunaan cookie kami.</p>
+<div class="cookie-consent" id="cookieConsent" role="region" aria-label="Informasi penyimpanan browser">
+    <p>🍪 SIMANTAP memakai cookie sesi esensial untuk keamanan login serta penyimpanan lokal untuk mengingat preferensi tampilan. Cookie sesi tetap diperlukan saat memakai akun.</p>
     <div class="cookie-actions">
-        <button class="btn-cookie btn-cookie-decline" onclick="declineCookies()">Tolak</button>
-        <button class="btn-cookie btn-cookie-accept" onclick="acceptCookies()">Terima</button>
+        <button type="button" class="btn-cookie btn-cookie-accept" onclick="acknowledgeCookieNotice()">Mengerti</button>
     </div>
 </div>
 
 <!-- AOS SCRIPT -->
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-    AOS.init({ duration: 800, once: true, offset: 80, easing: 'ease-out-cubic' });
+    if (window.AOS && typeof window.AOS.init === 'function') {
+        window.AOS.init({ duration: 800, once: true, offset: 80, easing: 'ease-out-cubic' });
+    }
 </script>
 
 <!-- LANDING JS -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Video Modal
-    const videoTrigger = document.querySelector('.video-placeholder');
-    const videoModal = document.getElementById('videoModal');
-    const closeVideo = document.getElementById('closeVideo');
-    const videoIframe = document.getElementById('videoIframe');
-    if (videoTrigger) {
-        videoTrigger.addEventListener('click', function() {
-            videoModal.classList.add('active');
-            videoIframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1';
-            document.body.style.overflow = 'hidden';
-        });
+    function readBrowserPreference(key) {
+        try { return window.localStorage.getItem(key); } catch (error) { return null; }
     }
-    if (closeVideo) {
-        closeVideo.addEventListener('click', function() {
-            videoModal.classList.remove('active');
-            videoIframe.src = '';
-            document.body.style.overflow = '';
-        });
-    }
-    if (videoModal) {
-        videoModal.addEventListener('click', function(e) {
-            if (e.target === this) { videoModal.classList.remove('active'); videoIframe.src = ''; document.body.style.overflow = ''; }
-        });
+    function saveBrowserPreference(key, value) {
+        try { window.localStorage.setItem(key, value); } catch (error) { /* storage may be disabled */ }
     }
 
+    // Informasi demo (video asli belum tersedia). Modal dapat ditutup dengan
+    // tombol, klik backdrop, atau tombol Escape dan mengembalikan fokus.
+    const videoTrigger = document.getElementById('videoTrigger');
+    const videoModal = document.getElementById('videoModal');
+    const closeVideo = document.getElementById('closeVideo');
+    function closeVideoModal() {
+        if (!videoModal) return;
+        videoModal.classList.remove('active');
+        videoModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        videoTrigger?.focus();
+    }
+    if (videoTrigger && videoModal) {
+        videoTrigger.addEventListener('click', function() {
+            videoModal.classList.add('active');
+            videoModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            closeVideo?.focus();
+        });
+        videoModal.addEventListener('click', function(e) {
+            if (e.target === videoModal) closeVideoModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && videoModal.classList.contains('active')) closeVideoModal();
+        });
+    }
+    closeVideo?.addEventListener('click', closeVideoModal);
+
     // Quiz
+    const registrationUrl = @json(route('register'));
     const quizData = [
         { question: 'Bagaimana sistem penilaian di sekolah Anda saat ini?', options: ['Manual di buku nilai', 'Menggunakan Spreadsheet', 'Aplikasi khusus penilaian', 'Platform terintegrasi'], scores: [1, 2, 3, 4] },
         { question: 'Bagaimana orang tua memantau perkembangan anak?', options: ['Tidak ada akses', 'Rapor cetak setiap semester', 'Aplikasi terpisah', 'Platform terintegrasi dengan notifikasi'], scores: [1, 2, 3, 4] },
@@ -1280,32 +1290,21 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (percentage >= 40) { level = 'Mulai Belajar'; emoji = '📖'; description = 'Masih ada ruang untuk perbaikan dalam sistem pengelolaan pembelajaran.'; recommendation = 'SIMANTAP dapat menjadi langkah awal yang tepat untuk transformasi digital.'; }
         else { level = 'Perlu Pendampingan'; emoji = '🤝'; description = 'Sekolah Anda memerlukan pendampingan dalam transformasi digital.'; recommendation = 'SIMANTAP dirancang mudah digunakan dan dapat membantu secara bertahap.'; }
         var circumference = 2 * Math.PI * 42;
-        document.querySelector('.quiz-container').innerHTML = '<div class="quiz-result"><div class="result-level">'+emoji+'</div><h3>'+level+'</h3><div style="display:flex;justify-content:center;margin:16px 0"><div style="position:relative;width:100px;height:100px"><svg width="100" height="100" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="10"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+circumference+'" stroke-dashoffset="'+(circumference*(1-percentage/100))+'" style="transition:stroke-dashoffset 1s ease"></circle></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><strong style="font-size:24px;color:var(--navy)">'+percentage+'%</strong><span style="font-size:10px;color:var(--text-muted)">Skor</span></div></div></div><p class="result-detail">'+description+'</p><div style="background:#FBF4E4;border-left:3px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:14px;text-align:left;margin-bottom:16px"><strong>💡 Rekomendasi:</strong> '+recommendation+'</div><div class="result-actions"><button class="btn-hero btn-hero-secondary" onclick="resetQuiz()"><i class="fas fa-redo"></i> Ulangi</button><a href="/register" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai dengan SIMANTAP</a></div></div>';
+        document.querySelector('.quiz-container').innerHTML = '<div class="quiz-result"><div class="result-level">'+emoji+'</div><h3>'+level+'</h3><div style="display:flex;justify-content:center;margin:16px 0"><div style="position:relative;width:100px;height:100px"><svg width="100" height="100" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="10"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+circumference+'" stroke-dashoffset="'+(circumference*(1-percentage/100))+'" style="transition:stroke-dashoffset 1s ease"></circle></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><strong style="font-size:24px;color:var(--navy)">'+percentage+'%</strong><span style="font-size:10px;color:var(--text-muted)">Skor</span></div></div></div><p class="result-detail">'+description+'</p><div style="background:#FBF4E4;border-left:3px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:14px;text-align:left;margin-bottom:16px"><strong>💡 Rekomendasi:</strong> '+recommendation+'</div><div class="result-actions"><button class="btn-hero btn-hero-secondary" onclick="resetQuiz()"><i class="fas fa-redo"></i> Ulangi</button><a href="'+registrationUrl+'" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai dengan SIMANTAP</a></div></div>';
     }
     window.resetQuiz = function() { quizStarted = false; currentQuiz = 0; quizAnswers = []; renderQuiz(); };
     if (document.querySelector('.quiz-container')) renderQuiz();
 
-    // Newsletter
-    var newsletterForm = document.getElementById('newsletterForm');
-    if (newsletterForm) {
-        newsletterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var btn = this.querySelector('button'), originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...'; btn.disabled = true;
-            setTimeout(function() { btn.innerHTML = '<i class="fas fa-check"></i> Terkirim!'; showToast('Terima kasih! Email Anda telah terdaftar.', 'success'); newsletterForm.reset(); setTimeout(function() { btn.innerHTML = originalText; btn.disabled = false; }, 3000); }, 1500);
-        });
-    }
-
     // Dark Mode
     var darkToggle = document.getElementById('darkToggle');
     if (darkToggle) {
-        var savedTheme = localStorage.getItem('simantap-theme');
+        var savedTheme = readBrowserPreference('simantap-theme');
         if (savedTheme === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); darkToggle.innerHTML = '<i class="fas fa-sun"></i>'; }
         darkToggle.addEventListener('click', function() {
             var current = document.documentElement.getAttribute('data-theme');
             var newTheme = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('simantap-theme', newTheme);
+            saveBrowserPreference('simantap-theme', newTheme);
             this.innerHTML = newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
             showToast(newTheme === 'dark' ? '🌙 Mode Gelap aktif' : '☀️ Mode Terang aktif', 'success');
         });
@@ -1318,11 +1317,16 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollTop.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
     }
 
-    // Cookie Consent
+    // Informasi cookie sesi esensial dan preferensi lokal. Tombol hanya
+    // menutup pemberitahuan; ia tidak mengklaim menonaktifkan cookie sesi.
     var cookieConsent = document.getElementById('cookieConsent');
-    if (cookieConsent && !localStorage.getItem('simantap-cookie')) { setTimeout(function() { cookieConsent.classList.add('active'); }, 2000); }
-    window.acceptCookies = function() { localStorage.setItem('simantap-cookie', 'accepted'); cookieConsent.classList.remove('active'); showToast('Terima kasih! Cookie telah diterima.', 'success'); };
-    window.declineCookies = function() { localStorage.setItem('simantap-cookie', 'declined'); cookieConsent.classList.remove('active'); };
+    if (cookieConsent && !readBrowserPreference('simantap-cookie-notice')) {
+        setTimeout(function() { cookieConsent.classList.add('active'); }, 2000);
+    }
+    window.acknowledgeCookieNotice = function() {
+        saveBrowserPreference('simantap-cookie-notice', 'dismissed');
+        cookieConsent?.classList.remove('active');
+    };
 
     // Toast
     window.showToast = function(message, type) {
@@ -1367,16 +1371,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.faq-item .question').forEach(function(question) {
         question.addEventListener('click', function() {
             var answer = this.nextElementSibling, isOpen = answer.classList.contains('open');
-            document.querySelectorAll('.faq-item .answer').forEach(function(a) { a.classList.remove('open'); });
-            document.querySelectorAll('.faq-item .question').forEach(function(q) { q.classList.remove('open'); });
-            if (!isOpen) { answer.classList.add('open'); this.classList.add('open'); }
+            document.querySelectorAll('.faq-item .answer').forEach(function(a) {
+                a.classList.remove('open');
+                var button = a.previousElementSibling;
+                button?.classList.remove('open');
+                button?.setAttribute('aria-expanded', 'false');
+            });
+            if (!isOpen) {
+                answer.classList.add('open');
+                this.classList.add('open');
+                this.setAttribute('aria-expanded', 'true');
+            }
         });
     });
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && videoModal && videoModal.classList.contains('active')) { videoModal.classList.remove('active'); videoIframe.src = ''; document.body.style.overflow = ''; }
-    });
 });
 
 // Animation keyframes

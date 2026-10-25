@@ -73,7 +73,15 @@ class ExportBackupJob implements ShouldQueue
                         if (str_starts_with($key, 'cbt_') && $row instanceof \Illuminate\Database\Eloquent\Model) {
                             $row->makeVisible($row->getHidden());
                         }
-                        $record = is_array($row) ? $row : $row->toArray();
+                        // Baris pivot (tanpa model) datang sebagai stdClass dari
+                        // query builder; stdClass tidak punya toArray().
+                        if (is_array($row)) {
+                            $record = $row;
+                        } elseif ($row instanceof \Illuminate\Database\Eloquent\Model) {
+                            $record = $row->toArray();
+                        } else {
+                            $record = (array) $row;
+                        }
                         if ($except !== []) {
                             $record = array_diff_key($record, array_flip($except));
                         }

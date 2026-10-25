@@ -218,7 +218,10 @@ echo "\n3. Route, controller, dan view\n";
 periksa('Semua controller pada routes/*.php memiliki berkasnya', function () use ($root) {
     $hilang = [];
     $routes = baca($root . '/routes/web.php') . baca($root . '/routes/api.php');
-    preg_match_all('/\\\\?(App\\\\Http\\\\Controllers\\\\[\w\\\\]+)::class/', $routes, $m);
+    // Controller yang disebut di dalam komentar (route dinonaktifkan) bukan
+    // dependensi aktif — pindai kode yang sudah dibuang komentarnya.
+    $kodeRoutes = kodeBersih(baca($root . '/routes/web.php')) . kodeBersih(baca($root . '/routes/api.php'));
+    preg_match_all('/\\\\?(App\\\\Http\\\\Controllers\\\\[\w\\\\]+)::class/', $kodeRoutes, $m);
 
     $dalamFlagCbt = str_contains($routes, "config('simantap.cbt_enabled'");
 

@@ -14,6 +14,11 @@
 @endsection
 
 @section('content')
+    @php
+        // Dipakai juga oleh @push('scripts') di bawah, termasuk saat kuis sudah
+        // dikerjakan. Cast array bisa menghasilkan null untuk JSON tidak valid.
+        $soal = is_array($kuis->soal ?? null) ? $kuis->soal : [];
+    @endphp
     @if($sudahMengerjakan)
         <div class="card" style="margin-bottom:16px">
             <div class="card-body">
@@ -91,10 +96,6 @@
             <input type="hidden" name="durasi" id="durasiInput" value="0">
             <input type="hidden" name="start_time" id="startTime" value="{{ now()->timestamp }}">
             <input type="hidden" name="soal_aktif" id="soalAktif" value="0">
-
-            @php
-                $soal = $kuis->soal ?? [];
-            @endphp
 
             @if(count($soal) > 0)
                 <!-- Navigasi Soal -->
@@ -177,13 +178,17 @@
         </form>
     @endif
 
+    {{-- Skrip pengerjaan hanya boleh muncul saat form kuis benar-benar ada;
+         jika kuis sudah dikerjakan, elemen #startTime/#formKuis tidak dirender
+         dan skrip ini akan menyebabkan ReferenceError di browser. --}}
+    @if(!$sudahMengerjakan && count($soal) > 0)
     @push('scripts')
         <script>
             const startTime = parseInt(document.getElementById('startTime').value);
             const durasiInput = document.getElementById('durasiInput');
             const timerDisplay = document.getElementById('timerDisplay');
             const nomorSaatIni = document.getElementById('nomorSaatIni');
-            const totalSoal = "{{ count($soal) }}";
+            const totalSoal = "{{ count($soal ?? []) }}";
 
             // --- TIMER COUNTDOWN ---
             function updateTimer() {
@@ -315,4 +320,5 @@
             }
         </script>
     @endpush
+    @endif
 @endsection

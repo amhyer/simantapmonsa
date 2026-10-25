@@ -66,7 +66,13 @@ class DataReferensiController extends Controller
      */
     public function destroyPembelajaran(JadwalPelajaran $pembelajaran)
     {
-        $pembelajaran->delete();
+        try {
+            $pembelajaran->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // kehadiran_mapel.jadwal_pelajaran_id memakai RESTRICT: jangan
+            // biarkan tombol Hapus memunculkan 500 saat data masih terpakai.
+            return back()->with('error', 'Jadwal pembelajaran masih digunakan oleh data kehadiran mapel dan tidak dapat dihapus.');
+        }
 
         return back()->with('success', 'Jadwal pembelajaran berhasil dihapus.');
     }
@@ -231,7 +237,10 @@ class DataReferensiController extends Controller
 
         $sekolah = SekolahSettings::first();
         if (!$sekolah) {
-            $sekolah = SekolahSettings::create(['guru_id' => auth()->id()]);
+            // nama_sekolah wajib (NOT NULL). Arahkan admin mengisi identitas
+            // sekolah dulu daripada membuat baris setengah jadi / error 500.
+            return redirect()->route('admin.sekolah.index')
+                ->with('error', 'Lengkapi Identitas Sekolah terlebih dahulu sebelum mengunggah logo dan tanda tangan.');
         }
 
         $pengaturan = $sekolah->pengaturan ?? [];

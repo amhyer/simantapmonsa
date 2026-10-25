@@ -19,6 +19,7 @@ class CbtQuestionBank extends Model
         return \Illuminate\Support\Carbon::instance($date)->timezone(config('app.timezone'))->format('Y-m-d H:i:s');
     }
 
+    public function guru() { return $this->belongsTo(User::class, 'guru_id'); }
     public function questions() { return $this->hasMany(CbtQuestion::class, 'bank_id'); }
     public function sessions() { return $this->hasMany(CbtTestSession::class, 'bank_id'); }
 }

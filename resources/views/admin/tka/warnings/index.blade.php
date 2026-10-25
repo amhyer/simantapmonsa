@@ -213,7 +213,6 @@
                                 <form action="{{ route('admin.tka.warnings.update-status', $warning) }}" 
                                       method="POST" style="display:inline">
                                     @csrf
-                                    @method('PATCH')
                                     <input type="hidden" name="status" value="{{ $warning->status === 'pending' ? 'sedang_diproses' : 'selesai' }}">
                                     <button type="submit" class="btn btn-sm btn-success" title="Update Status">
                                         <i class="fas fa-arrow-right"></i>

@@ -26,25 +26,31 @@ class GuruKebiasaanController extends Controller
         $totalDilaporkan = $kebiasaanMingguIni->pluck('siswa_id')->unique()->count();
         $belumDilaporkan = $siswaList->count() - $totalDilaporkan;
 
-        $semuaSkor = $semuaKebiasaan->flatMap(function ($k) {
-            return collect(['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'])
-                ->filter(fn($f) => $k->$f)
+        // Kolom kebiasaan berisi skor 1-4 (bukan boolean). Rata-rata dihitung
+        // dari nilai angkanya, bukan dari nama kolom yang ikut terkoleksi.
+        $fieldSkor = ['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'];
+        $semuaSkor = $semuaKebiasaan->flatMap(function ($k) use ($fieldSkor) {
+            return collect($fieldSkor)
+                ->map(fn($f) => $k->$f)
+                ->filter(fn($nilai) => is_numeric($nilai) && (int) $nilai > 0)
                 ->values();
         });
-        $rataRataSkor = $semuaSkor->count() > 0 ? $semuaSkor->avg() : 0;
+        $rataRataSkor = $semuaSkor->count() > 0 ? round($semuaSkor->avg(), 1) : 0;
 
+        // View mengakses $item->bangun_pagi dan $item->siswa, jadi harus tetap
+        // berupa model Eloquent (bukan array hasil toArray()).
         $kebiasaanByDate = $semuaKebiasaan
-            ->groupBy(fn($k) => $k->tanggal)
-            ->sortKeysDesc()
-            ->toArray();
+            ->groupBy(fn($k) => (string) $k->tanggal)
+            ->sortKeysDesc();
 
         $chartLabels = $siswaList->pluck('nama_peserta_didik')->toArray();
-        $chartData = $siswaList->map(function ($siswa) use ($semuaKebiasaan) {
+        $chartData = $siswaList->map(function ($siswa) use ($semuaKebiasaan, $fieldSkor) {
             $data = $semuaKebiasaan->filter(fn($k) => $k->siswa_id == $siswa->id);
             if ($data->isEmpty()) return 0;
-            $skor = $data->flatMap(function ($k) {
-                return collect(['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'])
-                    ->filter(fn($f) => $k->$f)
+            $skor = $data->flatMap(function ($k) use ($fieldSkor) {
+                return collect($fieldSkor)
+                    ->map(fn($f) => $k->$f)
+                    ->filter(fn($nilai) => is_numeric($nilai) && (int) $nilai > 0)
                     ->values();
             });
             return $skor->count() > 0 ? round($skor->avg(), 1) : 0;
