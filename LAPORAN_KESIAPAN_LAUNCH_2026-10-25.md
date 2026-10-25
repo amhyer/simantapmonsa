@@ -524,7 +524,15 @@ public/favicon.ico                  → struktur ICO valid (reserved=0, type=1, 
 | Kembalikan disk hardcoded di `ExportBackupJob` | ❌ FAIL |
 | Restore semua | ✅ 53 lulus, 0 gagal |
 
-**Dua pemeriksaan baru saya sempat salah dan sudah diperbaiki:**
+**CI menangkap satu test yang salah tulis.** Pada run pertama PR #12, dari 300 test
+hanya satu yang gagal: `test_hsts_dikirim_lewat_https` —
+`Failed asserting that null is identical to 'max-age=31536000'`. Penyebabnya bukan
+middleware-nya, melainkan harness-nya: `$this->withServerVariables(['HTTPS' => 'on'])`
+tidak sampai ke `$request->secure()`. Test-nya diganti memanggil `SecurityHeaders`
+langsung dengan request yang server bag-nya dibangun eksplisit, plus assertion prekondisi
+agar kondisi HTTPS benar-benar terpasang sebelum diuji.
+
+**Dua pemeriksaan statis baru juga sempat salah dan sudah diperbaiki:**
 
 1. Pemeriksaan "halaman error mandiri" mencari teks bebas `@vite`, sehingga ikut cocok
    dengan **kata `@vite` di dalam komentar** `errors/layout.blade.php` → FAIL palsu.

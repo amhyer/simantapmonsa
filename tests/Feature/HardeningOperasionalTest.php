@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\SecurityHeaders;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -54,16 +57,37 @@ class HardeningOperasionalTest extends TestCase
             $this->get('/login')->headers->get('Strict-Transport-Security'),
             'HSTS lewat HTTP tidak berguna dan bisa menyesatkan.'
         );
+
+        // Dipastikan juga di tingkat middleware, agar kondisi HTTPS diuji
+        // secara deterministik tanpa bergantung pada plumbing server vars harness.
+        $this->assertNull($this->lewatMiddleware(['HTTPS' => 'off'])->headers->get('Strict-Transport-Security'));
     }
 
     public function test_hsts_dikirim_lewat_https(): void
     {
-        $response = $this->withServerVariables(['HTTPS' => 'on'])->get('/login');
+        // Tidak memakai $this->withServerVariables(['HTTPS' => 'on']): pada
+        // harness ini variabel itu tidak sampai ke $request->secure(), sehingga
+        // assertion-nya gagal walau middleware-nya benar. Karena itu request-nya
+        // dibangun langsung dengan server bag HTTPS.
+        $response = $this->lewatMiddleware(['HTTPS' => 'on']);
 
         $this->assertSame(
             'max-age=' . config('security.hsts_max_age'),
             $response->headers->get('Strict-Transport-Security')
         );
+    }
+
+    /** Jalankan SecurityHeaders pada request dengan server bag tertentu. */
+    private function lewatMiddleware(array $server): \Illuminate\Http\Response
+    {
+        $request = Request::create('/login', 'GET', [], [], [], $server);
+
+        $this->assertTrue(
+            $server['HTTPS'] === 'on' ? $request->secure() : ! $request->secure(),
+            'Prekondisi test salah: request->secure() tidak sesuai server bag.'
+        );
+
+        return (new SecurityHeaders)->handle($request, fn () => new Response('ok'));
     }
 
     public function test_header_keamanan_bisa_dimatikan_lewat_konfigurasi(): void
