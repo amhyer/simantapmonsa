@@ -196,7 +196,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @vite('resources/js/charts.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const labels = ['Beriman & Berakhlak', 'Berkebinekaan', 'Bernalar Kritis', 'Gotong Royong', 'Mandiri', 'Kreatif'];

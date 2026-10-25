@@ -224,7 +224,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @vite('resources/js/charts.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const ctx1 = document.getElementById('chartAktivitas').getContext('2d');

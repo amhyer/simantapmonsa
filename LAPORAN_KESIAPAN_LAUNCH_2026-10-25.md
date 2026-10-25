@@ -39,7 +39,7 @@ baru sudah diuji lewat *mutation test* (lihat §10 dan §11).
 | S3 Security headers | ✅ **Selesai** | `App\Http\Middleware\SecurityHeaders` (global) + `config/security.php` |
 | S5 Halaman error | ✅ **Selesai** | `resources/views/errors/` 403, 404, 419, 429, 500, 503 |
 | S7 Favicon | ✅ **Selesai** | `public/favicon.ico` 0 byte → 4.286 byte (32×32, glyph "SM") |
-| S4 SRI pada CDN | ⏳ **Ditunda** | Alasan teknis di §11.4 — tidak bisa dikerjakan dengan jujur dari sandbox ini |
+| S4 Aset pihak ketiga | ✅ **Selesai (26 Okt)** | Ditangani lebih baik dari SRI: **seluruh CDN dibuang**, semua aset dibundel sendiri. Lihat §13 (§11.4 mencatat alasan penundaan awalnya) |
 | S6 SOP reset sandi | 🟡 **Sebagian** | SOP tertulis sudah ada di `DEPLOYMENT.md` §6; reset mandiri tetap tidak ada |
 
 ---
@@ -686,6 +686,144 @@ kasus ini tidak bisa terulang diam-diam:
 Keduanya menolak lolos bila tidak menemukan apa pun untuk diperiksa, dan keduanya
 sudah diuji: menyisipkan tautan relatif rusak (M6) dan mengembalikan URL GitHub rusak
 (M7) masing-masing membuat check-nya **gagal**. Verifier kini **58 lulus, 0 gagal**.
+
+## 13. S4 — Aset Pihak Ketiga Di-self-host (26 Okt 2026)
+
+S4 semula saya tunda karena **menghitung hash SRI membutuhkan byte asli dari CDN**, dan
+host CDN tidak terjangkau dari sandbox ini (lihat §11.4). Pada 26 Okt 2026 saya
+menanganinya dengan cara yang lebih baik: **membuang CDN-nya sama sekali**, sehingga
+SRI tidak lagi diperlukan.
+
+### 13.1 Temuan yang lebih buruk dari dugaan semula
+
+Audit ulang menemukan **22 tag aset dari 5 penyedia CDN berbeda**, bukan hanya
+`chart.js` dan `aos` yang saya catat di §11.4. Yang paling mengkhawatirkan:
+
+| Aset | Dari | Jumlah | Kondisi |
+|---|---|---|---|
+| Chart.js | `cdn.jsdelivr.net/npm/chart.js` | **15 view** | **12 tanpa pin versi** — halaman bisa berubah perilaku kapan pun paket merilis versi baru. 3 sisanya pin `@4.4.0`, padahal `package.json` menyatakan `^4.5.1` (tidak cocok) |
+| Font Awesome | `cdnjs.cloudflare.com` | 2 | pin 6.5.0 dan 6.4.0 — dua versi berbeda |
+| AOS | `unpkg.com` | 2 (CSS + JS) | pin 2.3.1 |
+| Bootstrap | `cdn.jsdelivr.net` | 1 | pin 5.3.0 |
+| Inter | `fonts.googleapis.com` | 3 (2 preconnect + CSS) | halaman landing |
+| Figtree | `fonts.bunny.net` | 2 | `layouts/guest.blade.php` |
+
+Dua temuan tambahan yang muncul saat audit:
+
+- **`chart.js` sudah jadi dependency npm** (`^4.5.1`) dan `guru-dashboard.js` sudah
+  membundelnya untuk satu halaman — jadi 15 view lain memuat pustaka yang sama dari
+  CDN tanpa alasan.
+- **`tailwind.config.js` mendeklarasikan `fontFamily.sans = ['Figtree', …]`, tetapi
+  `layouts/app.blade.php` tidak pernah memuat Figtree.** Hanya `layouts/guest.blade.php`
+  yang memuatnya. Artinya seluruh area dalam aplikasi selama ini jatuh ke font sistem —
+  bug yang satu kelas dengan P2.
+
+### 13.2 Yang dikerjakan
+
+| Berkas baru | Isi |
+|---|---|
+| `resources/js/charts.js` | `import Chart from 'chart.js/auto'; window.Chart = Chart;` |
+| `resources/css/halaman-publik.css` | Inter (subset latin, bobot 400–900) + Font Awesome + AOS CSS |
+| `resources/js/halaman-publik.js` | `import AOS from 'aos'` + `AOS.init(...)` |
+| `resources/css/tka-statistik.css` | Bootstrap + Font Awesome |
+
+- **15 tag `<script>` Chart.js** → `@vite('resources/js/charts.js')`.
+- `resources/js/guru-dashboard.js` **dihapus** dan `guru/dashboard.blade.php` diarahkan
+  ke `charts.js`. Bukti konsolidasinya persis: hash chunk-nya identik
+  (`guru-dashboard-DM6IsfOk.js` → `charts-DM6IsfOk.js`, sama-sama 202,10 kB).
+- Halaman landing: 3 `<link>` font + 2 AOS + skrip AOS inline → satu `@vite([...])`.
+- `layouts/guest.blade.php`: 2 `<link>` bunny.net → Figtree diimpor di `app.css`,
+  sehingga kini **semua** halaman (bukan hanya guest) benar-benar memuat font yang
+  dideklarasikan Tailwind.
+- Dependency baru di `package.json`: `aos@^2.3.1`, `bootstrap@^5.3.0`,
+  `@fontsource/inter@^5.3.0`, `@fontsource/figtree@^5.3.0`. CI memakai **`npm ci`**,
+  jadi `package-lock.json` yang mengunci versi pastinya.
+
+**Hasil: nol tag aset eksternal di seluruh view aplikasi.** Yang tersisa hanyalah
+tautan navigasi `<a href="https://tka.kemendikdasmen.go.id">` dan
+`<a href="https://github.com/amhyer/simantapmonsa">` — itu memang seharusnya keluar.
+`resources/views/vendor/scramble/*` sengaja tidak disentuh: milik paket, akan tertimpa
+saat pembaruan, dan hanya aktif di lingkungan lokal.
+
+### 13.3 Jebakan yang hampir lolos: modul Vite bersifat *deferred*
+
+Ini bagian yang paling mudah rusak secara senyap, jadi dicatat terang-terangan.
+
+Tag CDN lama adalah `<script src>` biasa yang **blocking** dan diletakkan di akhir
+body, sehingga `window.Chart` tersedia seketika untuk skrip inline berikutnya.
+`@vite()` menghasilkan `<script type="module">` yang **deferred** — dieksekusi *setelah*
+dokumen selesai diparsing. Skrip inline yang langsung memanggil `new Chart(...)`
+tanpa menunggu akan gagal dengan `ReferenceError: Chart is not defined`.
+
+Saya audit ke-15 situs, dan **14 aman** (sudah dibungkus `DOMContentLoaded`), tetapi
+**`resources/views/siswa/nilai/index.blade.php` tidak** — ia memanggil `new Chart(...)`
+langsung. Sudah dibungkus `DOMContentLoaded`, dan sintaksnya diverifikasi dengan
+`node --check` setelah ekspresi Blade dinetralkan.
+
+Kasus AOS lebih licik lagi. Skrip inline lamanya berbunyi:
+
+```js
+if (window.AOS && typeof window.AOS.init === 'function') { window.AOS.init({ ... }); }
+```
+
+Kalau `AOS.init()` dibiarkan inline, penjaga itu membuatnya **gagal tanpa suara** —
+halaman tetap 200, CI tetap hijau, animasinya saja yang mati. Karena itu `AOS.init()`
+dipindahkan ke dalam `resources/js/halaman-publik.js` bersama impornya.
+
+### 13.4 Verifikasi
+
+- **Verifier 58 → 61 pemeriksaan, 0 gagal.** Bagian 16 baru: tidak ada aset CDN di
+  view aplikasi; pustaka self-host terdaftar & terkunci di `package.json`; semua
+  `input` Vite benar-benar ada di disk.
+- **Mutation test M8–M11**, semuanya terdeteksi:
+
+  | Mutasi | Hasil |
+  |---|---|
+  | M8 · kembalikan satu `<script src="https://cdn.jsdelivr.net/npm/chart.js">` | ❌ terdeteksi |
+  | M9 · hapus `chart.js` dari `package.json` | ❌ terdeteksi |
+  | M10 · set `aos` ke `"*"` | ❌ terdeteksi (versi tidak terkunci) |
+  | M11 · tambah `resources/js/tidak-ada.js` ke `input` Vite | ❌ terdeteksi |
+  | restore | ✅ 61 lulus, 0 gagal |
+
+- `npm run build` → exit 0. Aset hasil build: `app-*.js` 77,14 kB (gzip 27,17) ·
+  `charts-*.js` 202,10 kB (gzip 69,24) · `halaman-publik-*.css` 97,35 kB (gzip 24,43) ·
+  `tka-statistik-*.css` 297,93 kB (gzip 52,45) · `halaman-publik-*.js` 14,02 kB.
+  Font `figtree-latin-*.woff2` dan `inter-latin-*.woff2` ikut terbundel.
+- **Test Playwright baru** (`tests/e2e/landing.spec.js`) membuktikan di Chromium
+  sungguhan: nol permintaan lintas-asal; `window.Chart` berupa fungsi **dan** ada
+  instance grafik yang benar-benar terbentuk; setiap elemen `[data-aos]` mendapat
+  kelas `aos-init` (bukti `AOS.init()` tidak jalan terlalu dini); ikon `.fas`
+  memakai font "Font Awesome" dan lebarnya > 0; ada `@font-face` Inter berstatus
+  `loaded`.
+
+  Test smoke yang lama hanya **memblokir** CDN (`route.abort()`), jadi ia membuktikan
+  halaman tahan tanpa CDN — tetapi tidak membuktikan penggantinya bekerja. Test baru
+  ini yang menutup celah tersebut.
+
+  **Test ini gagal pada percobaan pertama di CI, dan itu berguna.** Assertion saya
+  `expect(grafikDibuat.totalKanvas).toBeGreaterThan(0)` menerima **0** — bukan karena
+  Chart.js rusak (`window.Chart` terbukti berupa fungsi, assertion sebelumnya lolos),
+  melainkan karena kanvas statistik di landing berada di dalam `@if($lastUpdate)`, dan
+  CI menjalankan basis data kosong tanpa data TKA. **Asumsi test saya yang salah.**
+
+  Diperbaiki dengan menguji Chart.js lewat **kanvas sintetis** — membuat `<canvas>`
+  sendiri, menggambar, memverifikasi `Chart.getChart()` mengenalinya, lalu membersihkannya.
+  Cara ini justru lebih kuat: membuktikan pustakanya benar-benar berfungsi tanpa
+  bergantung pada ada-tidaknya data di halaman. Assertion Inter juga dibuat
+  deterministik dengan `document.fonts.load()`; tanpa itu bobot yang tidak terpakai di
+  halaman tetap berstatus `unloaded` dan hasilnya bisa berubah-ubah.
+
+### 13.5 Yang tetap tidak saya verifikasi
+
+- **Test Playwright baru belum pernah saya jalankan sendiri** — tidak ada PHP/vendor
+  di sandbox ini, jadi `php artisan serve` tidak bisa dinyalakan. Test itu baru
+  terbukti saat CI menjalankannya.
+- **Tampilan halaman setelah Figtree benar-benar dimuat di area dalam aplikasi.**
+  Sebelumnya font itu dideklarasikan tapi tidak pernah dimuat, jadi sekarang area
+  dalam aplikasi akan terlihat sedikit berbeda — memang itu tujuannya, tetapi
+  perlu dilihat mata.
+- Halaman `/tka-statistik` sengaja tidak saya masukkan ke test e2e agar tidak
+  bergantung pada sumber data TKA eksternal.
 
 ## Lampiran: Perintah yang Saya Jalankan
 
