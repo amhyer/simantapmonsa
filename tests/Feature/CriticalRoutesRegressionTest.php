@@ -23,6 +23,26 @@ class CriticalRoutesRegressionTest extends TestCase
             ->assertSee('Akun Anda belum terhubung dengan data siswa. Hubungi admin.');
     }
 
+    public function test_export_erapor_excel_berhasil_tanpa_pengaturan_dan_dengan_siswa(): void
+    {
+        $guru = User::factory()->guru()->create();
+        Siswa::create([
+            'guru_id' => $guru->id,
+            'nama_guru' => $guru->nama_lengkap,
+            'nis' => 'ERAPOR-NO-SETTINGS',
+            'nama_peserta_didik' => 'Siswa Tanpa Pengaturan',
+            'kelas' => '6A',
+            'jenis_kelamin' => 'L',
+            'aktif' => true,
+        ]);
+
+        $response = $this->actingAs($guru)->get(route('guru.erapor.excel'));
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $this->assertStringStartsWith('PK', $response->streamedContent());
+    }
+
     public function test_edit_assessment_yang_tidak_didukung_tidak_melempar_500(): void
     {
         $this->get('/tka/assessments/1/edit')->assertNotFound();

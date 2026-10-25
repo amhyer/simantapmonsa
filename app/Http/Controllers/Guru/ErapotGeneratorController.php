@@ -73,6 +73,8 @@ class ErapotGeneratorController extends Controller
         $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
         $kelas = $request->get('kelas', $pengaturan->kelas ?? null);
+        $semester = $pengaturan->semester ?? 'Ganjil';
+        $tahunPelajaran = $pengaturan->tahun_pelajaran ?? date('Y').'/'.(date('Y') + 1);
 
         $query = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik');
         if ($kelas) {
@@ -107,8 +109,8 @@ class ErapotGeneratorController extends Controller
         foreach ($siswa as $i => $s) {
             $nilai = NilaiErapot::where('siswa_id', $s->id)
                 ->where('guru_id', $guru->id)
-                ->where('semester', $pengaturan->semester)
-                ->where('tahun_ajaran', $pengaturan->tahun_pelajaran)
+                ->where('semester', $semester)
+                ->where('tahun_ajaran', $tahunPelajaran)
                 ->first();
 
             $kehadiran = Kehadiran::where('siswa_id', $s->id)->get();
