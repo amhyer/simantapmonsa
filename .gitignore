@@ -11,6 +11,8 @@
 .env.backup
 .env.production
 .phpunit.result.cache
+# Basis data uji peramban (dibuat CI, tidak boleh masuk repo)
+/database/e2e.sqlite
 Homestead.json
 Homestead.yaml
 auth.json

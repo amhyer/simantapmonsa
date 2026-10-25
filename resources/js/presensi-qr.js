@@ -1,6 +1,6 @@
 // PERBAIKAN BUNDLE: `html5-qrcode` dulu diimpor statis di baris pertama, sehingga
 // ikut terbundel ke app.js dan diunduh di SETIAP halaman — padahal hanya dipakai
-// saat operator menekan tombol "Mulai Kamera" di halaman pemetaan QR.
+// saat operator menekan tombol "Aktifkan kamera" di halaman pemetaan QR.
 // Impor dinamis memindahkannya ke chunk terpisah yang baru dimuat saat dibutuhkan.
 let pustakaQr = null;
 

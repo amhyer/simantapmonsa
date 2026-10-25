@@ -218,7 +218,10 @@ jobs:
     env:
       APP_ENV: testing
       DB_CONNECTION: sqlite
-      DB_DATABASE: ':memory:'
+      # Bukan ':memory:'. SQLite in-memory hanya hidup selama satu koneksi, dan
+      # `php artisan serve` membuka koneksi baru untuk tiap permintaan — jadi
+      # basis datarnya kosong terus dan halaman ber-auth tidak bisa diuji.
+      DB_DATABASE: database/e2e.sqlite
       CACHE_STORE: file
       SESSION_DRIVER: file
 
@@ -257,6 +260,12 @@ jobs:
 
       - name: Generate app key
         run: php artisan key:generate
+
+      - name: Siapkan basis data untuk test peramban
+        run: |
+          touch database/e2e.sqlite
+          php artisan migrate --force
+          php artisan db:seed --class=E2eSeeder --force
 
       - name: Build frontend and install browser test dependencies
         run: |
