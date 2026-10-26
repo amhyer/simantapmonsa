@@ -403,7 +403,7 @@ echo "\n8. Cakupan backup vs penghapusan data\n";
 periksa('Hapus Semua Data memakai registry tabel terpusat (bukan daftar sendiri)', function () use ($root) {
     $controller = baca($root . '/app/Http/Controllers/Admin/BackupController.php');
     if (!str_contains($controller, 'BackupTables::dikosongkan()')) {
-        return 'wipeAll masih memakai daftar $tabelData sendiri';
+        return 'wipeAll masih memakai daftar tabel sendiri';
     }
 
     $registry = baca($root . '/app/Support/BackupTables.php');
@@ -438,14 +438,12 @@ periksa('Registry backup konsisten: tidak ada tabel ganda & daftar pertahankan m
         return 'tabel tercatat dicadangkan sekaligus tidak dicadangkan: ' . implode(', ', $ganda);
     }
 
-    // Hanya identitas inti yang boleh bertahan setelah wipe.
     $bolehBertahan = ['users', 'semesters', 'sekolah_settings'];
     $asing = array_values(array_diff($dipertahankan, $bolehBertahan));
     if ($asing !== []) {
         return 'tabel dipertahankan di luar daftar aman: ' . implode(', ', $asing);
     }
 
-    // Tabel yang isinya dapat dibuat ulang (log) harus ikut dikosongkan.
     $logDipertahankan = array_values(array_intersect($tidakDicadangkan, $dipertahankan));
     if ($logDipertahankan !== []) {
         return 'log dipertahankan padahal dapat dibuat ulang: ' . implode(', ', $logDipertahankan);
@@ -459,10 +457,18 @@ periksa('Registry backup konsisten: tidak ada tabel ganda & daftar pertahankan m
     return true;
 });
 
-periksa('ExportBackupJob memakai registry tabel terpusat', function () use ($root) {
+periksa('Backup terjadwal dan export async berbagi writer streaming', function () use ($root) {
+    $command = baca($root . '/app/Console/Commands/BackupData.php');
     $job = baca($root . '/app/Jobs/ExportBackupJob.php');
+    $writer = baca($root . '/app/Services/Backup/BackupStreamWriter.php');
 
-    return str_contains($job, 'BackupTables::semua()') ? true : 'job export masih memakai daftar tabel sendiri';
+    return str_contains($command, 'BackupStreamWriter')
+        && str_contains($job, 'BackupStreamWriter')
+        && str_contains($writer, 'BackupTables::semua()')
+        && str_contains($command, 'php://temp/maxmemory:2097152')
+        && str_contains($job, 'php://temp/maxmemory:2097152')
+        ? true
+        : 'backup terjadwal/export belum berbagi stream writer terpusat';
 });
 
 /* ──────────────────────────────────────────────────────────────

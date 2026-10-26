@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\ExportBackupJob;
+use App\Services\Backup\BackupStreamWriter;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
@@ -100,7 +101,7 @@ class BackupRestoreDrillTest extends TestCase
 
     private function buatBackup(): string
     {
-        (new ExportBackupJob())->handle();
+        (new ExportBackupJob())->handle(app(BackupStreamWriter::class));
 
         $berkas = collect(Storage::disk('local')->files('backups'))
             ->filter(fn (string $path) => str_ends_with($path, '.json'))

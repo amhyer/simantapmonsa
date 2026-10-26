@@ -98,6 +98,26 @@ class BackupTables
             'cbt_results' => ['class' => \App\Models\CbtResult::class, 'except' => []],
             'cbt_violations' => ['class' => \App\Models\CbtViolation::class, 'except' => []],
 
+            // Tryout legacy tetap diperlukan pembaca admin/laporan selama
+            // cutover. Restore mengikuti urutan FK induk -> anak.
+            'tryout_categories' => ['class' => \App\Models\Tryout\Category::class, 'except' => []],
+            'tryout_packages' => ['class' => \App\Models\Tryout\Package::class, 'except' => []],
+            'tryout_subjects' => ['class' => \App\Models\Tryout\Subject::class, 'except' => []],
+            'tryout_questions' => ['class' => \App\Models\Tryout\TryoutQuestion::class, 'except' => []],
+            'tryout_question_options' => ['class' => \App\Models\Tryout\TryoutQuestionOption::class, 'except' => []],
+            'tryout_sessions' => ['class' => \App\Models\Tryout\Session::class, 'except' => []],
+            'tryout_results' => ['class' => \App\Models\Tryout\Result::class, 'except' => []],
+            'tryout_student_answers' => ['class' => \App\Models\Tryout\StudentAnswer::class, 'except' => []],
+
+            // TKA asesmen + laporan orang tua adalah data akademik sumber.
+            'tka_dimensions_enhanced' => ['class' => \App\Models\Tka\Dimension::class, 'except' => []],
+            'tka_assessment_items' => ['class' => \App\Models\Tka\AssessmentItem::class, 'except' => []],
+            'tka_student_assessments' => ['class' => \App\Models\Tka\StudentAssessment::class, 'except' => []],
+            'tka_assessment_responses' => ['class' => \App\Models\Tka\AssessmentResponse::class, 'except' => []],
+            'tka_parent_reports' => ['class' => \App\Models\Tka\ParentReport::class, 'except' => []],
+            'tka_historical_tracking' => ['class' => \App\Models\Tka\HistoricalTracking::class, 'except' => []],
+            'tka_early_warnings' => ['class' => \App\Models\Tka\EarlyWarning::class, 'except' => []],
+
             // Engine ujian terpadu (Fase 3): urutan induk -> anak. Tanpa entri
             // ini, hasil ujian baru hilang permanen setelah wipe + restore,
             // karena `exam_*` tidak masuk backup sedangkan `cbt_*`/`tryout_*`
@@ -112,18 +132,6 @@ class BackupTables
             'exam_answers' => ['class' => \App\Models\Exam\Answer::class, 'except' => []],
             'exam_results' => ['class' => \App\Models\Exam\Result::class, 'except' => []],
             'exam_violations' => ['class' => \App\Models\Exam\Violation::class, 'except' => []],
-
-            // Tryout: urutan induk -> anak. Sebelumnya seluruh tabel ini luput
-            // dari backup DAN dari wipe, sehingga "Hapus Semua Data" menyisakan
-            // data Tryout sementara engine-nya kosong.
-            'tryout_categories' => ['class' => \App\Models\Tryout\Category::class, 'except' => []],
-            'tryout_packages' => ['class' => \App\Models\Tryout\Package::class, 'except' => []],
-            'tryout_subjects' => ['class' => \App\Models\Tryout\Subject::class, 'except' => []],
-            'tryout_questions' => ['class' => \App\Models\Tryout\TryoutQuestion::class, 'except' => []],
-            'tryout_question_options' => ['class' => \App\Models\Tryout\TryoutQuestionOption::class, 'except' => []],
-            'tryout_sessions' => ['class' => \App\Models\Tryout\Session::class, 'except' => []],
-            'tryout_results' => ['class' => \App\Models\Tryout\Result::class, 'except' => []],
-            'tryout_student_answers' => ['class' => \App\Models\Tryout\StudentAnswer::class, 'except' => []],
 
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],

@@ -319,6 +319,50 @@ Bagian ini menambahkan status kerja setelah snapshot §1f; ia **tidak mengubah**
 - **CI run 40174270016:** [keempat job lulus](https://github.com/amhyer/simantapmonsa/actions/runs/40174270016): PHPUnit PHP 8.4/SQLite, PHPUnit PostgreSQL 16, unauthenticated Chromium smoke, dan authenticated CBT/Tryout/TKA E2E. Job E2E berhasil menjalankan migrasi/seeder SQLite terisolasi serta `npm run test:e2e`.
 - PHP/JavaScript/YAML syntax checks dan `git diff --check` juga lulus. Bukti ini terbatas pada suite/fixture dan environment run tersebut; **bukan** klaim produksi siap atau semua variasi data/environment telah teruji.
 
+## 1h. EKSEKUSI BACKLOG LANJUTAN (26 OKT 2026) — REPOSITORY-SAFE, BELUM DI-RUN DI LARAVEL
+
+Pekerjaan ini dimulai pada branch `arena/2ed9e1be-simantapmonsa` dari merge commit
+`604d623fd4b5f1e3bb86178457e5c7890a738290`. Setelah `main` maju, branch disinkronkan dengan
+`origin/main` pada `2dd638e` melalui merge commit `67d5cfc`, sambil mempertahankan perubahan
+Phase 3 yang telah masuk serta menyelesaikan konflik FormRequest/streaming. Status berikut
+membedakan perubahan kode dari operasi/validasi eksternal yang belum dilakukan.
+
+| Area | Perubahan kode | Status bukti |
+|---|---|---|
+| Backup registry & wipe | `BackupTables` mencakup 8 tabel legacy Tryout, 7 tabel TKA, dan seluruh tabel engine ujian `exam_*`; export/restore/wipe memakai registry yang sama ditambah daftar log/cache yang tidak dibackup. Akun, semester, identitas sekolah dipertahankan; `api_keys` tidak masuk registry wipe. | `BackupCoverageTest` dan `BackupStreamingTest` lulus pada CI SQLite dan PostgreSQL. Ini bukti fixture/test DB saja; **jangan lakukan wipe atau restore produksi** sebelum staging dan rekonsiliasi row-count/relasi. |
+| Export terjadwal & panel | `BackupData` dan `ExportBackupJob` berbagi `BackupStreamWriter`, query per chunk, temporary stream 2 MiB yang dapat spill ke disk, dan upload stream tanpa mematerialisasi JSON penuh. | PHPUnit CI SQLite dan PostgreSQL lulus; provider penyimpanan offsite/produksi yang sebenarnya belum diuji. |
+| Restore | `BackupJsonStreamReader` memvalidasi dan men-spool setiap baris ke temporary files sebelum transaksi; replay mengikuti urutan FK registry, independen dari urutan key JSON. Batas: 100.000 baris, upload 100 MiB, metadata 64 KiB, satu row JSON 16 MiB. | Uji urutan restore yang key-nya diacak dan test backup/restore lulus di kedua job PHPUnit CI; belum ada restore staging atau produksi. |
+| Dry-run backfill | `exam:backfill --dry-run [--only=cbt|tryout]` hanya menghitung baris sumber, menolak filter tak dikenal, dan tidak memanggil mapper/menulis `exam_*`. | `ExamBackfillDryRunTest` lulus pada CI SQLite dan PostgreSQL. Hitungan sumber bukan rekonsiliasi isi/field-level produksi. |
+| Validasi & format | Validasi mutasi/filter CBT dan Tryout dipindah ke FormRequest; policy siswa dijalankan sebelum validasi/mutasi. Tes negatif memeriksa no-mutation. Pint CI memeriksa FormRequest dan layanan backup baru. | CI run [`40266944031`](https://github.com/amhyer/simantapmonsa/actions/runs/40266944031) lulus keempat job: Pint + PHPUnit PHP 8.4, PHPUnit PostgreSQL 16, Chromium smoke, dan authenticated E2E CBT/Tryout/TKA. Lint PHP-WASM 43 file berubah; verifier statis 62 lulus/0 gagal. |
+| Benchmark fixture | `BackupStreamingTest` memuat fixture 3.000 baris × 4 KiB dengan batas pertumbuhan heap <32 MiB, ditambah uji 205 baris yang melewati batas chunk 200. | Assertion fixture lulus pada PHPUnit CI; ini bukan benchmark data produksi atau bukti kapasitas untuk dataset nyata. |
+
+Inventaris dependensi statis di repository (bukan bukti penggunaan data produksi): CBT legacy terdiri dari
+`cbt_question_banks`, `cbt_questions`, `cbt_test_sessions`, `cbt_results`, `cbt_violations` dan masih
+memiliki controller admin/guru, model, `CbtExamService`, `CbtEngineBridge`, serta mapper/backfill.
+Tryout legacy terdiri dari `tryout_categories`, `tryout_packages`, `tryout_subjects`,
+`tryout_questions`, `tryout_question_options`, `tryout_sessions`, `tryout_results`,
+`tryout_student_answers`; referensi aktif masih mencakup controller guru/admin, laporan/ekspor,
+`TryoutEngineBridge`, `TryoutResultDetailService`, model, dan `LegacyExamMapper`. TKA legacy terdiri
+dari `tka_dimensions_enhanced`, `tka_assessment_items`, `tka_student_assessments`,
+`tka_assessment_responses`, `tka_parent_reports`, `tka_historical_tracking`, `tka_early_warnings`,
+dengan controller, model, view/laporan, dan test aktif. Daftar ini perlu diperbarui dengan pencarian
+runtime dinamis serta konfirmasi pemilik data sebelum langkah retirement.
+
+Batas kerja yang belum dapat ditutup dari clone:
+- Inventaris kode lokal dapat menunjukkan model/route/bridge yang masih menyentuh tabel legacy, tetapi
+  rekonsiliasi data produksi memerlukan snapshot/row counts yang disetujui serta pemilik data.
+  `exam:backfill --dry-run` hanya memberi hitungan sumber, bukan bukti bahwa setiap nilai telah setara.
+- Drop tabel `cbt_*`/`tryout_*` tetap tertahan sampai inventaris dependensi, rekonsiliasi produksi,
+  backup + restore staging, rencana rollback, dan persetujuan pemilik layanan lulus. Tidak ada drop
+  atau migrasi destruktif ditambahkan.
+- Sinkronisasi live Dapodik/Google Sheets dan rotasi kredensial membutuhkan staging, otorisasi, serta
+  credential rotation oleh pemilik sistem. Tidak ada credential tersedia di workspace; tidak ada
+  live call atau rotasi yang diklaim selesai. Test/mock Dapodik yang ada tidak membuktikan koneksi live.
+- Fase 5 belum dimulai: pilihan fitur dan acceptance criteria implementasi belum diputuskan. Butir
+  “6.” pada permintaan terakhir kosong; daftar prioritas di §5 tetap usulan, bukan otorisasi scope.
+
+Verifikasi lokal yang tersedia: syntax lint (`@php-wasm/cli@3.1.60`) atas 43 file PHP berubah, smoke parser JSON, `git diff --check`, dan `tools/verifikasi-perbaikan.php` (**62 lulus, 0 gagal**). PHP-WASM memberi peringatan karena sandbox memakai Node 22 sementara paket meminta Node 24.18+. Eksekusi Laravel/Pint dilakukan di GitHub Actions, bukan pada clone lokal yang tidak menyediakan PHP, Composer, `vendor/`, atau database runtime. CI run `40266944031` adalah bukti eksekusi terbaru untuk commit saat itu; hasil tersebut tetap terbatas pada fixture dan runtime CI, bukan kesiapan produksi.
+
 ## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
 
 > Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status

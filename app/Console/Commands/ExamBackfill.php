@@ -51,9 +51,9 @@ class ExamBackfill extends Command
         $only = $this->option('only');
 
         if ($only !== null && ! in_array($only, [Engine::CBT, Engine::TRYOUT], true)) {
-            $this->error("Nilai --only harus 'cbt' atau 'tryout'.");
+            $this->error('Opsi --only harus cbt atau tryout.');
 
-            return self::INVALID;
+            return self::FAILURE;
         }
 
         if ($this->option('verify')) {
@@ -61,6 +61,11 @@ class ExamBackfill extends Command
         }
 
         $dryRun = (bool) $this->option('dry-run');
+
+        if ($dryRun) {
+            $this->info('DRY RUN: backfill dijalankan di dalam transaksi lalu di-rollback; tidak ada perubahan yang disimpan.');
+        }
+
         $sebelum = $this->jumlahTabel();
 
         DB::beginTransaction();

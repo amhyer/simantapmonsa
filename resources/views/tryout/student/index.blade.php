@@ -39,9 +39,9 @@
                     <p class="card-text text-muted small mb-2">
                         {{ $session['deskripsi'] }}
                     </p>
-                    
+
                     <hr>
-                    
+
                     <div class="row text-center mb-3">
                         <div class="col-4">
                             <h5 class="mb-0">{{ $session['jumlah_mapel'] }}</h5>
@@ -64,7 +64,7 @@
                         </small>
                     </div>
 
-                    <a href="{{ $session['mulai_url'] }}" 
+                    <a href="{{ $session['mulai_url'] }}"
                        class="btn btn-primary btn-sm w-100"
                        onclick="return confirm('Yakin ingin memulai tryout? Durasi {{ $session['durasi_menit'] }} menit.')">
                         🚀 Mulai Tryout
@@ -125,7 +125,7 @@
                     <td>{{ $result['peringkat'] ?? '-' }}</td>
                     <td>
                         @if($result['detail_url'])
-                        <a href="{{ $result['detail_url'] }}" 
+                        <a href="{{ $result['detail_url'] }}"
                            class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Detail
                         </a>

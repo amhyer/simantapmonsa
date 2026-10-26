@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Cbt\CbtBankRequest;
 use App\Models\CbtQuestionBank;
 use App\Models\User;
 use App\Services\Exam\LegacyExamMapper;
@@ -42,13 +43,9 @@ class CbtBankController extends Controller
         return view('admin.cbt.banks.create', compact('gurus'));
     }
 
-    public function store(Request $request)
+    public function store(CbtBankRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'subject' => 'required|string|max:100',
-            'guru_id' => 'required|integer|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         $bank = CbtQuestionBank::create($validated);
         $this->sinkronEngine($bank);
@@ -72,13 +69,9 @@ class CbtBankController extends Controller
         return view('admin.cbt.banks.edit', compact('bank', 'gurus'));
     }
 
-    public function update(Request $request, CbtQuestionBank $bank)
+    public function update(CbtBankRequest $request, CbtQuestionBank $bank)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'subject' => 'required|string|max:100',
-            'guru_id' => 'required|integer|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         $bank->update($validated);
         $this->sinkronEngine($bank->fresh());
