@@ -165,7 +165,12 @@ keluaran lama yang bisa dipakai sebagai pembanding.
   karena rute mulai/detail masih terikat model lama sampai 6e.
   Bukti: `TryoutStudentReaderTest` (2 test) — potret identik kedua cabang, dan
   setelah seluruh `tryout_*` dikosongkan halaman tetap 200 dengan data benar.
-- ⏭️ **6d-2** — alur soal/jawab/selesai CBT & Tryout membaca `exam_attempts`
+- ✅ **6d-2 (daftar ujian CBT siswa)** — `CbtStudentReader` membaca daftar
+  ujian dari `exam_sessions` (`sumber_tabel = cbt_test_sessions`) saat flag
+  pembaca aktif; filter guru/status/peserta dan paginasi sama seperti jalur
+  lama. Bukti: `CbtStudentReaderTest` (2 test) — potret identik dan halaman
+  tetap benar setelah `cbt_results` + `cbt_test_sessions` dikosongkan.
+- ⏭️ **6d-3** — alur soal/jawab/selesai CBT & Tryout membaca `exam_attempts`
   /`exam_answers` (rute & view berpindah dari model lama).
 
 ## Urutan pengerjaan yang disarankan

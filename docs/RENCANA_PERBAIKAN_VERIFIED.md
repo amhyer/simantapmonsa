@@ -174,7 +174,8 @@ sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produks
 | (6b) Pembaca hasil Tryout admin | ✅ | `App\Services\Exam\TryoutResultProvider` menyatukan daftar hasil (filter/paginasi/kartu statistik) dan rincian hasil ke array yang sama untuk `tryout_*` maupun `exam_*`; satu view dipakai keduanya. Rute baru `admin.tryout.results.engine.show` untuk rincian engine. Angka agregat halaman statistik ikut flag. Daftar paket/sesi untuk dropdown & "sesi terbaru" sengaja tetap dari `tryout_*` (katalog, menunggu 6c). Bukti: 4 test parity di `ExamReaderTest`. |
 | (6c-1) Dual-write CRUD ke engine | ✅ | simpan/hapus lewat UI guru **dan** admin langsung mencerminkan ke `exam_*`: bank & soal CBT, sesi CBT, paket/mapel/soal Tryout, sesi Tryout. `LegacyExamMapper` mendapat `paketTryout()` dan `lupakan*()`; opsi yang dihapus ikut dipangkas dari engine. Bukti: `CbtCrudEngineSyncTest` (4 test) + `TryoutCrudEngineSyncTest` (4 test). Arah tulis masih tabel lama → engine (belum dibalik). |
 | (6d-1) Halaman utama Tryout siswa | ✅ | `App\Services\Exam\TryoutStudentReader` membaca daftar sesi tersedia + riwayat hasil dari `tryout_*` **atau** `exam_*` dengan bentuk array yang sama (flag `simantap.exam_engine_readers`). View `tryout/student/index` tidak lagi memanggil model langsung. Identitas baris tetap id lama (dari `sumber_id`) karena rute mulai/detail masih terikat model lama sampai 6e. Bukti: `TryoutStudentReaderTest` — potret identik kedua cabang dan halaman tetap benar setelah seluruh `tryout_*` dikosongkan. |
-| (6) Drop tabel lama | ⏳ belum | pembaca dasbor **dan** hasil/statistik Tryout sudah terbukti setara, CRUD sudah menyalin ke `exam_*`, halaman utama Tryout siswa sudah bisa dibaca dari engine, dan `exam_*` sudah tercadang; yang tersisa: alur soal/jawab/selesai CBT & Tryout, inversi kepemilikan tulis, katalog & ekspor Tryout, lalu rikonsiliasi data produksi |
+| (6d-2) Daftar ujian CBT siswa | ✅ | `App\Services\Exam\CbtStudentReader` membaca daftar ujian dari `exam_sessions` dengan filter guru/status/peserta dan paginasi yang sama. Bukti: `CbtStudentReaderTest` — potret identik kedua cabang dan daftar tetap benar setelah `cbt_results` + `cbt_test_sessions` dikosongkan. |
+| (6) Drop tabel lama | ⏳ belum | pembaca dasbor **dan** hasil/statistik Tryout sudah terbukti setara, CRUD sudah menyalin ke `exam_*`, halaman utama Tryout **dan** daftar CBT siswa sudah bisa dibaca dari engine, dan `exam_*` sudah tercadang; yang tersisa: alur soal/jawab/selesai CBT & Tryout, inversi kepemilikan tulis, katalog & ekspor Tryout, lalu rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
@@ -197,7 +198,7 @@ lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
 desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
 (diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
 
-**Verifikasi Fase 3:** `php artisan test` → **256 test lulus, 0 gagal, 1068 assertion, ~136 s**.
+**Verifikasi Fase 3:** `php artisan test` → **258 test lulus, 0 gagal, 1076 assertion, ~153 s**.
 
 Pelanggaran CBT kini juga bermukim di engine (`exam_violations`, ditulis di alur
 langsung lewat `CbtEngineBridge::catatPelanggaran` dan dipetakan ulang oleh
@@ -246,6 +247,12 @@ sesi tersedia dan riwayat hasil. Pembaca engine memakai kolom sesi (`kelas`,
 dihitung persis seperti jalur lama. Baris hasil memakai `exam_attempts` +
 `exam_results`; id yang dipakai rute tetap id tabel lama (`sumber_id`) agar view
 dan rute tidak perlu diubah dua kali.
+
+Langkah 6d-2 (daftar CBT siswa): `CbtStudentReader` memindahkan pembacaan daftar
+ujian ke `exam_sessions` dengan kriteria identik (guru pengampu, status
+published/running/completed, peserta di `peserta_ids`, urutan terbaru, 20 per
+halaman). Paginator dinormalisasi menjadi array sehingga view sama untuk dua
+sumber; pembuktiannya juga mengosongkan `cbt_*` lebih dulu.
 
 ---
 

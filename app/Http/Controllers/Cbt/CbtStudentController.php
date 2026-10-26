@@ -35,11 +35,7 @@ class CbtStudentController extends Controller
     public function index()
     {
         $student = $this->student();
-        // JSON contains scalar integer disimpan konsisten dari pluck id.
-        $sessions = CbtTestSession::where('guru_id', $student->guru_id)
-            ->whereIn('status', ['published', 'running', 'completed'])
-            ->whereJsonContains('participant_ids', (int) $student->id)
-            ->latest()->paginate(20);
+        $sessions = app(\App\Services\Exam\CbtStudentReader::class)->sesiSiswa($student);
         return view('cbt.student.index', compact('sessions'));
     }
 
