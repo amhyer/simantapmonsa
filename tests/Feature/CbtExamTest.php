@@ -191,7 +191,11 @@ class CbtExamTest extends TestCase
     {
         $session = $this->createSession();
         $this->attempt($session);
-        $this->get(route('cbt.student.start', $session))->assertOk()->assertDontSee('<script>alert("soal")</script>', false)->assertDontSee('correct_answer');
+        $this->get(route('cbt.student.start', $session))->assertOk()
+            ->assertDontSee('<script>alert("soal")</script>', false)
+            ->assertDontSee('correct_answer')
+            ->assertSee('simantap:exam-outbox', false)
+            ->assertSee('window.ExamOutbox', false);
     }
 
     public function test_siswa_lain_tidak_bisa_mengakses_hasil_atau_mengirim_jawaban(): void

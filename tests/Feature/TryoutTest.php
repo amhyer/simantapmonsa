@@ -79,7 +79,9 @@ class TryoutTest extends TestCase
     {
         $this->actingAs($this->akun)
             ->get(route('tryout.student.start', $this->sesi))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('simantap:exam-outbox', false)
+            ->assertSee('window.ExamOutbox', false);
 
         $result = Result::where('tryout_session_id', $this->sesi->id)->firstOrFail();
         $this->assertNull($result->waktu_selesai);

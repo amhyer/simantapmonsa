@@ -147,6 +147,13 @@
         </div>
     </div>
 
+    <!-- Offline/outbox status -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div id="outbox-status" class="alert alert-warning d-none mb-0" role="status" aria-live="polite"></div>
+        </div>
+    </div>
+
     <!-- Submit Button -->
     <div class="row mt-4">
         <div class="col-12 text-center">
@@ -161,34 +168,41 @@
     </div>
 </div>
 
+@include('partials.exam-outbox')
 <script>
 let resultId = {{ $result->id }};
 // Server-side saved answers are authoritative after navigation or reload.
 let answers = @json((object) ($existingAnswers ?? []));
+const outboxStatus = document.getElementById('outbox-status');
+const resultUrl = @json(route('tryout.student.result', $result));
+const outbox = new window.ExamOutbox(@json('tryout:'.$result->id), {
+    url: @json(route('tryout.student.answer', $result)),
+    csrf: document.querySelector('meta[name="csrf-token"]').content,
+    onChange: (pending, tahap) => {
+        if (tahap === 'pending') {
+            outboxStatus.classList.remove('d-none');
+            outboxStatus.textContent = 'Jawaban belum tersimpan di server. Tetap di halaman ini; sistem akan mengirim ulang saat koneksi kembali.';
+        } else if (tahap === 'saving') {
+            outboxStatus.classList.remove('d-none');
+            outboxStatus.textContent = 'Menyimpan jawaban…';
+        } else if (pending === 0) {
+            outboxStatus.classList.add('d-none');
+        }
+    },
+    onExpired: () => {
+        outboxStatus.classList.remove('d-none');
+        outboxStatus.textContent = 'Ujian telah selesai. Membuka hasil…';
+        window.location.assign(resultUrl);
+    },
+});
+outbox.restoreToDom();
+Object.assign(answers, outbox.pendingMap());
 
 function saveAnswer(resultId, subjectId, questionId, answer) {
     answers[questionId] = answer;
-    
-    // Save to server
-    fetch(`/tryout/student/${resultId}/answer`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({
-            subject_id: subjectId,
-            question_id: questionId,
-            jawaban: answer
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateProgress();
-        }
-    })
-    .catch(error => console.error('Error:', error));
+    outbox.set(questionId, answer, {subject_id: subjectId, jawaban: answer});
+    outbox.flush();
+    updateProgress();
 }
 
 function updateProgress() {
@@ -203,10 +217,23 @@ function updateProgress() {
 // Restore the saved-answer count as well as the checked controls on first paint.
 updateProgress();
 
-// Auto-save every 30 seconds
-setInterval(() => {
-    localStorage.setItem('tryout_answers_' + resultId, JSON.stringify(answers));
-}, 30000);
+setInterval(() => outbox.flush(), 8000);
+window.addEventListener('online', () => outbox.flush());
+window.addEventListener('beforeunload', event => {
+    if (outbox.pendingCount) {
+        event.preventDefault();
+        event.returnValue = '';
+    }
+});
+
+document.querySelector('form[action$="complete"]').addEventListener('submit', event => {
+    if (outbox.pendingCount) {
+        event.preventDefault();
+        outboxStatus.classList.remove('d-none');
+        outboxStatus.textContent = 'Tunggu sebentar: masih ada jawaban yang belum tersimpan. Sistem mencoba mengirim ulang; klik Selesaikan lagi setelah status hilang.';
+        outbox.flush();
+    }
+});
 
 // Timer countdown
 let timeRemaining = {{ $session->package->durasi_total_menit * 60 }};

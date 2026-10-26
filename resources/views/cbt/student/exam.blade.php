@@ -30,12 +30,12 @@
 </form>
 @endsection
 @push('scripts')
+@include('partials.exam-outbox')
 <script>
 (() => {
     const form = document.getElementById('exam-form');
     const status = document.getElementById('save-status');
     const submitStatus = document.getElementById('submit-status');
-    const pending = new Map();
     const csrf = @json(csrf_token());
     const saveUrl = @json(route('cbt.student.answer', $result));
     const integrityUrl = @json(route('cbt.student.integrity', $result));
@@ -43,54 +43,40 @@
     const deadline = @json($result->deadline_at->getTimestamp() * 1000);
     const serverStart = @json(now()->getTimestamp() * 1000);
     const localStart = performance.now();
-    let saving = false;
     let submitting = false;
     let expired = false;
-
-    async function savePending() {
-        if (saving || expired || submitting || pending.size === 0) return;
-        saving = true;
-        try {
-            // Serialisasi: perubahan jawaban tidak saling menimpa karena balapan fetch.
-            while (pending.size && !expired && !submitting) {
-                for (const [id, answer] of Array.from(pending)) {
-                    if (expired || submitting) break;
-                    status.textContent = 'Menyimpan jawaban…';
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 10000);
-                    let response;
-                    try {
-                        response = await fetch(saveUrl, {
-                            method: 'POST', credentials: 'same-origin', signal: controller.signal,
-                            headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf},
-                            body: JSON.stringify({question_id: Number(id), answer})
-                        });
-                    } finally { clearTimeout(timeout); }
-                    if (response.status === 409) {
-                        expired = true;
-                        status.textContent = 'Ujian telah selesai. Membuka hasil…';
-                        location.assign(resultUrl);
-                        return;
-                    }
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    if (pending.get(id) === answer) pending.delete(id);
-                }
+    const outbox = new window.ExamOutbox(@json('cbt:'.$result->id), {
+        url: saveUrl,
+        csrf,
+        onChange: (pending, tahap) => {
+            if (expired || submitting) return;
+            if (tahap === 'saving') {
+                status.textContent = 'Menyimpan jawaban…';
+            } else if (tahap === 'pending') {
+                status.textContent = 'BELUM tersimpan. Jawaban aman di perangkat dan akan dikirim ulang saat online. Jangan tutup halaman.';
+            } else if (tahap === 'saved') {
+                status.textContent = pending
+                    ? 'Masih ada jawaban menunggu simpan.'
+                    : 'Semua perubahan jawaban tersimpan di server.';
             }
-            status.textContent = pending.size ? 'Masih ada jawaban menunggu simpan.' : 'Semua perubahan jawaban tersimpan di server.';
-        } catch (error) {
-            status.textContent = 'BELUM tersimpan. Periksa koneksi/login; sistem akan mencoba lagi. Jangan tutup halaman.';
-        } finally { saving = false; }
-    }
+        },
+        onExpired: () => {
+            expired = true;
+            status.textContent = 'Ujian telah selesai. Membuka hasil…';
+            location.assign(resultUrl);
+        },
+    });
+    outbox.restoreToDom();
 
     form.addEventListener('change', event => {
         if (!event.target.matches('input[data-question]') || submitting || expired) return;
-        pending.set(event.target.dataset.question, event.target.value);
-        savePending();
+        outbox.set(event.target.dataset.question, event.target.value);
+        outbox.flush();
     });
-    setInterval(savePending, 8000);
-    window.addEventListener('online', savePending);
+    setInterval(() => outbox.flush(), 8000);
+    window.addEventListener('online', () => outbox.flush());
     window.addEventListener('beforeunload', event => {
-        if (pending.size && !submitting) { event.preventDefault(); event.returnValue = ''; }
+        if (outbox.pendingCount && !submitting) { event.preventDefault(); event.returnValue = ''; }
     });
 
     form.addEventListener('submit', event => {
