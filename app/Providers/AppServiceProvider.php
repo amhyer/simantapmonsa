@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\DapodikSyncLog;
+use App\Models\NilaiErapot;
 use App\Models\Siswa;
+use App\Observers\NilaiErapotObserver;
 use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
@@ -43,6 +45,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Tryout\Session::class, TryoutSessionPolicy::class);
         Gate::policy(\App\Models\Tryout\Result::class, TryoutResultPolicy::class);
         Gate::policy(\App\Models\Tka\StudentAssessment::class, TkaAssessmentPolicy::class);
+
+        // Jejak audit nilai e-Rapor: observer memastikan input guru, import,
+        // dan sinkronisasi memakai rantai hash yang sama.
+        NilaiErapot::observe(NilaiErapotObserver::class);
 
         // Share activeTab with all views for admin routes
         View::share('activeTab', activeAdminTab());

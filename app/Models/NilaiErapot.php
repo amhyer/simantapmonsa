@@ -37,6 +37,7 @@ class NilaiErapot extends Model
 
     public function siswa() { return $this->belongsTo(Siswa::class); }
     public function guru() { return $this->belongsTo(User::class, 'guru_id'); }
+    public function auditLogs() { return $this->hasMany(NilaiErapotAudit::class, 'nilai_erapor_id')->orderBy('id'); }
 
     /**
      * Pembelajaran resmi (Dapodik) yang menjadi sumber nilai ini.

@@ -68,15 +68,17 @@ class BackupRestoreService
         try {
             $hasil = [];
 
-            foreach (BackupTables::tabel() as $table) {
-                if (! array_key_exists($table, $data)) {
-                    continue;
+            return NilaiErapotAuditService::tanpaAudit(function () use ($data, $connection, &$hasil): array {
+                foreach (BackupTables::tabel() as $table) {
+                    if (! array_key_exists($table, $data)) {
+                        continue;
+                    }
+
+                    $hasil[$table] = $this->restoreTable($table, $data[$table], $connection);
                 }
 
-                $hasil[$table] = $this->restoreTable($table, $data[$table], $connection);
-            }
-
-            return $hasil;
+                return $hasil;
+            });
         } finally {
             if ($connection !== null) {
                 DB::setDefaultConnection($sebelum);

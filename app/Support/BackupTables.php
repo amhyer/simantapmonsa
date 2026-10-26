@@ -17,6 +17,7 @@ use App\Models\MataPelajaran;
 use App\Models\Materi;
 use App\Models\Nilai;
 use App\Models\NilaiErapot;
+use App\Models\NilaiErapotAudit;
 use App\Models\OrangTuaSiswa;
 use App\Models\PengaturanGuru;
 use App\Models\Ptk;
@@ -73,6 +74,7 @@ class BackupTables
             'kuis' => ['class' => Kuis::class, 'except' => []],
             'nilai' => ['class' => Nilai::class, 'except' => []],
             'nilai_erapor' => ['class' => NilaiErapot::class, 'except' => []],
+            'nilai_erapor_audit_logs' => ['class' => NilaiErapotAudit::class, 'except' => []],
             'transkrip_nilai' => ['class' => TranskripNilai::class, 'except' => []],
             'kehadiran' => ['class' => Kehadiran::class, 'except' => []],
             'hasil_kuis' => ['class' => HasilKuis::class, 'except' => []],

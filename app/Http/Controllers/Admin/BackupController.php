@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Services\Backup\BackupJsonStreamReader;
 use App\Jobs\ExportBackupJob;
+use App\Services\NilaiErapotAuditService;
 use App\Support\BackupTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -113,19 +114,21 @@ class BackupController extends Controller
         fclose($stream);
 
         try {
-            DB::transaction(function () use ($spools): void {
-                foreach (BackupTables::tabel() as $table) {
-                    if (! isset($spools[$table])) {
-                        continue;
-                    }
+            NilaiErapotAuditService::tanpaAudit(function () use ($spools): void {
+                DB::transaction(function () use ($spools): void {
+                    foreach (BackupTables::tabel() as $table) {
+                        if (! isset($spools[$table])) {
+                            continue;
+                        }
 
-                    rewind($spools[$table]);
-                    while (($line = fgets($spools[$table])) !== false) {
-                        $record = json_decode(rtrim($line, "\r\n"), true, 512, JSON_THROW_ON_ERROR);
-                        $this->restoreRecord($table, $record);
+                        rewind($spools[$table]);
+                        while (($line = fgets($spools[$table])) !== false) {
+                            $record = json_decode(rtrim($line, "\r\n"), true, 512, JSON_THROW_ON_ERROR);
+                            $this->restoreRecord($table, $record);
+                        }
+                        $this->resetSequence($table);
                     }
-                    $this->resetSequence($table);
-                }
+                });
             });
         } catch (\Throwable $e) {
             Log::error('Backup import gagal: '.$e->getMessage());
