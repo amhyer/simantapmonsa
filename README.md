@@ -73,6 +73,7 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Topik | Berkas |
 |---|---|
 | Deployment produksi | [`DEPLOYMENT.md`](DEPLOYMENT.md) |
+| Runbook go-live & rollback | [`docs/RUNBOOK-GO-LIVE.md`](docs/RUNBOOK-GO-LIVE.md) |
 | Kesiapan launching | [`LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
 | Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
 | Reset sandi mandiri | [`docs/RESET-SANDI-MANDIRI.md`](docs/RESET-SANDI-MANDIRI.md) |

@@ -368,6 +368,7 @@ Verifikasi lokal yang tersedia: syntax lint (`@php-wasm/cli@3.1.60`) atas 43 fil
 Bagian ini mencatat implementasi lokal setelah §1h. Semua bukti di bawah berasal
 dari PHPUnit SQLite di clone ini; **bukan** bukti staging/produksi dan tidak
 menggantikan rotasi kredensial, restore offsite, atau uji pengguna nyata.
+Prosedur go-live dan rollback ada di `docs/RUNBOOK-GO-LIVE.md`.
 
 | Area | Perubahan kode | Status bukti |
 |---|---|---|
