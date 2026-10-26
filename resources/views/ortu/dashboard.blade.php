@@ -102,7 +102,7 @@
     </div>
     
     {{-- CBT Results Section --}}
-    @if($ringkasan && isset($ringkasan['cbt_results']) && $ringkasan['cbt_results']->count() > 0)
+    @if($ringkasan && isset($ringkasan['cbt_results']) && count($ringkasan['cbt_results']) > 0)
     <div class="card" style="margin-top:20px">
         <div class="card-header">
             <h3><i class="fas fa-clipboard-check" style="margin-right:8px;color:var(--navy)"></i>Hasil Ujian CBT Terbaru</h3>
@@ -121,15 +121,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($ringkasan['cbt_results'] as $result)
+                        @foreach($ringkasan['cbt_results'] as $hasil)
                         <tr>
-                            <td>{{ $result->session->title ?? '-' }}</td>
-                            <td>{{ $result->session->bank?->subject ?? '-' }}</td>
-                            <td>{{ ($result->submitted_at ?? $result->created_at)->format('d M Y H:i') }}</td>
-                            <td><strong>{{ number_format($result->score ?? 0, 1) }}</strong></td>
+                            <td>{{ $hasil['judul'] }}</td>
+                            <td>{{ $hasil['mapel'] }}</td>
+                            <td>{{ \Illuminate\Support\Carbon::parse($hasil['submitted_at'])->format('d M Y H:i') }}</td>
+                            <td><strong>{{ number_format($hasil['score'], 1) }}</strong></td>
                             <td>
                                 @php
-                                    $skor = $result->score ?? 0;
+                                    $skor = $hasil['score'];
                                     $predikat = $skor >= 90 ? 'A' : ($skor >= 80 ? 'B' : ($skor >= 70 ? 'C' : 'D'));
                                     $colors = ['A' => 'green', 'B' => 'blue', 'C' => 'yellow', 'D' => 'red'];
                                     $color = $colors[$predikat] ?? 'gray';
@@ -137,7 +137,7 @@
                                 <span class="tag tag-{{ $color }}">{{ $predikat }}</span>
                             </td>
                             <td>
-                                @if(($result->score ?? 0) >= 70)
+                                @if($hasil['score'] >= 70)
                                     <span class="tag tag-green">LULUS</span>
                                 @else
                                     <span class="tag tag-red">BELUM LULUS</span>

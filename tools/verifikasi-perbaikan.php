@@ -400,18 +400,58 @@ periksa('Kolom nilai_erapor.jadwal_pelajaran_id dibuat oleh migrasi', function (
  * 8. Backup vs wipe
  * ────────────────────────────────────────────────────────────── */
 echo "\n8. Cakupan backup vs penghapusan data\n";
-periksa('Wipe diturunkan dari registry backup + pengecualian eksplisit', function () use ($root) {
+periksa('Hapus Semua Data memakai registry tabel terpusat (bukan daftar sendiri)', function () use ($root) {
     $controller = baca($root . '/app/Http/Controllers/Admin/BackupController.php');
+    if (!str_contains($controller, 'BackupTables::dikosongkan()')) {
+        return 'wipeAll masih memakai daftar tabel sendiri';
+    }
+
+    $registry = baca($root . '/app/Support/BackupTables.php');
+    preg_match('/function dikosongkan\(\).*?\n    \}/s', $registry, $m);
+    $body = $m[0] ?? '';
+    foreach (['self::tabel()', 'self::tidakDicadangkan()', 'self::tidakDikosongkan()'] as $wajib) {
+        if (!str_contains($body, $wajib)) {
+            return 'dikosongkan() tidak menurunkan daftar dari ' . $wajib;
+        }
+    }
+
+    return true;
+});
+
+periksa('Registry backup konsisten: tidak ada tabel ganda & daftar pertahankan minimal', function () use ($root) {
     $registry = baca($root . '/app/Support/BackupTables.php');
 
-    if (!str_contains($controller, 'BackupTables::tabelUntukWipe()')) {
-        return 'wipe belum memakai daftar dari BackupTables';
+    preg_match('/function semua\(\).*?return \[(.*?)\n        \];/s', $registry, $r);
+    preg_match_all("/'([\w]+)' => \['class'/", $r[1] ?? '', $rt);
+    $dicadangkan = $rt[1];
+
+    preg_match('/function tidakDicadangkan\(\).*?return \[(.*?)\n        \];/s', $registry, $e);
+    preg_match_all("/'([\w]+)',/", $e[1] ?? '', $et);
+    $tidakDicadangkan = $et[1];
+
+    preg_match('/function tidakDikosongkan\(\).*?return \[(.*?)\n        \];/s', $registry, $k);
+    preg_match_all("/'([\w]+)',/", $k[1] ?? '', $kt);
+    $dipertahankan = $kt[1];
+
+    $ganda = array_values(array_intersect($dicadangkan, $tidakDicadangkan));
+    if ($ganda !== []) {
+        return 'tabel tercatat dicadangkan sekaligus tidak dicadangkan: ' . implode(', ', $ganda);
     }
-    if (!str_contains($registry, 'array_merge(self::tabel(), self::tidakDicadangkan())')) {
-        return 'tabel backup dan pengecualian tidak digabung untuk wipe';
+
+    $bolehBertahan = ['users', 'semesters', 'sekolah_settings'];
+    $asing = array_values(array_diff($dipertahankan, $bolehBertahan));
+    if ($asing !== []) {
+        return 'tabel dipertahankan di luar daftar aman: ' . implode(', ', $asing);
     }
-    if (!str_contains($registry, "['users', 'semesters', 'sekolah_settings', 'api_keys']")) {
-        return 'daftar tabel yang dipertahankan tidak eksplisit';
+
+    $logDipertahankan = array_values(array_intersect($tidakDicadangkan, $dipertahankan));
+    if ($logDipertahankan !== []) {
+        return 'log dipertahankan padahal dapat dibuat ulang: ' . implode(', ', $logDipertahankan);
+    }
+
+    $data = array_values(array_unique(array_merge($dicadangkan, $tidakDicadangkan)));
+    if (array_diff($data, $dipertahankan) === []) {
+        return 'tidak ada tabel data yang dikosongkan';
     }
 
     return true;

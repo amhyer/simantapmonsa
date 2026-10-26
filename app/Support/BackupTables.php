@@ -140,6 +140,43 @@ class BackupTables
     }
 
     /**
+     * Tabel yang dicadangkan dan TIDAK dikosongkan oleh "Hapus Semua Data".
+     *
+     * Daftar ini harus tetap kecil dan disengaja: akun, semester, dan identitas
+     * sekolah dipertahankan agar admin masih bisa login dan aplikasi tetap tahu
+     * konteks tahun ajar setelah wipe.
+     *
+     * Diperiksa oleh tools/verifikasi-perbaikan.php.
+     *
+     * @return array<int, string>
+     */
+    public static function tidakDikosongkan(): array
+    {
+        return [
+            'users',
+            'semesters',
+            'sekolah_settings',
+        ];
+    }
+
+    /**
+     * Tabel data yang dikosongkan tombol "Hapus Semua Data".
+     *
+     * Diturunkan dari registry yang sama agar cakupan backup dan wipe tidak
+     * pernah menyimpang (bug lama: tryout_* dan transkrip_nilai tercadang/terisi
+     * tetapi tidak pernah dikosongkan).
+     *
+     * @return array<int, string>
+     */
+    public static function dikosongkan(): array
+    {
+        return array_values(array_diff(
+            array_merge(self::tabel(), self::tidakDicadangkan()),
+            self::tidakDikosongkan()
+        ));
+    }
+
+    /**
      * Tabel yang SENGAJA tidak dicadangkan karena isinya dapat dibuat ulang
      * (log & cache sinkronisasi). Didaftarkan eksplisit agar selisih antara
      * tabel yang di-wipe dan yang dicadangkan selalu disengaja, bukan bug.
@@ -163,24 +200,6 @@ class BackupTables
     public static function tabel(): array
     {
         return array_keys(self::semua());
-    }
-
-    /**
-     * Satu daftar untuk wipe seluruh data yang memang dapat dipulihkan.
-     * Identitas akun, semester, pengaturan sekolah, dan API keys dipertahankan.
-     * Tabel log/cache yang dapat dibuat ulang ikut di-wipe tetapi dicatat
-     * eksplisit oleh tidakDicadangkan().
-     *
-     * @return array<int, string>
-     */
-    public static function tabelUntukWipe(): array
-    {
-        $dipertahankan = ['users', 'semesters', 'sekolah_settings', 'api_keys'];
-
-        return array_values(array_diff(
-            array_merge(self::tabel(), self::tidakDicadangkan()),
-            $dipertahankan
-        ));
     }
 
     public static function model(string $table): ?string

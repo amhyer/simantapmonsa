@@ -113,12 +113,12 @@
     </div>
     <div class="card-body">
         @php
-            $cbtTotalSessions = App\Models\CbtTestSession::count();
-            $cbtOngoing = App\Models\CbtTestSession::whereIn('status', ['published', 'running'])->count();
-            $cbtCompleted = App\Models\CbtTestSession::where('status', 'completed')->count();
-            $cbtTotalParticipants = App\Models\CbtResult::count();
-            $cbtAvgScore = App\Models\CbtResult::avg('score') ?? 0;
-            $cbtPassRate = App\Models\CbtResult::where('score', '>=', 70)->count() / max($cbtTotalParticipants, 1) * 100;
+            $cbtTotalSessions = $cbtRingkasan['total_sessions'] ?? 0;
+            $cbtOngoing = $cbtRingkasan['ongoing'] ?? 0;
+            $cbtCompleted = $cbtRingkasan['completed'] ?? 0;
+            $cbtTotalParticipants = $cbtRingkasan['total_participants'] ?? 0;
+            $cbtAvgScore = $cbtRingkasan['avg_score'] ?? 0;
+            $cbtPassRate = $cbtRingkasan['pass_rate'] ?? 0;
         @endphp
         <div class="grid grid-5" style="margin-bottom:16px">
             <div class="stat" style="text-align:center;padding:12px;background:#F8F6FC;border-radius:8px">

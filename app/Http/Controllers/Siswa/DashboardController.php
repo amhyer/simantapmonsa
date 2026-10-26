@@ -9,7 +9,9 @@ use App\Models\Kuis;
 use App\Models\Materi;
 use App\Models\Nilai;
 use App\Models\Siswa;
+use App\Services\Exam\CbtDashboardProvider;
 use App\Services\NilaiService;
+use Illuminate\Support\Facades\Route;
 
 class DashboardController extends Controller
 {
@@ -17,7 +19,7 @@ class DashboardController extends Controller
 
     protected $nilaiService;
 
-    public function __construct(NilaiService $nilaiService)
+    public function __construct(NilaiService $nilaiService, private CbtDashboardProvider $cbt)
     {
         $this->nilaiService = $nilaiService;
     }
@@ -39,6 +41,8 @@ class DashboardController extends Controller
                 'nilaiPerMapel' => collect(),
                 'kehadiranBulanan' => collect(),
                 'saran' => null,
+                'cbtUjian' => [],
+                'cbtHasil' => [],
             ]);
         }
 
@@ -97,10 +101,17 @@ class DashboardController extends Controller
 
         $saran = $this->generateSaran($siswa, $rataRata, $kehadiran, $nilaiPerMapel, $kkm);
 
+        // Modul CBT: data disiapkan provider (engine `exam_*` atau tabel lama,
+        // dipilih lewat simantap.exam_engine_readers).
+        $cbtAktif = config('simantap.cbt_enabled', false) && Route::has('cbt.student.index');
+        $cbtUjian = $cbtAktif ? $this->cbt->ujianTersedia($siswa) : [];
+        $cbtHasil = $cbtAktif ? $this->cbt->hasilTerbaru($siswa->id) : [];
+
         return view('siswa.dashboard', compact(
             'siswa', 'kehadiran', 'totalHadir', 'rataRata',
             'jumlahNilai', 'materiTerbaru', 'kuisAktif', 'hasilKuis',
-            'nilaiPerMapel', 'kehadiranBulanan', 'saran', 'kkm'
+            'nilaiPerMapel', 'kehadiranBulanan', 'saran', 'kkm',
+            'cbtUjian', 'cbtHasil'
         ));
     }
 

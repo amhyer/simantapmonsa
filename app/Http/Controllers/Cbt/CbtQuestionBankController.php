@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Cbt;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cbt\StoreCbtQuestionBankRequest;
 use App\Models\CbtQuestionBank;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Support\Facades\DB;
 
 class CbtQuestionBankController extends Controller
@@ -28,6 +29,7 @@ class CbtQuestionBankController extends Controller
     public function store(StoreCbtQuestionBankRequest $request)
     {
         $bank = CbtQuestionBank::create($this->data($request) + ['guru_id' => auth()->id()]);
+        $this->sinkronEngine($bank);
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Bank soal dibuat.');
     }
 
@@ -52,6 +54,7 @@ class CbtQuestionBankController extends Controller
             $locked = CbtQuestionBank::whereKey($bank->id)->lockForUpdate()->firstOrFail();
             $locked->update($data);
         });
+        $this->sinkronEngine($bank->fresh());
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Bank soal diperbarui.');
     }
 
@@ -63,7 +66,22 @@ class CbtQuestionBankController extends Controller
             abort_if($locked->sessions()->exists(), 409, 'Bank telah dipakai sesi; tidak boleh dihapus.');
             $locked->delete();
         });
+        $this->lupakanEngine($bank->id);
         return redirect()->route('cbt.question-banks.index')->with('success', 'Bank soal dihapus.');
+    }
+
+    private function sinkronEngine(CbtQuestionBank $bank): void
+    {
+        if (config('simantap.exam_engine_cbt', true)) {
+            app(LegacyExamMapper::class)->bankCbt($bank);
+        }
+    }
+
+    private function lupakanEngine(int $bankId): void
+    {
+        if (config('simantap.exam_engine_cbt', true)) {
+            app(LegacyExamMapper::class)->lupakanBankCbt($bankId);
+        }
     }
 
     public function apiGetQuestions(CbtQuestionBank $bank)

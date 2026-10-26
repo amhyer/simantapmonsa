@@ -258,9 +258,9 @@ class BackupController extends Controller
 
         Log::info('Wipe data diminta oleh: ' . (auth()->user()?->nama_pengguna ?? '?') . ' IP: ' . request()->ip());
 
-        // Wipe dan backup berbagi registry. Account, semester, setting sekolah,
-        // API keys, dan tabel framework dipertahankan; log/cache dapat dibuat ulang.
-        $tabelData = BackupTables::tabelUntukWipe();
+        // Daftar wipe diturunkan dari registry backup, dengan pengecualian
+        // eksplisit untuk tabel identitas yang harus tetap ada.
+        $tabelData = BackupTables::dikosongkan();
 
         $dihapus = [];
         $gagal = [];

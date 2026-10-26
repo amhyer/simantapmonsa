@@ -16,7 +16,7 @@ class BackupStreamingTest extends TestCase
     public function test_registry_covers_tryout_tka_and_engine_tables_and_wipe_keeps_identity_data(): void
     {
         $tables = BackupTables::tabel();
-        $wipeTables = BackupTables::tabelUntukWipe();
+        $wipeTables = BackupTables::dikosongkan();
 
         foreach ([
             'tryout_categories', 'tryout_packages', 'tryout_subjects', 'tryout_questions',

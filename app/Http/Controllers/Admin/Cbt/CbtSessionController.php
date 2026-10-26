@@ -9,6 +9,7 @@ use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\User;
 use App\Services\CbtExamService;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -58,6 +59,11 @@ class CbtSessionController extends Controller
             return CbtTestSession::create($validated + ['status' => 'draft']);
         });
 
+        if (config('simantap.exam_engine_cbt', true) && $session->bank) {
+            $mapper = app(LegacyExamMapper::class);
+            $mapper->sesiCbt($mapper->bankCbt($session->bank), $session);
+        }
+
         return redirect()->route('admin.cbt.sessions.show', $session)
             ->with('success', 'Draf sesi dibuat. Publikasikan untuk membekukan soal & peserta.');
     }
@@ -103,6 +109,10 @@ class CbtSessionController extends Controller
             });
             $locked->delete();
         });
+
+        if (config('simantap.exam_engine_cbt', true)) {
+            app(LegacyExamMapper::class)->lupakanSesiCbt($session->id);
+        }
 
         return redirect()->route('admin.cbt.sessions.index')->with('success', 'Sesi beserta hasilnya dihapus.');
     }

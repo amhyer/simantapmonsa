@@ -25,34 +25,34 @@
         </div>
     </div>
 
-    @if($availableSessions->count() > 0)
+    @if(count($availableSessions) > 0)
     <div class="row">
         @foreach($availableSessions as $session)
         <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100 border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{{ $session->nama_sesi }}</h5>
-                    <small>{{ $session->kode_sesi }}</small>
+                    <h5 class="mb-0">{{ $session['nama_sesi'] }}</h5>
+                    <small>{{ $session['kode_sesi'] }}</small>
                 </div>
                 <div class="card-body">
-                    <h6 class="card-title">{{ $session->package->nama_paket }}</h6>
+                    <h6 class="card-title">{{ $session['paket_nama'] }}</h6>
                     <p class="card-text text-muted small mb-2">
-                        {{ $session->package->deskripsi }}
+                        {{ $session['deskripsi'] }}
                     </p>
-                    
+
                     <hr>
-                    
+
                     <div class="row text-center mb-3">
                         <div class="col-4">
-                            <h5 class="mb-0">{{ $session->package->jumlah_mapel }}</h5>
+                            <h5 class="mb-0">{{ $session['jumlah_mapel'] }}</h5>
                             <small class="text-muted">Mapel</small>
                         </div>
                         <div class="col-4">
-                            <h5 class="mb-0">{{ $session->package->durasi_total_menit }}</h5>
+                            <h5 class="mb-0">{{ $session['durasi_menit'] }}</h5>
                             <small class="text-muted">Menit</small>
                         </div>
                         <div class="col-4">
-                            <h5 class="mb-0">{{ $session->package->passing_grade }}</h5>
+                            <h5 class="mb-0">{{ $session['passing_grade'] }}</h5>
                             <small class="text-muted">Passing</small>
                         </div>
                     </div>
@@ -60,13 +60,13 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="badge bg-success">Aktif</span>
                         <small class="text-muted">
-                            Deadline: {{ $session->tanggal_selesai->format('d M Y H:i') }}
+                            Deadline: {{ $session['deadline'] }}
                         </small>
                     </div>
 
-                    <a href="{{ route('tryout.student.start', $session) }}" 
+                    <a href="{{ $session['mulai_url'] }}"
                        class="btn btn-primary btn-sm w-100"
-                       onclick="return confirm('Yakin ingin memulai tryout? Durasi {{ $session->package->durasi_total_menit }} menit.')">
+                       onclick="return confirm('Yakin ingin memulai tryout? Durasi {{ $session['durasi_menit'] }} menit.')">
                         🚀 Mulai Tryout
                     </a>
                 </div>
@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    @if($myResults->count() > 0)
+    @if(count($myResults) > 0)
     <div class="table-wrapper">
         <table class="table table-hover">
             <thead>
@@ -106,28 +106,30 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>
-                        <strong>{{ $result->session->package->nama_paket }}</strong><br>
-                        <small class="text-muted">{{ $result->session->nama_sesi }}</small>
+                        <strong>{{ $result['paket_nama'] }}</strong><br>
+                        <small class="text-muted">{{ $result['sesi_nama'] }}</small>
                     </td>
-                    <td>{{ $result->waktu_mulai->format('d M Y H:i') }}</td>
+                    <td>{{ $result['tanggal'] }}</td>
                     <td>
-                        <strong class="{{ $result->lulus ? 'text-success' : 'text-danger' }}">
-                            {{ number_format($result->persentase, 1) }}
+                        <strong class="{{ $result['lulus'] ? 'text-success' : 'text-danger' }}">
+                            {{ number_format($result['persentase'], 1) }}
                         </strong>
                     </td>
                     <td>
-                        @if($result->lulus)
+                        @if($result['lulus'])
                         <span class="badge bg-success">Lulus</span>
                         @else
                         <span class="badge bg-danger">Tidak Lulus</span>
                         @endif
                     </td>
-                    <td>{{ $result->peringkat ?? '-' }}</td>
+                    <td>{{ $result['peringkat'] ?? '-' }}</td>
                     <td>
-                        <a href="{{ route('tryout.student.result', $result) }}" 
+                        @if($result['detail_url'])
+                        <a href="{{ $result['detail_url'] }}"
                            class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Detail
                         </a>
+                        @endif
                     </td>
                 </tr>
                 @endforeach

@@ -17,6 +17,8 @@ use App\Models\Tryout\Subject;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\User;
 use App\Services\CbtExamService;
+use App\Services\Exam\ExamReportService;
+use App\Services\ExamDashboardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -268,6 +270,309 @@ class ExamReaderTest extends TestCase
 
         $this->assertSame(1, \App\Models\CbtViolation::count());
         $this->assertSame(0, \App\Models\Exam\Violation::count());
+    }
+
+    // ------------------------------------------- dasbor: parity ke engine
+
+    public function test_ringkasan_cbt_guru_dan_sekolah_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->selesaikanCbt();
+
+        $engineGuru = app(ExamDashboardService::class)->ringkasanCbtGuru($this->guru->id);
+
+        $this->assertSame(
+            \App\Models\CbtQuestionBank::where('guru_id', $this->guru->id)->count(),
+            $engineGuru['total_bank']
+        );
+        $this->assertSame(
+            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)
+                ->whereIn('status', ['published', 'running'])->count(),
+            $engineGuru['sesi_aktif']
+        );
+        $this->assertSame(
+            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)->where('status', 'completed')->count(),
+            $engineGuru['sesi_selesai']
+        );
+        $this->assertSame(
+            \App\Models\CbtResult::whereHas('session', fn ($q) => $q->where('guru_id', $this->guru->id))->count(),
+            $engineGuru['total_peserta']
+        );
+
+        $legacyTotal = \App\Models\CbtResult::count();
+        $legacyAvg = (float) (\App\Models\CbtResult::avg('score') ?? 0);
+        $legacyPass = \App\Models\CbtResult::where('score', '>=', 70)->count() / max($legacyTotal, 1) * 100;
+
+        $engine = app(ExamDashboardService::class)->ringkasanCbtSekolah();
+
+        $this->assertSame(\App\Models\CbtTestSession::count(), $engine['total_sessions']);
+        $this->assertSame(
+            \App\Models\CbtTestSession::whereIn('status', ['published', 'running'])->count(),
+            $engine['ongoing']
+        );
+        $this->assertSame(\App\Models\CbtTestSession::where('status', 'completed')->count(), $engine['completed']);
+        $this->assertSame($legacyTotal, $engine['total_participants']);
+        $this->assertEqualsWithDelta($legacyAvg, $engine['avg_score'], 0.01);
+        $this->assertEqualsWithDelta($legacyPass, $engine['pass_rate'], 0.01);
+    }
+
+    public function test_hasil_cbt_terbaru_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->selesaikanCbt();
+
+        $legacy = \App\Models\CbtResult::where('siswa_id', $this->siswa->id)
+            ->with('session.bank')
+            ->whereNotNull('submitted_at')
+            ->orderByDesc('submitted_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'judul' => $r->session?->title ?? '-',
+                'mata_pelajaran' => $r->session?->bank?->subject ?? '-',
+                'score' => (float) ($r->score ?? 0),
+                'lulus' => (float) ($r->score ?? 0) >= 70,
+            ])
+            ->values();
+
+        $engine = app(ExamDashboardService::class)->hasilCbtTerbaru($this->siswa->id);
+
+        $this->assertSame($legacy->count(), $engine->count());
+        $this->assertSame($legacy[0]['judul'], $engine[0]['judul']);
+        $this->assertSame($legacy[0]['mata_pelajaran'], $engine[0]['mata_pelajaran']);
+        $this->assertSame($legacy[0]['score'], $engine[0]['score']);
+        $this->assertSame($legacy[0]['lulus'], $engine[0]['lulus']);
+        $this->assertNotNull($engine[0]['submitted_at']);
+    }
+
+    public function test_ujian_tersedia_engine_sama_dengan_pembaca_lama(): void
+    {
+        $this->mulaiCbt();
+
+        $legacy = \App\Models\CbtTestSession::with('bank')
+            ->whereIn('status', ['published', 'running'])
+            ->where('opens_at', '<=', now())
+            ->where('closes_at', '>', now())
+            ->orderBy('opens_at')
+            ->limit(50)
+            ->get()
+            ->filter(fn ($s) => in_array($this->siswa->id, $s->participant_ids ?? []))
+            ->take(3)
+            ->values();
+
+        $engine = app(ExamDashboardService::class)->ujianTersedia($this->siswa);
+
+        $this->assertSame($legacy->count(), $engine->count());
+        $this->assertSame($legacy[0]->title, $engine[0]->nama);
+        $this->assertSame($legacy[0]->bank?->subject, $engine[0]->bank?->mata_pelajaran);
+    }
+
+    public function test_statistik_tryout_engine_sama_dengan_halaman_statistik_lama(): void
+    {
+        $result = $this->selesaikanTryout();
+
+        $legacy = $this->actingAs($this->admin)
+            ->get(route('admin.tryout.statistics'))
+            ->assertOk()
+            ->viewData('stats');
+
+        $engine = app(ExamReportService::class)->ringkasanTryout();
+
+        $this->assertSame($legacy['total_packages'], $engine['total_packages']);
+        $this->assertSame($legacy['total_sessions'], $engine['total_sessions']);
+        $this->assertSame($legacy['active_sessions'], $engine['active_sessions']);
+        $this->assertSame($legacy['total_results'], $engine['total_results']);
+        $this->assertEqualsWithDelta((float) $legacy['average_pass_rate'], (float) $engine['average_pass_rate'], 0.01);
+
+        $baris = app(ExamReportService::class)->hasilSesiTryout($result->session);
+        $this->assertCount(1, $baris);
+        $this->assertSame('Siswa Pembaca', $baris[0]['peserta']);
+        $this->assertSame(100.0, $baris[0]['persentase']);
+        $this->assertTrue($baris[0]['lulus']);
+    }
+
+    // ---------------------------------- langkah 6b: provider dasbor berflag
+
+    /**
+     * Provider dasbor harus mengembalikan bentuk & angka yang sama dari kedua
+     * sumber data, supaya flag `exam_engine_readers` bisa dinyalakan tanpa
+     * mengubah tampilan.
+     */
+    public function test_provider_dasbor_parity_legacy_vs_engine(): void
+    {
+        $this->selesaikanCbt();
+
+        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+
+        config(['simantap.exam_engine_readers' => false]);
+        $lama = $this->potretDasbor($provider);
+
+        config(['simantap.exam_engine_readers' => true]);
+        $baru = $this->potretDasbor($provider);
+
+        $this->assertSame($lama, $baru, 'Provider dasbor harus identik pada kedua sumber data.');
+        $this->assertCount(1, $baru['ujian']);
+        $this->assertSame('Ujian IPA', $baru['hasil'][0]['judul']);
+    }
+
+    /**
+     * Bukti pembaca benar-benar lepas dari tabel lama: kosongkan `cbt_*`,
+     * data dasbor harus tetap tampil dari `exam_*`.
+     */
+    public function test_provider_dasbor_tetap_benar_setelah_tabel_lama_dikosongkan(): void
+    {
+        $this->selesaikanCbt();
+
+        \App\Models\CbtResult::query()->delete();
+        \App\Models\CbtTestSession::query()->delete();
+        \App\Models\CbtQuestionBank::query()->delete();
+
+        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+        config(['simantap.exam_engine_readers' => true]);
+
+        $potret = $this->potretDasbor($provider);
+
+        $this->assertCount(1, $potret['ujian']);
+        $this->assertSame('Ujian IPA', $potret['ujian'][0]['judul']);
+        $this->assertSame('IPA', $potret['ujian'][0]['mapel']);
+        $this->assertSame('Ujian IPA', $potret['hasil'][0]['judul']);
+        $this->assertSame(50.0, $potret['hasil'][0]['score']);
+        $this->assertSame(1, $potret['guru']['total_bank']);
+        $this->assertSame(1, $potret['sekolah']['total_participants']);
+        $this->assertSame(50.0, $potret['sekolah']['avg_score']);
+    }
+
+    /** Keempat dasbor peran harus tetap tampil saat reader engine aktif. */
+    public function test_dasbor_peran_tampil_dengan_reader_engine(): void
+    {
+        $this->selesaikanCbt();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $this->actingAs($this->akun)
+            ->get(route('siswa.dashboard'))
+            ->assertOk()
+            ->assertSee('Ujian IPA');
+
+        $this->actingAs($this->guru)
+            ->get(route('guru.dashboard'))
+            ->assertOk()
+            ->assertSee('Manajemen Ujian CBT');
+
+        $this->actingAs(User::factory()->kepsek()->create())
+            ->get(route('kepsek.dashboard'))
+            ->assertOk()
+            ->assertSee('Analisis CBT Sekolah');
+
+        $this->actingAs(User::factory()->ortu()->create(['terhubung_dengan' => [$this->siswa->id]]))
+            ->get(route('ortu.dashboard'))
+            ->assertOk()
+            ->assertSee('Ujian IPA');
+    }
+
+    /**
+     * Potret ternormalisasi dari provider (tanggal diformat agar dua cabang
+     * bisa dibandingkan tanpa peduli objek Carbon).
+     *
+     * @return array<string, mixed>
+     */
+    private function potretDasbor(\App\Services\Exam\CbtDashboardProvider $provider): array
+    {
+        $waktu = fn ($nilai) => $nilai instanceof \DateTimeInterface
+            ? $nilai->format('Y-m-d H:i')
+            : $nilai;
+
+        return [
+            'ujian' => array_map(
+                fn (array $u) => [...$u, 'closes_at' => $waktu($u['closes_at'])],
+                $provider->ujianTersedia($this->siswa)
+            ),
+            'hasil' => array_map(
+                fn (array $h) => [...$h, 'submitted_at' => $waktu($h['submitted_at'])],
+                $provider->hasilTerbaru($this->siswa->id)
+            ),
+            'guru' => $provider->ringkasanGuru($this->guru->id),
+            'sekolah' => $provider->ringkasanSekolah(),
+        ];
+    }
+
+    /** Provider daftar hasil Tryout harus identik pada kedua sumber data. */
+    public function test_daftar_hasil_tryout_provider_parity_legacy_vs_engine(): void
+    {
+        $this->selesaikanTryout();
+
+        $provider = app(\App\Services\Exam\TryoutResultProvider::class);
+
+        config(['simantap.exam_engine_readers' => false]);
+        $lama = $provider->daftar([]);
+
+        config(['simantap.exam_engine_readers' => true]);
+        $baru = $provider->daftar([]);
+
+        $this->assertSame($lama['ringkasan'], $baru['ringkasan']);
+        $this->assertCount(1, $baru['hasil']->items());
+
+        $lamaBaris = $lama['hasil']->items()[0];
+        $baruBaris = $baru['hasil']->items()[0];
+
+        foreach (['siswa_nama', 'siswa_kelas', 'sesi_nama', 'paket_nama', 'skor_total', 'jumlah_benar', 'jumlah_salah', 'jumlah_kosong', 'lulus'] as $kolom) {
+            $this->assertSame($lamaBaris[$kolom], $baruBaris[$kolom], "Kolom {$kolom} harus sama.");
+        }
+        $this->assertEqualsWithDelta($lamaBaris['waktu_detik'], $baruBaris['waktu_detik'], 2);
+    }
+
+    /**
+     * Daftar hasil harus tetap benar saat `tryout_results` dikosongkan, asal
+     * katalog sesi/paket (masih dibaca filter) tetap ada.
+     */
+    public function test_daftar_hasil_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $this->assertSame(1, app(\App\Services\Exam\TryoutResultProvider::class)->daftar([])['ringkasan']['total']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.index'))
+            ->assertOk()
+            ->assertSee('Siswa Pembaca')
+            ->assertSee('Paket Pembaca')
+            ->assertSee('100.0');
+    }
+
+    /** Halaman rincian versi engine menampilkan nilai yang sama. */
+    public function test_rincian_hasil_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $attempt = \App\Models\Exam\Attempt::firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tryout.results.engine.show', $attempt))
+            ->assertOk()
+            ->assertSee('Siswa Pembaca')
+            ->assertSee('Paket Pembaca')
+            ->assertSee('100.0')
+            ->assertSee('Lulus');
+    }
+
+    /** Statistik Tryout dari engine tetap benar tanpa tabel hasil lama. */
+    public function test_statistik_tryout_engine_tetap_benar_setelah_hasil_lama_dikosongkan(): void
+    {
+        $this->selesaikanTryout();
+        TryoutResult::query()->delete();
+        config(['simantap.exam_engine_readers' => true]);
+
+        $stats = $this->actingAs($this->admin)
+            ->get(route('admin.tryout.statistics'))
+            ->assertOk()
+            ->assertSee('100.0%')
+            ->viewData('stats');
+
+        $this->assertSame(1, $stats['total_packages']);
+        $this->assertSame(1, $stats['total_sessions']);
+        $this->assertSame(1, $stats['total_results']);
+        $this->assertEqualsWithDelta(100.0, (float) $stats['average_pass_rate'], 0.01);
     }
 
     /** @return array<int, array<int, string|null>> */

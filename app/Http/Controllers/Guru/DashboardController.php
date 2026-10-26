@@ -169,11 +169,16 @@ class DashboardController extends Controller
             'terakhir' => $riwayatSinkron[0] ?? null,
         ];
 
+        // Modul CBT: ringkasan disiapkan provider (engine `exam_*` atau `cbt_*`).
+        $cbtRingkasan = config('simantap.cbt_enabled', false) && \Illuminate\Support\Facades\Route::has('cbt.sessions.index')
+            ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanGuru((int) auth()->id())
+            : null;
+
         return view('guru.dashboard', compact(
             'ringkasan', 'perluPendampingan', 'menonjol', 'materiTerbaru', 'kuisAktif',
             'predikat', 'trendLabels', 'trendData', 'totalGuruSiswa', 'syncedSiswa',
             'kkmDiatur', 'namaHari', 'jadwalHariIni', 'deadlineRapor', 'siswaErapot',
-            'eseiMenunggu', 'sheetStatus'
+            'eseiMenunggu', 'sheetStatus', 'cbtRingkasan'
         ));
     }
 }

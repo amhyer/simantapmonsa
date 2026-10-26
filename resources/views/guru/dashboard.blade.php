@@ -331,19 +331,19 @@
             <div class="grid grid-4" style="margin-bottom:16px">
                 <div class="stat">
                     <div class="label">Total Bank Soal</div>
-                    <div class="value">{{ App\Models\CbtQuestionBank::where('guru_id', auth()->id())->count() }}</div>
+                    <div class="value">{{ $cbtRingkasan['total_bank'] ?? 0 }}</div>
                 </div>
                 <div class="stat">
                     <div class="label">Sesi Ujian Aktif</div>
-                    <div class="value">{{ App\Models\CbtTestSession::where('guru_id', auth()->id())->whereIn('status', ['published', 'running'])->count() }}</div>
+                    <div class="value">{{ $cbtRingkasan['sesi_aktif'] ?? 0 }}</div>
                 </div>
                 <div class="stat">
                     <div class="label">Sesi Selesai</div>
-                    <div class="value">{{ App\Models\CbtTestSession::where('guru_id', auth()->id())->where('status', 'completed')->count() }}</div>
+                    <div class="value">{{ $cbtRingkasan['sesi_selesai'] ?? 0 }}</div>
                 </div>
                 <div class="stat">
                     <div class="label">Total Peserta Ujian</div>
-                    <div class="value">{{ App\Models\CbtResult::whereHas('session', function($q) { $q->where('guru_id', auth()->id()); })->count() }}</div>
+                    <div class="value">{{ $cbtRingkasan['total_peserta'] ?? 0 }}</div>
                 </div>
             </div>
             <div style="display:flex;gap:8px">

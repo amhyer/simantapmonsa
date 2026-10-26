@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Cbt\CbtBankRequest;
 use App\Models\CbtQuestionBank;
 use App\Models\User;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -46,7 +47,8 @@ class CbtBankController extends Controller
     {
         $validated = $request->validated();
 
-        CbtQuestionBank::create($validated);
+        $bank = CbtQuestionBank::create($validated);
+        $this->sinkronEngine($bank);
 
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal dibuat.');
     }
@@ -72,6 +74,7 @@ class CbtBankController extends Controller
         $validated = $request->validated();
 
         $bank->update($validated);
+        $this->sinkronEngine($bank->fresh());
 
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal diperbarui.');
     }
@@ -85,7 +88,18 @@ class CbtBankController extends Controller
             $locked->delete();
         });
 
+        if (config('simantap.exam_engine_cbt', true)) {
+            app(LegacyExamMapper::class)->lupakanBankCbt($bank->id);
+        }
+
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal dihapus.');
+    }
+
+    private function sinkronEngine(CbtQuestionBank $bank): void
+    {
+        if (config('simantap.exam_engine_cbt', true)) {
+            app(LegacyExamMapper::class)->bankCbt($bank);
+        }
     }
 
     public function statistics()

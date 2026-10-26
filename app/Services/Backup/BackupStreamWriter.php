@@ -46,7 +46,7 @@ class BackupStreamWriter
                 continue;
             }
 
-            $this->writeAll($stream, ",\n" . json_encode($table, $flags) . ": [\n");
+            $this->writeAll($stream, ",\n".json_encode($table, $flags).": [\n");
             $firstRow = true;
             $counts[$table] = 0;
             $except = array_flip($definition['except']);
@@ -81,7 +81,7 @@ class BackupStreamWriter
     /** @param resource $stream */
     private function writeMember($stream, string $key, array $value, int $flags): void
     {
-        $this->writeAll($stream, json_encode($key, $flags) . ': ' . json_encode($value, $flags));
+        $this->writeAll($stream, json_encode($key, $flags).': '.json_encode($value, $flags));
     }
 
     /** @param resource $stream */

@@ -77,9 +77,15 @@ jobs:
       # incrementally formatted rather than making unrelated files a blocker.
       - name: Pint check (FormRequests and backup streaming)
         run: |
-          set -o pipefail
-          vendor/bin/pint --test app/Http/Requests/Cbt app/Http/Requests/Tryout app/Http/Requests/Admin app/Services/Backup 2>&1 \
-            | tee /tmp/pint.log
+          set +e
+          vendor/bin/pint --test app/Http/Requests/Cbt app/Http/Requests/Tryout app/Http/Requests/Admin app/Services/Backup 2>&1 | tee /tmp/pint.log
+          pint_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$pint_status" -ne 0 ]; then
+            vendor/bin/pint app/Http/Requests/Cbt app/Http/Requests/Tryout app/Http/Requests/Admin app/Services/Backup >/tmp/pint-fix.log 2>&1 || true
+            git diff -- app/Http/Requests/Cbt app/Http/Requests/Tryout app/Http/Requests/Admin app/Services/Backup >/tmp/pint.diff
+          fi
+          exit "$pint_status"
 
       - name: Generate app key
         run: php artisan key:generate
@@ -124,6 +130,9 @@ jobs:
             echo
             echo "--- pint.log (150 baris terakhir) ---"
             tail -n 150 /tmp/pint.log 2>/dev/null || echo "(log tidak tersedia)"
+            echo
+            echo "--- pint.diff (formatter suggestion) ---"
+            cat /tmp/pint.diff 2>/dev/null || echo "(diff tidak tersedia)"
             echo
             echo "--- composer-install.log (40 baris terakhir) ---"
             tail -n 40 /tmp/composer-install.log 2>/dev/null || echo "(log tidak tersedia)"

@@ -19,6 +19,7 @@ class TryoutPackageAdminRequest extends FormRequest
         $packageId = $package instanceof Package ? $package->id : $package;
 
         return [
+            'category_id' => ['nullable', 'exists:tryout_categories,id'],
             'kode_paket' => ['required', 'string', 'max:50', Rule::unique('tryout_packages', 'kode_paket')->ignore($packageId)],
             'nama_paket' => ['required', 'string', 'max:255'],
             'jenjang' => ['required', 'in:SD,SMP,SMA,SMK'],

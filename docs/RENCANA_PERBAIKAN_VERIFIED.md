@@ -171,7 +171,12 @@ sengaja **belum** dikerjakan (butuh keputusan produk + rikonsiliasi data produks
 | (5b) Sisa tampilan lain (ekspor/laporan) | ✅ | pembaca lama dikunci lebih dulu dengan `tests/Feature/ExamReaderTest.php` (ekspor CSV CBT, halaman hasil Tryout admin, dasbor ortu) — sebelumnya **tanpa test sama sekali**. Disusul pembaca pengganti murni `exam_*` (`ExamReportService` + rute `admin.cbt.sessions.export-engine`) yang keluarannya **identik** dengan jalur lama (diuji parity). Jalur lama tetap dipakai di produksi sebagai pembanding. |
 | (5c) Pelanggaran CBT ke engine | ✅ | tabel `exam_violations` baru (migrasi aditif, jejak `sumber_tabel`/`sumber_id`), ditulis lewat `CbtEngineBridge::catatPelanggaran` di alur langsung dan dipetakan ulang oleh `exam:backfill`. Kolom **Pelanggaran** pada ekspor engine kini terisi dan ikut diuji parity penuh (seluruh kolom identik). |
 | (5d) Cakupan backup `exam_*` | ✅ | seluruh 10 tabel `exam_*` didaftarkan di `BackupTables` **dan** daftar wipe `$tabelData`, sehingga backup/restore tidak lagi kehilangan data engine (sebelumnya tidak tercadang maupun terhapus → keadaan setengah saat wipe). Diperiksa rule cakupan: 46 tabel di-wipe, semuanya tercakup. |
-| (6) Drop tabel lama | ⏳ belum | pembaca pengganti sudah terbukti setara & `exam_*` sudah tercadang; menunggu rikonsiliasi data produksi |
+| (6b) Pembaca dasbor dari engine | ✅ | `App\Services\Exam\CbtDashboardProvider` menyatukan 4 dasbor peran (siswa, ortu, guru, kepsek) dengan flag `simantap.exam_engine_readers` (default **false** sampai rekonsiliasi produksi). View tidak lagi memanggil model `cbt_*` langsung. Parity diuji dua arah: potret provider identik pada kedua cabang **dan** data tetap benar setelah seluruh `cbt_*` dikosongkan (`ExamReaderTest`, 3 test baru). |
+| (6b) Pembaca hasil Tryout admin | ✅ | `App\Services\Exam\TryoutResultProvider` menyatukan daftar hasil (filter/paginasi/kartu statistik) dan rincian hasil ke array yang sama untuk `tryout_*` maupun `exam_*`; satu view dipakai keduanya. Rute baru `admin.tryout.results.engine.show` untuk rincian engine. Angka agregat halaman statistik ikut flag. Daftar paket/sesi untuk dropdown & "sesi terbaru" sengaja tetap dari `tryout_*` (katalog, menunggu 6c). Bukti: 4 test parity di `ExamReaderTest`. |
+| (6c-1) Dual-write CRUD ke engine | ✅ | simpan/hapus lewat UI guru **dan** admin langsung mencerminkan ke `exam_*`: bank & soal CBT, sesi CBT, paket/mapel/soal Tryout, sesi Tryout. `LegacyExamMapper` mendapat `paketTryout()` dan `lupakan*()`; opsi yang dihapus ikut dipangkas dari engine. Bukti: `CbtCrudEngineSyncTest` (4 test) + `TryoutCrudEngineSyncTest` (4 test). Arah tulis masih tabel lama → engine (belum dibalik). |
+| (6d-1) Halaman utama Tryout siswa | ✅ | `App\Services\Exam\TryoutStudentReader` membaca daftar sesi tersedia + riwayat hasil dari `tryout_*` **atau** `exam_*` dengan bentuk array yang sama (flag `simantap.exam_engine_readers`). View `tryout/student/index` tidak lagi memanggil model langsung. Identitas baris tetap id lama (dari `sumber_id`) karena rute mulai/detail masih terikat model lama sampai 6e. Bukti: `TryoutStudentReaderTest` — potret identik kedua cabang dan halaman tetap benar setelah seluruh `tryout_*` dikosongkan. |
+| (6d-2) Daftar ujian CBT siswa | ✅ | `App\Services\Exam\CbtStudentReader` membaca daftar ujian dari `exam_sessions` dengan filter guru/status/peserta dan paginasi yang sama. Bukti: `CbtStudentReaderTest` — potret identik kedua cabang dan daftar tetap benar setelah `cbt_results` + `cbt_test_sessions` dikosongkan. |
+| (6) Drop tabel lama | ⏳ belum | pembaca dasbor **dan** hasil/statistik Tryout sudah terbukti setara, CRUD sudah menyalin ke `exam_*`, halaman utama Tryout **dan** daftar CBT siswa sudah bisa dibaca dari engine, dan `exam_*` sudah tercadang; yang tersisa: alur soal/jawab/selesai CBT & Tryout, inversi kepemilikan tulis, katalog & ekspor Tryout, lalu rikonsiliasi data produksi |
 
 Catatan desain: `exam_sections` ditambahkan sebagai tingkat yang hilang pada skema awal
 dokumen, karena Tryout berjenjang paket → mapel; CBT hanya memakai satu tingkat bank → soal.
@@ -194,7 +199,7 @@ lewat `CbtEngineBridge`. Kunci penilaian dibekukan dari `question_snapshot` ke
 desain Fase 3. Akibatnya mengedit bank setelah publikasi tidak menggeser nilai
 (diuji `CbtEngineParityTest::test_snapshot_menang_atas_bank_yang_diedit`).
 
-**Verifikasi Fase 3:** `php artisan test` → **233 test lulus, 0 gagal, 898 assertion, ~220 s**.
+**Verifikasi Fase 3:** `php artisan test` → **258 test lulus, 0 gagal, 1076 assertion, ~153 s**.
 
 Pelanggaran CBT kini juga bermukim di engine (`exam_violations`, ditulis di alur
 langsung lewat `CbtEngineBridge::catatPelanggaran` dan dipetakan ulang oleh
@@ -218,6 +223,37 @@ Dua bug nyata yang ketangkap saat mengunci pembaca (langkah 5b):
    yang **tidak ada** di `Tryout\Result`, sehingga tabel & kartu statistik selalu
    tampil 0.0/kosong. Disajikan lewat accessor (`skor_total` = persentase, agar
    sebanding dengan ambang kelulusan 60) sehingga nilai sebenarnya tampil.
+
+Catatan langkah 6b: pembaca dasbor (siswa/guru/kepsek/ortu) dialihkan lewat
+`App\Services\Exam\CbtDashboardProvider`, sedangkan daftar/rincian hasil Tryout
+admin lewat `App\Services\Exam\TryoutResultProvider`. Flag
+`simantap.exam_engine_readers` (`SIMANTAP_EXAM_ENGINE_READERS`) sengaja
+**default `false`**: produksi tetap membaca tabel lama sampai `exam:backfill`
+dijalankan dan jumlah barisnya direkonsiliasi. Saat flag dinyalakan, pembaca
+tersebut hanya menyentuh `exam_*` — diuji dengan mengosongkan tabel lama dan
+memastikan angka serta halaman tetap benar.
+
+Langkah 6c-1 (dual-write): CRUD guru/admin kini memanggil `LegacyExamMapper`
+setiap kali menyimpan/menghapus bank, soal, paket/mapel, atau sesi. Tujuannya
+menutup celah data yang dibuat **setelah** backfill (sebelumnya engine hanya
+terisi saat publish/backfill, sehingga pembaca berflag bisa menghitung kurang).
+Penghapusan dicerminkan sebagai *soft delete* di engine, jadi riwayat tidak
+hilang permanen. Arah tulis masih tabel lama → engine; inversi (engine sebagai
+sumber) adalah langkah 6c-2.
+
+Langkah 6d-1 (pembaca alur siswa Tryout): `TryoutStudentReader` menyatukan daftar
+sesi tersedia dan riwayat hasil. Pembaca engine memakai kolom sesi (`kelas`,
+`rombel_id`, `mulai_at`, `selesai_at`) dan meta bank (`jumlah_mapel`,
+`durasi_total_menit`, `passing_grade`, `deskripsi`) sehingga ketersediaan sesi
+dihitung persis seperti jalur lama. Baris hasil memakai `exam_attempts` +
+`exam_results`; id yang dipakai rute tetap id tabel lama (`sumber_id`) agar view
+dan rute tidak perlu diubah dua kali.
+
+Langkah 6d-2 (daftar CBT siswa): `CbtStudentReader` memindahkan pembacaan daftar
+ujian ke `exam_sessions` dengan kriteria identik (guru pengampu, status
+published/running/completed, peserta di `peserta_ids`, urutan terbaru, 20 per
+halaman). Paginator dinormalisasi menjadi array sehingga view sama untuk dua
+sumber; pembuktiannya juga mengosongkan `cbt_*` lebih dulu.
 
 ---
 
