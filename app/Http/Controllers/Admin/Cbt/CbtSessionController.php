@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Cbt\CbtSessionStatusRequest;
+use App\Http\Requests\Admin\Cbt\CbtSessionStoreRequest;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\User;
@@ -46,17 +48,9 @@ class CbtSessionController extends Controller
         return view('admin.cbt.sessions.create', compact('gurus', 'banks'));
     }
 
-    public function store(Request $request)
+    public function store(CbtSessionStoreRequest $request)
     {
-        $validated = $request->validate([
-            'guru_id' => 'required|integer|exists:users,id',
-            'bank_id' => 'required|integer|exists:cbt_question_banks,id',
-            'title' => 'required|string|max:200',
-            'kelas' => 'required|string|max:50',
-            'opens_at' => 'required|date',
-            'closes_at' => 'required|date|after:opens_at',
-            'duration_minutes' => 'required|integer|min:1|max:300',
-        ]);
+        $validated = $request->validated();
 
         $session = DB::transaction(function () use ($validated) {
             \App\Models\CbtQuestionBank::whereKey($validated['bank_id'])->lockForUpdate()->firstOrFail();
@@ -76,11 +70,9 @@ class CbtSessionController extends Controller
         return view('admin.cbt.sessions.show', compact('session', 'results'));
     }
 
-    public function updateStatus(Request $request, CbtTestSession $session)
+    public function updateStatus(CbtSessionStatusRequest $request, CbtTestSession $session)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:published,running,completed',
-        ]);
+        $validated = $request->validated();
 
         match ($validated['status']) {
             'published' => $this->exam->publish($session),

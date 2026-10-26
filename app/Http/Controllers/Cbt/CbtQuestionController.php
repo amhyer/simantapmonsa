@@ -3,22 +3,16 @@
 namespace App\Http\Controllers\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cbt\StoreCbtQuestionRequest;
 use App\Models\CbtQuestion;
 use App\Models\CbtQuestionBank;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CbtQuestionController extends Controller
 {
-    private function data(Request $request): array
+    private function data(StoreCbtQuestionRequest $request): array
     {
-        return $request->validate([
-            'prompt' => 'required|string|max:10000',
-            'options' => 'required|array:A,B,C,D|size:4',
-            'options.A' => 'required|string|max:2000', 'options.B' => 'required|string|max:2000',
-            'options.C' => 'required|string|max:2000', 'options.D' => 'required|string|max:2000',
-            'correct_answer' => 'required|in:A,B,C,D',
-        ]);
+        return $request->validated();
     }
 
     private function mutate(CbtQuestionBank $bank, callable $callback): void
@@ -29,7 +23,7 @@ class CbtQuestionController extends Controller
         }, 3);
     }
 
-    public function store(Request $request, CbtQuestionBank $bank)
+    public function store(StoreCbtQuestionRequest $request, CbtQuestionBank $bank)
     {
         $this->authorize('update', $bank);
         $data = $this->data($request);
@@ -40,7 +34,7 @@ class CbtQuestionController extends Controller
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal ditambahkan.');
     }
 
-    public function update(Request $request, CbtQuestion $question)
+    public function update(StoreCbtQuestionRequest $request, CbtQuestion $question)
     {
         $this->authorize('update', $question);
         $bank = $question->bank;

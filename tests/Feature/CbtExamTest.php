@@ -199,10 +199,27 @@ class CbtExamTest extends TestCase
         $session = $this->createSession();
         $result = $this->attempt($session);
         $other = User::factory()->siswa()->create(['terhubung_dengan' => [$this->student->id]]);
+        $before = [
+            'result' => $result->fresh()->getAttributes(),
+            'answers' => $result->fresh()->answers,
+            'violations' => $result->fresh()->violations()->count(),
+            'engine_attempts' => \Illuminate\Support\Facades\DB::table('exam_attempts')->count(),
+            'engine_violations' => \Illuminate\Support\Facades\DB::table('exam_violations')->count(),
+        ];
+
         $this->actingAs($other)->get(route('cbt.student.result', $result))->assertForbidden();
         $this->postJson(route('cbt.student.answer', $result), ['question_id' => $session->question_snapshot[0]['id'], 'answer' => 'A'])->assertForbidden();
         $this->post(route('cbt.student.submit', $result))->assertForbidden();
         $this->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])->assertForbidden();
+
+        $after = [
+            'result' => $result->fresh()->getAttributes(),
+            'answers' => $result->fresh()->answers,
+            'violations' => $result->fresh()->violations()->count(),
+            'engine_attempts' => \Illuminate\Support\Facades\DB::table('exam_attempts')->count(),
+            'engine_violations' => \Illuminate\Support\Facades\DB::table('exam_violations')->count(),
+        ];
+        $this->assertSame($before, $after, 'Forbidden requests must not mutate legacy or engine records.');
     }
 
     public function test_guru_lain_tidak_bisa_membaca_bank_atau_monitoring(): void
@@ -387,7 +404,7 @@ class CbtExamTest extends TestCase
         $this->actingAs($this->account)->post(route('cbt.student.submit', $result));
 
         \Illuminate\Support\Facades\Storage::disk('local')->deleteDirectory('backups');
-        (new \App\Jobs\ExportBackupJob())->handle();
+        (new \App\Jobs\ExportBackupJob())->handle(app(\App\Services\Backup\BackupStreamWriter::class));
         $files = \Illuminate\Support\Facades\Storage::disk('local')->files('backups');
         $this->assertCount(1, $files);
         $json = \Illuminate\Support\Facades\Storage::disk('local')->get($files[0]);

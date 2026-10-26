@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
  */
 class ExamBackfill extends Command
 {
-    protected $signature = 'exam:backfill {--only= : Batasi ke cbt atau tryout}';
+    protected $signature = 'exam:backfill {--only= : Batasi ke cbt atau tryout} {--dry-run : Hanya hitung baris sumber; jangan tulis exam_*}';
 
     protected $description = 'Salin data CBT & Tryout ke tabel exam_* (idempoten, read-only terhadap tabel lama)';
 
@@ -45,6 +45,18 @@ class ExamBackfill extends Command
     public function handle(): int
     {
         $only = $this->option('only');
+        if ($only !== null && ! in_array($only, [Engine::CBT, Engine::TRYOUT], true)) {
+            $this->error('Opsi --only harus cbt atau tryout.');
+
+            return self::FAILURE;
+        }
+
+        if ($this->option('dry-run')) {
+            $this->info('DRY RUN: tabel sumber hanya dibaca; tidak ada perubahan pada exam_*.');
+            $this->table(['Tabel sumber', 'Baris'], $this->hitungBarisSumber($only));
+
+            return self::SUCCESS;
+        }
 
         DB::transaction(function () use ($only) {
             if ($only !== Engine::TRYOUT) {
@@ -71,6 +83,33 @@ class ExamBackfill extends Command
         );
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Count legacy source rows only. This is a safe inventory, not proof of
+     * field-level reconciliation or an estimate of rows that will be inserted.
+     *
+     * @return array<int, array{0: string, 1: int}>
+     */
+    private function hitungBarisSumber(?string $only): array
+    {
+        $tables = [];
+        if ($only !== Engine::TRYOUT) {
+            $tables = array_merge($tables, [
+                'cbt_question_banks', 'cbt_questions', 'cbt_test_sessions', 'cbt_results', 'cbt_violations',
+            ]);
+        }
+        if ($only !== Engine::CBT) {
+            $tables = array_merge($tables, [
+                'tryout_packages', 'tryout_subjects', 'tryout_questions', 'tryout_sessions',
+                'tryout_results', 'tryout_student_answers',
+            ]);
+        }
+
+        return array_map(
+            fn (string $table) => [$table, (int) DB::table($table)->count()],
+            $tables
+        );
     }
 
     private function backfillCbt(): void

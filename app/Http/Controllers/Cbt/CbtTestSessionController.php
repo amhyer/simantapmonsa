@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cbt\StoreCbtSessionRequest;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class CbtTestSessionController extends Controller
 {
@@ -28,15 +27,9 @@ class CbtTestSessionController extends Controller
         return view('cbt.sessions.create', compact('banks', 'classes'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCbtSessionRequest $request)
     {
-        $classes = Siswa::where('guru_id', auth()->id())->where('aktif', true)->whereNull('archived_at')->distinct()->pluck('kelas')->all();
-        $data = $request->validate([
-            'bank_id' => ['required', 'integer', Rule::exists('cbt_question_banks', 'id')->where('guru_id', auth()->id())],
-            'title' => 'required|string|max:200', 'kelas' => ['required', 'string', Rule::in($classes)],
-            'opens_at' => 'required|date', 'closes_at' => 'required|date|after:opens_at|after:now',
-            'duration_minutes' => 'required|integer|min:1|max:300',
-        ]);
+        $data = $request->validated();
         $session = DB::transaction(function () use ($data) {
             CbtQuestionBank::whereKey($data['bank_id'])->lockForUpdate()->firstOrFail();
             return CbtTestSession::create($data + ['guru_id' => auth()->id(), 'status' => 'draft']);

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tryout\StoreTryoutPackageRequest;
+use App\Http\Requests\Tryout\UpdateTryoutPackageRequest;
 use App\Models\Tryout\Category;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Subject;
 use App\Models\MataPelajaran;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TryoutPackageController extends Controller
@@ -32,25 +33,9 @@ class TryoutPackageController extends Controller
         return view('tryout.packages.create', compact('categories', 'mataPelajarans'));
     }
 
-    public function store(Request $request)
+    public function store(StoreTryoutPackageRequest $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:tryout_categories,id',
-            'kode_paket' => 'required|string|max:50|unique:tryout_packages,kode_paket',
-            'nama_paket' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'jenjang' => 'required|in:SD,SMP,SMA,SMK,UMUM',
-            'tahun_paket' => 'required|integer|min:2020|max:2030',
-            'durasi_total_menit' => 'required|integer|min:1',
-            'passing_grade' => 'required|numeric|min:0|max:100',
-            'standar_nilai' => 'nullable|array',
-            'subjects' => 'required|array|min:1',
-            'subjects.*.mata_pelajaran_id' => 'required|exists:mata_pelajaran,id',
-            'subjects.*.bobot' => 'required|numeric|min:0|max:10',
-            'subjects.*.jumlah_soal' => 'required|integer|min:1',
-            'subjects.*.durasi_menit' => 'required|integer|min:1',
-            'subjects.*.passing_grade_mapel' => 'required|numeric|min:0|max:100',
-        ]);
+        $validated = $request->validated();
 
         $package = Package::create([
             'uuid' => Str::uuid(),
@@ -101,20 +86,9 @@ class TryoutPackageController extends Controller
         return view('tryout.packages.edit', compact('package', 'categories', 'mataPelajarans'));
     }
 
-    public function update(Request $request, Package $package)
+    public function update(UpdateTryoutPackageRequest $request, Package $package)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:tryout_categories,id',
-            'kode_paket' => 'required|string|max:50|unique:tryout_packages,kode_paket,' . $package->id,
-            'nama_paket' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'jenjang' => 'required|in:SD,SMP,SMA,SMK,UMUM',
-            'tahun_paket' => 'required|integer|min:2020|max:2030',
-            'durasi_total_menit' => 'required|integer|min:1',
-            'passing_grade' => 'required|numeric|min:0|max:100',
-            'standar_nilai' => 'nullable|array',
-            'aktif' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $package->update($validated);
 

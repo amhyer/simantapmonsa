@@ -157,11 +157,26 @@ class TryoutTest extends TestCase
             'kelas' => '6A', 'jenis_kelamin' => 'P', 'aktif' => true,
         ]);
 
+        $before = [
+            'result' => $result->fresh()->getAttributes(),
+            'legacy_answers' => StudentAnswer::count(),
+            'engine_answers' => \Illuminate\Support\Facades\DB::table('exam_answers')->count(),
+            'engine_results' => \Illuminate\Support\Facades\DB::table('exam_results')->count(),
+        ];
+
         $this->actingAs($lain)->get(route('tryout.student.result', $result))->assertForbidden();
         $this->actingAs($lain)->postJson(route('tryout.student.answer', $result), [
             'subject_id' => $this->mapel->id, 'question_id' => $this->soal->id, 'jawaban' => 'A',
         ])->assertForbidden();
         $this->actingAs($lain)->post(route('tryout.student.complete', $result))->assertForbidden();
+
+        $after = [
+            'result' => $result->fresh()->getAttributes(),
+            'legacy_answers' => StudentAnswer::count(),
+            'engine_answers' => \Illuminate\Support\Facades\DB::table('exam_answers')->count(),
+            'engine_results' => \Illuminate\Support\Facades\DB::table('exam_results')->count(),
+        ];
+        $this->assertSame($before, $after, 'Forbidden requests must not mutate legacy or engine records.');
     }
 
     public function test_percobaan_ulang_tidak_menimpa_jawaban_percobaan_pertama(): void

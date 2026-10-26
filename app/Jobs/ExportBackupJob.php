@@ -2,117 +2,48 @@
 
 namespace App\Jobs;
 
-use App\Support\BackupTables;
+use App\Services\Backup\BackupStreamWriter;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ExportBackupJob implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * Create a new job instance.
+     * Tulis backup registry secara bertahap ke temporary stream, lalu unggah
+     * sebagai resource agar JSON utuh tidak pernah dimaterialisasi di memori.
      */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
-     * Tulis backup JSON secara streaming (per chunk 200 baris) agar
-     * memori tetap kecil walau data besar. Tanpa payload: job query sendiri.
-     */
-    public function handle(): void
+    public function handle(BackupStreamWriter $writer): void
     {
         set_time_limit(0);
 
-        $filename = 'backup-simantap-' . now()->format('Y-m-d-His') . '.json';
+        $filename = 'backup-simantap-'.now()->format('Y-m-d-His').'.json';
+        $directory = trim((string) config('backup.direktori', 'backups'), '/');
+        $path = $directory.'/'.$filename;
+        $diskName = (string) config('backup.disk', 'local');
+        $stream = fopen('php://temp/maxmemory:2097152', 'w+b');
 
-        // Disk & folder mengikuti config/backup.php agar sama dengan
-        // `simantap:backup` terjadwal dan daftar di Admin › Cadangan.
-        $direktori = trim((string) config('backup.direktori', 'backups'), '/');
-        $path = $direktori . '/' . $filename;
-
-        // Daftar tabel terpusat (App\Support\BackupTables) supaya cakupan
-        // backup selalu seimbang dengan tabel yang dikosongkan wipeAll().
-        $tables = BackupTables::semua();
-
-        $stream = fopen('php://temp', 'r+');
         if ($stream === false) {
-            throw new \RuntimeException('Gagal membuka stream sementara untuk backup.');
+            throw new RuntimeException('Gagal membuka temporary stream untuk backup.');
         }
 
         try {
-            fwrite($stream, "{\n");
-
-            $firstTable = true;
-            foreach ($tables as $key => $konfigurasi) {
-                // CBT belum tentu sudah dimigrasikan saat flag masih nonaktif.
-                if (str_starts_with($key, 'cbt_') && !Schema::hasTable($key)) {
-                    continue;
-                }
-                if (!$firstTable) {
-                    fwrite($stream, ",\n");
-                }
-                $firstTable = false;
-
-                fwrite($stream, json_encode($key) . ": [\n");
-
-                $except = $konfigurasi['except'];
-                $firstRow = true;
-
-                $tulis = function ($rows) use ($stream, $except, $key, &$firstRow) {
-                    foreach ($rows as $row) {
-                        if (!$firstRow) {
-                            fwrite($stream, ",\n");
-                        }
-                        $firstRow = false;
-
-                        // Backup privat harus menyertakan kunci/snapshot CBT;
-                        // hidden hanya untuk serialisasi HTTP, bukan pemulihan data.
-                        if (str_starts_with($key, 'cbt_') && $row instanceof \Illuminate\Database\Eloquent\Model) {
-                            $row->makeVisible($row->getHidden());
-                        }
-                        // Baris pivot (tanpa model) datang sebagai stdClass dari
-                        // query builder; stdClass tidak punya toArray().
-                        if (is_array($row)) {
-                            $record = $row;
-                        } elseif ($row instanceof \Illuminate\Database\Eloquent\Model) {
-                            $record = $row->toArray();
-                        } else {
-                            $record = (array) $row;
-                        }
-                        if ($except !== []) {
-                            $record = array_diff_key($record, array_flip($except));
-                        }
-                        fwrite($stream, json_encode($record));
-                    }
-                };
-
-                $class = $konfigurasi['class'];
-
-                if ($class) {
-                    // Eloquent chunk() hemat memori untuk tabel besar.
-                    $class::chunk(200, $tulis);
-                } else {
-                    // Tabel tanpa model (pivot) → ambil langsung dari query builder.
-                    // Kedua tabel pivot punya kolom `id` (lihat migrasinya).
-                    DB::table($key)->orderBy('id')->chunk(200, $tulis);
-                }
-
-                fwrite($stream, "\n]");
-            }
-
-            fwrite($stream, "\n}\n");
+            $summary = $writer->writeTo($stream);
             rewind($stream);
 
-            Storage::disk((string) config('backup.disk', 'local'))->put($path, stream_get_contents($stream));
+            if (! Storage::disk($diskName)->put($path, $stream)) {
+                throw new RuntimeException("Gagal menyimpan backup ke disk '{$diskName}'.");
+            }
 
-            Log::info("Backup exported successfully: {$filename}");
+            Log::info('Backup exported successfully.', [
+                'filename' => $filename,
+                'tables' => $summary['tables'],
+                'rows' => $summary['rows'],
+            ]);
         } finally {
             fclose($stream);
         }

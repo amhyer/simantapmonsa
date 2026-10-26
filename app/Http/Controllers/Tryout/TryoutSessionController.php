@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tryout\StoreTryoutSessionRequest;
 use App\Models\Tryout\Session;
 use App\Models\Tryout\Package;
 use App\Models\Semester;
 use App\Models\Rombel;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TryoutSessionController extends Controller
@@ -33,17 +33,9 @@ class TryoutSessionController extends Controller
         return view('tryout.sessions.create', compact('packages', 'semesters', 'rombels'));
     }
 
-    public function store(Request $request)
+    public function store(StoreTryoutSessionRequest $request)
     {
-        $validated = $request->validate([
-            'package_id' => 'required|exists:tryout_packages,id',
-            'semester_id' => 'required|exists:semesters,id',
-            'nama_sesi' => 'required|string|max:255',
-            'kelas' => 'nullable|string|max:50',
-            'rombel_id' => 'nullable|exists:rombel,id',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
-        ]);
+        $validated = $request->validated();
 
         $session = Session::create([
             'uuid' => Str::uuid(),

@@ -73,6 +73,11 @@ jobs:
           composer install --no-interaction --prefer-dist --no-progress 2>&1 \
             | tee /tmp/composer-install.log
 
+      # Gate the new request/streaming code while the historical codebase is
+      # incrementally formatted rather than making unrelated files a blocker.
+      - name: Pint check (FormRequests and backup streaming)
+        run: vendor/bin/pint --test app/Http/Requests/Cbt app/Http/Requests/Tryout app/Http/Requests/Admin app/Services/Backup
+
       - name: Generate app key
         run: php artisan key:generate
 

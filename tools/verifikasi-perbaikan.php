@@ -400,35 +400,35 @@ periksa('Kolom nilai_erapor.jadwal_pelajaran_id dibuat oleh migrasi', function (
  * 8. Backup vs wipe
  * ────────────────────────────────────────────────────────────── */
 echo "\n8. Cakupan backup vs penghapusan data\n";
-periksa('Setiap tabel yang di-wipe dicadangkan atau dikecualikan secara eksplisit', function () use ($root) {
+periksa('Wipe diturunkan dari registry backup + pengecualian eksplisit', function () use ($root) {
     $controller = baca($root . '/app/Http/Controllers/Admin/BackupController.php');
-    preg_match('/\$tabelData = \[(.*?)\];/s', $controller, $m);
-    if (!$m) {
-        return 'daftar $tabelData tidak ditemukan';
-    }
-    preg_match_all("/'([\w]+)'/", $m[1], $t);
-    $diWipe = array_values(array_unique($t[1]));
-
     $registry = baca($root . '/app/Support/BackupTables.php');
-    preg_match('/function semua\(\).*?return \[(.*?)\n        \];/s', $registry, $r);
-    preg_match_all("/'([\w]+)' => \['class'/", $r[1] ?? '', $rt);
-    $dicadangkan = $rt[1];
 
-    preg_match('/function tidakDicadangkan\(\).*?return \[(.*?)\n        \];/s', $registry, $e);
-    preg_match_all("/'([\w]+)',/", $e[1] ?? '', $et);
-    $dikecualikan = $et[1];
+    if (!str_contains($controller, 'BackupTables::tabelUntukWipe()')) {
+        return 'wipe belum memakai daftar dari BackupTables';
+    }
+    if (!str_contains($registry, 'array_merge(self::tabel(), self::tidakDicadangkan())')) {
+        return 'tabel backup dan pengecualian tidak digabung untuk wipe';
+    }
+    if (!str_contains($registry, "['users', 'semesters', 'sekolah_settings', 'api_keys']")) {
+        return 'daftar tabel yang dipertahankan tidak eksplisit';
+    }
 
-    $luput = array_values(array_diff($diWipe, $dicadangkan, $dikecualikan));
-
-    return $luput === []
-        ? true
-        : 'tabel di-wipe tapi tidak dicadangkan: ' . implode(', ', $luput);
+    return true;
 });
 
-periksa('ExportBackupJob memakai registry tabel terpusat', function () use ($root) {
+periksa('Backup terjadwal dan export async berbagi writer streaming', function () use ($root) {
+    $command = baca($root . '/app/Console/Commands/BackupData.php');
     $job = baca($root . '/app/Jobs/ExportBackupJob.php');
+    $writer = baca($root . '/app/Services/Backup/BackupStreamWriter.php');
 
-    return str_contains($job, 'BackupTables::semua()') ? true : 'job export masih memakai daftar tabel sendiri';
+    return str_contains($command, 'BackupStreamWriter')
+        && str_contains($job, 'BackupStreamWriter')
+        && str_contains($writer, 'BackupTables::semua()')
+        && str_contains($command, 'php://temp/maxmemory:2097152')
+        && str_contains($job, 'php://temp/maxmemory:2097152')
+        ? true
+        : 'backup terjadwal/export belum berbagi stream writer terpusat';
 });
 
 /* ──────────────────────────────────────────────────────────────

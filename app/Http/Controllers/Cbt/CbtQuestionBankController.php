@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cbt\StoreCbtQuestionBankRequest;
 use App\Models\CbtQuestionBank;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CbtQuestionBankController extends Controller
@@ -20,12 +20,12 @@ class CbtQuestionBankController extends Controller
         return view('cbt.banks.form', ['bank' => new CbtQuestionBank]);
     }
 
-    private function data(Request $request): array
+    private function data(StoreCbtQuestionBankRequest $request): array
     {
-        return $request->validate(['title' => 'required|string|max:200', 'subject' => 'required|string|max:100']);
+        return $request->validated();
     }
 
-    public function store(Request $request)
+    public function store(StoreCbtQuestionBankRequest $request)
     {
         $bank = CbtQuestionBank::create($this->data($request) + ['guru_id' => auth()->id()]);
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Bank soal dibuat.');
@@ -44,7 +44,7 @@ class CbtQuestionBankController extends Controller
         return view('cbt.banks.form', compact('bank'));
     }
 
-    public function update(Request $request, CbtQuestionBank $bank)
+    public function update(StoreCbtQuestionBankRequest $request, CbtQuestionBank $bank)
     {
         $this->authorize('update', $bank);
         $data = $this->data($request);
