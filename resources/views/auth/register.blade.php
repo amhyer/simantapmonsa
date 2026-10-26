@@ -4,9 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar - SIMANTAP</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    {{--
+        Webfont Google Fonts dilepas (P2). Halaman login dan ganti-sandi memang
+        tidak memuatnya, jadi halaman pendaftaran tampak berbeda dari keduanya
+        padahal ketiganya halaman gerbang yang sama. Tautan font juga menambah
+        permintaan ke pihak ketiga di jalur pendaftaran.
+
+        'Inter' tetap ada di font-family sebagai progressive enhancement: bila
+        font itu terpasang di perangkat, ia dipakai; bila tidak, browser jatuh ke
+        font sistem — sama seperti dua halaman gerbang lainnya.
+    --}}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -100,7 +108,7 @@
             <div class="form-group">
                 <label for="kata_sandi">Kata Sandi</label>
                 <input type="password" id="kata_sandi" name="kata_sandi" required>
-                <div class="hint">Minimal 6 karakter.</div>
+                <div class="hint">Minimal 8 karakter.</div>
             </div>
 
             <div class="form-group">
@@ -114,8 +122,8 @@
                     <option value="guru" {{ old('peran') == 'guru' ? 'selected' : '' }}>Guru</option>
                     <option value="siswa" {{ old('peran') == 'siswa' ? 'selected' : '' }}>Siswa</option>
                     <option value="ortu" {{ old('peran') == 'ortu' ? 'selected' : '' }}>Orang Tua</option>
-                    <option value="kepsek" {{ old('peran') == 'kepsek' ? 'selected' : '' }}>Kepala Sekolah</option>
                 </select>
+                <div class="hint">Pendaftaran baru menunggu aktivasi administrator sekolah. Akun kepala sekolah dibuat oleh administrator.</div>
             </div>
 
             <button type="submit" class="btn-register">Daftar Sekarang</button>
@@ -126,7 +134,7 @@
         </div>
 
         <div class="terms">
-            Dengan mendaftar, Anda menyetujui <a href="#">Syarat & Ketentuan</a> dan <a href="#">Kebijakan Privasi</a>.
+            Pendaftaran akan mengirim nama, nama pengguna, dan peran untuk ditinjau administrator sekolah. Akun baru tidak aktif sampai disetujui. Tanyakan kepada administrator sekolah mengenai kebijakan privasi yang berlaku.
         </div>
     </div>
 </body>

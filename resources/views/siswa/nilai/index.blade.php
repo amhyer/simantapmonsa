@@ -17,14 +17,18 @@
     @else
 
     @php
-        $allNilai = $nilai->merge($hasilKuis->map(fn($h) => (object)[
-            'jenis' => 'Kuis',
-            'judul_penilaian' => $h->judul_kuis,
-            'mata_pelajaran' => $h->sumber_soal,
-            'nilai' => $h->skor,
-            'tanggal' => $h->waktu,
-            'nama_guru' => $h->nama_guru,
-        ]))->sortByDesc('tanggal');
+        // $nilai adalah Eloquent\Collection: merge() akan memanggil getKey()
+        // pada setiap item, sementara hasil kuis sengaja dibuat stdClass.
+        // Gunakan Collection biasa agar dua sumber data bisa digabung aman.
+        $allNilai = collect($nilai->all())
+            ->concat($hasilKuis->map(fn($h) => (object)[
+                'jenis' => 'Kuis',
+                'judul_penilaian' => $h->judul_kuis,
+                'mata_pelajaran' => $h->sumber_soal,
+                'nilai' => $h->skor,
+                'tanggal' => $h->waktu,
+                'nama_guru' => $h->nama_guru,
+            ]))->sortByDesc('tanggal');
 
         $rataNilai = $allNilai->count() ? round($allNilai->avg('nilai'), 1) : 0;
         $nilaiTertinggi = $allNilai->count() ? $allNilai->max('nilai') : 0;
@@ -158,8 +162,11 @@
         </div>
 
         @push('scripts')
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            @vite('resources/js/charts.js')
             <script>
+                // Chart.js dimuat sebagai modul Vite (deferred), jadi inisialisasi
+                // harus menunggu DOM siap — sama seperti halaman grafik lainnya.
+                document.addEventListener('DOMContentLoaded', function() {
                 const labels = {!! json_encode($allNilai->pluck('tanggal')->reverse()->map(fn($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'))->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
                 const dataValues = {!! json_encode($allNilai->pluck('nilai')->reverse()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
                 const types = {!! json_encode($allNilai->pluck('jenis')->reverse()->toArray(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
@@ -218,6 +225,7 @@
                             }
                         }
                     }
+                });
                 });
             </script>
         @endpush

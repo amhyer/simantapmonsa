@@ -95,6 +95,43 @@ class AlignmentTest extends TestCase
         $this->assertSame($jadwal->id, (int) NilaiErapot::first()->jadwal_pelajaran_id);
     }
 
+    public function test_admin_dapat_mencocokkan_ulang_nilai_yang_belum_terpetakan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create(['aktif' => true]);
+        [, $jadwal, $siswa] = $this->seedDasar($guru);
+        $bisaCocok = $this->buatNilai($siswa, $guru, 'Matematika');
+        $tetapBelumCocok = $this->buatNilai($siswa, $guru, 'Fisika');
+
+        $this->actingAs($admin)
+            ->post(route('admin.referensi.alignment.refresh'))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame($jadwal->id, (int) $bisaCocok->fresh()->jadwal_pelajaran_id);
+        $this->assertNull($tetapBelumCocok->fresh()->jadwal_pelajaran_id);
+    }
+
+    public function test_admin_dapat_mengunduh_semua_nilai_belum_terpetakan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create(['aktif' => true]);
+        [, , $siswa] = $this->seedDasar($guru);
+        $this->buatNilai($siswa, $guru, 'Mapel Belum Terpetakan');
+        $this->buatNilai($siswa, $guru, '=HYPERLINK("https://example.invalid")');
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.referensi.alignment.export'))
+            ->assertOk()
+            ->assertDownload('nilai-erapor-unmatched-' . now()->format('Y-m-d') . '.csv');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Nama siswa', $csv);
+        $this->assertStringContainsString('Mapel Belum Terpetakan', $csv);
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertStringContainsString('Siswa Align', $csv);
+    }
+
     public function test_halaman_alignment_dan_badge_pembelajaran(): void
     {
         $admin = User::factory()->admin()->create();
@@ -112,7 +149,8 @@ class AlignmentTest extends TestCase
         $this->actingAs($admin)->get(route('admin.referensi.alignment'))
             ->assertOk()
             ->assertSee('Cek Alignment E-Rapor', false)
-            ->assertSee('Nama mapel tak cocok', false);
+            ->assertSee('Belum terpetakan', false)
+            ->assertDontSee('Nama mapel tak cocok');
 
         $this->actingAs($admin)->get(route('admin.referensi.pembelajaran'))
             ->assertOk()

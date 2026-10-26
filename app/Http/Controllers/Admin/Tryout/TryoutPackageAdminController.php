@@ -10,6 +10,10 @@ use App\Models\Tryout\Result;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Services\Exam\LegacyExamMapper;
+use App\Models\Tryout\StudentAnswer;
+use App\Services\ExcelExportService;
+use App\Services\TryoutResultDetailService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -376,6 +380,55 @@ class TryoutPackageAdminController extends Controller
     }
 
     /**
+     * Build the shared, validated query used by the results table and export.
+     */
+    private function resultsQuery(Request $request): Builder
+    {
+        $filters = $request->validate([
+            'lulus' => 'nullable|in:true,false',
+            'package_id' => 'nullable|integer|exists:tryout_packages,id',
+            'session_id' => 'nullable|integer|exists:tryout_sessions,id',
+            'tanggal_from' => 'nullable|date',
+            'tanggal_to' => 'nullable|date',
+            'search' => 'nullable|string|max:150',
+        ]);
+
+        $query = Result::query()->with(['session.package', 'siswa']);
+
+        if (isset($filters['lulus'])) {
+            $query->where('lulus', $filters['lulus'] === 'true');
+        }
+
+        if (isset($filters['session_id'])) {
+            $query->where('tryout_session_id', $filters['session_id']);
+        }
+
+        // The package filter is exposed by the page and must also be applied to
+        // the results query (and therefore to its export).
+        if (isset($filters['package_id'])) {
+            $query->whereHas('session', fn (Builder $sessionQuery) =>
+                $sessionQuery->where('package_id', $filters['package_id'])
+            );
+        }
+
+        if (isset($filters['tanggal_from'])) {
+            $query->whereDate('waktu_mulai', '>=', $filters['tanggal_from']);
+        }
+        if (isset($filters['tanggal_to'])) {
+            $query->whereDate('waktu_mulai', '<=', $filters['tanggal_to']);
+        }
+
+        if (isset($filters['search']) && trim($filters['search']) !== '') {
+            $search = trim($filters['search']);
+            $query->whereHas('siswa', fn (Builder $siswaQuery) =>
+                $siswaQuery->where('nama_peserta_didik', 'like', "%{$search}%")
+            );
+        }
+
+        return $query;
+    }
+
+    /**
      * Display all tryout results across all sessions.
      */
     public function allResults(Request $request)
@@ -398,13 +451,18 @@ class TryoutPackageAdminController extends Controller
     /**
      * Display the specified result.
      */
-    public function showResult(Result $result)
+    public function showResult(Result $result, TryoutResultDetailService $details)
     {
         $result->load(['session.package.subjects.questions', 'siswa', 'answers.question']);
 
-        return view('admin.tryout.results.show', [
-            'rincian' => app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariLegacy($result),
-        ]);
+        $rincian = app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariLegacy($result);
+        $detailNilaiMapel = $details->forResult($result);
+        if ($detailNilaiMapel !== []) {
+            $rincian['detail_mapel'] = $detailNilaiMapel;
+        }
+        $rincian['kelemahan'] = $details->weaknesses($result, $rincian['detail_mapel']);
+
+        return view('admin.tryout.results.show', compact('rincian'));
     }
 
     /**
@@ -425,12 +483,66 @@ class TryoutPackageAdminController extends Controller
     }
     
     /**
-     * Export results to Excel/PDF.
+     * Download every result matching the filters shown on the results page.
      */
-    public function exportResults(Request $request)
+    public function exportResults(Request $request, ExcelExportService $excel)
     {
-        // Placeholder for export functionality
-        return back()->with('info', 'Fitur export akan segera tersedia');
+        $results = $this->resultsQuery($request)->latest('created_at')->get();
+
+        if ($results->isEmpty()) {
+            return back()->with('error', 'Tidak ada hasil tryout yang cocok untuk diekspor.');
+        }
+
+        $sessionIds = $results->pluck('tryout_session_id')->unique()->values();
+        $answerCounts = StudentAnswer::query()
+            ->select('tryout_session_id', 'siswa_id', 'attempt_number')
+            ->selectRaw('SUM(CASE WHEN adalah_benar = ? THEN 1 ELSE 0 END) AS jumlah_benar', [true])
+            ->selectRaw('SUM(CASE WHEN adalah_benar = ? THEN 1 ELSE 0 END) AS jumlah_salah', [false])
+            ->selectRaw('SUM(CASE WHEN adalah_benar IS NULL THEN 1 ELSE 0 END) AS jumlah_kosong')
+            ->whereIn('tryout_session_id', $sessionIds)
+            ->groupBy('tryout_session_id', 'siswa_id', 'attempt_number')
+            ->get()
+            ->keyBy(fn ($counts) => implode(':', [
+                $counts->tryout_session_id,
+                $counts->siswa_id,
+                $counts->attempt_number,
+            ]));
+
+        $rows = $results->values()->map(function (Result $result, int $index) use ($answerCounts): array {
+            $key = implode(':', [$result->tryout_session_id, $result->siswa_id, $result->attempt_number]);
+            $counts = $answerCounts->get($key);
+
+            return [
+                $index + 1,
+                $result->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
+                $result->siswa?->nis ?? '-',
+                $result->siswa?->kelas ?? '-',
+                $result->session?->nama_sesi ?? '-',
+                $result->session?->package?->nama_paket ?? '-',
+                $result->attempt_number,
+                $result->nilai_total,
+                $result->nilai_maksimal,
+                $result->persentase,
+                (int) ($counts?->jumlah_benar ?? 0),
+                (int) ($counts?->jumlah_salah ?? 0),
+                (int) ($counts?->jumlah_kosong ?? 0),
+                $result->durasi_total_detik,
+                $result->lulus ? 'Lulus' : 'Tidak lulus',
+                $result->waktu_mulai?->format('Y-m-d H:i:s') ?? '-',
+                $result->waktu_selesai?->format('Y-m-d H:i:s') ?? '-',
+            ];
+        })->all();
+
+        return $excel->download(
+            'hasil-tryout-' . now()->format('Y-m-d') . '.xlsx',
+            'Hasil Tryout',
+            [
+                'No', 'Nama siswa', 'NIS', 'Kelas', 'Sesi', 'Paket', 'Percobaan',
+                'Nilai total', 'Nilai maksimal', 'Persentase (%)', 'Benar', 'Salah',
+                'Kosong', 'Durasi (detik)', 'Status', 'Waktu mulai', 'Waktu selesai',
+            ],
+            $rows,
+        );
     }
 
     /**

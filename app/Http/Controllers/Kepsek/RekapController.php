@@ -40,8 +40,10 @@ class RekapController extends Controller
         $dataSiswa = [];
         foreach ($siswa as $s) {
             $na = $this->nilaiService->hitungNilaiAkhir($s->id);
-            $predikat = $na['nilai_akhir'] > 0 
-                ? $this->nilaiService->getPredikat($na['nilai_akhir'], $ringkasan->kkm) 
+            // getPredikat() mengembalikan ['huruf','label','kelas']; view
+            // mencetak nilainya sebagai teks, jadi ambil hanya hurufnya.
+            $predikat = $na['nilai_akhir'] > 0
+                ? ($this->nilaiService->getPredikat($na['nilai_akhir'], $ringkasan->kkm)['huruf'] ?? null)
                 : null;
             $dataSiswa[] = ['siswa' => $s, 'nilai' => $na['nilai_akhir'], 'predikat' => $predikat];
         }

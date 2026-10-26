@@ -119,7 +119,11 @@ class DashboardController extends Controller
             $nilaiKelas = $nilaiSemua->get($item->kelas, collect());
             $rataNilai = $nilaiKelas->count() > 0 ? round($nilaiKelas->avg('nilai_akhir'), 1) : 0;
 
-            $kehadiranKelas = $kehadiranSemua->filter(fn($h) => $kelasSiswaIds->contains($h->siswa_id));
+            // $kehadiranSemua sudah di-groupBy('siswa_id'): nilai tiap kunci
+            // adalah collection baris, bukan model tunggal.
+            $kehadiranKelas = $kehadiranSemua
+                ->filter(fn($baris, $siswaId) => $kelasSiswaIds->contains($siswaId))
+                ->flatten(1);
             $totalKehadiran = $kehadiranKelas->sum('jumlah');
             $hadirCount = $kehadiranKelas->filter(fn($h) => $h->status === 'H')->sum('jumlah');
             $persenHadir = $totalKehadiran > 0 ? round($hadirCount / $totalKehadiran * 100, 1) : 0;

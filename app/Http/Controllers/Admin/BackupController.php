@@ -18,12 +18,17 @@ class BackupController extends Controller
 {
     public function index()
     {
-        $backups = Storage::disk('local')->files('backups');
-        $backupList = collect($backups)->map(function ($file) {
+        // Disk & folder mengikuti config/backup.php supaya daftar ini selalu
+        // menunjukkan tempat `simantap:backup` dan ExportBackupJob benar-benar menulis.
+        $disk = Storage::disk((string) config('backup.disk', 'local'));
+        $direktori = trim((string) config('backup.direktori', 'backups'), '/');
+
+        $backups = $disk->files($direktori);
+        $backupList = collect($backups)->map(function ($file) use ($disk) {
             return [
                 'name' => basename($file),
-                'size' => Storage::disk('local')->size($file),
-                'date' => Storage::disk('local')->lastModified($file),
+                'size' => $disk->size($file),
+                'date' => $disk->lastModified($file),
             ];
         })->sortByDesc('date')->values();
 

@@ -61,7 +61,6 @@
                     <div style="display:flex;gap:8px">
                         <form action="{{ route('guru.integrasi.disconnect') }}" method="POST" onsubmit="return confirm('Putuskan koneksi ke Google Sheet?')">
                             @csrf
-                            @method('DELETE')
                             <button type="submit" class="btn btn-danger">
                                 <i class="fas fa-unlink"></i> Putuskan
                             </button>

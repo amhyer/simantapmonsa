@@ -1,0 +1,11 @@
+/*
+ * Aset pihak ketiga untuk halaman publik /tka-statistik — dibundel sendiri,
+ * bukan dari cdn.jsdelivr.net / cdnjs.cloudflare.com. Alasan lengkapnya sama
+ * dengan resources/css/halaman-publik.css.
+ *
+ * Bootstrap hanya dipakai halaman ini, jadi dipisah dari entri landing agar
+ * halaman lain tidak ikut menanggung ukurannya.
+ */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+@import '@fortawesome/fontawesome-free/css/all.min.css';

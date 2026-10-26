@@ -256,12 +256,96 @@
                             </a>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <button class="btn btn-outline-info w-100" disabled>
+                            <a href="#tka-exports" class="btn btn-outline-info w-100">
                                 <i class="fas fa-file-export"></i><br>
-                                Export Report
-                            </button>
+                                Ekspor Data &amp; Laporan
+                            </a>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="tka-exports">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Laporan Massal per Semester</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Unduh ringkasan seluruh siswa yang memiliki penilaian pada semester pilihan.</p>
+                    <form method="POST" action="{{ route('admin.tka.generate-report') }}" class="row g-3">
+                        @csrf
+                        <div class="col-12">
+                            <label for="reportSemester" class="form-label">Semester</label>
+                            <select name="semester_id" id="reportSemester" class="form-select" required>
+                                <option value="">Pilih semester</option>
+                                @foreach($semesters as $semester)
+                                    <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
+                                        {{ $semester->label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="reportFormat" class="form-label">Format</label>
+                            <select name="format" id="reportFormat" class="form-select" required>
+                                <option value="excel" @selected(old('format', 'excel') === 'excel')>Excel (.xlsx)</option>
+                                <option value="pdf" @selected(old('format') === 'pdf')>PDF</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Unduh Laporan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Ekspor Data TKA</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Ekspor data penilaian, early warning, atau dimensi untuk satu atau seluruh semester.</p>
+                    <form method="POST" action="{{ route('admin.tka.export') }}" class="row g-3">
+                        @csrf
+                        <div class="col-12">
+                            <label for="exportType" class="form-label">Jenis data</label>
+                            <select name="type" id="exportType" class="form-select" required>
+                                <option value="assessments" @selected(old('type', 'assessments') === 'assessments')>Penilaian</option>
+                                <option value="warnings" @selected(old('type') === 'warnings')>Early warning</option>
+                                <option value="dimensions" @selected(old('type') === 'dimensions')>Dimensi</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="exportSemester" class="form-label">Semester (opsional)</label>
+                            <select name="semester_id" id="exportSemester" class="form-select">
+                                <option value="">Semua semester</option>
+                                @foreach($semesters as $semester)
+                                    <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
+                                        {{ $semester->label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="exportFormat" class="form-label">Format</label>
+                            <select name="format" id="exportFormat" class="form-select" required>
+                                <option value="excel" @selected(old('format', 'excel') === 'excel')>Excel (.xlsx)</option>
+                                <option value="pdf" @selected(old('format') === 'pdf')>PDF</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-file-export"></i> Ekspor Data
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

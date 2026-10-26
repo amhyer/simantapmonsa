@@ -53,7 +53,7 @@ class CbtStudentController extends Controller
         if ($result->submitted_at) {
             return redirect()->route('cbt.student.result', $result);
         }
-        $questions = CbtScoring::publicQuestions($session->question_snapshot);
+        $questions = CbtScoring::publicQuestions($session->question_snapshot ?? []);
         return view('cbt.student.exam', compact('session', 'result', 'questions'));
     }
 

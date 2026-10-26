@@ -12,6 +12,7 @@ use App\Models\HasilKuis;
 use App\Models\Catatan;
 use App\Models\Dimensi;
 use App\Models\PengaturanGuru;
+use Database\Seeders\Support\SeedGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -20,6 +21,17 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // PENJAGA PRODUKSI (kesiapan launching): seeder ini membuat akun dengan
+        // sandi yang tercantum di repositori (admin123, guru123, dst). Menjalankannya
+        // di server live berarti membuka kredensial publik.
+        if (! SeedGuard::bolehJalan($this->command)) {
+            return;
+        }
+
+        // Di luar lingkungan local (staging/production yang diizinkan), semua akun
+        // hasil seed dipaksa mengganti sandi pada login pertama.
+        $paksaGantiSandi = SeedGuard::paksaGantiSandi();
+
         $guru = User::create([
             'uuid' => Str::uuid(),
             'nama_lengkap' => 'Guru Kelas 7A',
@@ -29,6 +41,7 @@ class DatabaseSeeder extends Seeder
             'terhubung_dengan' => [],
             'kelas_mata_pelajaran' => 'Kelas 7A - Matematika',
             'aktif' => true,
+            'force_password_change' => $paksaGantiSandi,
         ]);
 
         $admin = User::where('nama_pengguna', 'admin')->first();
@@ -42,6 +55,7 @@ class DatabaseSeeder extends Seeder
                 'terhubung_dengan' => [],
                 'kelas_mata_pelajaran' => null,
                 'aktif' => true,
+                'force_password_change' => $paksaGantiSandi,
             ]);
         }
 
@@ -54,6 +68,7 @@ class DatabaseSeeder extends Seeder
             'terhubung_dengan' => [],
             'kelas_mata_pelajaran' => null,
             'aktif' => true,
+            'force_password_change' => $paksaGantiSandi,
         ]);
 
         PengaturanGuru::create([
@@ -101,6 +116,7 @@ class DatabaseSeeder extends Seeder
                 'terhubung_dengan' => [$siswa->id],
                 'kelas_mata_pelajaran' => 'Kelas 7A',
                 'aktif' => true,
+                'force_password_change' => $paksaGantiSandi,
             ]);
 
             User::create([
@@ -112,6 +128,7 @@ class DatabaseSeeder extends Seeder
                 'terhubung_dengan' => [$siswa->id],
                 'kelas_mata_pelajaran' => 'Kelas 7A',
                 'aktif' => true,
+                'force_password_change' => $paksaGantiSandi,
             ]);
         }
 
@@ -221,5 +238,9 @@ class DatabaseSeeder extends Seeder
         }
 
         echo "Seed berhasil! Login: admin/admin123, guru/guru123, kepsek/kepsek123\n";
+
+        if ($paksaGantiSandi) {
+            echo "Catatan: lingkungan non-local — semua akun di atas WAJIB mengganti sandi saat login pertama.\n";
+        }
     }
 }

@@ -1,4 +1,17 @@
-import { Html5Qrcode } from 'html5-qrcode';
+// PERBAIKAN BUNDLE: `html5-qrcode` dulu diimpor statis di baris pertama, sehingga
+// ikut terbundel ke app.js dan diunduh di SETIAP halaman — padahal hanya dipakai
+// saat operator menekan tombol "Mulai Kamera" di halaman pemetaan QR.
+// Impor dinamis memindahkannya ke chunk terpisah yang baru dimuat saat dibutuhkan.
+let pustakaQr = null;
+
+async function muatPustakaQr() {
+    if (!pustakaQr) {
+        const modul = await import('html5-qrcode');
+        pustakaQr = modul.Html5Qrcode;
+    }
+
+    return pustakaQr;
+}
 
 const statusLabels = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpa' };
 
@@ -124,6 +137,7 @@ function initQrScanner(root, index) {
         if (scanner) return;
 
         try {
+            const Html5Qrcode = await muatPustakaQr();
             scanner = new Html5Qrcode(reader.id, { verbose: false });
             const cameras = await Html5Qrcode.getCameras();
             const rearCamera = cameras.find((camera) => /back|rear|environment/i.test(camera.label));

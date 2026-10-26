@@ -90,7 +90,8 @@ class PetaKelasController extends Controller
     {
         $pengaturan = PengaturanGuru::findOrFail($id);
 
-        if ($pengaturan->siswa->count() > 0) {
+        // PengaturanGuru tidak punya relasi `siswa`; hitung langsung dari guru_id.
+        if (Siswa::where('guru_id', $pengaturan->guru_id)->exists()) {
             return redirect()->route('admin.peta-kelas.index')
                 ->with('error', 'Tidak bisa menghapus pengaturan kelas yang masih memiliki siswa terkait.');
         }

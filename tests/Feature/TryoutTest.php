@@ -119,6 +119,22 @@ class TryoutTest extends TestCase
         $this->assertNotNull($result->waktu_selesai);
     }
 
+    public function test_alur_siswa_tryout_end_to_end_mulai_autosave_complete_hasil(): void
+    {
+        $result = $this->mulai();
+        $this->jawab($result, 'A');
+
+        $this->post(route('tryout.student.complete', $result))
+            ->assertRedirect(route('tryout.student.result', $result));
+
+        $this->assertSame(100.0, $result->fresh()->persentase);
+        $this->actingAs($this->akun)
+            ->get(route('tryout.student.result', $result->fresh()))
+            ->assertOk()
+            ->assertSee('Matematika')
+            ->assertSee('100.0%');
+    }
+
     public function test_jawaban_setelah_selesai_ditolak_409(): void
     {
         $result = $this->mulai();
@@ -212,6 +228,35 @@ class TryoutTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.tryout.results.show', $result->fresh()))
             ->assertOk();
+    }
+
+    public function test_hasil_historis_menghitung_rincian_mapel_dari_jawaban_bila_ringkasan_kosong(): void
+    {
+        $result = $this->mulai();
+        StudentAnswer::create([
+            'tryout_session_id' => $result->tryout_session_id,
+            'tryout_subject_id' => $this->mapel->id,
+            'siswa_id' => $result->siswa_id,
+            'question_id' => $this->soal->id,
+            'attempt_number' => $result->attempt_number,
+            'jawaban' => 'A',
+            'adalah_benar' => true,
+            'poin_diperoleh' => 1,
+        ]);
+        $result->update(['detail_nilai_mapel' => [], 'analisis_kelemahan' => []]);
+
+        $this->actingAs($this->akun)
+            ->get(route('tryout.student.result', $result))
+            ->assertOk()
+            ->assertSee('Matematika')
+            ->assertSee('100.0%');
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)
+            ->get(route('admin.tryout.results.show', $result->fresh()))
+            ->assertOk()
+            ->assertSee('Matematika')
+            ->assertSee('100.0%');
     }
 
     public function test_guru_lain_tidak_bisa_mengelola_sesi_tryout(): void

@@ -181,7 +181,6 @@
                                 echo $firstResponse?->assessmentItem?->dimension?->nama_dimensi ?? '-';
                                 @endphp
                             </td>
-                            <td>-</td>
                             <td>{{ $assessment->tanggal_penilaian ? $assessment->tanggal_penilaian->format('d M Y') : '-' }}</td>
                             <td>{{ number_format($assessment->total_score ?? $assessment->skor_akhir ?? 0, 1) }}</td>
                             <td>
@@ -201,7 +200,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted">
+                            <td colspan="8" class="text-center text-muted">
                                 Tidak ada data penilaian
                             </td>
                         </tr>

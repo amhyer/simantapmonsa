@@ -92,7 +92,7 @@ class CbtTestSessionController extends Controller
             'participants' => count($session->participant_ids ?? []),
             'results' => $results->through(fn ($r) => [
                 'id' => $r->id, 'name' => $r->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
-                'answered' => count($r->answers), 'deadline' => $r->deadline_at->toIso8601String(),
+                'answered' => count($r->answers ?? []), 'deadline' => $r->deadline_at?->toIso8601String(),
                 'submitted' => (bool) $r->submitted_at, 'score' => $r->score, 'violations' => $r->violations_count,
             ]),
         ]);

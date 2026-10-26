@@ -163,6 +163,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
     Route::delete('/referensi/tanggal-rapor/{tanggalRapor}', [DataReferensiController::class, 'destroyTanggalRapor'])->middleware('throttle:30,1')->name('referensi.tanggal-rapor.destroy');
     Route::get('/referensi/kelompok-mapel', [DataReferensiController::class, 'kelompokMapel'])->name('referensi.kelompok-mapel');
     Route::get('/referensi/alignment', [DataReferensiController::class, 'alignmentCheck'])->name('referensi.alignment');
+    Route::post('/referensi/alignment/refresh', [DataReferensiController::class, 'refreshAlignment'])->middleware('throttle:5,1')->name('referensi.alignment.refresh');
+    Route::get('/referensi/alignment/export', [DataReferensiController::class, 'exportUnmatchedAlignment'])->name('referensi.alignment.export');
     Route::get('/referensi/mapping-rapor', [DataReferensiController::class, 'mappingRapor'])->name('referensi.mapping-rapor');
     Route::put('/referensi/mapel-meta', [DataReferensiController::class, 'updateMapelMeta'])->middleware('throttle:30,1')->name('referensi.mapel-meta.update');
     Route::get('/referensi/logo-ttd', [DataReferensiController::class, 'logoTtd'])->name('referensi.logo-ttd');
@@ -432,7 +434,9 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change'])->prefix('kep
 // Aktifkan setelah migrasi + pengujian integrasi; tetap false secara default.
 if (config('simantap.cbt_enabled', false)) {
     // ==================== CBT ROUTES ====================
-    Route::middleware(['auth', 'role:guru', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt')->name('cbt.')->group(function () {
+    // `force.password.change` wajib ada di sini: tanpa itu guru yang masih memakai
+    // sandi awal tetap bisa masuk alur ujian, padahal 7 grup route lain menolaknya.
+    Route::middleware(['auth', 'role:guru', 'force.password.change', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt')->name('cbt.')->group(function () {
         // Question Banks
         Route::prefix('question-banks')->name('question-banks.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Cbt\CbtQuestionBankController::class, 'index'])->name('index');
@@ -472,7 +476,8 @@ if (config('simantap.cbt_enabled', false)) {
     });
 
     // CBT Student Routes
-    Route::middleware(['auth', 'role:siswa', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    // Sama seperti grup guru di atas: sandi awal harus sudah diganti sebelum ujian.
+    Route::middleware(['auth', 'role:siswa', 'force.password.change', \App\Http\Middleware\CbtAccessMiddleware::class])->prefix('cbt/student')->name('cbt.student.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'index'])->name('index');
         Route::get('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'start'])->name('start');
         Route::post('/{session}/start', [\App\Http\Controllers\Cbt\CbtStudentController::class, 'begin'])->name('begin');
@@ -583,7 +588,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== TRYOUT ROUTES ====================
-Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tryout')->name('tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru', 'force.password.change'])->prefix('tryout')->name('tryout.')->group(function () {
     // Categories (nonaktif sementara: controller belum ada — milik area Kiro)
     // Route::resource('categories', \App\Http\Controllers\Tryout\TryoutCategoryController::class)->except(['show']);
     
@@ -614,7 +619,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.chang
 });
 
 // ==================== TKA ENHANCED ROUTES ====================
-Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tka')->name('tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru', 'force.password.change'])->prefix('tka')->name('tka.')->group(function () {
     // Dimensions
     Route::resource('dimensions', \App\Http\Controllers\Tka\TkaDimensionController::class);
     Route::post('/dimensions/{dimension}/item', [\App\Http\Controllers\Tka\TkaDimensionController::class, 'addItem'])->name('dimensions.add-item');
@@ -636,7 +641,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:guru'])->prefix('tka')->name(
 });
 
 // TKA Parent Routes
-Route::middleware(['module.asesmen', 'auth', 'role:ortu'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:ortu', 'force.password.change'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Tka\TkaParentController::class, 'index'])->name('index');
     Route::get('/{report}', [\App\Http\Controllers\Tka\TkaParentController::class, 'show'])->name('show');
 });

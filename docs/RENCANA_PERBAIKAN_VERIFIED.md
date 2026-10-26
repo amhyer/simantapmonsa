@@ -3,8 +3,9 @@
 ### Acuan pembenahan gabungan, diverifikasi langsung terhadap kode
 
 **Basis verifikasi:** working tree pada commit `56f7922` (15 Okt 2026) + perubahan belum di-commit.
-**Tanggal verifikasi:** 17 Oktober 2026.
-**Metode:** pembacaan kode + pemeriksaan file/folder satu per satu (bukan klaim dari laporan lain).
+**Tanggal verifikasi awal:** 17 Oktober 2026.
+**Metode awal:** pembacaan kode + pemeriksaan file/folder satu per satu (bukan klaim dari laporan lain).
+**Status mutakhir:** §1b dan matriks §2 adalah snapshot awal; §§1c–1e mencatat fase perbaikan setelahnya. §1f berisi eksekusi terbaru dan mengalahkan status historis yang belum direkonsiliasi.
 **Sumber digabung:**
 - `docs/Audit_Mendalam_SIMANTAPMONSA.md` (audit statis, snapshot `56f7922`)
 - `docs/AUDIT_SIMANTAP_MENDALAM_2026-10-17.md` (audit + eksekusi, klaim 19 temuan)
@@ -52,7 +53,7 @@ menyala hijau — bukan pembacaan kode, bukan laporan Markdown.
 | 0.4 | ✅ SELESAI | `.github/workflows/test.yml`; langkah wajib `php artisan test --exclude-group baseline` → lokal **127 test, 0 error, 0 gagal (61,5 s)** |
 | 0.5 | ✅ SELESAI (ubah pendekatan) | flag `cbt_enabled=false` + middleware `EnsureModuleEnabled` (alias `module.asesmen`) → 404. **Route tetap terdaftar** (bukan dihapus) agar `route()` di view tidak melempar `RouteNotFoundException` |
 | 0.6 | ✅ SELESAI | `git rm routes/web.php.remote all_routes.txt api.json`; `git mv setup_api_key.php tools/`; path di `tools/verifikasi-perbaikan.php` diperbaiki |
-| 0.7 | ✅ SELESAI | Header "⚠️ KEDALUWARSA (17 Okt 2026)" di 6 dokumen. `00_START_HERE.txt` dilewati (penulisan ulang merusak encoding; sudah direvert) |
+| 0.7 | ✅ SELESAI | Header "⚠️ KEDALUWARSA (17 Okt 2026)" di 6 dokumen. `arsip/00_START_HERE.txt` dilewati (penulisan ulang merusak encoding; sudah direvert) |
 
 ### Temuan baru dari eksekusi Fase 0
 
@@ -256,9 +257,71 @@ sumber; pembuktiannya juga mengosongkan `cbt_*` lebih dulu.
 
 ---
 
-## 2. MATRIKS VERIFIKASI (ID ↔ Status ↔ Bukti)
+## 1f. VERIFIKASI ULANG KEADAAN TERKINI (25 OKT 2026)
 
-Kode: **RUSAK** = masih belum diperbaiki · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
+**Basis:** commit `6088244edbc3ff986f3ba3aceaca62dc23bc5321` pada PR #9.
+Bukti CI: [run 40171614678](https://github.com/amhyer/simantapmonsa/actions/runs/40171614678).
+Hasil: PHPUnit PHP 8.4 (SQLite) **lulus**, PHPUnit PostgreSQL 16 **lulus**, smoke Chromium
+landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI selesai sukses.
+
+### Temuan yang diperiksa ulang
+
+| Temuan | Status aktual | Bukti yang dijalankan |
+|---|---|---|
+| `GET /ortu/dashboard` tanpa anak terhubung | **200; pesan aman** | `CriticalRoutesRegressionTest::test_dashboard_ortu_tanpa_anak_tetap_merender_pesan_yang_aman` |
+| `GET /guru/laporan/pdf` tanpa pengaturan, dengan 12 siswa | **200; PDF `%PDF-` valid** | `CriticalRoutesRegressionTest::test_pdf_laporan_guru_berhasil_tanpa_pengaturan_dan_tanpa_query_kehadiran_n_plus_satu` |
+| `GET /guru/erapor/excel` tanpa pengaturan, dengan siswa | **200; stream XLSX `PK` valid**; semester/tahun ajaran fallback ditetapkan bila pengaturan guru belum dibuat | `CriticalRoutesRegressionTest::test_export_erapor_excel_berhasil_tanpa_pengaturan_dan_dengan_siswa` |
+| N+1 kehadiran pada laporan guru | **Diperbaiki**: persentase dihitung dari agregat yang sudah diambil sekaligus; filter semester berulang per baris nilai dihapus karena siswa sudah difilter pada query awal | Dua test laporan memeriksa tidak ada query `COUNT` kehadiran per siswa; index juga mempertahankan hasil 50% pada fixture H/S |
+| `GET /tka/assessments/1/edit` | **404 terencana, bukan 500** | Route edit tidak didaftarkan karena controller tidak mendukung edit; `CriticalRoutesRegressionTest::test_edit_assessment_yang_tidak_didukung_tidak_melempar_500` |
+| Alur TKA: input skor berbobot → hasil → laporan orang tua | **Berjalan; skor terverifikasi** (13/16 = 81,25%, rerata berbobot 3,25 → `siap`) | `TkaAssessmentFlowTest::test_alur_tka_menilai_menghitung_membuat_dan_membaca_laporan_orang_tua` |
+| Rekomendasi orang tua TKA untuk dimensi lemah | **Berjalan**; filter closure yang sebelumnya tak dievaluasi diperbaiki | `TkaAssessmentFlowTest::test_laporan_tka_menyertakan_saran_untuk_dimensi_yang_lemah` |
+| IDOR asesmen TKA guru | **Ditutup untuk catatan siswa**: form hanya menampilkan siswa guru yang login; create/show/riwayat/generate report memeriksa kepemilikan via `TkaAssessmentPolicy` | `TkaAssessmentFlowTest::test_guru_tidak_dapat_melihat_membuat_atau_menerbitkan_laporan_untuk_siswa_guru_lain` |
+| ID item lintas-dimensi TKA | **Ditolak 404** saat ID item tidak termasuk dimensi parent pada route nested; tidak ada penghapusan | `TkaAssessmentFlowTest::test_item_dimensi_lain_tidak_dapat_dihapus_melalui_route_nested` |
+| Akses orang tua ke laporan TKA | **Hanya akun yang terhubung dapat membaca**; ID siswa string/integer dinormalisasi; akses orang tua lain 403 | Test alur TKA di atas menguji akses benar, penandaan dibaca, dan penolakan parent lain |
+| 13 view yang pernah dilaporkan hilang | **Semua tersedia** | `CriticalRoutesRegressionTest::test_view_yang_pernah_dilaporkan_hilang_semuanya_tersedia` + kompilasi seluruh Blade di CI |
+| Ekspor CSV CBT | **Berjalan** | `ExamReaderTest::test_ekspor_csv_cbt_memuat_nilai_dan_pelanggaran` membuat ujian, memanggil ekspor, dan memeriksa isi CSV |
+| Start → autosave → anti-cheat → submit → hasil CBT | **Berjalan** | `CbtExamTest::test_alur_siswa_end_to_end_mulai_autosave_anti_cheat_submit_hasil` |
+| Start → autosave → complete → hasil Tryout | **Berjalan** | `TryoutTest::test_alur_siswa_tryout_end_to_end_mulai_autosave_complete_hasil` |
+| IDOR lintas akun CBT, Tryout, dan asesmen TKA | **Policy terdaftar; aksi baca/tulis/telemetri diperiksa** | 7 Policy di `app/Policies` (4 CBT, 2 Tryout, 1 TKA); `CbtAuthorizationTest`, `CbtExamTest`, `TryoutTest`, dan `TkaAssessmentFlowTest` menguji akses ditolak/data tetap utuh |
+| Smoke route GET | **Semua route GET terdaftar, >1.000 kombinasi route × peran, tanpa 5xx** | `RouteHealthAuditTest` menjalankan enam peran (admin, guru, siswa, ortu, kepsek, tendik) dan gagal jika menemukan HTTP 5xx |
+
+### Batas cakupan yang tetap harus dinyatakan
+
+- Route-health mengisi parameter dinamis dengan nilai contoh `1`; binding yang datanya tidak
+  ada dapat berakhir 404 sebelum view dijalankan. Untuk itu, 13 view lama dan endpoint kritis
+  di atas diberi pemeriksaan khusus dengan fixture yang benar. Angka 0 5xx tidak berarti setiap
+  kombinasi ID/data produksi telah diuji.
+- Perbaikan laporan guru membuktikan tidak adanya query kehadiran per siswa pada dua halaman
+  yang diuji; belum ada benchmark waktu nyata atau pengukuran ulang skor performa 60%/cold-start.
+- PHPUnit PostgreSQL CI memakai database sementara, bukan PostgreSQL produksi. Layanan langsung
+  Dapodik/Google Sheets dan staging sekolah tetap belum diuji; Chromium hanya menguji landing/FAQ,
+  bukan keseluruhan UI CBT/Tryout/TKA.
+- `AuditCbtProofTest` lama memang tidak dikembalikan karena menargetkan skema CBT yang sudah
+  dihapus. Penjaga aktifnya adalah `CbtExamTest`, `CbtAuthorizationTest`, `TryoutTest`, test parity
+  engine, dan `RouteHealthAuditTest`.
+- Engine CBT/Tryout sudah memiliki bridge ke `exam_*` (lihat §1e); tabel legacy tetap dicerminkan
+  dan belum boleh dihapus sebelum rekonsiliasi data produksi.
+
+## 1g. IMPLEMENTASI E2E CBT / TRYOUT / TKA PADA BRANCH ARENA (25 OKT 2026)
+
+Bagian ini menambahkan status kerja setelah snapshot §1f; ia **tidak mengubah** angka historis atau bukti CI yang dicatat pada §1f.
+
+- Checklist terskop: `docs/CHECKLIST_E2E_CBT_TRYOUT_TKA.md`.
+- Fixture stabil: `database/seeders/E2eFixtureSeeder.php`; browser job memakai SQLite file terpisah dan password dari `E2E_*_PASSWORD` yang dibuat acak di runtime.
+- Core-route registry dan route sweep GET/no-5xx + assertion tanpa-mutasi: `tests/Feature/Support/RouteExpectationRegistry.php` dan `tests/Feature/RouteSweepTest.php`. File lama `RouteHealthAuditTest.php` digantikan oleh sweep berbasis fixture; angka 1035/1050 pada §1b–§1f tetap klaim historis, bukan hasil sweep baru ini.
+- Playwright CBT/Tryout/TKA ditambahkan; smoke Chromium landing/FAQ tetap job terpisah. CI job E2E mengunggah trace/screenshot/video jika gagal.
+- Temuan UI Tryout: controller kini memasok jawaban tersimpan keyed by Tryout question ID; `Tryout\Result::answers()` mengikat foreign key ke `tryout_session_id` sesi (bukan ID baris hasil) sekaligus filter siswa/attempt. Blade memulihkan kontrol/state dan progress saat reload; browser dan feature test memeriksa radio `checked`.
+- **CI run 40173918626:** PHPUnit SQLite, PHPUnit PostgreSQL 16, dan smoke Chromium lulus; authenticated E2E awalnya gagal karena helper mencoba memulai trace yang sudah dikelola Playwright Test. Helper manual itu dihapus.
+- **CI run 40174119007:** PHPUnit SQLite, PostgreSQL, smoke Chromium, serta journey CBT/TKA lulus. Journey Tryout menjalankan start/autosave/reload/hasil/penolakan siswa lain, lalu test harness gagal pada navigasi parent karena `newPage()` belum di-`await`; diperbaiki.
+- **CI run 40174270016:** [keempat job lulus](https://github.com/amhyer/simantapmonsa/actions/runs/40174270016): PHPUnit PHP 8.4/SQLite, PHPUnit PostgreSQL 16, unauthenticated Chromium smoke, dan authenticated CBT/Tryout/TKA E2E. Job E2E berhasil menjalankan migrasi/seeder SQLite terisolasi serta `npm run test:e2e`.
+- PHP/JavaScript/YAML syntax checks dan `git diff --check` juga lulus. Bukti ini terbatas pada suite/fixture dan environment run tersebut; **bukan** klaim produksi siap atau semua variasi data/environment telah teruji.
+
+## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
+
+> Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status
+> **RUSAK** di snapshot lama tidak mengalahkan bukti eksekusi lebih baru di §1f.
+
+Kode historis: **RUSAK** = masih belum diperbaiki pada 17 Okt · **SEBAGIAN** = ada perbaikan parsial · **HILANG** = artefak yang diklaim ada ternyata tidak ada.
 
 ### 2.1 CBT (dari AUDIT_SIMANTAP_MENDALAM, §1)
 

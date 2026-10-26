@@ -218,7 +218,10 @@ echo "\n3. Route, controller, dan view\n";
 periksa('Semua controller pada routes/*.php memiliki berkasnya', function () use ($root) {
     $hilang = [];
     $routes = baca($root . '/routes/web.php') . baca($root . '/routes/api.php');
-    preg_match_all('/\\\\?(App\\\\Http\\\\Controllers\\\\[\w\\\\]+)::class/', $routes, $m);
+    // Controller yang disebut di dalam komentar (route dinonaktifkan) bukan
+    // dependensi aktif — pindai kode yang sudah dibuang komentarnya.
+    $kodeRoutes = kodeBersih(baca($root . '/routes/web.php')) . kodeBersih(baca($root . '/routes/api.php'));
+    preg_match_all('/\\\\?(App\\\\Http\\\\Controllers\\\\[\w\\\\]+)::class/', $kodeRoutes, $m);
 
     $dalamFlagCbt = str_contains($routes, "config('simantap.cbt_enabled'");
 
@@ -787,6 +790,642 @@ periksa('Tidak ada kunci/token hardcoded di skrip bridge & config', function () 
     }
 
     return $temuan === [] ? true : 'nilai rahasia hardcoded di: ' . implode(', ', $temuan);
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 13. Kesiapan launching (LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n13. Kesiapan launching\n";
+
+periksa('Admin yang mereset sandi memicu force_password_change', function () use ($root) {
+    // Sengaja memakai sumber mentah (bukan kodeBersih): `force_password_change`
+    // di sini adalah KUNCI ARRAY berupa string literal, dan kodeBersih() menghapus
+    // seluruh literal string sehingga pemeriksaannya tidak akan pernah cocok.
+    $kode = baca($root . '/app/Http/Controllers/Admin/UserController.php');
+
+    if (! preg_match(
+        "/if\\s*\\(\\s*!\\s*empty\\s*\\(\\s*\\\$validated\\s*\\[\\s*'kata_sandi'\\s*\\]\\s*\\)/",
+        $kode,
+        $m,
+        PREG_OFFSET_CAPTURE
+    )) {
+        return "pola if (!empty(\$validated['kata_sandi'])) tidak ditemukan di UserController";
+    }
+
+    // Pola ini menuntut penetapan `$data['force_password_change'] = true` benar-benar
+    // mengikuti `Hash::make(...)`. Mencari teks `force_password_change` saja tidak
+    // cukup: pesan flash di akhir method juga menyebut nama yang sama.
+    if (preg_match(
+        "/Hash::make\\(\\s*\\\$validated\\s*\\[\\s*'kata_sandi'\\s*\\]\\s*\\)\\s*;(?:.|\\n){0,800}?\\\$data\\s*\\[\\s*'force_password_change'\\s*\\]\\s*=\\s*true/",
+        $kode
+    ) === 1) {
+        return true;
+    }
+
+    return 'UserController::update mereset sandi tanpa menandai force_password_change';
+});
+
+periksa('Akun baru buatan admin ditandai force_password_change', function () use ($root) {
+    $kode = baca($root . '/app/Http/Controllers/Admin/UserController.php');
+
+    if (! preg_match('/public function store\((.*?)\n    \}/s', $kode, $m)) {
+        return 'method store() tidak ditemukan di UserController';
+    }
+
+    return str_contains($m[1], "'force_password_change' => true")
+        ? true
+        : 'UserController::store tidak membuat akun dengan force_password_change';
+});
+
+periksa('Seeder kredensial contoh dijaga SeedGuard', function () use ($root) {
+    if (! is_file($root . '/database/seeders/Support/SeedGuard.php')) {
+        return 'database/seeders/Support/SeedGuard.php tidak ada';
+    }
+
+    $kurang = [];
+    foreach (['DatabaseSeeder', 'DemoDataSeeder', 'ApiKeySeeder'] as $seeder) {
+        $kode = baca("{$root}/database/seeders/{$seeder}.php");
+        if (! str_contains($kode, 'SeedGuard::bolehJalan')) {
+            $kurang[] = $seeder;
+        }
+    }
+
+    return $kurang === [] ? true : 'seeder tanpa penjaga: ' . implode(', ', $kurang);
+});
+
+periksa('Semua grup route CBT memasang force.password.change', function () use ($root) {
+    $sumber = baca($root . '/routes/web.php');
+
+    if (! preg_match_all(
+        '/Route::middleware\(\[([^\]]*)\]\)->prefix\(\'cbt[^\']*\'\)/',
+        $sumber,
+        $cocok
+    )) {
+        return 'tidak ada grup route CBT yang cocok dengan pola';
+    }
+
+    $tanpa = [];
+    foreach ($cocok[1] as $middleware) {
+        if (! str_contains($middleware, 'force.password.change')) {
+            $tanpa[] = '[' . trim($middleware) . ']';
+        }
+    }
+
+    return $tanpa === [] ? true : 'grup CBT tanpa middleware: ' . implode(' | ', $tanpa);
+});
+
+periksa('Setiap grup route ber-auth memasang force.password.change', function () use ($root) {
+    $sumber = baca($root . '/routes/web.php');
+
+    if (! preg_match_all(
+        '/Route::middleware\((\[[^\]]*\])\)/',
+        $sumber,
+        $cocok,
+        PREG_OFFSET_CAPTURE
+    )) {
+        return 'tidak ada Route::middleware([...]) yang cocok dengan pola';
+    }
+
+    $tanpa = [];
+    foreach ($cocok[1] as $i => $pair) {
+        $middleware = $pair[0];
+
+        // Hanya grup yang memang memakai middleware auth.
+        if (! preg_match("/['\"]auth['\"]/", $middleware)) {
+            continue;
+        }
+
+        if (str_contains($middleware, 'force.password.change')) {
+            continue;
+        }
+
+        // Pengecualian: grup yang MENDAFTARKAN route ganti sandi itu sendiri.
+        // Memasang middleware di sana akan menimbulkan redirect melingkar.
+        $setelah = substr($sumber, $pair[1], 400);
+        if (str_contains($setelah, 'force-password-change')) {
+            continue;
+        }
+
+        $tanpa[] = trim($middleware);
+    }
+
+    return $tanpa === []
+        ? true
+        : 'grup auth tanpa force.password.change: ' . implode(' | ', $tanpa);
+});
+
+periksa('Template .env produksi mematikan debug & mengamankan sesi', function () use ($root) {
+    $path = $root . '/.env.production.example';
+    if (! is_file($path)) {
+        return '.env.production.example tidak ada';
+    }
+
+    $isi = baca($path);
+    $wajib = [
+        'APP_ENV=production',
+        'APP_DEBUG=false',
+        'SESSION_SECURE_COOKIE=true',
+        'TELESCOPE_ENABLED=false',
+    ];
+
+    $kurang = array_values(array_filter($wajib, fn ($k) => ! str_contains($isi, $k)));
+    if ($kurang !== []) {
+        return 'nilai wajib tidak ada: ' . implode(', ', $kurang);
+    }
+
+    return preg_match('/^APP_KEY=.+$/m', $isi) === 1
+        ? 'APP_KEY terisi di template — harus kosong'
+        : true;
+});
+
+periksa('Panduan deployment tersedia dan README bukan template Laravel', function () use ($root) {
+    if (! is_file($root . '/DEPLOYMENT.md')) {
+        return 'DEPLOYMENT.md tidak ada';
+    }
+
+    $deploy = baca($root . '/DEPLOYMENT.md');
+    $kurang = [];
+    foreach (['schedule:run', 'queue:work', 'npm run build', 'migrate --force'] as $frasa) {
+        if (! str_contains($deploy, $frasa)) {
+            $kurang[] = $frasa;
+        }
+    }
+    if ($kurang !== []) {
+        return 'DEPLOYMENT.md tidak menyebut: ' . implode(', ', $kurang);
+    }
+
+    $readme = baca($root . '/README.md');
+    if (str_contains($readme, 'Laravel is accessible, powerful, and provides tools')) {
+        return 'README.md masih memakai teks template Laravel';
+    }
+
+    return str_contains($readme, 'DEPLOYMENT.md')
+        ? true
+        : 'README.md tidak menautkan DEPLOYMENT.md';
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 14. Hardening operasional (S1, S2, S3, S5, S7)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n14. Hardening operasional\n";
+
+periksa('Middleware SecurityHeaders terdaftar global', function () use ($root) {
+    if (! is_file($root . '/app/Http/Middleware/SecurityHeaders.php')) {
+        return 'app/Http/Middleware/SecurityHeaders.php tidak ada';
+    }
+
+    $bootstrap = baca($root . '/bootstrap/app.php');
+
+    return str_contains($bootstrap, 'SecurityHeaders::class')
+        ? true
+        : 'SecurityHeaders tidak didaftarkan di bootstrap/app.php';
+});
+
+periksa('Config keamanan ada dan CSP sengaja kosong', function () use ($root) {
+    if (! is_file($root . '/config/security.php')) {
+        return 'config/security.php tidak ada';
+    }
+
+    $isi = baca($root . '/config/security.php');
+
+    if (! str_contains($isi, "'content_security_policy'")) {
+        return 'kunci content_security_policy tidak ada di config/security.php';
+    }
+
+    // Presensi memakai geolokasi & QR memakai kamera — jangan dimatikan.
+    return str_contains($isi, 'geolocation=(self)') && str_contains($isi, 'camera=(self)')
+        ? true
+        : 'Permissions-Policy mematikan geolokasi/kamera yang dipakai presensi & QR';
+});
+
+periksa('Halaman error kustom lengkap', function () use ($root) {
+    $kurang = [];
+    foreach ([403, 404, 419, 429, 500, 503] as $kode) {
+        if (! is_file("{$root}/resources/views/errors/{$kode}.blade.php")) {
+            $kurang[] = $kode;
+        }
+    }
+
+    if ($kurang !== []) {
+        return 'halaman error tidak ada: ' . implode(', ', $kurang);
+    }
+
+    // Halaman error tidak boleh bergantung pada aset build maupun CDN.
+    // Dicocokkan sebagai PEMANGGILAN (`@vite(`, `<script src=...`), bukan teks
+    // bebas — kata "@vite" di dalam komentar pernah membuat pemeriksaan ini
+    // melaporkan kegagalan palsu.
+    $bergantung = [];
+    $pola = ['@vite(', '@vite (', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'];
+    foreach (glob($root . '/resources/views/errors/*.blade.php') ?: [] as $f) {
+        $isi = baca($f);
+        foreach ($pola as $jarum) {
+            if (str_contains($isi, $jarum)) {
+                $bergantung[] = basename($f) . " ({$jarum})";
+            }
+        }
+    }
+
+    return $bergantung === []
+        ? true
+        : 'halaman error bergantung aset eksternal: ' . implode(', ', $bergantung);
+});
+
+periksa('favicon.ico berisi ikon valid', function () use ($root) {
+    $path = $root . '/public/favicon.ico';
+
+    if (! is_file($path)) {
+        return 'public/favicon.ico tidak ada';
+    }
+
+    $ukuran = filesize($path);
+    if ($ukuran < 100) {
+        return "public/favicon.ico berukuran {$ukuran} byte (kosong?)";
+    }
+
+    $isi = (string) file_get_contents($path);
+    $kepala = unpack('vreserved/vtype/vcount', substr($isi, 0, 6));
+
+    return ($kepala['reserved'] === 0 && $kepala['type'] === 1 && $kepala['count'] >= 1)
+        ? true
+        : 'struktur ICO tidak valid (reserved/type/count salah)';
+});
+
+periksa('Backup terjadwal punya rotasi dan salinan offsite', function () use ($root) {
+    $kode = baca($root . '/app/Console/Commands/BackupData.php');
+
+    // Dicocokkan sebagai PEMBACAAN KONFIGURASI & PEMANGGILAN nyata, bukan teks
+    // bebas: nama "retensi_hari" juga muncul di komentar dan pesan konsol,
+    // sehingga pencocokan teks polos pernah membuat pemeriksaan ini lolos palsu.
+    $wajib = [
+        "config('backup.retensi_hari'" => 'pembacaan konfigurasi retensi',
+        "config('backup.salinan_disk'" => 'pembacaan konfigurasi disk salinan',
+        '->delete(' => 'pemanggilan penghapusan berkas',
+        'POLA_BERKAS' => 'pembatasan pola berkas yang dihapus',
+    ];
+
+    $kurang = [];
+    foreach ($wajib as $jarum => $label) {
+        if (! str_contains($kode, $jarum)) {
+            $kurang[] = $label;
+        }
+    }
+
+    if ($kurang !== []) {
+        return 'BackupData tanpa: ' . implode(', ', $kurang);
+    }
+
+    return is_file($root . '/config/backup.php')
+        ? true
+        : 'config/backup.php tidak ada';
+});
+
+periksa('Job & daftar cadangan memakai disk yang sama dengan konfigurasi', function () use ($root) {
+    $salah = [];
+
+    foreach ([
+        '/app/Jobs/ExportBackupJob.php',
+        '/app/Http/Controllers/Admin/BackupController.php',
+        '/app/Console/Commands/BackupData.php',
+    ] as $relatif) {
+        $kode = baca($root . $relatif);
+        if (! str_contains($kode, "config('backup.disk'")) {
+            $salah[] = ltrim($relatif, '/');
+        }
+    }
+
+    return $salah === []
+        ? true
+        : 'masih memakai disk hardcoded: ' . implode(', ', $salah);
+});
+
+periksa('Variabel cadangan & keamanan terdokumentasi di template env', function () use ($root) {
+    $template = baca($root . '/.env.production.example');
+
+    $kurang = [];
+    foreach (['BACKUP_RETENTION_DAYS', 'BACKUP_COPY_DISK', 'SECURITY_HSTS_MAX_AGE'] as $var) {
+        if (! str_contains($template, $var)) {
+            $kurang[] = $var;
+        }
+    }
+
+    return $kurang === [] ? true : 'belum ada di .env.production.example: ' . implode(', ', $kurang);
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 15. Kebersihan aset & dokumen (P1, P3, P4)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n15. Kebersihan aset & dokumen\n";
+
+periksa('Tidak ada aset frontend mati', function () use ($root) {
+    // Berkas di resources/ yang tidak dirujuk view mana pun dan tidak masuk
+    // input Vite adalah kode mati — pernah ada 1.588 baris semacam ini.
+    $input = [];
+    if (preg_match_all("/['\"]([^'\"]+\\.(?:js|css))['\"]/", baca($root . '/vite.config.js'), $m)) {
+        $input = $m[1];
+    }
+
+    $dipakai = [];
+    foreach (array_merge(
+        glob($root . '/resources/views/**/*.blade.php') ?: [],
+        glob($root . '/resources/views/*.blade.php') ?: [],
+        glob($root . '/resources/views/**/**/*.blade.php') ?: []
+    ) as $view) {
+        $isi = baca($view);
+        if (preg_match_all('/resources\/(?:js|css)\/[\w.-]+\.(?:js|css)/', $isi, $mv)) {
+            $dipakai = array_merge($dipakai, $mv[0]);
+        }
+    }
+    $dipakai = array_unique($dipakai);
+
+    // app.css meng-@import layout.css, dan app.js mengimpor presensi-*.js,
+    // jadi berkas yang di-@import/diimpor sesama aset juga terhitung terpakai.
+    $diimport = [];
+    foreach (glob($root . '/resources/css/*.css') ?: [] as $css) {
+        if (preg_match_all('/@import\s+["\']\.\/([\w.-]+\.css)["\']/', baca($css), $mi)) {
+            foreach ($mi[1] as $nama) {
+                $diimport[] = 'resources/css/' . $nama;
+            }
+        }
+    }
+
+    $dirujukJs = [];
+    foreach (glob($root . '/resources/js/*.js') ?: [] as $js) {
+        if (preg_match_all('/[\'"]\.\/([\w.-]+\.js)[\'"]/', baca($js), $mj)) {
+            foreach ($mj[1] as $nama) {
+                $dirujukJs[] = 'resources/js/' . $nama;
+            }
+        }
+    }
+
+    $terpakai = array_unique(array_merge($input, $dipakai, $diimport, $dirujukJs));
+
+    $mati = [];
+    foreach (array_merge(glob($root . '/resources/js/*.js') ?: [], glob($root . '/resources/css/*.css') ?: []) as $berkas) {
+        $relatif = 'resources/' . basename(dirname($berkas)) . '/' . basename($berkas);
+        if (! in_array($relatif, $terpakai, true)) {
+            $mati[] = $relatif;
+        }
+    }
+
+    return $mati === [] ? true : 'aset tidak dirujuk: ' . implode(', ', $mati);
+});
+
+periksa('html5-qrcode dimuat secara malas, bukan di bundle utama', function () use ($root) {
+    $kode = baca($root . '/resources/js/presensi-qr.js');
+
+    // Impor statis di tingkat atas akan menyeret ~369 kB ke app.js yang
+    // diunduh di setiap halaman, padahal QR hanya dipakai di satu halaman.
+    if (preg_match('/^\s*import\s.*html5-qrcode/m', $kode)) {
+        return 'masih ada `import ... from \'html5-qrcode\'` statis di presensi-qr.js';
+    }
+
+    return str_contains($kode, "import('html5-qrcode')")
+        ? true
+        : "tidak ditemukan import('html5-qrcode') dinamis";
+});
+
+periksa('Root repositori hanya berisi dokumen aktif', function () use ($root) {
+    $izinkan = ['README.md', 'DEPLOYMENT.md', 'AGENTS.md', 'CLAUDE.md', 'LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md'];
+
+    $lebih = [];
+    foreach (array_merge(glob($root . '/*.md') ?: [], glob($root . '/*.txt') ?: []) as $berkas) {
+        $nama = basename($berkas);
+        if (! in_array($nama, $izinkan, true)) {
+            $lebih[] = $nama;
+        }
+    }
+
+    if ($lebih !== []) {
+        return 'dokumen yang sebaiknya dipindah ke docs/: ' . implode(', ', $lebih);
+    }
+
+    return is_file($root . '/docs/arsip/README.md')
+        ? true
+        : 'docs/arsip/README.md (indeks arsip) tidak ada';
+});
+
+/**
+ * Kumpulkan berkas dokumen (.md/.txt) untuk pemeriksaan integritas tautan.
+ * `public/` dilewati karena berisi artefak build hasil Vite.
+ *
+ * @return list<string>
+ */
+function berkasDokumen(string $root): array
+{
+    $lewati = ['.git', 'node_modules', 'vendor', 'public', '.arena'];
+    $hasil = [];
+    $tumpuk = [$root];
+
+    while ($tumpuk !== []) {
+        $dir = array_pop($tumpuk);
+        foreach (scandir($dir) ?: [] as $nama) {
+            if ($nama === '.' || $nama === '..') {
+                continue;
+            }
+
+            $penuh = $dir . '/' . $nama;
+
+            if (is_dir($penuh)) {
+                if (! in_array($nama, $lewati, true)) {
+                    $tumpuk[] = $penuh;
+                }
+
+                continue;
+            }
+
+            if (preg_match('/\.(md|txt)$/i', $nama)) {
+                $hasil[] = $penuh;
+            }
+        }
+    }
+
+    sort($hasil);
+
+    return $hasil;
+}
+
+periksa('Tautan Markdown relatif menunjuk berkas yang ada', function () use ($root) {
+    $rusak = [];
+    $diperiksa = 0;
+
+    foreach (berkasDokumen($root) as $berkas) {
+        $isi = baca($berkas);
+        $dir = dirname($berkas);
+
+        if (! preg_match_all('/\[[^\]]*\]\(([^)\s]+)\)/', $isi, $m)) {
+            continue;
+        }
+
+        foreach ($m[1] as $tautan) {
+            // Tautan eksternal, jangkar, dan placeholder bukan urusan check ini.
+            if (preg_match('#^(https?://|mailto:|\#|<)#i', $tautan)) {
+                continue;
+            }
+
+            $diperiksa++;
+            $target = preg_split('/[#?]/', $tautan)[0];
+
+            if ($target === '') {
+                continue;
+            }
+
+            if (! file_exists($dir . '/' . $target)) {
+                $rusak[] = rel($berkas, $root) . ' -> ' . $tautan;
+            }
+        }
+    }
+
+    if ($diperiksa === 0) {
+        return 'tidak ada tautan relatif yang diperiksa — check ini tidak membuktikan apa pun';
+    }
+
+    return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
+});
+
+periksa('URL GitHub absolut menunjuk berkas yang ada', function () use ($root) {
+    $rusak = [];
+    $diperiksa = 0;
+
+    // Kasus nyata yang pernah lolos: dokumen dipindah ke docs/arsip/, tetapi
+    // URL absolut `.../blob/main/<berkas>` tetap menunjuk lokasi lama.
+    $pola = '#github\.com/amhyer/simantapmonsa/(?:blob|tree)/([^/\s)]+)/([^\s)"\']+)#i';
+
+    foreach (berkasDokumen($root) as $berkas) {
+        $isi = baca($berkas);
+
+        if (! preg_match_all($pola, $isi, $m, PREG_SET_ORDER)) {
+            continue;
+        }
+
+        foreach ($m as $cocok) {
+            $diperiksa++;
+            $jalur = $cocok[2];
+
+            if (! file_exists($root . '/' . $jalur)) {
+                $rusak[] = rel($berkas, $root) . ' -> ' . $jalur;
+            }
+        }
+    }
+
+    if ($diperiksa === 0) {
+        return 'tidak ada URL GitHub yang diperiksa — check ini tidak membuktikan apa pun';
+    }
+
+    return $rusak === [] ? true : implode(' | ', array_slice($rusak, 0, 5));
+});
+
+/* ──────────────────────────────────────────────────────────────
+ * 16. Tidak ada aset pihak ketiga dari CDN (S4)
+ * ────────────────────────────────────────────────────────────── */
+echo "\n16. Aset pihak ketiga di-self-host, bukan CDN\n";
+
+/**
+ * Kumpulkan seluruh berkas Blade, tanpa resources/views/vendor/ (milik paket).
+ *
+ * @return list<string>
+ */
+function berkasBlade(string $root): array
+{
+    $hasil = [];
+    $tumpuk = [$root . '/resources/views'];
+
+    while ($tumpuk !== []) {
+        $dir = array_pop($tumpuk);
+
+        foreach (scandir($dir) ?: [] as $nama) {
+            if ($nama === '.' || $nama === '..') {
+                continue;
+            }
+
+            $penuh = $dir . '/' . $nama;
+
+            if (is_dir($penuh)) {
+                // View terbitan paket (scramble, telescope) akan tertimpa saat
+                // paket diperbarui, jadi di luar cakupan perbaikan ini.
+                if ($nama !== 'vendor') {
+                    $tumpuk[] = $penuh;
+                }
+
+                continue;
+            }
+
+            if (str_ends_with($nama, '.blade.php')) {
+                $hasil[] = $penuh;
+            }
+        }
+    }
+
+    sort($hasil);
+
+    return $hasil;
+}
+
+periksa('Tidak ada aset pihak ketiga yang dimuat dari CDN', function () use ($root) {
+    $temuan = [];
+
+    foreach (berkasBlade($root) as $berkas) {
+        $isi = baca($berkas);
+
+        // Hanya tag yang MEMUAT aset: <script src>, <link href>, <img src>.
+        // Tautan navigasi <a href="https://..."> jelas boleh.
+        $pola = '#<(script|link|img)\b[^>]*\b(?:src|href)\s*=\s*["\']https?://#i';
+
+        if (preg_match_all($pola, $isi, $m)) {
+            foreach ($m[0] as $tag) {
+                $temuan[] = rel($berkas, $root) . ': ' . substr(trim($tag), 0, 70);
+            }
+        }
+    }
+
+    return $temuan === [] ? true : implode(' | ', array_slice($temuan, 0, 4));
+});
+
+periksa('Pustaka self-host terkunci di package.json', function () use ($root) {
+    $pkg = json_decode(baca($root . '/package.json'), true);
+    $deps = array_merge($pkg['dependencies'] ?? [], $pkg['devDependencies'] ?? []);
+
+    // Semua ini dulu dimuat dari CDN; kini dibundel Vite. Kalau salah satu
+    // hilang dari package.json, build akan gagal diam-diam atau jatuh ke CDN lagi.
+    $wajib = [
+        'chart.js',                        // grafik di 15 halaman
+        'aos',                             // animasi scroll halaman landing
+        'bootstrap',                       // tata letak /tka-statistik
+        '@fontsource/inter',               // font halaman landing
+        '@fontsource/figtree',             // font utama aplikasi (Tailwind sans)
+        '@fortawesome/fontawesome-free',   // ikon
+        'html5-qrcode',                    // pemindai presensi (dimuat malas)
+    ];
+
+    $kurang = array_values(array_filter($wajib, fn ($p) => ! isset($deps[$p])));
+
+    if ($kurang !== []) {
+        return 'tidak terdaftar di package.json: ' . implode(', ', $kurang);
+    }
+
+    // Versi harus spesifik, bukan "*" atau "" yang bisa berubah sendiri.
+    $longgar = [];
+    foreach ($wajib as $p) {
+        if (in_array($deps[$p], ['*', '', 'latest'], true)) {
+            $longgar[] = "{$p}={$deps[$p]}";
+        }
+    }
+
+    return $longgar === [] ? true : 'versi tidak terkunci: ' . implode(', ', $longgar);
+});
+
+periksa('Semua input Vite ada di disk', function () use ($root) {
+    $config = baca($root . '/vite.config.js');
+
+    if (! preg_match_all("/['\"](resources\/[^'\"]+\.(?:js|css))['\"]/", $config, $m)) {
+        return 'tidak ada input yang terbaca dari vite.config.js';
+    }
+
+    $hilang = array_values(array_filter(
+        array_unique($m[1]),
+        fn ($relatif) => ! is_file($root . '/' . $relatif)
+    ));
+
+    return $hilang === [] ? true : 'input tidak ditemukan: ' . implode(', ', $hilang);
 });
 
 /* ────────────────────────────────────────────────────────────── */

@@ -1,0 +1,24 @@
+/*
+ * Aset pihak ketiga untuk halaman publik (landing) — dibundel sendiri via Vite,
+ * BUKAN dimuat dari CDN.
+ *
+ * Sebelumnya halaman ini mengambil Inter dari fonts.googleapis.com, Font Awesome
+ * dari cdnjs.cloudflare.com, dan AOS dari unpkg.com. Ketiganya kini berasal dari
+ * paket npm yang terkunci di package.json, sehingga:
+ *   - versi tidak bisa berubah sendiri di bawah kaki kita,
+ *   - halaman tetap tampil walau CDN pihak ketiga down,
+ *   - tidak perlu menghitung/memelihara hash SRI.
+ *
+ * Hanya subset `latin` Inter yang diambil (bukan semua subset) agar hemat, karena
+ * seluruh antarmuka SIMANTAP berbahasa Indonesia.
+ */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/inter/latin-800.css';
+@import '@fontsource/inter/latin-900.css';
+
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+@import 'aos/dist/aos.css';

@@ -31,7 +31,11 @@ class ExportBackupJob implements ShouldQueue
         set_time_limit(0);
 
         $filename = 'backup-simantap-' . now()->format('Y-m-d-His') . '.json';
-        $path = 'backups/' . $filename;
+
+        // Disk & folder mengikuti config/backup.php agar sama dengan
+        // `simantap:backup` terjadwal dan daftar di Admin › Cadangan.
+        $direktori = trim((string) config('backup.direktori', 'backups'), '/');
+        $path = $direktori . '/' . $filename;
 
         // Daftar tabel terpusat (App\Support\BackupTables) supaya cakupan
         // backup selalu seimbang dengan tabel yang dikosongkan wipeAll().
@@ -74,7 +78,15 @@ class ExportBackupJob implements ShouldQueue
                         if (str_starts_with($key, 'cbt_') && $row instanceof \Illuminate\Database\Eloquent\Model) {
                             $row->makeVisible($row->getHidden());
                         }
-                        $record = is_array($row) ? $row : $row->toArray();
+                        // Baris pivot (tanpa model) datang sebagai stdClass dari
+                        // query builder; stdClass tidak punya toArray().
+                        if (is_array($row)) {
+                            $record = $row;
+                        } elseif ($row instanceof \Illuminate\Database\Eloquent\Model) {
+                            $record = $row->toArray();
+                        } else {
+                            $record = (array) $row;
+                        }
                         if ($except !== []) {
                             $record = array_diff_key($record, array_flip($except));
                         }
@@ -99,7 +111,7 @@ class ExportBackupJob implements ShouldQueue
             fwrite($stream, "\n}\n");
             rewind($stream);
 
-            Storage::disk('local')->put($path, stream_get_contents($stream));
+            Storage::disk((string) config('backup.disk', 'local'))->put($path, stream_get_contents($stream));
 
             Log::info("Backup exported successfully: {$filename}");
         } finally {
