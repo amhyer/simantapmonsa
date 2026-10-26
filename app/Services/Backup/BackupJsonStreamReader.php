@@ -36,6 +36,7 @@ class BackupJsonStreamReader
     /**
      * @param  callable(string): void  $onTable
      * @param  callable(string, array<string|int, mixed>): void  $onRecord
+     *
      * @throws JsonException
      */
     public function eachRecord(callable $onTable, callable $onRecord): void
@@ -86,6 +87,7 @@ class BackupJsonStreamReader
 
     /**
      * @param  callable(string, array<string|int, mixed>): void  $onRecord
+     *
      * @throws JsonException
      */
     private function readTable(string $table, callable $onRecord): void
