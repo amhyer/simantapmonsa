@@ -76,6 +76,9 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Kesiapan launching | [`LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
 | Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
 | Reset sandi mandiri | [`docs/RESET-SANDI-MANDIRI.md`](docs/RESET-SANDI-MANDIRI.md) |
+| Audit nilai e-Rapor | [`docs/AUDIT-NILAI.md`](docs/AUDIT-NILAI.md) |
+| Analisis butir CBT | [`docs/ANALISIS-BUTIR.md`](docs/ANALISIS-BUTIR.md) |
+| Antrean jawaban offline | [`docs/ANTREAN-OFFLINE-UJIAN.md`](docs/ANTREAN-OFFLINE-UJIAN.md) |
 | Checklist staging integrasi | [`docs/CHECKLIST-STAGING-INTEGRASI.md`](docs/CHECKLIST-STAGING-INTEGRASI.md) |
 | Uji beban (k6) | [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md) |
 | Drill restore backup | [`docs/DRILL-RESTORE-BACKUP.md`](docs/DRILL-RESTORE-BACKUP.md) |
@@ -97,6 +100,9 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 - Sandi yang dibuat/direset admin memicu `force_password_change` pada pemilik akun.
 - Reset sandi mandiri memakai email opsional; akun tanpa email tetap direset admin.
   Permintaan dibatasi 5/menit, token sekali pakai dan kedaluwarsa 60 menit.
+- Perubahan nilai e-Rapor dicatat dalam rantai hash (`prev_hash -> hash`), ikut
+  backup/restore, dan dapat diverifikasi dengan `php artisan nilai:audit:verifikasi`.
+  Ini mendeteksi perubahan langsung pada snapshot, bukan pengganti backup/WORM.
 - API key disimpan sebagai hash SHA-256; kunci polos hanya tampil sekali saat dibuat.
 - Telescope dikunci ke admin yang namanya ada di `TELESCOPE_ALLOWED_USERS`.
 - API docs Scramble (`/docs/api`) hanya dapat diakses di lingkungan `local`.
@@ -109,16 +115,16 @@ Laporkan celah keamanan secara pribadi ke pengelola proyek — jangan lewat issu
 
 ```
 app/
-  Http/Controllers/   87 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Cbt, Tka)
-  Models/             64 model Eloquent
+  Http/Controllers/   89 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Cbt, Tka)
+  Models/             65 model Eloquent
   Services/           Dapodik, Nilai, Google Sheets, CBT/Exam engine, Presensi
   Support/            BackupTables (satu sumber kebenaran cakupan backup/restore)
 database/
-  migrations/         83 migrasi
+  migrations/         85 migrasi
   seeders/            DatabaseSeeder, DemoDataSeeder, ApiKeySeeder (+ Support/SeedGuard)
 dapodik-bridge/       Bridge Python yang berjalan di komputer operator sekolah
 docs/                 Audit, rencana perbaikan, desain CBT/Tryout/TKA
-routes/web.php        377 pendaftaran route
+routes/web.php        414 pendaftaran route
 tools/                Skrip verifikasi statis & pemeriksaan runtime
 ```
 

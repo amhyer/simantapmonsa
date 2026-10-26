@@ -363,6 +363,38 @@ Batas kerja yang belum dapat ditutup dari clone:
 
 Verifikasi lokal yang tersedia: syntax lint (`@php-wasm/cli@3.1.60`) atas 43 file PHP berubah, smoke parser JSON, `git diff --check`, dan `tools/verifikasi-perbaikan.php` (**62 lulus, 0 gagal**). PHP-WASM memberi peringatan karena sandbox memakai Node 22 sementara paket meminta Node 24.18+. Eksekusi Laravel/Pint dilakukan di GitHub Actions, bukan pada clone lokal yang tidak menyediakan PHP, Composer, `vendor/`, atau database runtime. CI run `40266944031` adalah bukti eksekusi terbaru untuk commit saat itu; hasil tersebut tetap terbatas pada fixture dan runtime CI, bukan kesiapan produksi.
 
+## 1i. EKSEKUSI 26 OKT 2026 - AUDIT NILAI, ANALISIS BUTIR, ANTREAN OFFLINE
+
+Bagian ini mencatat implementasi lokal setelah §1h. Semua bukti di bawah berasal
+dari PHPUnit SQLite di clone ini; **bukan** bukti staging/produksi dan tidak
+menggantikan rotasi kredensial, restore offsite, atau uji pengguna nyata.
+
+| Area | Perubahan kode | Status bukti |
+|---|---|---|
+| Audit nilai e-Rapor | Tabel `nilai_erapor_audit_logs`; model/service/observer untuk snapshot dan rantai `prev_hash -> hash` pada create/update/delete; command `nilai:audit:verifikasi`; tabel ikut `BackupTables`, observer dijeda saat restore. | `NilaiErapotAuditTest` (4 test) memeriksa rantai, deteksi snapshot yang diubah, kegagalan command, dan audit tetap ada setelah nilai dihapus. Belum ada external anchor/WORM; status `draft -> disahkan -> terbit` belum diimplementasikan. Lihat `docs/AUDIT-NILAI.md`. |
+| Analisis butir | Service `ExamItemAnalysisService` menghitung P, D 27% atas/bawah, distraktor, jawaban kosong; sumber engine `exam_*` dengan fallback snapshot CBT lama; halaman admin dan command `exam:analisis-butir`. | `ExamItemAnalysisTest` (3 test) memeriksa P/D/distraktor engine, fallback sesi lama, dan akses halaman admin. Ini analisis klasik sederhana, bukan IRT/reliabilitas. Lihat `docs/ANALISIS-BUTIR.md`. |
+| Antrean jawaban offline | Partial `exam-outbox` berbasis `localStorage`: simpan per jawaban, pulihkan ke kontrol setelah reload, kirim ulang tiap 8 detik/online, timeout 10 detik, hentikan pada 409; dipakai CBT dan Tryout; Tryout menolak complete selama antrean belum kosong. | `CbtExamTest` dan `TryoutTest` memeriksa halaman memuat antrean. Perilaku jaringan diuji manual; **belum** ada Service Worker, IndexedDB, HMAC per soal, atau mode ujian penuh offline. Lihat `docs/ANTREAN-OFFLINE-UJIAN.md`. |
+
+Verifikasi lokal terbaru:
+
+- `php artisan test`: **365 test lulus, 1.767 assertion**, termasuk route sweep
+  **0 endpoint 5xx dari 1.712 kombinasi GET x akun fixture**.
+- `php artisan list` menemukan `nilai:audit:verifikasi` dan `exam:analisis-butir`.
+- `php artisan view:cache` perlu dijalankan ulang pada CI/deploy setelah perubahan
+  Blade; view analisis sudah dirender oleh feature test.
+
+Batas yang tetap terbuka:
+
+- Rotasi kredensial Dapodik/Google, validasi live staging, restore offsite nyata,
+  dan uji beban dengan data mirip produksi tetap membutuhkan akses pemilik sistem.
+- Rekonsiliasi produksi dan drop tabel `cbt_*`/`tryout_*` tetap menunggu bukti
+  isi/relasi, backup + rollback staging, dan persetujuan pemilik data.
+- Audit hash-chain tidak mencegah administrator database yang berniat buruk
+  menghitung ulang rantai; dibutuhkan penyimpanan eksternal/append-only jika
+  ancaman itu masuk model keamanan.
+- Mode ujian offline penuh (PWA/Service Worker/IndexedDB/HMAC) belum dikerjakan;
+  yang ada hanya ketahanan antrean jawaban pada perangkat yang sudah membuka halaman.
+
 ## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
 
 > Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status
@@ -575,6 +607,12 @@ Urut berdasarkan nilai ÷ risiko untuk sekolah dasar.
 | 11 | **Multi-sekolah (SaaS)** | `schools` + `school_id`, plan/limit, billing Midtrans/Xendit, isolasi policy global | Semua fase stabil |
 
 ---
+
+**Status 26 Okt 2026:** prioritas 2 (audit trail) sudah memiliki rantai hash untuk
+perubahan `nilai_erapor`, tetapi alur status `draft -> disahkan -> terbit` dan
+snapshot saat publish belum ada. Prioritas 3 (analisis butir) sudah tersedia untuk
+sesi CBT (engine dan fallback legacy). Prioritas 10 baru berupa antrean jawaban
+offline; mode ujian penuh offline tetap belum dikerjakan. Lihat §1i.
 
 ## 6. CATATAN KOORDINASI & METODOLOGI
 
