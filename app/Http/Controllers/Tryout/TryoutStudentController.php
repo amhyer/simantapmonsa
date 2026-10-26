@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tryout\StoreTryoutAnswerRequest;
 use App\Models\Tryout\Result;
 use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
@@ -11,7 +12,6 @@ use App\Models\Siswa;
 use App\Services\TryoutEngineBridge;
 use App\Services\TryoutResultDetailService;
 use App\Services\TryoutScoring;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TryoutStudentController extends Controller
@@ -90,7 +90,7 @@ class TryoutStudentController extends Controller
         return view('tryout.student.take', compact('session', 'result', 'subjects', 'existingAnswers'));
     }
 
-    public function submitAnswer(Request $request, Result $result)
+    public function submitAnswer(StoreTryoutAnswerRequest $request, Result $result)
     {
         $this->authorize('answer', $result);
 
@@ -102,11 +102,7 @@ class TryoutStudentController extends Controller
             return response()->json(['success' => false, 'message' => 'Sesi tryout sudah berakhir'], 409);
         }
 
-        $validated = $request->validate([
-            'subject_id' => 'required|exists:tryout_subjects,id',
-            'question_id' => 'required|exists:tryout_questions,id',
-            'jawaban' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         // Soal & mapel harus milik paket sesi ini (cegah menyisipkan ID asing).
         $question = TryoutQuestion::with('options')
@@ -158,7 +154,7 @@ class TryoutStudentController extends Controller
         );
     }
 
-    public function complete(Request $request, Result $result)
+    public function complete(Result $result)
     {
         $this->authorize('complete', $result);
 

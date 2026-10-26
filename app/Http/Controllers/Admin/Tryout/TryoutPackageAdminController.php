@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\Admin\Tryout;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Tryout\DuplicateTryoutPackageRequest;
+use App\Http\Requests\Admin\Tryout\TryoutPackageAdminRequest;
+use App\Http\Requests\Admin\Tryout\TryoutPackageFiltersRequest;
+use App\Http\Requests\Admin\Tryout\TryoutResultFiltersRequest;
+use App\Http\Requests\Admin\Tryout\TryoutSessionAdminRequest;
+use App\Http\Requests\Admin\Tryout\TryoutSessionFiltersRequest;
 use App\Models\Tryout\Category;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Session;
@@ -14,7 +20,6 @@ use App\Models\Tryout\StudentAnswer;
 use App\Services\ExcelExportService;
 use App\Services\TryoutResultDetailService;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TryoutPackageAdminController extends Controller
@@ -22,43 +27,44 @@ class TryoutPackageAdminController extends Controller
     /**
      * Display a listing of all tryout packages.
      */
-    public function index(Request $request)
+    public function index(TryoutPackageFiltersRequest $request)
     {
+        $filters = $request->validated();
         $query = Package::with(['category', 'subjects']);
 
         // Filter by category
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+        if (isset($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
         }
 
         // Filter by jenjang
-        if ($request->filled('jenjang')) {
-            $query->where('jenjang', $request->jenjang);
+        if (isset($filters['jenjang'])) {
+            $query->where('jenjang', $filters['jenjang']);
         }
         
         // Filter by tipe ujian
-        if ($request->filled('tipe_ujian')) {
-            $query->where('tipe_ujian', $request->tipe_ujian);
+        if (isset($filters['tipe_ujian'])) {
+            $query->where('tipe_ujian', $filters['tipe_ujian']);
         }
         
         // Filter by mata pelajaran
-        if ($request->filled('mata_pelajaran_id')) {
-            $query->where('mata_pelajaran_id', $request->mata_pelajaran_id);
+        if (isset($filters['mata_pelajaran_id'])) {
+            $query->where('mata_pelajaran_id', $filters['mata_pelajaran_id']);
         }
         
         // Filter by year
-        if ($request->filled('tahun')) {
-            $query->where('tahun_paket', $request->tahun);
+        if (isset($filters['tahun'])) {
+            $query->where('tahun_paket', $filters['tahun']);
         }
 
         // Filter by status
-        if ($request->filled('aktif')) {
-            $query->where('aktif', $request->aktif === 'true');
+        if (isset($filters['aktif'])) {
+            $query->where('aktif', $filters['aktif'] === 'true');
         }
 
         // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('nama_paket', 'like', "%{$search}%")
                   ->orWhere('kode_paket', 'like', "%{$search}%");
@@ -89,21 +95,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Store a newly created package.
      */
-    public function store(Request $request)
+    public function store(TryoutPackageAdminRequest $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'nullable|exists:tryout_categories,id',
-            'kode_paket' => 'required|string|max:50|unique:tryout_packages,kode_paket',
-            'nama_paket' => 'required|string|max:255',
-            'jenjang' => 'required|in:SD,SMP,SMA,SMK',
-            'tipe_ujian' => 'required|in:USBN,UNBK,AKM',
-            'tahun_paket' => 'required|integer|min:2020|max:2030',
-            'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
-            'total_soal' => 'required|integer|min:1',
-            'waktu_menit' => 'required|integer|min:1',
-            'kkm' => 'required|numeric|min:0|max:100',
-            'deskripsi' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
         
         $validated['uuid'] = Str::uuid();
         $validated['aktif'] = true;
@@ -146,20 +140,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Update the specified package.
      */
-    public function update(Request $request, Package $package)
+    public function update(TryoutPackageAdminRequest $request, Package $package)
     {
-        $validated = $request->validate([
-            'kode_paket' => 'required|string|max:50|unique:tryout_packages,kode_paket,' . $package->id,
-            'nama_paket' => 'required|string|max:255',
-            'jenjang' => 'required|in:SD,SMP,SMA,SMK',
-            'tipe_ujian' => 'required|in:USBN,UNBK,AKM',
-            'tahun_paket' => 'required|integer|min:2020|max:2030',
-            'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id',
-            'total_soal' => 'required|integer|min:1',
-            'waktu_menit' => 'required|integer|min:1',
-            'kkm' => 'required|numeric|min:0|max:100',
-            'deskripsi' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
         
         $package->update($validated + [
             'durasi_total_menit' => $validated['waktu_menit'],
@@ -225,26 +208,27 @@ class TryoutPackageAdminController extends Controller
     /**
      * Display all tryout sessions across all packages.
      */
-    public function allSessions(Request $request)
+    public function allSessions(TryoutSessionFiltersRequest $request)
     {
+        $filters = $request->validated();
         $query = Session::with(['package', 'semester', 'guru', 'rombel']);
 
         // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
         }
 
         // Filter by package
-        if ($request->filled('package_id')) {
-            $query->where('package_id', $request->package_id);
+        if (isset($filters['package_id'])) {
+            $query->where('package_id', $filters['package_id']);
         }
 
         // Filter by date
-        if ($request->filled('tanggal_mulai_from')) {
-            $query->whereDate('tanggal_mulai', '>=', $request->tanggal_mulai_from);
+        if (isset($filters['tanggal_mulai_from'])) {
+            $query->whereDate('tanggal_mulai', '>=', $filters['tanggal_mulai_from']);
         }
-        if ($request->filled('tanggal_mulai_to')) {
-            $query->whereDate('tanggal_mulai', '<=', $request->tanggal_mulai_to);
+        if (isset($filters['tanggal_mulai_to'])) {
+            $query->whereDate('tanggal_mulai', '<=', $filters['tanggal_mulai_to']);
         }
 
         $sessions = $query->withCount('results')
@@ -271,18 +255,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Store a newly created session.
      */
-    public function storeSession(Request $request)
+    public function storeSession(TryoutSessionAdminRequest $request)
     {
-        $validated = $request->validate([
-            'kode_sesi' => 'required|string|max:50|unique:tryout_sessions,kode_sesi',
-            'nama_sesi' => 'required|string|max:255',
-            'package_id' => 'required|exists:tryout_packages,id',
-            'semester_id' => 'nullable|exists:semesters,id',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
-            'durasi_menit' => 'required|integer|min:1',
-            'instruksi' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
         
         $validated['uuid'] = Str::uuid();
         $validated['status'] = 'draft';
@@ -319,18 +294,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Update the specified session.
      */
-    public function updateSession(Request $request, Session $session)
+    public function updateSession(TryoutSessionAdminRequest $request, Session $session)
     {
-        $validated = $request->validate([
-            'kode_sesi' => 'required|string|max:50|unique:tryout_sessions,kode_sesi,' . $session->id,
-            'nama_sesi' => 'required|string|max:255',
-            'package_id' => 'required|exists:tryout_packages,id',
-            'semester_id' => 'nullable|exists:semesters,id',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
-            'durasi_menit' => 'required|integer|min:1',
-            'instruksi' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
         
         $session->update($validated);
         $this->sinkronSesi($session->fresh());
@@ -382,16 +348,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Build the shared, validated query used by the results table and export.
      */
-    private function resultsQuery(Request $request): Builder
+    private function resultsQuery(TryoutResultFiltersRequest $request): Builder
     {
-        $filters = $request->validate([
-            'lulus' => 'nullable|in:true,false',
-            'package_id' => 'nullable|integer|exists:tryout_packages,id',
-            'session_id' => 'nullable|integer|exists:tryout_sessions,id',
-            'tanggal_from' => 'nullable|date',
-            'tanggal_to' => 'nullable|date',
-            'search' => 'nullable|string|max:150',
-        ]);
+        $filters = $request->validated();
 
         $query = Result::query()->with(['session.package', 'siswa']);
 
@@ -431,7 +390,7 @@ class TryoutPackageAdminController extends Controller
     /**
      * Display all tryout results across all sessions.
      */
-    public function allResults(Request $request)
+    public function allResults(TryoutResultFiltersRequest $request)
     {
         $hasil = app(\App\Services\Exam\TryoutResultProvider::class)->daftar(
             $request->only(['lulus', 'session_id', 'tanggal_from', 'tanggal_to', 'search'])
@@ -485,7 +444,7 @@ class TryoutPackageAdminController extends Controller
     /**
      * Download every result matching the filters shown on the results page.
      */
-    public function exportResults(Request $request, ExcelExportService $excel)
+    public function exportResults(TryoutResultFiltersRequest $request, ExcelExportService $excel)
     {
         $results = $this->resultsQuery($request)->latest('created_at')->get();
 
@@ -558,12 +517,9 @@ class TryoutPackageAdminController extends Controller
     /**
      * Duplicate a package for new year.
      */
-    public function duplicate(Package $package, Request $request)
+    public function duplicate(Package $package, DuplicateTryoutPackageRequest $request)
     {
-        $validated = $request->validate([
-            'tahun_paket' => 'required|integer|min:2020|max:2030',
-            'nama_paket' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $newPackage = $package->replicate();
         $newPackage->uuid = Str::uuid();

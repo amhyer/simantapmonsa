@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Backup\BackupStreamWriter;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Filesystem\Filesystem as Disk;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 class BackupData extends Command
@@ -13,67 +15,55 @@ class BackupData extends Command
     protected $signature = 'simantap:backup
                             {--tanpa-rotasi : Lewati penghapusan cadangan kedaluwarsa}';
 
-    protected $description = 'Backup data SIMANTAP ke file JSON (dengan rotasi & salinan offsite)';
+    protected $description = 'Backup seluruh tabel terdaftar ke JSON secara streaming (dengan rotasi & salinan offsite)';
 
     /** Pola berkas yang dikelola rotasi. Sama dengan yang ditulis ExportBackupJob. */
     private const POLA_BERKAS = 'backup-simantap-';
 
-    public function handle(): int
+    public function handle(BackupStreamWriter $writer): int
     {
-        $this->info('Membuat backup...');
+        $this->info('Membuat backup dari registry...');
 
-        $data = [
-            'metadata' => [
-                'version' => '1.0',
-                'created_at' => now()->toIso8601String(),
-                'app' => config('app.name'),
-            ],
-            'users' => \App\Models\User::all()->toArray(),
-            'siswa' => \App\Models\Siswa::all()->toArray(),
-            'nilai_erapor' => \App\Models\NilaiErapot::all()->toArray(),
-            'kehadiran' => \App\Models\Kehadiran::all()->toArray(),
-            'kebiasaan' => \App\Models\Kebiasaan::all()->toArray(),
-        ];
-
-        // Sertakan seluruh CBT dalam backup terjadwal, termasuk snapshot privat.
-        foreach (\App\Support\BackupTables::semua() as $table => $definition) {
-            if (str_starts_with($table, 'cbt_') && \Illuminate\Support\Facades\Schema::hasTable($table)) {
-                $data[$table] = $definition['class']::all()->map(function ($row) {
-                    return $row->makeVisible($row->getHidden())->toArray();
-                })->all();
-            }
+        $stream = fopen('php://temp/maxmemory:2097152', 'w+b');
+        if ($stream === false) {
+            throw new RuntimeException('Gagal membuka temporary stream untuk backup.');
         }
 
-        $isi = json_encode($data, JSON_PRETTY_PRINT);
-        $direktori = trim((string) config('backup.direktori', 'backups'), '/');
-        $filename = self::POLA_BERKAS . date('Y-m-d-His') . '.json';
-        $relatif = "{$direktori}/{$filename}";
+        try {
+            $summary = $writer->writeTo($stream);
+            $direktori = trim((string) config('backup.direktori', 'backups'), '/');
+            $filename = self::POLA_BERKAS.date('Y-m-d-His').'.json';
+            $relatif = "{$direktori}/{$filename}";
+            $namaDiskUtama = (string) config('backup.disk', 'local');
+            $utama = Storage::disk($namaDiskUtama);
 
-        $namaDiskUtama = (string) config('backup.disk', 'local');
-        $utama = Storage::disk($namaDiskUtama);
-        $utama->put($relatif, $isi);
+            rewind($stream);
+            if (! $utama->put($relatif, $stream)) {
+                throw new RuntimeException("Gagal menyimpan backup ke disk '{$namaDiskUtama}'.");
+            }
 
-        // Disk 'local' berakar di storage/app/private (config/filesystems.php).
-        // path() hanya tersedia untuk disk lokal, jadi jangan dipanggil buta.
-        $this->info('✅ Backup tersimpan: ' . $this->lokasi($utama, $relatif, $namaDiskUtama));
-        $this->info('📊 Total: ' . count($data['siswa']) . ' siswa');
+            $this->info('✅ Backup tersimpan: '.$this->lokasi($utama, $relatif, $namaDiskUtama));
+            $this->info("📊 {$summary['tables']} tabel / {$summary['rows']} baris; siswa: ".($summary['rows_by_table']['siswa'] ?? 0));
 
-        $this->salinKeOffsite($relatif, $isi, $namaDiskUtama);
+            $this->salinKeOffsite($relatif, $stream, $namaDiskUtama);
 
-        if ($this->option('tanpa-rotasi')) {
-            $this->warn('Rotasi dilewati (--tanpa-rotasi).');
+            if ($this->option('tanpa-rotasi')) {
+                $this->warn('Rotasi dilewati (--tanpa-rotasi).');
+
+                return self::SUCCESS;
+            }
+
+            $this->rotasi($utama, $namaDiskUtama, $direktori);
+
+            $salinan = $this->diskSalinan($namaDiskUtama);
+            if ($salinan !== null) {
+                $this->rotasi($salinan[1], $salinan[0], $direktori);
+            }
 
             return self::SUCCESS;
+        } finally {
+            fclose($stream);
         }
-
-        $this->rotasi($utama, $namaDiskUtama, $direktori);
-
-        $salinan = $this->diskSalinan($namaDiskUtama);
-        if ($salinan !== null) {
-            $this->rotasi($salinan[1], $salinan[0], $direktori);
-        }
-
-        return self::SUCCESS;
     }
 
     /**
@@ -93,10 +83,10 @@ class BackupData extends Command
         return [$nama, Storage::disk($nama)];
     }
 
-    private function salinKeOffsite(string $relatif, string $isi, string $diskUtama): void
+    /** @param resource $stream */
+    private function salinKeOffsite(string $relatif, $stream, string $diskUtama): void
     {
         $salinan = $this->diskSalinan($diskUtama);
-
         if ($salinan === null) {
             return;
         }
@@ -104,11 +94,14 @@ class BackupData extends Command
         [$nama, $disk] = $salinan;
 
         try {
-            $disk->put($relatif, $isi);
-            $this->info("☁️  Salinan offsite tersimpan di disk '{$nama}': " . $this->lokasi($disk, $relatif, $nama));
+            rewind($stream);
+            if (! $disk->put($relatif, $stream)) {
+                throw new RuntimeException('Filesystem mengembalikan false saat menulis stream.');
+            }
+            $this->info("☁️  Salinan offsite tersimpan di disk '{$nama}': ".$this->lokasi($disk, $relatif, $nama));
         } catch (Throwable $e) {
-            Log::error("Gagal menyalin cadangan ke disk '{$nama}': " . $e->getMessage());
-            $this->error("⚠️  Cadangan utama AMAN, tetapi salinan ke disk '{$nama}' gagal: " . $e->getMessage());
+            Log::error("Gagal menyalin cadangan ke disk '{$nama}': ".$e->getMessage());
+            $this->error("⚠️  Cadangan utama AMAN, tetapi salinan ke disk '{$nama}' gagal: ".$e->getMessage());
         }
     }
 
@@ -144,7 +137,7 @@ class BackupData extends Command
                 $dihapus++;
             } catch (Throwable $e) {
                 $gagal++;
-                Log::warning("Gagal menghapus cadangan kedaluwarsa {$berkas}: " . $e->getMessage());
+                Log::warning("Gagal menghapus cadangan kedaluwarsa {$berkas}: ".$e->getMessage());
             }
         }
 

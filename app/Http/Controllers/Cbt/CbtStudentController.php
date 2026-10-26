@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Cbt;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cbt\StoreCbtAnswerRequest;
+use App\Http\Requests\Cbt\SubmitCbtAnswersRequest;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
 use App\Services\CbtScoring;
-use Illuminate\Http\Request;
 
 class CbtStudentController extends Controller
 {
@@ -63,10 +64,10 @@ class CbtStudentController extends Controller
         return redirect()->route($result->submitted_at ? 'cbt.student.result' : 'cbt.student.start', $result->submitted_at ? $result : $session);
     }
 
-    public function submitAnswer(Request $request, CbtResult $result)
+    public function submitAnswer(StoreCbtAnswerRequest $request, CbtResult $result)
     {
         $this->own($result);
-        $data = $request->validate(['question_id' => 'required|integer|min:1', 'answer' => 'required|in:A,B,C,D']);
+        $data = $request->validated();
         $accepted = $this->exam->answer($result, $data['question_id'], $data['answer']);
         return response()->json([
             'saved' => $accepted, 'server_time' => now()->toIso8601String(),
@@ -75,10 +76,10 @@ class CbtStudentController extends Controller
         ], $accepted ? 200 : 409);
     }
 
-    public function submit(Request $request, CbtResult $result)
+    public function submit(SubmitCbtAnswersRequest $request, CbtResult $result)
     {
         $this->own($result);
-        $data = $request->validate(['answers' => 'sometimes|array|max:200', 'answers.*' => 'required|in:A,B,C,D']);
+        $data = $request->validated();
         $this->exam->submit($result, $data['answers'] ?? []);
         return redirect()->route('cbt.student.result', $result)->with('success', 'Ujian telah dikumpulkan.');
     }
