@@ -76,6 +76,7 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Kesiapan launching | [`LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
 | Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
 | Reset sandi mandiri | [`docs/RESET-SANDI-MANDIRI.md`](docs/RESET-SANDI-MANDIRI.md) |
+| Checklist staging integrasi | [`docs/CHECKLIST-STAGING-INTEGRASI.md`](docs/CHECKLIST-STAGING-INTEGRASI.md) |
 | Drill restore backup | [`docs/DRILL-RESTORE-BACKUP.md`](docs/DRILL-RESTORE-BACKUP.md) |
 | Rekonsiliasi CBT/Tryout | [`docs/REKONSILIASI-FASE-3.md`](docs/REKONSILIASI-FASE-3.md) |
 | Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |

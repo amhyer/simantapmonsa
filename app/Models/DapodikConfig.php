@@ -16,6 +16,7 @@ class DapodikConfig extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'npsn',
         'token',
         'host',
