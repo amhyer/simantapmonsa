@@ -62,8 +62,9 @@ composer test                        # PHPUnit (SQLite)
 npm run test:e2e                     # Playwright (Chromium)
 ```
 
-CI (`.github/workflows/test.yml`) menjalankan tiga job pada setiap push/PR ke `main`:
-PHPUnit di SQLite, PHPUnit di PostgreSQL 16, dan browser smoke test Chromium.
+CI (`.github/workflows/test.yml`) menjalankan empat job pada setiap push/PR ke `main`:
+PHPUnit di SQLite, PHPUnit di PostgreSQL 16, browser smoke test Chromium (landing/FAQ),
+dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 
 ---
 

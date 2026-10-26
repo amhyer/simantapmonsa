@@ -262,7 +262,9 @@ sumber; pembuktiannya juga mengosongkan `cbt_*` lebih dulu.
 **Basis:** commit `6088244edbc3ff986f3ba3aceaca62dc23bc5321` pada PR #9.
 Bukti CI: [run 40171614678](https://github.com/amhyer/simantapmonsa/actions/runs/40171614678).
 Hasil: PHPUnit PHP 8.4 (SQLite) **lulus**, PHPUnit PostgreSQL 16 **lulus**, smoke Chromium
-landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI selesai sukses.
+landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI selesai sukses
+pada snapshot historis ini; workflow saat ini menjalankan **empat** job (tambahan E2E
+Playwright terautentikasi) — lihat §1g.
 
 ### Temuan yang diperiksa ulang
 
