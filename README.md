@@ -62,8 +62,8 @@ composer test                        # PHPUnit (SQLite)
 npm run test:e2e                     # Playwright (Chromium)
 ```
 
-CI (`.github/workflows/test.yml`) menjalankan tiga job pada setiap push/PR ke `main`:
-PHPUnit di SQLite, PHPUnit di PostgreSQL 16, dan browser smoke test Chromium.
+CI (`.github/workflows/test.yml`) menjalankan empat job pada setiap push/PR ke `main`:
+PHPUnit di SQLite, PHPUnit di PostgreSQL 16, browser smoke Chromium, dan authenticated E2E CBT/Tryout/TKA.
 
 ---
 
@@ -79,6 +79,7 @@ PHPUnit di SQLite, PHPUnit di PostgreSQL 16, dan browser smoke test Chromium.
 | Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
 | Model & relasi database | [`docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md`](docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md) |
 | Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
+| Uji route/halaman dengan Playwright | [`docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md`](docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md) |
 | Arsip dokumentasi lama | [`docs/arsip/`](docs/arsip/README.md) |
 
 ---
