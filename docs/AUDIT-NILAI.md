@@ -35,8 +35,13 @@ payload = nilai_erapor_id + siswa_id + guru_id + aksi + status +
 
 `payload` diurutkan secara deterministik sebelum di-hash. Jika satu angka di
 dalam `snapshot` diubah langsung di database, verifikasi akan menandai
-`hash_tidak_cocok`. Jika catatan dihapus atau urutannya diubah, verifikasi
-menandai `prev_hash_tidak_cocok`.
+`hash_tidak_cocok`. Jika catatan di tengah rantai dihapus atau urutannya diubah,
+verifikasi menandai `prev_hash_tidak_cocok`.
+
+Catatan penting: menghapus catatan **terakhir** (atau seluruh tabel) tidak dapat
+dideteksi oleh rantai saja karena tidak ada catatan berikutnya yang menunjuk ke
+hash yang hilang. Karena itu hash-chain ini bukan bukti anti-hapus; untuk itu
+dibutuhkan salinan eksternal/append-only atau anchor berkala.
 
 `nilai_erapor_id` sengaja tidak memakai foreign key agar riwayat tetap ada
 setelah baris nilai dihapus.
@@ -77,7 +82,8 @@ file backup, dan log; bandingkan dengan snapshot backup terakhir.
 
 - Rantai hash mendeteksi perubahan yang tidak disertai perhitungan ulang seluruh
   rantai. Administrator database yang berniat buruk tetap dapat menghitung ulang
-  hash; ini bukan notaris eksternal atau WORM storage.
+  hash; ini bukan notaris eksternal atau WORM storage. Penghapusan catatan
+  terakhir/awal tidak terdeteksi tanpa salinan eksternal.
 - `ip_address` dan `user_agent` adalah konteks tambahan, bukan bukti identitas.
 - Status akademik `draft -> disahkan -> terbit` dan snapshot saat publish belum
   diimplementasikan. Saat ini yang tersedia adalah jejak perubahan nilai.

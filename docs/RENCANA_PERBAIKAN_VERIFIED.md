@@ -391,8 +391,9 @@ Batas yang tetap terbuka:
 - Rekonsiliasi produksi dan drop tabel `cbt_*`/`tryout_*` tetap menunggu bukti
   isi/relasi, backup + rollback staging, dan persetujuan pemilik data.
 - Audit hash-chain tidak mencegah administrator database yang berniat buruk
-  menghitung ulang rantai; dibutuhkan penyimpanan eksternal/append-only jika
-  ancaman itu masuk model keamanan.
+  menghitung ulang rantai, dan penghapusan catatan terakhir tidak terdeteksi tanpa
+  anchor/salinan eksternal; dibutuhkan penyimpanan append-only jika ancaman itu
+  masuk model keamanan.
 - Mode ujian offline penuh (PWA/Service Worker/IndexedDB/HMAC) belum dikerjakan;
   yang ada hanya ketahanan antrean jawaban pada perangkat yang sudah membuka halaman.
 
