@@ -9,6 +9,7 @@ use App\Models\Tryout\Session;
 use App\Models\Tryout\Result;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -87,6 +88,7 @@ class TryoutPackageAdminController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'category_id' => 'nullable|exists:tryout_categories,id',
             'kode_paket' => 'required|string|max:50|unique:tryout_packages,kode_paket',
             'nama_paket' => 'required|string|max:255',
             'jenjang' => 'required|in:SD,SMP,SMA,SMK',
@@ -101,9 +103,17 @@ class TryoutPackageAdminController extends Controller
         
         $validated['uuid'] = Str::uuid();
         $validated['aktif'] = true;
+        // Form admin memakai nama kolom lama (waktu_menit/kkm); skema paket
+        // menyimpannya sebagai durasi_total_menit/passing_grade.
+        $validated['durasi_total_menit'] = $validated['waktu_menit'];
+        $validated['passing_grade'] = $validated['kkm'];
+        // Form admin tidak memilih kategori, padahal kolomnya NOT NULL.
+        $validated['category_id'] ??= Category::query()->value('id')
+            ?? Category::create(['nama_kategori' => 'Umum', 'aktif' => true])->id;
         
-        Package::create($validated);
-        
+        $package = Package::create($validated);
+        $this->sinkronPaket($package);
+
         return redirect()->route('admin.tryout.packages.index')
             ->with('success', 'Paket tryout berhasil dibuat');
     }
@@ -147,8 +157,12 @@ class TryoutPackageAdminController extends Controller
             'deskripsi' => 'nullable|string',
         ]);
         
-        $package->update($validated);
-        
+        $package->update($validated + [
+            'durasi_total_menit' => $validated['waktu_menit'],
+            'passing_grade' => $validated['kkm'],
+        ]);
+        $this->sinkronPaket($package->fresh());
+
         return redirect()->route('admin.tryout.packages.index')
             ->with('success', 'Paket tryout berhasil diperbarui');
     }
@@ -163,7 +177,11 @@ class TryoutPackageAdminController extends Controller
         }
         
         $package->delete();
-        
+
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->lupakanPaketTryout($package->id);
+        }
+
         return redirect()->route('admin.tryout.packages.index')
             ->with('success', 'Paket tryout berhasil dihapus');
     }
@@ -264,8 +282,10 @@ class TryoutPackageAdminController extends Controller
         
         $validated['uuid'] = Str::uuid();
         $validated['status'] = 'draft';
+        $validated['guru_id'] = auth()->id();
         
-        Session::create($validated);
+        $session = Session::create($validated);
+        $this->sinkronSesi($session);
         
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil dibuat');
@@ -309,7 +329,8 @@ class TryoutPackageAdminController extends Controller
         ]);
         
         $session->update($validated);
-        
+        $this->sinkronSesi($session->fresh());
+
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil diperbarui');
     }
@@ -323,8 +344,13 @@ class TryoutPackageAdminController extends Controller
             return back()->with('error', 'Tidak dapat menghapus sesi yang memiliki hasil ujian');
         }
         
+        $sessionId = $session->id;
         $session->delete();
-        
+
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->lupakanSesiTryout($sessionId);
+        }
+
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil dihapus');
     }
@@ -344,6 +370,7 @@ class TryoutPackageAdminController extends Controller
         ]);
         
         $session->update(['status' => 'completed']);
+        $this->sinkronSesi($session->fresh());
 
         return back()->with('success', 'Sesi berhasil dipaksa selesai');
     }
@@ -455,7 +482,23 @@ class TryoutPackageAdminController extends Controller
             }
         }
 
+        $this->sinkronPaket($newPackage->fresh());
+
         return redirect()->route('admin.tryout.packages.show', $newPackage)
             ->with('success', 'Paket berhasil diduplikasi');
+    }
+
+    private function sinkronPaket(Package $package): void
+    {
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->paketTryout($package);
+        }
+    }
+
+    private function sinkronSesi(Session $session): void
+    {
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->pastikanSesiTryout($session);
+        }
     }
 }

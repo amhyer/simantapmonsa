@@ -92,6 +92,10 @@ class LegacyExamMapper
             );
         }
 
+        // Opsi yang dihapus di bank tidak boleh tertinggal di engine.
+        $hurufAktif = array_map('strval', array_keys((array) $cbtQuestion->options));
+        QuestionOption::where('question_id', $question->id)->whereNotIn('huruf', $hurufAktif)->delete();
+
         return $question;
     }
 
@@ -112,6 +116,35 @@ class LegacyExamMapper
                 'peserta_ids' => $cbtSession->participant_ids,
             ]
         );
+    }
+
+    /**
+     * Cermin penghapusan: hapus padanan engine saat baris lama dihapus.
+     * Engine memakai soft delete, jadi riwayat tidak hilang permanen.
+     */
+    public function lupakanBankCbt(int $cbtBankId): void
+    {
+        Bank::where('sumber_tabel', self::SUMBER_CBT_BANK)->where('sumber_id', $cbtBankId)->delete();
+    }
+
+    public function lupakanSoalCbt(int $cbtQuestionId): void
+    {
+        Question::where('sumber_tabel', self::SUMBER_CBT_SOAL)->where('sumber_id', $cbtQuestionId)->delete();
+    }
+
+    public function lupakanSesiCbt(int $cbtSessionId): void
+    {
+        ExamSession::where('sumber_tabel', self::SUMBER_CBT_SESI)->where('sumber_id', $cbtSessionId)->delete();
+    }
+
+    public function lupakanPaketTryout(int $packageId): void
+    {
+        Bank::where('sumber_tabel', self::SUMBER_TRYOUT_PAKET)->where('sumber_id', $packageId)->delete();
+    }
+
+    public function lupakanSesiTryout(int $tryoutSessionId): void
+    {
+        ExamSession::where('sumber_tabel', self::SUMBER_TRYOUT_SESI)->where('sumber_id', $tryoutSessionId)->delete();
     }
 
     // -------------------------------------------------------------- Tryout
@@ -170,7 +203,9 @@ class LegacyExamMapper
             ]
         );
 
+        $hurufAktif = [];
         foreach ($tryoutQuestion->options as $option) {
+            $hurufAktif[] = (string) $option->huruf;
             QuestionOption::updateOrCreate(
                 ['question_id' => $question->id, 'huruf' => $option->huruf],
                 [
@@ -181,7 +216,28 @@ class LegacyExamMapper
             );
         }
 
+        // Opsi yang dihapus di bank tidak boleh tertinggal di engine.
+        QuestionOption::where('question_id', $question->id)->whereNotIn('huruf', $hurufAktif)->delete();
+
         return $question;
+    }
+
+    /**
+     * Pastikan bank, section, dan soal Tryout ada di engine terpadu.
+     * Dipakai CRUD paket/mapel/soal agar data baru langsung terlihat pembaca.
+     */
+    public function paketTryout(Package $package): Bank
+    {
+        $bank = $this->bankTryout($package);
+
+        foreach ($package->subjects()->with('mataPelajaran')->get() as $subject) {
+            $section = $this->sectionTryout($bank, $subject);
+            foreach ($subject->questions as $tryoutQuestion) {
+                $this->soalTryout($bank, $section, $tryoutQuestion);
+            }
+        }
+
+        return $bank;
     }
 
     /**
@@ -191,15 +247,7 @@ class LegacyExamMapper
      */
     public function pastikanSesiTryout(TryoutSession $tryoutSession): ExamSession
     {
-        $package = $tryoutSession->package;
-        $bank = $this->bankTryout($package);
-
-        foreach ($package->subjects()->with('mataPelajaran')->get() as $subject) {
-            $section = $this->sectionTryout($bank, $subject);
-            foreach ($subject->questions as $tryoutQuestion) {
-                $this->soalTryout($bank, $section, $tryoutQuestion);
-            }
-        }
+        $bank = $this->paketTryout($tryoutSession->package);
 
         return ExamSession::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_SESI, 'sumber_id' => $tryoutSession->id],

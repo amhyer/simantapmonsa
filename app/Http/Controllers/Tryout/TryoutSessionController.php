@@ -7,6 +7,7 @@ use App\Models\Tryout\Session;
 use App\Models\Tryout\Package;
 use App\Models\Semester;
 use App\Models\Rombel;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -58,6 +59,10 @@ class TryoutSessionController extends Controller
             'tanggal_selesai' => $validated['tanggal_selesai'],
             'status' => 'draft',
         ]);
+
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->pastikanSesiTryout($session);
+        }
 
         return redirect()->route('tryout.sessions.show', $session)
             ->with('success', 'Sesi tryout berhasil dibuat');

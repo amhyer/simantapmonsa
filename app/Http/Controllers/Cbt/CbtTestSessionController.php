@@ -7,6 +7,7 @@ use App\Models\CbtQuestionBank;
 use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -41,6 +42,10 @@ class CbtTestSessionController extends Controller
             CbtQuestionBank::whereKey($data['bank_id'])->lockForUpdate()->firstOrFail();
             return CbtTestSession::create($data + ['guru_id' => auth()->id(), 'status' => 'draft']);
         });
+        if (config('simantap.exam_engine_cbt', true) && $session->bank) {
+            $mapper = app(LegacyExamMapper::class);
+            $mapper->sesiCbt($mapper->bankCbt($session->bank), $session);
+        }
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Draf sesi dibuat.');
     }
 

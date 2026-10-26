@@ -144,7 +144,21 @@ keluaran lama yang bisa dipakai sebagai pembanding.
   "sesi terbaru" statistik) masih dari `tryout_*`; itu menunggu 6c karena
   kepemilikan tulis paket/sesi belum dibalik. Ekspor Tryout admin masih stub
   (tidak ada pembanding lama).
-- ⏭️ **6c** — balik kepemilikan tulis (CRUD bank/soal/sesi), lalu 6d alur siswa.
+- ✅ **6c-1 (dual-write CRUD)** — setiap simpan/hapus lewat UI guru **dan** admin
+  kini langsung mencerminkan ke `exam_*` (bukan menunggu publish/backfill):
+  bank & soal CBT, sesi CBT, paket/mapel/soal Tryout, dan sesi Tryout.
+  `LegacyExamMapper` mendapat `paketTryout()`, `lupakan*()`, serta pemangkasan
+  opsi yang dihapus (opsi basi tidak tertinggal di engine).
+  Bukti: `CbtCrudEngineSyncTest` (4 test), `TryoutCrudEngineSyncTest` (4 test).
+  Catatan: arah tulis masih `*_lama` → engine (belum dibalik); ini prasyarat 6d/6e.
+- 🐞 **Bug ikut diperbaiki** — form admin Tryout membuat paket tanpa
+  `category_id`/`durasi_total_menit` (500 NOT NULL; kini dipetakan dari
+  `waktu_menit`/`kkm` + kategori fallback) dan sesi admin tanpa `guru_id`
+  (500 NOT NULL; kini diisi user login).
+- ⏭️ **6c-2** — balik kepemilikan tulis (engine jadi sumber, tabel lama jadi
+  cermin), sisanya: hapus/ubah sesi Tryout guru, unggah soal Tryout (belum ada
+  UI), dan penanganan nilai `tipe_ujian`/`total_soal` yang tak punya kolom.
+- ⏭️ **6d** — alur siswa membaca `exam_*`; lalu 6e hapus tabel lama.
 
 ## Urutan pengerjaan yang disarankan
 

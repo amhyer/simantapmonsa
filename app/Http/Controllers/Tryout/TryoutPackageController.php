@@ -7,6 +7,7 @@ use App\Models\Tryout\Category;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Subject;
 use App\Models\MataPelajaran;
+use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -81,6 +82,8 @@ class TryoutPackageController extends Controller
             ]);
         }
 
+        $this->sinkronEngine($package->fresh());
+
         return redirect()->route('tryout.packages.show', $package)
             ->with('success', 'Paket tryout berhasil dibuat');
     }
@@ -117,6 +120,7 @@ class TryoutPackageController extends Controller
         ]);
 
         $package->update($validated);
+        $this->sinkronEngine($package->fresh());
 
         return redirect()->route('tryout.packages.show', $package)
             ->with('success', 'Paket tryout berhasil diperbarui');
@@ -124,9 +128,21 @@ class TryoutPackageController extends Controller
 
     public function destroy(Package $package)
     {
+        $packageId = $package->id;
         $package->delete();
+
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->lupakanPaketTryout($packageId);
+        }
 
         return redirect()->route('tryout.packages.index')
             ->with('success', 'Paket tryout berhasil dihapus');
+    }
+
+    private function sinkronEngine(Package $package): void
+    {
+        if (config('simantap.exam_engine_tryout', true)) {
+            app(LegacyExamMapper::class)->paketTryout($package);
+        }
     }
 }
