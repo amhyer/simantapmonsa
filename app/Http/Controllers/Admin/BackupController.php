@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Jobs\ExportBackupJob;
+use App\Services\BackupRestoreService;
 use App\Support\BackupTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -63,38 +63,24 @@ class BackupController extends Controller
         }
 
         // Hanya tabel yang dikenal (App\Support\BackupTables) yang boleh dipulihkan.
-        $validTables = BackupTables::tabel();
-        foreach (array_keys($data) as $table) {
-            if ($table === 'metadata') {
-                continue; // blok metadata dari `simantap:backup` tidak diimpor
-            }
-            if (!in_array($table, $validTables, true)) {
-                return redirect()->route('admin.backup.index')
-                    ->with('error', "Tabel '$table' tidak valid dalam backup.");
-            }
+        // Logika yang sama dipakai `simantap:backup:drill` agar drill benar-benar
+        // menguji prosedur restore produksi, bukan tiruan terpisah.
+        $service = app(BackupRestoreService::class);
+        $validasi = $service->validasi($data);
+
+        if ($validasi['tidak_dikenal'] !== []) {
+            return redirect()->route('admin.backup.index')
+                ->with('error', "Tabel '" . implode("', '", $validasi['tidak_dikenal']) . "' tidak valid dalam backup.");
         }
 
         // Batas pengaman agar file raksasa tidak menghabiskan memori/waktu.
-        $totalRecords = 0;
-        foreach ($data as $records) {
-            if (is_array($records)) {
-                $totalRecords += count($records);
-            }
-        }
-        if ($totalRecords > 100000) {
+        if ($validasi['total'] > 100000) {
             return redirect()->route('admin.backup.index')
                 ->with('error', 'File backup terlalu besar (maks 100.000 baris). Bagi menjadi beberapa file.');
         }
 
         try {
-            DB::transaction(function () use ($data) {
-                // Ikuti urutan registry (induk → anak) agar foreign key terpenuhi.
-                foreach (BackupTables::tabel() as $table) {
-                    if (array_key_exists($table, $data)) {
-                        $this->restoreTable($table, $data[$table]);
-                    }
-                }
-            });
+            DB::transaction(fn () => $service->restore($data));
         } catch (\Throwable $e) {
             Log::error('Backup import gagal: ' . $e->getMessage());
 
@@ -104,75 +90,6 @@ class BackupController extends Controller
 
         return redirect()->route('admin.backup.index')
             ->with('success', 'Data berhasil dipulihkan dari backup.');
-    }
-
-    /**
-     * Restore satu tabel backup. Dipanggil di dalam DB::transaction agar gagal
-     * di tengah tidak menyisakan data parsial (inkonsisten).
-     *
-     * Kolom difilter terhadap kolom yang benar-benar ada di tabel (schema),
-     * sehingga backup dari versi lama/patch tidak menyebabkan SQL error.
-     */
-    protected function restoreTable(string $table, mixed $records): void
-    {
-        if (!is_array($records) || empty($records)) {
-            return;
-        }
-
-        if (!in_array($table, BackupTables::tabel(), true) || !Schema::hasTable($table)) {
-            return;
-        }
-
-        $kolom = Schema::getColumnListing($table);
-        $modelClass = BackupTables::model($table);
-
-        foreach ($records as $record) {
-            if (!is_array($record)) {
-                continue;
-            }
-
-            $row = array_intersect_key($record, array_flip($kolom));
-            if ($row === []) {
-                continue;
-            }
-
-            $id = $row['id'] ?? null;
-
-            // Export sengaja tidak menyertakan `kata_sandi`. Karena kolomnya
-            // NOT NULL, baris users yang dipulihkan tanpa sandi diberi sandi acak
-            // + wajib ganti saat login pertama (tidak ada akun tanpa sandi).
-            if ($table === 'users' && empty($row['kata_sandi'])) {
-                $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));
-                $row['force_password_change'] = true;
-            }
-
-            if ($modelClass) {
-                \Illuminate\Database\Eloquent\Model::unguarded(function () use ($modelClass, $id, $row) {
-                    $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
-                    if ($id !== null) {
-                        $query->updateOrCreate(['id' => $id], $row);
-                    } else {
-                        $modelClass::create($row);
-                    }
-                });
-                continue;
-            }
-
-            // Tabel tanpa model Eloquent (pivot).
-            if ($id !== null) {
-                DB::table($table)->updateOrInsert(['id' => $id], $row);
-            } else {
-                DB::table($table)->insert($row);
-            }
-        }
-
-        if (DB::getDriverName() === 'pgsql' && in_array('id', $kolom, true)) {
-            $seq = DB::selectOne('SELECT pg_get_serial_sequence(?, ?) AS seq', [$table, 'id'])?->seq;
-            if ($seq) {
-                $maxId = (int) DB::table($table)->max('id');
-                DB::statement('SELECT setval(?, ?, ?)', [$seq, max($maxId, 1), $maxId > 0]);
-            }
-        }
     }
 
     public function wipeAll(Request $request)
