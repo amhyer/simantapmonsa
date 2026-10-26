@@ -48,8 +48,18 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
         await expect(page.locator('#progress-bar')).toHaveText('100.0%');
 
         // E2E-TRY-03: complete the real attempt; scoring is performed by the server.
+        const completionResponsePromise = page.waitForResponse(response =>
+            response.url().endsWith('/tryout/student/9411/complete')
+            && response.request().method() === 'POST'
+        );
         page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: /Selesaikan Tryout/ }).click();
+        const completionResponse = await completionResponsePromise;
+        const completionStatus = completionResponse.status();
+        const completionError = completionStatus >= 400
+            ? (await completionResponse.text()).slice(0, 2000)
+            : '';
+        expect(completionStatus, `Complete endpoint returned HTTP ${completionStatus}: ${completionError}`).toBe(302);
         await expect(page).toHaveURL(/\/tryout\/student\/9411\/result$/);
         await expect(page.getByRole('heading', { name: 'Hasil Tryout' })).toBeVisible();
         await expect(page.locator('.display-4')).toHaveText('100.0');
