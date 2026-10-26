@@ -89,7 +89,21 @@ php artisan exam:rekonsiliasi --json > rekonsiliasi.json
 - [ ] Ekspor/laporan yang masih memakai tabel lama tetap benar.
 - [ ] Flag pembaca engine dinyalakan, alur diulang, lalu bandingkan hasil.
 
-## 7. Sinyal go/no-go
+## 7. Uji beban
+
+```bash
+LOAD_TEST_PASSWORD='...' php artisan db:seed --class=LoadTestSeeder
+BASE_URL=https://staging.sekolah.sch.id k6 run tests/load/k6-smoke.js
+```
+
+- [ ] Smoke publik lulus (10 VU/30 detik).
+- [ ] Login + dashboard lulus (3 VU/1 menit).
+- [ ] Tidak ada error 500/502 atau connection pool habis.
+- [ ] Hasil p95/p99 dicatat di laporan go-live.
+
+Detail: [`LOAD-TEST.md`](LOAD-TEST.md).
+
+## 8. Sinyal go/no-go
 
 Go hanya jika:
 
