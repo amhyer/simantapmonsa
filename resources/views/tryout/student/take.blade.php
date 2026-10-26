@@ -92,6 +92,7 @@
                                                name="q_{{ $question->id }}"
                                                id="q{{ $question->id }}_{{ $option->huruf }}"
                                                value="{{ $option->huruf }}"
+                                               @checked((string) ($existingAnswers[$question->id] ?? '') === (string) $option->huruf)
                                                onchange="saveAnswer({{ $result->id }}, {{ $subject->id }}, {{ $question->id }}, '{{ $option->huruf }}')">
                                         <label class="form-check-label" for="q{{ $question->id }}_{{ $option->huruf }}">
                                             <strong>{{ $option->huruf }}.</strong> {{ $option->isi_opsi }}
@@ -107,6 +108,7 @@
                                                name="q_{{ $question->id }}"
                                                id="q{{ $question->id }}_benar"
                                                value="benar"
+                                               @checked((string) ($existingAnswers[$question->id] ?? '') === 'benar')
                                                onchange="saveAnswer({{ $result->id }}, {{ $subject->id }}, {{ $question->id }}, 'benar')">
                                         <label class="form-check-label" for="q{{ $question->id }}_benar">
                                             ✅ Benar
@@ -118,6 +120,7 @@
                                                name="q_{{ $question->id }}"
                                                id="q{{ $question->id }}_salah"
                                                value="salah"
+                                               @checked((string) ($existingAnswers[$question->id] ?? '') === 'salah')
                                                onchange="saveAnswer({{ $result->id }}, {{ $subject->id }}, {{ $question->id }}, 'salah')">
                                         <label class="form-check-label" for="q{{ $question->id }}_salah">
                                             ❌ Salah
@@ -129,6 +132,7 @@
                                     <input type="text"
                                            class="form-control"
                                            placeholder="Tulis jawaban singkat"
+                                           value="{{ $existingAnswers[$question->id] ?? '' }}"
                                            onchange="saveAnswer({{ $result->id }}, {{ $subject->id }}, {{ $question->id }}, this.value)">
                                 </div>
                                 @endif
@@ -159,7 +163,8 @@
 
 <script>
 let resultId = {{ $result->id }};
-let answers = {};
+// Server-side saved answers are authoritative after navigation or reload.
+let answers = @json((object) ($existingAnswers ?? []));
 
 function saveAnswer(resultId, subjectId, questionId, answer) {
     answers[questionId] = answer;
@@ -189,11 +194,14 @@ function saveAnswer(resultId, subjectId, questionId, answer) {
 function updateProgress() {
     const totalQuestions = {{ $subjects->sum(function($s) { return $s->questions->count(); }) }};
     const answered = Object.keys(answers).length;
-    const percentage = (answered / totalQuestions * 100).toFixed(1);
+    const percentage = totalQuestions > 0 ? (answered / totalQuestions * 100).toFixed(1) : '0.0';
     
     document.getElementById('progress-bar').style.width = percentage + '%';
     document.getElementById('progress-bar').textContent = percentage + '%';
 }
+
+// Restore the saved-answer count as well as the checked controls on first paint.
+updateProgress();
 
 // Auto-save every 30 seconds
 setInterval(() => {

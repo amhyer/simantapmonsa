@@ -266,7 +266,21 @@ landing/FAQ **lulus**, dan `php artisan view:cache` **lulus**. Ketiga job CI sel
 - Engine CBT/Tryout sudah memiliki bridge ke `exam_*` (lihat §1e); tabel legacy tetap dicerminkan
   dan belum boleh dihapus sebelum rekonsiliasi data produksi.
 
-## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat status terkini §1f)
+## 1g. IMPLEMENTASI E2E CBT / TRYOUT / TKA PADA BRANCH ARENA (25 OKT 2026)
+
+Bagian ini menambahkan status kerja setelah snapshot §1f; ia **tidak mengubah** angka historis atau bukti CI yang dicatat pada §1f.
+
+- Checklist terskop: `docs/CHECKLIST_E2E_CBT_TRYOUT_TKA.md`.
+- Fixture stabil: `database/seeders/E2eFixtureSeeder.php`; browser job memakai SQLite file terpisah dan password dari `E2E_*_PASSWORD` yang dibuat acak di runtime.
+- Core-route registry dan route sweep GET/no-5xx + assertion tanpa-mutasi: `tests/Feature/Support/RouteExpectationRegistry.php` dan `tests/Feature/RouteSweepTest.php`. File lama `RouteHealthAuditTest.php` digantikan oleh sweep berbasis fixture; angka 1035/1050 pada §1b–§1f tetap klaim historis, bukan hasil sweep baru ini.
+- Playwright CBT/Tryout/TKA ditambahkan; smoke Chromium landing/FAQ tetap job terpisah. CI job E2E mengunggah trace/screenshot/video jika gagal.
+- Temuan UI Tryout: controller kini memasok jawaban tersimpan keyed by Tryout question ID; `Tryout\Result::answers()` mengikat foreign key ke `tryout_session_id` sesi (bukan ID baris hasil) sekaligus filter siswa/attempt. Blade memulihkan kontrol/state dan progress saat reload; browser dan feature test memeriksa radio `checked`.
+- **CI run 40173918626:** PHPUnit SQLite, PHPUnit PostgreSQL 16, dan smoke Chromium lulus; authenticated E2E awalnya gagal karena helper mencoba memulai trace yang sudah dikelola Playwright Test. Helper manual itu dihapus.
+- **CI run 40174119007:** PHPUnit SQLite, PostgreSQL, smoke Chromium, serta journey CBT/TKA lulus. Journey Tryout menjalankan start/autosave/reload/hasil/penolakan siswa lain, lalu test harness gagal pada navigasi parent karena `newPage()` belum di-`await`; diperbaiki.
+- **CI run 40174270016:** [keempat job lulus](https://github.com/amhyer/simantapmonsa/actions/runs/40174270016): PHPUnit PHP 8.4/SQLite, PHPUnit PostgreSQL 16, unauthenticated Chromium smoke, dan authenticated CBT/Tryout/TKA E2E. Job E2E berhasil menjalankan migrasi/seeder SQLite terisolasi serta `npm run test:e2e`.
+- PHP/JavaScript/YAML syntax checks dan `git diff --check` juga lulus. Bukti ini terbatas pada suite/fixture dan environment run tersebut; **bukan** klaim produksi siap atau semua variasi data/environment telah teruji.
+
+## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
 
 > Matriks berikut merekam temuan awal, sebelum rekonsiliasi dan perbaikan pada §§1c–1f. Status
 > **RUSAK** di snapshot lama tidak mengalahkan bukti eksekusi lebih baru di §1f.

@@ -97,8 +97,11 @@ class TryoutStudentController extends Controller
         }
 
         $subjects = $session->package->subjects()->with(['questions.options'])->get();
+        $existingAnswers = $result->answers()
+            ->pluck('jawaban', 'question_id')
+            ->all();
 
-        return view('tryout.student.take', compact('session', 'result', 'subjects'));
+        return view('tryout.student.take', compact('session', 'result', 'subjects', 'existingAnswers'));
     }
 
     public function submitAnswer(Request $request, Result $result)
