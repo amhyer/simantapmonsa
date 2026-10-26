@@ -319,17 +319,19 @@ Bagian ini menambahkan status kerja setelah snapshot §1f; ia **tidak mengubah**
 ## 1h. EKSEKUSI BACKLOG LANJUTAN (26 OKT 2026) — REPOSITORY-SAFE, BELUM DI-RUN DI LARAVEL
 
 Pekerjaan ini dimulai pada branch `arena/2ed9e1be-simantapmonsa` dari merge commit
-`604d623fd4b5f1e3bb86178457e5c7890a738290`. Status berikut membedakan perubahan kode dari
-operasi/validasi eksternal yang belum dilakukan.
+`604d623fd4b5f1e3bb86178457e5c7890a738290`. Setelah `main` maju, branch disinkronkan dengan
+`origin/main` pada `2dd638e` melalui merge commit `67d5cfc`, sambil mempertahankan perubahan
+Phase 3 yang telah masuk serta menyelesaikan konflik FormRequest/streaming. Status berikut
+membedakan perubahan kode dari operasi/validasi eksternal yang belum dilakukan.
 
 | Area | Perubahan kode | Status bukti |
 |---|---|---|
-| Backup registry & wipe | `BackupTables` menambahkan 8 tabel legacy Tryout dan 7 tabel TKA; urutan restore mengikuti FK. Wipe sekarang diturunkan dari registry backup + daftar log/cache yang sengaja tidak dibackup; `users`, `semesters`, `sekolah_settings`, `api_keys`, dan tabel framework dipertahankan. | `BackupStreamingTest` menguji cakupan serta urutan restore untuk JSON dengan key tabel diacak; belum dieksekusi pada runtime Laravel. **Jangan gunakan wipe pada produksi** sampai backup/restore staging dan row-count/relasi direkonsiliasi. |
-| Export terjadwal & panel | `BackupData` dan `ExportBackupJob` memakai `BackupStreamWriter` bersama; pembacaan per chunk dan temporary stream 2 MiB yang spill ke disk; offsite menerima stream tanpa `stream_get_contents()` seluruh payload. | Syntax lint lewat PHP-WASM lulus; PHPUnit dan storage provider nyata belum dijalankan. |
-| Restore | `BackupJsonStreamReader` memvalidasi JSON/tabel/baris sambil men-spool satu baris per waktu ke temporary files; baris diputar ulang dalam urutan FK registry di satu transaksi, tanpa memuat seluruh JSON atau bergantung pada urutan kunci file. Schema/model dicache per tabel; batas 100.000 baris/upload 100 MiB dipertahankan, metadata dibatasi 64 KiB dan satu row JSON 16 MiB. Sequence PostgreSQL disetel setelah tabel selesai. | Uji round-trip lama diperbarui untuk writer baru, tetapi belum dijalankan. Belum ada restore staging/backup produksi; file >100 MiB tetap ditolak. |
-| Dry-run backfill | `exam:backfill --dry-run [--only=cbt|tryout]` menghitung baris sumber saja dan menolak filter tidak dikenal; tidak memanggil mapper atau menulis `exam_*`. | `ExamBackfillDryRunTest` ditambahkan; belum dijalankan. Jumlah baris bukan rekonsiliasi isi/field-level. |
-| Validasi & format | Validasi mutasi/filter pada controller guru/admin CBT dan Tryout dipindah ke FormRequest; request siswa memeriksa policy sebelum validasi. Tes negatif siswa ditambah assertion no-mutation. CI menjalankan Pint untuk semua FormRequest baru dan layanan streaming (bukan seluruh legacy codebase). | Syntax lint PHP-WASM untuk 42 file berubah lulus; CI/Pint/PHPUnit belum dijalankan pada perubahan ini. |
-| Benchmark fixture | `BackupStreamingTest` memuat fixture 3.000 baris × 4 KiB dan menetapkan ambang pertumbuhan heap <32 MiB, selain uji 205 baris yang melintasi batas chunk 200. | Kode ukur ada, hasil ukur **belum tersedia** sebelum PHPUnit berjalan; ini bukan benchmark data produksi. |
+| Backup registry & wipe | `BackupTables` mencakup 8 tabel legacy Tryout, 7 tabel TKA, dan seluruh tabel engine ujian `exam_*`; export/restore/wipe memakai registry yang sama ditambah daftar log/cache yang tidak dibackup. Akun, semester, identitas sekolah dipertahankan; `api_keys` tidak masuk registry wipe. | `BackupCoverageTest` dan `BackupStreamingTest` lulus pada CI SQLite dan PostgreSQL. Ini bukti fixture/test DB saja; **jangan lakukan wipe atau restore produksi** sebelum staging dan rekonsiliasi row-count/relasi. |
+| Export terjadwal & panel | `BackupData` dan `ExportBackupJob` berbagi `BackupStreamWriter`, query per chunk, temporary stream 2 MiB yang dapat spill ke disk, dan upload stream tanpa mematerialisasi JSON penuh. | PHPUnit CI SQLite dan PostgreSQL lulus; provider penyimpanan offsite/produksi yang sebenarnya belum diuji. |
+| Restore | `BackupJsonStreamReader` memvalidasi dan men-spool setiap baris ke temporary files sebelum transaksi; replay mengikuti urutan FK registry, independen dari urutan key JSON. Batas: 100.000 baris, upload 100 MiB, metadata 64 KiB, satu row JSON 16 MiB. | Uji urutan restore yang key-nya diacak dan test backup/restore lulus di kedua job PHPUnit CI; belum ada restore staging atau produksi. |
+| Dry-run backfill | `exam:backfill --dry-run [--only=cbt|tryout]` hanya menghitung baris sumber, menolak filter tak dikenal, dan tidak memanggil mapper/menulis `exam_*`. | `ExamBackfillDryRunTest` lulus pada CI SQLite dan PostgreSQL. Hitungan sumber bukan rekonsiliasi isi/field-level produksi. |
+| Validasi & format | Validasi mutasi/filter CBT dan Tryout dipindah ke FormRequest; policy siswa dijalankan sebelum validasi/mutasi. Tes negatif memeriksa no-mutation. Pint CI memeriksa FormRequest dan layanan backup baru. | CI run [`40266944031`](https://github.com/amhyer/simantapmonsa/actions/runs/40266944031) lulus keempat job: Pint + PHPUnit PHP 8.4, PHPUnit PostgreSQL 16, Chromium smoke, dan authenticated E2E CBT/Tryout/TKA. Lint PHP-WASM 43 file berubah; verifier statis 62 lulus/0 gagal. |
+| Benchmark fixture | `BackupStreamingTest` memuat fixture 3.000 baris × 4 KiB dengan batas pertumbuhan heap <32 MiB, ditambah uji 205 baris yang melewati batas chunk 200. | Assertion fixture lulus pada PHPUnit CI; ini bukan benchmark data produksi atau bukti kapasitas untuk dataset nyata. |
 
 Inventaris dependensi statis di repository (bukan bukti penggunaan data produksi): CBT legacy terdiri dari
 `cbt_question_banks`, `cbt_questions`, `cbt_test_sessions`, `cbt_results`, `cbt_violations` dan masih
@@ -356,8 +358,7 @@ Batas kerja yang belum dapat ditutup dari clone:
 - Fase 5 belum dimulai: pilihan fitur dan acceptance criteria implementasi belum diputuskan. Butir
   “6.” pada permintaan terakhir kosong; daftar prioritas di §5 tetap usulan, bukan otorisasi scope.
 
-Verifikasi yang tersedia saat penulisan: syntax lint (`@php-wasm/cli@3.1.60`) atas 42 file PHP berubah, smoke parser JSON kecil, dan `tools/verifikasi-perbaikan.php` (**61 lulus, 0 gagal**). PHP-WASM memberi peringatan engine karena sandbox memakai Node 22 sementara paket meminta Node 24.18+. Pemeriksaan ini bukan eksekusi Laravel. Tidak tersedia binary PHP, Composer, `vendor/`, atau database runtime di clone ini, sehingga `php artisan test`, Pint, dan suite feature yang baru **belum berjalan**.
-CI run `40174441883` adalah baseline sebelum backlog ini, bukan bukti untuk perubahan di §1h.
+Verifikasi lokal yang tersedia: syntax lint (`@php-wasm/cli@3.1.60`) atas 43 file PHP berubah, smoke parser JSON, `git diff --check`, dan `tools/verifikasi-perbaikan.php` (**62 lulus, 0 gagal**). PHP-WASM memberi peringatan karena sandbox memakai Node 22 sementara paket meminta Node 24.18+. Eksekusi Laravel/Pint dilakukan di GitHub Actions, bukan pada clone lokal yang tidak menyediakan PHP, Composer, `vendor/`, atau database runtime. CI run `40266944031` adalah bukti eksekusi terbaru untuk commit saat itu; hasil tersebut tetap terbatas pada fixture dan runtime CI, bukan kesiapan produksi.
 
 ## 2. MATRIKS VERIFIKASI — SNAPSHOT 17 OKTOBER (lihat verifikasi §1f dan status branch §1g)
 
