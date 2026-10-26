@@ -17,6 +17,7 @@ use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
 use App\Models\Tryout\StudentAnswer;
+use App\Services\Exam\ExamReconciliationService;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ExamBackfill extends Command
 {
-    protected $signature = 'exam:backfill {--only= : Batasi ke cbt atau tryout}';
+    protected $signature = 'exam:backfill
+                            {--only= : Batasi ke cbt atau tryout}
+                            {--dry-run : Jalankan di transaksi lalu rollback; tidak menyimpan perubahan}
+                            {--verify : Hanya rekonsiliasi isi (read-only), tanpa menyalin}';
 
     protected $description = 'Salin data CBT & Tryout ke tabel exam_* (idempoten, read-only terhadap tabel lama)';
 
@@ -42,35 +46,122 @@ class ExamBackfill extends Command
         parent::__construct();
     }
 
-    public function handle(): int
+    public function handle(ExamReconciliationService $reconciliation): int
     {
         $only = $this->option('only');
 
-        DB::transaction(function () use ($only) {
+        if ($only !== null && ! in_array($only, [Engine::CBT, Engine::TRYOUT], true)) {
+            $this->error("Nilai --only harus 'cbt' atau 'tryout'.");
+
+            return self::INVALID;
+        }
+
+        if ($this->option('verify')) {
+            return $this->jalankanVerifikasi($reconciliation, $only);
+        }
+
+        $dryRun = (bool) $this->option('dry-run');
+        $sebelum = $this->jumlahTabel();
+
+        DB::beginTransaction();
+
+        try {
             if ($only !== Engine::TRYOUT) {
                 $this->backfillCbt();
             }
             if ($only !== Engine::CBT) {
                 $this->backfillTryout();
             }
-        });
+
+            $sesudah = $this->jumlahTabel();
+
+            if ($dryRun) {
+                DB::rollBack();
+            } else {
+                DB::commit();
+            }
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
 
         $this->newLine();
         $this->table(
-            ['Tabel', 'Jumlah'],
-            [
-                ['exam_engines', Engine::count()],
-                ['exam_banks', Bank::count()],
-                ['exam_sections', Section::count()],
-                ['exam_questions', Question::count()],
-                ['exam_sessions', Session::count()],
-                ['exam_attempts', Attempt::count()],
-                ['exam_answers', Answer::count()],
-                ['exam_results', Result::count()],
-            ]
+            ['Tabel', 'Sebelum', 'Sesudah', 'Delta'],
+            array_map(
+                fn (string $tabel) => [
+                    $tabel,
+                    $sebelum[$tabel] ?? 0,
+                    $dryRun ? ($sebelum[$tabel] ?? 0) : ($sesudah[$tabel] ?? 0),
+                    ($sesudah[$tabel] ?? 0) - ($sebelum[$tabel] ?? 0),
+                ],
+                array_keys($sebelum)
+            )
         );
 
+        if ($dryRun) {
+            $this->warn('Mode --dry-run: seluruh perubahan sudah di-rollback. Tidak ada data yang disimpan.');
+            $this->line('Kolom Delta menunjukkan jumlah baris yang AKAN dibuat/diperbarui.');
+        } else {
+            $this->info('Backfill selesai dan sudah di-commit.');
+        }
+
+        $this->line('Jalankan `php artisan exam:rekonsiliasi` untuk membuktikan isi data sama.');
+
         return self::SUCCESS;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function jumlahTabel(): array
+    {
+        return [
+            'exam_engines' => Engine::count(),
+            'exam_banks' => Bank::count(),
+            'exam_sections' => Section::count(),
+            'exam_questions' => Question::count(),
+            'exam_sessions' => Session::count(),
+            'exam_attempts' => Attempt::count(),
+            'exam_answers' => Answer::count(),
+            'exam_results' => Result::count(),
+        ];
+    }
+
+    private function jalankanVerifikasi(ExamReconciliationService $reconciliation, ?string $only): int
+    {
+        $laporan = $reconciliation->laporan($only, 25);
+
+        $this->table(
+            ['Tabel', 'Jumlah'],
+            array_map(
+                fn (string $tabel, int $jumlah) => [$tabel, $jumlah],
+                array_keys($laporan['jumlah']['legacy']),
+                array_values($laporan['jumlah']['legacy'])
+            )
+        );
+
+        if ($laporan['ok']) {
+            $this->info("✅ Rekonsiliasi cocok: {$laporan['diperiksa']} baris diperiksa, 0 masalah.");
+
+            return self::SUCCESS;
+        }
+
+        $this->error("❌ {$laporan['total_masalah']} masalah ditemukan dari {$laporan['diperiksa']} baris yang diperiksa.");
+
+        foreach ($laporan['masalah'] as $masalah) {
+            $this->line(sprintf(
+                '- [%s/%s#%s] %s %s',
+                $masalah['area'],
+                $masalah['tabel'],
+                $masalah['id'],
+                $masalah['masalah'],
+                $masalah['detail'] === [] ? '' : (string) json_encode($masalah['detail'], JSON_UNESCAPED_UNICODE)
+            ));
+        }
+
+        return self::FAILURE;
     }
 
     private function backfillCbt(): void

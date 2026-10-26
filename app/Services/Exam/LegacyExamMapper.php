@@ -53,12 +53,8 @@ class LegacyExamMapper
     {
         $bank = Bank::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_CBT_BANK, 'sumber_id' => $cbtBank->id],
-            [
-                'engine_id' => $this->engine(Engine::CBT, 'CBT (pilihan ganda)')->id,
-                'guru_id' => $cbtBank->guru_id,
-                'nama' => $cbtBank->title,
-                'mata_pelajaran' => $cbtBank->subject,
-            ]
+            ['engine_id' => $this->engine(Engine::CBT, 'CBT (pilihan ganda)')->id]
+                + $this->atributBankCbt($cbtBank)
         );
 
         foreach ($cbtBank->questions()->orderBy('id')->get() as $cbtQuestion) {
@@ -68,54 +64,95 @@ class LegacyExamMapper
         return $bank;
     }
 
+    /**
+     * Atribut bank CBT tanpa efek samping. Dipakai bersama oleh pembuat dan
+     * pemeriksa rekonsiliasi agar keduanya tidak pernah berbeda aturan.
+     *
+     * @return array<string, mixed>
+     */
+    public function atributBankCbt(CbtQuestionBank $cbtBank): array
+    {
+        return [
+            'guru_id' => $cbtBank->guru_id,
+            'nama' => $cbtBank->title,
+            'mata_pelajaran' => $cbtBank->subject,
+        ];
+    }
+
     public function soalCbt(Bank $bank, CbtQuestion $cbtQuestion): Question
     {
         $question = Question::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_CBT_SOAL, 'sumber_id' => $cbtQuestion->id],
-            [
-                'bank_id' => $bank->id,
-                'tipe' => 'pilihan_ganda',
-                'pertanyaan' => $cbtQuestion->prompt,
-                'poin' => 1,
-                'aktif' => true,
-            ]
+            ['bank_id' => $bank->id] + $this->atributSoalCbt($cbtQuestion)
         );
 
-        foreach ((array) $cbtQuestion->options as $huruf => $isi) {
+        foreach ($this->atributOpsiCbt($cbtQuestion) as $huruf => $atribut) {
             QuestionOption::updateOrCreate(
                 ['question_id' => $question->id, 'huruf' => (string) $huruf],
-                [
-                    'isi_opsi' => (string) $isi,
-                    'adalah_benar' => (string) $huruf === (string) $cbtQuestion->correct_answer,
-                    'urutan' => is_numeric($huruf) ? (int) $huruf : ord(mb_strtoupper((string) $huruf)) - 64,
-                ]
+                $atribut
             );
         }
 
         // Opsi yang dihapus di bank tidak boleh tertinggal di engine.
-        $hurufAktif = array_map('strval', array_keys((array) $cbtQuestion->options));
+        $hurufAktif = array_map('strval', array_keys($this->atributOpsiCbt($cbtQuestion)));
         QuestionOption::where('question_id', $question->id)->whereNotIn('huruf', $hurufAktif)->delete();
 
         return $question;
+    }
+
+    /** @return array<string, mixed> */
+    public function atributSoalCbt(CbtQuestion $cbtQuestion): array
+    {
+        return [
+            'tipe' => 'pilihan_ganda',
+            'pertanyaan' => $cbtQuestion->prompt,
+            'poin' => 1,
+            'aktif' => true,
+        ];
+    }
+
+    /**
+     * @return array<string, array{isi_opsi: string, adalah_benar: bool, urutan: int}>
+     */
+    public function atributOpsiCbt(CbtQuestion $cbtQuestion): array
+    {
+        $hasil = [];
+
+        foreach ((array) $cbtQuestion->options as $huruf => $isi) {
+            $hasil[(string) $huruf] = [
+                'isi_opsi' => (string) $isi,
+                'adalah_benar' => (string) $huruf === (string) $cbtQuestion->correct_answer,
+                'urutan' => is_numeric($huruf)
+                    ? (int) $huruf
+                    : ord(mb_strtoupper((string) $huruf)) - 64,
+            ];
+        }
+
+        return $hasil;
     }
 
     public function sesiCbt(Bank $bank, CbtTestSession $cbtSession): ExamSession
     {
         return ExamSession::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_CBT_SESI, 'sumber_id' => $cbtSession->id],
-            [
-                'bank_id' => $bank->id,
-                'guru_id' => $cbtSession->guru_id,
-                'nama' => $cbtSession->title,
-                'kelas' => $cbtSession->kelas,
-                'mulai_at' => $cbtSession->opens_at,
-                'selesai_at' => $cbtSession->closes_at,
-                'durasi_menit' => $cbtSession->duration_minutes,
-                'status' => $cbtSession->status,
-                'soal_snapshot' => $cbtSession->question_snapshot,
-                'peserta_ids' => $cbtSession->participant_ids,
-            ]
+            ['bank_id' => $bank->id] + $this->atributSesiCbt($cbtSession)
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function atributSesiCbt(CbtTestSession $cbtSession): array
+    {
+        return [
+            'guru_id' => $cbtSession->guru_id,
+            'nama' => $cbtSession->title,
+            'kelas' => $cbtSession->kelas,
+            'mulai_at' => $cbtSession->opens_at,
+            'selesai_at' => $cbtSession->closes_at,
+            'durasi_menit' => $cbtSession->duration_minutes,
+            'status' => $cbtSession->status,
+            'soal_snapshot' => $cbtSession->question_snapshot,
+            'peserta_ids' => $cbtSession->participant_ids,
+        ];
     }
 
     /**
@@ -153,68 +190,64 @@ class LegacyExamMapper
     {
         return Bank::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_PAKET, 'sumber_id' => $package->id],
-            [
-                'engine_id' => $this->engine(Engine::TRYOUT, 'Tryout')->id,
-                'kode' => $package->kode_paket,
-                'nama' => $package->nama_paket,
-                'meta' => [
-                    'category_id' => $package->category_id,
-                    'jenjang' => $package->jenjang,
-                    'tahun_paket' => $package->tahun_paket,
-                    'durasi_total_menit' => $package->durasi_total_menit,
-                    'passing_grade' => $package->passing_grade,
-                    'deskripsi' => $package->deskripsi,
-                    'jumlah_mapel' => $package->jumlah_mapel,
-                ],
-            ]
+            ['engine_id' => $this->engine(Engine::TRYOUT, 'Tryout')->id]
+                + $this->atributBankTryout($package)
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function atributBankTryout(Package $package): array
+    {
+        return [
+            'kode' => $package->kode_paket,
+            'nama' => $package->nama_paket,
+            'meta' => [
+                'category_id' => $package->category_id,
+                'jenjang' => $package->jenjang,
+                'tahun_paket' => $package->tahun_paket,
+                'durasi_total_menit' => $package->durasi_total_menit,
+                'passing_grade' => $package->passing_grade,
+                'deskripsi' => $package->deskripsi,
+                'jumlah_mapel' => $package->jumlah_mapel,
+            ],
+        ];
     }
 
     public function sectionTryout(Bank $bank, Subject $subject): Section
     {
         return Section::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_MAPEL, 'sumber_id' => $subject->id],
-            [
-                'bank_id' => $bank->id,
-                'nama' => $subject->mataPelajaran?->nama,
-                'mata_pelajaran_id' => $subject->mata_pelajaran_id,
-                'urutan' => $subject->urutan,
-                'bobot' => $subject->bobot,
-                'durasi_menit' => $subject->durasi_menit,
-                'passing_grade' => $subject->passing_grade_mapel,
-            ]
+            ['bank_id' => $bank->id] + $this->atributSectionTryout($subject)
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function atributSectionTryout(Subject $subject): array
+    {
+        return [
+            'nama' => $subject->mataPelajaran?->nama,
+            'mata_pelajaran_id' => $subject->mata_pelajaran_id,
+            'urutan' => $subject->urutan,
+            'bobot' => $subject->bobot,
+            'durasi_menit' => $subject->durasi_menit,
+            'passing_grade' => $subject->passing_grade_mapel,
+        ];
     }
 
     public function soalTryout(Bank $bank, Section $section, TryoutQuestion $tryoutQuestion): Question
     {
         $question = Question::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_SOAL, 'sumber_id' => $tryoutQuestion->id],
-            [
-                'bank_id' => $bank->id,
-                'section_id' => $section->id,
-                'urutan' => $tryoutQuestion->urutan,
-                'tipe' => $tryoutQuestion->tipe_soal,
-                'pertanyaan' => $tryoutQuestion->pertanyaan,
-                'media_type' => $tryoutQuestion->media_type ?? 'text',
-                'media_url' => $tryoutQuestion->media_url,
-                'poin' => $tryoutQuestion->poin,
-                'tingkat_kesulitan' => $tryoutQuestion->tingkat_kesulitan,
-                'pembahasan' => $tryoutQuestion->pembahasan,
-                'aktif' => (bool) $tryoutQuestion->aktif,
-            ]
+            ['bank_id' => $bank->id, 'section_id' => $section->id]
+                + $this->atributSoalTryout($tryoutQuestion)
         );
 
         $hurufAktif = [];
-        foreach ($tryoutQuestion->options as $option) {
-            $hurufAktif[] = (string) $option->huruf;
+        foreach ($this->atributOpsiTryout($tryoutQuestion) as $huruf => $atribut) {
+            $hurufAktif[] = (string) $huruf;
             QuestionOption::updateOrCreate(
-                ['question_id' => $question->id, 'huruf' => $option->huruf],
-                [
-                    'isi_opsi' => $option->isi_opsi,
-                    'adalah_benar' => (bool) $option->adalah_benar,
-                    'urutan' => $option->urutan,
-                ]
+                ['question_id' => $question->id, 'huruf' => (string) $huruf],
+                $atribut
             );
         }
 
@@ -222,6 +255,40 @@ class LegacyExamMapper
         QuestionOption::where('question_id', $question->id)->whereNotIn('huruf', $hurufAktif)->delete();
 
         return $question;
+    }
+
+    /** @return array<string, mixed> */
+    public function atributSoalTryout(TryoutQuestion $tryoutQuestion): array
+    {
+        return [
+            'urutan' => $tryoutQuestion->urutan,
+            'tipe' => $tryoutQuestion->tipe_soal,
+            'pertanyaan' => $tryoutQuestion->pertanyaan,
+            'media_type' => $tryoutQuestion->media_type ?? 'text',
+            'media_url' => $tryoutQuestion->media_url,
+            'poin' => $tryoutQuestion->poin,
+            'tingkat_kesulitan' => $tryoutQuestion->tingkat_kesulitan,
+            'pembahasan' => $tryoutQuestion->pembahasan,
+            'aktif' => (bool) $tryoutQuestion->aktif,
+        ];
+    }
+
+    /**
+     * @return array<string, array{isi_opsi: string, adalah_benar: bool, urutan: int}>
+     */
+    public function atributOpsiTryout(TryoutQuestion $tryoutQuestion): array
+    {
+        $hasil = [];
+
+        foreach ($tryoutQuestion->options as $option) {
+            $hasil[(string) $option->huruf] = [
+                'isi_opsi' => $option->isi_opsi,
+                'adalah_benar' => (bool) $option->adalah_benar,
+                'urutan' => $option->urutan,
+            ];
+        }
+
+        return $hasil;
     }
 
     /**
@@ -253,21 +320,26 @@ class LegacyExamMapper
 
         return ExamSession::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_SESI, 'sumber_id' => $tryoutSession->id],
-            [
-                'bank_id' => $bank->id,
-                'guru_id' => $tryoutSession->guru_id,
-                'semester_id' => $tryoutSession->semester_id,
-                'rombel_id' => $tryoutSession->rombel_id,
-                'kode' => $tryoutSession->kode_sesi,
-                'nama' => $tryoutSession->nama_sesi,
-                'kelas' => $tryoutSession->kelas,
-                'mulai_at' => $tryoutSession->tanggal_mulai,
-                'selesai_at' => $tryoutSession->tanggal_selesai,
-                'durasi_menit' => $tryoutSession->durasi_menit,
-                'status' => $tryoutSession->status,
-                'instruksi' => $tryoutSession->instruksi,
-            ]
+            ['bank_id' => $bank->id] + $this->atributSesiTryout($tryoutSession)
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function atributSesiTryout(TryoutSession $tryoutSession): array
+    {
+        return [
+            'guru_id' => $tryoutSession->guru_id,
+            'semester_id' => $tryoutSession->semester_id,
+            'rombel_id' => $tryoutSession->rombel_id,
+            'kode' => $tryoutSession->kode_sesi,
+            'nama' => $tryoutSession->nama_sesi,
+            'kelas' => $tryoutSession->kelas,
+            'mulai_at' => $tryoutSession->tanggal_mulai,
+            'selesai_at' => $tryoutSession->tanggal_selesai,
+            'durasi_menit' => $tryoutSession->durasi_menit,
+            'status' => $tryoutSession->status,
+            'instruksi' => $tryoutSession->instruksi,
+        ];
     }
 
     /**
