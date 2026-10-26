@@ -33,6 +33,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users',
+            'email' => 'nullable|email|max:255|unique:users,email',
             'kata_sandi' => 'required|string|min:8',
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
@@ -44,6 +45,7 @@ class UserController extends Controller
             'uuid' => Str::uuid(),
             'nama_lengkap' => $validated['nama_lengkap'],
             'nama_pengguna' => $validated['nama_pengguna'],
+            'email' => $validated['email'] ?? null,
             'kata_sandi' => Hash::make($validated['kata_sandi']),
             'peran' => $validated['peran'],
             'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
@@ -91,6 +93,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'kata_sandi' => 'nullable|string|min:8',
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
@@ -101,6 +104,7 @@ class UserController extends Controller
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
             'nama_pengguna' => $validated['nama_pengguna'],
+            'email' => $validated['email'] ?? null,
             'peran' => $validated['peran'],
             'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,

@@ -30,6 +30,12 @@
                         @error('nama_pengguna') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
+                <div style="margin-bottom:16px">
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email (opsional, untuk reset sandi mandiri)</label>
+                    <input type="email" name="email" value="{{ old('email') }}" placeholder="nama@sekolah.sch.id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    @error('email') <span class="field-error">{{ $message }}</span> @enderror
+                    <small style="display:block;color:#667085;font-size:12px;margin-top:6px">Tanpa email, sandi hanya dapat direset oleh admin. Email tidak dipakai untuk login.</small>
+                </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi *</label>

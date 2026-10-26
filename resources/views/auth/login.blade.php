@@ -22,6 +22,9 @@
         .btn { width: 100%; padding: 12px; background: var(--navy); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: .15s; }
         .btn:hover { background: #2B4A80; }
         .error { background: #FEE9E7; color: #B42318; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .status { background: #E7F6EC; color: #067647; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .forgot { display: block; text-align: right; margin-top: 12px; font-size: 13px; color: var(--navy); text-decoration: none; font-weight: 600; }
+        .forgot:hover { text-decoration: underline; }
         .demo { background: #FBF4E4; border-left: 3px solid var(--gold); padding: 12px 14px; border-radius: 8px; font-size: 12.5px; margin-top: 20px; }
         .demo b { color: var(--navy); }
     </style>
@@ -37,6 +40,10 @@
             <div class="error">{{ $errors->first() }}</div>
         @endif
 
+        @if(session('status'))
+            <div class="status">{{ session('status') }}</div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}">
             @csrf
             <div class="form-group">
@@ -49,6 +56,8 @@
             </div>
             <button type="submit" class="btn">Masuk</button>
         </form>
+
+        <a class="forgot" href="{{ route('password.request') }}">Lupa kata sandi?</a>
 
         @if(app()->environment('local'))
             <div class="demo">

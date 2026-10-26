@@ -13,7 +13,7 @@ class PasswordResetTest extends TestCase
     {
         $response = $this->get('/forgot-password');
 
-        // We don't implement password reset — expect 404
+        // Jalur lama tetap 404; alur reset mandiri memakai /lupa-sandi.
         $response->assertStatus(404);
     }
 
@@ -21,7 +21,7 @@ class PasswordResetTest extends TestCase
     {
         $response = $this->get('/reset-password/some-token');
 
-        // We don't implement password reset — expect 404
+        // Jalur lama tetap 404; alur reset mandiri memakai /reset-sandi/{token}.
         $response->assertStatus(404);
     }
 }

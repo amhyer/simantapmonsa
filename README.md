@@ -75,6 +75,9 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Deployment produksi | [`DEPLOYMENT.md`](DEPLOYMENT.md) |
 | Kesiapan launching | [`LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
 | Keamanan | [`docs/04-SECURITY-GUIDE.md`](docs/04-SECURITY-GUIDE.md) |
+| Reset sandi mandiri | [`docs/RESET-SANDI-MANDIRI.md`](docs/RESET-SANDI-MANDIRI.md) |
+| Drill restore backup | [`docs/DRILL-RESTORE-BACKUP.md`](docs/DRILL-RESTORE-BACKUP.md) |
+| Rekonsiliasi CBT/Tryout | [`docs/REKONSILIASI-FASE-3.md`](docs/REKONSILIASI-FASE-3.md) |
 | Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |
 | Modul CBT | [`docs/CBT.md`](docs/CBT.md) |
 | Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
@@ -90,6 +93,8 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 - Login dibatasi 5 percobaan per IP (decay 300 detik); akun nonaktif/terarsip ditolak.
 - Pendaftaran publik membuat akun **nonaktif** — admin yang mengaktifkan.
 - Sandi yang dibuat/direset admin memicu `force_password_change` pada pemilik akun.
+- Reset sandi mandiri memakai email opsional; akun tanpa email tetap direset admin.
+  Permintaan dibatasi 5/menit, token sekali pakai dan kedaluwarsa 60 menit.
 - API key disimpan sebagai hash SHA-256; kunci polos hanya tampil sekali saat dibuat.
 - Telescope dikunci ke admin yang namanya ada di `TELESCOPE_ALLOWED_USERS`.
 - API docs Scramble (`/docs/api`) hanya dapat diakses di lingkungan `local`.

@@ -18,6 +18,7 @@ class User extends Authenticatable
         'uuid',
         'nama_lengkap',
         'nama_pengguna',
+        'email',
         'kata_sandi',
         'peran',
         'terhubung_dengan',

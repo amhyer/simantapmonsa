@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\TkaController as TkaStatsController;
@@ -69,6 +71,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
     Route::get('/register', [LandingController::class, 'register'])->name('register');
     Route::post('/register', [LandingController::class, 'storeRegister'])->middleware('throttle:5,1');
+
+    // Reset sandi mandiri. Pengguna yang belum punya email tetap diarahkan ke admin.
+    Route::get('/lupa-sandi', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/lupa-sandi', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-sandi/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-sandi', [ResetPasswordController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 });
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('throttle:30,1')->name('logout');
 
