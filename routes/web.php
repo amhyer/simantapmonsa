@@ -521,6 +521,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
         Route::delete('/{session}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'destroy'])->name('destroy');
         Route::get('/{session}/export/{format}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'exportResults'])->name('export');
         Route::get('/{session}/export-engine/{format}', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'exportResultsEngine'])->name('export-engine');
+        Route::get('/{session}/analisis-butir', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'analisisButir'])->name('analisis-butir');
     });
 });
 

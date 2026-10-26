@@ -100,6 +100,9 @@
                 <a href="{{ route('admin.cbt.sessions.export', [$session, 'csv']) }}" class="btn btn-success">
                     <i class="fas fa-file-csv"></i> Ekspor CSV
                 </a>
+                <a href="{{ route('admin.cbt.sessions.analisis-butir', $session) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-bar"></i> Analisis Butir
+                </a>
                 @endif
 
                 <form method="POST" action="{{ route('admin.cbt.sessions.destroy', $session) }}"

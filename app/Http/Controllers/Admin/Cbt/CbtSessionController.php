@@ -117,6 +117,14 @@ class CbtSessionController extends Controller
         return redirect()->route('admin.cbt.sessions.index')->with('success', 'Sesi beserta hasilnya dihapus.');
     }
 
+    public function analisisButir(CbtTestSession $session, \App\Services\Exam\ExamItemAnalysisService $analysis)
+    {
+        $session->load(['guru', 'bank']);
+        $hasil = $analysis->untukSesiCbt($session);
+
+        return view('admin.cbt.sessions.analisis', compact('session', 'hasil'));
+    }
+
     public function exportResults(CbtTestSession $session, string $format)
     {
         abort_unless($format === 'csv', 404, 'Format ekspor hanya mendukung csv.');
