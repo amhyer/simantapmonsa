@@ -158,7 +158,15 @@ keluaran lama yang bisa dipakai sebagai pembanding.
 - ⏭️ **6c-2** — balik kepemilikan tulis (engine jadi sumber, tabel lama jadi
   cermin), sisanya: hapus/ubah sesi Tryout guru, unggah soal Tryout (belum ada
   UI), dan penanganan nilai `tipe_ujian`/`total_soal` yang tak punya kolom.
-- ⏭️ **6d** — alur siswa membaca `exam_*`; lalu 6e hapus tabel lama.
+- ✅ **6d-1 (halaman utama Tryout siswa)** — `TryoutStudentReader` menyatukan
+  daftar sesi tersedia + riwayat hasil ke bentuk array yang sama untuk
+  `tryout_*` dan `exam_*` (flag `simantap.exam_engine_readers`). Satu view
+  dipakai dua sumber; identitas baris tetap id lama (diambil dari `sumber_id`)
+  karena rute mulai/detail masih terikat model lama sampai 6e.
+  Bukti: `TryoutStudentReaderTest` (2 test) — potret identik kedua cabang, dan
+  setelah seluruh `tryout_*` dikosongkan halaman tetap 200 dengan data benar.
+- ⏭️ **6d-2** — alur soal/jawab/selesai CBT & Tryout membaca `exam_attempts`
+  /`exam_answers` (rute & view berpindah dari model lama).
 
 ## Urutan pengerjaan yang disarankan
 

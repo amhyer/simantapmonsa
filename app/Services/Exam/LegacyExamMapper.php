@@ -163,6 +163,8 @@ class LegacyExamMapper
                     'tahun_paket' => $package->tahun_paket,
                     'durasi_total_menit' => $package->durasi_total_menit,
                     'passing_grade' => $package->passing_grade,
+                    'deskripsi' => $package->deskripsi,
+                    'jumlah_mapel' => $package->jumlah_mapel,
                 ],
             ]
         );

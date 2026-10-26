@@ -30,23 +30,9 @@ class TryoutStudentController extends Controller
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan');
         }
 
-        $availableSessions = Session::where('status', 'ongoing')
-                                    ->where('tanggal_mulai', '<=', now())
-                                    ->where('tanggal_selesai', '>=', now())
-                                    ->where(function ($q) use ($siswa) {
-                                        $q->whereNull('kelas')
-                                          ->orWhere('kelas', $siswa->kelas)
-                                          ->orWhereHas('rombel', function ($q) use ($siswa) {
-                                              $q->where('id', $siswa->rombel_id);
-                                          });
-                                    })
-                                    ->with(['package.subjects.mataPelajaran'])
-                                    ->get();
-
-        $myResults = Result::where('siswa_id', $siswa->id)
-                          ->with(['session.package', 'siswa'])
-                          ->latest()
-                          ->get();
+        $reader = app(\App\Services\Exam\TryoutStudentReader::class);
+        $availableSessions = $reader->sesiTersedia($siswa);
+        $myResults = $reader->hasilSaya($siswa);
 
         return view('tryout.student.index', compact('availableSessions', 'myResults'));
     }
