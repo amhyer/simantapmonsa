@@ -19,7 +19,7 @@ $catatan = [];
 
 function rel(string $path, string $root): string
 {
-    return str_replace($root . '/', '', $path);
+    return str_replace(str_replace('\\', '/', $root) . '/', '', str_replace('\\', '/', $path));
 }
 
 function baca(string $path): string
@@ -89,7 +89,7 @@ function semuaPhp(string $root): array
         new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
     );
     foreach ($iterator as $file) {
-        $path = $file->getPathname();
+        $path = str_replace('\\', '/', $file->getPathname());
         if (str_contains($path, '/vendor/') || str_contains($path, '/node_modules/') || str_contains($path, '/.git/')) {
             continue;
         }
