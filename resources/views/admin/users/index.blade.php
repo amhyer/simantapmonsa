@@ -230,16 +230,31 @@
         var label = labels[peran] || peran;
         if (!confirm('Hapus SEMUA akun ' + label + ' (' + jumlah + ' akun)?\n\nTindakan ini tidak dapat dibatalkan.')) return;
 
+        // Konfirmasi bertingkat: ketik frasa persis sebelum dihapus
+        // (divalidasi ulang di UserController@destroyAll).
+        var frasa = 'HAPUS ' + String(peran).toUpperCase();
+        var ketikan = prompt('Ketik persis: ' + frasa + '\nuntuk menghapus ' + jumlah + ' akun ' + label + '.');
+
+        if (ketikan === null) return;
+
+        if (String(ketikan).trim().toUpperCase() !== frasa) {
+            alert('Teks konfirmasi tidak cocok. Tidak ada akun yang dihapus.');
+            return;
+        }
+
         fetch('{{ url("/admin/users/hapus-semua") }}/' + peran, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ konfirmasi: frasa })
         }).then(function(r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
+            return r.json().then(function(d) {
+                if (!r.ok) throw new Error(d.message || ('HTTP ' + r.status));
+                return d;
+            });
         }).then(function(d) {
             if (d.success) {
                 alert(d.message);

@@ -137,9 +137,17 @@ class MapelController extends Controller
             ->with('success', 'Mata pelajaran "' . $nama . '" berhasil dihapus.');
     }
 
-    public function destroyAll()
+    public function destroyAll(Request $request)
     {
         $jenjangSekolah = $this->getJenjangSekolah();
+
+        // Konfirmasi bertingkat: pengguna harus mengetik frasa persis sebelum
+        // semua mata pelajaran aktif dihapus (mengikuti pola `admin.backup.wipe`).
+        if (strtoupper(trim((string) $request->input('konfirmasi'))) !== 'HAPUS SEMUA') {
+            return redirect()->route('admin.mapel.index')
+                ->with('error', 'Teks konfirmasi tidak cocok — tidak ada mata pelajaran yang dihapus.');
+        }
+
         MataPelajaran::where('jenjang', $jenjangSekolah)->where('aktif', true)->delete();
         return redirect()->route('admin.mapel.index')
             ->with('success', 'Semua mata pelajaran aktif berhasil dihapus.');

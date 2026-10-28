@@ -10,6 +10,12 @@
         return ($item['planned'] ?? false) === true || !isset($item['route']);
     };
 
+    // Menu duplikat (T12): `admin.mapel.*`, `admin.semester.*`, dan
+    // `admin.peta-kelas.*` memang berada di tab Setup — tautan di sidebar
+    // E-Rapor membuat tab aktif berpindah begitu diklik. Tinggalkan satu
+    // pintu masuk per halaman, pada tab yang benar-benar menaunginya.
+    // `Mapping Rapor` juga sebelumnya muncul dua kali di sidebar ini
+    // ("Mapping Mapel" di grup Transkrip dan "Mapping Rapor" di referensi).
     $menuAdmin = [
         ['label' => 'UTAMA', 'items' => [
             ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Sistem'],
@@ -26,7 +32,6 @@
         ['label' => 'TRANSKRIP IJAZAH', 'icon' => 'lucide-file-text', 'children' => [
             ['route' => 'admin.transkrip.setting', 'icon' => 'lucide-settings', 'label' => 'Setting Transkrip'],
             ['route' => 'admin.transkrip.nomor', 'icon' => 'lucide-file-input', 'label' => 'Nomor Ijazah'],
-            ['route' => 'admin.referensi.mapping-rapor', 'icon' => 'lucide-shuffle', 'label' => 'Mapping Mapel'],
             ['route' => 'admin.transkrip.input', 'icon' => 'lucide-pen-square', 'label' => 'Input Nilai Transkrip'],
             ['route' => 'admin.transkrip.import', 'icon' => 'lucide-upload', 'label' => 'Import Nilai Transkrip'],
             ['route' => 'admin.transkrip.cetak', 'icon' => 'lucide-printer', 'label' => 'Cetak Transkrip Nilai'],
@@ -40,11 +45,8 @@
             ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
             ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru'],
             ['route' => 'admin.users.siswa', 'icon' => 'lucide-graduation-cap', 'label' => 'Data Siswa'],
-            ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Data Kelas'],
-            ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Data Mapel'],
             ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
             ['route' => 'admin.referensi.alignment', 'icon' => 'lucide-link', 'label' => 'Cek Alignment'],
-            ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Data Semester'],
             ['route' => 'admin.referensi.ekstrakurikuler', 'icon' => 'lucide-activity', 'label' => 'Data Ekstrakurikuler'],
             ['route' => 'admin.referensi.kelompok-mapel', 'icon' => 'lucide-layers', 'label' => 'Data Kelompok Mapel'],
             ['route' => 'admin.referensi.mapping-rapor', 'icon' => 'lucide-shuffle', 'label' => 'Mapping Rapor'],

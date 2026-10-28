@@ -124,7 +124,9 @@
                         <div style="font-size:13px;color:var(--muted)">
                             Menampilkan {{ $mapel->firstItem() }}-{{ $mapel->lastItem() }} dari {{ $mapel->total() }} data
                         </div>
-                        <form action="{{ route('admin.mapel.destroy-all') }}" method="POST" onsubmit="return confirm('YAKIN HAPUS SEMUA mata pelajaran {{ $jenjangSekolah }}? Tindakan ini tidak dapat dibatalkan.')">
+                        {{-- Konfirmasi bertingkat: selain dialog konfirmasi, pengguna wajib
+                             mengetik frasa persis (divalidasi di MapelController@destroyAll). --}}
+                        <form action="{{ route('admin.mapel.destroy-all') }}" method="POST" onsubmit="return konfirmasiKetik(this, 'HAPUS SEMUA', 'Menghapus seluruh mata pelajaran aktif {{ $jenjangSekolah }}.')">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger">
                                 <i class="fas fa-trash-alt"></i> Hapus Semua

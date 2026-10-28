@@ -23,6 +23,8 @@
         return ($item['planned'] ?? false) === true || !isset($item['route']);
     };
 
+    // Menu duplikat (T12): Data Sekolah dan Data Pembelajaran bernaung di tab
+    // E-Rapor (lihat activeAdminTab()), jadi tidak diulang di sidebar Setup.
     $menuAdmin = [
         ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
@@ -37,15 +39,14 @@
             // Sebelumnya halaman ini hanya tertaut dari dalam halaman Dapodik.
             ['route' => 'admin.api-keys.index', 'icon' => 'lucide-key-round', 'label' => 'API Keys & Bridge'],
         ]],
-        ['label' => 'DATA REFERENSI', 'items' => [
-            ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],
-        ]],
         ['label' => 'PETA KELAS', 'items' => [
+            // Papan pemetaan sebelumnya hanya tertaut dari dalam halaman
+            // (dasbor, Data Guru, Data Pembelajaran) — kini masuk menu juga.
+            ['route' => 'admin.peta-kelas.index', 'icon' => 'lucide-layout-dashboard', 'label' => 'Papan Pemetaan'],
             ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Daftar Peta Kelas'],
         ]],
-        ['label' => 'DATA MAPEL & PEMBELAJARAN', 'icon' => 'lucide-book', 'children' => [
+        ['label' => 'DATA MAPEL', 'icon' => 'lucide-book', 'children' => [
             ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Data Mapel'],
-            ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
         ]],
         ['label' => 'DATA SEMESTER', 'items' => [
             ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Data Semester'],
