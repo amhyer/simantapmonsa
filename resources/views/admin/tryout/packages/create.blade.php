@@ -2,10 +2,6 @@
 
 @section('title', 'Tambah Paket Tryout - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Tambah Paket Tryout')
 @section('page_subtitle', 'Paket soal tryout baru')
 

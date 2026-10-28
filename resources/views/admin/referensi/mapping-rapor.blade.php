@@ -2,10 +2,6 @@
 
 @section('title', 'Mapping Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Mapping Rapor')
 @section('page_subtitle', 'Atur urutan tampil mata pelajaran di rapor (angka kecil tampil lebih dulu)')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Import Nilai Transkrip - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Import Nilai Transkrip')
 @section('page_subtitle', 'Unggah CSV nilai akhir per siswa per mapel')
 

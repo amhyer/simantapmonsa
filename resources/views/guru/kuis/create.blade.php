@@ -10,7 +10,7 @@
 @section('page_subtitle', 'Susun asesmen baru')
 
 @section('header_actions')
-    <a href="{{ route('guru.kuis.index') }}" class="btn btn-ghost btn-sm">â† Kembali</a>
+    <a href="{{ route('guru.kuis.index') }}" class="btn btn-ghost btn-sm">← Kembali</a>
 @endsection
 
 @section('content')
@@ -94,7 +94,7 @@
             </div>
         </div>
         <div style="display:flex;gap:10px">
-            <button type="submit" class="btn">ðŸ’¾ Simpan Kuis</button>
+            <button type="submit" class="btn">💾 Simpan Kuis</button>
             <a href="{{ route('guru.kuis.index') }}" class="btn btn-ghost">Batal</a>
         </div>
     </form>

@@ -2,10 +2,6 @@
 
 @section('title', 'Sesi Ujian CBT - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Sesi Ujian CBT')
 @section('page_subtitle', 'Monitoring seluruh sesi ujian')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Anggota Kelompok - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Anggota: ' . $kelompok->nama)
 @section('page_subtitle', ($kelompok->kegiatan?->nama ?? '-') . ' · ' . ($kelompok->kegiatan?->tema?->nama ?? '-'))
 

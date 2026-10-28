@@ -2,10 +2,6 @@
 
 @section('title', 'Setting Transkrip - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Setting Transkrip')
 @section('page_subtitle', 'Kop penerbitan transkrip nilai ijazah')
 

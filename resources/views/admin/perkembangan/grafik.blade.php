@@ -2,10 +2,6 @@
 
 @section('title', 'Grafik Nilai Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Grafik Nilai Rapor')
 @section('page_subtitle', 'Sebaran predikat dan rata-rata per kelas')
 

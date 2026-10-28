@@ -2,10 +2,6 @@
 
 @section('title', 'Data Kelas - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Kelas')
 @section('page_subtitle', 'Daftar rombongan belajar dari Dapodik')
 

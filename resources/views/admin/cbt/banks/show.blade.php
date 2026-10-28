@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Bank Soal CBT - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Bank Soal CBT')
 @section('page_subtitle', $bank->title)
 

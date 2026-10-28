@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Penilaian TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Penilaian TKA')
 @section('page_subtitle', 'Kelola data penilaian')
 

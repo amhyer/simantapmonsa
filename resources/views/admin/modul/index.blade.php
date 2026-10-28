@@ -2,10 +2,6 @@
 
 @section('title', 'Modul & Tampilan - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Modul & Tampilan')
 @section('page_subtitle', 'Aktifkan atau nonaktifkan modul sistem')
 

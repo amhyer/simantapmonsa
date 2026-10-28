@@ -32,6 +32,7 @@
                                 <th>Kategori</th>
                                 <th>Item</th>
                                 <th>Status</th>
+                                <th style="text-align:right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,6 +46,17 @@
                                         <span class="tag {{ $dimension->aktif ? 'tag-ok' : 'tag-mut' }}">
                                             {{ $dimension->aktif ? 'Aktif' : 'Nonaktif' }}
                                         </span>
+                                    </td>
+                                    {{-- Kolom aksi: tanpa ini halaman show & edit dimensi
+                                         tidak bisa dicapai dari mana pun. --}}
+                                    <td style="text-align:right;white-space:nowrap">
+                                        <a href="{{ route('tka.dimensions.show', $dimension) }}" class="btn btn-ghost btn-sm" title="Lihat rubrik">Detail</a>
+                                        <a href="{{ route('tka.dimensions.edit', $dimension) }}" class="btn btn-ghost btn-sm" title="Ubah">Ubah</a>
+                                        <form action="{{ route('tka.dimensions.destroy', $dimension) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus dimensi &quot;{{ $dimension->nama_dimensi }}&quot;? Item penilaian di dalamnya ikut terhapus.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Hapus" style="color:var(--bad)">Hapus</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

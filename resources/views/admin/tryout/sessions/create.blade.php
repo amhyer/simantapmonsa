@@ -2,10 +2,6 @@
 
 @section('title', 'Buat Sesi Tryout - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Buat Sesi Tryout')
 @section('page_subtitle', 'Jadwal pelaksanaan tryout')
 

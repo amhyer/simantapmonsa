@@ -2,10 +2,6 @@
 
 @section('title', 'Statistik Nilai Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Statistik Nilai Rapor')
 @section('page_subtitle', 'Sebaran predikat dan rata-rata per mata pelajaran (dari nilai e-rapor)')
 

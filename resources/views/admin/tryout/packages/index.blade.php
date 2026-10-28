@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Paket Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Paket Tryout')
 @section('page_subtitle', 'Kelola paket tryout')
 

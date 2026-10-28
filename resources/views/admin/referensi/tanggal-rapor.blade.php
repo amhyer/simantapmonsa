@@ -2,10 +2,6 @@
 
 @section('title', 'Tanggal Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Tanggal Rapor')
 @section('page_subtitle', 'Atur tanggal pembagian rapor per tahun ajaran dan semester')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Log Aktivitas - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Log Aktivitas')
 @section('page_subtitle', 'Riwayat aktivitas seluruh pengguna sistem')
 

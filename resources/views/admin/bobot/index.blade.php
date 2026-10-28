@@ -2,10 +2,6 @@
 
 @section('title', 'Bobot & Ketuntasan - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Bobot & Ketuntasan')
 @section('page_subtitle', 'Pengaturan bobot penilaian dan KKM per kelas')
 

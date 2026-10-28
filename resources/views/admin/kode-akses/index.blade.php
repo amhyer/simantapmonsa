@@ -2,10 +2,6 @@
 
 @section('title', 'Kode & Akses - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Kode & Akses')
 @section('page_subtitle', 'Pengaturan kode akses per guru/kelas')
 

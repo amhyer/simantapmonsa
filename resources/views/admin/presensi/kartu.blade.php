@@ -1,9 +1,6 @@
 @extends('layouts.admin-with-tabs')
 
 @section('title', 'Pemetaan QR Kartu Siswa - SIMANTAP')
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
 @section('page_title', 'Pemetaan QR Kartu Siswa')
 @section('page_subtitle', 'Hubungkan QR yang sudah tercetak ke data siswa tanpa menyimpan isi QR mentah')
 

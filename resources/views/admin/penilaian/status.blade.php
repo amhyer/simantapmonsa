@@ -2,10 +2,6 @@
 
 @section('title', 'Status Penilaian - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Status Penilaian')
 @section('page_subtitle', 'Pantau kelengkapan input setiap guru (siswa, materi, kuis, nilai, e-rapor)')
 

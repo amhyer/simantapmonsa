@@ -2,10 +2,6 @@
 
 @section('title', 'Kelompok Kokurikuler - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Kelompok Kokurikuler')
 @section('page_subtitle', 'Kelompok siswa per kegiatan beserta anggotanya')
 

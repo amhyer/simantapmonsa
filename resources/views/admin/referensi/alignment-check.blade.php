@@ -1,4 +1,7 @@
-@extends('layouts.app')
+{{-- Memakai layout admin agar halaman ini tetap memiliki bilah tab dan menu
+     samping seperti halaman admin lainnya (sebelumnya memakai layouts.app
+     tanpa @section('sidebar'), sehingga menu hilang sepenuhnya). --}}
+@extends('layouts.admin-with-tabs')
 
 @section('title', 'Cek Alignment E-Rapor')
 

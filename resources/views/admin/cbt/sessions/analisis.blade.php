@@ -1,9 +1,6 @@
 @extends('layouts.admin-with-tabs')
 
 @section('title', 'Analisis Butir Soal - Admin')
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
 
 @section('page_title', 'Analisis Butir Soal')
 @section('page_subtitle', $session->title)

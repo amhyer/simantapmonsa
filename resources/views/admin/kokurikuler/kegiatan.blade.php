@@ -2,10 +2,6 @@
 
 @section('title', 'Kegiatan Kokurikuler - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Kegiatan Kokurikuler')
 @section('page_subtitle', 'Kegiatan per tema beserta koordinator dan jadwalnya')
 

@@ -10,6 +10,13 @@
 @section('page_subtitle', 'Analisis kesiapan siswa menghadapi Asesmen Nasional')
 
 @section('content')
+    {{-- Halaman analisis (guru.tka.analysis) sebelumnya tidak tertaut dari mana pun. --}}
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px">
+        <a href="{{ route('guru.tka.analysis') }}" class="btn btn-sm">
+            <i class="fas fa-chart-line" style="margin-right:6px"></i>Analisis Kesiapan
+        </a>
+    </div>
+
     <div class="grid grid-4" style="margin-bottom:20px">
         <div class="stat-card primary">
             <i class="fas fa-users stat-icon"></i>
@@ -175,8 +182,13 @@
                                             <span class="tag tag-mut">Belum Dinilai</span>
                                         @endif
                                     </td>
-                                    <td style="text-align:center">
-                                        <a href="{{ route('guru.dimensi.index') }}?siswa_id={{ $siswa->id }}" class="btn btn-ghost btn-sm">
+                                    <td style="text-align:center;white-space:nowrap">
+                                        {{-- Detail TKA per siswa (guru.tka.show) kini tertaut
+                                             dari sini; sebelumnya hanya bisa lewat URL. --}}
+                                        <a href="{{ route('guru.tka.show', $siswa->id) }}" class="btn btn-ghost btn-sm" title="Detail kesiapan siswa">
+                                            <i class="fas fa-id-card"></i>
+                                        </a>
+                                        <a href="{{ route('guru.dimensi.index') }}?siswa_id={{ $siswa->id }}" class="btn btn-ghost btn-sm" title="Lihat/isi skor dimensi">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>

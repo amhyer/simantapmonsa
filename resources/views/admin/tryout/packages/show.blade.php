@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Paket Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Paket Tryout')
 @section('page_subtitle', $package->nama_paket)
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Edit Mata Pelajaran - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Edit Mata Pelajaran')
 @section('page_subtitle', $mapel->nama)
 

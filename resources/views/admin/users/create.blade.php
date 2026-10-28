@@ -2,15 +2,11 @@
 
 @section('title', 'Tambah Akun - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Tambah Akun')
 @section('page_subtitle', 'Buat akun pengguna baru')
 
 @section('header_actions')
-    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">â† Kembali</a>
+    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">← Kembali</a>
 @endsection
 
 @section('content')
@@ -59,7 +55,7 @@
                     <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="display:flex;gap:10px">
-                    <button type="submit" class="btn">ðŸ’¾ Simpan</button>
+                    <button type="submit" class="btn">💾 Simpan</button>
                     <a href="{{ route('admin.users.index') }}" class="btn btn-ghost">Batal</a>
                 </div>
             </form>

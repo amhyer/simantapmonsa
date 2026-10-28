@@ -2,54 +2,6 @@
 
 @section('title', 'Admin Dashboard - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-
-{{-- E-Rapor Alignment Widget --}}
-<div class="card" style="margin-bottom:20px">
-    <div class="card-header">
-        <h3><i class="fas fa-link" style="margin-right:8px;color:var(--navy)"></i>E-Rapor Alignment Status</h3>
-        <a href="{{ route('admin.referensi.alignment') }}" class="btn btn-ghost btn-sm">Detail</a>
-    </div>
-    <div class="card-body">
-        @php
-            $alignmentStats = app(App\Services\JadwalPelajaranResolver::class)->alignmentStats();
-            $alignmentPersen = $alignmentStats['persen'] ?? 0;
-            $alignmentColor = $alignmentPersen >= 90 ? '#059669' : ($alignmentPersen >= 70 ? '#D97706' : '#DC2626');
-        @endphp
-        <div class="grid grid-4" style="margin-bottom:16px">
-            <div class="stat" style="text-align:center">
-                <div class="value" style="font-size:24px">{{ $alignmentStats['total'] ?? 0 }}</div>
-                <div class="label" style="font-size:11px">Total Nilai</div>
-            </div>
-            <div class="stat" style="text-align:center">
-                <div class="value" style="font-size:24px;color:#059669">{{ $alignmentStats['matched'] ?? 0 }}</div>
-                <div class="label" style="font-size:11px">Terpetakan</div>
-            </div>
-            <div class="stat" style="text-align:center">
-                <div class="value" style="font-size:24px;color:#DC2626">{{ $alignmentStats['unmatched'] ?? 0 }}</div>
-                <div class="label" style="font-size:11px">Belum Terpetakan</div>
-            </div>
-            <div class="stat" style="text-align:center">
-                <div class="value" style="font-size:24px;color:{{ $alignmentColor }}">{{ $alignmentPersen }}%</div>
-                <div class="label" style="font-size:11px">Health</div>
-            </div>
-        </div>
-        <div style="background:#F2F4F7;border-radius:8px;height:12px;overflow:hidden;margin-bottom:12px">
-            <div style="height:100%;background:{{ $alignmentColor }};width:{{ $alignmentPersen }}%;border-radius:8px;transition:width .3s"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-            <span>Target: minimal 90% untuk integrasi optimal</span>
-            @if($alignmentPersen < 90)
-                <a href="{{ route('admin.referensi.alignment') }}" style="color:var(--navy);font-weight:600">Perbaiki →</a>
-            @else
-                <span style="color:#059669;font-weight:600">✓ Baik</span>
-            @endif
-        </div>
-    </div>
-</div>
-@endsection
-
 @section('page_title', 'Dasbor Admin')
 @section('page_subtitle', $sekolahSettings ? $sekolahSettings->nama_sekolah : 'Kelola seluruh sistem')
 
@@ -525,5 +477,4 @@
     </div>
 </div>
 @endsection
-
 

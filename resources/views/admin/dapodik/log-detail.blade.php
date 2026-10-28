@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Log Sinkronisasi - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Log Sinkronisasi')
 @section('page_subtitle', $log->nama_sekolah ?? 'Log #' . $log->id)
 

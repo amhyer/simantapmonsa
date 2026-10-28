@@ -2,10 +2,6 @@
 
 @section('title', 'Akun Massal - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Akun Massal')
 @section('page_subtitle', 'Buat akun siswa secara massal')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Sesi Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Sesi Tryout')
 @section('page_subtitle', 'Kelola sesi tryout')
 

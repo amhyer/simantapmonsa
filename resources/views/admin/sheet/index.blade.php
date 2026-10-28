@@ -2,10 +2,6 @@
 
 @section('title', 'Penyimpanan Data - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Penyimpanan Data')
 @section('page_subtitle', 'Koneksi Google Sheet untuk penyimpanan data')
 

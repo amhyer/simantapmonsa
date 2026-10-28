@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Hasil Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Hasil Tryout')
 @section('page_subtitle', $rincian['siswa_nama'])
 

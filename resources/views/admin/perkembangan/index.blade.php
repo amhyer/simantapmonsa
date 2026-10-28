@@ -2,10 +2,6 @@
 
 @section('title', 'Perkembangan Nilai - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Perkembangan Nilai')
 @section('page_subtitle', 'Tren rata-rata nilai rapor antar semester')
 

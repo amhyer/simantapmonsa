@@ -2,10 +2,6 @@
 
 @section('title', 'Profile - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Profile Pengguna')
 @section('page_subtitle', 'Detail akun dan ubah password')
 

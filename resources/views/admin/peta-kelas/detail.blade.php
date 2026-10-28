@@ -2,10 +2,6 @@
 
 @section('title', 'Anggota Rombel - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Anggota: ' . $rombel->nama_rombel)
 @section('page_subtitle', ($rombel->kurikulum ?? 'Kurikulum -') . ' · ' . ($rombel->jenis_rombel ?? '-') . ' · Tingkat ' . ($rombel->tingkat ?? '-'))
 

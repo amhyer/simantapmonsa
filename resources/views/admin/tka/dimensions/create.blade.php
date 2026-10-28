@@ -2,10 +2,6 @@
 
 @section('title', 'Tambah Dimensi TKA - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Tambah Dimensi TKA')
 @section('page_subtitle', 'Dimensi penilaian baru')
 

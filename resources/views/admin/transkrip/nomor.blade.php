@@ -2,10 +2,6 @@
 
 @section('title', 'Nomor Ijazah - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Nomor Ijazah')
 @section('page_subtitle', 'Kelola nomor ijazah per peserta didik')
 

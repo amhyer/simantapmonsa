@@ -2,6 +2,10 @@
 
 @section('title', 'Laporan TKA untuk Orang Tua')
 
+@section('sidebar')
+    @include('ortu.partials.sidebar')
+@endsection
+
 @section('content')
 <div class="container-fluid py-4">
     <div class="row mb-3">

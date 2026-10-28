@@ -79,6 +79,7 @@
                                 <th style="text-align:center">🌙 Tidur Cepat</th>
                                 <th style="text-align:right">Rata-rata</th>
                                 <th>Catatan</th>
+                                <th style="text-align:right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -131,6 +132,12 @@
                                         @else
                                             <span style="font-size:12px;color:var(--muted)">—</span>
                                         @endif
+                                    </td>
+                                    {{-- Kolom aksi: halaman detail kebiasaan per siswa
+                                         (guru.kebiasaan.show) sebelumnya tidak tertaut
+                                         dari mana pun. --}}
+                                    <td style="text-align:right;white-space:nowrap">
+                                        <a href="{{ route('guru.kebiasaan.show', $item->siswa_id) }}" class="btn btn-ghost btn-sm" title="Lihat riwayat kebiasaan siswa ini">Riwayat</a>
                                     </td>
                                 </tr>
                             @endforeach

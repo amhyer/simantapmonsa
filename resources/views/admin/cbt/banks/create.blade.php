@@ -2,10 +2,6 @@
 
 @section('title', 'Buat Bank Soal CBT - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Buat Bank Soal CBT')
 @section('page_subtitle', 'Bank soal baru untuk seluruh guru')
 

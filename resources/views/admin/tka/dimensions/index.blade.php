@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Dimensi TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Dimensi TKA')
 @section('page_subtitle', 'Kelola dimensi P5')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Input Nilai: ' . $siswa->nama_peserta_didik)
 @section('page_subtitle', 'NISN ' . ($siswa->nisn ?? '-'))
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Dashboard TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Dashboard TKA')
 @section('page_subtitle', 'Monitoring Profil Pelajar')
 
