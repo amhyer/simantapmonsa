@@ -558,11 +558,20 @@ periksa('Login memeriksa kolom aktif/archived_at', function () use ($root) {
         : 'LoginController tidak memeriksa archived_at';
 });
 
-periksa('Pendaftaran publik tidak mengaktifkan akun otomatis', function () use ($root) {
+periksa('Pendaftaran mandiri ditutup (akun hanya dibuat admin sekolah)', function () use ($root) {
+    $rute = baca($root . '/routes/web.php');
     $kode = baca($root . '/app/Http/Controllers/LandingController.php');
 
-    if (!preg_match("/'aktif'\s*=>\s*false/", $kode)) {
-        return "LandingController masih membuat akun 'aktif' => true untuk pendaftar publik";
+    if (preg_match("/Route::post\\(['\"]\\/register['\"]/", $rute)) {
+        return 'Masih ada route POST /register untuk pendaftaran publik';
+    }
+
+    if (str_contains($kode, 'storeRegister') || str_contains($kode, 'User::create')) {
+        return 'LandingController masih membuat akun dari pendaftaran publik';
+    }
+
+    if (file_exists($root . '/resources/views/auth/register.blade.php')) {
+        return 'View pendaftaran publik masih ada';
     }
 
     return true;
