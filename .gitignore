@@ -58,3 +58,8 @@ docs/*.mp4
 
 # Artefak graphify (knowledge graph lokal, 12MB+, bisa dibangun ulang via graphify)
 graphify-out/
+
+# Playwright
+node_modules/
+/blob-report/
+/playwright/.cache/
