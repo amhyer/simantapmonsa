@@ -15,6 +15,7 @@
 | `04-SECURITY-GUIDE.md` | Panduan keamanan dan production checklist |
 | `05-ARCHITECTURE.md` | Arsitektur sistem, routes, middleware |
 | `06-DATABASE-COLUMNS.md` | Referensi kolom database (yang sering salah akses) |
+| `13-INVENTARIS-UI.md` | Inventaris antarmuka: 199 halaman, menu per peran, tombol & aksi, pola interaksi, temuan UI |
 
 ---
 
