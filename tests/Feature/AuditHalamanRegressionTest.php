@@ -272,6 +272,10 @@ class AuditHalamanRegressionTest extends TestCase
             ->assertDontSee('Daftar Sekarang')
             ->assertDontSee('Daftar di sini')
             ->assertDontSee('Buat Akun')
+            ->assertDontSee('Guru · Login')
+            ->assertDontSee('Siswa · Login')
+            ->assertDontSee('Orang Tua · Login')
+            ->assertDontSee('Kepala Sekolah · Login')
             ->assertSee('Siapkan Akun');
 
         $this->get(route('register'))

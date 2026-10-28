@@ -1124,7 +1124,7 @@
                 <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — platform untuk pembelajaran dan pengelolaan kelas. Integrasi spreadsheet dapat diaktifkan sesuai konfigurasi sekolah.</p>
             </div>
             <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
-            <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Guru · Login</a><a href="{{ route('login') }}">Siswa · Login</a><a href="{{ route('login') }}">Orang Tua · Login</a><a href="{{ route('login') }}">Kepala Sekolah · Login</a></div>
+            <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Login</a></div>
             <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
         </div>
         <div class="footer-bottom">
