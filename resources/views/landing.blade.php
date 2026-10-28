@@ -483,7 +483,7 @@
         </div>
         <div class="steps-grid">
             <div class="step-card" data-aos="fade-up"><div class="step-number">1</div><h3>Siapkan Instalasi</h3><p>Administrator menyiapkan aplikasi, database, dan integrasi spreadsheet sesuai kebutuhan sekolah.</p></div>
-            <div class="step-card" data-aos="fade-up" data-aos-delay="200"><div class="step-number">2</div><h3>Buat Akun</h3><p>Administrator membuat akun guru, siswa, orang tua, dan kepala sekolah.</p></div>
+            <div class="step-card" data-aos="fade-up" data-aos-delay="200"><div class="step-number">2</div><h3>Siapkan Akun</h3><p>Administrator sekolah membuat dan mengaktifkan akun guru, siswa, orang tua, dan kepala sekolah.</p></div>
             <div class="step-card" data-aos="fade-up" data-aos-delay="400"><div class="step-number">3</div><h3>Mulai Mengajar</h3><p>Guru mengisi data, siswa mengerjakan kuis, orang tua melapor, kepsek merekap.</p></div>
         </div>
     </div>
