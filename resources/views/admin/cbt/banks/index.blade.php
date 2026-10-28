@@ -2,10 +2,6 @@
 
 @section('title', 'Manajemen Bank Soal CBT - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Bank Soal CBT')
 @section('page_subtitle', 'Kelola semua bank soal')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Early Warning TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Early Warning')
 @section('page_subtitle', $warning->siswa->nama_peserta_didik ?? 'Peringatan dini TKA')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Identitas Sekolah - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Identitas Sekolah')
 @section('page_subtitle', 'Profil dan identitas resmi sekolah')
 

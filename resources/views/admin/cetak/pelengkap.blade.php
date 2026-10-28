@@ -2,10 +2,6 @@
 
 @section('title', 'Pelengkap Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Pelengkap Rapor')
 @section('page_subtitle', 'Ketidakhadiran, catatan, dan data fisik per siswa')
 

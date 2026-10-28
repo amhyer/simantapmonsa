@@ -2,10 +2,6 @@
 
 @section('title', 'Leger Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Leger Rapor')
 @section('page_subtitle', 'Rekap nilai akhir semua mapel per kelas')
 

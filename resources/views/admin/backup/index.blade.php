@@ -2,10 +2,6 @@
 
 @section('title', 'Data & Pemulihan - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data & Pemulihan')
 @section('page_subtitle', 'Ekspor dan impor data sistem')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Ekstrakurikuler - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Ekstrakurikuler')
 @section('page_subtitle', 'Kelola kegiatan ekstrakurikuler sekolah')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Kirim Nilai Ke Dapodik - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Kirim Nilai Ke Dapodik')
 @section('page_subtitle', 'Kirim data dari SIMANTAP ke server Dapodik pusat')
 

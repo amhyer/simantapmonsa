@@ -2,10 +2,6 @@
 
 @section('title', 'Mata Pelajaran - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Mata Pelajaran')
 @section('page_subtitle', 'Kelola daftar mata pelajaran ' . $jenjangSekolah)
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Pengguna - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Kelola Pengguna')
 @section('page_subtitle', 'Kelola semua akun pengguna sistem')
 

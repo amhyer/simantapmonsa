@@ -2,6 +2,10 @@
 
 @section('title', 'Tryout - Dashboard Siswa')
 
+@section('sidebar')
+    @include('siswa.partials.sidebar')
+@endsection
+
 @section('content')
 <div class="container-fluid py-4">
     <div class="row mb-4">
@@ -64,7 +68,10 @@
                         </small>
                     </div>
 
-                    <a href="{{ $session['mulai_url'] }}"
+                    {{-- Tautan dibangun di Blade (sebelumnya disuplai controller
+                         lewat $session['mulai_url']) supaya rute bisa dilacak
+                         secara statis. --}}
+                    <a href="{{ route('tryout.student.start', $session['id']) }}"
                        class="btn btn-primary btn-sm w-100"
                        onclick="return confirm('Yakin ingin memulai tryout? Durasi {{ $session['durasi_menit'] }} menit.')">
                         🚀 Mulai Tryout
@@ -124,8 +131,11 @@
                     </td>
                     <td>{{ $result['peringkat'] ?? '-' }}</td>
                     <td>
-                        @if($result['detail_url'])
-                        <a href="{{ $result['detail_url'] }}"
+                        {{-- Sama seperti di atas: tautan detail dibangun di Blade.
+                             Baris engine yang belum punya id lawas tidak
+                             ditautkan (nilai id 0). --}}
+                        @if(!empty($result['id']))
+                        <a href="{{ route('tryout.student.result', $result['id']) }}"
                            class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Detail
                         </a>

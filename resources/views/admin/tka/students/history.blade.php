@@ -2,10 +2,6 @@
 
 @section('title', 'Riwayat TKA Siswa - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Riwayat TKA Siswa')
 @section('page_subtitle', $siswa->nama_peserta_didik)
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Foto Siswa - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Foto Siswa')
 @section('page_subtitle', 'Unggah foto massal — nama file harus sama dengan NIS atau NISN (mis. 2401001.jpg)')
 

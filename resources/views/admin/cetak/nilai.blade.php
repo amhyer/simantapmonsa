@@ -2,10 +2,6 @@
 
 @section('title', 'Nilai Rapor - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Nilai Rapor')
 @section('page_subtitle', 'Cetak hasil belajar per peserta didik')
 

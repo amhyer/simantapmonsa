@@ -2,10 +2,6 @@
 
 @section('title', 'API Keys & Dapodik - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'API Keys & Dapodik Bridge')
 @section('page_subtitle', 'Kelola akses API untuk aplikasi eksternal')
 

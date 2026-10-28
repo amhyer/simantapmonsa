@@ -2,10 +2,6 @@
 
 @section('title', 'Cetak Transkrip Nilai - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Cetak Transkrip Nilai')
 @section('page_subtitle', 'Pilih siswa untuk mencetak transkrip')
 

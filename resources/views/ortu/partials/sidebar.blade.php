@@ -13,7 +13,7 @@
                 ['route' => 'ortu.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Anak'],
                 ['route' => 'ortu.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Guru'],
                 ['route' => 'ortu.laporan.index', 'icon' => 'lucide-file-text', 'label' => 'Laporan / Rapor'],
-                ['route' => 'tka.parent.index', 'icon' => 'lucide-gauge', 'label' => 'Laporan TKA'],
+                ['route' => 'tka.parent.index', 'icon' => 'lucide-gauge', 'label' => 'Laporan TKA', 'asesmen' => true],
             ]],
         ]],
     ];
@@ -29,6 +29,9 @@
             @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
             <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">
                 @foreach($item['children'] as $child)
+                    {{-- Menu modul asesmen disembunyikan saat modul dimatikan
+                         (route-nya dijawab 404 oleh middleware module.asesmen). --}}
+                    @continue(($child['asesmen'] ?? false) && !modulAsesmenAktif())
                     <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endforeach
             </x-sidebar-submenu>

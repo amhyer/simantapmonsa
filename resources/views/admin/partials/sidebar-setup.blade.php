@@ -34,6 +34,8 @@
         ['label' => 'DAPODIK', 'icon' => 'lucide-database-zap', 'children' => [
             ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Ambil Data Dapodik', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
             ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
+            // Sebelumnya halaman ini hanya tertaut dari dalam halaman Dapodik.
+            ['route' => 'admin.api-keys.index', 'icon' => 'lucide-key-round', 'label' => 'API Keys & Bridge'],
         ]],
         ['label' => 'DATA REFERENSI', 'items' => [
             ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Data Sekolah'],

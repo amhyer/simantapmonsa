@@ -22,6 +22,10 @@
     ];
 @endphp
 
+{{-- Seluruh menu di tab ini berada di balik middleware `module.asesmen`.
+     Saat modul mati menu tidak ditampilkan sama sekali, karena setiap tautan
+     di dalamnya pasti berujung 404. --}}
+@if(modulAsesmenAktif())
 @foreach($menuAdmin as $group)
     @if(isset($group['children']))
         @php $childActive = collect($group['children'])->contains(fn($c) => isset($c['route']) && $isActive($c['route'])); @endphp
@@ -40,3 +44,4 @@
         @endforeach
     @endif
 @endforeach
+@endif

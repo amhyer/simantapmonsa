@@ -2,10 +2,6 @@
 
 @section('title', 'Peta Kelas - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Peta Kelas')
 @section('page_subtitle', 'Pemetaan guru dan siswa per kelas — seret siswa untuk pindah kelas')
 

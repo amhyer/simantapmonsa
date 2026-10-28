@@ -1,9 +1,6 @@
 @extends('layouts.admin-with-tabs')
 
 @section('title', 'Presensi Pegawai - SIMANTAP')
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
 @section('page_title', 'Presensi Pegawai')
 @section('page_subtitle', 'Atur area absensi dan pantau presensi guru, kepala sekolah, serta tendik')
 

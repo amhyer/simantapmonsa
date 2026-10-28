@@ -2,10 +2,6 @@
 
 @section('title', 'Data Siswa - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Siswa')
 @section('page_subtitle', 'Data peserta didik dari Dapodik beserta status akunnya (berbeda dengan Kelola Pengguna yang berisi akun login)')
 

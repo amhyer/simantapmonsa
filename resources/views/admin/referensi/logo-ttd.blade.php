@@ -2,10 +2,6 @@
 
 @section('title', 'Logo dan TTD - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Logo dan TTD')
 @section('page_subtitle', 'Unggah logo pemda, logo sekolah, tanda tangan kepala sekolah, dan kop sekolah (maks 2MB per file)')
 

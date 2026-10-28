@@ -2,10 +2,6 @@
 
 @section('title', 'Konfigurasi & Sinkronisasi Dapodik - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Konfigurasi & Sinkronisasi Dapodik')
 @section('page_subtitle', 'Pilih metode sinkronisasi data Dapodik')
 

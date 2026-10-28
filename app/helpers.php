@@ -86,3 +86,19 @@ if (!function_exists('activeAdminTab')) {
         return 'erapor';
     }
 }
+
+if (!function_exists('modulAsesmenAktif')) {
+    /**
+     * Apakah modul asesmen (CBT / Tryout / TKA) dapat diakses.
+     *
+     * Seluruh route modul asesmen dilindungi middleware `module.asesmen`
+     * (App\Http\Middleware\EnsureModuleEnabled) yang menjawab 404 selama
+     * `config('simantap.cbt_enabled')` bernilai false. Karena route-nya tetap
+     * terdaftar, menu yang menaut ke sana tampak normal padahal selalu gagal —
+     * jadi menu disembunyikan dengan penjaga ini, bukan dibiarkan menipu.
+     */
+    function modulAsesmenAktif(): bool
+    {
+        return (bool) config('simantap.cbt_enabled', false);
+    }
+}

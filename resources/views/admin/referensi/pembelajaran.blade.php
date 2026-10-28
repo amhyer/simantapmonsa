@@ -2,10 +2,6 @@
 
 @section('title', 'Data Pembelajaran - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Pembelajaran')
 @section('page_subtitle', 'Jadwal pembelajaran (rombongan belajar × mapel × guru); baris DAPODIK berasal dari hasil sinkronisasi')
 

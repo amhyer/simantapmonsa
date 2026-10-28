@@ -2,10 +2,6 @@
 
 @section('title', 'Input Nilai Transkrip - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Input Nilai Transkrip')
 @section('page_subtitle', 'Nilai akhir per mapel untuk ijazah')
 

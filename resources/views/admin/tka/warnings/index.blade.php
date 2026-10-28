@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Early Warning TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Early Warning TKA')
 @section('page_subtitle', 'Pantau peringatan dini')
 

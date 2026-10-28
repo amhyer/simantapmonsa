@@ -15,12 +15,15 @@
 |  · Halaman (GET) | **199** |
 |  · Endpoint aksi (POST/PUT/PATCH/DELETE) | **161** |
 | Rute tambahan bila CBT diaktifkan | **+28** (total 388) |
-| Template Blade | **230** |
-| Elemen `<button>` | **306** |
-| Elemen `<form>` | **165** |
-| Tautan `<a>` | **314** |
+| Template Blade | **229** |
+| Elemen `<button>` | **308** |
+| Elemen `<form>` | **167** |
+| Tautan `<a>` | **320** |
 | `<select>` (filter/pilihan) | **127** |
 | Halaman dengan pemanggilan `fetch()` | **17** |
+
+_Angka diperbarui 28 Oktober 2026 setelah perbaikan temuan T1–T6, T14, dan T15 (kolom Status di §6)._
+_Metode penghitungan: kemunculan `<button`, `<form`, `<select`, dan `<a` pada seluruh berkas `.blade.php` — lihat §8._
 
 Sebaran per area (dihitung dari awalan URI):
 
@@ -44,8 +47,8 @@ Sebaran per area (dihitung dari awalan URI):
 
 | Layout | Dipakai oleh | Ciri |
 |---|---|---|
-| `layouts/admin-with-tabs.blade.php` | **80 view admin** | Sidebar dipilih otomatis sesuai **tab aktif**; ada **bilah tab** di bawah topbar |
-| `layouts/app.blade.php` | **92 view** (guru, siswa, ortu, kepsek, tendik, tryout, tka) | Sidebar diisi lewat `@section('sidebar')` oleh masing-masing halaman |
+| `layouts/admin-with-tabs.blade.php` | **81 view admin** | Sidebar dipilih otomatis sesuai **tab aktif**; ada **bilah tab** di bawah topbar |
+| `layouts/app.blade.php` | **91 view** (guru, siswa, ortu, kepsek, tendik, tryout, tka) | Sidebar diisi lewat `@section('sidebar')` oleh masing-masing halaman |
 | `layouts/guest.blade.php` | — (**tidak dipakai**; komponen `GuestLayout` tidak pernah dipanggil) | Kartu tengah, tanpa sidebar |
 | `auth/*.blade.php` | 5 halaman auth | Berdiri sendiri: masing-masing memuat `<!DOCTYPE html>` + `@vite` sendiri |
 | `landing.blade.php` + `landing/tka-statistik.blade.php` | Publik | Halaman pemasaran, navigasi sendiri |
@@ -122,6 +125,12 @@ di `app/helpers.php`:
 | **TKA** | `admin.tka.dashboard` | `admin.tka.*` | `admin.partials.sidebar-tka` |
 | **Setup** | `admin.users.index` | selainnya (`admin.users.*`, `admin.presensi.*`, `admin.dapodik.*`, `admin.mapel.*`, `admin.semester.*`, `admin.kokurikuler.*`, `admin.kode-akses.*`, `admin.modul.*`, `admin.bobot.*`, `admin.sheet.*`, `admin.backup.*`, `admin.log.*`) | `admin.partials.sidebar-setup` |
 
+> **Catatan (28 Okt 2026).** Tab **CBT/Ujian** dan **TKA** hanya dirender bila
+> `modulAsesmenAktif()` bernilai `true` (isi: `config('simantap.cbt_enabled')`). Saat flag mati —
+> kondisi bawaan — kedua tab tidak ditampilkan dan `sidebar-cbt` / `sidebar-tka` menghasilkan
+> kosong, karena seluruh rute di baliknya dijawab 404 oleh middleware `module.asesmen`.
+> Sebelum perbaikan ini keempat tab selalu tampil (lihat T1 di §6.1).
+
 **Tab E-Rapor**
 
 ```
@@ -195,6 +204,7 @@ PRESENSI ▸
 DAPODIK ▸
  · Ambil Data Dapodik       admin.dapodik.index        (badge: waktu sinkron terakhir / "Belum sync")
  · Kirim Nilai Ke Dapodik   admin.dapodik.push.index
+ · API Keys & Bridge        admin.api-keys.index
 DATA REFERENSI
  · Data Sekolah             admin.sekolah.index
 PETA KELAS
@@ -220,8 +230,8 @@ SYSTEM ▸
  · Log Aktivitas            admin.log.index
 ```
 
-> **Catatan:** halaman **API Keys** (`admin.api-keys.index`) tidak ada di sidebar mana pun;
-> satu-satunya pintu masuk adalah tautan "API Keys" di halaman `admin/dapodik/index`.
+> **Catatan (diperbarui 28 Okt 2026):** halaman **API Keys** (`admin.api-keys.index`) kini
+> masuk menu **DAPODIK** pada tab Setup (sebelumnya tidak ada di sidebar mana pun — temuan T14).
 
 ### 3.2 Guru
 
@@ -263,6 +273,10 @@ UJIAN CBT 🅰
  · CBT • Bank Soal          cbt.question-banks.index
 ```
 
+> Grup **CBT & TRYOUT** (Tryout + Asesmen TKA) kini hanya tampil bila modul asesmen aktif;
+> seluruh rute di dalamnya berada di balik `module.asesmen`. **Kesiapan TKA**
+> (`guru.tka.index`) tetap di grup PEMBELAJARAN karena rutenya tidak memakai middleware itu.
+
 ### 3.3 Siswa
 
 ```
@@ -277,6 +291,9 @@ UJIAN & TRYOUT
 UJIAN CBT 🅰
  · Ujian CBT                cbt.student.index
 ```
+
+> Grup **UJIAN & TRYOUT** kini hanya tampil bila modul asesmen aktif (`module.asesmen`
+> menjawab 404 untuk `tryout.student.*` saat flag mati).
 
 ### 3.4 Orang tua
 
@@ -294,6 +311,8 @@ PEMANTAUAN
     · Laporan / Rapor       ortu.laporan.index
     · Laporan TKA           tka.parent.index
 ```
+
+> **Laporan TKA** (`tka.parent.index`) kini disembunyikan bila modul asesmen nonaktif.
 
 ### 3.5 Kepala sekolah
 
@@ -428,7 +447,7 @@ _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 ### Admin — tab E-Rapor — 64 halaman
 
 #### API Keys & Dapodik
-`GET /admin/api-keys` · `admin.api-keys.index` · `Admin\ApiKeyController@index` · `admin/api-keys/index.blade.php` (163 baris)
+`GET /admin/api-keys` · `admin.api-keys.index` · `Admin\ApiKeyController@index` · `admin/api-keys/index.blade.php` (159 baris)
 
 Subjudul: _Kelola akses API untuk aplikasi eksternal_
 
@@ -443,7 +462,7 @@ Subjudul: _Kelola akses API untuk aplikasi eksternal_
 | Batal | `JS` | `document.getElementById('modalForm').sty…` | tombol client-side |
 
 #### Data & Pemulihan
-`GET /admin/backup` · `admin.backup.index` · `Admin\BackupController@index` · `admin/backup/index.blade.php` (155 baris)
+`GET /admin/backup` · `admin.backup.index` · `Admin\BackupController@index` · `admin/backup/index.blade.php` (151 baris)
 
 Subjudul: _Ekspor dan impor data sistem_
 
@@ -459,7 +478,7 @@ Subjudul: _Ekspor dan impor data sistem_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Bobot & Ketuntasan
-`GET /admin/bobot` · `admin.bobot.index` · `Admin\BobotController@index` · `admin/bobot/index.blade.php` (149 baris)
+`GET /admin/bobot` · `admin.bobot.index` · `Admin\BobotController@index` · `admin/bobot/index.blade.php` (145 baris)
 
 Subjudul: _Pengaturan bobot penilaian dan KKM per kelas_
 
@@ -470,7 +489,7 @@ Subjudul: _Pengaturan bobot penilaian dan KKM per kelas_
 | Batal | `JS` | `closeModal()` | tombol client-side |
 
 #### Leger Rapor
-`GET /admin/cetak/leger` · `admin.cetak.leger` · `Admin\CetakController@leger` · `admin/cetak/leger.blade.php` (94 baris)
+`GET /admin/cetak/leger` · `admin.cetak.leger` · `Admin\CetakController@leger` · `admin/cetak/leger.blade.php` (90 baris)
 
 Subjudul: _Rekap nilai akhir semua mapel per kelas_
 
@@ -480,7 +499,7 @@ Subjudul: _Rekap nilai akhir semua mapel per kelas_
 | Cetak | `JS` | `window.print()` | tombol client-side |
 
 #### Nilai Rapor
-`GET /admin/cetak/nilai` · `admin.cetak.nilai` · `Admin\CetakController@nilai` · `admin/cetak/nilai.blade.php` (84 baris)
+`GET /admin/cetak/nilai` · `admin.cetak.nilai` · `Admin\CetakController@nilai` · `admin/cetak/nilai.blade.php` (80 baris)
 
 Subjudul: _Cetak hasil belajar per peserta didik_
 
@@ -498,7 +517,7 @@ Subjudul: _Cetak hasil belajar per peserta didik_
 | Kembali | `→` | `admin.cetak.nilai` | navigasi (GET /admin/cetak/nilai) |
 
 #### Pelengkap Rapor
-`GET /admin/cetak/pelengkap` · `admin.cetak.pelengkap` · `Admin\CetakController@pelengkap` · `admin/cetak/pelengkap.blade.php` (80 baris)
+`GET /admin/cetak/pelengkap` · `admin.cetak.pelengkap` · `Admin\CetakController@pelengkap` · `admin/cetak/pelengkap.blade.php` (76 baris)
 
 Subjudul: _Ketidakhadiran, catatan, dan data fisik per siswa_
 
@@ -508,7 +527,7 @@ Subjudul: _Ketidakhadiran, catatan, dan data fisik per siswa_
 | Cetak | `JS` | `window.print()` | tombol client-side |
 
 #### Konfigurasi & Sinkronisasi Dapodik
-`GET /admin/dapodik` · `admin.dapodik.index` · `Admin\DapodikImportController@index` · `admin/dapodik/index.blade.php` (889 baris)
+`GET /admin/dapodik` · `admin.dapodik.index` · `Admin\DapodikImportController@index` · `admin/dapodik/index.blade.php` (885 baris)
 
 Subjudul: _Pilih metode sinkronisasi data Dapodik_
 
@@ -548,14 +567,14 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Detail Log Sinkronisasi
-`GET /admin/dapodik/log/{id}` · `admin.dapodik.log-detail` · `Admin\DapodikImportController@logDetail` · `admin/dapodik/log-detail.blade.php` (76 baris)
+`GET /admin/dapodik/log/{id}` · `admin.dapodik.log-detail` · `Admin\DapodikImportController@logDetail` · `admin/dapodik/log-detail.blade.php` (72 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | ← Kembali | `→` | `admin.dapodik.index` | navigasi (GET /admin/dapodik) |
 
 #### Kirim Nilai Ke Dapodik
-`GET /admin/dapodik/push` · `admin.dapodik.push.index` · `Admin\DapodikPushController@index` · `admin/dapodik/push/index.blade.php` (193 baris)
+`GET /admin/dapodik/push` · `admin.dapodik.push.index` · `Admin\DapodikPushController@index` · `admin/dapodik/push/index.blade.php` (189 baris)
 
 Subjudul: _Kirim data dari SIMANTAP ke server Dapodik pusat_
 
@@ -575,7 +594,7 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Admin Dashboard
-`GET /admin/dashboard` · `admin.dashboard` · `DashboardController@admin` · `admin/dashboard.blade.php` (530 baris)
+`GET /admin/dashboard` · `admin.dashboard` · `DashboardController@admin` · `admin/dashboard.blade.php` (481 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -594,7 +613,7 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 | Backup & Restore Data system | `→` | `admin.backup.index` | navigasi (GET /admin/backup) |
 
 #### Kode & Akses
-`GET /admin/kode-akses` · `admin.kode-akses.index` · `Admin\KodeAksesController@index` · `admin/kode-akses/index.blade.php` (97 baris)
+`GET /admin/kode-akses` · `admin.kode-akses.index` · `Admin\KodeAksesController@index` · `admin/kode-akses/index.blade.php` (93 baris)
 
 Subjudul: _Pengaturan kode akses per guru/kelas_
 
@@ -605,7 +624,7 @@ Subjudul: _Pengaturan kode akses per guru/kelas_
 | Batal | `JS` | `closeModal()` | tombol client-side |
 
 #### Kegiatan Kokurikuler
-`GET /admin/kokurikuler/kegiatan` · `admin.kokurikuler.kegiatan` · `Admin\KokurikulerController@kegiatan` · `admin/kokurikuler/kegiatan.blade.php` (104 baris)
+`GET /admin/kokurikuler/kegiatan` · `admin.kokurikuler.kegiatan` · `Admin\KokurikulerController@kegiatan` · `admin/kokurikuler/kegiatan.blade.php` (100 baris)
 
 Subjudul: _Kegiatan per tema beserta koordinator dan jadwalnya_
 
@@ -615,7 +634,7 @@ Subjudul: _Kegiatan per tema beserta koordinator dan jadwalnya_
 | Hapus | `DELETE` | `DELETE /admin/kokurikuler/kegiatan/{kegiatan}` | onsubmit: return confirm('Hapus kegiatan beserta k… |
 
 #### Kelompok Kokurikuler
-`GET /admin/kokurikuler/kelompok` · `admin.kokurikuler.kelompok` · `Admin\KokurikulerController@kelompok` · `admin/kokurikuler/kelompok.blade.php` (91 baris)
+`GET /admin/kokurikuler/kelompok` · `admin.kokurikuler.kelompok` · `Admin\KokurikulerController@kelompok` · `admin/kokurikuler/kelompok.blade.php` (87 baris)
 
 Subjudul: _Kelompok siswa per kegiatan beserta anggotanya_
 
@@ -626,7 +645,7 @@ Subjudul: _Kelompok siswa per kegiatan beserta anggotanya_
 | Kelola Anggota | `→` | `admin.kokurikuler.kelompok.show` | navigasi (GET /admin/kokurikuler/kelompok/{kelompok}) |
 
 #### Anggota Kelompok
-`GET /admin/kokurikuler/kelompok/{kelompok}` · `admin.kokurikuler.kelompok.show` · `Admin\KokurikulerController@showKelompok` · `admin/kokurikuler/kelompok-show.blade.php` (53 baris)
+`GET /admin/kokurikuler/kelompok/{kelompok}` · `admin.kokurikuler.kelompok.show` · `Admin\KokurikulerController@showKelompok` · `admin/kokurikuler/kelompok-show.blade.php` (49 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -634,7 +653,7 @@ Subjudul: _Kelompok siswa per kegiatan beserta anggotanya_
 | ← Kembali | `→` | `admin.kokurikuler.kelompok` | navigasi (GET /admin/kokurikuler/kelompok) |
 
 #### Tema Kokurikuler
-`GET /admin/kokurikuler/tema` · `admin.kokurikuler.tema` · `Admin\KokurikulerController@tema` · `admin/kokurikuler/tema.blade.php` (79 baris)
+`GET /admin/kokurikuler/tema` · `admin.kokurikuler.tema` · `Admin\KokurikulerController@tema` · `admin/kokurikuler/tema.blade.php` (75 baris)
 
 Subjudul: _Tema kegiatan kokurikuler / projek_
 
@@ -644,14 +663,14 @@ Subjudul: _Tema kegiatan kokurikuler / projek_
 | Hapus | `DELETE` | `DELETE /admin/kokurikuler/tema/{tema}` | onsubmit: return confirm('Hapus tema beserta kegia… |
 
 #### Log Aktivitas
-`GET /admin/log` · `admin.log.index` · `Admin\LogController@index` · `admin/log/index.blade.php` (93 baris)
+`GET /admin/log` · `admin.log.index` · `Admin\LogController@index` · `admin/log/index.blade.php` (89 baris)
 
 Subjudul: _Riwayat aktivitas seluruh pengguna sistem_
 
 _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 
 #### Mata Pelajaran
-`GET /admin/mapel` · `admin.mapel.index` · `Admin\MapelController@index` · `admin/mapel/index.blade.php` (193 baris)
+`GET /admin/mapel` · `admin.mapel.index` · `Admin\MapelController@index` · `admin/mapel/index.blade.php` (189 baris)
 
 Subjudul: _Kelola daftar mata pelajaran_
 
@@ -671,7 +690,7 @@ Subjudul: _Kelola daftar mata pelajaran_
 | (ikon) | `→` | `admin.mapel.edit` | navigasi (GET /admin/mapel/{mapel}/edit) |
 
 #### Tambah Mata Pelajaran
-`GET /admin/mapel/create` · `admin.mapel.create` · `Admin\MapelController@create` · `admin/mapel/create.blade.php` (59 baris)
+`GET /admin/mapel/create` · `admin.mapel.create` · `Admin\MapelController@create` · `admin/mapel/create.blade.php` (55 baris)
 
 Subjudul: _Jenjang:_
 
@@ -681,7 +700,7 @@ Subjudul: _Jenjang:_
 | Batal | `→` | `admin.mapel.index` | navigasi (GET /admin/mapel) |
 
 #### Edit Mata Pelajaran
-`GET /admin/mapel/{mapel}/edit` · `admin.mapel.edit` · `Admin\MapelController@edit` · `admin/mapel/edit.blade.php` (77 baris)
+`GET /admin/mapel/{mapel}/edit` · `admin.mapel.edit` · `Admin\MapelController@edit` · `admin/mapel/edit.blade.php` (73 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -690,7 +709,7 @@ Subjudul: _Jenjang:_
 | Batal | `→` | `admin.mapel.index` | navigasi (GET /admin/mapel) |
 
 #### Modul & Tampilan
-`GET /admin/modul` · `admin.modul.index` · `Admin\ModulController@index` · `admin/modul/index.blade.php` (84 baris)
+`GET /admin/modul` · `admin.modul.index` · `Admin\ModulController@index` · `admin/modul/index.blade.php` (80 baris)
 
 Subjudul: _Aktifkan atau nonaktifkan modul sistem_
 
@@ -699,7 +718,7 @@ Subjudul: _Aktifkan atau nonaktifkan modul sistem_
 | 💾 Simpan Pengaturan | `POST` | `POST /admin/modul` | kolom: modul[{{ $key }}] |
 
 #### Statistik Nilai Rapor
-`GET /admin/penilaian/statistik` · `admin.penilaian.statistik` · `Admin\PenilaianController@statistik` · `admin/penilaian/statistik.blade.php` (101 baris)
+`GET /admin/penilaian/statistik` · `admin.penilaian.statistik` · `Admin\PenilaianController@statistik` · `admin/penilaian/statistik.blade.php` (97 baris)
 
 Subjudul: _Sebaran predikat dan rata-rata per mata pelajaran (dari nilai e-rapor)_
 
@@ -709,21 +728,21 @@ Subjudul: _Sebaran predikat dan rata-rata per mata pelajaran (dari nilai e-rapor
 | Reset | `→` | `admin.penilaian.statistik` | navigasi (GET /admin/penilaian/statistik) |
 
 #### Status Penilaian
-`GET /admin/penilaian/status` · `admin.penilaian.status` · `Admin\PenilaianController@status` · `admin/penilaian/status.blade.php` (69 baris)
+`GET /admin/penilaian/status` · `admin.penilaian.status` · `Admin\PenilaianController@status` · `admin/penilaian/status.blade.php` (65 baris)
 
 Subjudul: _Pantau kelengkapan input setiap guru (siswa, materi, kuis, nilai, e-rapor)_
 
 _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 
 #### Perkembangan Nilai
-`GET /admin/perkembangan` · `admin.perkembangan.index` · `Admin\PerkembanganController@index` · `admin/perkembangan/index.blade.php` (60 baris)
+`GET /admin/perkembangan` · `admin.perkembangan.index` · `Admin\PerkembanganController@index` · `admin/perkembangan/index.blade.php` (56 baris)
 
 Subjudul: _Tren rata-rata nilai rapor antar semester_
 
 _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 
 #### Grafik Nilai Rapor
-`GET /admin/perkembangan/grafik` · `admin.perkembangan.grafik` · `Admin\PerkembanganController@grafik` · `admin/perkembangan/grafik.blade.php` (106 baris)
+`GET /admin/perkembangan/grafik` · `admin.perkembangan.grafik` · `Admin\PerkembanganController@grafik` · `admin/perkembangan/grafik.blade.php` (102 baris)
 
 Subjudul: _Sebaran predikat dan rata-rata per kelas_
 
@@ -733,7 +752,7 @@ Subjudul: _Sebaran predikat dan rata-rata per kelas_
 | Reset | `→` | `admin.perkembangan.grafik` | navigasi (GET /admin/perkembangan/grafik) |
 
 #### Peta Kelas
-`GET /admin/peta-kelas` · `admin.peta-kelas.index` · `Admin\PetaKelasController@index` · `admin/peta-kelas/index.blade.php` (311 baris)
+`GET /admin/peta-kelas` · `admin.peta-kelas.index` · `Admin\PetaKelasController@index` · `admin/peta-kelas/index.blade.php` (307 baris)
 
 Subjudul: _Pemetaan guru dan siswa per kelas — seret siswa untuk pindah kelas_
 
@@ -749,7 +768,7 @@ Subjudul: _Pemetaan guru dan siswa per kelas — seret siswa untuk pindah kelas_
 | (AJAX) | `fetch` | `'{{ route("admin.peta-kelas.keluarkan"` | permintaan asinkron |
 
 #### Data Kelas
-`GET /admin/peta-kelas/daftar` · `admin.peta-kelas.daftar` · `Admin\PetaKelasController@daftar` · `admin/peta-kelas/daftar.blade.php` (73 baris)
+`GET /admin/peta-kelas/daftar` · `admin.peta-kelas.daftar` · `Admin\PetaKelasController@daftar` · `admin/peta-kelas/daftar.blade.php` (69 baris)
 
 Subjudul: _Daftar rombongan belajar dari Dapodik_
 
@@ -766,14 +785,14 @@ Subjudul: _Daftar rombongan belajar dari Dapodik_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Anggota Rombel
-`GET /admin/peta-kelas/{rombel}` · `admin.peta-kelas.detail` · `Admin\PetaKelasController@detail` · `admin/peta-kelas/detail.blade.php` (75 baris)
+`GET /admin/peta-kelas/{rombel}` · `admin.peta-kelas.detail` · `Admin\PetaKelasController@detail` · `admin/peta-kelas/detail.blade.php` (71 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | ← Kembali | `→` | `admin.peta-kelas.daftar` | navigasi (GET /admin/peta-kelas/daftar) |
 
 #### Presensi Pegawai
-`GET /admin/presensi` · `admin.presensi.index` · `Admin\PresensiController@index` · `admin/presensi/index.blade.php` (150 baris)
+`GET /admin/presensi` · `admin.presensi.index` · `Admin\PresensiController@index` · `admin/presensi/index.blade.php` (147 baris)
 
 Subjudul: _Atur area absensi dan pantau presensi guru, kepala sekolah, serta tendik_
 
@@ -786,7 +805,7 @@ Subjudul: _Atur area absensi dan pantau presensi guru, kepala sekolah, serta ten
 | Simpan koreksi | `POST` | `POST /admin/presensi/pegawai/koreksi` | kolom: user_id, tanggal, status, jam_masuk, jam_pulang, alasan_koreksi |
 
 #### Pemetaan QR Kartu Siswa
-`GET /admin/presensi/kartu-siswa` · `admin.presensi.kartu.index` · `Admin\PresensiKartuController@index` · `admin/presensi/kartu.blade.php` (70 baris)
+`GET /admin/presensi/kartu-siswa` · `admin.presensi.kartu.index` · `Admin\PresensiKartuController@index` · `admin/presensi/kartu.blade.php` (67 baris)
 
 Subjudul: _Hubungkan QR yang sudah tercetak ke data siswa tanpa menyimpan isi QR mentah_
 
@@ -796,7 +815,7 @@ Subjudul: _Hubungkan QR yang sudah tercetak ke data siswa tanpa menyimpan isi QR
 | Lepaskan | `DELETE` | `DELETE /admin/presensi/kartu-siswa/{siswa}` | onsubmit: return confirm('Lepaskan QR kartu {{ add… |
 
 #### Profile
-`GET /admin/profile` · `admin.profile` · `Admin\ProfileController@show` · `admin/profile.blade.php` (119 baris)
+`GET /admin/profile` · `admin.profile` · `Admin\ProfileController@show` · `admin/profile.blade.php` (115 baris)
 
 Subjudul: _Detail akun dan ubah password_
 
@@ -805,7 +824,9 @@ Subjudul: _Detail akun dan ubah password_
 | Simpan Password | `PUT` | `PUT /admin/profile/password` | kolom: kata_sandi_saat_ini, password, password_confirmation |
 
 #### Cek Alignment E-Rapor
-`GET /admin/referensi/alignment` · `admin.referensi.alignment` · `Admin\DataReferensiController@alignmentCheck` · `admin/referensi/alignment-check.blade.php` (119 baris)
+`GET /admin/referensi/alignment` · `admin.referensi.alignment` · `Admin\DataReferensiController@alignmentCheck` · `admin/referensi/alignment-check.blade.php` (122 baris)
+
+_Layout diubah 28 Okt 2026: `layouts.app` → `layouts.admin-with-tabs`, sehingga halaman ini kini punya bilah tab dan sidebar per tab (sebelumnya tanpa navigasi sama sekali — lihat T3 di §6.1)._
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -818,7 +839,7 @@ Subjudul: _Detail akun dan ubah password_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Ekstrakurikuler
-`GET /admin/referensi/ekstrakurikuler` · `admin.referensi.ekstrakurikuler` · `Admin\DataReferensiController@ekstrakurikuler` · `admin/referensi/ekstrakurikuler.blade.php` (88 baris)
+`GET /admin/referensi/ekstrakurikuler` · `admin.referensi.ekstrakurikuler` · `Admin\DataReferensiController@ekstrakurikuler` · `admin/referensi/ekstrakurikuler.blade.php` (84 baris)
 
 Subjudul: _Kelola kegiatan ekstrakurikuler sekolah_
 
@@ -828,7 +849,7 @@ Subjudul: _Kelola kegiatan ekstrakurikuler sekolah_
 | Hapus | `DELETE` | `DELETE /admin/referensi/ekstrakurikuler/{ekstrakurikuler}` | onsubmit: return confirm('Hapus ekstrakurikuler in… |
 
 #### Foto Siswa
-`GET /admin/referensi/foto-siswa` · `admin.referensi.foto-siswa` · `Admin\DataReferensiController@fotoSiswa` · `admin/referensi/foto-siswa.blade.php` (103 baris)
+`GET /admin/referensi/foto-siswa` · `admin.referensi.foto-siswa` · `Admin\DataReferensiController@fotoSiswa` · `admin/referensi/foto-siswa.blade.php` (99 baris)
 
 Subjudul: _Unggah foto massal — nama file harus sama dengan NIS atau NISN (mis. 2401001.jpg)_
 
@@ -838,7 +859,7 @@ Subjudul: _Unggah foto massal — nama file harus sama dengan NIS atau NISN (mis
 | Upload | `POST` | `POST /admin/referensi/foto-siswa/{siswa}` | kolom: foto |
 
 #### Data Guru
-`GET /admin/referensi/guru` · `admin.referensi.guru` · `Admin\DataReferensiController@guru` · `admin/referensi/guru.blade.php` (117 baris)
+`GET /admin/referensi/guru` · `admin.referensi.guru` · `Admin\DataReferensiController@guru` · `admin/referensi/guru.blade.php` (113 baris)
 
 Subjudul: _Data pendidik dan tenaga kependidikan dari Dapodik_
 
@@ -849,7 +870,7 @@ Subjudul: _Data pendidik dan tenaga kependidikan dari Dapodik_
 | Peta Kelas | `→` | `admin.peta-kelas.index` | navigasi (GET /admin/peta-kelas) |
 
 #### Kelompok Mapel
-`GET /admin/referensi/kelompok-mapel` · `admin.referensi.kelompok-mapel` · `Admin\DataReferensiController@kelompokMapel` · `admin/referensi/kelompok-mapel.blade.php` (76 baris)
+`GET /admin/referensi/kelompok-mapel` · `admin.referensi.kelompok-mapel` · `Admin\DataReferensiController@kelompokMapel` · `admin/referensi/kelompok-mapel.blade.php` (72 baris)
 
 Subjudul: _Kelompokkan mata pelajaran (mis. A, B, C) untuk pengelompokan di rapor_
 
@@ -858,7 +879,7 @@ Subjudul: _Kelompokkan mata pelajaran (mis. A, B, C) untuk pengelompokan di rapo
 | Simpan Kelompok | `PUT` | `PUT /admin/referensi/mapel-meta` |  |
 
 #### Logo dan TTD
-`GET /admin/referensi/logo-ttd` · `admin.referensi.logo-ttd` · `Admin\DataReferensiController@logoTtd` · `admin/referensi/logo-ttd.blade.php` (49 baris)
+`GET /admin/referensi/logo-ttd` · `admin.referensi.logo-ttd` · `Admin\DataReferensiController@logoTtd` · `admin/referensi/logo-ttd.blade.php` (45 baris)
 
 Subjudul: _Unggah logo pemda, logo sekolah, tanda tangan kepala sekolah, dan kop sekolah (maks 2MB pe…_
 
@@ -867,7 +888,7 @@ Subjudul: _Unggah logo pemda, logo sekolah, tanda tangan kepala sekolah, dan kop
 | Simpan Semua | `POST` | `POST /admin/referensi/logo-ttd` | kolom: {{ $key }} |
 
 #### Mapping Rapor
-`GET /admin/referensi/mapping-rapor` · `admin.referensi.mapping-rapor` · `Admin\DataReferensiController@mappingRapor` · `admin/referensi/mapping-rapor.blade.php` (67 baris)
+`GET /admin/referensi/mapping-rapor` · `admin.referensi.mapping-rapor` · `Admin\DataReferensiController@mappingRapor` · `admin/referensi/mapping-rapor.blade.php` (63 baris)
 
 Subjudul: _Atur urutan tampil mata pelajaran di rapor (angka kecil tampil lebih dulu)_
 
@@ -876,7 +897,7 @@ Subjudul: _Atur urutan tampil mata pelajaran di rapor (angka kecil tampil lebih 
 | Simpan Urutan | `PUT` | `PUT /admin/referensi/mapel-meta` |  |
 
 #### Data Pembelajaran
-`GET /admin/referensi/pembelajaran` · `admin.referensi.pembelajaran` · `Admin\DataReferensiController@pembelajaran` · `admin/referensi/pembelajaran.blade.php` (154 baris)
+`GET /admin/referensi/pembelajaran` · `admin.referensi.pembelajaran` · `Admin\DataReferensiController@pembelajaran` · `admin/referensi/pembelajaran.blade.php` (150 baris)
 
 Subjudul: _Jadwal pembelajaran (rombongan belajar × mapel × guru); baris DAPODIK berasal dari hasil s…_
 
@@ -888,7 +909,7 @@ Subjudul: _Jadwal pembelajaran (rombongan belajar × mapel × guru); baris DAPOD
 | Peta Kelas | `→` | `admin.peta-kelas.index` | navigasi (GET /admin/peta-kelas) |
 
 #### Tanggal Rapor
-`GET /admin/referensi/tanggal-rapor` · `admin.referensi.tanggal-rapor` · `Admin\DataReferensiController@tanggalRapor` · `admin/referensi/tanggal-rapor.blade.php` (99 baris)
+`GET /admin/referensi/tanggal-rapor` · `admin.referensi.tanggal-rapor` · `Admin\DataReferensiController@tanggalRapor` · `admin/referensi/tanggal-rapor.blade.php` (95 baris)
 
 Subjudul: _Atur tanggal pembagian rapor per tahun ajaran dan semester_
 
@@ -898,7 +919,7 @@ Subjudul: _Atur tanggal pembagian rapor per tahun ajaran dan semester_
 | Hapus | `DELETE` | `DELETE /admin/referensi/tanggal-rapor/{tanggalRapor}` | onsubmit: return confirm('Hapus tanggal rapor ini?… |
 
 #### Identitas Sekolah
-`GET /admin/sekolah` · `admin.sekolah.index` · `Admin\SekolahController@index` · `admin/sekolah/index.blade.php` (279 baris)
+`GET /admin/sekolah` · `admin.sekolah.index` · `Admin\SekolahController@index` · `admin/sekolah/index.blade.php` (275 baris)
 
 Subjudul: _Profil dan identitas resmi sekolah_
 
@@ -910,7 +931,7 @@ Subjudul: _Profil dan identitas resmi sekolah_
 | (AJAX) | `fetch` | `'{{ url("/api/sekolah/lookup"` | permintaan asinkron |
 
 #### Semester
-`GET /admin/semester` · `admin.semester.index` · `Admin\SemesterController@index` · `admin/semester/index.blade.php` (124 baris)
+`GET /admin/semester` · `admin.semester.index` · `Admin\SemesterController@index` · `admin/semester/index.blade.php` (120 baris)
 
 Subjudul: _Kelola semester aktif dan tahun ajaran_
 
@@ -921,7 +942,7 @@ Subjudul: _Kelola semester aktif dan tahun ajaran_
 | Hapus (ikon) | `DELETE` | `DELETE /admin/semester/{semester}` | onsubmit: return confirm('Hapus semester ini?') |
 
 #### Penyimpanan Data
-`GET /admin/sheet` · `admin.sheet.index` · `Admin\SheetController@index` · `admin/sheet/index.blade.php` (95 baris)
+`GET /admin/sheet` · `admin.sheet.index` · `Admin\SheetController@index` · `admin/sheet/index.blade.php` (91 baris)
 
 Subjudul: _Koneksi Google Sheet untuk penyimpanan data_
 
@@ -931,7 +952,7 @@ Subjudul: _Koneksi Google Sheet untuk penyimpanan data_
 | Hubungkan | `POST` | `POST /admin/sheet/connect` | kolom: spreadsheet_id, spreadsheet_url |
 
 #### Cetak Transkrip Nilai
-`GET /admin/transkrip/cetak` · `admin.transkrip.cetak` · `Admin\TranskripController@cetak` · `admin/transkrip/cetak.blade.php` (56 baris)
+`GET /admin/transkrip/cetak` · `admin.transkrip.cetak` · `Admin\TranskripController@cetak` · `admin/transkrip/cetak.blade.php` (52 baris)
 
 Subjudul: _Pilih siswa untuk mencetak transkrip_
 
@@ -949,7 +970,7 @@ Subjudul: _Pilih siswa untuk mencetak transkrip_
 | Kembali | `→` | `admin.transkrip.cetak` | navigasi (GET /admin/transkrip/cetak) |
 
 #### Import Nilai Transkrip
-`GET /admin/transkrip/import` · `admin.transkrip.import` · `Admin\TranskripController@importNilai` · `admin/transkrip/import.blade.php` (45 baris)
+`GET /admin/transkrip/import` · `admin.transkrip.import` · `Admin\TranskripController@importNilai` · `admin/transkrip/import.blade.php` (41 baris)
 
 Subjudul: _Unggah CSV nilai akhir per siswa per mapel_
 
@@ -964,7 +985,7 @@ Subjudul: _Unggah CSV nilai akhir per siswa per mapel_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Input Nilai Transkrip
-`GET /admin/transkrip/input` · `admin.transkrip.input` · `Admin\TranskripController@input` · `admin/transkrip/input.blade.php` (59 baris)
+`GET /admin/transkrip/input` · `admin.transkrip.input` · `Admin\TranskripController@input` · `admin/transkrip/input.blade.php` (55 baris)
 
 Subjudul: _Nilai akhir per mapel untuk ijazah_
 
@@ -974,7 +995,7 @@ Subjudul: _Nilai akhir per mapel untuk ijazah_
 | Input Nilai | `→` | `admin.transkrip.input.form` | navigasi (GET /admin/transkrip/input/{siswa}) |
 
 #### Input Nilai Transkrip
-`GET /admin/transkrip/input/{siswa}` · `admin.transkrip.input.form` · `Admin\TranskripController@formInput` · `admin/transkrip/input-form.blade.php` (60 baris)
+`GET /admin/transkrip/input/{siswa}` · `admin.transkrip.input.form` · `Admin\TranskripController@formInput` · `admin/transkrip/input-form.blade.php` (56 baris)
 
 Subjudul: _NISN_
 
@@ -984,7 +1005,7 @@ Subjudul: _NISN_
 | Kembali | `→` | `admin.transkrip.input` | navigasi (GET /admin/transkrip/input) |
 
 #### Nomor Ijazah
-`GET /admin/transkrip/nomor` · `admin.transkrip.nomor` · `Admin\TranskripController@nomor` · `admin/transkrip/nomor.blade.php` (83 baris)
+`GET /admin/transkrip/nomor` · `admin.transkrip.nomor` · `Admin\TranskripController@nomor` · `admin/transkrip/nomor.blade.php` (79 baris)
 
 Subjudul: _Kelola nomor ijazah per peserta didik_
 
@@ -995,7 +1016,7 @@ Subjudul: _Kelola nomor ijazah per peserta didik_
 | Simpan | `PUT` | `PUT /admin/transkrip/nomor/{siswa}` | kolom: nomor_ijazah |
 
 #### Setting Transkrip
-`GET /admin/transkrip/setting` · `admin.transkrip.setting` · `Admin\TranskripController@setting` · `admin/transkrip/setting.blade.php` (46 baris)
+`GET /admin/transkrip/setting` · `admin.transkrip.setting` · `Admin\TranskripController@setting` · `admin/transkrip/setting.blade.php` (42 baris)
 
 Subjudul: _Kop penerbitan transkrip nilai ijazah_
 
@@ -1004,7 +1025,7 @@ Subjudul: _Kop penerbitan transkrip nilai ijazah_
 | Simpan Setting | `PUT` | `PUT /admin/transkrip/setting` | kolom: tempat, tahun_lulus, nip_kepala_sekolah, keterangan |
 
 #### Kelola Pengguna
-`GET /admin/users` · `admin.users.index` · `Admin\UserController@index` · `admin/users/index.blade.php` (269 baris)
+`GET /admin/users` · `admin.users.index` · `Admin\UserController@index` · `admin/users/index.blade.php` (265 baris)
 
 Subjudul: _Kelola semua akun pengguna sistem_
 
@@ -1031,7 +1052,7 @@ Subjudul: _Kelola semua akun pengguna sistem_
 | (AJAX) | `fetch` | `'{{ url("/admin/users/hapus-semua"` | permintaan asinkron |
 
 #### Akun Massal
-`GET /admin/users/akun-massal` · `admin.users.akun-massal` · `Admin\UserController@akunMassal` · `admin/users/massal.blade.php` (123 baris)
+`GET /admin/users/akun-massal` · `admin.users.akun-massal` · `Admin\UserController@akunMassal` · `admin/users/massal.blade.php` (119 baris)
 
 Subjudul: _Buat akun siswa secara massal_
 
@@ -1044,7 +1065,7 @@ Subjudul: _Buat akun siswa secara massal_
 | (AJAX) | `fetch` | `'{{ route("admin.users.proses-massal"` | permintaan asinkron |
 
 #### Tambah Akun
-`GET /admin/users/create` · `admin.users.create` · `Admin\UserController@create` · `admin/users/create.blade.php` (70 baris)
+`GET /admin/users/create` · `admin.users.create` · `Admin\UserController@create` · `admin/users/create.blade.php` (66 baris)
 
 Subjudul: _Buat akun pengguna baru_
 
@@ -1055,7 +1076,7 @@ Subjudul: _Buat akun pengguna baru_
 | Batal | `→` | `admin.users.index` | navigasi (GET /admin/users) |
 
 #### Data Siswa
-`GET /admin/users/siswa` · `admin.users.siswa` · `Admin\UserController@siswaIndex` · `admin/users/siswa.blade.php` (120 baris)
+`GET /admin/users/siswa` · `admin.users.siswa` · `Admin\UserController@siswaIndex` · `admin/users/siswa.blade.php` (116 baris)
 
 Subjudul: _Data peserta didik dari Dapodik beserta status akunnya (berbeda dengan Kelola Pengguna yan…_
 
@@ -1065,7 +1086,7 @@ Subjudul: _Data peserta didik dari Dapodik beserta status akunnya (berbeda denga
 | Import Dapodik | `→` | `admin.dapodik.index` | navigasi (GET /admin/dapodik) |
 
 #### Ubah Akun
-`GET /admin/users/{param}/edit` · `admin.users.edit` · `Admin\UserController@edit` · `admin/users/edit.blade.php` (69 baris)
+`GET /admin/users/{param}/edit` · `admin.users.edit` · `Admin\UserController@edit` · `admin/users/edit.blade.php` (65 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1076,7 +1097,7 @@ Subjudul: _Data peserta didik dari Dapodik beserta status akunnya (berbeda denga
 ### Admin — tab CBT/Ujian — 11 halaman
 
 #### Manajemen Bank Soal CBT - Admin
-`GET /admin/cbt/banks` · `admin.cbt.banks.index` · `Admin\Cbt\CbtBankController@index` · `admin/cbt/banks/index.blade.php` (134 baris)
+`GET /admin/cbt/banks` · `admin.cbt.banks.index` · `Admin\Cbt\CbtBankController@index` · `admin/cbt/banks/index.blade.php` (130 baris)
 
 Subjudul: _Kelola semua bank soal_
 
@@ -1095,7 +1116,7 @@ Subjudul: _Kelola semua bank soal_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Buat Bank Soal CBT - Admin
-`GET /admin/cbt/banks/create` · `admin.cbt.banks.create` · `Admin\Cbt\CbtBankController@create` · `admin/cbt/banks/create.blade.php` (73 baris)
+`GET /admin/cbt/banks/create` · `admin.cbt.banks.create` · `Admin\Cbt\CbtBankController@create` · `admin/cbt/banks/create.blade.php` (69 baris)
 
 Subjudul: _Bank soal baru untuk seluruh guru_
 
@@ -1105,7 +1126,7 @@ Subjudul: _Bank soal baru untuk seluruh guru_
 | Kembali | `→` | `admin.cbt.banks.index` | navigasi (GET /admin/cbt/banks) |
 
 #### Detail Bank Soal CBT - Admin
-`GET /admin/cbt/banks/{bank}` · `admin.cbt.banks.show` · `Admin\Cbt\CbtBankController@show` · `admin/cbt/banks/show.blade.php` (122 baris)
+`GET /admin/cbt/banks/{bank}` · `admin.cbt.banks.show` · `Admin\Cbt\CbtBankController@show` · `admin/cbt/banks/show.blade.php` (118 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1114,7 +1135,7 @@ Subjudul: _Bank soal baru untuk seluruh guru_
 | … | `→` | `admin.cbt.sessions.show` | navigasi (GET /admin/cbt/sessions/{session}) |
 
 #### Edit Bank Soal CBT - Admin
-`GET /admin/cbt/banks/{bank}/edit` · `admin.cbt.banks.edit` · `Admin\Cbt\CbtBankController@edit` · `admin/cbt/banks/edit.blade.php` (73 baris)
+`GET /admin/cbt/banks/{bank}/edit` · `admin.cbt.banks.edit` · `Admin\Cbt\CbtBankController@edit` · `admin/cbt/banks/edit.blade.php` (69 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1122,7 +1143,7 @@ Subjudul: _Bank soal baru untuk seluruh guru_
 | Kembali | `→` | `admin.cbt.banks.index` | navigasi (GET /admin/cbt/banks) |
 
 #### Sesi Ujian CBT - Admin
-`GET /admin/cbt/sessions` · `admin.cbt.sessions.index` · `Admin\Cbt\CbtSessionController@index` · `admin/cbt/sessions/index.blade.php` (138 baris)
+`GET /admin/cbt/sessions` · `admin.cbt.sessions.index` · `Admin\Cbt\CbtSessionController@index` · `admin/cbt/sessions/index.blade.php` (134 baris)
 
 Subjudul: _Monitoring seluruh sesi ujian_
 
@@ -1135,7 +1156,7 @@ Subjudul: _Monitoring seluruh sesi ujian_
 | (ikon) | `→` | `admin.cbt.sessions.export` | navigasi (GET /admin/cbt/sessions/{session}/export/{format}) |
 
 #### Buat Sesi Ujian CBT - Admin
-`GET /admin/cbt/sessions/create` · `admin.cbt.sessions.create` · `Admin\Cbt\CbtSessionController@create` · `admin/cbt/sessions/create.blade.php` (106 baris)
+`GET /admin/cbt/sessions/create` · `admin.cbt.sessions.create` · `Admin\Cbt\CbtSessionController@create` · `admin/cbt/sessions/create.blade.php` (102 baris)
 
 Subjudul: _Sesi baru (status draf)_
 
@@ -1145,7 +1166,7 @@ Subjudul: _Sesi baru (status draf)_
 | Kembali | `→` | `admin.cbt.sessions.index` | navigasi (GET /admin/cbt/sessions) |
 
 #### Detail Sesi Ujian CBT - Admin
-`GET /admin/cbt/sessions/{session}` · `admin.cbt.sessions.show` · `Admin\Cbt\CbtSessionController@show` · `admin/cbt/sessions/show.blade.php` (184 baris)
+`GET /admin/cbt/sessions/{session}` · `admin.cbt.sessions.show` · `Admin\Cbt\CbtSessionController@show` · `admin/cbt/sessions/show.blade.php` (180 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1158,7 +1179,7 @@ Subjudul: _Sesi baru (status draf)_
 | Kembali | `→` | `admin.cbt.sessions.index` | navigasi (GET /admin/cbt/sessions) |
 
 #### Analisis Butir Soal - Admin
-`GET /admin/cbt/sessions/{session}/analisis-butir` · `admin.cbt.sessions.analisis-butir` · `Admin\Cbt\CbtSessionController@analisisButir` · `admin/cbt/sessions/analisis.blade.php` (151 baris)
+`GET /admin/cbt/sessions/{session}/analisis-butir` · `admin.cbt.sessions.analisis-butir` · `Admin\Cbt\CbtSessionController@analisisButir` · `admin/cbt/sessions/analisis.blade.php` (148 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1177,7 +1198,7 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 ### Admin — tab Tryout — 13 halaman
 
 #### Kelola Paket Tryout - Admin
-`GET /admin/tryout/packages` · `admin.tryout.packages.index` · `Admin\Tryout\TryoutPackageAdminController@index` · `admin/tryout/packages/index.blade.php` (248 baris)
+`GET /admin/tryout/packages` · `admin.tryout.packages.index` · `Admin\Tryout\TryoutPackageAdminController@index` · `admin/tryout/packages/index.blade.php` (244 baris)
 
 Subjudul: _Kelola paket tryout_
 
@@ -1193,7 +1214,7 @@ Subjudul: _Kelola paket tryout_
 | (ikon) | `→` | `admin.tryout.packages.edit` | navigasi (GET /admin/tryout/packages/{package}/edit) |
 
 #### Tambah Paket Tryout
-`GET /admin/tryout/packages/create` · `admin.tryout.packages.create` · `Admin\Tryout\TryoutPackageAdminController@create` · `admin/tryout/packages/create.blade.php` (92 baris)
+`GET /admin/tryout/packages/create` · `admin.tryout.packages.create` · `Admin\Tryout\TryoutPackageAdminController@create` · `admin/tryout/packages/create.blade.php` (88 baris)
 
 Subjudul: _Paket soal tryout baru_
 
@@ -1203,7 +1224,7 @@ Subjudul: _Paket soal tryout baru_
 | Kembali | `→` | `admin.tryout.packages.index` | navigasi (GET /admin/tryout/packages) |
 
 #### Detail Paket Tryout - Admin
-`GET /admin/tryout/packages/{package}` · `admin.tryout.packages.show` · `Admin\Tryout\TryoutPackageAdminController@show` · `admin/tryout/packages/show.blade.php` (167 baris)
+`GET /admin/tryout/packages/{package}` · `admin.tryout.packages.show` · `Admin\Tryout\TryoutPackageAdminController@show` · `admin/tryout/packages/show.blade.php` (163 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1211,7 +1232,7 @@ Subjudul: _Paket soal tryout baru_
 | Kembali | `→` | `admin.tryout.packages.index` | navigasi (GET /admin/tryout/packages) |
 
 #### Edit Paket Tryout - Admin
-`GET /admin/tryout/packages/{package}/edit` · `admin.tryout.packages.edit` · `Admin\Tryout\TryoutPackageAdminController@edit` · `admin/tryout/packages/edit.blade.php` (98 baris)
+`GET /admin/tryout/packages/{package}/edit` · `admin.tryout.packages.edit` · `Admin\Tryout\TryoutPackageAdminController@edit` · `admin/tryout/packages/edit.blade.php` (94 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1219,7 +1240,7 @@ Subjudul: _Paket soal tryout baru_
 | Kembali | `→` | `admin.tryout.packages.show` | navigasi (GET /admin/tryout/packages/{package}) |
 
 #### Kelola Hasil Tryout - Admin
-`GET /admin/tryout/results` · `admin.tryout.results.index` · `Admin\Tryout\TryoutPackageAdminController@allResults` · `admin/tryout/results/index.blade.php` (247 baris)
+`GET /admin/tryout/results` · `admin.tryout.results.index` · `Admin\Tryout\TryoutPackageAdminController@allResults` · `admin/tryout/results/index.blade.php` (243 baris)
 
 Subjudul: _Lihat semua hasil tryout_
 
@@ -1231,7 +1252,7 @@ Subjudul: _Lihat semua hasil tryout_
 | Kembali ke Statistik | `→` | `admin.tryout.statistics` | navigasi (GET /admin/tryout/statistics) |
 
 #### Detail Hasil Tryout - Admin
-`GET /admin/tryout/results/engine/{attempt}` · `admin.tryout.results.engine.show` · `Admin\Tryout\TryoutPackageAdminController@showEngineResult` · `admin/tryout/results/show.blade.php` (158 baris)
+`GET /admin/tryout/results/engine/{attempt}` · `admin.tryout.results.engine.show` · `Admin\Tryout\TryoutPackageAdminController@showEngineResult` · `admin/tryout/results/show.blade.php` (154 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1243,14 +1264,14 @@ Subjudul: _Lihat semua hasil tryout_
 _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengalihan._
 
 #### Detail Hasil Tryout - Admin
-`GET /admin/tryout/results/{result}` · `admin.tryout.results.show` · `Admin\Tryout\TryoutPackageAdminController@showResult` · `admin/tryout/results/show.blade.php` (158 baris)
+`GET /admin/tryout/results/{result}` · `admin.tryout.results.show` · `Admin\Tryout\TryoutPackageAdminController@showResult` · `admin/tryout/results/show.blade.php` (154 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | Kembali | `→` | `admin.tryout.results.index` | navigasi (GET /admin/tryout/results) |
 
 #### Kelola Sesi Tryout - Admin
-`GET /admin/tryout/sessions` · `admin.tryout.sessions.index` · `Admin\Tryout\TryoutPackageAdminController@allSessions` · `admin/tryout/sessions/index.blade.php` (276 baris)
+`GET /admin/tryout/sessions` · `admin.tryout.sessions.index` · `Admin\Tryout\TryoutPackageAdminController@allSessions` · `admin/tryout/sessions/index.blade.php` (272 baris)
 
 Subjudul: _Kelola sesi tryout_
 
@@ -1266,7 +1287,7 @@ Subjudul: _Kelola sesi tryout_
 | (ikon) | `→` | `admin.tryout.sessions.edit` | navigasi (GET /admin/tryout/sessions/{session}/edit) |
 
 #### Buat Sesi Tryout
-`GET /admin/tryout/sessions/create` · `admin.tryout.sessions.create` · `Admin\Tryout\TryoutPackageAdminController@createSession` · `admin/tryout/sessions/create.blade.php` (82 baris)
+`GET /admin/tryout/sessions/create` · `admin.tryout.sessions.create` · `Admin\Tryout\TryoutPackageAdminController@createSession` · `admin/tryout/sessions/create.blade.php` (78 baris)
 
 Subjudul: _Jadwal pelaksanaan tryout_
 
@@ -1276,7 +1297,7 @@ Subjudul: _Jadwal pelaksanaan tryout_
 | Kembali | `→` | `admin.tryout.sessions.index` | navigasi (GET /admin/tryout/sessions) |
 
 #### Detail Sesi Tryout - Admin
-`GET /admin/tryout/sessions/{session}` · `admin.tryout.sessions.show` · `Admin\Tryout\TryoutPackageAdminController@showSession` · `admin/tryout/sessions/show.blade.php` (186 baris)
+`GET /admin/tryout/sessions/{session}` · `admin.tryout.sessions.show` · `Admin\Tryout\TryoutPackageAdminController@showSession` · `admin/tryout/sessions/show.blade.php` (182 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1286,7 +1307,7 @@ Subjudul: _Jadwal pelaksanaan tryout_
 | Detail | `→` | `admin.tryout.results.show` | navigasi (GET /admin/tryout/results/{result}) |
 
 #### Edit Sesi Tryout - Admin
-`GET /admin/tryout/sessions/{session}/edit` · `admin.tryout.sessions.edit` · `Admin\Tryout\TryoutPackageAdminController@editSession` · `admin/tryout/sessions/edit.blade.php` (85 baris)
+`GET /admin/tryout/sessions/{session}/edit` · `admin.tryout.sessions.edit` · `Admin\Tryout\TryoutPackageAdminController@editSession` · `admin/tryout/sessions/edit.blade.php` (81 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1294,7 +1315,7 @@ Subjudul: _Jadwal pelaksanaan tryout_
 | Kembali | `→` | `admin.tryout.sessions.show` | navigasi (GET /admin/tryout/sessions/{session}) |
 
 #### Statistik Tryout - Admin
-`GET /admin/tryout/statistics` · `admin.tryout.statistics` · `Admin\Tryout\TryoutPackageAdminController@statistics` · `admin/tryout/statistics.blade.php` (215 baris)
+`GET /admin/tryout/statistics` · `admin.tryout.statistics` · `Admin\Tryout\TryoutPackageAdminController@statistics` · `admin/tryout/statistics.blade.php` (211 baris)
 
 Subjudul: _Statistik dan ringkasan tryout_
 
@@ -1309,7 +1330,7 @@ Subjudul: _Statistik dan ringkasan tryout_
 ### Admin — tab TKA — 9 halaman
 
 #### Dashboard TKA - Admin
-`GET /admin/tka` · `admin.tka.dashboard` · `Admin\Tka\TkaAdminController@index` · `admin/tka/dashboard.blade.php` (356 baris)
+`GET /admin/tka` · `admin.tka.dashboard` · `Admin\Tka\TkaAdminController@index` · `admin/tka/dashboard.blade.php` (352 baris)
 
 Subjudul: _Monitoring Profil Pelajar_
 
@@ -1324,7 +1345,7 @@ Subjudul: _Monitoring Profil Pelajar_
 | Early Warnings | `→` | `admin.tka.warnings.index` | navigasi (GET /admin/tka/warnings) |
 
 #### Kelola Penilaian TKA - Admin
-`GET /admin/tka/assessments` · `admin.tka.assessments.index` · `Admin\Tka\TkaAdminController@assessments` · `admin/tka/assessments/index.blade.php` (218 baris)
+`GET /admin/tka/assessments` · `admin.tka.assessments.index` · `Admin\Tka\TkaAdminController@assessments` · `admin/tka/assessments/index.blade.php` (214 baris)
 
 Subjudul: _Kelola data penilaian_
 
@@ -1336,14 +1357,14 @@ Subjudul: _Kelola data penilaian_
 | (ikon) | `→` | `admin.tka.assessments.history` | navigasi (GET /admin/tka/assessments/siswa/{siswaId}/history) |
 
 #### Riwayat TKA Siswa - Admin
-`GET /admin/tka/assessments/siswa/{siswaId}/history` · `admin.tka.assessments.history` · `Admin\Tka\TkaAdminController@studentHistory` · `admin/tka/students/history.blade.php` (193 baris)
+`GET /admin/tka/assessments/siswa/{siswaId}/history` · `admin.tka.assessments.history` · `Admin\Tka\TkaAdminController@studentHistory` · `admin/tka/students/history.blade.php` (189 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | Kembali | `→` | `admin.tka.assessments.index` | navigasi (GET /admin/tka/assessments) |
 
 #### Kelola Dimensi TKA - Admin
-`GET /admin/tka/dimensions` · `admin.tka.dimensions.index` · `Admin\Tka\TkaAdminController@dimensions` · `admin/tka/dimensions/index.blade.php` (164 baris)
+`GET /admin/tka/dimensions` · `admin.tka.dimensions.index` · `Admin\Tka\TkaAdminController@dimensions` · `admin/tka/dimensions/index.blade.php` (160 baris)
 
 Subjudul: _Kelola dimensi P5_
 
@@ -1356,7 +1377,7 @@ Subjudul: _Kelola dimensi P5_
 | (ikon) | `→` | `admin.tka.dimensions.edit` | navigasi (GET /admin/tka/dimensions/{dimension}/edit) |
 
 #### Tambah Dimensi TKA
-`GET /admin/tka/dimensions/create` · `admin.tka.dimensions.create` · `Admin\Tka\TkaAdminController@createDimension` · `admin/tka/dimensions/create.blade.php` (54 baris)
+`GET /admin/tka/dimensions/create` · `admin.tka.dimensions.create` · `Admin\Tka\TkaAdminController@createDimension` · `admin/tka/dimensions/create.blade.php` (50 baris)
 
 Subjudul: _Dimensi penilaian baru_
 
@@ -1366,7 +1387,7 @@ Subjudul: _Dimensi penilaian baru_
 | Kembali | `→` | `admin.tka.dimensions.index` | navigasi (GET /admin/tka/dimensions) |
 
 #### Detail Dimensi TKA - Admin
-`GET /admin/tka/dimensions/{dimension}` · `admin.tka.dimensions.show` · `Admin\Tka\TkaAdminController@showDimension` · `admin/tka/dimensions/show.blade.php` (101 baris)
+`GET /admin/tka/dimensions/{dimension}` · `admin.tka.dimensions.show` · `Admin\Tka\TkaAdminController@showDimension` · `admin/tka/dimensions/show.blade.php` (97 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1375,7 +1396,7 @@ Subjudul: _Dimensi penilaian baru_
 | Kembali | `→` | `admin.tka.dimensions.index` | navigasi (GET /admin/tka/dimensions) |
 
 #### Edit Dimensi TKA - Admin
-`GET /admin/tka/dimensions/{dimension}/edit` · `admin.tka.dimensions.edit` · `Admin\Tka\TkaAdminController@editDimension` · `admin/tka/dimensions/edit.blade.php` (80 baris)
+`GET /admin/tka/dimensions/{dimension}/edit` · `admin.tka.dimensions.edit` · `Admin\Tka\TkaAdminController@editDimension` · `admin/tka/dimensions/edit.blade.php` (76 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1383,7 +1404,7 @@ Subjudul: _Dimensi penilaian baru_
 | Kembali | `→` | `admin.tka.dimensions.show` | navigasi (GET /admin/tka/dimensions/{dimension}) |
 
 #### Kelola Early Warning TKA - Admin
-`GET /admin/tka/warnings` · `admin.tka.warnings.index` · `Admin\Tka\TkaAdminController@earlyWarnings` · `admin/tka/warnings/index.blade.php` (241 baris)
+`GET /admin/tka/warnings` · `admin.tka.warnings.index` · `Admin\Tka\TkaAdminController@earlyWarnings` · `admin/tka/warnings/index.blade.php` (237 baris)
 
 Subjudul: _Pantau peringatan dini_
 
@@ -1396,7 +1417,7 @@ Subjudul: _Pantau peringatan dini_
 | (ikon) | `→` | `admin.tka.warnings.show` | navigasi (GET /admin/tka/warnings/{warning}) |
 
 #### Detail Early Warning TKA - Admin
-`GET /admin/tka/warnings/{warning}` · `admin.tka.warnings.show` · `Admin\Tka\TkaAdminController@showWarning` · `admin/tka/warnings/show.blade.php` (107 baris)
+`GET /admin/tka/warnings/{warning}` · `admin.tka.warnings.show` · `Admin\Tka\TkaAdminController@showWarning` · `admin/tka/warnings/show.blade.php` (103 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1527,11 +1548,14 @@ Subjudul: _Hubungkan data SIMANTAP dengan Google Spreadsheet_
 | Simpan Pengaturan | `POST` | `POST /guru/integrasi/update-settings` | kolom: sinkron_nilai, sinkron_kehadiran, sinkron_kebiasaan, sinkron_dimensi |
 
 #### 7 Kebiasaan dari Orang Tua
-`GET /guru/kebiasaan` · `guru.kebiasaan.index` · `Guru\GuruKebiasaanController@index` · `guru/kebiasaan/index.blade.php` (191 baris)
+`GET /guru/kebiasaan` · `guru.kebiasaan.index` · `Guru\GuruKebiasaanController@index` · `guru/kebiasaan/index.blade.php` (198 baris)
 
 Subjudul: _Laporan pembiasaan siswa dari rumah_
 
-_Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
+| Aksi | Metode | Endpoint / fungsi | Catatan |
+|---|---|---|---|
+| Riwayat (per baris) | `→` | `guru.kebiasaan.show` | navigasi (GET /guru/kebiasaan/{id}) — **ditambahkan**, sebelumnya halaman detail tidak tertaut |
+| Filter Tanggal | `GET` | `GET /guru/kebiasaan` | kolom: tanggal (diarahkan lewat `onchange`) |
 
 #### Detail Kebiasaan
 `GET /guru/kebiasaan/{id}` · `guru.kebiasaan.show` · `Guru\GuruKebiasaanController@show` · `guru/kebiasaan/show.blade.php` (81 baris)
@@ -1799,13 +1823,15 @@ Subjudul: _Perbarui data_
 | Batal | `→` | `guru.siswa.index` | navigasi (GET /guru/siswa) |
 
 #### Kesiapan TKA
-`GET /guru/tka` · `guru.tka.index` · `Guru\TKAController@index` · `guru/tka/index.blade.php` (240 baris)
+`GET /guru/tka` · `guru.tka.index` · `Guru\TKAController@index` · `guru/tka/index.blade.php` (252 baris)
 
 Subjudul: _Analisis kesiapan siswa menghadapi Asesmen Nasional_
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
-| (ikon) | `→` | `guru.dimensi.index` | navigasi (GET /guru/dimensi) |
+| Analisis Kesiapan | `→` | `guru.tka.analysis` | navigasi (GET /guru/tka/analisis) — **ditambahkan**, sebelumnya halaman ini tidak tertaut dari mana pun |
+| Detail (per baris) | `→` | `guru.tka.show` | navigasi (GET /guru/tka/{id}) — **ditambahkan** |
+| Skor dimensi (per baris) | `→` | `guru.dimensi.index` | navigasi (GET /guru/dimensi?siswa_id={id}) |
 
 #### Analisis TKA
 `GET /guru/tka/analisis` · `guru.tka.analysis` · `Guru\TKAController@analysis` · `guru/tka/analysis.blade.php` (79 baris)
@@ -1826,13 +1852,16 @@ Subjudul: _Analisis dimensi profil lulusan per siswa_
 ### Tryout (guru & siswa) — 12 halaman
 
 #### Paket Tryout
-`GET /tryout/packages` · `tryout.packages.index` · `Tryout\TryoutPackageController@index` · `tryout/packages/index.blade.php` (59 baris)
+`GET /tryout/packages` · `tryout.packages.index` · `Tryout\TryoutPackageController@index` · `tryout/packages/index.blade.php` (72 baris)
 
 Subjudul: _Kelola paket soal tryout_
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | Tambah Paket | `→` | `tryout.packages.create` | navigasi (GET /tryout/packages/create) |
+| Detail (per baris) | `→` | `tryout.packages.show` | navigasi (GET /tryout/packages/{param}) — **ditambahkan** |
+| Ubah (per baris) | `→` | `tryout.packages.edit` | navigasi (GET /tryout/packages/{param}/edit) — **ditambahkan** |
+| Hapus (per baris) | `DELETE` | `DELETE /tryout/packages/{param}` | konfirmasi `confirm()` — **ditambahkan** |
 
 #### Tambah Paket Tryout
 `GET /tryout/packages/create` · `tryout.packages.create` · `Tryout\TryoutPackageController@create` · `tryout/packages/create.blade.php` (125 baris)
@@ -1905,12 +1934,15 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 | Kembali ke Sesi | `→` | `tryout.sessions.show` | navigasi (GET /tryout/sessions/{session}) |
 
 #### Tryout - Dashboard Siswa
-`GET /tryout/student` · `tryout.student.index` · `Tryout\TryoutStudentController@index` · `tryout/student/index.blade.php` (146 baris)
+`GET /tryout/student` · `tryout.student.index` · `Tryout\TryoutStudentController@index` · `tryout/student/index.blade.php` (156 baris)
 
-_Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
+| Aksi | Metode | Endpoint / fungsi | Catatan |
+|---|---|---|---|
+| Mulai Tryout (per sesi) | `→` | `tryout.student.start` | navigasi (GET /tryout/student/{session}/start) + `confirm()` durasi; sekarang dibangun dengan `route()` di Blade (sebelumnya `$session['mulai_url']` dari service) |
+| Detail (per hasil) | `→` | `tryout.student.result` | navigasi (GET /tryout/student/{result}/result); baris tanpa id lawas tidak ditautkan |
 
 #### Hasil Tryout
-`GET /tryout/student/{result}/result` · `tryout.student.result` · `Tryout\TryoutStudentController@result` · `tryout/student/result.blade.php` (214 baris)
+`GET /tryout/student/{result}/result` · `tryout.student.result` · `Tryout\TryoutStudentController@result` · `tryout/student/result.blade.php` (218 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1931,16 +1963,18 @@ _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 
 #### Penilaian TKA
-`GET /tka/assessments` · `tka.assessments.index` · `Tka\TkaAssessmentController@index` · `tka/assessments/index.blade.php` (51 baris)
+`GET /tka/assessments` · `tka.assessments.index` · `Tka\TkaAssessmentController@index` · `tka/assessments/index.blade.php` (60 baris)
 
 Subjudul: _Hasil asesmen kesiapan belajar siswa_
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | Nilai Siswa | `→` | `tka.assessments.create` | navigasi (GET /tka/assessments/create) |
+| Detail (per baris) | `→` | `tka.assessments.show` | navigasi (GET /tka/assessments/{param}) — **ditambahkan** |
+| Riwayat (per baris) | `→` | `tka.assessments.by-siswa` | navigasi (GET /tka/assessments/siswa/{siswaId}) — **ditambahkan** |
 
 #### Penilaian TKA - Tambah
-`GET /tka/assessments/create` · `tka.assessments.create` · `Tka\TkaAssessmentController@create` · `tka/assessments/create.blade.php` (216 baris)
+`GET /tka/assessments/create` · `tka.assessments.create` · `Tka\TkaAssessmentController@create` · `tka/assessments/create.blade.php` (220 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -1964,13 +1998,16 @@ Subjudul: _Hasil asesmen kesiapan belajar siswa_
 | Kembali | `→` | `tka.assessments.index` | navigasi (GET /tka/assessments) |
 
 #### Dimensi TKA
-`GET /tka/dimensions` · `tka.dimensions.index` · `Tka\TkaDimensionController@index` · `tka/dimensions/index.blade.php` (59 baris)
+`GET /tka/dimensions` · `tka.dimensions.index` · `Tka\TkaDimensionController@index` · `tka/dimensions/index.blade.php` (71 baris)
 
 Subjudul: _Dimensi penilaian kesiapan belajar_
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | Tambah Dimensi | `→` | `tka.dimensions.create` | navigasi (GET /tka/dimensions/create) |
+| Detail (per baris) | `→` | `tka.dimensions.show` | navigasi (GET /tka/dimensions/{param}) — **ditambahkan** |
+| Ubah (per baris) | `→` | `tka.dimensions.edit` | navigasi (GET /tka/dimensions/{param}/edit) — **ditambahkan** |
+| Hapus (per baris) | `DELETE` | `DELETE /tka/dimensions/{param}` | konfirmasi `confirm()` — **ditambahkan** |
 
 #### Tambah Dimensi TKA
 `GET /tka/dimensions/create` · `tka.dimensions.create` · `Tka\TkaDimensionController@create` · `tka/dimensions/create.blade.php` (105 baris)
@@ -2017,7 +2054,7 @@ Subjudul: _Hasil asesmen TKA anak Anda_
 | Lihat | `→` | `tka.parent.show` | navigasi (GET /tka/parent/{report}) |
 
 #### Laporan TKA untuk Orang Tua
-`GET /tka/parent/{report}` · `tka.parent.show` · `Tka\TkaParentController@show` · `tka/parent/show.blade.php` (179 baris)
+`GET /tka/parent/{report}` · `tka.parent.show` · `Tka\TkaParentController@show` · `tka/parent/show.blade.php` (183 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -2178,7 +2215,7 @@ Subjudul: _Log aktivitas dan statistik penggunaan sistem_
 _Halaman baca-saja — tidak ada tombol, form, atau tautan aksi._
 
 #### Dashboard Kepala Sekolah
-`GET /kepsek/dashboard` · `kepsek.dashboard` · `Kepsek\DashboardController@index` · `kepsek/dashboard.blade.php` (194 baris)
+`GET /kepsek/dashboard` · `kepsek.dashboard` · `Kepsek\DashboardController@index` · `kepsek/dashboard.blade.php` (197 baris)
 
 Subjudul: _Monitoring aktivitas sekolah secara real-time_
 
@@ -2288,33 +2325,56 @@ Pola pendukung lain:
 
 Daftar ini adalah hasil pembacaan silang antara menu, rute, dan isi halaman — bukan hasil uji jalan.
 
+**Status perbaikan (28 Oktober 2026).** Kolom *Status* pada tabel 6.1 & 6.2 menandai tindak lanjut:
+✅ sudah diperbaiki · ⏳ belum dikerjakan (butuh keputusan desain/produk) · ➖ bukan temuan atau sekadar informasi.
+Perbaikan ✅ ada pada cabang `arena/553884e4-simantapmonsa` (commit `fix(ui): sembunyikan menu modul nonaktif, lengkapi navigasi dan aksi baris`);
+dampaknya juga tercatat pada kolom aksi tiap halaman di §4 (baris bertanda **ditambahkan**).
+
 ### 6.1 Berdampak pada pengguna
 
-| # | Temuan | Bukti | Dampak | Saran |
-|---|---|---|---|---|
-| T1 | **28 % halaman (56 dari 199) diblokir `module.asesmen`** | `EnsureModuleEnabled` mengembalikan **404** bila `config('simantap.cbt_enabled')` false (nilai default). 94 rute — `admin/cbt`, `admin/tryout`, `admin/tka`, `tryout.*`, `tka.*` — memakai middleware ini | Tab **CBT/Ujian** dan **TKA** di admin, menu **Tryout** & **Asesmen TKA** guru, menu **Tryout** siswa, dan **Laporan TKA** ortu semuanya berujung halaman 404, padahal menunya tetap tampil (rute terdaftar, hanya middleware yang menolak) | Sembunyikan tab/menu saat flag nonaktif, atau pisahkan flag menjadi `tryout_enabled` / `tka_enabled` agar TKA & Tryout tidak ikut terkunci oleh `cbt_enabled` |
-| T2 | **Menu admin "lengkap" tidak pernah dirender** | 80 view admin mengisi `@section('sidebar')` dengan `@include('admin.partials.sidebar')`, tetapi `layouts/admin-with-tabs` **tidak** memiliki `@yield('sidebar')` — ia memilih 4 partial per tab | `admin/partials/sidebar.blade.php` (13 grup, lengkap dengan Kokurikuler, CBT, TKA, API Keys) menjadi kode mati dan perlahan menyimpang dari yang tampil | Hapus `@include` yang sia-sia dari 80 view, atau jadikan `sidebar.blade.php` satu-satunya sumber menu |
-| T3 | **6 halaman tanpa sidebar** | `layouts.app` tanpa `@section('sidebar')`: `admin/referensi/alignment-check`, `tka/assessments/create`, `tka/parent/show`, `tryout/student/index`, `tryout/student/result`, `tryout/student/take` | Siswa yang sedang mengerjakan tryout (`take`, `result`, `index`) kehilangan seluruh navigasi — tidak ada cara keluar selain tombol browser | Tambahkan `@include('siswa.partials.sidebar')` (dan partial terkait) pada keenam view |
-| T4 | **Halaman indeks tanpa aksi baris** | `tryout/packages/index` (guru), `tka/dimensions/index` (guru), `guru/kebiasaan/index`, `guru/tka/index`, `tka/assessments/index` | Rute `show`/`edit`/`destroy` untuk paket tryout, dimensi TKA, dan detail kebiasaan **ada** tetapi tidak terjangkau dari antarmuka — data bisa dibuat namun tidak bisa dibuka, diubah, atau dihapus | Tambahkan kolom aksi pada tabel (lihat/ubah/hapus) |
-| T5 | **Tautan lintas-peran** | `kepsek/dashboard.blade.php:151` menaut ke `admin.cbt.sessions.index`, sedangkan grup rute itu dilindungi `role:admin` | Kepala sekolah yang mengeklik **Detail Ujian** memperoleh 403 | Arahkan ke halaman pemantauan kepsek, atau buat rute khusus kepsek |
-| T6 | **Mojibake pada 4 view** | `admin/users/create`, `admin/users/edit`, `guru/kuis/create`, `guru/nilai/create` berisi `ðŸ’¾` dan `â†\x90` (UTF-8 terenkode ganda) | Tombol **Simpan** dan tautan **Kembali** menampilkan karakter rusak | Simpan ulang berkas sebagai UTF-8, ganti dengan `💾` / `←` |
-| T7 | **Kelas Bootstrap tidak dimuat global** | Bootstrap hanya diimpor oleh `resources/css/tka-statistik.css`, tetapi 22 view memakai `container-fluid`, `col-md-6`, `btn-close`, `bg-primary`, `border-primary` (mis. `tryout/student/*`, `admin/tka/*`, `admin/tryout/*`, `admin/cbt/*`) | Tata letak halaman ujian/TKA/tryout tampil berbeda (sebagian tidak bergaya); tombol tutup `.btn-close` pada alert tidak berfungsi karena Bootstrap JS juga tidak dimuat | Impor Bootstrap hanya di halaman itu, atau seragamkan ke kelas `layout.css` (`.card`, `.btn`, `.table-wrapper`) |
-| T8 | **Dua set ikon** | Sidebar: `<x-lucide-*>`; isi halaman: `<i class="fas fa-*">` | Tebal-tipis dan ukuran ikon tidak konsisten antara menu dan konten | Pilih satu set |
-| T9 | **1 form hapus tanpa konfirmasi** | `admin/mapel/index.blade.php` — form DELETE tanpa `onsubmit confirm` | Salah klik langsung menghapus mata pelajaran | Samakan dengan 25 form hapus lainnya |
-| T10 | **Endpoint berbahaya tanpa jeda konfirmasi ganda** | `admin.backup.wipe` sudah meminta `konfirmasi` + `password` (baik); `admin.users.destroy-all` dan `admin.mapel.destroy-all` hanya mengandalkan `confirm()` | Risiko salah klik pada aksi yang menghapus banyak baris | Pertimbangkan konfirmasi bertingkat seperti `backup.wipe` |
+| # | Temuan | Bukti | Dampak | Saran | Status |
+|---|---|---|---|---|---|
+| T1 | **28 % halaman (56 dari 199) diblokir `module.asesmen`** | `EnsureModuleEnabled` mengembalikan **404** bila `config('simantap.cbt_enabled')` false (nilai default). 94 rute — `admin/cbt`, `admin/tryout`, `admin/tka`, `tryout.*`, `tka.*` — memakai middleware ini | Tab **CBT/Ujian** dan **TKA** di admin, menu **Tryout** & **Asesmen TKA** guru, menu **Tryout** siswa, dan **Laporan TKA** ortu semuanya berujung halaman 404, padahal menunya tetap tampil (rute terdaftar, hanya middleware yang menolak) | Sembunyikan tab/menu saat flag nonaktif, atau pisahkan flag menjadi `tryout_enabled` / `tka_enabled` agar TKA & Tryout tidak ikut terkunci oleh `cbt_enabled` | ✅ Diperbaiki — tab & menu disembunyikan saat modul mati (`modulAsesmenAktif()`) |
+
+| T2 | **Menu admin "lengkap" tidak pernah dirender** | 80 view admin mengisi `@section('sidebar')` dengan `@include('admin.partials.sidebar')`, tetapi `layouts/admin-with-tabs` **tidak** memiliki `@yield('sidebar')` — ia memilih 4 partial per tab | `admin/partials/sidebar.blade.php` (13 grup, lengkap dengan Kokurikuler, CBT, TKA, API Keys) menjadi kode mati dan perlahan menyimpang dari yang tampil | Hapus `@include` yang sia-sia dari 80 view, atau jadikan `sidebar.blade.php` satu-satunya sumber menu | ✅ Diperbaiki — 80 `@section('sidebar')` sia-sia dihapus; `admin/partials/sidebar.blade.php` dihapus |
+
+| T3 | **6 halaman tanpa sidebar** | `layouts.app` tanpa `@section('sidebar')`: `admin/referensi/alignment-check`, `tka/assessments/create`, `tka/parent/show`, `tryout/student/index`, `tryout/student/result`, `tryout/student/take` | Siswa yang sedang mengerjakan tryout (`take`, `result`, `index`) kehilangan seluruh navigasi — tidak ada cara keluar selain tombol browser | Tambahkan `@include('siswa.partials.sidebar')` (dan partial terkait) pada keenam view | ✅ Diperbaiki sebagian — sidebar ditambah pada 5 halaman; `tryout/student/take` sengaja tetap tanpa sidebar selama ujian |
+
+| T4 | **Halaman indeks tanpa aksi baris** | `tryout/packages/index` (guru), `tka/dimensions/index` (guru), `guru/kebiasaan/index`, `guru/tka/index`, `tka/assessments/index` | Rute `show`/`edit`/`destroy` untuk paket tryout, dimensi TKA, dan detail kebiasaan **ada** tetapi tidak terjangkau dari antarmuka — data bisa dibuat namun tidak bisa dibuka, diubah, atau dihapus | Tambahkan kolom aksi pada tabel (lihat/ubah/hapus) | ✅ Diperbaiki — kolom aksi ditambahkan pada kelima indeks |
+
+| T5 | **Tautan lintas-peran** | `kepsek/dashboard.blade.php:151` menaut ke `admin.cbt.sessions.index`, sedangkan grup rute itu dilindungi `role:admin` | Kepala sekolah yang mengeklik **Detail Ujian** memperoleh 403 | Arahkan ke halaman pemantauan kepsek, atau buat rute khusus kepsek | ✅ Diperbaiki — tombol kini menuju `kepsek.hasil-belajar.index` |
+
+| T6 | **Mojibake pada 4 view** | `admin/users/create`, `admin/users/edit`, `guru/kuis/create`, `guru/nilai/create` berisi `ðŸ’¾` dan `â†\x90` (UTF-8 terenkode ganda) | Tombol **Simpan** dan tautan **Kembali** menampilkan karakter rusak | Simpan ulang berkas sebagai UTF-8, ganti dengan `💾` / `←` | ✅ Diperbaiki — 0 mojibake tersisa di seluruh `resources/views` |
+
+| T7 | **Kelas Bootstrap tidak dimuat global** | Bootstrap hanya diimpor oleh `resources/css/tka-statistik.css`, tetapi 22 view memakai `container-fluid`, `col-md-6`, `btn-close`, `bg-primary`, `border-primary` (mis. `tryout/student/*`, `admin/tka/*`, `admin/tryout/*`, `admin/cbt/*`) | Tata letak halaman ujian/TKA/tryout tampil berbeda (sebagian tidak bergaya); tombol tutup `.btn-close` pada alert tidak berfungsi karena Bootstrap JS juga tidak dimuat | Impor Bootstrap hanya di halaman itu, atau seragamkan ke kelas `layout.css` (`.card`, `.btn`, `.table-wrapper`) | ⏳ Belum — menunggu keputusan desain (Bootstrap vs kelas `layout.css`) |
+
+| T8 | **Dua set ikon** | Sidebar: `<x-lucide-*>`; isi halaman: `<i class="fas fa-*">` | Tebal-tipis dan ukuran ikon tidak konsisten antara menu dan konten | Pilih satu set | ⏳ Belum — menunggu keputusan desain (Lucide vs Font Awesome) |
+
+| T9 | **1 form hapus tanpa konfirmasi** | `admin/mapel/index.blade.php` — form DELETE tanpa `onsubmit confirm` | Salah klik langsung menghapus mata pelajaran | Samakan dengan 25 form hapus lainnya | ➖ Bukan temuan — `deleteSelectedForm` memang tanpa `onsubmit`, tetapi dikonfirmasi dari JS `deleteSelected()` |
+
+| T10 | **Endpoint berbahaya tanpa jeda konfirmasi ganda** | `admin.backup.wipe` sudah meminta `konfirmasi` + `password` (baik); `admin.users.destroy-all` dan `admin.mapel.destroy-all` hanya mengandalkan `confirm()` | Risiko salah klik pada aksi yang menghapus banyak baris | Pertimbangkan konfirmasi bertingkat seperti `backup.wipe` | ⏳ Belum — pertimbangan produk (konfirmasi bertingkat) |
+
 
 ### 6.2 Kebersihan kode & konsistensi
 
-| # | Temuan | Bukti |
-|---|---|---|
-| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, 6 `errors/*` (dipanggil framework saat runtime), 3 `vendor/scramble/*` (paket). Tambahan: `layouts/guest` hanya direferensikan komponen `App\View\Components\GuestLayout`, yang sendiri tidak pernah dipanggil | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di seluruh controller — **tidak ada** view halaman yang benar-benar yatim |
-| T12 | Duplikasi menu: **Mapping Rapor** muncul di grup *Transkrip Ijazah* dan *Data Referensi*; **Data Sekolah** ada di tab E-Rapor dan Setup; **Data Mapel**, **Data Semester**, **Pemetaan Peta Kelas** juga ganda | `sidebar-erapor` vs `sidebar-setup` |
-| T13 | Sisa *scaffolding* Breeze: `layouts/navigation`, `layouts/guest` + `GuestLayout`, dan 8 komponen form/tombol (`components/modal` dll.) tidak dipakai mana pun — halaman auth justru berdiri sendiri dengan `<!DOCTYPE html>` lengkap | Pencarian `@extends('layouts.guest')`, `<x-guest-layout>`, `<x-modal`, `<x-primary-button>` → 0 |
-| T14 | `admin.api-keys.index` tidak masuk menu mana pun — hanya dapat dijangkau dari tautan di halaman Dapodik | Pemeriksaan keempat partial sidebar |
-| T15 | `tryout/student/index` membangun tautan di controller (`$session['mulai_url']`), bukan `route()` di Blade — menyulitkan pelacakan tautan statis | `resources/views/tryout/student/index.blade.php` |
-| T16 | 32 pemanggilan `route()` mengarah ke nama yang **tidak terdaftar** pada konfigurasi default; semuanya `cbt.*` (karena blok rute CBT dibungkus `if (config(...))`) dan sudah dijaga `Route::has()` di siswa/guru, tetapi **tidak** di `cbt/banks/*`, `cbt/sessions/*`, `cbt/student/*` | Pemeriksaan `route()` vs daftar rute |
-| T17 | Siswa: 5 halaman; namun **Kuis** menuntut JS (timer & navigasi soal) — `siswa/kuis/show` mem-push skrip hanya saat form tersedia | `siswa/kuis/show.blade.php` |
-| T18 | Tidak ada halaman yang memanggil `{{ $x->links() }}` pada 96 dari 122 view bertabel | Pemeriksaan pagination |
+| # | Temuan | Bukti | Status |
+|---|---|---|---|
+| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, 6 `errors/*` (dipanggil framework saat runtime), 3 `vendor/scramble/*` (paket). Tambahan: `layouts/guest` hanya direferensikan komponen `App\View\Components\GuestLayout`, yang sendiri tidak pernah dipanggil | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di seluruh controller — **tidak ada** view halaman yang benar-benar yatim | ➖ Tidak berubah — 18 view yatim di atas tetap ada (komponen Breeze, `errors/*`, `vendor/scramble/*`). Terpisah dari daftar itu, `admin/partials/sidebar.blade.php` kini dihapus karena kehilangan seluruh penyertanya (lihat T2) |
+
+| T12 | Duplikasi menu: **Mapping Rapor** muncul di grup *Transkrip Ijazah* dan *Data Referensi*; **Data Sekolah** ada di tab E-Rapor dan Setup; **Data Mapel**, **Data Semester**, **Pemetaan Peta Kelas** juga ganda | `sidebar-erapor` vs `sidebar-setup` | ⏳ Belum — pemeliharaan menu |
+
+| T13 | Sisa *scaffolding* Breeze: `layouts/navigation`, `layouts/guest` + `GuestLayout`, dan 8 komponen form/tombol (`components/modal` dll.) tidak dipakai mana pun — halaman auth justru berdiri sendiri dengan `<!DOCTYPE html>` lengkap | Pencarian `@extends('layouts.guest')`, `<x-guest-layout>`, `<x-modal`, `<x-primary-button>` → 0 | ⏳ Belum — pembersihan *scaffolding* Breeze |
+
+| T14 | `admin.api-keys.index` tidak masuk menu mana pun — hanya dapat dijangkau dari tautan di halaman Dapodik | Pemeriksaan keempat partial sidebar | ✅ Diperbaiki — "API Keys & Bridge" masuk menu **Setup » Dapodik** |
+
+| T15 | `tryout/student/index` membangun tautan di controller (`$session['mulai_url']`), bukan `route()` di Blade — menyulitkan pelacakan tautan statis | `resources/views/tryout/student/index.blade.php` | ✅ Diperbaiki — tautan dibangun dengan `route()` di Blade |
+
+| T16 | 32 pemanggilan `route()` mengarah ke nama yang **tidak terdaftar** pada konfigurasi default; semuanya `cbt.*` (karena blok rute CBT dibungkus `if (config(...))`) dan sudah dijaga `Route::has()` di siswa/guru, tetapi **tidak** di `cbt/banks/*`, `cbt/sessions/*`, `cbt/student/*` | Pemeriksaan `route()` vs daftar rute | ➖ Diperiksa ulang — aman: rute `cbt.*` ikut terbit bersama blok `if (config(...))` (routes/web.php:446), jadi view-nya tidak pernah dirender tanpa rute |
+
+| T17 | Siswa: 5 halaman; namun **Kuis** menuntut JS (timer & navigasi soal) — `siswa/kuis/show` mem-push skrip hanya saat form tersedia | `siswa/kuis/show.blade.php` | ➖ Informasi |
+
+| T18 | Tidak ada halaman yang memanggil `{{ $x->links() }}` pada 96 dari 122 view bertabel | Pemeriksaan pagination | ➖ Informasi |
+
 
 ### 6.3 Hal yang sudah baik
 
@@ -2558,7 +2618,7 @@ Dokumen ini dihasilkan dengan membaca sumber, bukan dengan menjalankan aplikasi:
    dan membuang blok `if (config(...))` serta baris komentar).
 2. **Pemetaan rute → view** — setiap `public function` di 89 controller dipindai isi tubuhnya
    (penyeimbang kurung kurawal) untuk menemukan `view('…')`.
-3. **Isi view** — 230 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
+3. **Isi view** — 229 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
    `@csrf`, kolom, tombol submit), `<button>` (teks, `type`, `onclick`), `<a>` (`href` → `route()`),
    `fetch()`, serta jumlah `<table>`, `<select>`, `<input>`.
 4. **Menu** — kelima partial sidebar + `components/admin-tabs` dibaca langsung; pohon menu di

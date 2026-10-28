@@ -2,10 +2,6 @@
 
 @section('title', 'Statistik Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Dashboard Tryout')
 @section('page_subtitle', 'Statistik dan ringkasan tryout')
 

@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Sesi Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Detail Sesi Tryout')
 @section('page_subtitle', $session->nama_sesi)
 

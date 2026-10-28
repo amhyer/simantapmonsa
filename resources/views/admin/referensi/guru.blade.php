@@ -2,10 +2,6 @@
 
 @section('title', 'Data Guru - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Guru')
 @section('page_subtitle', 'Data pendidik dan tenaga kependidikan dari Dapodik')
 

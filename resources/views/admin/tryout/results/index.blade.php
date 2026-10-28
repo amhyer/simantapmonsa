@@ -2,10 +2,6 @@
 
 @section('title', 'Kelola Hasil Tryout - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Hasil Tryout')
 @section('page_subtitle', 'Lihat semua hasil tryout')
 

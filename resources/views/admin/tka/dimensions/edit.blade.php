@@ -2,10 +2,6 @@
 
 @section('title', 'Edit Dimensi TKA - Admin')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Edit Dimensi TKA')
 @section('page_subtitle', $dimension->nama_dimensi)
 

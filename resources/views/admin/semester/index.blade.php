@@ -2,10 +2,6 @@
 
 @section('title', 'Semester - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Manajemen Semester')
 @section('page_subtitle', 'Kelola semester aktif dan tahun ajaran')
 

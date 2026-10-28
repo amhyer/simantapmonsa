@@ -2,10 +2,6 @@
 
 @section('title', 'Kelompok Mapel - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Data Kelompok Mapel')
 @section('page_subtitle', 'Kelompokkan mata pelajaran (mis. A, B, C) untuk pengelompokan di rapor')
 

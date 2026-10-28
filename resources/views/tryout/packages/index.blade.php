@@ -32,6 +32,7 @@
                                 <th>Jenjang</th>
                                 <th>Mapel</th>
                                 <th>Status</th>
+                                <th style="text-align:right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,6 +46,18 @@
                                         <span class="tag {{ $package->aktif ? 'tag-ok' : 'tag-mut' }}">
                                             {{ $package->aktif ? 'Aktif' : 'Nonaktif' }}
                                         </span>
+                                    </td>
+                                    {{-- Kolom aksi: sebelumnya halaman ini tidak punya tautan
+                                         ke detail/ubah/hapus, sehingga halaman show & edit
+                                         hanya bisa dicapai lewat URL langsung. --}}
+                                    <td style="text-align:right;white-space:nowrap">
+                                        <a href="{{ route('tryout.packages.show', $package) }}" class="btn btn-ghost btn-sm" title="Detail">Detail</a>
+                                        <a href="{{ route('tryout.packages.edit', $package) }}" class="btn btn-ghost btn-sm" title="Ubah">Ubah</a>
+                                        <form action="{{ route('tryout.packages.destroy', $package) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus paket tryout &quot;{{ $package->nama_paket }}&quot;? Seluruh sesi dan hasil di dalamnya ikut terhapus.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Hapus" style="color:var(--bad)">Hapus</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

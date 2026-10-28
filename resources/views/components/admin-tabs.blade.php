@@ -1,10 +1,18 @@
 @php
     $tabs = [
-        'erapor' => ['label' => 'E-Rapor', 'route' => 'admin.dashboard'],
-        'cbt' => ['label' => 'CBT/Ujian', 'route' => 'admin.cbt.sessions.index'],
-        'tka' => ['label' => 'TKA', 'route' => 'admin.tka.dashboard'],
-        'setup' => ['label' => 'Setup', 'route' => 'admin.users.index'],
+        'erapor' => ['label' => 'E-Rapor', 'route' => 'admin.dashboard', 'asesmen' => false],
+        'cbt' => ['label' => 'CBT/Ujian', 'route' => 'admin.cbt.sessions.index', 'asesmen' => true],
+        'tka' => ['label' => 'TKA', 'route' => 'admin.tka.dashboard', 'asesmen' => true],
+        'setup' => ['label' => 'Setup', 'route' => 'admin.users.index', 'asesmen' => false],
     ];
+
+    // Tab modul asesmen disembunyikan selama `simantap.cbt_enabled` mati:
+    // seluruh route di baliknya dijawab 404 oleh middleware `module.asesmen`,
+    // sehingga tab yang tetap tampil hanya akan menipu pengguna.
+    if (!modulAsesmenAktif()) {
+        $tabs = array_filter($tabs, fn (array $tab) => empty($tab['asesmen']));
+    }
+
     $activeTab = activeAdminTab();
 @endphp
 

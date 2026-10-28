@@ -148,7 +148,10 @@
                 <span class="tag tag-{{ $cbtPassRate >= 80 ? 'ok' : ($cbtPassRate >= 60 ? 'warn' : 'bad') }}">{{ number_format($cbtPassRate, 1) }}%</span>
             </div>
             <div style="display:flex;gap:8px">
-                <a href="{{ route('admin.cbt.sessions.index') }}" class="btn btn-ghost btn-sm">Detail Ujian</a>
+                {{-- Sebelumnya menaut ke admin.cbt.sessions.index (khusus admin) sehingga
+                     kepala sekolah selalu mendapat 403. Arahkan ke analisis yang bisa
+                     diakses peran kepsek. --}}
+                <a href="{{ route('kepsek.hasil-belajar.index') }}" class="btn btn-ghost btn-sm">Lihat Analisis Nilai</a>
             </div>
         </div>
     </div>

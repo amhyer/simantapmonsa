@@ -11,7 +11,7 @@
 
 @section('content')
 <div class="card" style="max-width:700px">
-    <div class="card-header"><h3>ðŸ“ Form Input Nilai</h3><a href="{{ route('guru.nilai.index') }}" class="btn btn-ghost btn-sm">â† Kembali</a></div>
+    <div class="card-header"><h3>📝 Form Input Nilai</h3><a href="{{ route('guru.nilai.index') }}" class="btn btn-ghost btn-sm">← Kembali</a></div>
     <div class="card-body">
         <form method="POST" action="{{ route('guru.nilai.store') }}">
             @csrf
@@ -52,7 +52,7 @@
                 <input type="number" name="nilai" min="0" max="100" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <div style="display:flex;gap:8px">
-                <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">ðŸ’¾ Simpan Nilai</button>
+                <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">💾 Simpan Nilai</button>
                 <a href="{{ route('guru.nilai.index') }}" class="btn btn-ghost btn-sm">Batal</a>
             </div>
         </form>

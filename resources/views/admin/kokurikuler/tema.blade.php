@@ -2,10 +2,6 @@
 
 @section('title', 'Tema Kokurikuler - SIMANTAP')
 
-@section('sidebar')
-    @include('admin.partials.sidebar')
-@endsection
-
 @section('page_title', 'Daftar Tema')
 @section('page_subtitle', 'Tema kegiatan kokurikuler / projek')
 
