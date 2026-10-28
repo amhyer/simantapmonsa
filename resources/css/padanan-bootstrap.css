@@ -1,0 +1,189 @@
+/*
+ * Padanan kelas Bootstrap yang dipakai view SIMANTAP.
+ *
+ * Mengapa berkas ini ada (temuan T7 di docs/13-INVENTARIS-UI.md):
+ * Bootstrap adalah dependensi proyek, tetapi CSS-nya hanya diimpor oleh
+ * `resources/css/tka-statistik.css` — yang dipakai satu halaman publik
+ * (`landing/tka-statistik`). Sementara itu 21 view lain (tryout siswa,
+ * TKA, CBT, hasil ujian) memakai kelas Bootstrap (`container-fluid`,
+ * `col-md-6`, `badge bg-success`, `btn-close`, `form-select`, …) tanpa
+ * pernah memuat Bootstrap, sehingga kisi halaman berderet penuh, lencana
+ * tampil sebagai teks polos, dan tombol tutup peringatan tidak berguna.
+ *
+ * Menambahkan Bootstrap ke bundle utama berisiko menimpa `.btn`, `.card`,
+ * `.alert`, dan `.table` yang sudah ditata `layout.css`. Karena itu yang
+ * ditulis di sini HANYA kelas yang belum punya definisi di `layout.css`
+ * maupun di utilitas Tailwind — jadi tidak ada aturan yang saling menimpa.
+ */
+
+/* ---------------------------------------------------------------- kisi */
+        .container-fluid { width: 100%; margin-inline: auto; padding-inline: 16px; }
+        .row { display: flex; flex-wrap: wrap; margin-inline: -8px; }
+        .row > * { flex-shrink: 0; width: 100%; max-width: 100%; padding-inline: 8px; }
+
+
+        .col-1 { flex: 0 0 auto; width: 8.333333%; }
+        .col-2 { flex: 0 0 auto; width: 16.666667%; }
+        .col-3 { flex: 0 0 auto; width: 25%; }
+        .col-4 { flex: 0 0 auto; width: 33.333333%; }
+        .col-5 { flex: 0 0 auto; width: 41.666667%; }
+        .col-6 { flex: 0 0 auto; width: 50%; }
+        .col-7 { flex: 0 0 auto; width: 58.333333%; }
+        .col-8 { flex: 0 0 auto; width: 66.666667%; }
+        .col-9 { flex: 0 0 auto; width: 75%; }
+        .col-10 { flex: 0 0 auto; width: 83.333333%; }
+        .col-11 { flex: 0 0 auto; width: 91.666667%; }
+        .col-12 { flex: 0 0 auto; width: 100%; }
+
+        @media (min-width: 576px) {
+            .col-sm-1 { flex: 0 0 auto; width: 8.333333%; }
+            .col-sm-2 { flex: 0 0 auto; width: 16.666667%; }
+            .col-sm-3 { flex: 0 0 auto; width: 25%; }
+            .col-sm-4 { flex: 0 0 auto; width: 33.333333%; }
+            .col-sm-5 { flex: 0 0 auto; width: 41.666667%; }
+            .col-sm-6 { flex: 0 0 auto; width: 50%; }
+            .col-sm-7 { flex: 0 0 auto; width: 58.333333%; }
+            .col-sm-8 { flex: 0 0 auto; width: 66.666667%; }
+            .col-sm-9 { flex: 0 0 auto; width: 75%; }
+            .col-sm-10 { flex: 0 0 auto; width: 83.333333%; }
+            .col-sm-11 { flex: 0 0 auto; width: 91.666667%; }
+            .col-sm-12 { flex: 0 0 auto; width: 100%; }
+        }
+
+        @media (min-width: 768px) {
+            .col-md-1 { flex: 0 0 auto; width: 8.333333%; }
+            .col-md-2 { flex: 0 0 auto; width: 16.666667%; }
+            .col-md-3 { flex: 0 0 auto; width: 25%; }
+            .col-md-4 { flex: 0 0 auto; width: 33.333333%; }
+            .col-md-5 { flex: 0 0 auto; width: 41.666667%; }
+            .col-md-6 { flex: 0 0 auto; width: 50%; }
+            .col-md-7 { flex: 0 0 auto; width: 58.333333%; }
+            .col-md-8 { flex: 0 0 auto; width: 66.666667%; }
+            .col-md-9 { flex: 0 0 auto; width: 75%; }
+            .col-md-10 { flex: 0 0 auto; width: 83.333333%; }
+            .col-md-11 { flex: 0 0 auto; width: 91.666667%; }
+            .col-md-12 { flex: 0 0 auto; width: 100%; }
+        }
+
+        @media (min-width: 992px) {
+            .col-lg-1 { flex: 0 0 auto; width: 8.333333%; }
+            .col-lg-2 { flex: 0 0 auto; width: 16.666667%; }
+            .col-lg-3 { flex: 0 0 auto; width: 25%; }
+            .col-lg-4 { flex: 0 0 auto; width: 33.333333%; }
+            .col-lg-5 { flex: 0 0 auto; width: 41.666667%; }
+            .col-lg-6 { flex: 0 0 auto; width: 50%; }
+            .col-lg-7 { flex: 0 0 auto; width: 58.333333%; }
+            .col-lg-8 { flex: 0 0 auto; width: 66.666667%; }
+            .col-lg-9 { flex: 0 0 auto; width: 75%; }
+            .col-lg-10 { flex: 0 0 auto; width: 83.333333%; }
+            .col-lg-11 { flex: 0 0 auto; width: 91.666667%; }
+            .col-lg-12 { flex: 0 0 auto; width: 100%; }
+        }
+
+
+/* ------------------------------------------------------------ penyusun */
+        .d-flex { display: flex; }
+        .d-inline-flex { display: inline-flex; }
+        .d-none { display: none; }
+        .d-block { display: block; }
+        .justify-content-start { justify-content: flex-start; }
+        .justify-content-end { justify-content: flex-end; }
+        .justify-content-center { justify-content: center; }
+        .justify-content-between { justify-content: space-between; }
+        .justify-content-around { justify-content: space-around; }
+        .align-items-start { align-items: flex-start; }
+        .align-items-end { align-items: flex-end; }
+        .align-items-center { align-items: center; }
+        .flex-column { flex-direction: column; }
+
+/* --------------------------------------------------------- warna teks */
+        .text-start { text-align: left; }
+        .text-end { text-align: right; }
+        .text-danger { color: var(--bad); }
+        .text-success { color: var(--ok); }
+        .text-warning { color: var(--warn); }
+        .text-info { color: var(--navy-light); }
+
+/* ------------------------------------------------------ latar & tepi */
+        .bg-primary { background-color: var(--navy); }
+        .bg-success { background-color: var(--ok); }
+        .bg-danger { background-color: var(--bad); }
+        .bg-warning { background-color: var(--warn); }
+        .bg-info { background-color: var(--navy-light); }
+        .bg-secondary { background-color: var(--muted); }
+        .border-primary { border-color: var(--navy); }
+        .border-success { border-color: var(--ok); }
+        .border-danger { border-color: var(--bad); }
+        .border-warning { border-color: var(--warn); }
+        .border-info { border-color: var(--navy-light); }
+
+/* ------------------------------------------------------------ lencana */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 10px; border-radius: 99px;
+            font-size: 11.5px; font-weight: 600; line-height: 1.7;
+            background: var(--muted); color: #fff;
+        }
+
+/* ------------------------------------------------- varian tombol lain */
+        .btn-success { background: var(--ok); color: #fff; border-color: var(--ok); }
+        .btn-success:hover { filter: brightness(0.93); }
+        .btn-warning { background: var(--warn); color: #fff; border-color: var(--warn); }
+        .btn-warning:hover { filter: brightness(0.93); }
+        .btn-info { background: var(--navy-light); color: #fff; border-color: var(--navy-light); }
+        .btn-info:hover { filter: brightness(0.93); }
+        .btn-lg { padding: 10px 20px; font-size: 14px; }
+
+/* -------------------------------------------------------------- tabel */
+        .table-responsive { overflow-x: auto; }
+        .table-hover tbody tr:hover { background: #FAFBFD; }
+        .table-striped tbody tr:nth-of-type(odd) { background: #FAFBFD; }
+        .table-bordered th, .table-bordered td { border: 1px solid var(--line); }
+
+/* -------------------------------------------------------------- kartu */
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .card-footer { padding: 12px 16px; border-top: 1px solid var(--line); background: #FAFBFD; }
+
+/* ----------------------------------------------------------- formulir */
+        .form-select {
+            width: 100%; padding: 8px 12px; font-size: 13px; color: var(--text);
+            background-color: #fff; border: 1px solid var(--line); border-radius: 8px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .form-select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31, 56, 100, .12); }
+
+/* ------------------------------------------- peringatan & tombol tutup */
+        .alert-dismissible { position: relative; padding-right: 44px; }
+        .btn-close {
+            position: relative; width: 24px; height: 24px; padding: 0;
+            border: 0; border-radius: 6px; background: transparent;
+            color: inherit; cursor: pointer; opacity: .55;
+        }
+        .btn-close::before, .btn-close::after {
+            content: ''; position: absolute; left: 6px; top: 11px;
+            width: 12px; height: 2px; border-radius: 2px; background: currentColor;
+        }
+        .btn-close::before { transform: rotate(45deg); }
+        .btn-close::after { transform: rotate(-45deg); }
+        .btn-close:hover { opacity: .9; background: rgba(0, 0, 0, .06); }
+        .alert-dismissible .btn-close { position: absolute; top: 10px; right: 12px; }
+        .fade { transition: opacity .15s linear; }
+        .fade:not(.show) { opacity: 0; }
+
+/* ---------------------------------------------------------------- tab */
+        .tab-content > .tab-pane { display: none; }
+        .tab-content > .tab-pane.show, .tab-content > .tab-pane.active { display: block; }
+        .nav { display: flex; flex-wrap: wrap; margin: 0 0 12px; padding: 0; list-style: none; }
+        .nav-tabs { gap: 4px; border-bottom: 1px solid var(--line); }
+        .nav-tabs .nav-item { margin-bottom: -1px; }
+        .nav-link {
+            display: block; padding: 8px 14px; font-size: 13px; font-weight: 600;
+            color: var(--muted); background: transparent; cursor: pointer;
+            border: 1px solid transparent; border-radius: 8px 8px 0 0;
+        }
+        .nav-link:hover { color: var(--navy); background: var(--bg); }
+        .nav-tabs .nav-link.active { color: var(--navy); background: #fff; border-color: var(--line) var(--line) #fff; }
+
+/* ------------------------------------------------------- utilitas lain */
+        .h-100 { height: 100%; }
+        .rounded-3 { border-radius: 12px; }

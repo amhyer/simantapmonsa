@@ -15,14 +15,14 @@
 |  · Halaman (GET) | **199** |
 |  · Endpoint aksi (POST/PUT/PATCH/DELETE) | **161** |
 | Rute tambahan bila CBT diaktifkan | **+28** (total 388) |
-| Template Blade | **229** |
-| Elemen `<button>` | **308** |
-| Elemen `<form>` | **167** |
-| Tautan `<a>` | **320** |
+| Template Blade | **214** |
+| Elemen `<button>` | **303** |
+| Elemen `<form>` | **165** |
+| Tautan `<a>` | **315** |
 | `<select>` (filter/pilihan) | **127** |
 | Halaman dengan pemanggilan `fetch()` | **17** |
 
-_Angka diperbarui 28 Oktober 2026 setelah perbaikan temuan T1–T6, T14, dan T15 (kolom Status di §6)._
+_Angka diperbarui 28 Oktober 2026 setelah perbaikan temuan T1–T7, T10, dan T12–T15 (kolom Status di §6)._
 _Metode penghitungan: kemunculan `<button`, `<form`, `<select`, dan `<a` pada seluruh berkas `.blade.php` — lihat §8._
 
 Sebaran per area (dihitung dari awalan URI):
@@ -49,12 +49,15 @@ Sebaran per area (dihitung dari awalan URI):
 |---|---|---|
 | `layouts/admin-with-tabs.blade.php` | **81 view admin** | Sidebar dipilih otomatis sesuai **tab aktif**; ada **bilah tab** di bawah topbar |
 | `layouts/app.blade.php` | **91 view** (guru, siswa, ortu, kepsek, tendik, tryout, tka) | Sidebar diisi lewat `@section('sidebar')` oleh masing-masing halaman |
-| `layouts/guest.blade.php` | — (**tidak dipakai**; komponen `GuestLayout` tidak pernah dipanggil) | Kartu tengah, tanpa sidebar |
 | `auth/*.blade.php` | 5 halaman auth | Berdiri sendiri: masing-masing memuat `<!DOCTYPE html>` + `@vite` sendiri |
 | `landing.blade.php` + `landing/tka-statistik.blade.php` | Publik | Halaman pemasaran, navigasi sendiri |
 | `admin/cetak/nilai-show`, `admin/transkrip/cetak-show`, `admin/exports/table`, `guru/erapor/pdf*`, `guru/laporan/pdf` | Cetak/unduh | Tanpa layout aplikasi (siap cetak / PDF) |
 
-`resources/views/layouts/navigation.blade.php` (navbar ala Breeze) **tidak dipakai** layout mana pun — sisa *scaffolding* awal.
+`resources/views/layouts/navigation.blade.php` (navbar ala Breeze) **sudah dihapus** bersama 13 komponen
+Breeze yang tidak pernah dipanggil (`components/{application-logo, auth-session-status, danger-button,
+dropdown, dropdown-link, input-error, input-label, modal, nav-link, primary-button, responsive-nav-link,
+secondary-button, text-input}`) dan kelas `App\View\Components\GuestLayout` — temuan T13 di §6.2.
+Yang tersisa di `resources/views/components/` tinggal `admin-tabs` dan empat `sidebar-*`.
 
 ### 2.2 Anatomi satu halaman
 
@@ -91,7 +94,9 @@ Ikon sidebar memakai **Lucide** (`mallardduck/blade-lucide-icons`), sedangkan is
 ### 2.4 Tema & peran
 
 `layout.css` mendefinisikan token warna (`--navy` #1F3864, `--gold` #B8860B, `--violet` #7C3AED,
-`--ok/--warn/--bad`). Untuk **siswa**, `layouts/app.blade.php` menimpa `--navy` dengan `--violet`,
+`--ok/--warn/--bad`). `app.css` mengimpor tiga berkas: `layout.css`, `padanan-bootstrap.css`
+(berkas baru 28 Okt 2026 — padanan kelas Bootstrap yang dipakai ~21 view, lihat T7 di §6.1),
+lalu `@tailwind base/components/utilities`. Untuk **siswa**, `layouts/app.blade.php` menimpa `--navy` dengan `--violet`,
 sehingga seluruh aksen berubah ungu. Enam peran (`admin, guru, siswa, ortu, kepsek, tendik`)
 diarahkan oleh closure `/dashboard` (`route('home')`) ke dasbor masing-masing; `tendik` langsung
 dikirim ke `presensi.pegawai.index`.
@@ -100,7 +105,7 @@ dikirim ke `presensi.pegawai.index`.
 
 | Berkas | Dipakai di |
 |---|---|
-| `resources/js/app.js` | Semua halaman (Alpine, AutoAnimate, reveal-on-scroll, count-up, progress bar, back-to-top, live animate tabel) |
+| `resources/js/app.js` | Semua halaman (Alpine, AutoAnimate, reveal-on-scroll, count-up, progress bar, back-to-top, live animate tabel, penutup peringatan `data-bs-dismiss`, tab `data-bs-toggle`, konfirmasi bertingkat `konfirmasiKetik()`) |
 | `resources/js/charts.js` | 10+ halaman grafik (di-`@vite` terpisah): guru/analisis, guru/dashboard, guru/kebiasaan, guru/laporan, guru/tka, kepsek/* |
 | `resources/js/presensi-pegawai.js` | `pegawai/presensi/index` (geofencing) |
 | `resources/js/presensi-qr.js` | `admin/presensi/kartu`, `guru/kehadiran/jadwal` (pemindai QR) |
@@ -146,7 +151,6 @@ PERKEMBANGAN NILAI ▸
 TRANSKRIP IJAZAH ▸
  · Setting Transkrip        admin.transkrip.setting
  · Nomor Ijazah             admin.transkrip.nomor
- · Mapping Mapel            admin.referensi.mapping-rapor
  · Input Nilai Transkrip    admin.transkrip.input
  · Import Nilai Transkrip   admin.transkrip.import
  · Cetak Transkrip Nilai    admin.transkrip.cetak
@@ -158,18 +162,20 @@ DATA REFERENSI ▸
  · Data Sekolah             admin.sekolah.index
  · Data Guru                admin.referensi.guru
  · Data Siswa               admin.users.siswa
- · Data Kelas               admin.peta-kelas.daftar
- · Data Mapel               admin.mapel.index
  · Data Pembelajaran        admin.referensi.pembelajaran
  · Cek Alignment            admin.referensi.alignment
- · Data Semester            admin.semester.index
  · Data Ekstrakurikuler     admin.referensi.ekstrakurikuler
  · Data Kelompok Mapel      admin.referensi.kelompok-mapel
- · Mapping Rapor            admin.referensi.mapping-rapor   ← tampil dua kali
+ · Mapping Rapor            admin.referensi.mapping-rapor
  · Logo dan TTD             admin.referensi.logo-ttd
  · Tanggal Rapor            admin.referensi.tanggal-rapor
  · Foto Siswa               admin.referensi.foto-siswa
 ```
+
+> Menu **Data Kelas**, **Data Mapel**, dan **Data Semester** dihapus dari tab ini (T12):
+> rutenya bernaung di tab Setup, sehingga tombolnya memindahkan tab aktif begitu diklik.
+> **Mapping Mapel** (grup Transkrip Ijazah) juga dihapus karena duplikat **Mapping Rapor**
+> pada grup Data Referensi.
 
 **Tab CBT/Ujian**
 
@@ -205,13 +211,11 @@ DAPODIK ▸
  · Ambil Data Dapodik       admin.dapodik.index        (badge: waktu sinkron terakhir / "Belum sync")
  · Kirim Nilai Ke Dapodik   admin.dapodik.push.index
  · API Keys & Bridge        admin.api-keys.index
-DATA REFERENSI
- · Data Sekolah             admin.sekolah.index
 PETA KELAS
+ · Papan Pemetaan           admin.peta-kelas.index
  · Daftar Peta Kelas        admin.peta-kelas.daftar
-DATA MAPEL & PEMBELAJARAN ▸
+DATA MAPEL ▸
  · Data Mapel               admin.mapel.index
- · Data Pembelajaran        admin.referensi.pembelajaran
 DATA SEMESTER
  · Data Semester            admin.semester.index
 DATA KOKURIKULER ▸
@@ -230,8 +234,12 @@ SYSTEM ▸
  · Log Aktivitas            admin.log.index
 ```
 
-> **Catatan (diperbarui 28 Okt 2026):** halaman **API Keys** (`admin.api-keys.index`) kini
-> masuk menu **DAPODIK** pada tab Setup (sebelumnya tidak ada di sidebar mana pun — temuan T14).
+> **Catatan (diperbarui 28 Okt 2026).**
+> 1. Halaman **API Keys** (`admin.api-keys.index`) kini masuk menu **DAPODIK** (temuan T14),
+>    dan **Papan Pemetaan** (`admin.peta-kelas.index`) masuk menu **PETA KELAS** — keduanya
+>    sebelumnya hanya tertaut dari dalam halaman lain.
+> 2. **Data Sekolah** dan **Data Pembelajaran** dihapus dari tab ini (T12): keduanya bernaung
+>    di tab E-Rapor, jadi tautannya memindahkan tab aktif saat diklik.
 
 ### 3.2 Guru
 
@@ -2327,7 +2335,7 @@ Daftar ini adalah hasil pembacaan silang antara menu, rute, dan isi halaman — 
 
 **Status perbaikan (28 Oktober 2026).** Kolom *Status* pada tabel 6.1 & 6.2 menandai tindak lanjut:
 ✅ sudah diperbaiki · ⏳ belum dikerjakan (butuh keputusan desain/produk) · ➖ bukan temuan atau sekadar informasi.
-Perbaikan ✅ ada pada cabang `arena/553884e4-simantapmonsa` (commit `fix(ui): sembunyikan menu modul nonaktif, lengkapi navigasi dan aksi baris`);
+Perbaikan ✅ gelombang pertama ada di `main` (commit `3d02b9d`, PR #19); gelombang kedua — T7, T10, T12, T13 — menyusul;
 dampaknya juga tercatat pada kolom aksi tiap halaman di §4 (baris bertanda **ditambahkan**).
 
 ### 6.1 Berdampak pada pengguna
@@ -2346,24 +2354,24 @@ dampaknya juga tercatat pada kolom aksi tiap halaman di §4 (baris bertanda **di
 
 | T6 | **Mojibake pada 4 view** | `admin/users/create`, `admin/users/edit`, `guru/kuis/create`, `guru/nilai/create` berisi `ðŸ’¾` dan `â†\x90` (UTF-8 terenkode ganda) | Tombol **Simpan** dan tautan **Kembali** menampilkan karakter rusak | Simpan ulang berkas sebagai UTF-8, ganti dengan `💾` / `←` | ✅ Diperbaiki — 0 mojibake tersisa di seluruh `resources/views` |
 
-| T7 | **Kelas Bootstrap tidak dimuat global** | Bootstrap hanya diimpor oleh `resources/css/tka-statistik.css`, tetapi 22 view memakai `container-fluid`, `col-md-6`, `btn-close`, `bg-primary`, `border-primary` (mis. `tryout/student/*`, `admin/tka/*`, `admin/tryout/*`, `admin/cbt/*`) | Tata letak halaman ujian/TKA/tryout tampil berbeda (sebagian tidak bergaya); tombol tutup `.btn-close` pada alert tidak berfungsi karena Bootstrap JS juga tidak dimuat | Impor Bootstrap hanya di halaman itu, atau seragamkan ke kelas `layout.css` (`.card`, `.btn`, `.table-wrapper`) | ⏳ Belum — menunggu keputusan desain (Bootstrap vs kelas `layout.css`) |
+| T7 | **Kelas Bootstrap tidak dimuat global** | Bootstrap hanya diimpor oleh `resources/css/tka-statistik.css`, tetapi 22 view memakai `container-fluid`, `col-md-6`, `btn-close`, `bg-primary`, `border-primary` (mis. `tryout/student/*`, `admin/tka/*`, `admin/tryout/*`, `admin/cbt/*`) | Tata letak halaman ujian/TKA/tryout tampil berbeda (sebagian tidak bergaya); tombol tutup `.btn-close` pada alert tidak berfungsi karena Bootstrap JS juga tidak dimuat | Impor Bootstrap hanya di halaman itu, atau seragamkan ke kelas `layout.css` (`.card`, `.btn`, `.table-wrapper`) | ✅ Diperbaiki — berkas baru `resources/css/padanan-bootstrap.css` berisi HANYA kelas yang belum didefinisikan `layout.css`/Tailwind (kisi, lencana, warna, `btn-close`, `form-select`, tab); penangan `data-bs-dismiss` & `data-bs-toggle="tab"` ditambahkan di `resources/js/app.js` |
 
-| T8 | **Dua set ikon** | Sidebar: `<x-lucide-*>`; isi halaman: `<i class="fas fa-*">` | Tebal-tipis dan ukuran ikon tidak konsisten antara menu dan konten | Pilih satu set | ⏳ Belum — menunggu keputusan desain (Lucide vs Font Awesome) |
+| T8 | **Dua set ikon** | Sidebar: `<x-lucide-*>`; isi halaman: `<i class="fas fa-*">` | Tebal-tipis dan ukuran ikon tidak konsisten antara menu dan konten | Pilih satu set | ⏳ Belum — perubahan menyeluruh: ratusan `<i class=\"fas fa-*\">` di isi halaman versus `<x-lucide-*>` di sidebar. Butuh keputusan pemilik produk lebih dulu |
 
 | T9 | **1 form hapus tanpa konfirmasi** | `admin/mapel/index.blade.php` — form DELETE tanpa `onsubmit confirm` | Salah klik langsung menghapus mata pelajaran | Samakan dengan 25 form hapus lainnya | ➖ Bukan temuan — `deleteSelectedForm` memang tanpa `onsubmit`, tetapi dikonfirmasi dari JS `deleteSelected()` |
 
-| T10 | **Endpoint berbahaya tanpa jeda konfirmasi ganda** | `admin.backup.wipe` sudah meminta `konfirmasi` + `password` (baik); `admin.users.destroy-all` dan `admin.mapel.destroy-all` hanya mengandalkan `confirm()` | Risiko salah klik pada aksi yang menghapus banyak baris | Pertimbangkan konfirmasi bertingkat seperti `backup.wipe` | ⏳ Belum — pertimbangan produk (konfirmasi bertingkat) |
+| T10 | **Endpoint berbahaya tanpa jeda konfirmasi ganda** | `admin.backup.wipe` sudah meminta `konfirmasi` + `password` (baik); `admin.users.destroy-all` dan `admin.mapel.destroy-all` hanya mengandalkan `confirm()` | Risiko salah klik pada aksi yang menghapus banyak baris | Pertimbangkan konfirmasi bertingkat seperti `backup.wipe` | ✅ Diperbaiki — `admin.users.destroy-all` & `admin.mapel.destroy-all` kini wajib mengetik frasa persis (`HAPUS GURU` / `HAPUS SEMUA`) yang divalidasi ulang di controller |
 
 
 ### 6.2 Kebersihan kode & konsistensi
 
 | # | Temuan | Bukti | Status |
 |---|---|---|---|
-| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, 6 `errors/*` (dipanggil framework saat runtime), 3 `vendor/scramble/*` (paket). Tambahan: `layouts/guest` hanya direferensikan komponen `App\View\Components\GuestLayout`, yang sendiri tidak pernah dipanggil | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di seluruh controller — **tidak ada** view halaman yang benar-benar yatim | ➖ Tidak berubah — 18 view yatim di atas tetap ada (komponen Breeze, `errors/*`, `vendor/scramble/*`). Terpisah dari daftar itu, `admin/partials/sidebar.blade.php` kini dihapus karena kehilangan seluruh penyertanya (lihat T2) |
+| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, 6 `errors/*` (dipanggil framework saat runtime), 3 `vendor/scramble/*` (paket). Tambahan: `layouts/guest` hanya direferensikan komponen `App\View\Components\GuestLayout`, yang sendiri tidak pernah dipanggil | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di seluruh controller — **tidak ada** view halaman yang benar-benar yatim | ✅ Diperbaiki — 15 view yatim dihapus (T13) dan `admin/partials/sidebar.blade.php` ikut dihapus (T2). Tersisa **9**: 6 `errors/*` (dipanggil framework saat runtime) dan 3 `vendor/scramble/*` (milik paket) |
 
-| T12 | Duplikasi menu: **Mapping Rapor** muncul di grup *Transkrip Ijazah* dan *Data Referensi*; **Data Sekolah** ada di tab E-Rapor dan Setup; **Data Mapel**, **Data Semester**, **Pemetaan Peta Kelas** juga ganda | `sidebar-erapor` vs `sidebar-setup` | ⏳ Belum — pemeliharaan menu |
+| T12 | Duplikasi menu: **Mapping Rapor** muncul di grup *Transkrip Ijazah* dan *Data Referensi*; **Data Sekolah** ada di tab E-Rapor dan Setup; **Data Mapel**, **Data Semester**, **Pemetaan Peta Kelas** juga ganda | `sidebar-erapor` vs `sidebar-setup` | ✅ Diperbaiki — `admin.mapel.index`, `admin.semester.index`, `admin.peta-kelas.daftar` kini hanya di tab Setup; `admin.sekolah.index`, `admin.referensi.pembelajaran` hanya di tab E-Rapor; **Mapping Mapel** (duplikat Mapping Rapor) dihapus |
 
-| T13 | Sisa *scaffolding* Breeze: `layouts/navigation`, `layouts/guest` + `GuestLayout`, dan 8 komponen form/tombol (`components/modal` dll.) tidak dipakai mana pun — halaman auth justru berdiri sendiri dengan `<!DOCTYPE html>` lengkap | Pencarian `@extends('layouts.guest')`, `<x-guest-layout>`, `<x-modal`, `<x-primary-button>` → 0 | ⏳ Belum — pembersihan *scaffolding* Breeze |
+| T13 | Sisa *scaffolding* Breeze: `layouts/navigation`, `layouts/guest` + `GuestLayout`, dan 8 komponen form/tombol (`components/modal` dll.) tidak dipakai mana pun — halaman auth justru berdiri sendiri dengan `<!DOCTYPE html>` lengkap | Pencarian `@extends('layouts.guest')`, `<x-guest-layout>`, `<x-modal`, `<x-primary-button>` → 0 | ✅ Diperbaiki — dihapus: `layouts/navigation`, `layouts/guest`, `App\View\Components\GuestLayout`, dan 13 komponen Breeze (termasuk `components/modal`). `App\View\Components\AppLayout` sengaja dipertahankan (menunjuk `layouts.app` yang hidup) |
 
 | T14 | `admin.api-keys.index` tidak masuk menu mana pun — hanya dapat dijangkau dari tautan di halaman Dapodik | Pemeriksaan keempat partial sidebar | ✅ Diperbaiki — "API Keys & Bridge" masuk menu **Setup » Dapodik** |
 
@@ -2618,7 +2626,7 @@ Dokumen ini dihasilkan dengan membaca sumber, bukan dengan menjalankan aplikasi:
    dan membuang blok `if (config(...))` serta baris komentar).
 2. **Pemetaan rute → view** — setiap `public function` di 89 controller dipindai isi tubuhnya
    (penyeimbang kurung kurawal) untuk menemukan `view('…')`.
-3. **Isi view** — 229 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
+3. **Isi view** — 214 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
    `@csrf`, kolom, tombol submit), `<button>` (teks, `type`, `onclick`), `<a>` (`href` → `route()`),
    `fetch()`, serta jumlah `<table>`, `<select>`, `<input>`.
 4. **Menu** — kelima partial sidebar + `components/admin-tabs` dibaca langsung; pohon menu di

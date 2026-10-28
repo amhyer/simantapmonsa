@@ -1,6 +1,14 @@
 @import "./layout.css";
 
 /*
+ * Padanan kelas Bootstrap yang dipakai ~21 view (tryout, TKA, CBT) tetapi
+ * tidak pernah ikut memuat Bootstrap. Hanya berisi kelas yang belum
+ * didefinisikan layout.css maupun utilitas Tailwind — lihat keterangan di
+ * dalam berkasnya.
+ */
+@import "./padanan-bootstrap.css";
+
+/*
  * Catatan font — dibaca sebelum menambah webfont di sini.
  *
  * `body` di resources/css/layout.css:30 memakai tumpukan

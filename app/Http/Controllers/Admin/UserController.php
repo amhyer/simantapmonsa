@@ -185,6 +185,16 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Peran tidak valid.'], 400);
         }
 
+        // Konfirmasi bertingkat: frasa diketik ulang di peramban sebelum
+        // penghapusan massal dijalankan (mengikuti pola `admin.backup.wipe`).
+        $frasaKonfirmasi = 'HAPUS ' . strtoupper($peran);
+        if (strtoupper(trim((string) $request->input('konfirmasi'))) !== $frasaKonfirmasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teks konfirmasi tidak cocok. Ketik persis: ' . $frasaKonfirmasi,
+            ], 422);
+        }
+
         $users = User::where('peran', $peran)->where('nama_pengguna', '!=', 'admin')->get();
         $count = $users->count();
 

@@ -334,3 +334,106 @@ Alpine.start();
         });
     }
 })();
+
+/*
+ * Tombol tutup peringatan ala Bootstrap (`data-bs-dismiss="alert"`).
+ *
+ * JavaScript Bootstrap tidak diimpor ke bundle aplikasi — hanya CSS-nya
+ * yang dipakai satu halaman publik. Tanpa penangan ini, 14 peringatan
+ * bertipe `alert alert-dismissible` di halaman tryout/TKA/CBT menampilkan
+ * tombol silang yang tidak melakukan apa-apa saat diklik.
+ */
+document.addEventListener('click', (event) => {
+    const tombol = event.target.closest('[data-bs-dismiss="alert"], [data-dismiss="alert"]');
+
+    if (!tombol) {
+        return;
+    }
+
+    const peringatan = tombol.closest('.alert');
+
+    if (!peringatan) {
+        return;
+    }
+
+    peringatan.classList.remove('show');
+    peringatan.style.opacity = '0';
+
+    window.setTimeout(() => peringatan.remove(), 160);
+});
+
+/*
+ * Tab ala Bootstrap (`data-bs-toggle="tab"`).
+ *
+ * Sama seperti tombol tutup di atas: tanpa penangan ini, tab mata pelajaran
+ * pada halaman mengerjakan tryout tidak berpindah saat diklik, karena
+ * JavaScript Bootstrap tidak pernah dimuat.
+ */
+document.addEventListener('click', (event) => {
+    const tombol = event.target.closest('[data-bs-toggle="tab"]');
+
+    if (!tombol) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const target = document.querySelector(tombol.dataset.bsTarget || tombol.getAttribute('href') || '');
+
+    if (!target) {
+        return;
+    }
+
+    const panel = target.parentElement;
+    const daftar = tombol.closest('.nav-tabs, .nav-pills') || document;
+
+    daftar.querySelectorAll('.nav-link.active').forEach((el) => el.classList.remove('active'));
+
+    if (panel) {
+        panel.querySelectorAll('.tab-pane.active, .tab-pane.show')
+            .forEach((el) => el.classList.remove('active', 'show'));
+    }
+
+    tombol.classList.add('active');
+    target.classList.add('show', 'active');
+});
+
+/*
+ * Konfirmasi bertingkat untuk aksi hapus massal (temuan T10).
+ *
+ * `confirm()` saja mudah terlewat bila tombolnya berdekatan dengan tombol
+ * lain. Pembantu ini meminta pengguna mengetik frasa persis, lalu
+ * menyisipkannya sebagai kolom tersembunyi `konfirmasi` agar sisi server
+ * ikut memvalidasinya (pola yang sama dengan `admin.backup.wipe`).
+ */
+window.konfirmasiKetik = function (form, frasa, keterangan) {
+    if (!form) {
+        return false;
+    }
+
+    const jawab = window.prompt(
+        'Tindakan ini TIDAK dapat dibatalkan.\n\n' + (keterangan || '') + '\n\nKetik persis: ' + frasa
+    );
+
+    if (jawab === null) {
+        return false;
+    }
+
+    if (String(jawab).trim().toUpperCase() !== frasa) {
+        window.alert('Teks konfirmasi tidak cocok. Tidak ada data yang dihapus.');
+        return false;
+    }
+
+    let kolom = form.querySelector('input[name="konfirmasi"]');
+
+    if (!kolom) {
+        kolom = document.createElement('input');
+        kolom.type = 'hidden';
+        kolom.name = 'konfirmasi';
+        form.appendChild(kolom);
+    }
+
+    kolom.value = frasa;
+
+    return true;
+};
