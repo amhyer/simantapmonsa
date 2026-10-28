@@ -265,16 +265,17 @@ class AuditHalamanRegressionTest extends TestCase
         }
     }
 
-    public function test_form_pendaftaran_hanya_menampilkan_peran_yang_diterima_controller(): void
+    public function test_landing_page_tidak_menawarkan_pendaftaran_mandiri(): void
     {
-        $this->get(route('register'))
+        $this->get(route('landing'))
             ->assertOk()
-            ->assertSee('Minimal 8 karakter.')
-            ->assertSee('value="guru"', false)
-            ->assertSee('value="siswa"', false)
-            ->assertSee('value="ortu"', false)
-            ->assertDontSee('value="kepsek"', false)
-            ->assertSee('menunggu aktivasi administrator sekolah');
+            ->assertDontSee('Daftar Sekarang')
+            ->assertDontSee('Daftar di sini')
+            ->assertDontSee('Buat Akun')
+            ->assertSee('Siapkan Akun');
+
+        $this->get(route('register'))
+            ->assertRedirect(route('login'));
     }
 
     public function test_method_spoofing_pada_form_sesuai_verb_route(): void

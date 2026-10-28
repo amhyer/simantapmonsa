@@ -186,7 +186,7 @@ Route::get('/api/dapodik/ping', [DapodikSyncController::class, 'ping']);  // Ope
 ### Public Routes
 - `GET /` — Landing page
 - `POST /login` — Login
-- `POST /register` — Registration (throttled)
+- `GET /register` — Dialihkan ke login; pendaftaran mandiri ditutup (akun dibuat admin sekolah)
 - `GET /demo` — Demo login (non-production only)
 
 ### Protected Routes (require auth + role middleware)

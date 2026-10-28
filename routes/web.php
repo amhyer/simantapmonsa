@@ -69,8 +69,11 @@ Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
-    Route::get('/register', [LandingController::class, 'register'])->name('register');
-    Route::post('/register', [LandingController::class, 'storeRegister'])->middleware('throttle:5,1');
+    // Pendaftaran mandiri ditutup: akun guru, siswa, dan orang tua hanya
+    // dibuat oleh administrator sekolah melalui panel Kelola Pengguna.
+    Route::get('/register', fn () => redirect()->route('login')
+        ->with('status', 'Pendaftaran mandiri ditutup. Akun dibuat oleh administrator sekolah.'))
+        ->name('register');
 
     // Reset sandi mandiri. Pengguna yang belum punya email tetap diarahkan ke admin.
     Route::get('/lupa-sandi', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');

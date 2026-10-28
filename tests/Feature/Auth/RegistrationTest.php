@@ -9,43 +9,28 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    public function test_halaman_pendaftaran_dialihkan_ke_login(): void
     {
-        $response = $this->get('/register');
-
-        $response->assertStatus(200);
+        $this->get('/register')
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status');
     }
 
-    public function test_new_users_can_register(): void
+    public function test_pendaftaran_publik_ditolak_untuk_guru_siswa_dan_orang_tua(): void
     {
-        $namaPengguna = 'testuser_' . rand(1000, 9999);
+        foreach (['guru', 'siswa', 'ortu'] as $peran) {
+            $namaPengguna = 'calon_' . $peran . '_' . rand(1000, 9999);
 
-        $response = $this->post('/register', [
-            'nama_lengkap' => 'Test User',
-            'nama_pengguna' => $namaPengguna,
-            'peran' => 'siswa',
-            'kata_sandi' => 'password123',
-            'kata_sandi_confirmation' => 'password123',
-        ]);
+            $this->post('/register', [
+                'nama_lengkap' => 'Calon ' . ucfirst($peran),
+                'nama_pengguna' => $namaPengguna,
+                'peran' => $peran,
+                'kata_sandi' => 'password123',
+                'kata_sandi_confirmation' => 'password123',
+            ])->assertStatus(405);
 
-        $response->assertRedirect();
-        $this->assertDatabaseHas('users', ['nama_pengguna' => $namaPengguna]);
-    }
-
-    public function test_registration_rejects_kepsek_role(): void
-    {
-        $namaPengguna = 'kepsekjahat_' . rand(1000, 9999);
-
-        $response = $this->post('/register', [
-            'nama_lengkap' => 'Calon Kepsek Jahat',
-            'nama_pengguna' => $namaPengguna,
-            'peran' => 'kepsek',
-            'kata_sandi' => 'password123',
-            'kata_sandi_confirmation' => 'password123',
-        ]);
-
-        $response->assertSessionHasErrors('peran');
-        $this->assertDatabaseMissing('users', ['nama_pengguna' => $namaPengguna]);
+            $this->assertDatabaseMissing('users', ['nama_pengguna' => $namaPengguna]);
+        }
     }
 
     public function test_login_page_hides_demo_credentials_outside_local(): void

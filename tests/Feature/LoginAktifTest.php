@@ -64,7 +64,7 @@ class LoginAktifTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_pendaftaran_publik_menghasilkan_akun_nonaktif(): void
+    public function test_pendaftaran_publik_ditutup(): void
     {
         $namaPengguna = 'calon_' . rand(1000, 9999);
 
@@ -74,19 +74,8 @@ class LoginAktifTest extends TestCase
             'peran' => 'guru',
             'kata_sandi' => 'password123',
             'kata_sandi_confirmation' => 'password123',
-        ])->assertRedirect(route('login'));
+        ])->assertStatus(405);
 
-        $this->assertDatabaseHas('users', [
-            'nama_pengguna' => $namaPengguna,
-            'aktif' => false,
-        ]);
-
-        // Akun hasil pendaftaran belum bisa dipakai sebelum diaktifkan admin.
-        $this->post('/login', [
-            'nama_pengguna' => $namaPengguna,
-            'kata_sandi' => 'password123',
-        ])->assertSessionHasErrors('nama_pengguna');
-
-        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['nama_pengguna' => $namaPengguna]);
     }
 }
