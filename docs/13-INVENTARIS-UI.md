@@ -1,9 +1,9 @@
 # Inventaris Antarmuka SIMANTAP — Halaman, Menu, Tombol & Aksi
 
-> Dokumen ini **dihasilkan dari pembacaan kode** (`routes/web.php`, 231 template Blade,
-> 66 controller, partial sidebar, dan komponen UI) pada branch `arena/f505ac82-simantapmonsa`,
-> basis `b26850c`. Angka di bawah dihitung otomatis, jadi bisa dipakai sebagai
-> *baseline* untuk audit/regresi UI berikutnya.
+> Dokumen ini **dihasilkan dari pembacaan kode** (`routes/web.php`, 230 template Blade,
+> controller, partial sidebar, dan komponen UI) pada branch `arena/f505ac82-simantapmonsa`.
+> Angka di bawah dihitung otomatis, jadi bisa dipakai sebagai *baseline* untuk
+> audit/regresi UI berikutnya.
 
 ---
 
@@ -11,14 +11,15 @@
 
 | Metrik | Jumlah |
 |---|---:|
-| Route terdaftar (CBT nonaktif — kondisi default) | **361** |
+| Route terdaftar (CBT nonaktif — kondisi default) | **360** |
 |  · Halaman (GET) | **199** |
-|  · Endpoint aksi (POST/PUT/PATCH/DELETE) | **162** |
-| Template Blade | **231** |
-| Elemen `<button>` | **307** |
-| Elemen `<form>` | **166** |
-| Tautan `<a>` | **318** |
-| `<select>` (filter/pilihan) | **128** |
+|  · Endpoint aksi (POST/PUT/PATCH/DELETE) | **161** |
+| Rute tambahan bila CBT diaktifkan | **+28** (total 388) |
+| Template Blade | **230** |
+| Elemen `<button>` | **306** |
+| Elemen `<form>` | **165** |
+| Tautan `<a>` | **314** |
+| `<select>` (filter/pilihan) | **127** |
 | Halaman dengan pemanggilan `fetch()` | **17** |
 
 Sebaran per area (dihitung dari awalan URI):
@@ -31,15 +32,12 @@ Sebaran per area (dihitung dari awalan URI):
 | Tryout (guru & siswa) (`/tryout`) | 12 | 9 | **21** |
 | TKA (guru & ortu) (`/tka`) | 12 | 8 | **20** |
 | Admin › CBT (`/admin/cbt`) | 11 | 7 | **18** |
-| Publik / autentikasi (`/publik`) | 9 | 6 | **15** |
 | Admin › TKA (`/admin/tka`) | 9 | 6 | **15** |
+| Publik / autentikasi (`/publik`) | 9 | 5 | **14** |
 | Siswa (`/siswa`) | 9 | 2 | **11** |
 | Kepala sekolah (`/kepsek`) | 10 | 0 | **10** |
 | Orang tua (`/ortu`) | 7 | 1 | **8** |
 | Presensi pegawai (`/presensi`) | 1 | 2 | **3** |
-
----
-
 ## 2. Arsitektur antarmuka
 
 ### 2.1 Dua kerangka (layout) utama
@@ -341,7 +339,7 @@ tersendiri dan tidak memiliki tabel aksi.
 ### Publik & autentikasi — 9 halaman
 
 #### Landing
-`GET /` · `landing` · `LandingController@index` · `landing.blade.php` (1445 baris)
+`GET /` · `landing` · `LandingController@index` · `landing.blade.php` (1444 baris)
 
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
@@ -358,18 +356,14 @@ tersendiri dan tidak memiliki tabel aksi.
 | Ulangi | `JS` | `resetQuiz()` | tombol client-side |
 | SM SIMAN TAP | `→` | `landing` | navigasi (GET /) |
 | Login | `→` | `login` | navigasi (GET /login) |
-| Daftar | `→` | `register` | navigasi (GET /register) |
-| Mulai Sekarang | `→` | `register` | navigasi (GET /register) |
+| Masuk ke Aplikasi | `→` | `login` | navigasi (GET /login) |
 | Masuk ke aplikasi | `→` | `login` | navigasi (GET /login) |
-| Daftar di sini | `→` | `register` | navigasi (GET /register) |
-| Daftar Sekarang | `→` | `register` | navigasi (GET /register) |
 | Lihat halaman lengkap → | `→` | `tka.statistik` | navigasi (GET /tka-statistik) |
 | Lihat Statistik Lengkap | `→` | `tka.statistik` | navigasi (GET /tka-statistik) |
 | Guru · Login | `→` | `login` | navigasi (GET /login) |
 | Siswa · Login | `→` | `login` | navigasi (GET /login) |
 | Orang Tua · Login | `→` | `login` | navigasi (GET /login) |
 | Kepala Sekolah · Login | `→` | `login` | navigasi (GET /login) |
-| Buat Akun | `→` | `register` | navigasi (GET /register) |
 
 #### ⚙︎ /api/tka-statistik
 `GET /api/tka-statistik` · `tka.api` · `TkaController@api`
@@ -379,7 +373,7 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 #### ⚙︎ /dashboard
 `GET /dashboard` · `home`
 
-_Bukan halaman: closure pengalih peran (`/dashboard`)._
+_Bukan halaman: closure `home` — mengarahkan tiap peran ke dasbornya._
 
 #### ⚙︎ /demo
 `GET /demo` · `demo` · `LandingController@demo`
@@ -409,13 +403,10 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 | Kirim Tautan Reset | `POST` | `POST /lupa-sandi` | kolom: login |
 | Kembali ke halaman masuk | `→` | `login` | navigasi (GET /login) |
 
-#### Register
-`GET /register` · `register` · `LandingController@register` · `auth/register.blade.php` (142 baris)
+#### ⚙︎ /register
+`GET /register` · `register`
 
-| Aksi | Metode | Endpoint / fungsi | Catatan |
-|---|---|---|---|
-| Daftar Sekarang | `POST` | `POST /register` | kolom: nama_lengkap, nama_pengguna, kata_sandi, kata_sandi_confirmation, peran |
-| Login di sini | `→` | `login` | navigasi (GET /login) |
+_Bukan halaman: closure pengalihan — pendaftaran mandiri ditutup, `GET /register` mengarah ke `/login`._
 
 #### Reset Password
 `GET /reset-sandi/{token}` · `password.reset` · `Auth\ResetPasswordController@showResetForm` · `auth/reset-password.blade.php` (66 baris)
@@ -2260,9 +2251,6 @@ _Bukan halaman HTML — unduhan berkas (PDF/CSV/XLSX), respons JSON, atau pengal
 | Aksi | Metode | Endpoint / fungsi | Catatan |
 |---|---|---|---|
 | ← Kembali | `→` | `kepsek.rekap.index` | navigasi (GET /kepsek/rekap) |
-
----
-
 ## 5. Pola interaksi berulang
 
 Dua belas pola berikut menutupi hampir seluruh interaksi di aplikasi. Memahaminya cukup untuk
@@ -2271,7 +2259,7 @@ menebak perilaku halaman yang belum terdokumentasi.
 | # | Pola | Jumlah | Contoh | Catatan |
 |---|---|---:|---|---|
 | 1 | **Filter → Tampilkan** (`<form method="GET">` + tombol *Tampilkan/Filter/Cari*) | 26 form | `admin.cetak.leger`, `admin.perkembangan.grafik`, `admin.tryout.packages.index` | Selalu disertai tautan **Reset** ke rute yang sama tanpa parameter |
-| 2 | **Simpan (POST/PUT)** | 89 form POST · 25 form PUT/PATCH | `admin.mapel.store`, `admin.users.update` | Semua sudah memuat `@csrf` (0 temuan form tanpa CSRF) |
+| 2 | **Simpan (POST/PUT)** | 88 form POST · 25 form PUT/PATCH | `admin.mapel.store`, `admin.users.update` | Semua sudah memuat `@csrf` (0 temuan form tanpa CSRF) |
 | 3 | **Hapus (DELETE + konfirmasi)** | 26 form DELETE | `admin.kokurikuler.tema.destroy`, `guru.catatan.destroy` | 25 di antaranya memakai `onsubmit="return confirm(...)"`; **1 tanpa konfirmasi** (`admin/mapel/index`, form hapus baris) |
 | 4 | **Cetak lewat `window.print()`** | 6 tombol | `admin.cetak.leger`, `admin.cetak.nilai-show`, `admin.transkrip.cetak-show`, `admin.cetak.pelengkap` | Bukan PDF server-side; bergantung pada dialog cetak browser |
 | 5 | **Ekspor / unduh / cetak berkas** | 16 rute | `admin.backup.export`, `guru.nilai-erapor.export`, `admin.cbt.sessions.export`, `kepsek.rekap.unduh` | Format: CSV, XLSX, ZIP backup, PDF (DomPDF) |
@@ -2290,7 +2278,7 @@ Pola pendukung lain:
   Sisanya (96) menampilkan seluruh baris tanpa pagination.
 * **Toast** — dipanggil dari JS setelah aksi asinkron berhasil/gagal.
 * **Auto-save** — hanya ada di `guru.nilai-erapor.index` (`auto-save`, throttle 120/menit).
-* **Throttle** — 48 rute tulis dibatasi: `throttle:120,1` (auto-save & scan), `60,1` (input nilai, bind kartu),
+* **Throttle** — 47 rute tulis dibatasi: `throttle:120,1` (auto-save & scan), `60,1` (input nilai, bind kartu),
   `30,1` (koreksi presensi, unggah foto, referensi), `10,1` (login, impor, push Dapodik),
   `5,1` (hapus massal, backup impor, sinkron penuh), `10,5` (hapus seluruh data).
 
@@ -2319,7 +2307,7 @@ Daftar ini adalah hasil pembacaan silang antara menu, rute, dan isi halaman — 
 
 | # | Temuan | Bukti |
 |---|---|---|
-| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze yang tak terpakai (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, `layouts/guest` (+ komponen `App\View\Components\GuestLayout`), `errors/*` (dipanggil framework saat runtime), `vendor/scramble/*` (paket) | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di 66 controller — **tidak ada** view halaman yang benar-benar yatim |
+| T11 | 18 view tidak direferensikan mana pun: 8 komponen Breeze (`components/{auth-session-status, danger-button, input-error, input-label, modal, primary-button, secondary-button, text-input}`), `layouts/navigation`, 6 `errors/*` (dipanggil framework saat runtime), 3 `vendor/scramble/*` (paket). Tambahan: `layouts/guest` hanya direferensikan komponen `App\View\Components\GuestLayout`, yang sendiri tidak pernah dipanggil | Pemeriksaan silang `@extends/@include/<x-*>` dan `view()/loadView()/Pdf::loadView()` di seluruh controller — **tidak ada** view halaman yang benar-benar yatim |
 | T12 | Duplikasi menu: **Mapping Rapor** muncul di grup *Transkrip Ijazah* dan *Data Referensi*; **Data Sekolah** ada di tab E-Rapor dan Setup; **Data Mapel**, **Data Semester**, **Pemetaan Peta Kelas** juga ganda | `sidebar-erapor` vs `sidebar-setup` |
 | T13 | Sisa *scaffolding* Breeze: `layouts/navigation`, `layouts/guest` + `GuestLayout`, dan 8 komponen form/tombol (`components/modal` dll.) tidak dipakai mana pun — halaman auth justru berdiri sendiri dengan `<!DOCTYPE html>` lengkap | Pencarian `@extends('layouts.guest')`, `<x-guest-layout>`, `<x-modal`, `<x-primary-button>` → 0 |
 | T14 | `admin.api-keys.index` tidak masuk menu mana pun — hanya dapat dijangkau dari tautan di halaman Dapodik | Pemeriksaan keempat partial sidebar |
@@ -2331,26 +2319,28 @@ Daftar ini adalah hasil pembacaan silang antara menu, rute, dan isi halaman — 
 ### 6.3 Hal yang sudah baik
 
 * **0 form POST/PUT/PATCH/DELETE tanpa `@csrf`** — semua token tersemat.
-* **48 rute tulis ber-throttle**, termasuk auto-save (120/menit) dan login (10/menit).
+* **47 rute tulis ber-throttle**, termasuk auto-save (120/menit) dan login (10/menit).
 * **`force.password.change`** diterapkan pada 7 grup rute (kecuali landing & auth) — pengguna dengan sandi awal dipaksa mengganti sandi.
 * **`x-sidebar-planned`** dipakai untuk menandai fitur yang belum siap, bukan tautan mati.
 * Halaman berbahaya (`backup.wipe`) sudah meminta kata sandi ulang.
 
 ---
 
+
+---
+
 ## 7. Lampiran A — endpoint aksi tanpa halaman sendiri
 
-162 endpoint tulis (POST/PUT/PATCH/DELETE). Dikelompokkan agar mudah dipakai sebagai daftar
+161 endpoint tulis (POST/PUT/PATCH/DELETE). Dikelompokkan agar mudah dipakai sebagai daftar
 periksa saat menguji ulang tombol.
 
-### Publik & autentikasi — 6 endpoint
+### Publik & autentikasi — 5 endpoint
 
 | Metode | Endpoint | Nama rute | Controller | Throttle |
 |---|---|---|---|---|
 | `POST` | `/login` | `—` | `Auth\LoginController@login` | `throttle:10,1` |
 | `POST` | `/logout` | `logout` | `Auth\LoginController@logout` | `throttle:30,1` |
 | `POST` | `/lupa-sandi` | `password.email` | `Auth\ForgotPasswordController@sendResetLinkEmail` | `throttle:5,1` |
-| `POST` | `/register` | `—` | `LandingController@storeRegister` | `throttle:5,1` |
 | `POST` | `/reset-sandi` | `password.update` | `Auth\ResetPasswordController@reset` | `throttle:5,1` |
 | `PUT` | `/force-password-change` | `force-password-change.update` | `Auth\ForcePasswordChangeController@update` | — |
 
@@ -2559,9 +2549,6 @@ periksa saat menguji ulang tombol.
 | Metode | Endpoint | Nama rute | Controller | Throttle |
 |---|---|---|---|---|
 | `POST` | `/ortu/kebiasaan` | `ortu.kebiasaan.store` | `Ortu\KebiasaanController@store` | — |
-
----
-
 ## 8. Lampiran B — metode & cara memperbarui
 
 Dokumen ini dihasilkan dengan membaca sumber, bukan dengan menjalankan aplikasi:
@@ -2569,9 +2556,9 @@ Dokumen ini dihasilkan dengan membaca sumber, bukan dengan menjalankan aplikasi:
 1. **Rute** — `routes/web.php` diurai dengan parser berbasis kedalaman kurung kurawal
    (mengikuti `Route::middleware()->prefix()->name()->group()` bersarang, `Route::resource()`,
    dan membuang blok `if (config(...))` serta baris komentar).
-2. **Pemetaan rute → view** — setiap `public function` di 66 controller dipindai isi tubuhnya
+2. **Pemetaan rute → view** — setiap `public function` di 89 controller dipindai isi tubuhnya
    (penyeimbang kurung kurawal) untuk menemukan `view('…')`.
-3. **Isi view** — 231 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
+3. **Isi view** — 230 berkas `.blade.php` dipindai untuk `<form>` (action, method, `@method`,
    `@csrf`, kolom, tombol submit), `<button>` (teks, `type`, `onclick`), `<a>` (`href` → `route()`),
    `fetch()`, serta jumlah `<table>`, `<select>`, `<input>`.
 4. **Menu** — kelima partial sidebar + `components/admin-tabs` dibaca langsung; pohon menu di
@@ -2587,6 +2574,6 @@ Dokumen ini dihasilkan dengan membaca sumber, bukan dengan menjalankan aplikasi:
   tautan apa pun (statis maupun dinamis) pada halaman yang disebut.
 * Rute CBT (`/cbt/*`) baru terdaftar bila `SIMANTAP_CBT_ENABLED=true`; angka di dokumen ini
   memakai kondisi **default (CBT nonaktif)**. Dengan CBT aktif jumlah rute bertambah
-  28 (389 total, 213 halaman).
+  28 (388 total, 213 halaman).
 * Jumlah rute absolut bisa berbeda 1–2 dari `php artisan route:list` karena keterbatasan parser;
   untuk angka resmi pakailah `php artisan route:list`.
