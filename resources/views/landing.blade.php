@@ -362,8 +362,7 @@
             <li><a href="#faq">FAQ</a></li>
         </ul>
         <div class="nav-actions">
-            <a href="{{ route('login') }}" class="btn-nav btn-nav-outline">Login</a>
-            <a href="{{ route('register') }}" class="btn-nav btn-nav-primary">Daftar</a>
+            <a href="{{ route('login') }}" class="btn-nav btn-nav-primary">Login</a>
             <button class="hamburger" id="hamburger" aria-label="Menu">
                 <span></span><span></span><span></span>
             </button>
@@ -379,8 +378,8 @@
             <h1>Satu Ekosistem untuk <br><span class="highlight">Tiga Agenda</span> Sekolah</h1>
             <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Instalasi sekolah dapat mengaktifkan integrasi Google Sheet sesuai konfigurasi.</p>
             <div class="cta-group">
-                <a href="{{ route('register') }}" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai Sekarang</a>
-                <a href="#demo" class="btn-hero btn-hero-secondary"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Akses Aplikasi</a>
+                <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
+                <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
             </div>
             <div class="trust">
                 <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>
@@ -422,9 +421,9 @@
         <div class="demo-card" data-aos="fade-up">
             <div style="font-size:48px;margin-bottom:16px" aria-hidden="true">🎯</div>
             <h3>Akses Aplikasi SIMANTAP</h3>
-            <p>Video demo belum tersedia. Untuk mencoba aplikasi, masuk dengan akun sekolah. Akun yang baru didaftarkan perlu diaktifkan administrator.</p>
+            <p>Video demo belum tersedia. Untuk mencoba aplikasi, masuk dengan akun sekolah. Akun guru, siswa, dan orang tua dibuat oleh administrator sekolah.</p>
             <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Masuk ke aplikasi</a>
-            <span class="demo-note"><i class="fas fa-info-circle" aria-hidden="true"></i> Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a>.</span>
+            <span class="demo-note"><i class="fas fa-info-circle" aria-hidden="true"></i> Belum punya akun? Hubungi administrator sekolah.</span>
         </div>
     </div>
 </section>
@@ -590,8 +589,8 @@
         <h2 data-aos="fade-up">Siap Mewujudkan <span class="highlight">Pembelajaran</span> yang Terintegrasi?</h2>
         <p data-aos="fade-up" data-aos-delay="100">Mulai gunakan SIMANTAP di sekolah Anda. Pengelolaan hosting, database, dan integrasi spreadsheet mengikuti konfigurasi sekolah.</p>
         <div class="cta-buttons" data-aos="fade-up" data-aos-delay="200">
-            <a href="{{ route('register') }}" class="btn-cta btn-cta-primary"><i class="fas fa-rocket"></i> Daftar Sekarang</a>
-            <a href="{{ route('login') }}" class="btn-cta btn-cta-secondary"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="{{ route('login') }}" class="btn-cta btn-cta-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
+            <a href="#features" class="btn-cta btn-cta-secondary"><i class="fas fa-star"></i> Lihat Fitur</a>
         </div>
         <div class="trust-badges" data-aos="fade-up" data-aos-delay="300">
             <div class="badge-item"><i class="fas fa-user-shield"></i><span>Akses berbasis peran</span></div>
@@ -1093,9 +1092,9 @@
                 ['Apa itu SIMANTAP?', 'SIMANTAP adalah aplikasi pembelajaran yang menggabungkan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam, serta manajemen kelas seperti nilai, kehadiran, materi, kuis, dan catatan. Integrasi Google Sheet bersifat opsional dan bergantung pada konfigurasi sekolah.'],
                 ['Berapa biaya menggunakan SIMANTAP?', 'Biaya hosting, database, dan layanan eksternal bergantung pada cara sekolah memasang dan mengoperasikan aplikasi. Tanyakan kepada administrator tentang biaya instalasi sekolah Anda.'],
                 ['Bagaimana cara menyimpan data?', 'Data inti disimpan pada database instalasi aplikasi. Integrasi Google Sheet dapat digunakan jika dikonfigurasi oleh administrator sekolah.'],
-                ['Siapa saja yang bisa menggunakan SIMANTAP?', 'SIMANTAP dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Pendaftaran publik hanya menyediakan peran tertentu; akun kepala sekolah dibuat administrator.'],
+                ['Siapa saja yang bisa menggunakan SIMANTAP?', 'SIMANTAP dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Akun dibuat dan dikelola oleh administrator sekolah; tidak ada pendaftaran mandiri.'],
                 ['Bagaimana data dikelola?', 'Akses aplikasi dibatasi berdasarkan peran. Integrasi dapat mengirim data ke layanan eksternal seperti Google Sheet jika diaktifkan. Administrator sekolah bertanggung jawab mengatur izin dan kebijakan privasi instalasinya.'],
-                ['Bagaimana cara memulai?', 'Daftar dengan peran yang tersedia dan tunggu aktivasi administrator. Akun kepala sekolah dibuat oleh administrator. Setelah aktif, administrator dapat menghubungkan akun siswa dan orang tua dengan data yang sesuai.'],
+                ['Bagaimana cara memulai?', 'Hubungi administrator sekolah untuk pembuatan akun. Setelah akun aktif, administrator dapat menghubungkan akun siswa dan orang tua dengan data yang sesuai.'],
             ] as $i => $faq)
                 <div class="faq-item" data-aos="fade-up" data-aos-delay="{{ $i * 100 }}">
                     <button type="button" class="question" id="faq-question-{{ $i }}" aria-expanded="false" aria-controls="faq-answer-{{ $i }}">{{ $faq[0] }}<span class="icon" aria-hidden="true">▼</span></button>
@@ -1126,7 +1125,7 @@
             </div>
             <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
             <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Guru · Login</a><a href="{{ route('login') }}">Siswa · Login</a><a href="{{ route('login') }}">Orang Tua · Login</a><a href="{{ route('login') }}">Kepala Sekolah · Login</a></div>
-            <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="{{ route('register') }}">Buat Akun</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
+            <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
         </div>
         <div class="footer-bottom">
             <span>&copy; {{ date('Y') }} SIMANTAP — Tim Kerja 4 BBGTK Sulawesi Selatan</span>
@@ -1172,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Quiz
-    const registrationUrl = @json(route('register'));
+    const loginUrl = @json(route('login'));
     const quizData = [
         { question: 'Bagaimana sistem penilaian di sekolah Anda saat ini?', options: ['Manual di buku nilai', 'Menggunakan Spreadsheet', 'Aplikasi khusus penilaian', 'Platform terintegrasi'], scores: [1, 2, 3, 4] },
         { question: 'Bagaimana orang tua memantau perkembangan anak?', options: ['Tidak ada akses', 'Rapor cetak setiap semester', 'Aplikasi terpisah', 'Platform terintegrasi dengan notifikasi'], scores: [1, 2, 3, 4] },
@@ -1206,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (percentage >= 40) { level = 'Mulai Belajar'; emoji = '📖'; description = 'Masih ada ruang untuk perbaikan dalam sistem pengelolaan pembelajaran.'; recommendation = 'SIMANTAP dapat menjadi langkah awal yang tepat untuk transformasi digital.'; }
         else { level = 'Perlu Pendampingan'; emoji = '🤝'; description = 'Sekolah Anda memerlukan pendampingan dalam transformasi digital.'; recommendation = 'SIMANTAP dirancang mudah digunakan dan dapat membantu secara bertahap.'; }
         var circumference = 2 * Math.PI * 42;
-        document.querySelector('.quiz-container').innerHTML = '<div class="quiz-result"><div class="result-level">'+emoji+'</div><h3>'+level+'</h3><div style="display:flex;justify-content:center;margin:16px 0"><div style="position:relative;width:100px;height:100px"><svg width="100" height="100" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="10"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+circumference+'" stroke-dashoffset="'+(circumference*(1-percentage/100))+'" style="transition:stroke-dashoffset 1s ease"></circle></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><strong style="font-size:24px;color:var(--navy)">'+percentage+'%</strong><span style="font-size:10px;color:var(--text-muted)">Skor</span></div></div></div><p class="result-detail">'+description+'</p><div style="background:#FBF4E4;border-left:3px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:14px;text-align:left;margin-bottom:16px"><strong>💡 Rekomendasi:</strong> '+recommendation+'</div><div class="result-actions"><button class="btn-hero btn-hero-secondary" onclick="resetQuiz()"><i class="fas fa-redo"></i> Ulangi</button><a href="'+registrationUrl+'" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Mulai dengan SIMANTAP</a></div></div>';
+        document.querySelector('.quiz-container').innerHTML = '<div class="quiz-result"><div class="result-level">'+emoji+'</div><h3>'+level+'</h3><div style="display:flex;justify-content:center;margin:16px 0"><div style="position:relative;width:100px;height:100px"><svg width="100" height="100" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="10"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+circumference+'" stroke-dashoffset="'+(circumference*(1-percentage/100))+'" style="transition:stroke-dashoffset 1s ease"></circle></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column"><strong style="font-size:24px;color:var(--navy)">'+percentage+'%</strong><span style="font-size:10px;color:var(--text-muted)">Skor</span></div></div></div><p class="result-detail">'+description+'</p><div style="background:#FBF4E4;border-left:3px solid var(--gold);padding:12px 16px;border-radius:8px;font-size:14px;text-align:left;margin-bottom:16px"><strong>💡 Rekomendasi:</strong> '+recommendation+'</div><div class="result-actions"><button class="btn-hero btn-hero-secondary" onclick="resetQuiz()"><i class="fas fa-redo"></i> Ulangi</button><a href="'+loginUrl+'" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke SIMANTAP</a></div></div>';
     }
     window.resetQuiz = function() { quizStarted = false; currentQuiz = 0; quizAnswers = []; renderQuiz(); };
     if (document.querySelector('.quiz-container')) renderQuiz();
