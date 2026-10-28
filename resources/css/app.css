@@ -1,20 +1,23 @@
 @import "./layout.css";
 
 /*
- * Figtree — dibundel sendiri via Vite, bukan dari fonts.bunny.net.
+ * Catatan font — dibaca sebelum menambah webfont di sini.
  *
- * `tailwind.config.js` mendeklarasikan fontFamily.sans = ['Figtree', ...], jadi
- * font ini memang font utama aplikasi. Sebelumnya hanya layouts/guest.blade.php
- * yang memuatnya (lewat CDN), sedangkan layouts/app.blade.php mendeklarasikannya
- * tanpa pernah memuatnya — sehingga seluruh area dalam aplikasi jatuh ke font
- * sistem. Sekarang dimuat sekali di sini untuk semua halaman.
+ * `body` di resources/css/layout.css:30 memakai tumpukan
+ * 'Inter', -apple-system, BlinkMacSystemFont, sans-serif. Karena Inter tidak
+ * dimuat di area dalam aplikasi, teks jatuh ke font sistem — dan itu memang
+ * perilaku yang diinginkan (nol permintaan font di halaman ber-auth).
  *
- * Bobot 400/500/600 dipertahankan sama persis dengan yang dulu diminta dari CDN,
- * agar tampilan tidak berubah. Hanya subset `latin` yang diambil.
+ * Sempat ada @font-face Figtree di sini. Figtree adalah font bawaan scaffolding
+ * Breeze dan hanya dirujuk oleh layouts/guest.blade.php yang tidak dipakai satu
+ * view pun, tetapi preflight Tailwind menerapkannya ke <html> sehingga peramban
+ * benar-benar mengunduh ~80 kB berkas font di setiap halaman tanpa mengubah
+ * tampilan sedikit pun. Sudah dibuang.
+ *
+ * Kalau nanti Anda ingin area dalam aplikasi benar-benar merender Inter (bukan
+ * font sistem), tambahkan:  @import "@fontsource/inter/latin-400.css";  dst.
+ * Itu perubahan visual pada ~92 halaman, jadi keputusannya di tangan Anda.
  */
-@import "@fontsource/figtree/latin-400.css";
-@import "@fontsource/figtree/latin-500.css";
-@import "@fontsource/figtree/latin-600.css";
 
 @tailwind base;
 @tailwind components;

@@ -8,8 +8,9 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
         <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-        {{-- Figtree dibundel sendiri lewat resources/css/app.css — bukan dari
-             fonts.bunny.net. Lihat komentar di berkas itu. --}}
+        {{-- Font tidak dimuat dari CDN di sini. Layout ini sendiri saat ini tidak
+             dipakai satu view pun (lihat catatan di LAPORAN §14.5), tetapi tautan
+             fonts.bunny.net-nya tetap dibuang agar tidak ada CDN yang tersisa. --}}
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])

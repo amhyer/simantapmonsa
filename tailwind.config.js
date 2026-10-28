@@ -12,7 +12,12 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // Disamakan dengan resources/css/layout.css:30 dan ketiga halaman
+                // gerbang auth, yang semuanya memakai tumpukan 'Inter' lalu font
+                // sistem. Sebelumnya berisi 'Figtree' (bawaan scaffolding Breeze)
+                // yang tidak dipakai satu pun view hidup, sehingga Tailwind
+                // mendeklarasikan font lain dari yang benar-benar dirender.
+                sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
             },
         },
     },

@@ -595,7 +595,7 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
 |---|---|---|
 | P1 | `git rm resources/css/landing.css resources/js/landing.js` | **1.588 baris kode mati dihapus** (956 + 632). `grep -rn "landing.css\|landing.js"` seluruh repositori → kosong. |
 | P2 | Hapus `<link>` Google Fonts + 2 baris `preconnect` dari `resources/views/auth/register.blade.php`, diganti komentar penjelas berbahasa Indonesia | Ketiga halaman gerbang auth (`login`, `register`, `force-change-password`) kini konsisten: **nol permintaan font eksternal**, `'Inter'` tetap ada di awal tumpukan `font-family` sebagai *progressive enhancement*. |
-| P3 | Impor statis `Html5Qrcode` di `resources/js/presensi-qr.js` diganti pemuatan malas `await import('html5-qrcode')` di dalam handler tombol "Mulai Kamera" | Bundle utama **444,73 kB → 76,98 kB** (gzip **134,95 → 27,08 kB**), turun **82,7 %**. `html5-qrcode` kini terpisah ke `esm-k8a5Y8M6.js` (369,11 kB / 108,72 kB gzip) dan **hanya diunduh saat pemindaian QR benar-benar dibuka**. |
+| P3 | Impor statis `Html5Qrcode` di `resources/js/presensi-qr.js` diganti pemuatan malas `await import('html5-qrcode')` di dalam handler tombol "Aktifkan kamera" | Bundle utama **444,73 kB → 76,98 kB** (gzip **134,95 → 27,08 kB**), turun **82,7 %**. `html5-qrcode` kini terpisah ke `esm-k8a5Y8M6.js` (369,11 kB / 108,72 kB gzip) dan **hanya diunduh saat pemindaian QR benar-benar dibuka**. |
 | P4 | 15 dokumen warisan dipindah `git mv` ke `docs/arsip/` + indeks `docs/arsip/README.md`; 8 referensi silang diperbarui | Root turun dari **20 dokumen → 5** (`README.md`, `DEPLOYMENT.md`, `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`, `AGENTS.md`, `CLAUDE.md`). 17 tautan Markdown relatif + 16 URL absolut GitHub diperiksa, **semuanya menunjuk berkas yang ada**. *(Klaim awal "nol referensi menggantung" di sini ternyata salah — lihat §12.5.)* |
 
 ### 12.2 Keputusan desain
@@ -610,7 +610,7 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
   perlu Anda ambil, bukan perbaikan bug.
 - **P3 — pemuatan malas, bukan penghapusan fitur.** `html5-qrcode` tetap dipakai;
   yang berubah hanya *kapan* ia diunduh. Konsekuensinya: saat operator menekan
-  "Mulai Kamera" ada jeda pendek (~109 kB gzip) untuk mengambil chunk QR. Ini
+  "Aktifkan kamera" ada jeda pendek (~109 kB gzip) untuk mengambil chunk QR. Ini
   terjadi sekali per sesi dan di-cache browser setelahnya.
 - **P4 — arsip, bukan hapus.** Dokumen-dokumen itu punya nilai sejarah dan masih
   dirujuk silang oleh beberapa audit, jadi diarsipkan beserta indeks yang
@@ -644,7 +644,7 @@ Keempat item 🟢 POLES sudah dikerjakan. Ringkasannya, lalu bukti dan batasnya.
 - **Perilaku pemindai QR setelah refactor impor malas.** Saya tidak bisa membuka
   kamera di lingkungan ini, dan Playwright di CI hanya menyentuh halaman landing.
   Impor dinamisnya benar secara statis dan build-nya sukses, tetapi **klik tombol
-  "Mulai Kamera" sekali di staging sebelum Hari-H** adalah pemeriksaan 30 detik
+  "Aktifkan kamera" sekali di staging sebelum Hari-H** adalah pemeriksaan 30 detik
   yang tidak bisa saya gantikan.
 - **Tampilan halaman register tanpa webfont Inter.** Perubahan ini sengaja, tapi
   efek visualnya perlu mata Anda.
@@ -714,9 +714,10 @@ Dua temuan tambahan yang muncul saat audit:
   membundelnya untuk satu halaman — jadi 15 view lain memuat pustaka yang sama dari
   CDN tanpa alasan.
 - **`tailwind.config.js` mendeklarasikan `fontFamily.sans = ['Figtree', …]`, tetapi
-  `layouts/app.blade.php` tidak pernah memuat Figtree.** Hanya `layouts/guest.blade.php`
-  yang memuatnya. Artinya seluruh area dalam aplikasi selama ini jatuh ke font sistem —
-  bug yang satu kelas dengan P2.
+  `layouts/app.blade.php` tidak pernah memuat Figtree.** *(Catatan 26 Okt: kesimpulan
+  yang saya tarik dari sini ternyata keliru — melihat §14.5. Figtree bukan font yang
+  seharusnya dimuat; ia font bawaan scaffolding Breeze yang tidak dipakai satu view
+  hidup pun, sedangkan `body` di `layout.css:30` memakai tumpukan `'Inter'`.)*
 
 ### 13.2 Yang dikerjakan
 
@@ -732,9 +733,9 @@ Dua temuan tambahan yang muncul saat audit:
   ke `charts.js`. Bukti konsolidasinya persis: hash chunk-nya identik
   (`guru-dashboard-DM6IsfOk.js` → `charts-DM6IsfOk.js`, sama-sama 202,10 kB).
 - Halaman landing: 3 `<link>` font + 2 AOS + skrip AOS inline → satu `@vite([...])`.
-- `layouts/guest.blade.php`: 2 `<link>` bunny.net → Figtree diimpor di `app.css`,
-  sehingga kini **semua** halaman (bukan hanya guest) benar-benar memuat font yang
-  dideklarasikan Tailwind.
+- `layouts/guest.blade.php`: 2 `<link>` bunny.net dibuang. *(Catatan 26 Okt: saya
+  sempat mengimpor Figtree ke `app.css` dan mengklaim "semua halaman kini memuat font
+  yang dideklarasikan Tailwind". Klaim itu salah dan sudah dibalik — lihat §14.5.)*
 - Dependency baru di `package.json`: `aos@^2.3.1`, `bootstrap@^5.3.0`,
   `@fontsource/inter@^5.3.0`, `@fontsource/figtree@^5.3.0`. CI memakai **`npm ci`**,
   jadi `package-lock.json` yang mengunci versi pastinya.
@@ -818,12 +819,128 @@ dipindahkan ke dalam `resources/js/halaman-publik.js` bersama impornya.
 - **Test Playwright baru belum pernah saya jalankan sendiri** — tidak ada PHP/vendor
   di sandbox ini, jadi `php artisan serve` tidak bisa dinyalakan. Test itu baru
   terbukti saat CI menjalankannya.
-- **Tampilan halaman setelah Figtree benar-benar dimuat di area dalam aplikasi.**
-  Sebelumnya font itu dideklarasikan tapi tidak pernah dimuat, jadi sekarang area
-  dalam aplikasi akan terlihat sedikit berbeda — memang itu tujuannya, tetapi
+- ~~**Tampilan halaman setelah Figtree benar-benar dimuat di area dalam aplikasi.**~~
+  *(Tidak berlaku lagi — Figtree justru dibuang. Lihat §14.5.)*
+- **Tampilan halaman setelah perubahan lain di §13** (ikon, animasi, Bootstrap di
+  `/tka-statistik`) — secara teknis setara, tetapi
   perlu dilihat mata.
 - Halaman `/tka-statistik` sengaja tidak saya masukkan ke test e2e agar tidak
   bergantung pada sumber data TKA eksternal.
+
+## 14. B5 — Bahan Keputusan CBT (keputusan tetap di tangan Anda)
+
+Saya **tidak** menyalakan `SIMANTAP_CBT_ENABLED`. Ini keputusan produk, bukan teknis.
+Yang bisa saya lakukan adalah menyajikan faktanya supaya keputusannya cepat.
+
+### 14.1 Apa yang sudah ada
+
+| Komponen | Jumlah | Keterangan |
+|---|---|---|
+| Rute di belakang flag | **34** | `routes/web.php:435–489`, semuanya dalam `if (config('simantap.cbt_enabled'))` |
+| Controller | 5 | `CbtQuestionBank`, `CbtQuestion`, `CbtTestSession`, `CbtStudent`, `CbtIntegrity` |
+| Model | 5 | `CbtQuestionBank`, `CbtQuestion`, `CbtTestSession`, `CbtResult`, `CbtViolation` |
+| Migrasi | 1 | `2026_10_18_000001_create_cbt_tables.php` — **sudah ikut termigrasi di setiap lingkungan**, termasuk produksi. Tabelnya sudah ada, hanya rutenya yang disembunyikan |
+| Test khusus CBT | **41** | `CbtExamTest` 29 · `CbtAuthorizationTest` 6 · `CbtEngineParityTest` 5 · `CbtDisabledTest` 1 |
+| Berkas test yang menyebut CBT | 16 | termasuk `ExamEngineFoundationTest`, `ExamReaderTest` |
+
+Dua lapis penjaga sudah terpasang: `EnsureModuleEnabled` (alias `module.asesmen`,
+terdaftar di `bootstrap/app.php:23`) menolak dengan 404 saat flag mati, dan
+`CbtAccessMiddleware` membatasi siapa yang boleh masuk. Grup rute guru juga sudah
+memasang `force.password.change`.
+
+### 14.2 Fakta yang mengurangi risiko menyalakannya
+
+- **Tidak ada migrasi yang tertunda.** Menyalakan flag tidak mengubah skema basis data
+  sama sekali — tabel `cbt_*` sudah dibuat oleh migrasi yang sama yang membuat tabel lain.
+- **Bisa dimatikan lagi seketika** tanpa rollback: cukup set `SIMANTAP_CBT_ENABLED=false`
+  dan `php artisan config:clear`. Tidak ada data yang hilang.
+- **CI tidak akan rusak.** `CbtDisabledTest` memaksa `SIMANTAP_CBT_ENABLED=false` sendiri
+  di awal test lalu memulihkannya di blok `finally`, jadi test itu tetap lolos apa pun
+  nilai flag di lingkungan lain.
+- **Dasbor orang tua sudah siap dua arah.** `Ortu/DashboardController.php:35` membaca flag
+  yang sama, jadi hasil CBT muncul/hilang otomatis mengikuti keputusan Anda.
+
+### 14.3 Yang perlu Anda pastikan sebelum menyalakan
+
+Ini bagian yang **tidak bisa saya verifikasi** dari repositori:
+
+1. **Soal sudah diinput atau belum.** 41 test membuktikan kodenya jalan, bukan bahwa bank
+   soal Anda terisi. CBT tanpa soal = halaman kosong bagi guru.
+2. **Perangkat siswa.** Ujian berbasis peramban butuh kebijakan tersendiri (browser mana,
+   bolehkah tab lain, apa yang terjadi kalau listrik/mati jaringan di tengah ujian).
+   `CbtViolation` dan `CbtIntegrityController` sudah ada untuk integritas, tetapi
+   prosedurnya perlu Anda tetapkan.
+3. **Siapa yang boleh.** `CbtAccessMiddleware` membatasi akses — pastikan daftarnya sesuai
+   rencana Anda.
+
+### 14.4 Rekomendasi saya
+
+**Tunda untuk launching, nyalakan setelahnya.** Alasannya bukan karena kodenya belum siap
+— 41 test-nya lolos dan CI hijau — melainkan karena Hari-H bukan waktu yang tepat untuk
+membuka permukaan baru seluas 34 rute kepada guru dan siswa. Begitu launching stabil,
+menyalakannya cuma satu baris `.env` dan bisa dibatalkan dalam hitungan detik.
+
+Kalau Anda memutuskan sebaliknya, perintahnya:
+
+```bash
+# di server produksi
+sed -i 's/^SIMANTAP_CBT_ENABLED=.*/SIMANTAP_CBT_ENABLED=true/' .env
+php artisan config:clear
+# verifikasi rute terdaftar
+php artisan route:list --name=cbt | head
+```
+
+### 14.5 Koreksi: Figtree bukan font yang seharusnya dimuat
+
+Di §13 saya menulis bahwa `tailwind.config.js` mendeklarasikan Figtree tetapi
+`layouts/app.blade.php` tidak pernah memuatnya, lalu menyimpulkan itu bug dan
+mengimpor Figtree ke `app.css` — dengan klaim "kini **semua** halaman memuat font yang
+dideklarasikan Tailwind".
+
+**Klaim itu salah, dan test e2e yang menangkapnya.** Test di CI mengembalikan:
+
+```
+Expected pattern: /Figtree/
+Received string:  "Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+```
+
+Dua assertion sebelumnya **lolos** — `@font-face` Figtree memang ada dan statusnya
+`loaded`. Jadi Figtree benar-benar **diunduh**, tetapi `body` dirender dengan tumpukan
+lain. Penyebabnya:
+
+- `resources/css/layout.css:30` → `body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }`
+- Preflight Tailwind menerapkan `fontFamily.sans` (Figtree) ke `<html>`, sehingga
+  peramban mengunduh fontnya — lalu `body` menimpanya.
+- **Figtree hanya dirujuk oleh `layouts/guest.blade.php`, dan layout itu tidak dipakai
+  satu view pun** (hanya dirender `GuestLayout.php`, dan `<x-guest-layout>` tidak muncul
+  di view mana pun). Satu-satunya pemakai kelas `font-sans` juga berkas mati itu.
+
+Jadi perubahan saya di §13 menambahkan **79.648 byte** berkas font (`figtree-latin-{400,500,600}`
+woff2 + woff) yang diunduh di setiap halaman dalam aplikasi **tanpa mengubah tampilan
+sedikit pun**. Itu regresi, bukan perbaikan.
+
+**Yang dikerjakan sebagai koreksi:**
+
+| Tindakan | Alasan |
+|---|---|
+| Hapus 3 `@import` Figtree dari `app.css` | Fontnya tidak dirender |
+| `tailwind.config.js` `sans` → `['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']` | Disamakan dengan yang benar-benar dirender `layout.css` |
+| Hapus `@fontsource/figtree` dari `package.json` | Tidak dipakai lagi |
+| Check verifier baru: *Font Tailwind `sans` cocok dengan yang dirender layout.css* | Mengunci agar tidak terulang |
+
+Hasil: **nol perubahan tampilan** (area dalam aplikasi tetap merender font sistem,
+seperti sebelumnya), dan ~80 kB unduhan yang sia-sia hilang. Verifier **62 lulus,
+0 gagal**; mutasi M12 (mengembalikan `'Figtree'` ke `tailwind.config.js`) membuat
+check barunya **gagal**.
+
+**Kalau Anda ingin area dalam aplikasi benar-benar merender Inter** (bukan font sistem),
+itu satu baris: `@import "@fontsource/inter/latin-400.css";` di `app.css`. Saya **tidak**
+melakukannya karena itu perubahan visual pada ~92 halaman dan bukan keputusan saya.
+
+**Temuan ikutan yang belum dikerjakan** (sengaja, agar PR tetap terfokus): ada satu set
+scaffolding Breeze yang mati — `layouts/guest.blade.php`, `app/View/Components/GuestLayout.php`,
+dan komponen `input-label`, `primary-button`, `text-input`, `auth-session-status`
+(dipakai 0 view). Layak jadi PR pembersihan tersendiri, satu kelas dengan P1.
 
 ## Lampiran: Perintah yang Saya Jalankan
 
