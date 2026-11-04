@@ -18,6 +18,52 @@
 </div>
 
 <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card" style="border-left:4px solid #D97706">
+        <div class="card-header">
+            <h3><i class="fas fa-award" style="color:#D97706;margin-right:8px"></i>Kesiapan TKA Sekolah</h3>
+            <span class="tag tag-{{ ($tkaSekolah['persen_siap'] ?? 0) >= 70 ? 'ok' : 'warn' }}">{{ $tkaSekolah['persen_siap'] ?? 0 }}% Siap</span>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div>
+                    <div style="font-size:24px;font-weight:800;color:#D97706">{{ number_format($tkaSekolah['rata_rata'] ?? 0, 2) }} <span style="font-size:13px;color:var(--muted);font-weight:400">/ 4.00</span></div>
+                    <div style="font-size:12px;color:var(--muted)">Rata-rata Skor Dimensi Sekolah</div>
+                </div>
+                <div style="text-align:right">
+                    <span style="font-size:13px;font-weight:700;color:#059669">{{ $tkaSekolah['siap'] ?? 0 }} observasi siap</span>
+                    <div style="font-size:11px;color:var(--muted)">dari {{ $tkaSekolah['total'] ?? 0 }} data</div>
+                </div>
+            </div>
+            <div style="background:#F2F4F7;border-radius:6px;height:8px;overflow:hidden">
+                <div style="height:100%;background:#059669;width:{{ $tkaSekolah['persen_siap'] ?? 0 }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #2563EB">
+        <div class="card-header">
+            <h3><i class="fas fa-laptop-code" style="color:#2563EB;margin-right:8px"></i>Status CBT & Tryout Sekolah</h3>
+            <span class="tag tag-primary">{{ $cbtRingkasan['sesi_aktif'] ?? 0 }} Sesi Aktif</span>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <div style="font-size:24px;font-weight:800;color:#2563EB">{{ $cbtRingkasan['total_peserta'] ?? 0 }}</div>
+                    <div style="font-size:12px;color:var(--muted)">Total Percobaan Ujian</div>
+                </div>
+                <div>
+                    <div style="font-size:24px;font-weight:800;color:#059669">{{ number_format($cbtRingkasan['rata_rata'] ?? 0, 1) }}</div>
+                    <div style="font-size:12px;color:var(--muted)">Rata-rata Skor Ujian</div>
+                </div>
+                <div>
+                    <span class="tag tag-ok">{{ $cbtRingkasan['tingkat_kelulusan'] ?? 0 }}% Lulus KKM</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-bottom:16px">
     <div class="card">
         <div class="card-header"><h3>📊 Aktivitas Guru 7 Hari</h3></div>
         <div class="card-body"><div style="height:280px"><canvas id="chartAktivitas"></canvas></div></div>

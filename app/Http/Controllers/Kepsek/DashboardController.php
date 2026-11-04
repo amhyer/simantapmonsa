@@ -144,10 +144,21 @@ class DashboardController extends Controller
             ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanSekolah()
             : null;
 
+        $tkaScores = \App\Models\Dimensi::pluck('skor');
+        $tkaTotal = $tkaScores->count();
+        $tkaRata = $tkaTotal > 0 ? round($tkaScores->avg(), 2) : 0;
+        $tkaSiap = $tkaScores->filter(fn($s) => $s >= 2.5)->count();
+        $tkaSekolah = [
+            'total' => $tkaTotal,
+            'rata_rata' => $tkaRata,
+            'siap' => $tkaSiap,
+            'persen_siap' => $tkaTotal > 0 ? round(($tkaSiap / $tkaTotal) * 100) : 0,
+        ];
+
         return view('kepsek.dashboard', compact(
             'stats', 'rataNilai', 'predikatSekolah', 'persenHadir',
             'partisipasiOrtu', 'aktivitasGuru', 'topGuru',
-            'distribusiPredikat', 'perKelas', 'cbtRingkasan'
+            'distribusiPredikat', 'perKelas', 'cbtRingkasan', 'tkaSekolah'
         ));
     }
 

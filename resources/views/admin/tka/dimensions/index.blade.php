@@ -2,158 +2,136 @@
 
 @section('title', 'Kelola Dimensi TKA - Admin')
 
-@section('page_title', 'Dimensi TKA')
-@section('page_subtitle', 'Kelola dimensi P5')
+@section('sidebar')
+    @include('admin.partials.sidebar')
+@endsection
+
+@section('page_title', 'Dimensi Profil Pelajar Pancasila')
+@section('page_subtitle', 'Konfigurasi 6 dimensi dan butir indikator pengamatan karakter siswa')
+
+@section('header_actions')
+    <a href="{{ route('admin.tka.dimensions.create') }}" class="btn btn-gold btn-sm">
+        <i class="fas fa-plus"></i> Tambah Dimensi
+    </a>
+@endsection
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">🎯 Kelola Dimensi TKA</h2>
-            <p class="text-muted mb-0">Kelola dimensi Profil Pelajar Pancasila untuk penilaian TKA</p>
-        </div>
+{{-- Stat Summary --}}
+<div class="grid grid-3" style="margin-bottom:20px">
+    <div class="stat-card primary">
+        <i class="fas fa-th-large stat-icon"></i>
+        <div class="stat-label">Total Dimensi</div>
+        <div class="stat-value">{{ $dimensions->count() }}</div>
+        <div class="stat-change">Dimensi kurikulum</div>
     </div>
 
-    @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="stat-card ok">
+        <i class="fas fa-check-circle stat-icon"></i>
+        <div class="stat-label">Dimensi Aktif</div>
+        <div class="stat-value">{{ $dimensions->where('aktif', true)->count() }}</div>
+        <div class="stat-change up">Digunakan dalam asesmen</div>
     </div>
-    @endif
 
-    <!-- Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card border-primary h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Dimensi</h6>
-                            <h2 class="mb-0">{{ $dimensions->count() }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-th-large fa-2x text-primary opacity-25"></i>
-                        </div>
-                    </div>
+    <div class="stat-card gold">
+        <i class="fas fa-list-check stat-icon"></i>
+        <div class="stat-label">Total Indikator</div>
+        <div class="stat-value">{{ $dimensions->sum('items_count') }}</div>
+        <div class="stat-change">Butir rubrik pengamatan</div>
+    </div>
+</div>
+
+{{-- Dimensions Table Card --}}
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-layer-group" style="color:var(--navy);margin-right:8px"></i>Daftar Dimensi Profil Pelajar Pancasila</h3>
+        <a href="{{ route('admin.tka.dimensions.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Tambah Dimensi
+        </a>
+    </div>
+
+    <div class="card-body tight">
+        @if($dimensions->isEmpty())
+            <div class="empty-state">
+                <div class="icon">🎯</div>
+                <h4>Belum Ada Dimensi Dikonfigurasi</h4>
+                <p>Tambahkan 6 dimensi Profil Pelajar Pancasila untuk memulai penilaian TKA.</p>
+                <div style="margin-top:16px">
+                    <a href="{{ route('admin.tka.dimensions.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Tambah Dimensi Sekarang
+                    </a>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card border-success h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Dimensi Aktif</h6>
-                            <h2 class="mb-0">{{ $dimensions->where('aktif', true)->count() }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x text-success opacity-25"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6 mb-3">
-            <div class="card border-info h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Item Penilaian</h6>
-                            <h2 class="mb-0">{{ $dimensions->sum('assessment_items_count') }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-list-check fa-2x text-info opacity-25"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <a href="{{ route('admin.tka.dimensions.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Tambah Dimensi
-            </a>
-            <a href="{{ route('admin.tka.dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
-            </a>
-        </div>
-    </div>
-
-    <!-- Dimensions Table -->
-    <div class="card">
-        <div class="card-body">
+        @else
             <div class="table-wrapper">
-                <table class="table table-hover">
+                <table>
                     <thead>
                         <tr>
-                            <th width="3%">No</th>
-                            <th width="20%">Nama Dimensi</th>
-                            <th width="10%">Kode</th>
-                            <th width="30%">Deskripsi</th>
-                            <th width="15%">Item Penilaian</th>
-                            <th width="10%">Status</th>
-                            <th width="15%">Aksi</th>
+                            <th style="width:10%">Kode</th>
+                            <th style="width:30%">Nama Dimensi</th>
+                            <th style="width:25%">Deskripsi Ringkas</th>
+                            <th style="width:10%">Bobot</th>
+                            <th style="width:10%">Indikator</th>
+                            <th style="width:8%">Status</th>
+                            <th style="width:12%;text-align:right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($dimensions as $index => $dimension)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>
-                                <strong>{{ $dimension->nama_dimensi }}</strong>
-                            </td>
-                            <td>
-                                <span class="badge bg-primary">{{ $dimension->kode_dimensi }}</span>
-                            </td>
-                            <td>
-                                <small>{{ Str::limit($dimension->deskripsi, 100) }}</small>
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ $dimension->assessment_items_count ?? 0 }}</span>
-                            </td>
-                            <td>
-                                @if($dimension->aktif)
-                                <span class="badge bg-success">Aktif</span>
-                                @else
-                                <span class="badge bg-secondary">Non-Aktif</span>
-                                @endif
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.tka.dimensions.show', $dimension) }}" 
-                                   class="btn btn-sm btn-info" title="Detail">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.tka.dimensions.edit', $dimension) }}" 
-                                   class="btn btn-sm btn-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.tka.dimensions.toggle-status', $dimension) }}" 
-                                      method="POST" style="display:inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-{{ $dimension->aktif ? 'secondary' : 'success' }}" 
-                                            title="{{ $dimension->aktif ? 'Non-Aktifkan' : 'Aktifkan' }}">
-                                        <i class="fas fa-{{ $dimension->aktif ? 'toggle-off' : 'toggle-on' }}"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted">
-                                Tidak ada data dimensi
-                            </td>
-                        </tr>
-                        @endforelse
+                        @foreach($dimensions as $dim)
+                            <tr>
+                                <td>
+                                    <span class="tag tag-primary" style="font-family:monospace;font-weight:700">
+                                        {{ $dim->kode_dimensi }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="font-weight:700;font-size:14px;color:var(--text)">
+                                        <a href="{{ route('admin.tka.dimensions.show', $dim) }}" style="color:var(--navy);text-decoration:none">
+                                            {{ $dim->nama_dimensi }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:12.5px;color:var(--muted);line-height:1.4">
+                                        {{ Str::limit($dim->deskripsi ?? 'Tidak ada deskripsi', 80) }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="tag tag-gold">{{ $dim->bobot ?? 1 }}%</span>
+                                </td>
+                                <td>
+                                    <span class="tag tag-secondary">
+                                        {{ $dim->items_count ?? $dim->assessmentItems()->count() }} Butir
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($dim->aktif)
+                                        <span class="tag tag-ok">Aktif</span>
+                                    @else
+                                        <span class="tag tag-bad">Nonaktif</span>
+                                    @endif
+                                </td>
+                                <td style="text-align:right">
+                                    <div style="display:inline-flex;align-items:center;gap:6px">
+                                        <a href="{{ route('admin.tka.dimensions.show', $dim) }}" class="btn btn-primary btn-sm" title="Lihat Indikator">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.tka.dimensions.edit', $dim) }}" class="btn btn-secondary btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('admin.tka.dimensions.toggle-status', $dim) }}" style="display:inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="{{ $dim->aktif ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                                <i class="fas fa-power-off" style="color:{{ $dim->aktif ? 'var(--bad)' : 'var(--ok)' }}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
+        @endif
     </div>
 </div>
 @endsection
-

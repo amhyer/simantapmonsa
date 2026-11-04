@@ -35,6 +35,8 @@ yarn-error.log
 /dapodik-bridge/build/
 /dapodik-bridge/*.exe
 /dapodik-bridge/*.dll
+__pycache__/
+*.pyc
 
 # Laravel cache - generate ulang otomatis
 /storage/framework/views/*.php
@@ -63,3 +65,9 @@ graphify-out/
 node_modules/
 /blob-report/
 /playwright/.cache/
+
+# Berkas sementara probe/debugging lokal
+.tmp*
+*-tmp.*
+*.tmp.*
+

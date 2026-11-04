@@ -45,8 +45,13 @@ class CbtSessionController extends Controller
     {
         $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
         $banks = \App\Models\CbtQuestionBank::with('guru')->orderBy('title')->get();
+        $classes = \App\Models\Siswa::where('aktif', true)->whereNull('archived_at')
+            ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
+        if ($classes->isEmpty()) {
+            $classes = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+        }
 
-        return view('admin.cbt.sessions.create', compact('gurus', 'banks'));
+        return view('admin.cbt.sessions.create', compact('gurus', 'banks', 'classes'));
     }
 
     public function store(CbtSessionStoreRequest $request)

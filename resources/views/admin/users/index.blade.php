@@ -19,11 +19,15 @@
         $kepsekUsers = $users->where('peran', 'kepsek');
         $tendikUsers = $users->where('peran', 'tendik');
         $allRole = $adminUsers->merge($guruUsers)->merge($siswaUsers)->merge($ortuUsers)->merge($kepsekUsers)->merge($tendikUsers);
-        $siswaWithoutUser = $siswa->filter(function ($s) use ($users) {
-            return !$users->contains(function ($u) use ($s) {
-                return $u->peran === 'siswa' && is_array($u->terhubung_dengan) && in_array($s->id, $u->terhubung_dengan);
-            });
-        });
+        $siswaLinkedSet = [];
+        foreach ($siswaUsers as $u) {
+            if (is_array($u->terhubung_dengan)) {
+                foreach ($u->terhubung_dengan as $sId) {
+                    $siswaLinkedSet[$sId] = true;
+                }
+            }
+        }
+        $siswaWithoutUser = $siswa->filter(fn($s) => !isset($siswaLinkedSet[$s->id]));
     @endphp
 
     <div class="grid grid-4" style="margin-bottom:16px">

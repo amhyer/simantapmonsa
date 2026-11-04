@@ -18,6 +18,11 @@ class EnsureModuleEnabled
 {
     public function handle(Request $request, Closure $next)
     {
+        // Admin super selalu memiliki akses ke pengelolaan modul asesmen & CBT/TKA
+        if (auth()->check() && auth()->user()->peran === 'admin') {
+            return $next($request);
+        }
+
         if (!config('simantap.cbt_enabled', false)) {
             abort(404);
         }

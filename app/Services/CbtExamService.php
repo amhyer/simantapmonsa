@@ -26,7 +26,12 @@ class CbtExamService
             $session = CbtTestSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
             abort_unless($session->status === 'draft', 409, 'Sesi sudah dipublikasikan.');
             $questions = $bank->questions()->orderBy('id')->get();
-            $participants = Siswa::where('guru_id', $session->guru_id)->where('kelas', $session->kelas)
+            $participants = Siswa::where('kelas', $session->kelas)
+                ->where(function ($q) use ($session) {
+                    $q->where('guru_id', $session->guru_id)
+                      ->orWhereNotNull('dapodik_id')
+                      ->orWhereNull('guru_id');
+                })
                 ->where('aktif', true)->whereNull('archived_at')->orderBy('id')->pluck('id')->all();
             if ($questions->isEmpty() || $questions->count() > 200 || !$participants || count($participants) > 500) {
                 throw ValidationException::withMessages(['session' => 'Butuh 1–200 soal dan 1–500 siswa aktif pada kelas tersebut.']);
@@ -58,9 +63,20 @@ class CbtExamService
 
     public function eligible(CbtTestSession $session, Siswa $siswa): bool
     {
-        return $siswa->aktif && !$siswa->archived_at
-            && (int) $session->guru_id === (int) $siswa->guru_id
-            && in_array((int) $siswa->id, array_map('intval', $session->participant_ids ?? []), true);
+        if (!$siswa->aktif || $siswa->archived_at) {
+            return false;
+        }
+
+        if (!in_array((int) $siswa->id, array_map('intval', $session->participant_ids ?? []), true)) {
+            return false;
+        }
+
+        // Siswa non-dapodik terikat ketat ke guru_id pemilik sesi
+        if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && (int) $session->guru_id !== (int) $siswa->guru_id) {
+            return false;
+        }
+
+        return true;
     }
 
     public function begin(CbtTestSession $session, Siswa $siswa, int $userId): CbtResult

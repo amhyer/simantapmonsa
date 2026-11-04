@@ -140,6 +140,72 @@
         </div>
     </div>
 
+    {{-- CBT & TKA Kesiapan Siswa --}}
+    <div class="grid grid-2" style="margin-bottom:20px">
+        {{-- Kesiapan TKA Kelas --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-award" style="margin-right:8px;color:#D97706"></i>Kesiapan TKA Siswa Binaan</h3>
+                <a href="{{ route('guru.tka.index') }}" class="btn btn-ghost btn-sm">Monitoring TKA &rarr;</a>
+            </div>
+            <div class="card-body">
+                @if(($tkaRingkasan['total'] ?? 0) > 0)
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                        <div>
+                            <div style="font-size:26px;font-weight:800;color:#D97706">{{ number_format($tkaRingkasan['rata_rata'], 2) }} <span style="font-size:14px;color:var(--muted);font-weight:400">/ 4.00</span></div>
+                            <div style="font-size:12px;color:var(--muted)">Rata-rata Skor Profil Lulusan</div>
+                        </div>
+                        <div style="text-align:right">
+                            <span class="tag tag-ok" style="font-size:13px">{{ $tkaRingkasan['siap'] }} Siap</span>
+                            @if($tkaRingkasan['perlu_bimbingan'] > 0)
+                                <span class="tag tag-bad" style="font-size:13px">{{ $tkaRingkasan['perlu_bimbingan'] }} Butuh Bimbingan</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div style="background:#F2F4F7;border-radius:6px;height:8px;overflow:hidden">
+                        @php $persenSiap = $tkaRingkasan['total'] > 0 ? round(($tkaRingkasan['siap'] / $tkaRingkasan['total']) * 100) : 0; @endphp
+                        <div style="height:100%;background:#059669;width:{{ $persenSiap }}%"></div>
+                    </div>
+                @else
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                        <div style="font-size:13px;color:var(--muted)">Belum ada data penilaian dimensi TKA untuk siswa kelas Anda.</div>
+                        <a href="{{ route('guru.tka.index') }}" class="btn btn-sm btn-ghost" style="color:#D97706;border:1px solid #D97706;flex-shrink:0">+ Observasi TKA</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Ujian CBT & Tryout --}}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-laptop-code" style="margin-right:8px;color:#2563EB"></i>Ujian CBT & Bank Soal</h3>
+                <a href="{{ route('cbt.sessions.index') }}" class="btn btn-ghost btn-sm">Kelola Sesi &rarr;</a>
+            </div>
+            <div class="card-body">
+                @if($cbtRingkasan)
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                        <div>
+                            <div style="font-size:24px;font-weight:800;color:#2563EB">{{ $cbtRingkasan['sesi_aktif'] ?? 0 }}</div>
+                            <div style="font-size:12px;color:var(--muted)">Sesi Ujian Aktif</div>
+                        </div>
+                        <div>
+                            <div style="font-size:24px;font-weight:800;color:#059669">{{ $cbtRingkasan['total_peserta'] ?? 0 }}</div>
+                            <div style="font-size:12px;color:var(--muted)">Peserta Mengerjakan</div>
+                        </div>
+                        <div>
+                            <a href="{{ route('cbt.question-banks.index') }}" class="btn btn-ghost btn-sm">Bank Soal</a>
+                        </div>
+                    </div>
+                @else
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                        <div style="font-size:13px;color:var(--muted)">Manajemen bank soal dan sesi ujian CBT siswa.</div>
+                        <a href="{{ route('cbt.sessions.index') }}" class="btn btn-sm btn-ghost" style="color:#2563EB;border:1px solid #2563EB;flex-shrink:0">Buka CBT</a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-2" style="margin-bottom:20px">
         <div class="card">
             <div class="card-header">

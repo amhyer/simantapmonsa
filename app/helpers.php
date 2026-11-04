@@ -55,15 +55,6 @@ if (!function_exists('getKKM')) {
 if (!function_exists('activeAdminTab')) {
     function activeAdminTab(): string
     {
-        $route = request()->route()?->getName() ?? '';
-
-        // E-Rapor tab
-        if (request()->routeIs('admin.dashboard', 'admin.penilaian.*', 'admin.perkembangan.*', 
-                                 'admin.transkrip.*', 'admin.cetak.*', 'admin.referensi.*', 
-                                 'admin.profile', 'admin.sekolah.*')) {
-            return 'erapor';
-        }
-
         // CBT tab
         if (request()->routeIs('admin.cbt.*', 'admin.tryout.*')) {
             return 'cbt';
@@ -74,15 +65,42 @@ if (!function_exists('activeAdminTab')) {
             return 'tka';
         }
 
-        // Setup tab
-        if (request()->routeIs('admin.users.*', 'admin.mapel.*', 'admin.semester.*', 
-                               'admin.kode-akses.*', 'admin.modul.*', 'admin.bobot.*', 
-                               'admin.backup.*', 'admin.log.*', 'admin.sheet.*', 'admin.presensi.*',
-                               'admin.dapodik.*', 'admin.peta-kelas.*', 'admin.kokurikuler.*')) {
+        // Setup tab (Master Data Sekolah, Siswa, Guru, Rombel, Akun, Dapodik, Sistem)
+        if (request()->routeIs(
+            'admin.sekolah.*',
+            'admin.dapodik.*',
+            'admin.users.*',
+            'admin.referensi.guru',
+            'admin.referensi.pembelajaran',
+            'admin.referensi.foto-siswa',
+            'admin.peta-kelas.*',
+            'admin.mapel.*',
+            'admin.semester.*',
+            'admin.kode-akses.*',
+            'admin.presensi.*',
+            'admin.kokurikuler.*',
+            'admin.modul.*',
+            'admin.bobot.*',
+            'admin.backup.*',
+            'admin.log.*',
+            'admin.sheet.*'
+        )) {
             return 'setup';
         }
 
-        // Fallback
+        // E-Rapor tab
+        if (request()->routeIs(
+            'admin.dashboard',
+            'admin.penilaian.*',
+            'admin.perkembangan.*',
+            'admin.transkrip.*',
+            'admin.cetak.*',
+            'admin.referensi.*',
+            'admin.profile'
+        )) {
+            return 'erapor';
+        }
+
         return 'erapor';
     }
 }

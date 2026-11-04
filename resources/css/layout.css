@@ -560,3 +560,350 @@
         .toast-error { background: var(--bad); }
         .toast-warning { background: var(--warn); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ============================================================
+           CBT & TKA PROFESSIONAL STYLES
+           ============================================================ */
+        .filter-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 16px 20px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 180px;
+            flex: 1;
+        }
+        @media (max-width: 768px) {
+            .filter-group { min-width: 100%; }
+        }
+        
+        /* CBT Exam Professional HUD & Layout */
+        .cbt-hud {
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(16, 24, 40, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .cbt-hud-title {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cbt-hud-timer {
+            font-family: 'SF Pro Display', -apple-system, monospace;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px;
+            border-radius: 99px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .cbt-hud-timer.urgent {
+            background: var(--bad);
+            animation: pulseAlert 1.5s infinite;
+        }
+        @keyframes pulseAlert {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.03); }
+        }
+        .cbt-autosave-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.12);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cbt-autosave-badge.ok { background: rgba(18, 128, 92, 0.3); color: #34D399; }
+        .cbt-autosave-badge.pending { background: rgba(181, 71, 8, 0.3); color: #FBBF24; }
+        
+        .cbt-main-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 992px) {
+            .cbt-main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .cbt-question-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            position: relative;
+        }
+        .cbt-question-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+        .cbt-q-number {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--navy);
+            background: #EEF2F9;
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+        .cbt-q-prompt {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+            margin-bottom: 24px;
+            white-space: pre-wrap;
+        }
+        
+        .cbt-options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cbt-option-label {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        .cbt-option-label:hover {
+            border-color: var(--navy-light);
+            background: #FAFBFD;
+        }
+        .cbt-option-label:has(input:checked),
+        .cbt-option-label.is-selected {
+            border-color: var(--navy);
+            background: #EEF2F9;
+            box-shadow: 0 0 0 1px var(--navy);
+        }
+        .cbt-option-label input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cbt-option-key {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1.5px solid var(--line);
+            background: #fff;
+            color: var(--muted);
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+        .cbt-option-label:has(input:checked) .cbt-option-key,
+        .cbt-option-label.is-selected .cbt-option-key {
+            background: var(--navy);
+            color: #fff;
+            border-color: var(--navy);
+        }
+        .cbt-option-text {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.5;
+            flex: 1;
+        }
+        
+        .cbt-bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        /* CBT Palette Grid */
+        .cbt-palette-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px;
+            position: sticky;
+            top: 90px;
+        }
+        .cbt-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        .cbt-palette-item {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1.5px solid var(--line);
+            background: #FAFBFD;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .cbt-palette-item:hover {
+            border-color: var(--navy);
+            transform: translateY(-1px);
+        }
+        .cbt-palette-item.answered {
+            background: var(--ok);
+            color: #fff;
+            border-color: var(--ok);
+        }
+        .cbt-palette-item.flagged {
+            background: var(--gold);
+            color: #fff;
+            border-color: var(--gold);
+        }
+        .cbt-palette-item.current {
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--navy);
+            font-weight: 900;
+        }
+        
+        /* Score Hero Banner */
+        .score-hero-card {
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .score-circle .score-num {
+            font-size: 38px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .score-circle .score-max {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* Mobile Hardening & Responsive Optimizations for CBT */
+        @media (min-width: 993px) {
+            .cbt-mobile-back-btn { display: none !important; }
+        }
+        @media (max-width: 992px) {
+            #btn-toggle-palette { display: inline-flex !important; }
+            .cbt-palette-card { position: static !important; margin-top: 16px; }
+        }
+        @media (max-width: 768px) {
+            .cbt-hud { padding: 10px 14px; gap: 10px; }
+            .cbt-hud-title { font-size: 13.5px; }
+            .cbt-hud-timer { font-size: 16px; padding: 4px 10px; }
+            .cbt-question-card { padding: 16px 14px; }
+            .cbt-q-prompt { font-size: 14.5px; margin-bottom: 18px; }
+            .cbt-option-label { padding: 12px 14px; gap: 10px; }
+            .cbt-bottom-bar { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+            .cbt-bottom-bar > div { width: 100%; display: flex; justify-content: space-between; }
+            .cbt-bottom-bar .btn { flex: 1; text-align: center; justify-content: center; }
+        }
+
+        /* TKA Pusmendik Dual-Pane Stimulus Layout */
+        .cbt-split-pane {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+        .cbt-stimulus-col {
+            background: #FAFBFD;
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+            padding: 18px 20px;
+            max-height: 62vh;
+            overflow-y: auto;
+        }
+        .cbt-stimulus-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--line);
+        }
+        .cbt-stimulus-content {
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text);
+        }
+        .cbt-question-col {
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 900px) {
+            .cbt-split-pane {
+                grid-template-columns: 1fr;
+            }
+            .cbt-stimulus-col {
+                max-height: 260px;
+                margin-bottom: 16px;
+            }
+        }

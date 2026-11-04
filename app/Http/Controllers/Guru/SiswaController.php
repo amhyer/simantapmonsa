@@ -20,10 +20,35 @@ class SiswaController extends Controller
         $this->nilaiService = $nilaiService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $siswa = Siswa::where('guru_id', auth()->id())->orderBy('nama_peserta_didik')->get();
-        return view('guru.siswa.index', compact('siswa'));
+        $guruId = auth()->id();
+        $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
+            ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
+        if ($kelasList->isEmpty()) {
+            $kelasList = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+        }
+
+        $selectedKelas = $request->input('kelas')
+            ?? \App\Models\Rombel::where('guru_id', $guruId)->value('nama_rombel')
+            ?? \App\Models\PengaturanGuru::where('guru_id', $guruId)->value('kelas')
+            ?? Siswa::where('guru_id', $guruId)->value('kelas')
+            ?? $kelasList->first();
+
+        if ($selectedKelas) {
+            $siswa = Siswa::where('kelas', $selectedKelas)
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->orderBy('nama_peserta_didik')
+                ->get();
+            if ($siswa->isEmpty()) {
+                $siswa = Siswa::where('guru_id', $guruId)->orderBy('nama_peserta_didik')->get();
+            }
+        } else {
+            $siswa = Siswa::where('guru_id', $guruId)->orderBy('nama_peserta_didik')->get();
+        }
+
+        return view('guru.siswa.index', compact('siswa', 'kelasList', 'selectedKelas'));
     }
 
     public function create()
@@ -69,7 +94,7 @@ class SiswaController extends Controller
 
     public function edit(Siswa $siswa)
     {
-        if ($siswa->guru_id !== auth()->id()) {
+        if (empty($siswa->dapodik_id) && $siswa->guru_id !== auth()->id()) {
             abort(403);
         }
         return view('guru.siswa.edit', compact('siswa'));
@@ -77,7 +102,7 @@ class SiswaController extends Controller
 
     public function update(Request $request, Siswa $siswa)
     {
-        if ($siswa->guru_id !== auth()->id()) {
+        if (empty($siswa->dapodik_id) && $siswa->guru_id !== auth()->id()) {
             abort(403);
         }
 
@@ -107,6 +132,10 @@ class SiswaController extends Controller
 
     public function destroy(Siswa $siswa)
     {
+        if (!empty($siswa->dapodik_id)) {
+            return back()->with('error', 'Siswa Dapodik adalah data master terpusat sekolah dan tidak dapat dihapus manual.');
+        }
+
         if ($siswa->guru_id !== auth()->id()) {
             abort(403);
         }

@@ -105,9 +105,12 @@
     </div>
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h3><i class="fas fa-list" style="margin-right:8px;color:var(--navy)"></i>Daftar Siswa & Skor Kesiapan</h3>
-            <span class="tag tag-mut">{{ count($siswaList) }} siswa</span>
+            <div style="display:flex;gap:8px;align-items:center">
+                <a href="{{ route('guru.tka.analysis') }}" class="btn btn-sm btn-outline"><i class="fas fa-chart-line" style="margin-right:6px"></i>Analisis Kognitif Kelas</a>
+                <span class="tag tag-mut">{{ count($siswaList) }} siswa</span>
+            </div>
         </div>
         <div class="card-body tight">
             @if(count($siswaList))

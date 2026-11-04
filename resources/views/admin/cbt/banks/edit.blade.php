@@ -2,64 +2,72 @@
 
 @section('title', 'Edit Bank Soal CBT - Admin')
 
-@section('page_title', 'Edit Bank Soal CBT')
+@section('sidebar')
+    @include('admin.partials.sidebar')
+@endsection
+
+@section('page_title', 'Ubah Bank Soal CBT')
 @section('page_subtitle', $bank->title)
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">✏️ Edit Bank Soal CBT</h2>
-            <p class="text-muted mb-0">Perbarui data dasar bank soal</p>
-        </div>
-    </div>
-
-    @if($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
+<div style="max-width:700px;margin:0 auto">
     <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-edit" style="margin-right:8px;color:var(--navy)"></i>Ubah Identitas Bank Soal</h3>
+            <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
+
         <div class="card-body">
             <form method="POST" action="{{ route('admin.cbt.banks.update', $bank) }}">
                 @csrf
                 @method('PUT')
 
-                <div class="mb-3">
-                    <label class="form-label">Judul Bank <span class="text-danger">*</span></label>
-                    <input type="text" name="title" class="form-control" maxlength="200"
-                           value="{{ old('title', $bank->title) }}" required>
+                <div style="margin-bottom:20px">
+                    <label class="form-label">
+                        Judul Bank Soal <span style="color:var(--bad)">*</span>
+                    </label>
+                    <input type="text" 
+                           name="title" 
+                           class="form-control" 
+                           maxlength="200" 
+                           value="{{ old('title', $bank->title) }}" 
+                           required>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
-                    <input type="text" name="subject" class="form-control" maxlength="100"
-                           value="{{ old('subject', $bank->subject) }}" required>
+                <div style="margin-bottom:20px">
+                    <label class="form-label">
+                        Mata Pelajaran <span style="color:var(--bad)">*</span>
+                    </label>
+                    <input type="text" 
+                           name="subject" 
+                           class="form-control" 
+                           maxlength="100" 
+                           value="{{ old('subject', $bank->subject) }}" 
+                           required>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Guru Pemilik <span class="text-danger">*</span></label>
-                    <select name="guru_id" class="form-select" required>
+                <div style="margin-bottom:24px">
+                    <label class="form-label">
+                        Guru Pemilik / Pengampu <span style="color:var(--bad)">*</span>
+                    </label>
+                    <select name="guru_id" class="form-control" required style="width:100%">
                         @foreach($gurus as $guru)
-                        <option value="{{ $guru->id }}" {{ old('guru_id', $bank->guru_id) == $guru->id ? 'selected' : '' }}>
-                            {{ $guru->nama_lengkap }}
-                        </option>
+                            <option value="{{ $guru->id }}" @selected(old('guru_id', $bank->guru_id) == $guru->id)>
+                                {{ $guru->nama_lengkap }} (NIP: {{ $guru->nip ?? '-' }})
+                            </option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Simpan Perubahan
-                    </button>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:18px;border-top:1px solid var(--line);gap:12px">
                     <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Kembali
+                        Batal
                     </a>
+                    <button type="submit" class="btn btn-primary" style="padding:10px 24px">
+                        <i class="fas fa-save"></i> Perbarui Bank Soal
+                    </button>
                 </div>
             </form>
         </div>

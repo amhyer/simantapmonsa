@@ -33,10 +33,14 @@ class CbtStudentReader
 
     private function sesiLegacy(Siswa $siswa, int $perPage): LengthAwarePaginator
     {
-        return CbtTestSession::where('guru_id', $siswa->guru_id)
-            ->whereIn('status', ['published', 'running', 'completed'])
-            ->whereJsonContains('participant_ids', (int) $siswa->id)
-            ->latest()
+        $query = CbtTestSession::whereIn('status', ['published', 'running', 'completed'])
+            ->whereJsonContains('participant_ids', (int) $siswa->id);
+
+        if (empty($siswa->dapodik_id) && $siswa->guru_id) {
+            $query->where('guru_id', $siswa->guru_id);
+        }
+
+        return $query->latest()
             ->paginate($perPage)
             ->through(fn (CbtTestSession $s) => $this->baris(
                 id: (int) $s->id,
@@ -49,11 +53,15 @@ class CbtStudentReader
 
     private function sesiEngine(Siswa $siswa, int $perPage): LengthAwarePaginator
     {
-        return ExamSession::where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SESI)
-            ->where('guru_id', $siswa->guru_id)
+        $query = ExamSession::where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SESI)
             ->whereIn('status', ['published', 'running', 'completed'])
-            ->whereJsonContains('peserta_ids', (int) $siswa->id)
-            ->latest()
+            ->whereJsonContains('peserta_ids', (int) $siswa->id);
+
+        if (empty($siswa->dapodik_id) && $siswa->guru_id) {
+            $query->where('guru_id', $siswa->guru_id);
+        }
+
+        return $query->latest()
             ->paginate($perPage)
             ->through(fn (ExamSession $s) => $this->baris(
                 id: (int) $s->sumber_id,

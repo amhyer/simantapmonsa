@@ -1,147 +1,149 @@
 @extends('layouts.admin-with-tabs')
 
-@section('title', 'Analisis Butir Soal - Admin')
+@section('title', 'Analisis Butir Soal - ' . $session->title)
 
-@section('page_title', 'Analisis Butir Soal')
+@section('sidebar')
+    @include('admin.partials.sidebar')
+@endsection
+
+@section('page_title', 'Analisis Butir Soal CBT')
 @section('page_subtitle', $session->title)
 
+@section('header_actions')
+    <a href="{{ route('admin.cbt.sessions.show', $session) }}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Kembali ke Sesi
+    </a>
+@endsection
+
 @section('content')
-<div class="container-fluid py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-        <div>
-            <h2 class="mb-1">Analisis Butir</h2>
-            <p class="text-muted mb-0">
-                {{ $session->kelas }} &middot; Guru: {{ $session->guru->nama_lengkap ?? '-' }} &middot;
-                Bank: {{ $session->bank->title ?? '-' }}
-            </p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('admin.cbt.sessions.show', $session) }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Kembali ke Sesi
-            </a>
-        </div>
+{{-- Source Info Banner --}}
+<div class="note note-ok" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+        <i class="fas fa-info-circle"></i> 
+        <strong>Metrik Psikometri:</strong> 
+        Tingkat Kesukaran (P) = Peserta Benar / Total Peserta • 
+        Daya Pembeda (D) = Proporsi Kelompok Atas (27%) - Proporsi Kelompok Bawah (27%).
+    </div>
+    <div>
+        <span class="tag tag-primary">Status: {{ ucfirst($hasil['status_data']) }}</span>
+    </div>
+</div>
+
+{{-- Metric Stat Cards --}}
+<div class="grid grid-4" style="margin-bottom:24px">
+    <div class="stat-card primary">
+        <i class="fas fa-users stat-icon"></i>
+        <div class="stat-label">Peserta Dianalisis</div>
+        <div class="stat-value">{{ $hasil['jumlah_peserta'] }}</div>
+        <div class="stat-change">Siswa terekam</div>
     </div>
 
-    <div class="alert alert-light border">
-        <strong>Sumber data:</strong>
-        {{ $hasil['sumber'] === 'engine' ? 'engine terpadu exam_*' : 'tabel CBT lama (snapshot)' }}
-        &middot; <strong>Status:</strong>
-        {{ $hasil['status_data'] === 'selesai' ? 'hasil terkumpul' : 'sebagian / sesi masih berjalan' }}
-        &middot; Rumus P = benar/peserta, D = 27% atas - 27% bawah.
-        @if($hasil['status_data'] !== 'selesai')
-            <span class="text-warning">Angka dapat berubah sampai sesi selesai.</span>
-        @endif
+    <div class="stat-card gold">
+        <i class="fas fa-list-ol stat-icon"></i>
+        <div class="stat-label">Jumlah Butir Soal</div>
+        <div class="stat-value">{{ $hasil['jumlah_soal'] }}</div>
+        <div class="stat-change">Pilihan Ganda</div>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-muted small">PESERTA DIANALISIS</div>
-                <div class="fs-3 fw-bold">{{ $hasil['jumlah_peserta'] }}</div>
-            </div></div>
+    <div class="stat-card ok">
+        <i class="fas fa-gauge-high stat-icon"></i>
+        <div class="stat-label">Rata-rata Kesukaran (P)</div>
+        <div class="stat-value">
+            {{ $hasil['rata_p'] !== null ? number_format($hasil['rata_p'] * 100, 1) . '%' : '-' }}
         </div>
-        <div class="col-md-3">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-muted small">JUMLAH BUTIR</div>
-                <div class="fs-3 fw-bold">{{ $hasil['jumlah_soal'] }}</div>
-            </div></div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-muted small">RATA-RATA P</div>
-                <div class="fs-3 fw-bold">
-                    {{ $hasil['rata_p'] !== null ? number_format($hasil['rata_p'] * 100, 1) . '%' : '-' }}
-                </div>
-            </div></div>
-        </div>
-        <div class="col-md-3">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-muted small">RATA-RATA D</div>
-                <div class="fs-3 fw-bold">{{ $hasil['rata_d'] !== null ? number_format($hasil['rata_d'], 2) : '-' }}</div>
-            </div></div>
-        </div>
+        <div class="stat-change up">Tingkat kemudahan</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Rincian per Butir</h5>
+    <div class="stat-card violet">
+        <i class="fas fa-chart-line stat-icon"></i>
+        <div class="stat-label">Rata-rata Pembeda (D)</div>
+        <div class="stat-value">
+            {{ $hasil['rata_d'] !== null ? number_format($hasil['rata_d'], 2) : '-' }}
         </div>
-        <div class="card-body">
+        <div class="stat-change">Kualitas diskriminasi</div>
+    </div>
+</div>
+
+{{-- Butir Soal Analysis Table --}}
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-microscope" style="color:var(--navy);margin-right:8px"></i>Hasil Analisis Per Butir Soal</h3>
+        <span class="tag tag-secondary">Evaluasi Kelayakan Butir</span>
+    </div>
+
+    <div class="card-body tight">
+        @if(empty($hasil['butir']))
+            <div class="empty-state">
+                <div class="icon">📊</div>
+                <h4>Belum Ada Data untuk Dianalisis</h4>
+                <p>Ujian membutuhkan minimal siswa yang mengumpulkan jawaban untuk menghitung daya pembeda.</p>
+            </div>
+        @else
             <div class="table-wrapper">
-                <table class="table table-hover align-middle">
+                <table>
                     <thead>
                         <tr>
-                            <th style="width:42px">No</th>
-                            <th>Butir</th>
-                            <th style="width:60px">Kunci</th>
-                            <th style="width:80px">Benar</th>
-                            <th style="width:80px">P</th>
-                            <th style="width:90px">Kategori P</th>
-                            <th style="width:70px">D</th>
-                            <th style="width:90px">Kategori D</th>
-                            <th>Distraktor</th>
-                            <th>Catatan</th>
+                            <th style="width:6%">No</th>
+                            <th style="width:20%">Tingkat Kesukaran (P)</th>
+                            <th style="width:20%">Daya Pembeda (D)</th>
+                            <th style="width:24%">Rekomendasi Butir</th>
+                            <th style="width:30%;text-align:right">Pengecoh / Distraktor</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($hasil['butir'] as $butir)
-                        <tr>
-                            <td>{{ $butir['nomor'] }}</td>
-                            <td>
-                                <div style="max-width:380px">{{ \Illuminate\Support\Str::limit($butir['teks'], 130) }}</div>
-                                <small class="text-muted">{{ $butir['tipe'] }}</small>
-                            </td>
-                            <td><span class="badge bg-dark">{{ $butir['kunci'] ?? '?' }}</span></td>
-                            <td>{{ $butir['jumlah_benar'] }} / {{ $butir['jumlah_peserta'] }}</td>
-                            <td>{{ $butir['p'] !== null ? number_format($butir['p'] * 100, 1) . '%' : '-' }}</td>
-                            <td>
-                                <span class="badge bg-{{
-                                    $butir['kategori_p'] === 'Sulit' ? 'danger' :
-                                    ($butir['kategori_p'] === 'Mudah' ? 'warning text-dark' :
-                                    ($butir['kategori_p'] === 'Sedang' ? 'success' : 'secondary'))
-                                }}">{{ $butir['kategori_p'] }}</span>
-                            </td>
-                            <td>{{ $butir['d'] !== null ? number_format($butir['d'], 2) : '-' }}</td>
-                            <td>
-                                <span class="badge bg-{{
-                                    $butir['kategori_d'] === 'Lemah' ? 'danger' :
-                                    ($butir['kategori_d'] === 'Cukup' ? 'warning text-dark' :
-                                    ($butir['kategori_d'] === 'Baik' ? 'success' : 'secondary'))
-                                }}">{{ $butir['kategori_d'] }}</span>
-                            </td>
-                            <td>
-                                @forelse($butir['distraktor'] as $huruf => $jumlah)
-                                    <span class="badge bg-light text-dark border me-1">{{ $huruf }}: {{ $jumlah }}</span>
-                                @empty
-                                    <span class="text-muted">-</span>
-                                @endforelse
-                                @if($butir['kosong'] > 0)
-                                    <span class="badge bg-secondary">Kosong: {{ $butir['kosong'] }}</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($butir['catatan'] === [])
-                                    <span class="text-success">Baik</span>
-                                @else
-                                    <ul class="mb-0 ps-3">
-                                        @foreach($butir['catatan'] as $catatan)
-                                            <li>{{ $catatan }}</li>
+                        @foreach($hasil['butir'] as $b)
+                            @php
+                                $pPercent = round(($b['p'] ?? 0) * 100);
+                                $dVal = $b['d'] ?? 0;
+                                $rekomendasi = 'Diterima';
+                                $rekomClass = 'tag-ok';
+                                if ($dVal < 0.2) {
+                                    $rekomendasi = 'Perlu Revisi';
+                                    $rekomClass = 'tag-warn';
+                                }
+                                if ($dVal < 0) {
+                                    $rekomendasi = 'Dibuang / Perbaiki Kunci';
+                                    $rekomClass = 'tag-bad';
+                                }
+                            @endphp
+                            <tr>
+                                <td style="font-weight:700;color:var(--navy)">#{{ $b['nomor'] }} — {{ Str::limit($b['teks'] ?? '', 60) }}</td>
+                                <td>
+                                    <div style="font-weight:700;font-size:13.5px">
+                                        {{ number_format($pPercent, 1) }}%
+                                    </div>
+                                    <div style="font-size:11px;color:var(--muted)">
+                                        Kategori: <strong>{{ ucfirst($b['kategori_p'] ?? '-') }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-weight:700;font-size:13.5px;color:{{ $dVal >= 0.3 ? 'var(--ok)' : ($dVal >= 0.2 ? 'var(--warn)' : 'var(--bad)') }}">
+                                        {{ number_format($dVal, 2) }}
+                                    </div>
+                                    <div style="font-size:11px;color:var(--muted)">
+                                        Kategori: <strong>{{ ucfirst($b['kategori_d'] ?? '-') }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="tag {{ $rekomClass }}" style="font-weight:700">
+                                        {{ $rekomendasi }}
+                                    </span>
+                                </td>
+                                <td style="text-align:right">
+                                    <div style="display:inline-flex;gap:4px;font-size:11px">
+                                        @foreach($b['distraktor'] ?? [] as $opt => $cnt)
+                                            <span style="padding:2px 6px;border-radius:4px;background:#FAFBFD;border:1px solid var(--line)">
+                                                <strong>{{ $opt }}:</strong> {{ $cnt }}
+                                            </span>
                                         @endforeach
-                                    </ul>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="10" class="text-center text-muted">
-                                Belum ada soal atau hasil yang dapat dianalisis.
-                            </td>
-                        </tr>
-                        @endforelse
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
+        @endif
     </div>
 </div>
 @endsection

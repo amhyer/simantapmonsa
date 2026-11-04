@@ -6,7 +6,6 @@
         ['label' => 'PEMBELAJARAN', 'items' => [
             ['route' => 'guru.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi Ajar'],
             ['route' => 'guru.dimensi.index', 'icon' => 'lucide-sprout', 'label' => 'Profil Lulusan'],
-            ['route' => 'guru.tka.index', 'icon' => 'lucide-ruler', 'label' => 'Kesiapan TKA'],
         ]],
         ['label' => 'ASESMEN', 'items' => [
             ['label' => 'Asesmen & Nilai', 'icon' => 'lucide-clipboard-check', 'open' => true, 'children' => [
@@ -17,14 +16,20 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
-        ['label' => 'CBT & TRYOUT', 'items' => [
-            ['label' => 'Tryout', 'icon' => 'lucide-package', 'children' => [
+        ['label' => 'CBT, TRYOUT & TKA', 'items' => [
+            ['label' => 'Ujian CBT', 'icon' => 'lucide-monitor', 'open' => request()->routeIs('cbt.*'), 'children' => [
+                ['route' => 'cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
+                ['route' => 'cbt.question-banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
+            ]],
+            ['label' => 'Tryout', 'icon' => 'lucide-package', 'open' => request()->routeIs('tryout.*'), 'children' => [
                 ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
             ]],
-            ['label' => 'Asesmen TKA', 'icon' => 'lucide-gauge', 'children' => [
-                ['route' => 'tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi TKA'],
-                ['route' => 'tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian TKA'],
+            ['label' => 'Asesmen & Simulasi TKA', 'icon' => 'lucide-award', 'open' => request()->routeIs('tka.*', 'guru.tka.*'), 'children' => [
+                ['route' => 'guru.tka.index', 'icon' => 'lucide-gauge', 'label' => 'Monitoring Kesiapan TKA'],
+                ['route' => 'guru.tka.analysis', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Kognitif Kelas'],
+                ['route' => 'tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi & Kisi-kisi TKA'],
+                ['route' => 'tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian Diagnostik TKA'],
             ]],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
@@ -66,8 +71,3 @@
         @endif
     @endforeach
 @endforeach
-@if(modulAsesmenAktif() && Route::has('cbt.sessions.index'))
-    <x-sidebar-label>UJIAN CBT</x-sidebar-label>
-    <x-sidebar-link :href="route('cbt.sessions.index')" icon="lucide-clipboard-check" label="CBT • Sesi Ujian" :active="request()->routeIs('cbt.*')" />
-    <x-sidebar-link :href="route('cbt.question-banks.index')" icon="lucide-book-open" label="CBT • Bank Soal" :active="request()->routeIs('cbt.question-banks.*')" />
-@endif

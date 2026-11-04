@@ -174,11 +174,24 @@ class DashboardController extends Controller
             ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanGuru((int) auth()->id())
             : null;
 
+        // Modul TKA Kesiapan Belajar Kelas:
+        $dimensiScores = \App\Models\Dimensi::where('guru_id', $guruId)->pluck('skor');
+        $tkaCount = $dimensiScores->count();
+        $tkaRata = $tkaCount > 0 ? round($dimensiScores->avg(), 2) : 0;
+        $tkaSiap = $dimensiScores->filter(fn($s) => $s >= 2.5)->count();
+        $tkaPerlu = $dimensiScores->filter(fn($s) => $s < 2.5)->count();
+        $tkaRingkasan = [
+            'total' => $tkaCount,
+            'rata_rata' => $tkaRata,
+            'siap' => $tkaSiap,
+            'perlu_bimbingan' => $tkaPerlu,
+        ];
+
         return view('guru.dashboard', compact(
             'ringkasan', 'perluPendampingan', 'menonjol', 'materiTerbaru', 'kuisAktif',
             'predikat', 'trendLabels', 'trendData', 'totalGuruSiswa', 'syncedSiswa',
             'kkmDiatur', 'namaHari', 'jadwalHariIni', 'deadlineRapor', 'siswaErapot',
-            'eseiMenunggu', 'sheetStatus', 'cbtRingkasan'
+            'eseiMenunggu', 'sheetStatus', 'cbtRingkasan', 'tkaRingkasan'
         ));
     }
 }

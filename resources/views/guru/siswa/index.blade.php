@@ -25,6 +25,26 @@
 @endsection
 
 @section('content')
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+            <i class="fas fa-database" style="color:#16A34A;font-size:18px"></i>
+            <div>
+                <b style="color:#166534;font-size:13px">Single Source of Truth (Data Terpusat Dapodik)</b>
+                <div style="font-size:12px;color:#15803D">Data siswa ditarik otomatis dari Dapodik dan langsung tersebar ke seluruh modul (CBT, e-Rapor, Presensi, Analisis). Anda tidak perlu mengunggah ulang data siswa.</div>
+            </div>
+        </div>
+        @if(isset($kelasList) && count($kelasList) > 0)
+            <form method="GET" action="{{ route('guru.siswa.index') }}" style="display:flex;align-items:center;gap:8px;margin:0">
+                <label style="font-size:12px;font-weight:600;color:#166534;white-space:nowrap">Pilih Kelas:</label>
+                <select name="kelas" onchange="this.form.submit()" style="padding:5px 10px;border-radius:6px;border:1px solid #86EFAC;font-size:12px;background:#fff;font-weight:600;color:#166534">
+                    @foreach($kelasList as $k)
+                        <option value="{{ $k }}" @selected(isset($selectedKelas) && $selectedKelas === $k)>Kelas {{ $k }}</option>
+                    @endforeach
+                </select>
+            </form>
+        @endif
+    </div>
+
     <div id="imporForm" style="display:none;margin-bottom:16px">
         <div class="card">
             <div class="card-body">

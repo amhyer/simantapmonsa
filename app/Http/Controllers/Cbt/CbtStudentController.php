@@ -18,13 +18,23 @@ class CbtStudentController extends Controller
     private function student(): Siswa
     {
         $user = auth()->user();
-        $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
-        if (!$siswa) {
-            $linked = Siswa::whereIn('id', $user->terhubung_dengan ?? [])->limit(2)->get();
-            abort_unless($linked->count() === 1, 403, 'Akun harus terhubung ke tepat satu siswa.');
-            $siswa = $linked->first();
+        $siswa = null;
+
+        $ids = array_map('intval', (array) ($user->terhubung_dengan ?? []));
+        if ($ids !== []) {
+            $siswa = Siswa::whereIn('id', $ids)->first();
         }
-        abort_unless($siswa->aktif && !$siswa->archived_at, 403);
+
+        if (!$siswa) {
+            $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+        }
+
+        if (!$siswa) {
+            $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
+            $siswa = Siswa::where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna)->first();
+        }
+
+        abort_unless($siswa && $siswa->aktif && !$siswa->archived_at, 403, 'Data siswa aktif tidak ditemukan untuk akun ini.');
         return $siswa;
     }
 

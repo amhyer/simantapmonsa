@@ -1,7 +1,26 @@
-<style>
-.cbt-form label{display:block;margin:12px 0 5px;font-weight:600}.cbt-form input:not([type=radio]),.cbt-form select,.cbt-form textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box}.cbt-form{max-width:900px}.cbt-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.cbt-note{padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin:12px 0}.cbt-list{width:100%;border-collapse:collapse}.cbt-list td,.cbt-list th{text-align:left;padding:12px;border-bottom:1px solid #e2e8f0}.cbt-option{display:flex;gap:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin:6px 0}.cbt-option input{width:auto}.cbt-timer{position:sticky;top:0;z-index:10;background:#172554;color:#fff;padding:16px;border-radius:8px}.cbt-form button{cursor:pointer}
-</style>
-@if(session('success'))<p class="cbt-note" role="status">{{ session('success') }}</p>@endif
+@if(session('success'))
+    <div class="note note-ok" style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-check-circle" style="color:var(--ok);font-size:16px"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="note note-bad" style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-exclamation-triangle" style="color:var(--bad);font-size:16px"></i>
+        <span>{{ session('error') }}</span>
+    </div>
+@endif
+
 @if($errors->any())
-<div class="cbt-note" role="alert"><strong>Periksa isian berikut:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    <div class="note note-bad" style="margin-bottom:16px">
+        <div style="font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <i class="fas fa-exclamation-circle" style="color:var(--bad)"></i> Periksa kembali isian berikut:
+        </div>
+        <ul style="margin:0;padding-left:20px;font-size:13px">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
 @endif

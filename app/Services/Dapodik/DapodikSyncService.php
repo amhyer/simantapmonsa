@@ -150,8 +150,8 @@ class DapodikSyncService
         $allErrors = [];
         $sekolahResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0];
         $rombelResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0];
-        $gtkResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0];
-        $siswaResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0];
+        $gtkResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'existing_dapodik_ids' => []];
+        $siswaResult = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'existing_dapodik_ids' => []];
         $archiveResult = ['archived' => 0, 'skipped' => 0, 'errors' => []];
 
         try {
@@ -181,6 +181,12 @@ class DapodikSyncService
                     $siswaResult['diperbarui'] += $batchResult['diperbarui'];
                     $siswaResult['dilewati'] += $batchResult['dilewati'];
                     $siswaResult['gagal'] += $batchResult['gagal'];
+                    if (!empty($batchResult['existing_dapodik_ids'])) {
+                        $siswaResult['existing_dapodik_ids'] = array_merge(
+                            $siswaResult['existing_dapodik_ids'],
+                            $batchResult['existing_dapodik_ids']
+                        );
+                    }
                     $allErrors = array_merge($allErrors, $batchResult['errors']);
                     DB::commit();
                 } catch (\Exception $e) {
@@ -656,6 +662,7 @@ class DapodikSyncService
                     'rekaman' => $row,
                 ];
 
+                $studentModel = null;
                 if ($existing) {
                     $existing->update($siswaData);
                     $existing->forceFill([
@@ -663,6 +670,7 @@ class DapodikSyncService
                         'archived_at' => null,
                     ])->save();
                     $result['diperbarui']++;
+                    $studentModel = $existing;
                 } else {
                     $newSiswa = Siswa::create(array_merge($siswaData, [
                         'uuid' => Str::uuid(),
@@ -673,6 +681,11 @@ class DapodikSyncService
                         'archived_at' => null,
                     ])->save();
                     $result['berhasil']++;
+                    $studentModel = $newSiswa;
+                }
+
+                if ($studentModel) {
+                    $this->ensureStudentUser($studentModel, $nis, $aktif);
                 }
 
                 if ($dapodikId) {
@@ -708,6 +721,12 @@ class DapodikSyncService
             $siswaQuery = Siswa::where('aktif', true)
                 ->whereNotNull('dapodik_id')
                 ->whereNull('archived_at');
+
+            // SAFETY GUARD: Jangan arsipkan massal jika daftar ID siswa kosong (mencegah salah arsip seluruh sekolah)
+            if (empty($currentSiswaDapodikIds)) {
+                $result['skipped'] += $siswaQuery->count();
+                return $result;
+            }
 
             $siswaChunkSize = (int) config('dapodik.archive_chunk', 500);
             $siswaIdsToArchive = $siswaQuery->pluck('dapodik_id')->filter()
@@ -1068,5 +1087,47 @@ class DapodikSyncService
         }
 
         return null;
+    }
+
+    private function ensureStudentUser(Siswa $siswa, ?string $nis, bool $isActive = true): void
+    {
+        try {
+            $username = $nis ?: ($siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id));
+            
+            $user = User::where('peran', 'siswa')
+                ->where(function ($q) use ($siswa, $username) {
+                    $q->whereJsonContains('terhubung_dengan', $siswa->id)
+                      ->orWhere('nama_pengguna', $username)
+                      ->orWhere('nama_pengguna', 'siswa' . $username);
+                })
+                ->first();
+
+            if ($user) {
+                $terhubung = (array) ($user->terhubung_dengan ?? []);
+                if (!in_array($siswa->id, $terhubung, true)) {
+                    $terhubung[] = $siswa->id;
+                }
+                $user->update([
+                    'nama_lengkap' => $siswa->nama_peserta_didik,
+                    'kelas_mata_pelajaran' => $siswa->kelas,
+                    'aktif' => $isActive,
+                    'terhubung_dengan' => array_values(array_unique($terhubung)),
+                ]);
+            } else {
+                User::create([
+                    'uuid' => (string) Str::uuid(),
+                    'nama_lengkap' => $siswa->nama_peserta_didik,
+                    'nama_pengguna' => $username,
+                    'kata_sandi' => bcrypt('siswa123'),
+                    'peran' => 'siswa',
+                    'terhubung_dengan' => [$siswa->id],
+                    'kelas_mata_pelajaran' => $siswa->kelas,
+                    'aktif' => $isActive,
+                    'force_password_change' => false,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Gagal auto-create akun user siswa {$siswa->id}: " . $e->getMessage());
+        }
     }
 }

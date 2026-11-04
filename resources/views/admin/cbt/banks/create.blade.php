@@ -3,63 +3,72 @@
 @section('title', 'Buat Bank Soal CBT - Admin')
 
 @section('page_title', 'Buat Bank Soal CBT')
-@section('page_subtitle', 'Bank soal baru untuk seluruh guru')
+@section('page_subtitle', 'Penugasan bank soal baru untuk guru pengampu')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">➕ Buat Bank Soal CBT</h2>
-            <p class="text-muted mb-0">Isi data dasar bank soal; soal diisi guru pemilik setelahnya</p>
-        </div>
-    </div>
-
-    @if($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
+<div style="max-width:700px;margin:0 auto">
     <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-folder-plus" style="margin-right:8px;color:var(--navy)"></i>Formulir Pembuatan Bank Soal</h3>
+            <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
+
         <div class="card-body">
             <form method="POST" action="{{ route('admin.cbt.banks.store') }}">
                 @csrf
 
-                <div class="mb-3">
-                    <label class="form-label">Judul Bank <span class="text-danger">*</span></label>
-                    <input type="text" name="title" class="form-control" maxlength="200"
-                           value="{{ old('title') }}" required>
+                <div style="margin-bottom:20px">
+                    <label class="form-label">
+                        Judul Bank Soal <span style="color:var(--bad)">*</span>
+                    </label>
+                    <input type="text" 
+                           name="title" 
+                           class="form-control" 
+                           maxlength="200" 
+                           placeholder="Contoh: Asesmen Sumatif Akhir Semester IPA Kelas 8" 
+                           value="{{ old('title') }}" 
+                           required>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
-                    <input type="text" name="subject" class="form-control" maxlength="100"
-                           value="{{ old('subject') }}" required>
+                <div style="margin-bottom:20px">
+                    <label class="form-label">
+                        Mata Pelajaran <span style="color:var(--bad)">*</span>
+                    </label>
+                    <input type="text" 
+                           name="subject" 
+                           class="form-control" 
+                           maxlength="100" 
+                           placeholder="Contoh: IPA / Matematika / Bahasa Indonesia" 
+                           value="{{ old('subject') }}" 
+                           required>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Guru Pemilik <span class="text-danger">*</span></label>
-                    <select name="guru_id" class="form-select" required>
-                        <option value="">— Pilih Guru —</option>
+                <div style="margin-bottom:24px">
+                    <label class="form-label">
+                        Guru Pemilik / Pengampu <span style="color:var(--bad)">*</span>
+                    </label>
+                    <select name="guru_id" class="form-control" required style="width:100%">
+                        <option value="">— Pilih Guru Pengampu —</option>
                         @foreach($gurus as $guru)
-                        <option value="{{ $guru->id }}" {{ old('guru_id') == $guru->id ? 'selected' : '' }}>
-                            {{ $guru->nama_lengkap }}
-                        </option>
+                            <option value="{{ $guru->id }}" @selected(old('guru_id') == $guru->id)>
+                                {{ $guru->nama_lengkap }} (NIP: {{ $guru->nip ?? '-' }})
+                            </option>
                         @endforeach
                     </select>
+                    <small style="color:var(--muted);font-size:12px;margin-top:4px;display:block">
+                        Guru ini akan memiliki kewenangan mengisi dan mengedit butir soal pada bank ini.
+                    </small>
                 </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Simpan
-                    </button>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:18px;border-top:1px solid var(--line);gap:12px">
                     <a href="{{ route('admin.cbt.banks.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Kembali
+                        Batal
                     </a>
+                    <button type="submit" class="btn btn-primary" style="padding:10px 24px">
+                        <i class="fas fa-save"></i> Simpan Bank Soal
+                    </button>
                 </div>
             </form>
         </div>

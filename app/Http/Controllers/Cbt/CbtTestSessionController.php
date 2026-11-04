@@ -24,7 +24,11 @@ class CbtTestSessionController extends Controller
     public function create()
     {
         $banks = CbtQuestionBank::where('guru_id', auth()->id())->orderBy('title')->get();
-        $classes = Siswa::where('guru_id', auth()->id())->where('aktif', true)->whereNull('archived_at')->distinct()->orderBy('kelas')->pluck('kelas');
+        $classes = Siswa::where('aktif', true)->whereNull('archived_at')
+            ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
+        if ($classes->isEmpty()) {
+            $classes = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+        }
         return view('cbt.sessions.create', compact('banks', 'classes'));
     }
 

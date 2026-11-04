@@ -16,6 +16,33 @@
         </div>
     @else
 
+    @if(config('simantap.cbt_enabled', false) && Route::has('cbt.student.index') && count($cbtUjian) > 0)
+        <div style="background:linear-gradient(135deg, var(--violet, #6D28D9) 0%, #4C1D95 100%);color:#fff;border-radius:12px;padding:18px 22px;margin-bottom:20px;box-shadow:0 4px 15px rgba(109,40,217,0.25)">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+                <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span style="background:#10B981;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px">Sesi Ujian Aktif</span>
+                            <span style="font-size:12px;opacity:0.9">{{ count($cbtUjian) }} Ujian Siap Dikerjakan</span>
+                        </div>
+                        <h2 style="font-size:17px;font-weight:700;margin:4px 0 2px 0;color:#fff">{{ $cbtUjian[0]['judul'] }}</h2>
+                        <div style="font-size:12px;opacity:0.9">
+                            Mata Pelajaran: <b>{{ $cbtUjian[0]['mapel'] }}</b> &bull; Batas Selesai: {{ \Illuminate\Support\Carbon::parse($cbtUjian[0]['closes_at'])->format('d M H:i') }}
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <a href="{{ route('cbt.student.start', $cbtUjian[0]['id']) }}" class="btn" style="background:#fff;color:var(--violet, #6D28D9);font-weight:700;padding:9px 18px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
+                        <i class="fas fa-play" style="margin-right:6px"></i> Mulai Ujian
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-4" style="margin-bottom:20px">
         <div class="stat-card violet" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-user"></i></div>

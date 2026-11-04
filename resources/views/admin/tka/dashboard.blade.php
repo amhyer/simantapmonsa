@@ -1,351 +1,314 @@
 @extends('layouts.admin-with-tabs')
 
-@section('title', 'Dashboard TKA - Admin')
+@section('title', 'Dashboard Tes Kemampuan Akademik (TKA) - Admin')
 
-@section('page_title', 'Dashboard TKA')
-@section('page_subtitle', 'Monitoring Profil Pelajar')
+@section('sidebar')
+    @include('admin.partials.sidebar')
+@endsection
+
+@section('page_title', 'Dashboard Tes Kemampuan Akademik (TKA)')
+@section('page_subtitle', 'Monitoring Kesiapan Asesmen Siswa, Kisi-kisi Pusmendik & Sistem Deteksi Dini (Early Warning)')
+
+@section('header_actions')
+    <a href="https://pusmendik.kemendikdasmen.go.id/tka/simulasi_tka/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="color:var(--navy, #1F3864);border-color:currentColor">
+        <i class="fas fa-external-link-alt"></i> Portal Pusmendik
+    </a>
+    <a href="{{ route('admin.tka.dimensions.index') }}" class="btn btn-gold btn-sm">
+        <i class="fas fa-th-large"></i> Kelola Kisi-kisi TKA
+    </a>
+@endsection
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">🎯 Dashboard TKA (Tes Kesiapan Akhir)</h2>
-            <p class="text-muted mb-0">Monitoring dan manajemen penilaian Profil Pelajar Pancasila</p>
-        </div>
+{{-- Statistics Cards --}}
+<div class="grid grid-4" style="margin-bottom:24px">
+    <div class="stat-card primary">
+        <i class="fas fa-th-large stat-icon"></i>
+        <div class="stat-label">Total Dimensi Profil</div>
+        <div class="stat-value">{{ $stats['total_dimensions'] }}</div>
+        <div class="stat-change up">{{ $stats['active_dimensions'] }} dimensi aktif</div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card border-primary h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Dimensi</h6>
-                            <h2 class="mb-0">{{ $stats['total_dimensions'] }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-th-large fa-3x text-primary opacity-25"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted">{{ $stats['active_dimensions'] }} aktif</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card border-success h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Total Penilaian</h6>
-                            <h2 class="mb-0">{{ $stats['total_assessments'] }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clipboard-check fa-3x text-success opacity-25"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted">{{ $stats['assessments_this_month'] }} bulan ini</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card border-warning h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Early Warnings</h6>
-                            <h2 class="mb-0">{{ $stats['early_warnings']['total'] }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-exclamation-triangle fa-3x text-warning opacity-25"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted">{{ $stats['early_warnings']['pending'] }} pending</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card border-info h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-2">Kritis</h6>
-                            <h2 class="mb-0 text-danger">{{ $stats['critical_warnings']->count() }}</h2>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-radiation fa-3x text-danger opacity-25"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted">Perlu tindakan segera</small>
-                </div>
-            </div>
-        </div>
+    <div class="stat-card ok">
+        <i class="fas fa-clipboard-check stat-icon"></i>
+        <div class="stat-label">Total Penilaian Siswa</div>
+        <div class="stat-value">{{ $stats['total_assessments'] }}</div>
+        <div class="stat-change up">{{ $stats['assessments_this_month'] }} penilaian bulan ini</div>
     </div>
 
-    <div class="row">
-        <!-- Status Distribution -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">📊 Distribusi Status Kesiapan</h5>
-                </div>
-                <div class="card-body">
+    <div class="stat-card warn">
+        <i class="fas fa-exclamation-triangle stat-icon"></i>
+        <div class="stat-label">Early Warnings</div>
+        <div class="stat-value">{{ $stats['early_warnings']['total'] }}</div>
+        <div class="stat-change">{{ $stats['early_warnings']['pending'] }} butuh tindak lanjut</div>
+    </div>
+
+    <div class="stat-card bad">
+        <i class="fas fa-bell stat-icon"></i>
+        <div class="stat-label">Peringatan Kritis</div>
+        <div class="stat-value">{{ $stats['critical_warnings']->count() }}</div>
+        <div class="stat-change down">Perlu bimbingan segera</div>
+    </div>
+</div>
+
+{{-- Row: Distribusi Kesiapan & Critical Warnings --}}
+<div class="grid grid-2" style="margin-bottom:24px">
+    {{-- Status Distribution Card --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-pie" style="color:var(--navy);margin-right:8px"></i>Distribusi Status Kesiapan Siswa</h3>
+            <span class="tag tag-secondary">Profil Pelajar</span>
+        </div>
+        <div class="card-body">
+            @php
+                $statusBadges = [
+                    'sangat_siap' => ['tag' => 'tag-ok', 'fill' => 'fill-ok', 'label' => 'Sangat Siap'],
+                    'siap' => ['tag' => 'tag-primary', 'fill' => '', 'label' => 'Siap'],
+                    'perlu_bimbingan' => ['tag' => 'tag-gold', 'fill' => 'fill-warn', 'label' => 'Perlu Bimbingan'],
+                    'belum_siap' => ['tag' => 'tag-bad', 'fill' => 'fill-bad', 'label' => 'Belum Siap'],
+                ];
+                $totalAssessments = max(1, $stats['total_assessments']);
+            @endphp
+
+            <div style="display:flex;flex-direction:column;gap:16px">
+                @foreach($stats['status_distribution'] as $status => $count)
                     @php
-                    $statusColors = [
-                        'sangat_siap' => 'success',
-                        'siap' => 'primary',
-                        'perlu_bimbingan' => 'warning',
-                        'belum_siap' => 'danger',
-                    ];
-                    $statusLabels = [
-                        'sangat_siap' => 'Sangat Siap',
-                        'siap' => 'Siap',
-                        'perlu_bimbingan' => 'Perlu Bimbingan',
-                        'belum_siap' => 'Belum Siap',
-                    ];
+                        $cfg = $statusBadges[$status] ?? ['tag' => 'tag-secondary', 'fill' => '', 'label' => ucfirst($status)];
+                        $pct = round(($count / $totalAssessments) * 100);
                     @endphp
-                    
-                    @foreach($stats['status_distribution'] as $status => $count)
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>{{ $statusLabels[$status] ?? $status }}</span>
-                            <strong>{{ $count }}</strong>
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                            <span class="tag {{ $cfg['tag'] }}">{{ $cfg['label'] }}</span>
+                            <span style="font-weight:700;font-size:13px">{{ $count }} Siswa <small style="color:var(--muted);font-weight:400">({{ $pct }}%)</small></span>
                         </div>
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-{{ $statusColors[$status] ?? 'secondary' }}" 
-                                 role="progressbar"
-                                 style="width: {{ $stats['total_assessments'] > 0 ? ($count / $stats['total_assessments'] * 100) : 0 }}%">
-                            </div>
+                        <div class="bar">
+                            <span class="fill {{ $cfg['fill'] }}" style="width:{{ $pct }}%"></span>
                         </div>
                     </div>
-                    @endforeach
-                </div>
+                @endforeach
             </div>
         </div>
+    </div>
 
-        <!-- Critical Warnings -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">🚨 Early Warning Kritis</h5>
-                </div>
-                <div class="card-body">
-                    @if($stats['critical_warnings']->count() > 0)
-                    <div class="table-wrapper">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Siswa</th>
-                                    <th>Dimensi</th>
-                                    <th>Tanggal</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($stats['critical_warnings'] as $warning)
+    {{-- Critical Warnings List --}}
+    <div class="card" style="border-left:4px solid var(--bad)">
+        <div class="card-header">
+            <h3><i class="fas fa-radiation" style="color:var(--bad);margin-right:8px"></i>Peringatan Dini Kritis</h3>
+            <span class="tag tag-bad">{{ $stats['critical_warnings']->count() }} Kritis</span>
+        </div>
+        <div class="card-body tight">
+            @if($stats['critical_warnings']->count() > 0)
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Siswa & Kelas</th>
+                                <th>Dimensi</th>
+                                <th>Tanggal</th>
+                                <th style="text-align:right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($stats['critical_warnings'] as $warning)
                                 <tr>
                                     <td>
-                                        <strong>{{ $warning->siswa->nama_peserta_didik }}</strong><br>
-                                        <small class="text-muted">{{ $warning->siswa->kelas }}</small>
+                                        <div style="font-weight:700;font-size:13px;color:var(--text)">
+                                            {{ $warning->siswa->nama_peserta_didik }}
+                                        </div>
+                                        <div style="font-size:11px;color:var(--muted)">Kelas {{ $warning->siswa->kelas }}</div>
                                     </td>
-                                    <td>{{ $warning->dimension->nama_dimensi }}</td>
-                                    <td>{{ $warning->created_at->format('d M Y') }}</td>
                                     <td>
-                                        <a href="{{ route('admin.tka.warnings.index', ['status' => 'pending', 'tingkat_peringatan' => 'kritis']) }}" 
-                                           class="btn btn-sm btn-danger">
-                                            <i class="fas fa-arrow-right"></i>
+                                        <span class="tag tag-warn" style="font-size:11px">
+                                            {{ $warning->dimension->nama_dimensi ?? '-' }}
+                                        </span>
+                                    </td>
+                                    <td style="font-size:12px;color:var(--muted)">{{ $warning->created_at->format('d/m/Y') }}</td>
+                                    <td style="text-align:right">
+                                        <a href="{{ route('admin.tka.warnings.index', ['status' => 'pending', 'tingkat_peringatan' => 'kritis']) }}" class="btn btn-primary btn-sm" style="background:var(--bad);border-color:var(--bad)">
+                                            Tindak Lanjut →
                                         </a>
                                     </td>
                                 </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @else
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                        <p class="mb-0">Tidak ada early warning kritis</p>
-                    </div>
-                    @endif
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            @else
+                <div class="empty-state" style="padding:30px 20px">
+                    <div class="icon">✅</div>
+                    <h4>Kondisi Terkendali</h4>
+                    <p>Tidak ada indikator early warning kategori kritis saat ini.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+{{-- Row: Recent Assessments & Quick Links --}}
+<div class="grid grid-2" style="margin-bottom:24px">
+    {{-- Recent Assessments --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-clock-rotate-left" style="color:var(--navy);margin-right:8px"></i>Penilaian Karakter Terbaru</h3>
+            <a href="{{ route('admin.tka.assessments.index') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+        </div>
+        <div class="card-body tight">
+            @if($stats['recent_assessments']->count() > 0)
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Siswa</th>
+                                <th>Tanggal</th>
+                                <th>Kesiapan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($stats['recent_assessments'] as $assessment)
+                                @php
+                                    $cfg = $statusBadges[$assessment->status_kesiapan] ?? ['tag' => 'tag-secondary', 'label' => ucfirst($assessment->status_kesiapan)];
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div style="font-weight:700;font-size:13px">{{ $assessment->siswa->nama_peserta_didik }}</div>
+                                        <div style="font-size:11px;color:var(--muted)">{{ $assessment->semester->label ?? '-' }}</div>
+                                    </td>
+                                    <td style="font-size:12px">{{ $assessment->tanggal_penilaian->format('d/m/Y') }}</td>
+                                    <td>
+                                        <span class="tag {{ $cfg['tag'] }}">{{ $cfg['label'] }}</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty-state" style="padding:30px 20px">
+                    <div class="icon">📝</div>
+                    <h4>Belum Ada Penilaian</h4>
+                    <p>Belum ada rekaman penilaian kesiapan belajar siswa.</p>
+                </div>
+            @endif
         </div>
     </div>
 
-    <div class="row">
-        <!-- Recent Assessments -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">📝 Penilaian Terbaru</h5>
-                </div>
-                <div class="card-body">
-                    @if($stats['recent_assessments']->count() > 0)
-                    <div class="table-wrapper">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Siswa</th>
-                                    <th>Tanggal</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($stats['recent_assessments'] as $assessment)
-                                <tr>
-                                    <td>
-                                        <strong>{{ $assessment->siswa->nama_peserta_didik }}</strong><br>
-                                        <small class="text-muted">{{ $assessment->semester->label }}</small>
-                                    </td>
-                                    <td>{{ $assessment->tanggal_penilaian->format('d M Y') }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $statusColors[$assessment->status_kesiapan] ?? 'secondary' }}">
-                                            {{ $statusLabels[$assessment->status_kesiapan] ?? $assessment->status_kesiapan }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @else
-                    <div class="text-center text-muted py-4">
-                        <p class="mb-0">Belum ada penilaian</p>
-                    </div>
-                    @endif
-                </div>
-                <div class="card-footer">
-                    <a href="{{ route('admin.tka.assessments.index') }}" class="btn btn-sm btn-primary">
-                        Lihat Semua <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
+    {{-- Quick Menu & Actions --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-compass" style="color:var(--navy);margin-right:8px"></i>Akses Cepat Modul TKA</h3>
         </div>
+        <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <a href="{{ route('admin.tka.dimensions.index') }}" class="btn btn-secondary" style="padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px">
+                <i class="fas fa-th-large" style="font-size:20px;color:var(--navy)"></i>
+                <span style="font-weight:700">Kelola Dimensi P5</span>
+                <small style="color:var(--muted)">6 Dimensi Profil Pelajar</small>
+            </a>
 
-        <!-- Quick Links -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">🔗 Menu Cepat</h5>
+            <a href="{{ route('admin.tka.assessments.index') }}" class="btn btn-secondary" style="padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px">
+                <i class="fas fa-clipboard-check" style="font-size:20px;color:var(--ok)"></i>
+                <span style="font-weight:700">Semua Penilaian</span>
+                <small style="color:var(--muted)">Data riwayat asesmen</small>
+            </a>
+
+            <a href="{{ route('admin.tka.warnings.index') }}" class="btn btn-secondary" style="padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px">
+                <i class="fas fa-exclamation-triangle" style="font-size:20px;color:var(--warn)"></i>
+                <span style="font-weight:700">Early Warning Hub</span>
+                <small style="color:var(--muted)">Peringatan & intervensi</small>
+            </a>
+
+            <a href="#tka-exports" class="btn btn-secondary" style="padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px">
+                <i class="fas fa-file-export" style="font-size:20px;color:var(--gold)"></i>
+                <span style="font-weight:700">Laporan & Ekspor</span>
+                <small style="color:var(--muted)">Unduh format Excel & PDF</small>
+            </a>
+        </div>
+    </div>
+</div>
+
+{{-- Export Section --}}
+<div class="grid grid-2" id="tka-exports" style="margin-bottom:24px">
+    {{-- Laporan Massal --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-pdf" style="color:var(--navy);margin-right:8px"></i>Laporan Massal per Semester</h3>
+        </div>
+        <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+                Unduh rekapitulasi penilaian kesiapan siswa secara kolektif untuk semester yang dipilih.
+            </p>
+            <form method="POST" action="{{ route('admin.tka.generate-report') }}">
+                @csrf
+                <div style="margin-bottom:14px">
+                    <label for="reportSemester" class="form-label">Pilih Semester</label>
+                    <select name="semester_id" id="reportSemester" class="form-control" required style="width:100%">
+                        <option value="">— Pilih Semester —</option>
+                        @foreach($semesters as $semester)
+                            <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
+                                {{ $semester->label }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ route('admin.tka.dimensions.index') }}" class="btn btn-outline-primary w-100">
-                                <i class="fas fa-th-large"></i><br>
-                                Kelola Dimensi
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ route('admin.tka.assessments.index') }}" class="btn btn-outline-success w-100">
-                                <i class="fas fa-clipboard-check"></i><br>
-                                Semua Penilaian
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ route('admin.tka.warnings.index') }}" class="btn btn-outline-warning w-100">
-                                <i class="fas fa-exclamation-triangle"></i><br>
-                                Early Warnings
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="#tka-exports" class="btn btn-outline-info w-100">
-                                <i class="fas fa-file-export"></i><br>
-                                Ekspor Data &amp; Laporan
-                            </a>
-                        </div>
-                    </div>
+
+                <div style="margin-bottom:18px">
+                    <label for="reportFormat" class="form-label">Format Dokumen</label>
+                    <select name="format" id="reportFormat" class="form-control" required style="width:100%">
+                        <option value="excel" @selected(old('format', 'excel') === 'excel')>Microsoft Excel (.xlsx)</option>
+                        <option value="pdf" @selected(old('format') === 'pdf')>Dokumen PDF (.pdf)</option>
+                    </select>
                 </div>
-            </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-download"></i> Unduh Laporan Massal
+                </button>
+            </form>
         </div>
     </div>
 
-    <div class="row" id="tka-exports">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Laporan Massal per Semester</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">Unduh ringkasan seluruh siswa yang memiliki penilaian pada semester pilihan.</p>
-                    <form method="POST" action="{{ route('admin.tka.generate-report') }}" class="row g-3">
-                        @csrf
-                        <div class="col-12">
-                            <label for="reportSemester" class="form-label">Semester</label>
-                            <select name="semester_id" id="reportSemester" class="form-select" required>
-                                <option value="">Pilih semester</option>
-                                @foreach($semesters as $semester)
-                                    <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
-                                        {{ $semester->label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="reportFormat" class="form-label">Format</label>
-                            <select name="format" id="reportFormat" class="form-select" required>
-                                <option value="excel" @selected(old('format', 'excel') === 'excel')>Excel (.xlsx)</option>
-                                <option value="pdf" @selected(old('format') === 'pdf')>PDF</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-download"></i> Unduh Laporan
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    {{-- Ekspor Data --}}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-database" style="color:var(--gold);margin-right:8px"></i>Ekspor Data Terperinci</h3>
         </div>
+        <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+                Ekspor tabel data mentah asesmen, early warning, atau dimensi ke spreadsheet.
+            </p>
+            <form method="POST" action="{{ route('admin.tka.export') }}">
+                @csrf
+                <div style="margin-bottom:14px">
+                    <label for="exportType" class="form-label">Jenis Data</label>
+                    <select name="type" id="exportType" class="form-control" required style="width:100%">
+                        <option value="assessments" @selected(old('type', 'assessments') === 'assessments')>Seluruh Penilaian Siswa</option>
+                        <option value="warnings" @selected(old('type') === 'warnings')>Peringatan Dini (Early Warning)</option>
+                        <option value="dimensions" @selected(old('type') === 'dimensions')>Dimensi &amp; Indikator</option>
+                    </select>
+                </div>
 
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Ekspor Data TKA</h5>
+                <div style="margin-bottom:14px">
+                    <label for="exportSemester" class="form-label">Semester (Opsional)</label>
+                    <select name="semester_id" id="exportSemester" class="form-control" style="width:100%">
+                        <option value="">— Semua Semester —</option>
+                        @foreach($semesters as $semester)
+                            <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
+                                {{ $semester->label }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted">Ekspor data penilaian, early warning, atau dimensi untuk satu atau seluruh semester.</p>
-                    <form method="POST" action="{{ route('admin.tka.export') }}" class="row g-3">
-                        @csrf
-                        <div class="col-12">
-                            <label for="exportType" class="form-label">Jenis data</label>
-                            <select name="type" id="exportType" class="form-select" required>
-                                <option value="assessments" @selected(old('type', 'assessments') === 'assessments')>Penilaian</option>
-                                <option value="warnings" @selected(old('type') === 'warnings')>Early warning</option>
-                                <option value="dimensions" @selected(old('type') === 'dimensions')>Dimensi</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="exportSemester" class="form-label">Semester (opsional)</label>
-                            <select name="semester_id" id="exportSemester" class="form-select">
-                                <option value="">Semua semester</option>
-                                @foreach($semesters as $semester)
-                                    <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
-                                        {{ $semester->label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="exportFormat" class="form-label">Format</label>
-                            <select name="format" id="exportFormat" class="form-select" required>
-                                <option value="excel" @selected(old('format', 'excel') === 'excel')>Excel (.xlsx)</option>
-                                <option value="pdf" @selected(old('format') === 'pdf')>PDF</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-file-export"></i> Ekspor Data
-                            </button>
-                        </div>
-                    </form>
+
+                <div style="margin-bottom:18px">
+                    <label for="exportFormat" class="form-label">Format File</label>
+                    <select name="format" id="exportFormat" class="form-control" required style="width:100%">
+                        <option value="excel" @selected(old('format', 'excel') === 'excel')>Microsoft Excel (.xlsx)</option>
+                        <option value="pdf" @selected(old('format') === 'pdf')>Dokumen PDF (.pdf)</option>
+                    </select>
                 </div>
-            </div>
+
+                <button type="submit" class="btn btn-secondary btn-block">
+                    <i class="fas fa-file-export"></i> Ekspor Data Sekarang
+                </button>
+            </form>
         </div>
     </div>
 </div>
 @endsection
-

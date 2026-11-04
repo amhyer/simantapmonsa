@@ -17,6 +17,7 @@
         }
     </style>
     @endif
+    @stack('styles')
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

@@ -1,280 +1,157 @@
 # SIMANTAP — Arsitektur Sistem
 
-**Versi:** 4.2
-**Tanggal:** 13 September 2026
+**Versi:** 5.0  
+**Tanggal Pembaruan:** 30 Oktober 2026  
+**Status Audit:** Terverifikasi Otomatis (PHPUnit 364 tests PASS, Playwright E2E 135+ route GET PASS)
 
 ---
 
-## Overview
+## 1. Overview Sistem
+
+SIMANTAP (**Situs Mandiri Terintegrasi Aplikasi Pembelajaran**) adalah platform terpadu untuk sekolah yang mengintegrasikan tiga pilar utama:
+1. **Asesmen & Ujian**: Modul Tryout Akademik, TKA (Tes Kesiapan Akademik) Berbobot, dan CBT (Computer-Based Test) dengan engine ujian terpadu (`exam_*`).
+2. **Pembelajaran Mendalam & Karakter**: Materi Ajar, Kuis Interaktif, Pemantauan 7 Kebiasaan Anak, dan Penilaian Dimensi Profil Lulusan.
+3. **Manajemen Kelas & Akademik**: Manajemen Rombel/Peta Kelas, e-Rapor Kemdikbud terintegrasi dengan audit hash tamper-evident, Transkrip Ijazah, Presensi Geofence Pegawai, dan Presensi Siswa berbasis QR Code.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SIMANTAP v4.2 Architecture                   │
+│                    SIMANTAP v5.0 Architecture                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐    │
-│  │   Dapodik    │────▶│   Bridge     │────▶│   SIMANTAP   │    │
-│  │  Desktop v6  │     │  v4.0 EXE    │     │  Laravel 11  │    │
+│  │   Dapodik    │────▶│dapodik-bridge│────▶│   SIMANTAP   │    │
+│  │  Desktop v6  │◀────│  Python / EXE│◀────│  Laravel 13  │    │
 │  └──────────────┘     └──────────────┘     └──────────────┘    │
 │         │                    │                    │             │
 │         ▼                    ▼                    ▼             │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐    │
-│  │  WebService  │     │    POST      │     │  PostgreSQL  │    │
-│  │ :5774        │     │  /api/       │     │  Database    │    │
-│  └──────────────┘     │  dapodik/    │     └──────────────┘    │
-│                       │  sync/{modul}│                         │
-│                       └──────────────┘                         │
+│  │  WebService  │     │   Rest API   │     │  PostgreSQL  │    │
+│  │ :5774 (Local)│     │  /api/dapodik│     │  (Prod) /    │    │
+│  └──────────────┘     │  sync & push │     │  SQLite (CI) │    │
+│                       └──────────────┘     └──────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Tech Stack
+## 2. Tech Stack
 
-| Layer | Technology | Version |
-|-------|------------|---------|
-| Backend | Laravel | 11.x |
-| PHP | PHP | 8.5 |
-| Database | PostgreSQL | 16 |
-| Frontend | Blade + Tailwind | - |
-| Chart | Chart.js | 4.x |
-| PDF Export | DomPDF | 2.x |
-| Excel Export | PhpSpreadsheet | 5.9 |
-| Bridge | Python + Custom EXE | 4.0 |
-
----
-
-## Database Tables (Verified)
-
-### Core Tables
-| Table | Description | Key Columns |
-|-------|-------------|-------------|
-| `users` | All user accounts | id, uuid, nama_lengkap, nama_pengguna, kata_sandi, peran, is_active |
-| `siswa` | Student data | id, uuid, nis, nisn, nama_peserta_didik, kelas, telepon |
-| `guru` | Teacher data | id, uuid, nip, nama_guru, mata_pelajaran |
-| `semester` | Academic terms | id, semester_id, tahun_ajaran, nama_semester |
-| `mata_pelajaran` | Subjects | id, uuid, nama_mapel, guru_id |
-| `mapel` | Alternative subjects table | id, uuid, nama_mapel, kelas, guru_id |
-
-### Academic Tables
-| Table | Description | Key Columns |
-|-------|-------------|-------------|
-| `pengaturan_guru` | Teacher settings per subject | id, guru_id, mata_pelajaran, kelas, kkm, sistem |
-| `nilai` | Grades | id, uuid, guru_id, siswa_id, nilai, kuis_id |
-| `dimensi` | Competency dimensions | id, uuid, guru_id, siswa_id, dimensi, skor |
-| `kehadiran` | Attendance | id, uuid, guru_id, siswa_id, status, tanggal |
-| `kuis` | Quizzes | id, uuid, guru_id, judul, opsi_a-d, jawaban_benar |
-| `materi` | Teaching materials | id, uuid, guru_id, judul, kelas, mata_pelajaran |
-
-### Support Tables
-| Table | Description |
-|-------|-------------|
-| `api_keys` | API authentication for Bridge |
-| `dapodik_sync_logs` | Sync operation logs |
-| `dapodik_config` | Dapodik connection settings |
-| `backups` | Backup file metadata |
-| `setting_sekolah` | School profile settings |
+| Layer | Teknologi | Versi | Keterangan |
+|-------|-----------|-------|------------|
+| **Backend Framework** | Laravel | 13.x (`^13.17`) | Routing, Eloquent, Queues, Security Headers |
+| **PHP Runtime** | PHP | 8.4+ (min ^8.3) | Herd environment, OPcache CLI enabled |
+| **Database Produksi** | PostgreSQL | 16 | Primary database multi-tabel |
+| **Database Pengujian** | SQLite | 3.x | In-memory untuk Unit/Feature, file `e2e.sqlite` untuk Playwright |
+| **Frontend UI** | Blade + Tailwind CSS 4 + Alpine.js | - | Ringan (bundle app.js ~76 kB, tanpa dependensi font eksternal) |
+| **Ikon UI** | Lucide Icons | 2.x | Paket `mallardduck/blade-lucide-icons` |
+| **PDF Generation** | Barryvdh DomPDF | 3.1 | Cetak rapor, transkrip ijazah, dan kartu presensi |
+| **Spreadsheet Engine** | PhpSpreadsheet | 5.9 | Ekspor-impor nilai e-Rapor, transkrip, data Dapodik |
+| **API Documentation** | Dedoc Scramble | 0.13.x | OpenAPI documentation otomatis (terkunci di `local`) |
+| **Dapodik Bridge** | Python (Custom EXE) | 4.x | Sinkronisasi dua arah via Dapodik WebService lokal :5774 |
 
 ---
 
-## 5 User Roles
+## 3. Enam Peran Pengguna (6 User Roles)
 
-### Admin (`peran = 'admin'`)
-- Full CRUD: Users, Siswa, Guru, Mata Pelajaran
-- School profile settings
-- API key management
-- Dapodik sync trigger
-- Backup/restore
-- Grade weight configuration (Bobot Penilaian)
-- Dashboard: statistics, charts, school info
+SIMANTAP membedakan otorisasi ke dalam 6 peran dengan isolasi middleware ketat:
 
-### Guru (`peran = 'guru'`)
-- Input grades (manual + Dapodik import)
-- Manage quiz (create, activate/deactivate)
-- Upload materials
-- Attendance (kehadiran)
-- View own dashboard with student statistics
-- e-Rapor export (PDF/Excel)
+### 1. Admin (`peran = 'admin'`)
+- **Dashboard & Analitik**: Statistik agregat sekolah, pemantauan status penilaian, tren perkembangan nilai.
+- **Kelola Pengguna**: CRUD akun pengguna, pembuatan massal, pencarian akun siswa.
+- **Peta Kelas & Rombel**: Penataan anggota rombongan belajar, mutasi kelas, pengeluaran siswa.
+- **Mata Pelajaran**: Pengaturan mapel lokal dan Dapodik, pengurutan, kelompok mapel.
+- **Data Referensi (Dapodik & Rapor)**: Referensi guru/PTK, tanggal cetak rapor, mapping rapor, logo & tanda tangan kepsek/wali kelas, ekstrakurikuler.
+- **Kokurikuler**: Manajemen tema, kegiatan projek kokurikuler, dan kelompok siswa.
+- **Transkrip Ijazah**: Format nomor ijazah, input manual nilai transkrip, impor Excel, cetak transkrip kelulusan.
+- **Cetak Agregat**: Cetak leger nilai kelas, lembar pelengkap rapor, rekap nilai siswa.
+- **Presensi & Lokasi**: Konfigurasi radius geofence sekolah, koreksi presensi pegawai, penautan dan cetak QR kartu siswa.
+- **Integrasi Dapodik**: Tarik data (Pull via API / Bridge), unggah data (Push nilai rapor, kehadiran, rombel ke Dapodik), log aktivitas sinkronisasi.
+- **Pengaturan Sistem**: Profil identitas sekolah, semester aktif, bobot penilaian (Formatif/Sumatif), modul & tampilan, Google Sheets sync, backup & restore mandiri, API Key management.
+- **Asesmen Admin**: Manajemen Bank Soal CBT, Sesi CBT (analisis butir soal), Paket & Sesi Tryout, Dimensi & Early Warning TKA.
 
-### Siswa (`peran = 'siswa'`)
-- View own grades and attendance
-- Take quizzes (online)
-- View materials from teacher
-- View own dashboard
+### 2. Guru (`peran = 'guru'`)
+- **Dashboard Pengajar**: Statistik siswa di bawah bimbingan, jadwal mengajar.
+- **Manajemen Kelas & Siswa**: Daftar siswa kelas binaan, fitur "Pungut Siswa" dari Dapodik, pengunduhan data CSV.
+- **Pembelajaran**: Materi Ajar daring, Kuis interaktif pilihan ganda mandiri.
+- **Penilaian & e-Rapor**:
+  - Input Nilai Cepat (dukungan paste massal dari Excel).
+  - Input Nilai e-Rapor (dengan auto-save berkala dan penjanaan deskripsi otomatis capaian kompetensi).
+  - Generator e-Rapor: Cetak PDF individual, cetak massal (bulk), ekspor Excel.
+- **Asesmen Kelas**:
+  - CBT Guru: Bank soal, pembukaan sesi ujian kelas, pemantauan real-time status siswa.
+  - Tryout Guru: Paket tryout, pembukaan sesi tryout, live monitoring.
+  - TKA Guru: Penilaian indikator dimensi kesiapan belajar siswa, analisis profil lulusan.
+- **Karakter & Presensi**: Pemantauan input 7 Kebiasaan dari orang tua, absensi kelas/mapel via pemindai kamera QR code, presensi mandiri pegawai dengan geofence.
 
-### Ortu (`peran = 'ortu'`)
-- View child's grades
-- View child's attendance
-- View child's quiz results
-- Reports with filtering
+### 3. Siswa (`peran = 'siswa'`)
+- **Dashboard Siswa**: Ringkasan capaian nilai, materi aktif, tugas baru.
+- **Materi & Kuis**: Membaca materi modul ajar, mengerjakan kuis latihan.
+- **Ujian Daring**:
+  - Pengerjaan Tryout Akademik (timer otomatis, navigasi soal, hasil ujian langsung).
+  - Pengerjaan CBT (dilindungi integritas anti-cheat, autosave jawaban).
+- **Nilai & Profil**: Melihat riwayat nilai ulangan/ujian, melihat profil data pribadi.
 
-### Kepsek (`peran = 'kepsek'`)
-- Monitor all teachers (pantau guru)
-- View school-wide reports
-- Activity logs (aktivitas)
-- Print reports
-- Dashboard with school overview
+### 4. Orang Tua (`peran = 'ortu'`)
+- **Dashboard Orang Tua**: Multi-anak (pemilih anak / switcher jika memiliki lebih dari 1 siswa).
+- **Karakter 7 Kebiasaan**: Pengisian ceklis harian pembiasaan anak di rumah (bangun pagi, ibadah, membaca, berolahraga, dll).
+- **Pemantauan Akademik**: Melihat nilai perkembangan anak, kehadiran harian, catatan khusus guru.
+- **Laporan TKA Orang Tua**: Melihat kartu kesiapan belajar anak beserta saran aktivitas pendampingan di rumah.
 
----
+### 5. Kepala Sekolah (`peran = 'kepsek'`)
+- **Dashboard Eksekutif**: Overview capaian akademik dan kedisiplinan seluruh sekolah.
+- **Pantau Guru**: Monitoring progres pengisian nilai e-Rapor oleh guru kelas dan guru mapel.
+- **Rekapitulasi**: Rekap nilai seluruh kelas, unduh CSV nilai agregat sekolah.
+- **Peta Kelas & Aktivitas**: Monitoring penempatan rombel dan log aktivitas pengisian nilai/sistem.
 
-## Authentication Flow
-
-### Custom Auth Implementation
-```php
-// app/helpers.php
-function check($user, $password): bool
-{
-    return Hash::check($password, $user->kata_sandi);
-}
-
-// Middleware checks peran
-if ($user && check($user, $password)) {
-    // Set session
-    session(['pengguna_login' => $user->toArray()]);
-}
-```
-
-### Key Points
-- Uses `nama_pengguna` field (not `email`)
-- `getAuthPassword()` returns `kata_sandi` attribute
-- Session stores full user array as `pengguna_login`
-- `$user->pemeriksaan()` returns role-based
+### 6. Tenaga Kependidikan / Tendik (`peran = 'tendik'`)
+- **Presensi Mandiri**: Akses langsung ke `/presensi/pegawai` (pencatatan jam masuk & pulang kerja terlindung radius geofence koordinat sekolah).
 
 ---
 
-## Dapodik WebService Integration
+## 4. Alur Autentikasi & Keamanan
 
-### Protocol
-- **Base URL:** `http://localhost:5774/WebService`
-- **Auth:** `Authorization: Bearer <token>` + `?npsn=<NPSN>`
-- **Method:** GET only
-- **Response:** JSON `{results: N, start: N, limit: N, rows: [...]}`
-
-### Endpoints
-| Endpoint | Description |
-|----------|-------------|
-| `getSekolah` | School profile data |
-| `getPesertaDidik` | Student data |
-| `getGtk` | Teacher data |
-| `getRombonganBelajar` | Class/subject assignments |
-
-### Sync Flow
-```
-1. Admin clicks "Sync dari Dapodik" in SIMANTAP
-2. SIMANTAP calls Bridge API: POST /api/dapodik/sync/{modul}
-3. Bridge sends GET request to Dapodik WebService
-4. Bridge parses response, extracts rows
-5. Bridge POSTs rows to SIMANTAP API: POST /api/dapodik/sync/{modul}
-6. SIMANTAP SyncService processes and stores data
-7. Response sent back to Bridge
-8. Bridge shows result to admin
-```
-
-### API Key Middleware
-```php
-// routes/api.php
-Route::post('/api/dapodik/sync/{modul}', [DapodikSyncController::class, 'sync'])
-    ->middleware('apikey');  // Requires valid API key
-
-Route::get('/api/dapodik/ping', [DapodikSyncController::class, 'ping']);  // Open
-```
+### Kredensial & Sesi
+- **Identifikasi Login**: Menggunakan atribut `nama_pengguna` (bukan email). Kata sandi disimpan dengan enkripsi bcrypt (`BCRYPT_ROUNDS=12` di produksi, rounds=4 di testing). Kolom `kata_sandi` selalu disembunyikan via `$hidden`.
+- **Force Password Change**: Pengguna yang baru dibuat oleh admin atau direset kata sandinya ditandai `force_password_change = true`, dan wajib mengganti kata sandi di `/force-password-change` sebelum bisa mengakses halaman fungsional apa pun.
+- **Pendaftaran Mandiri Ditutup**: Route `/register` otomatis mengalihkan pengguna ke `/login` untuk mencegah pembuatan akun liar. Semua akun dibuat oleh Administrator Sekolah.
+- **Anti-Brute Force**: Login dibatasi 10 percobaan per menit (`throttle:10,1`). Reset sandi dibatasi 5 per menit.
+- **Rantai Audit Nilai e-Rapor**: Setiap modifikasi nilai e-Rapor dicatat dalam tabel `nilai_erapor_audit_logs` dengan format hash berantai (`prev_hash` -> `hash`) untuk mendeteksi manipulasi database manual (`php artisan nilai:audit:verifikasi`).
 
 ---
 
-## Routes Summary
+## 5. Middleware Stack
 
-### Public Routes
-- `GET /` — Landing page
-- `POST /login` — Login
-- `GET /register` — Dialihkan ke login; pendaftaran mandiri ditutup (akun dibuat admin sekolah)
-- `GET /demo` — Demo login (non-production only)
-
-### Protected Routes (require auth + role middleware)
-
-#### Admin (`role:admin`)
-- `GET /admin/dashboard`
-- `GET /admin/users` — CRUD
-- `GET /admin/siswa` — CRUD
-- `GET /admin/guru` — CRUD
-- `GET /admin/mapel` — CRUD
-- `GET /admin/setting-sekolah` — School profile
-- `GET /admin/api-keys` — API key management
-- `GET /admin/bobot` — Grade weights
-- `GET /admin/dapodik` — Dapodik sync panel
-- `GET /admin/backup` — Backup/restore
-- `GET /admin/semester` — Semester management
-- `GET /admin/peta-kelas` — Class map
-- `POST /admin/dapodik/sync` — Trigger sync
-- `GET /admin/laporan` — Reports
-
-#### Guru (`role:guru`)
-- `GET /guru/dashboard`
-- `GET /guru/input-nilai` — Grade input
-- `GET /guru/erapor` — e-Rapor
-- `GET /guru/kuis` — Quiz management
-- `GET /guru/materi` — Materials
-- `GET /guru/kehadiran` — Attendance
-- `GET /guru/kegiatan` — Activities
-- `GET /guru/integrasi` — Dapodik import
-
-#### Siswa (`role:siswa`)
-- `GET /siswa/dashboard`
-- `GET /siswa/nilai` — Grades
-- `GET /siswa/kehadiran` — Attendance
-- `GET /siswa/kuis` — Quiz
-- `GET /siswa/materi` — Materials
-
-#### Ortu (`role:ortu`)
-- `GET /ortu/dashboard`
-- `GET /ortu/rekap` — Child's grades
-- `GET /ortu/kehadiran` — Child's attendance
-- `GET /ortu/laporan` — Reports
-
-#### Kepsek (`role:kepsek`)
-- `GET /kepsek/dashboard`
-- `GET /kepsek/pantau` — Monitor teachers
-- `GET /kepsek/aktivitas` — Activity logs
-- `GET /kepsek/laporan` — School reports
+| Middleware Alias | Class Implementation | Fungsi |
+|------------------|----------------------|--------|
+| `role` | `App\Http\Middleware\RoleMiddleware` | Memverifikasi kecocokan `user()->peran` dengan parameter route |
+| `force.password.change` | `App\Http\Middleware\ForcePasswordChange` | Memaksa user dengan flag belum ganti sandi ke halaman ganti sandi |
+| `apikey` | `App\Http\Middleware\ApiKeyMiddleware` | Autentikasi token SHA-256 untuk API sinkronisasi Bridge |
+| `module.asesmen` | `App\Http\Middleware\EnsureModuleEnabled` | Kill switch modul asesmen (CBT/Tryout/TKA) jika dinonaktifkan di konfigurasi |
+| `cbt.access` | `App\Http\Middleware\CbtAccessMiddleware` | Kontrol akses jendela waktu dan partisipasi sesi ujian CBT |
+| Global | `App\Http\Middleware\SecurityHeaders` | Menerapkan header X-Frame-Options, X-Content-Type-Options, CSP, dan HSTS |
 
 ---
 
-## Middleware Stack
+## 6. Integrasi Eksternal
 
-```php
-// bootstrap/app.php
-$middleware->alias([
-    'role' => \App\Http\Middleware\RoleMiddleware::class,
-    'apikey' => \App\Http\Middleware\ApiKeyMiddleware::class,
-]);
-```
+### A. Dapodik WebService (Tarik & Dorong Data)
+- **Komunikasi Lokal**: Berjalan via `dapodik-bridge/` (skrip Python di komputer operator yang mengakses server lokal Dapodik di port 5774).
+- **Pull Modul**: Mengimpor `getSekolah`, `getGtk`, `getPesertaDidik`, `getRombonganBelajar`, `getPembelajaran`.
+- **Push Modul**: Mengirimkan pembaruan data balik ke Dapodik (`/admin/dapodik/push`): Sekolah, Siswa, GTK, Rombel, Jadwal, Nilai Rapor, dan Kehadiran.
 
-### RoleMiddleware
-- Checks `session('pengguna_login.peran')` against required role
-- Redirects to `/` if unauthorized
+### B. Google Sheets Backup Sync
+- Menggunakan `google/apiclient` untuk mencadangkan data tabel transaksional secara real-time atau berkala ke spreadsheet Google Drive sekolah yang ditentukan di menu `/admin/sheet`.
 
-### ApiKeyMiddleware
-- Validates `X-API-KEY` header against `api_keys` table
-- Used for Bridge API authentication
-- Open for `/api/dapodik/ping`, protected for `/api/dapodik/sync/{modul}`
+### C. Cadangan & Pemulihan Mandiri (Backup/Restore)
+- Menyimpan snapshot seluruh tabel penting ke dalam arsip JSON streaming berintegritas tinggi.
+- Dilengkapi otomatisasi rotasi backup harian di cron job (02:00) dan verifikasi drill restore berkala (`BackupRestoreDrill`).
 
 ---
 
-## Key Services
+## 7. Engine Ujian Terpadu (`exam_*`)
 
-### DapodikSyncService
-- `app/Services/Dapodik/DapodikSyncService.php`
-- Handles data sync from Dapodik WebService
-- Maps Dapodik fields to SIMANTAP schema
-- Manages upsert logic (create or update)
-- Logs sync operations
-
-### NilaiService
-- `app/Services/NilaiService.php`
-- Grade calculation and prediction
-- Supports configurable weights (Formatif/Sumatif/Sumatif Akhir)
-- Predikat calculation: A(≥90), B(≥80), C(≥70/KKM), D(<70)
-
-### Setting
-- `app/helpers.php` — file-based settings via `setting()`
-- Settings stored in `storage/app/settings.json`
-- Registered in `composer.json` autoload files
+Dalam fase penyempurnaan CBT dan Tryout, sistem telah menggunakan arsitektur **Engine Ujian Terpadu**:
+- Tabel terpadu: `exam_packages`, `exam_sections`, `exam_questions`, `exam_sessions`, `exam_attempts`, `exam_answers`, `exam_violations`.
+- Menghilangkan duplikasi logika penilaian dengan `ExamGradingService` dan `ExamAttemptService`.
+- Melindungi ujian siswa dari insiden koneksi putus melalui sinkronisasi state jawaban lokal dan finalisasi server terjadwal (`cbt:finalize-expired`).
+- Mendukung fitur analisis butir soal otomatis (`ExamItemAnalysisService`): tingkat kesukaran, daya pembeda, dan efektivitas pengecoh.

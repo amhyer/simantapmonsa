@@ -120,7 +120,9 @@ class DapodikSyncController extends Controller
                     'status' => 'aktif',
                 ];
 
-                $existing = SekolahSettings::where('npsn', $s['npsn'] ?? null)->first();
+                $existing = SekolahSettings::where('npsn', $s['npsn'] ?? null)
+                    ->orWhere('guru_id', $currentUserId)
+                    ->first();
                 if ($existing) {
                     $existing->update($mapped);
                     $diperbarui++;
@@ -272,13 +274,16 @@ class DapodikSyncController extends Controller
 
                 $existingUser = null;
                 if ($dapodikId) {
-                    $existingUser = User::where('dapodik_id', $dapodikId)->first();
+                    $existingUser = User::withTrashed()->where('dapodik_id', $dapodikId)->first();
                 }
                 if (!$existingUser && $username) {
-                    $existingUser = User::where('nama_pengguna', $username)->first();
+                    $existingUser = User::withTrashed()->where('nama_pengguna', $username)->first();
                 }
 
                 if ($existingUser) {
+                    if ($existingUser->trashed()) {
+                        $existingUser->restore();
+                    }
                     $existingUser->update([
                         'nama_lengkap' => $nama,
                         'nama_pengguna' => $username,
@@ -290,7 +295,7 @@ class DapodikSyncController extends Controller
                     $base = $username ?: ('gtk_' . $dapodikId);
                     $finalUsername = $base;
                     $counter = 1;
-                    while (User::where('nama_pengguna', $finalUsername)->exists()) {
+                    while (User::withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
                         $finalUsername = $base . '.' . $counter;
                         $counter++;
                     }

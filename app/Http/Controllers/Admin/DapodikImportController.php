@@ -154,6 +154,9 @@ $log = DapodikSyncLog::create([
     public function downloadBridge()
     {
         $filePath = public_path('bridge/SIMANTAP-Bridge.exe');
+        if (!file_exists($filePath)) {
+            $filePath = base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe');
+        }
         $fileName = 'SIMANTAP-Bridge.exe';
 
         if (!file_exists($filePath)) {

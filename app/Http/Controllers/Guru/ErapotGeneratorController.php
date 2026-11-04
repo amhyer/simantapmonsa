@@ -16,13 +16,30 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ErapotGeneratorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
-        $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
 
-        return view('guru.erapor.index', compact('siswa', 'pengaturan'));
+        $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
+            ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
+        $selectedKelas = $request->input('kelas')
+            ?? \App\Models\Rombel::where('guru_id', $guru->id)->value('nama_rombel')
+            ?? $pengaturan?->kelas
+            ?? $kelasList->first();
+
+        $query = Siswa::where('aktif', true)->whereNull('archived_at');
+        if ($selectedKelas) {
+            $query->where('kelas', $selectedKelas);
+        } else {
+            $query->where('guru_id', $guru->id);
+        }
+        $siswa = $query->orderBy('nama_peserta_didik')->get();
+        if ($siswa->isEmpty()) {
+            $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
+        }
+
+        return view('guru.erapor.index', compact('siswa', 'pengaturan', 'kelasList', 'selectedKelas'));
     }
 
     public function generatePdf($siswaId)
@@ -30,7 +47,7 @@ class ErapotGeneratorController extends Controller
         $guru = auth()->user();
         $siswa = Siswa::with(['orangTua'])->findOrFail($siswaId);
 
-        if ($siswa->guru_id !== $guru->id) {
+        if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== $guru->id) {
             abort(403);
         }
 
@@ -51,10 +68,23 @@ class ErapotGeneratorController extends Controller
 
         $siswaIds = $request->input('siswa_ids', []);
         if (empty($siswaIds)) {
-            $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
+            $query = Siswa::where('aktif', true)->whereNull('archived_at');
+            if ($request->filled('kelas')) {
+                $query->where('kelas', $request->input('kelas'));
+            } else {
+                $query->where('guru_id', $guru->id);
+            }
+            $siswa = $query->orderBy('nama_peserta_didik')->get();
+            if ($siswa->isEmpty()) {
+                $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
+            }
         } else {
-            // Authorization: only return students belonging to this guru
-            $siswa = Siswa::where('guru_id', $guru->id)->whereIn('id', $siswaIds)->get();
+            // Authorization: return students belonging to this guru or school's dapodik
+            $siswa = Siswa::whereIn('id', $siswaIds)->where(function ($q) use ($guru) {
+                $q->where('guru_id', $guru->id)
+                  ->orWhereNotNull('dapodik_id')
+                  ->orWhereNull('guru_id');
+            })->get();
         }
 
         $allData = [];
@@ -76,11 +106,16 @@ class ErapotGeneratorController extends Controller
         $semester = $pengaturan->semester ?? 'Ganjil';
         $tahunPelajaran = $pengaturan->tahun_pelajaran ?? date('Y').'/'.(date('Y') + 1);
 
-        $query = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik');
+        $query = Siswa::where('aktif', true)->whereNull('archived_at')->orderBy('nama_peserta_didik');
         if ($kelas) {
             $query->where('kelas', $kelas);
+        } else {
+            $query->where('guru_id', $guru->id);
         }
         $siswa = $query->get();
+        if ($siswa->isEmpty()) {
+            $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
+        }
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

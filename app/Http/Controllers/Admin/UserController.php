@@ -17,8 +17,13 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('peran')->orderBy('nama_lengkap')->get();
-        $siswa = Siswa::with('guru')->get();
+        $users = User::select('id', 'uuid', 'nama_lengkap', 'nama_pengguna', 'email', 'peran', 'terhubung_dengan', 'kelas_mata_pelajaran', 'aktif', 'created_at')
+            ->orderBy('peran')
+            ->orderBy('nama_lengkap')
+            ->get();
+        $siswa = Siswa::select('id', 'nama_peserta_didik', 'nis', 'kelas', 'guru_id')
+            ->with('guru:id,nama_lengkap')
+            ->get();
         return view('admin.users.index', compact('users', 'siswa'));
     }
 

@@ -37,6 +37,10 @@ class DashboardController extends Controller
             ? app(\App\Services\Exam\CbtDashboardProvider::class)->hasilTerbaru($anak->id)
             : [];
 
+        $tkaReport = \App\Models\Tka\ParentReport::where('siswa_id', $anak->id)->latest()->first();
+        $tkaDimensi = \App\Models\Dimensi::where('siswa_id', $anak->id)->pluck('skor');
+        $tkaRata = $tkaDimensi->count() > 0 ? round($tkaDimensi->avg(), 2) : null;
+
         $ringkasan = [
             'nilai_akhir' => $na['nilai_akhir'],
             'predikat' => $na['nilai_akhir'] > 0
@@ -49,6 +53,8 @@ class DashboardController extends Controller
             'catatan' => Catatan::where('siswa_id', $anak->id)
                 ->orderByDesc('tanggal')->limit(3)->get(),
             'cbt_results' => $cbtResults,
+            'tka_report' => $tkaReport,
+            'tka_rata' => $tkaRata,
         ];
 
         return view('ortu.dashboard', compact('anak', 'anakList', 'ringkasan'));

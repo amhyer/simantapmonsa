@@ -6,6 +6,7 @@ use App\Models\Aktivitas;
 use App\Models\DapodikSyncLog;
 use App\Models\OrangTuaSiswa;
 use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -120,6 +121,7 @@ class ImportDapodikJob implements ShouldQueue
                             }
 
                             $this->saveOrangTua($existing, $s);
+                            $this->ensureStudentUser($existing);
                         } catch (\Exception $e) {
                             $gagal++;
                             $errors[] = 'Baris ' . $baris . ': ' . $e->getMessage();
@@ -220,6 +222,47 @@ class ImportDapodikJob implements ShouldQueue
                     'no_telepon' => $s['telepon_wali'] ?? null,
                 ]
             );
+        }
+    }
+
+    private function ensureStudentUser(Siswa $siswa): void
+    {
+        try {
+            $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id);
+            $user = User::where('peran', 'siswa')
+                ->where(function ($q) use ($siswa, $username) {
+                    $q->whereJsonContains('terhubung_dengan', $siswa->id)
+                      ->orWhere('nama_pengguna', $username)
+                      ->orWhere('nama_pengguna', 'siswa' . $username);
+                })
+                ->first();
+
+            if ($user) {
+                $terhubung = (array) ($user->terhubung_dengan ?? []);
+                if (!in_array($siswa->id, $terhubung, true)) {
+                    $terhubung[] = $siswa->id;
+                }
+                $user->update([
+                    'nama_lengkap' => $siswa->nama_peserta_didik,
+                    'kelas_mata_pelajaran' => $siswa->kelas,
+                    'aktif' => (bool) $siswa->aktif,
+                    'terhubung_dengan' => array_values(array_unique($terhubung)),
+                ]);
+            } else {
+                User::create([
+                    'uuid' => (string) Str::uuid(),
+                    'nama_lengkap' => $siswa->nama_peserta_didik,
+                    'nama_pengguna' => $username,
+                    'kata_sandi' => bcrypt('siswa123'),
+                    'peran' => 'siswa',
+                    'terhubung_dengan' => [$siswa->id],
+                    'kelas_mata_pelajaran' => $siswa->kelas,
+                    'aktif' => (bool) $siswa->aktif,
+                    'force_password_change' => false,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::warning("Gagal auto-create akun user siswa {$siswa->id}: " . $e->getMessage());
         }
     }
 }

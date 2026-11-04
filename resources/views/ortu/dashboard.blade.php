@@ -60,9 +60,34 @@
             <div class="card-body" style="display:grid;gap:8px">
                 <a href="{{ route('ortu.kebiasaan.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-clipboard-list"></i> Isi 7 Kebiasaan</a>
                 <a href="{{ route('ortu.nilai.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-chart-bar"></i> Lihat Perkembangan Nilai</a>
+                <a href="{{ route('tka.parent.index') }}" class="btn btn-ghost btn-block"><i class="fas fa-award"></i> Laporan Karakter & TKA Anak</a>
             </div>
         </div>
     </div>
+
+    @if(isset($ringkasan['tka_rata']) && $ringkasan['tka_rata'] > 0)
+        <div class="card" style="margin-top:16px;border-left:4px solid #D97706">
+            <div class="card-header">
+                <h3><i class="fas fa-award" style="color:#D97706;margin-right:8px"></i>Perkembangan Profil Karakter & TKA Anak</h3>
+                <a href="{{ route('tka.parent.index') }}" class="btn btn-ghost btn-sm">Lihat Detail Laporan &rarr;</a>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                    <div>
+                        <div style="font-size:24px;font-weight:800;color:#D97706">{{ number_format($ringkasan['tka_rata'], 2) }} <span style="font-size:13px;color:var(--muted);font-weight:400">/ 4.00</span></div>
+                        <div style="font-size:12px;color:var(--muted)">Skor Observasi Guru Kelas</div>
+                    </div>
+                    <div>
+                        @if($ringkasan['tka_rata'] >= 2.5)
+                            <span class="tag tag-ok">Kesiapan Baik</span>
+                        @else
+                            <span class="tag tag-warn">Perlu Pendampingan Belajar</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="card" style="margin-top:20px">
         <div class="card-header">

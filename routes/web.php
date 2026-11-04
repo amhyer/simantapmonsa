@@ -413,6 +413,17 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('sisw
     Route::get('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'show'])->name('profil.show');
     Route::get('/profil/edit', [\App\Http\Controllers\Siswa\ProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'update'])->name('profil.update');
+
+    // Simulasi TKA Mandiri (Pusmendik Kemendikdasmen)
+    Route::prefix('tka-simulasi')->name('tka-simulasi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'index'])->name('index');
+        Route::get('/{id}/confirm', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'confirm'])->name('confirm');
+        Route::post('/{id}/start', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'start'])->name('start');
+        Route::get('/{id}/exam', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'exam'])->name('exam');
+        Route::post('/{id}/answer', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'answer'])->middleware('throttle:120,1')->name('answer');
+        Route::post('/{id}/submit', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'submit'])->name('submit');
+        Route::get('/{id}/result', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'result'])->name('result');
+    });
 });
 
 // ==================== ORANG TUA ROUTES ====================

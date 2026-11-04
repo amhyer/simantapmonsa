@@ -22,14 +22,31 @@ class InputNilaiController extends Controller
      */
     private const JENIS_VALID = ['Tugas', 'Ulangan Harian', 'Praktik', 'PTS', 'PAS'];
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $siswa = Siswa::where('guru_id', $user->id)->orderBy('nama_peserta_didik')->get();
         $pengaturan = PengaturanGuru::where('guru_id', $user->id)->first();
         $kuis = Kuis::where('guru_id', $user->id)->orderByDesc('created_at')->get();
 
-        return view('guru.input-nilai.index', compact('siswa', 'pengaturan', 'kuis'));
+        $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
+            ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
+        $selectedKelas = $request->input('kelas')
+            ?? \App\Models\Rombel::where('guru_id', $user->id)->value('nama_rombel')
+            ?? $pengaturan?->kelas
+            ?? $kelasList->first();
+
+        $query = Siswa::where('aktif', true)->whereNull('archived_at');
+        if ($selectedKelas) {
+            $query->where('kelas', $selectedKelas);
+        } else {
+            $query->where('guru_id', $user->id);
+        }
+        $siswa = $query->orderBy('nama_peserta_didik')->get();
+        if ($siswa->isEmpty()) {
+            $siswa = Siswa::where('guru_id', $user->id)->orderBy('nama_peserta_didik')->get();
+        }
+
+        return view('guru.input-nilai.index', compact('siswa', 'pengaturan', 'kuis', 'kelasList', 'selectedKelas'));
     }
 
     public function getNilai(Request $request): JsonResponse
@@ -43,7 +60,20 @@ class InputNilaiController extends Controller
         }
         $judul = $request->judul ?? '';
 
-        $siswa = Siswa::where('guru_id', $user->id)->orderBy('nama_peserta_didik')->get();
+        $selectedKelas = $request->input('kelas')
+            ?? \App\Models\Rombel::where('guru_id', $user->id)->value('nama_rombel')
+            ?? PengaturanGuru::where('guru_id', $user->id)->value('kelas');
+
+        $query = Siswa::where('aktif', true)->whereNull('archived_at');
+        if ($selectedKelas) {
+            $query->where('kelas', $selectedKelas);
+        } else {
+            $query->where('guru_id', $user->id);
+        }
+        $siswa = $query->orderBy('nama_peserta_didik')->get();
+        if ($siswa->isEmpty()) {
+            $siswa = Siswa::where('guru_id', $user->id)->orderBy('nama_peserta_didik')->get();
+        }
 
         $nilaiData = Nilai::where('guru_id', $user->id)
             ->where('jenis', $jenis)
@@ -90,7 +120,11 @@ class InputNilaiController extends Controller
         $jenis = $validated['jenis'] === 'UH' ? 'Ulangan Harian' : $validated['jenis'];
 
         $saved = 0;
-        $ownedSiswa = Siswa::where('guru_id', $user->id)->get(['id', 'nama_peserta_didik']);
+        $ownedSiswa = Siswa::where(function ($q) use ($user) {
+            $q->where('guru_id', $user->id)
+              ->orWhereNotNull('dapodik_id')
+              ->orWhereNull('guru_id');
+        })->where('aktif', true)->whereNull('archived_at')->get(['id', 'nama_peserta_didik']);
         $ownedSiswaIds = $ownedSiswa->pluck('id')->toArray();
         $namaBySiswa = $ownedSiswa->pluck('nama_peserta_didik', 'id');
 
