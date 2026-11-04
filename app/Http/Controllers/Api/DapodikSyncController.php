@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Semester;
-use App\Models\Siswa;
+use App\Models\DapodikSyncLog;
+use App\Models\JadwalPelajaran;
 use App\Models\Ptk;
 use App\Models\Rombel;
-use App\Models\JadwalPelajaran;
 use App\Models\SekolahSettings;
-use App\Models\DapodikSyncLog;
+use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,17 +90,56 @@ class DapodikSyncController extends Controller
         ]);
     }
 
+    /**
+     * Eksekusi batch sinkronisasi secara atomik per-kelompok (default 50 baris)
+     * menggunakan transaksi luar untuk atomisitas batch dan savepoint per-baris
+     * (`DB::transaction` bersarang) agar 1 baris korup tidak membatalkan baris
+     * valid lain (mencegah error PostgreSQL `25P02` aborted transaction).
+     *
+     * @param  array<int, mixed>  $items
+     * @param  callable(mixed): string  $rowHandler  Mengembalikan 'berhasil'|'diperbarui'|'dilewati'
+     * @param  callable(mixed, \Throwable): void|null  $onError
+     * @return array{berhasil: int, gagal: int, diperbarui: int, dilewati: int}
+     */
+    private function processInBatches(array $items, callable $rowHandler, ?callable $onError = null): array
+    {
+        $stats = [
+            'berhasil' => 0,
+            'gagal' => 0,
+            'diperbarui' => 0,
+            'dilewati' => 0,
+        ];
+
+        $batchSize = max(1, (int) config('dapodik.batch_size', 50));
+
+        foreach (array_chunk($items, $batchSize) as $chunk) {
+            DB::transaction(function () use ($chunk, $rowHandler, $onError, &$stats) {
+                foreach ($chunk as $item) {
+                    try {
+                        $outcome = DB::transaction(fn () => $rowHandler($item));
+                        if (isset($stats[$outcome])) {
+                            $stats[$outcome]++;
+                        }
+                    } catch (\Throwable $e) {
+                        $stats['gagal']++;
+                        if ($onError !== null) {
+                            $onError($item, $e);
+                        }
+                    }
+                }
+            }, 3);
+        }
+
+        return $stats;
+    }
+
     private function syncSekolah(array $data): array
     {
-        $berhasil = 0;
-        $gagal = 0;
-        $diperbarui = 0;
-        $dilewati = 0;
-
         $currentUserId = auth()->id() ?? 1;
 
-        foreach ($data as $s) {
-            try {
+        return $this->processInBatches(
+            $data,
+            function (array $s) use ($currentUserId): string {
                 $mapped = [
                     'guru_id' => $currentUserId,
                     'npsn' => $s['npsn'] ?? '',
@@ -125,29 +164,25 @@ class DapodikSyncController extends Controller
                     ->first();
                 if ($existing) {
                     $existing->update($mapped);
-                    $diperbarui++;
-                } else {
-                    SekolahSettings::create($mapped);
-                    $berhasil++;
-                }
-            } catch (\Exception $e) {
-                $gagal++;
-                Log::warning("Gagal sync sekolah settings: " . $e->getMessage());
-            }
-        }
 
-        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'diperbarui' => $diperbarui, 'dilewati' => $dilewati];
+                    return 'diperbarui';
+                }
+
+                SekolahSettings::create($mapped);
+
+                return 'berhasil';
+            },
+            function ($s, \Throwable $e): void {
+                Log::warning('Gagal sync sekolah settings: ' . $e->getMessage());
+            }
+        );
     }
 
     private function syncPesertaDidik(array $data, Semester $semester): array
     {
-        $berhasil = 0;
-        $gagal = 0;
-        $diperbarui = 0;
-        $dilewati = 0;
-
-        foreach ($data as $pd) {
-            try {
+        return $this->processInBatches(
+            $data,
+            function (array $pd) use ($semester): string {
                 $dapodikId = $pd['peserta_didik_id'] ?? $pd['dapodik_id'] ?? null;
                 $nisn = $pd['nisn'] ?? null;
 
@@ -200,31 +235,27 @@ class DapodikSyncController extends Controller
 
                 if ($existing) {
                     $existing->update($siswaData);
-                    $diperbarui++;
-                } else {
-                    $siswaData['uuid'] = Str::uuid();
-                    Siswa::create($siswaData);
-                    $berhasil++;
-                }
-            } catch (\Exception $e) {
-                $gagal++;
-                $msg = "Gagal sync peserta didik dapodik_id: " . ($pd['peserta_didik_id'] ?? $pd['dapodik_id'] ?? 'unknown') . ": " . $e->getMessage();
-                Log::warning($msg);
-            }
-        }
 
-        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'diperbarui' => $diperbarui, 'dilewati' => $dilewati];
+                    return 'diperbarui';
+                }
+
+                $siswaData['uuid'] = Str::uuid();
+                Siswa::create($siswaData);
+
+                return 'berhasil';
+            },
+            function ($pd, \Throwable $e): void {
+                $id = is_array($pd) ? ($pd['peserta_didik_id'] ?? $pd['dapodik_id'] ?? 'unknown') : 'unknown';
+                Log::warning("Gagal sync peserta didik dapodik_id: {$id}: " . $e->getMessage());
+            }
+        );
     }
 
     private function syncPtk(array $data, Semester $semester): array
     {
-        $berhasil = 0;
-        $gagal = 0;
-        $diperbarui = 0;
-        $dilewati = 0;
-
-        foreach ($data as $p) {
-            try {
+        return $this->processInBatches(
+            $data,
+            function (array $p) use ($semester): string {
                 $dapodikId = $p['ptk_id'] ?? $p['dapodik_id'] ?? null;
                 $nama = trim($p['nama'] ?? '');
                 $nip = trim($p['nip'] ?? '');
@@ -234,8 +265,7 @@ class DapodikSyncController extends Controller
                 $jk = in_array($jkRaw, ['L', 'P'], true) ? $jkRaw : null;
 
                 if (empty($nama) || (empty($nip) && empty($nuptk))) {
-                    $dilewati++;
-                    continue;
+                    return 'dilewati';
                 }
 
                 $existing = null;
@@ -258,12 +288,12 @@ class DapodikSyncController extends Controller
                     'jabatan' => $p['jabatan_ptk'] ?? $p['jabatan'] ?? null,
                 ];
 
+                $outcome = 'berhasil';
                 if ($existing) {
                     $existing->update($ptkData);
-                    $diperbarui++;
+                    $outcome = 'diperbarui';
                 } else {
                     Ptk::create($ptkData);
-                    $berhasil++;
                 }
 
                 $username = $nip ?: $nuptk;
@@ -312,24 +342,21 @@ class DapodikSyncController extends Controller
                         'archived_at' => null,
                     ]);
                 }
-            } catch (\Exception $e) {
-                $gagal++;
-                Log::warning('Gagal sync PTK dapodik_id ' . ($dapodikId ?? 'unknown') . ': ' . $e->getMessage());
-            }
-        }
 
-        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'diperbarui' => $diperbarui, 'dilewati' => $dilewati];
+                return $outcome;
+            },
+            function ($p, \Throwable $e): void {
+                $id = is_array($p) ? ($p['ptk_id'] ?? $p['dapodik_id'] ?? 'unknown') : 'unknown';
+                Log::warning("Gagal sync PTK dapodik_id {$id}: " . $e->getMessage());
+            }
+        );
     }
 
     private function syncRombel(array $data, Semester $semester): array
     {
-        $berhasil = 0;
-        $gagal = 0;
-        $diperbarui = 0;
-        $dilewati = 0;
-
-        foreach ($data as $r) {
-            try {
+        return $this->processInBatches(
+            $data,
+            function (array $r) use ($semester): string {
                 $dapodikId = $r['rombongan_belajar_id'] ?? $r['dapodik_id'] ?? null;
 
                 $existing = null;
@@ -368,28 +395,22 @@ class DapodikSyncController extends Controller
 
                 if ($existing) {
                     $existing->update($rombelData);
-                    $diperbarui++;
-                } else {
-                    Rombel::create($rombelData);
-                    $berhasil++;
-                }
-            } catch (\Exception $e) {
-                $gagal++;
-            }
-        }
 
-        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'diperbarui' => $diperbarui, 'dilewati' => $dilewati];
+                    return 'diperbarui';
+                }
+
+                Rombel::create($rombelData);
+
+                return 'berhasil';
+            }
+        );
     }
 
     private function syncJadwal(array $data, Semester $semester): array
     {
-        $berhasil = 0;
-        $gagal = 0;
-        $diperbarui = 0;
-        $dilewati = 0;
-
-        foreach ($data as $j) {
-            try {
+        return $this->processInBatches(
+            $data,
+            function (array $j) use ($semester): string {
                 $dapodikId = $j['jadwal_id'] ?? $j['dapodik_id'] ?? null;
 
                 $existing = null;
@@ -413,17 +434,15 @@ class DapodikSyncController extends Controller
 
                 if ($existing) {
                     $existing->update($jadwalData);
-                    $diperbarui++;
-                } else {
-                    JadwalPelajaran::create($jadwalData);
-                    $berhasil++;
-                }
-            } catch (\Exception $e) {
-                $gagal++;
-            }
-        }
 
-        return ['berhasil' => $berhasil, 'gagal' => $gagal, 'diperbarui' => $diperbarui, 'dilewati' => $dilewati];
+                    return 'diperbarui';
+                }
+
+                JadwalPelajaran::create($jadwalData);
+
+                return 'berhasil';
+            }
+        );
     }
 
     public function status(Request $request)
