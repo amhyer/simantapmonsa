@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,6 +31,7 @@ class User extends Authenticatable
         'force_password_change',
         'archived_at',
         'dapodik_id',
+        'tenant_id',
     ];
 
     protected $hidden = [
@@ -52,7 +56,15 @@ class User extends Authenticatable
         parent::boot();
         static::creating(function ($model) {
             if (!$model->uuid) $model->uuid = Str::uuid();
+            if (empty($model->tenant_id) && TenantContext::check()) {
+                $model->tenant_id = TenantContext::id();
+            }
         });
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
     }
 
     public function getAuthPassword()

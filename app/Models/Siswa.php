@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
@@ -9,11 +10,12 @@ use Illuminate\Support\Str;
 
 class Siswa extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
     protected $table = 'siswa';
     protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash'];
     protected $fillable = [
         'uuid',
+        'tenant_id',
         'dapodik_id',
         'guru_id',
         'rombel_id',

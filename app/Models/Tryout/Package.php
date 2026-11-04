@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,11 +11,11 @@ use Illuminate\Support\Str;
 
 class Package extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'tryout_packages';
     protected $fillable = [
-        'uuid', 'category_id', 'kode_paket', 'nama_paket',
+        'uuid', 'tenant_id', 'category_id', 'kode_paket', 'nama_paket',
         'deskripsi', 'jenjang', 'tahun_paket', 'jumlah_mapel',
         'durasi_total_menit', 'passing_grade', 'standar_nilai', 'aktif'
     ];

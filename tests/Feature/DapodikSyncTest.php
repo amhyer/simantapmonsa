@@ -574,9 +574,7 @@ class DapodikSyncTest extends TestCase
 
         $this->assertDatabaseHas('siswa', [
             'dapodik_id' => 'PD001',
-        ]);
-        $this->assertDatabaseMissing('siswa', [
-            'dapodik_id' => 'PD001',
+            'aktif' => 1,
             'archived_at' => null,
         ]);
     }

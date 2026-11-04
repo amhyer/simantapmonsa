@@ -2,6 +2,7 @@
 
 namespace App\Models\Tka;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,9 +10,11 @@ use Illuminate\Support\Str;
 
 class StudentAssessment extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'tka_student_assessments';
     protected $fillable = [
-        'uuid', 'siswa_id', 'semester_id', 'guru_id',
+        'uuid', 'tenant_id', 'siswa_id', 'semester_id', 'guru_id',
         'tanggal_penilaian', 'total_score', 'max_score',
         'persentase', 'status_kesiapan', 'skor_per_dimensi'
     ];

@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,9 +10,11 @@ use Illuminate\Support\Str;
 
 class Result extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'tryout_results';
     protected $fillable = [
-        'uuid', 'tryout_session_id', 'siswa_id', 'attempt_number',
+        'uuid', 'tenant_id', 'tryout_session_id', 'siswa_id', 'attempt_number',
         'nilai_total', 'nilai_maksimal', 'persentase', 'peringkat',
         'lulus', 'prediksi_peminatan', 'detail_nilai_mapel',
         'analisis_kelemahan', 'rekomendasi_pembelajaran',

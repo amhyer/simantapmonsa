@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class SekolahSettings extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'sekolah_settings';
     protected $hidden = ['pengaturan'];
     protected $fillable = [
+        'tenant_id',
         'guru_id',
         'nama_sekolah',
         'alamat',

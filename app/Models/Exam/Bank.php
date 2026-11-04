@@ -3,6 +3,7 @@
 namespace App\Models\Exam;
 
 use App\Models\User;
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,12 +11,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bank extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'exam_banks';
 
     protected $fillable = [
-        'engine_id', 'guru_id', 'kode', 'nama', 'mata_pelajaran',
+        'tenant_id', 'engine_id', 'guru_id', 'kode', 'nama', 'mata_pelajaran',
         'sumber_tabel', 'sumber_id', 'meta',
     ];
 

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class CbtQuestionBank extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'cbt_question_banks';
-    protected $fillable = ['id', 'guru_id', 'title', 'subject'];
+    protected $fillable = ['id', 'tenant_id', 'guru_id', 'title', 'subject'];
 
     protected function casts(): array
     {

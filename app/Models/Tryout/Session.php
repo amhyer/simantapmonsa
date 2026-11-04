@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,11 +11,11 @@ use Illuminate\Support\Str;
 
 class Session extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'tryout_sessions';
     protected $fillable = [
-        'uuid', 'kode_sesi', 'nama_sesi', 'package_id',
+        'uuid', 'tenant_id', 'kode_sesi', 'nama_sesi', 'package_id',
         'semester_id', 'guru_id', 'kelas', 'rombel_id',
         'tanggal_mulai', 'tanggal_selesai', 'durasi_menit', 'instruksi', 'status'
     ];

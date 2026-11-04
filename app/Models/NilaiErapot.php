@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class NilaiErapot extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'nilai_erapor';
     protected $fillable = [
-        'uuid', 'siswa_id', 'guru_id', 'jadwal_pelajaran_id',
+        'uuid', 'tenant_id', 'siswa_id', 'guru_id', 'jadwal_pelajaran_id',
         'mata_pelajaran', 'kelas',
         'semester', 'tahun_ajaran', 'fase',
         'nilai_formatif', 'nilai_sumatif', 'nilai_sumatif_akhir',

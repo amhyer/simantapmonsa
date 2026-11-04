@@ -4,6 +4,7 @@ namespace App\Models\Exam;
 
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Attempt extends Model
 {
+    use BelongsToTenant;
+
     public const STATUS_BERJALAN = 'berjalan';
 
     public const STATUS_DIKUMPULKAN = 'dikumpulkan';
@@ -20,7 +23,7 @@ class Attempt extends Model
     protected $table = 'exam_attempts';
 
     protected $fillable = [
-        'session_id', 'siswa_id', 'user_id', 'attempt_number', 'mulai_at', 'deadline_at',
+        'tenant_id', 'session_id', 'siswa_id', 'user_id', 'attempt_number', 'mulai_at', 'deadline_at',
         'selesai_at', 'status', 'nilai_total', 'nilai_maksimal', 'sumber_tabel', 'sumber_id', 'meta',
     ];
 

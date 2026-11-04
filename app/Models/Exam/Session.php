@@ -5,6 +5,7 @@ namespace App\Models\Exam;
 use App\Models\Rombel;
 use App\Models\Semester;
 use App\Models\User;
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,12 +13,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Session extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'exam_sessions';
 
     protected $fillable = [
-        'bank_id', 'guru_id', 'semester_id', 'rombel_id', 'kode', 'nama', 'kelas',
+        'tenant_id', 'bank_id', 'guru_id', 'semester_id', 'rombel_id', 'kode', 'nama', 'kelas',
         'mulai_at', 'selesai_at', 'durasi_menit', 'status', 'soal_snapshot',
         'peserta_ids', 'instruksi', 'sumber_tabel', 'sumber_id', 'meta',
     ];

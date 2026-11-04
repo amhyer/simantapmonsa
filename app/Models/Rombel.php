@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class Rombel extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'rombel';
     protected $fillable = [
-        'dapodik_id', 'semester_id', 'nama_rombel', 'tingkat', 'kurikulum', 'jenis_rombel', 'guru_id',
+        'tenant_id', 'dapodik_id', 'semester_id', 'nama_rombel', 'tingkat', 'kurikulum', 'jenis_rombel', 'guru_id',
     ];
 
     public function semester()

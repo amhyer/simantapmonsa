@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class CbtResult extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'cbt_results';
-    protected $fillable = ['id', 'session_id', 'siswa_id', 'user_id', 'started_at', 'deadline_at', 'submitted_at', 'answers', 'correct_count', 'score'];
+    protected $fillable = ['id', 'tenant_id', 'session_id', 'siswa_id', 'user_id', 'started_at', 'deadline_at', 'submitted_at', 'answers', 'correct_count', 'score'];
 
     protected function casts(): array
     {

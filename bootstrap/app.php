@@ -16,11 +16,17 @@ return Application::configure(basePath: dirname(__DIR__))
         // Header keamanan pada setiap respons (nilai di config/security.php).
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
+        // Isolasi data multi-tenant (aktif saat user memiliki tenant_id atau mode SaaS diaktifkan).
+        $middleware->web(append: [
+            \App\Http\Middleware\IdentifyTenant::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'apikey' => \App\Http\Middleware\ApiKeyMiddleware::class,
             'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
             'module.asesmen' => \App\Http\Middleware\EnsureModuleEnabled::class,
+            'tenant' => \App\Http\Middleware\IdentifyTenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

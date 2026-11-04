@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class CbtTestSession extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'cbt_test_sessions';
-    protected $fillable = ['id', 'guru_id', 'bank_id', 'title', 'kelas', 'opens_at', 'closes_at', 'duration_minutes', 'status', 'question_snapshot', 'participant_ids'];
+    protected $fillable = ['id', 'tenant_id', 'guru_id', 'bank_id', 'title', 'kelas', 'opens_at', 'closes_at', 'duration_minutes', 'status', 'question_snapshot', 'participant_ids'];
 
     protected function casts(): array
     {
