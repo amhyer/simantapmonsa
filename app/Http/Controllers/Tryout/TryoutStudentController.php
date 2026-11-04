@@ -9,6 +9,7 @@ use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\Siswa;
+use App\Services\Exam\DistributedConsistencyGuard;
 use App\Services\TryoutEngineBridge;
 use App\Services\TryoutResultDetailService;
 use App\Services\TryoutScoring;
@@ -158,75 +159,79 @@ class TryoutStudentController extends Controller
     {
         $this->authorize('complete', $result);
 
-        if ($result->waktu_selesai) {
-            return back()->with('error', 'Tryout sudah diselesaikan');
-        }
+        return app(DistributedConsistencyGuard::class)->run('tryout-submit', $result->id, function () use ($result) {
+            $result->refresh();
 
-        if ($this->pakaiEngineBaru()) {
-            $this->bridge->selesaikan($result, (float) $result->session->package->passing_grade);
+            if ($result->waktu_selesai) {
+                return back()->with('error', 'Tryout sudah diselesaikan');
+            }
 
-            return redirect()->route('tryout.student.result', $result->fresh())
+            if ($this->pakaiEngineBaru()) {
+                $this->bridge->selesaikan($result, (float) $result->session->package->passing_grade);
+
+                return redirect()->route('tryout.student.result', $result->fresh())
+                    ->with('success', 'Tryout berhasil diselesaikan');
+            }
+
+            $subjects = $result->session->package->subjects()->with(['questions'])->get();
+            $detailNilaiMapel = [];
+            $totalScore = 0;
+            $maxScore = 0;
+
+            foreach ($subjects as $subject) {
+                $answers = StudentAnswer::where('tryout_session_id', $result->tryout_session_id)
+                                       ->where('siswa_id', $result->siswa_id)
+                                       ->where('attempt_number', $result->attempt_number)
+                                       ->where('tryout_subject_id', $subject->id)
+                                       ->get();
+
+                $subjectScore = $answers->sum('poin_diperoleh');
+                $subjectMax = $subject->questions->sum('poin');
+                $subjectPercentage = $subjectMax > 0 ? ($subjectScore / $subjectMax * 100) : 0;
+
+                $detailNilaiMapel[] = [
+                    'mata_pelajaran_id' => $subject->mata_pelajaran_id,
+                    'nama_mapel' => $subject->mataPelajaran?->nama ?? 'Unknown',
+                    'skor' => $subjectScore,
+                    'maksimal' => $subjectMax,
+                    'persentase' => round($subjectPercentage, 2),
+                    'lulus' => $subjectPercentage >= $subject->passing_grade_mapel,
+                ];
+
+                $totalScore += $subjectScore * $subject->bobot;
+                $maxScore += $subjectMax * $subject->bobot;
+            }
+
+            $persentase = $maxScore > 0 ? ($totalScore / $maxScore * 100) : 0;
+            $lulus = $persentase >= $result->session->package->passing_grade;
+
+            $ranking = Result::where('tryout_session_id', $result->tryout_session_id)
+                            ->whereNotNull('waktu_selesai')
+                            ->where('nilai_total', '>', $totalScore)
+                            ->count() + 1;
+
+            $weakSubjects = collect($detailNilaiMapel)
+                ->where('persentase', '<', 60)
+                ->sortBy('persentase')
+                ->take(3)
+                ->values()
+                ->toArray();
+
+            $result->update([
+                'nilai_total' => $totalScore,
+                'nilai_maksimal' => $maxScore,
+                'persentase' => $persentase,
+                'lulus' => $lulus,
+                'peringkat' => $ranking,
+                'detail_nilai_mapel' => $detailNilaiMapel,
+                'analisis_kelemahan' => $weakSubjects,
+                'waktu_selesai' => now(),
+                'durasi_total_detik' => now()->diffInSeconds($result->waktu_mulai),
+            ]);
+
+            return redirect()->route('tryout.student.result', $result)
                 ->with('success', 'Tryout berhasil diselesaikan');
-        }
-
-        $subjects = $result->session->package->subjects()->with(['questions'])->get();
-        $detailNilaiMapel = [];
-        $totalScore = 0;
-        $maxScore = 0;
-
-        foreach ($subjects as $subject) {
-            $answers = StudentAnswer::where('tryout_session_id', $result->tryout_session_id)
-                                   ->where('siswa_id', $result->siswa_id)
-                                   ->where('attempt_number', $result->attempt_number)
-                                   ->where('tryout_subject_id', $subject->id)
-                                   ->get();
-
-            $subjectScore = $answers->sum('poin_diperoleh');
-            $subjectMax = $subject->questions->sum('poin');
-            $subjectPercentage = $subjectMax > 0 ? ($subjectScore / $subjectMax * 100) : 0;
-
-            $detailNilaiMapel[] = [
-                'mata_pelajaran_id' => $subject->mata_pelajaran_id,
-                'nama_mapel' => $subject->mataPelajaran?->nama ?? 'Unknown',
-                'skor' => $subjectScore,
-                'maksimal' => $subjectMax,
-                'persentase' => round($subjectPercentage, 2),
-                'lulus' => $subjectPercentage >= $subject->passing_grade_mapel,
-            ];
-
-            $totalScore += $subjectScore * $subject->bobot;
-            $maxScore += $subjectMax * $subject->bobot;
-        }
-
-        $persentase = $maxScore > 0 ? ($totalScore / $maxScore * 100) : 0;
-        $lulus = $persentase >= $result->session->package->passing_grade;
-
-        $ranking = Result::where('tryout_session_id', $result->tryout_session_id)
-                        ->whereNotNull('waktu_selesai')
-                        ->where('nilai_total', '>', $totalScore)
-                        ->count() + 1;
-
-        $weakSubjects = collect($detailNilaiMapel)
-            ->where('persentase', '<', 60)
-            ->sortBy('persentase')
-            ->take(3)
-            ->values()
-            ->toArray();
-
-        $result->update([
-            'nilai_total' => $totalScore,
-            'nilai_maksimal' => $maxScore,
-            'persentase' => $persentase,
-            'lulus' => $lulus,
-            'peringkat' => $ranking,
-            'detail_nilai_mapel' => $detailNilaiMapel,
-            'analisis_kelemahan' => $weakSubjects,
-            'waktu_selesai' => now(),
-            'durasi_total_detik' => now()->diffInSeconds($result->waktu_mulai),
-        ]);
-
-        return redirect()->route('tryout.student.result', $result)
-            ->with('success', 'Tryout berhasil diselesaikan');
+        });
     }
 
     public function result(Result $result, TryoutResultDetailService $details)

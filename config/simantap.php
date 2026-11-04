@@ -20,4 +20,14 @@ return [
     // (jalankan `exam:backfill` lalu bandingkan), karena instalasi lama bisa
     // punya data yang belum punya padanan engine.
     'exam_engine_readers' => env('SIMANTAP_EXAM_ENGINE_READERS', false),
+
+    // Strategi autosave Redis-first murni (tanpa write DB per klik jawaban).
+    // Default false = dual-write (buffer Redis/Cache + baris CbtResult tanpa
+    // mengunci CbtTestSession). Set true di produksi ber-Redis untuk beban tinggi
+    // 300+ siswa serentak; jawaban di-flush penuh saat submit/complete/expired.
+    'cbt_buffer_async' => env('SIMANTAP_CBT_BUFFER_ASYNC', false),
+
+    // Mode SaaS Multi-Tenant (satu database banyak sekolah dengan isolasi ketat
+    // kolom `tenant_id`). Default false untuk instalasi sekolah tunggal.
+    'multi_tenant_enabled' => env('SIMANTAP_MULTI_TENANT', false),
 ];

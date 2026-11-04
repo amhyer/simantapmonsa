@@ -6,16 +6,27 @@ use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\Siswa;
+use App\Services\Exam\DistributedConsistencyGuard;
+use App\Services\Exam\ExamAnswerBuffer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CbtExamService
 {
-    public function __construct(private CbtEngineBridge $bridge) {}
+    public function __construct(
+        private CbtEngineBridge $bridge,
+        private ExamAnswerBuffer $buffer,
+        private DistributedConsistencyGuard $guard,
+    ) {}
 
     private function pakaiEngineBaru(): bool
     {
         return (bool) config('simantap.exam_engine_cbt', true);
+    }
+
+    private function pakaiBufferAsinkron(): bool
+    {
+        return (bool) config('simantap.cbt_buffer_async', false);
     }
 
     public function publish(CbtTestSession $session): void
@@ -107,13 +118,19 @@ class CbtExamService
         }, 3);
     }
 
-    /** Semua pembaruan hasil mengunci sesi dulu, lalu hasil. */
-    private function locked(CbtResult $result, callable $callback): mixed
+    /**
+     * Mengunci HANYA baris `CbtResult` milik siswa (tanpa `lockForUpdate()` pada
+     * `CbtTestSession`), sehingga 300+ siswa pada sesi yang sama tidak saling
+     * memblokir saat autosave/submit/anti-cheat. Bebas deadlock karena `CbtResult`
+     * adalah daun paling bawah pada hierarki `Bank -> Session -> Result`.
+     */
+    private function lockedResult(CbtResult $result, callable $callback): mixed
     {
         return DB::transaction(function () use ($result, $callback) {
-            $session = CbtTestSession::whereKey($result->session_id)->lockForUpdate()->firstOrFail();
-            $result = CbtResult::whereKey($result->id)->lockForUpdate()->firstOrFail();
-            return $callback($session, $result);
+            $locked = CbtResult::whereKey($result->id)->lockForUpdate()->firstOrFail();
+            $session = CbtTestSession::findOrFail($locked->session_id);
+
+            return $callback($session, $locked);
         }, 3);
     }
 
@@ -124,13 +141,21 @@ class CbtExamService
 
     private function finish(CbtTestSession $session, CbtResult $result): CbtResult
     {
+        $persisted = is_array($result->answers) ? $result->answers : [];
+        $mergedAnswers = $result->submitted_at
+            ? $persisted
+            : $this->buffer->merge($result->id, $persisted);
+
         if (!$result->submitted_at) {
             // Sesi lama/rusak bisa punya snapshot atau jawaban NULL; jangan
             // sampai scheduler finalisasi berhenti dengan TypeError.
             $result->update(CbtScoring::grade(
                 is_array($session->question_snapshot) ? $session->question_snapshot : [],
-                is_array($result->answers) ? $result->answers : []
-            ) + ['submitted_at' => now()]);
+                $mergedAnswers
+            ) + [
+                'answers' => $mergedAnswers,
+                'submitted_at' => now(),
+            ]);
         }
 
         if ($this->pakaiEngineBaru()) {
@@ -140,6 +165,8 @@ class CbtExamService
             $this->bridge->catatJawaban($result, is_array($result->answers) ? $result->answers : []);
             $this->bridge->catatPenilaian($result);
         }
+
+        $this->buffer->forget($result->id);
 
         return $result;
     }
@@ -152,12 +179,12 @@ class CbtExamService
         if ($result->session->status !== 'completed' && now()->lessThan($result->deadline_at)) {
             return $result;
         }
-        return $this->locked($result, fn ($session, $locked) => $this->expired($session, $locked) ? $this->finish($session, $locked) : $locked);
+        return $this->lockedResult($result, fn ($session, $locked) => $this->expired($session, $locked) ? $this->finish($session, $locked) : $locked);
     }
 
     public function recordViolation(CbtResult $result, Siswa $siswa, string $type): void
     {
-        $this->locked($result, function ($session, $locked) use ($siswa, $type) {
+        $this->lockedResult($result, function ($session, $locked) use ($siswa, $type) {
             abort_unless($this->eligible($session, $siswa), 403);
             abort_if($locked->submitted_at || $this->expired($session, $locked), 409);
             if ($locked->violations()->count() < 100) {
@@ -183,14 +210,33 @@ class CbtExamService
 
     public function answer(CbtResult $result, int $questionId, string $answer): bool
     {
-        return $this->locked($result, function ($session, $result) use ($questionId, $answer) {
+        // Jalur cepat Redis-first asinkron: simpan di buffer skalar tanpa lock DB.
+        if ($this->pakaiBufferAsinkron()) {
+            $session = $result->relationLoaded('session')
+                ? $result->session
+                : CbtTestSession::findOrFail($result->session_id);
+
+            if ($result->submitted_at || $this->expired($session, $result)) {
+                $this->lockedResult($result, fn ($s, $r) => $this->finish($s, $r));
+
+                return false;
+            }
+
+            $this->validateAnswers($session, [$questionId => $answer]);
+            $this->buffer->put($result->id, $questionId, $answer);
+
+            return true;
+        }
+
+        return $this->lockedResult($result, function ($session, $result) use ($questionId, $answer) {
             if ($result->submitted_at || $this->expired($session, $result)) {
                 $this->finish($session, $result);
                 return false; // Jangan throw: finalisasi harus tetap COMMIT.
             }
             $this->validateAnswers($session, [$questionId => $answer]);
-            $answers = $result->answers;
-            $answers[$questionId] = $answer;
+            $this->buffer->put($result->id, $questionId, $answer);
+
+            $answers = $this->buffer->merge($result->id, is_array($result->answers) ? $result->answers : []);
             $result->update(['answers' => $answers]);
 
             if ($this->pakaiEngineBaru()) {
@@ -203,17 +249,19 @@ class CbtExamService
 
     public function submit(CbtResult $result, array $answers = []): CbtResult
     {
-        return $this->locked($result, function ($session, $result) use ($answers) {
-            if (!$result->submitted_at && !$this->expired($session, $result)) {
-                $this->validateAnswers($session, $answers);
-                $saved = $result->answers;
-                foreach ($answers as $id => $answer) {
-                    $saved[$id] = $answer;
+        return $this->guard->run('cbt-submit', $result->id, function () use ($result, $answers) {
+            return $this->lockedResult($result, function ($session, $result) use ($answers) {
+                if (!$result->submitted_at && !$this->expired($session, $result)) {
+                    $this->validateAnswers($session, $answers);
+                    $saved = $this->buffer->merge($result->id, is_array($result->answers) ? $result->answers : []);
+                    foreach ($answers as $id => $answer) {
+                        $saved[(int) $id] = (string) $answer;
+                    }
+                    $result->update(['answers' => $saved]);
                 }
-                $result->update(['answers' => $saved]);
-            }
-            // Setelah deadline, nilai hanya dihitung dari jawaban yang sudah tersimpan.
-            return $this->finish($session, $result);
+                // Setelah deadline, nilai hanya dihitung dari jawaban yang sudah tersimpan/ter-buffer.
+                return $this->finish($session, $result);
+            });
         });
     }
 
@@ -222,10 +270,11 @@ class CbtExamService
         DB::transaction(function () use ($session) {
             $session = CbtTestSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($session->status, ['running', 'completed'], true), 409);
+            // Tandai sesi selesai terlebih dahulu agar autosave paralel langsung tertolak.
+            $session->update(['status' => 'completed']);
             foreach ($session->results()->whereNull('submitted_at')->lockForUpdate()->get() as $result) {
                 $this->finish($session, $result);
             }
-            $session->update(['status' => 'completed']);
         }, 3);
     }
 
@@ -235,7 +284,7 @@ class CbtExamService
         CbtResult::whereNull('submitted_at')->where('deadline_at', '<=', now())
             ->chunkById(100, function ($results) use (&$count) {
                 foreach ($results as $result) {
-                    $this->locked($result, function ($session, $result) use (&$count) {
+                    $this->lockedResult($result, function ($session, $result) use (&$count) {
                         if (!$result->submitted_at && $this->expired($session, $result)) {
                             $this->finish($session, $result);
                             $count++;

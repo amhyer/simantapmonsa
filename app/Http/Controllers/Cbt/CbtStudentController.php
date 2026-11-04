@@ -10,6 +10,7 @@ use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
 use App\Services\CbtScoring;
+use App\Services\Exam\ExamAnswerBuffer;
 
 class CbtStudentController extends Controller
 {
@@ -64,6 +65,10 @@ class CbtStudentController extends Controller
         if ($result->submitted_at) {
             return redirect()->route('cbt.student.result', $result);
         }
+        $result->setAttribute(
+            'answers',
+            app(ExamAnswerBuffer::class)->merge($result->id, is_array($result->answers) ? $result->answers : [])
+        );
         $questions = CbtScoring::publicQuestions($session->question_snapshot ?? []);
         return view('cbt.student.exam', compact('session', 'result', 'questions'));
     }

@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cbt\StoreCbtSessionRequest;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtTestSession;
+use App\Models\Rombel;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
+use App\Services\Exam\ExamAnswerBuffer;
 use App\Services\Exam\LegacyExamMapper;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CbtTestSessionController extends Controller
@@ -27,7 +30,7 @@ class CbtTestSessionController extends Controller
         $classes = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         if ($classes->isEmpty()) {
-            $classes = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+            $classes = Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
         }
         return view('cbt.sessions.create', compact('banks', 'classes'));
     }
@@ -56,6 +59,7 @@ class CbtTestSessionController extends Controller
     {
         $this->authorize('publish', $session);
         $this->exam->publish($session);
+        Cache::forget("cbt:session:{$session->id}:monitoring:p1");
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dipublikasikan; soal dan peserta telah dibekukan.');
     }
 
@@ -63,6 +67,7 @@ class CbtTestSessionController extends Controller
     {
         $this->authorize('start', $session);
         $this->exam->open($session);
+        Cache::forget("cbt:session:{$session->id}:monitoring:p1");
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dibuka. Siswa dapat mulai sesuai jadwal.');
     }
 
@@ -70,6 +75,7 @@ class CbtTestSessionController extends Controller
     {
         $this->authorize('complete', $session);
         $this->exam->complete($session);
+        Cache::forget("cbt:session:{$session->id}:monitoring:p1");
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi ditutup dan jawaban tersimpan dinilai.');
     }
 
@@ -83,15 +89,35 @@ class CbtTestSessionController extends Controller
     public function apiMonitoring(CbtTestSession $session)
     {
         $this->authorize('monitoring', $session);
-        $results = $session->results()->with('siswa')->withCount('violations')->orderBy('id')->paginate(50);
-        return response()->json([
-            'status' => $session->status,
-            'participants' => count($session->participant_ids ?? []),
-            'results' => $results->through(fn ($r) => [
-                'id' => $r->id, 'name' => $r->siswa?->nama_peserta_didik ?? 'Siswa dihapus',
-                'answered' => count($r->answers ?? []), 'deadline' => $r->deadline_at?->toIso8601String(),
-                'submitted' => (bool) $r->submitted_at, 'score' => $r->score, 'violations' => $r->violations_count,
-            ]),
-        ]);
+
+        $page = max(1, (int) request('page', 1));
+        $cacheKey = "cbt:session:{$session->id}:monitoring:p{$page}";
+
+        // ATURAN PROYEK: Cache HANYA menyimpan array/skalar murni (bukan Model Eloquent).
+        $payload = Cache::remember($cacheKey, 3, function () use ($session, $page) {
+            $freshSession = CbtTestSession::findOrFail($session->id);
+            $buffer = app(ExamAnswerBuffer::class);
+            $results = $freshSession->results()
+                ->with('siswa')
+                ->withCount('violations')
+                ->orderBy('id')
+                ->paginate(50, ['*'], 'page', $page);
+
+            return [
+                'status' => (string) $freshSession->status,
+                'participants' => count($freshSession->participant_ids ?? []),
+                'results' => $results->through(fn ($r) => [
+                    'id' => (int) $r->id,
+                    'name' => (string) ($r->siswa?->nama_peserta_didik ?? 'Siswa dihapus'),
+                    'answered' => count($buffer->merge($r->id, is_array($r->answers) ? $r->answers : [])),
+                    'deadline' => $r->deadline_at?->toIso8601String(),
+                    'submitted' => (bool) $r->submitted_at,
+                    'score' => $r->score !== null ? (float) $r->score : null,
+                    'violations' => (int) $r->violations_count,
+                ])->toArray(),
+            ];
+        });
+
+        return response()->json($payload);
     }
 }

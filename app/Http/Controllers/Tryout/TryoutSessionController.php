@@ -9,6 +9,7 @@ use App\Models\Tryout\Package;
 use App\Models\Semester;
 use App\Models\Rombel;
 use App\Services\Exam\LegacyExamMapper;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class TryoutSessionController extends Controller
@@ -73,6 +74,7 @@ class TryoutSessionController extends Controller
     {
         $this->authorize('publish', $session);
         $session->update(['status' => 'published']);
+        Cache::forget("tryout:session:{$session->id}:monitoring");
         return back()->with('success', 'Sesi tryout dipublikasikan');
     }
 
@@ -80,6 +82,7 @@ class TryoutSessionController extends Controller
     {
         $this->authorize('start', $session);
         $session->update(['status' => 'ongoing']);
+        Cache::forget("tryout:session:{$session->id}:monitoring");
         return back()->with('success', 'Sesi tryout dimulai');
     }
 
@@ -87,6 +90,7 @@ class TryoutSessionController extends Controller
     {
         $this->authorize('complete', $session);
         $session->update(['status' => 'completed']);
+        Cache::forget("tryout:session:{$session->id}:monitoring");
         return back()->with('success', 'Sesi tryout selesai');
     }
 
@@ -112,18 +116,23 @@ class TryoutSessionController extends Controller
     public function apiMonitoring(Session $session)
     {
         $this->authorize('monitoring', $session);
-        $active = $session->results()
-                         ->whereNull('waktu_selesai')
-                         ->with('siswa')
-                         ->get()
-                         ->map(function ($result) {
-                             return [
-                                 'id' => $result->id,
-                                 'siswa' => $result->siswa->nama_peserta_didik,
-                                 'waktu_mulai' => $result->waktu_mulai,
-                                 'durasi_sudah' => now()->diffInSeconds($result->waktu_mulai),
-                             ];
-                         });
+
+        // ATURAN PROYEK: Cache HANYA menyimpan array/skalar murni (bukan Model Eloquent).
+        $active = Cache::remember("tryout:session:{$session->id}:monitoring", 3, function () use ($session) {
+            return $session->results()
+                ->whereNull('waktu_selesai')
+                ->with('siswa')
+                ->get()
+                ->map(function ($result) {
+                    return [
+                        'id' => (int) $result->id,
+                        'siswa' => (string) ($result->siswa?->nama_peserta_didik ?? 'Siswa dihapus'),
+                        'waktu_mulai' => $result->waktu_mulai?->toIso8601String(),
+                        'durasi_sudah' => $result->waktu_mulai ? (int) now()->diffInSeconds($result->waktu_mulai) : 0,
+                    ];
+                })
+                ->all();
+        });
 
         return response()->json(['active_students' => $active]);
     }
