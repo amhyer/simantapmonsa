@@ -59,6 +59,7 @@
                 <div class="card-body">
                     <h5 class="card-title">📋 Informasi</h5>
                     <hr>
+                    <div class="table-wrapper">
                     <table class="table table-sm table-borderless">
                         <tr>
                             <td width="40%">Nama</td>
@@ -77,6 +78,7 @@
                             <td><strong>{{ $result->peringkat ?? '-' }}</strong></td>
                         </tr>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -86,6 +88,7 @@
                 <div class="card-body">
                     <h5 class="card-title">⏱️ Waktu</h5>
                     <hr>
+                    <div class="table-wrapper">
                     <table class="table table-sm table-borderless">
                         <tr>
                             <td width="40%">Mulai</td>
@@ -104,6 +107,7 @@
                             <td>{{ $result->session->package->passing_grade }}</td>
                         </tr>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

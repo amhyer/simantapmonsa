@@ -66,7 +66,7 @@
         </div>
         <div class="card-body tight">
             <div style="font-size:12px;color:var(--muted);margin:0 16px 10px">Rincian Kerja Utama Administrator :</div>
-            <div style="overflow-x:auto">
+            <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <thead>
                         <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
@@ -198,11 +198,12 @@
                 <h3><i class="fas fa-book" style="color:var(--navy)"></i> Ringkasan Konten</h3>
             </div>
             <div class="card-body tight">
+                <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <tbody>
                         <tr style="border-bottom:1px solid #F2F4F7">
                             <td style="padding:12px 16px;display:flex;align-items:center;gap:10px">
-                                <span style="width:32px;height:32px;background:#EEF2F9;color:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-book-open" style="font-size:14px"></i></span>
+                                <span style="width:32px;height:32px;background:#EEF2F9;color:var(--navy);border-radius:8px;display:flex;align-items:center;gap:0;justify-content:center"><i class="fas fa-book-open" style="font-size:14px"></i></span>
                                 <div>
                                     <div style="font-weight:600;font-size:13px">Materi Pembelajaran</div>
                                     <div style="font-size:11px;color:var(--muted)">Upload oleh guru</div>
@@ -242,6 +243,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -283,6 +285,7 @@
                 <a href="{{ route('admin.backup.index') }}" class="btn btn-sm btn-ghost">Kelola</a>
             </div>
             <div class="card-body tight">
+                <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <tbody>
                         <tr style="border-bottom:1px solid #F2F4F7">
@@ -315,6 +318,7 @@
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -324,6 +328,7 @@
                 <h3><i class="fas fa-heart-pulse" style="color:var(--ok)"></i> Kesehatan Sistem</h3>
             </div>
             <div class="card-body tight">
+                <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <tbody>
                         @foreach($health as $h)
@@ -336,6 +341,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>

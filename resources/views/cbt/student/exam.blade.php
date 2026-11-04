@@ -2,7 +2,7 @@
 @section('title', 'Mengerjakan Ujian - ' . $session->title)
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+@vite(['resources/css/katex.css'])
 @endpush
 
 @section('sidebar')
@@ -527,7 +527,7 @@
     });
     syncExamFullscreenUI();
 
-    // KaTeX Auto-Render Math Integration
+    // KaTeX Auto-Render Math Integration (Self-Hosted via Vite)
     function renderExamMath() {
         if (typeof renderMathInElement === 'function') {
             const katexOptions = {
@@ -543,8 +543,6 @@
             document.querySelectorAll('.cbt-q-prompt, .cbt-option-text').forEach(el => {
                 renderMathInElement(el, katexOptions);
             });
-        } else {
-            setTimeout(renderExamMath, 150);
         }
     }
     if (document.readyState === 'loading') {
@@ -552,9 +550,8 @@
     } else {
         renderExamMath();
     }
+    window.addEventListener('simantap:katex-ready', renderExamMath);
 })();
 </script>
-{{-- KaTeX CDN Libraries --}}
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+@vite(['resources/js/katex.js'])
 @endpush

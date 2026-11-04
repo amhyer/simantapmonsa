@@ -83,7 +83,7 @@
             </div>
             <div class="card-body">
                 @if($nilaiPerMapel->count())
-                    <div style="overflow-x:auto">
+                    <div class="table-wrapper">
                         <table style="width:100%;border-collapse:collapse;font-size:13px">
                             <thead>
                                 <tr style="border-bottom:2px solid #E4E7EC">
@@ -138,7 +138,7 @@
             </div>
             <div class="card-body">
                 @if($kehadiranBulanan->count())
-                    <div style="overflow-x:auto">
+                    <div class="table-wrapper">
                         <table style="width:100%;border-collapse:collapse;font-size:13px">
                             <thead>
                                 <tr style="border-bottom:2px solid #E4E7EC">

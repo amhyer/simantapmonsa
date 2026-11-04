@@ -65,7 +65,7 @@
     <div class="card-header"><h3><i class="fas fa-calendar-alt"></i> Daftar Semester</h3><span class="tag tag-secondary">{{ $semesters->count() }} semester</span></div>
     <div class="card-body tight">
         @if($semesters->count())
-            <div style="overflow-x:auto">
+            <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <thead>
                         <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">

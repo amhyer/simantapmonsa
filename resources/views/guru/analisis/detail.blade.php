@@ -45,7 +45,7 @@
         <div class="card-header"><h3>📝 Daftar Nilai</h3></div>
         <div class="card-body tight">
             @if($nilai->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead><tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC"><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Tanggal</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Jenis</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Judul</th><th style="padding:8px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Nilai</th></tr></thead>
                         <tbody>
@@ -70,7 +70,7 @@
         <div class="card-header"><h3>📝 Daftar Kuis</h3></div>
         <div class="card-body tight">
             @if($hasilKuis->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead><tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC"><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Waktu</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Kuis</th><th style="padding:8px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Skor</th><th style="padding:8px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Benar</th></tr></thead>
                         <tbody>

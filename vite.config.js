@@ -11,6 +11,8 @@ export default defineConfig({
                 'resources/css/halaman-publik.css',
                 'resources/js/halaman-publik.js',
                 'resources/css/tka-statistik.css',
+                'resources/css/katex.css',
+                'resources/js/katex.js',
             ],
             refresh: true,
         }),

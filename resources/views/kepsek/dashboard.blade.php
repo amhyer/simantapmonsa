@@ -90,7 +90,7 @@
         <div class="card-header"><h3>🏆 Top 5 Guru Aktif</h3></div>
         <div class="card-body tight">
             @if($topGuru->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead><tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC"><th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Guru</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Nilai</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Materi</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Kuis</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Siswa</th></tr></thead>
                         <tbody>
@@ -116,7 +116,7 @@
         <div class="card-header"><h3>🏫 Ringkasan Per Kelas</h3></div>
         <div class="card-body tight">
             @if($perKelas->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead><tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC"><th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Kelas</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Siswa</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Rata Nilai</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Hadir</th><th style="padding:10px 12px;text-align:center;font-size:10px;text-transform:uppercase;color:#667085">Partisipasi</th></tr></thead>
                         <tbody>

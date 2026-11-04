@@ -48,7 +48,7 @@
     <div class="card-header"><h3>📋 Data Siswa</h3></div>
     <div class="card-body tight">
         @if(count($dataSiswa))
-            <div style="overflow-x:auto">
+            <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse">
                     <thead>
                         <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">

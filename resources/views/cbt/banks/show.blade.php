@@ -2,7 +2,7 @@
 @section('title', 'Kelola Soal - ' . $bank->title)
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+@vite(['resources/css/katex.css'])
 @endpush
 
 @section('sidebar')
@@ -187,10 +187,9 @@
 @endsection
 
 @push('scripts')
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+@vite(['resources/js/katex.js'])
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function () {
     function renderMath() {
         if (typeof renderMathInElement === 'function') {
             renderMathInElement(document.body, {
@@ -203,11 +202,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 throwOnError: false,
                 ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'input', 'select']
             });
-        } else {
-            setTimeout(renderMath, 150);
         }
     }
-    renderMath();
-});
+    document.addEventListener('DOMContentLoaded', renderMath);
+    window.addEventListener('simantap:katex-ready', renderMath);
+})();
 </script>
 @endpush

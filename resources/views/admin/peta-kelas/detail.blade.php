@@ -24,7 +24,7 @@
         </div>
         <div class="card-body tight">
             @if($rombel->siswa->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse" id="tabelAnggota">
                         <thead>
                             <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">

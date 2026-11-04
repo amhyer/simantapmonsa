@@ -63,7 +63,7 @@
             <input type="text" id="searchUser" placeholder="Cari nama atau username..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:200px" oninput="filterUsers(this.value)">
         </div>
         <div class="card-body tight">
-            <div style="overflow-x:auto">
+            <div class="table-wrapper">
                 <table style="width:100%;border-collapse:collapse" id="userTable">
                     <thead>
                         <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
@@ -121,7 +121,7 @@
         </div>
         <div class="card-body tight">
             @if($siswaWithoutUser->count())
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead>
                             <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">

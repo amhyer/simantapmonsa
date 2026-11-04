@@ -75,7 +75,7 @@ function renderSiswa(list) {
         return;
     }
 
-    let html = '<table style="width:100%;border-collapse:collapse">';
+    let html = '<div class="table-wrapper"><table style="width:100%;border-collapse:collapse">';
     html += '<thead><tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">';
     html += '<th style="padding:8px 12px;text-align:left;width:40px"><input type="checkbox" id="cekSemua" onchange="toggleSemua(this)"></th>';
     html += '<th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#667085">Nama</th>';
@@ -96,7 +96,7 @@ function renderSiswa(list) {
         html += '</tr>';
     });
 
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     document.getElementById('daftarSiswa').innerHTML = html;
 }
 

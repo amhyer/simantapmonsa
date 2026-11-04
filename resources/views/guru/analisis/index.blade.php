@@ -130,7 +130,7 @@
         </div>
         <div class="card-body tight">
             @if(count($matriksSiswa))
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead>
                             <tr>

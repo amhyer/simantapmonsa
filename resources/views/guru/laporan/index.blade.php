@@ -113,7 +113,7 @@
         </div>
         <div class="card-body tight">
             @if(count($dataLaporan))
-                <div style="overflow-x:auto">
+                <div class="table-wrapper">
                     <table style="width:100%;border-collapse:collapse">
                         <thead>
                             <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
@@ -188,7 +188,7 @@
                         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--navy)">
                             <i class="fas fa-layer-group" style="margin-right:6px"></i>Detail Nilai per Mata Pelajaran
                         </h3>
-                        <div style="overflow-x:auto">
+                        <div class="table-wrapper">
                             <table style="width:100%;border-collapse:collapse">
                                 <thead>
                                     <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
