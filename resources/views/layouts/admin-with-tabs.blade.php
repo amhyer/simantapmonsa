@@ -54,15 +54,7 @@
             @php
                 $activeTab = activeAdminTab();
             @endphp
-            @if($activeTab === 'cbt')
-                @include('admin.partials.sidebar-cbt')
-            @elseif($activeTab === 'tka')
-                @include('admin.partials.sidebar-tka')
-            @elseif($activeTab === 'setup')
-                @include('admin.partials.sidebar-setup')
-            @else
-                @include('admin.partials.sidebar-erapor')
-            @endif
+            @include('admin.partials.sidebar', ['tab' => $activeTab])
         </nav>
         
         <div class="sidebar-footer">

@@ -1,3 +1,8 @@
+@props(['groups' => []])
+
+{{-- Renderer sidebar admin yang SATU: seluruh grup menu dirender lewat
+     komponen ini. Data menu (berlabel, icon, route, badge, planned) tinggal
+     didefinisikan di partial sidebar; markup/chrome tidak boleh diduplikasi. --}}
 @php
     $isActive = function ($route) {
         try {
@@ -9,22 +14,9 @@
     $isPlanned = function ($item) {
         return ($item['planned'] ?? false) === true || !isset($item['route']);
     };
-
-    $menuAdmin = [
-        ['label' => 'TKA (PROFIL PELAJAR)', 'icon' => 'lucide-award', 'children' => [
-            ['route' => 'admin.tka.dashboard', 'icon' => 'lucide-gauge', 'label' => 'Dashboard TKA'],
-            ['route' => 'admin.tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi P5'],
-            ['route' => 'admin.tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Data Penilaian'],
-            ['route' => 'admin.tka.warnings.index', 'icon' => 'lucide-alert-triangle', 'label' => 'Early Warning'],
-        ]],
-    ];
 @endphp
 
-{{-- Seluruh menu di tab ini berada di balik middleware `module.asesmen`.
-     Saat modul mati menu tidak ditampilkan sama sekali, karena setiap tautan
-     di dalamnya pasti berujung 404. --}}
-@if(modulAsesmenAktif())
-@foreach($menuAdmin as $group)
+@foreach(($groups ?? []) as $group)
     @if(isset($group['children']))
         @php $childActive = collect($group['children'])->contains(fn($c) => isset($c['route']) && $isActive($c['route'])); @endphp
         <x-sidebar-submenu :icon="$group['icon']" :label="ucwords(strtolower($group['label']))" :open="$childActive || ($group['open'] ?? false)" :active="$childActive">
@@ -42,4 +34,3 @@
         @endforeach
     @endif
 @endforeach
-@endif
