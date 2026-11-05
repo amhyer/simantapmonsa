@@ -27,25 +27,37 @@
             flex-wrap: wrap;
         }
         .print-sheet {
-            max-width: 840px;
+            max-width: 900px;
             margin: 24px auto;
             padding: 0 16px 40px;
         }
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(335px, 1fr));
-            gap: 18px;
-            justify-items: center;
+            grid-template-columns: repeat(auto-fill, 85.6mm);
+            gap: 20px 24px;
+            justify-content: center;
         }
         .simantap-qr-box svg {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
             display: block;
+        }
+        .ktp-size-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #EFF8FF;
+            color: #175CD3;
+            border: 1px solid #B2DDFF;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
         }
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 10mm;
+                margin: 8mm 12mm;
             }
             body {
                 background: #fff !important;
@@ -56,28 +68,42 @@
                 display: none !important;
             }
             .print-sheet {
-                max-width: none;
-                margin: 0;
-                padding: 0;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             .cards-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10mm 8mm;
+                display: grid !important;
+                grid-template-columns: 85.6mm 85.6mm !important;
+                gap: 2.5mm 10mm !important;
+                justify-content: center !important;
+                page-break-inside: auto;
             }
             .simantap-id-card {
+                width: 85.6mm !important;
+                height: 54mm !important;
+                min-width: 85.6mm !important;
+                min-height: 54mm !important;
+                max-width: 85.6mm !important;
+                max-height: 54mm !important;
                 box-shadow: none !important;
-                max-width: 100% !important;
+                border: 0.25mm dashed #98A2B3 !important; /* Panduan garis potong KTP */
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
             }
         }
     </style>
 </head>
 <body>
     <div class="print-toolbar">
-        <div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <strong style="font-size:15px">{{ $judul ?? 'Cetak Kartu Identitas' }}</strong>
             @if(!empty($subjudul))
-                <span style="color:#667085;font-size:13px;margin-left:8px">· {{ $subjudul }}</span>
+                <span style="color:#667085;font-size:13px">· {{ $subjudul }}</span>
             @endif
+            <span class="ktp-size-badge" title="Ukuran resmi KTP / ISO/IEC 7810 ID-1 standard">
+                📏 Ukuran KTP: 85.6 × 54.0 mm (10 Kartu/A4)
+            </span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             {{-- Sisi Cetak Selector --}}
