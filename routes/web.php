@@ -629,7 +629,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== TRYOUT ROUTES ====================
-Route::middleware(['module.asesmen', 'auth', 'role:guru', 'force.password.change'])->prefix('tryout')->name('tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru,admin', 'force.password.change'])->prefix('tryout')->name('tryout.')->group(function () {
     // Categories (nonaktif sementara: controller belum ada — milik area Kiro)
     // Route::resource('categories', \App\Http\Controllers\Tryout\TryoutCategoryController::class)->except(['show']);
     

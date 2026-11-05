@@ -157,7 +157,7 @@ class DashboardController extends Controller
 
         $todayStr = today()->toDateString();
         $kehadiranSiswaHariIni = Kehadiran::whereDate('tanggal', $todayStr)->where('status', 'H')->count();
-        $presensiPegawaiHariIni = \App\Models\PresensiPegawai::whereDate('tanggal', $todayStr)->whereNotNull('jam_masuk')->count();
+        $presensiPegawaiHariIni = \App\Models\PresensiPegawai::whereDate('tanggal', $todayStr)->whereNotNull('waktu_masuk')->count();
         $presensiHariIni = [
             'siswa_hadir' => $kehadiranSiswaHariIni,
             'pegawai_hadir' => $presensiPegawaiHariIni,
