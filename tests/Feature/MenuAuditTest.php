@@ -38,6 +38,8 @@ class MenuAuditTest extends TestCase
         $siswaUser = User::factory()->siswa()->create(['nama_pengguna' => 'S001']);
         $ortu->update(['terhubung_dengan' => [$siswa->id]]);
 
+        $tendik = User::factory()->tendik()->create();
+
         $map = [
             'admin' => [$admin, [
                 'admin.dashboard', 'admin.profile', 'admin.dapodik.index',
@@ -57,6 +59,10 @@ class MenuAuditTest extends TestCase
                 'admin.kode-akses.index', 'admin.modul.index', 'admin.bobot.index',
                 'admin.sheet.index', 'admin.backup.index', 'admin.api-keys.index',
                 'admin.log.index',
+                'admin.presensi.index',
+                'admin.presensi.kartu.index',
+                'admin.presensi.kartu.siswa.cetak-massal',
+                'admin.presensi.kartu.pegawai.cetak-massal',
             ]],
             'guru' => [$guru, [
                 'guru.dashboard', 'guru.materi.index', 'guru.dimensi.index',
@@ -65,10 +71,11 @@ class MenuAuditTest extends TestCase
                 'guru.kehadiran.index', 'guru.catatan.index', 'guru.kebiasaan.index',
                 'guru.laporan.index', 'guru.erapor.index', 'guru.siswa.index',
                 'guru.integrasi.index', 'guru.pengaturan.index',
+                'presensi.pegawai.index', 'presensi.pegawai.kartu',
             ]],
             'siswa' => [$siswaUser, [
                 'siswa.dashboard', 'siswa.materi.index', 'siswa.kuis.index',
-                'siswa.nilai.index', 'siswa.profil.show',
+                'siswa.nilai.index', 'siswa.profil.show', 'siswa.kartu.cetak',
             ]],
             'ortu' => [$ortu, [
                 'ortu.dashboard', 'ortu.kebiasaan.index', 'ortu.rekap.index',
@@ -79,6 +86,10 @@ class MenuAuditTest extends TestCase
                 'kepsek.dashboard', 'kepsek.rekap.index', 'kepsek.peta-kelas.index',
                 'kepsek.hasil-belajar.index', 'kepsek.pantau.index',
                 'kepsek.kebiasaan.index', 'kepsek.aktivitas.index',
+                'presensi.pegawai.index', 'presensi.pegawai.kartu',
+            ]],
+            'tendik' => [$tendik, [
+                'presensi.pegawai.index', 'presensi.pegawai.kartu',
             ]],
         ];
 

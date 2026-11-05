@@ -161,7 +161,7 @@
                     <i class="fas fa-exclamation-triangle"></i> {{ session('error') }}
                 </div>
             @endif
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 <div class="note note-bad" style="margin-bottom:16px">
                     <i class="fas fa-exclamation-circle"></i> Periksa kembali isian berikut:
                     <ul>
