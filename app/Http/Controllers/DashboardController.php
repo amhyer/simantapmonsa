@@ -152,6 +152,7 @@ class DashboardController extends Controller
                 ['label' => 'Cache', 'nilai' => config('cache.default'), 'ok' => true],
                 ['label' => 'Database', 'nilai' => DB::getDriverName() . ' (' . $this->formatBytes($this->ukuranDatabase()) . ')', 'ok' => true],
                 ['label' => 'Folder backup', 'nilai' => $this->formatBytes($backupUkuran), 'ok' => true],
+                ['label' => 'Kartu QR Siswa', 'nilai' => Siswa::whereNotNull('qr_token_hash')->count() . ' / ' . $siswaAktif . ' aktif', 'ok' => Siswa::whereNotNull('qr_token_hash')->count() > 0],
             ];
 
             // Rekap kelengkapan guru aktif (distinct guru_id per tabel konten).

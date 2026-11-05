@@ -120,3 +120,33 @@ if (!function_exists('modulAsesmenAktif')) {
         return (bool) config('simantap.cbt_enabled', false);
     }
 }
+
+if (!function_exists('semesterAktifLabel')) {
+    /**
+     * Label semester dan tahun ajaran aktif untuk konteks header.
+     * Hanya menyimpan string skalar di cache (bukan model Eloquent).
+     */
+    function semesterAktifLabel(): ?string
+    {
+        return Cache::remember('app_semester_aktif_label:v1', 300, function () {
+            try {
+                if (!\Illuminate\Support\Facades\Schema::hasTable('semesters')) {
+                    return null;
+                }
+                $semester = \App\Models\Semester::where('is_aktif', true)->first();
+                if (!$semester) {
+                    $semester = \App\Models\Semester::orderByDesc('semester_id')->first();
+                }
+                if (!$semester) {
+                    return null;
+                }
+                $ta = $semester->tahun_ajaran ?? '';
+                $smt = $semester->nama_semester ?? $semester->semester ?? '';
+                $label = trim($ta . ($smt ? " ({$smt})" : ''));
+                return $label !== '' ? $label : null;
+            } catch (\Throwable) {
+                return null;
+            }
+        });
+    }
+}

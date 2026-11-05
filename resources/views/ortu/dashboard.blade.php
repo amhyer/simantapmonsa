@@ -17,6 +17,43 @@
         </div>
     @else
 
+    @php
+        $kh = $ringkasan['kehadiran_hari_ini'] ?? null;
+    @endphp
+    @if($kh && $kh->status === 'H')
+        <div class="note note-ok" style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+            <i class="fas fa-check-circle" style="font-size:20px"></i>
+            <div>
+                <strong>Alhamdulillah, ananda telah hadir di sekolah hari ini.</strong>
+                <div style="font-size:12px;opacity:0.9">Waktu kehadiran: {{ $kh->waktu_masuk ? \Carbon\Carbon::parse($kh->waktu_masuk)->format('H:i') . ' WITA' : 'Tercatat' }} (Metode: {{ strtoupper($kh->metode ?? 'QR') }})</div>
+            </div>
+        </div>
+    @elseif($kh && in_array($kh->status, ['S', 'I']))
+        <div class="note note-warn" style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+            <i class="fas fa-info-circle" style="font-size:20px"></i>
+            <div>
+                <strong>Status Kehadiran Hari Ini: {{ $kh->status === 'S' ? 'Sakit' : 'Izin' }}</strong>
+                @if($kh->keterangan) <div style="font-size:12px">Keterangan: {{ $kh->keterangan }}</div> @endif
+            </div>
+        </div>
+    @elseif($kh && $kh->status === 'A')
+        <div class="note note-bad" style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+            <i class="fas fa-exclamation-triangle" style="font-size:20px"></i>
+            <div>
+                <strong>Perhatian: Ananda tercatat belum hadir (Alpa) pada hari ini.</strong>
+                <div style="font-size:12px">Silakan hubungi pihak sekolah atau wali kelas jika ananda berhalangan hadir.</div>
+            </div>
+        </div>
+    @else
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+                <i class="fas fa-clock" style="color:var(--muted)"></i>
+                <span style="font-size:13px;color:#475569">Presensi hari ini belum tercatat atau jam pelajaran sedang berjalan.</span>
+            </div>
+            <a href="{{ route('ortu.kehadiran.index') }}" class="btn btn-ghost btn-sm" style="font-size:12px">Lihat Riwayat Presensi</a>
+        </div>
+    @endif
+
     <div class="grid grid-4" style="margin-bottom:20px">
         <div class="stat-card primary">
             <i class="fas fa-user stat-icon"></i>

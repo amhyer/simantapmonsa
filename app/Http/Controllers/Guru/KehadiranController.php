@@ -424,6 +424,76 @@ class KehadiranController extends Controller
         return back()->with('success', 'Kehadiran berhasil disimpan.');
     }
 
+    public function tandaiSemuaHadir(Request $request, JadwalPelajaran $jadwal, MapelAttendancePolicy $policy)
+    {
+        $this->pastikanJadwalMilikGuru($jadwal);
+        $this->pastikanWaktuJadwalTerbuka($jadwal);
+        $jadwal->loadMissing('rombel');
+        $students = $this->siswaUntukJadwal($jadwal, $policy);
+        $presensiMapelTerpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal);
+
+        $today = now()->toDateString();
+        $now = now();
+        $updatedCount = 0;
+
+        foreach ($students as $siswa) {
+            $record = Kehadiran::withTrashed()
+                ->where('siswa_id', $siswa->id)
+                ->whereDate('tanggal', $today)
+                ->first();
+
+            if (!$record || $record->trashed() || empty($record->status)) {
+                if ($record && $record->trashed()) {
+                    $record->restore();
+                }
+                $record = $record ?? new Kehadiran([
+                    'siswa_id' => $siswa->id,
+                    'tanggal' => $today,
+                ]);
+
+                $record->fill([
+                    'guru_id' => auth()->id(),
+                    'status' => 'H',
+                    'waktu_masuk' => $record->waktu_masuk ?? $now,
+                    'jadwal_pelajaran_id' => $record->jadwal_pelajaran_id ?: $jadwal->id,
+                    'dicatat_oleh' => auth()->id(),
+                    'metode' => 'manual',
+                    'keterangan' => 'Tandai hadir serentak',
+                ]);
+                $record->save();
+                $updatedCount++;
+            }
+
+            if ($presensiMapelTerpisah) {
+                $recordMapel = KehadiranMapel::where('jadwal_pelajaran_id', $jadwal->id)
+                    ->where('siswa_id', $siswa->id)
+                    ->whereDate('tanggal', $today)
+                    ->first();
+
+                if (!$recordMapel || empty($recordMapel->status)) {
+                    $recordMapel = $recordMapel ?? new KehadiranMapel([
+                        'jadwal_pelajaran_id' => $jadwal->id,
+                        'siswa_id' => $siswa->id,
+                        'tanggal' => $today,
+                    ]);
+
+                    $recordMapel->fill([
+                        'guru_id' => auth()->id(),
+                        'mata_pelajaran' => $jadwal->mata_pelajaran,
+                        'status' => 'H',
+                        'waktu_masuk' => $recordMapel->waktu_masuk ?? $now,
+                        'dicatat_oleh' => auth()->id(),
+                        'metode' => 'manual',
+                        'keterangan' => 'Tandai hadir serentak',
+                    ]);
+                    $recordMapel->save();
+                }
+            }
+        }
+
+        return back()->with('success', "Berhasil menandai {$updatedCount} siswa sebagai Hadir.");
+    }
+
     public function destroy(Kehadiran $kehadiran)
     {
         if ($kehadiran->guru_id !== auth()->id()) abort(403);

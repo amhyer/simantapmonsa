@@ -17,6 +17,30 @@
     <div class="stat-card ok"><div class="stat-value">{{ $persenHadir }}%</div><div class="stat-label">Kehadiran Rata-rata</div></div>
 </div>
 
+<div class="card" style="margin-bottom:16px;background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%);color:#fff;border-radius:12px;padding:16px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:20px">
+                <i class="fas fa-calendar-check" style="color:#38BDF8"></i>
+            </div>
+            <div>
+                <div style="font-size:12px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.5px">Presensi Eksekutif Hari Ini — {{ now()->translatedFormat('l, d F Y') }}</div>
+                <div style="font-size:16px;font-weight:700;color:#F8FAFC">Monitoring Kehadiran Siswa & Pegawai Real-time</div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.1)">
+                <div style="font-size:11px;color:#94A3B8">Siswa Hadir</div>
+                <div style="font-size:16px;font-weight:800;color:#38BDF8">{{ $presensiHariIni['siswa_hadir'] }} <span style="font-size:12px;font-weight:400;color:#94A3B8">/ {{ $presensiHariIni['total_siswa'] }} ({{ $presensiHariIni['persen_siswa'] }}%)</span></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.1)">
+                <div style="font-size:11px;color:#94A3B8">Pegawai / Guru Masuk</div>
+                <div style="font-size:16px;font-weight:800;color:#34D399">{{ $presensiHariIni['pegawai_hadir'] }} <span style="font-size:12px;font-weight:400;color:#94A3B8">/ {{ $presensiHariIni['total_guru'] }}</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="grid grid-2" style="margin-bottom:16px">
     <div class="card" style="border-left:4px solid #D97706">
         <div class="card-header">

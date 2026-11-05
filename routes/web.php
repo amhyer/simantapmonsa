@@ -378,6 +378,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     Route::get('/kehadiran/jadwal/{jadwal}', [KehadiranController::class, 'jadwal'])->name('kehadiran.jadwal');
     Route::get('/kehadiran/jadwal/{jadwal}/kartu-kelas', [KehadiranController::class, 'cetakKartuKelas'])->name('kehadiran.kartu-kelas');
     Route::post('/kehadiran/jadwal/{jadwal}/scan', [KehadiranController::class, 'scan'])->middleware('throttle:120,1')->name('kehadiran.scan');
+    Route::post('/kehadiran/jadwal/{jadwal}/tandai-semua', [KehadiranController::class, 'tandaiSemuaHadir'])->name('kehadiran.tandai-semua');
     Route::post('/kehadiran/jadwal/{jadwal}/siswa/{siswa}/status', [KehadiranController::class, 'setStatus'])->middleware('throttle:120,1')->name('kehadiran.status');
     Route::resource('kehadiran', KehadiranController::class)->only(['index', 'store', 'destroy']);
     

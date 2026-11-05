@@ -66,16 +66,24 @@
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-calendar-day" style="margin-right:8px;color:var(--navy)"></i>Mengajar Hari Ini ({{ $namaHari }})</h3>
-                <span class="tag tag-primary">{{ $jadwalHariIni->count() }} sesi</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="tag tag-primary">{{ $jadwalHariIni->count() }} sesi</span>
+                    <a href="{{ route('guru.kehadiran.index') }}" class="btn btn-ghost btn-sm" title="Buka seluruh jadwal & rekap">Roster</a>
+                </div>
             </div>
             <div class="card-body tight">
                 @if($jadwalHariIni->count())
                     @foreach($jadwalHariIni as $j)
                         <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #F2F4F7">
-                            <span style="min-width:96px;font-weight:700;font-size:13px">{{ substr($j->jam_mulai, 0, 5) }}–{{ substr($j->jam_selesai, 0, 5) }}</span>
+                            <span style="min-width:88px;font-weight:700;font-size:13px">{{ substr($j->jam_mulai, 0, 5) }}–{{ substr($j->jam_selesai, 0, 5) }}</span>
                             <div style="flex:1;min-width:0">
                                 <div style="font-weight:600;font-size:13px">{{ $j->mata_pelajaran }}</div>
                                 <div style="font-size:11px;color:var(--muted)">Kelas {{ $j->kelas }}</div>
+                            </div>
+                            <div>
+                                <a href="{{ route('guru.kehadiran.jadwal', $j) }}" class="btn btn-sm btn-primary" style="padding:5px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px;border-radius:6px">
+                                    <i class="fas fa-qrcode"></i> Scan QR
+                                </a>
                             </div>
                         </div>
                     @endforeach

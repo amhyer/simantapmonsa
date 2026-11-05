@@ -48,19 +48,28 @@
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-user"></i></div>
             <div class="stat-label">Nama</div>
             <div class="stat-value" style="font-size:15px">{{ $siswa->nama_peserta_didik }}</div>
-            <div class="stat-change" style="color:var(--violet)">NISN: {{ $siswa->nisn }}</div>
+            <div class="stat-change" style="color:var(--violet);margin-bottom:4px">NISN: {{ $siswa->nisn }}</div>
+            <a href="{{ route('siswa.kartu.cetak') }}" class="btn btn-xs" style="background:rgba(109,40,217,0.12);color:var(--violet);font-weight:700;display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none">
+                <i class="fas fa-qrcode"></i> Kartu Pelajar
+            </a>
         </div>
         <div class="stat-card gold" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-chart-line"></i></div>
             <div class="stat-label">Rata-rata Nilai</div>
             <div class="stat-value" style="color:var(--gold)">{{ $rataRata > 0 ? number_format($rataRata, 1) : '-' }}</div>
             <div class="stat-change">{{ $jumlahNilai }} penilaian</div>
+            @if($rataRata >= 85)
+                <div style="margin-top:4px"><span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px"><i class="fas fa-award"></i> Berprestasi</span></div>
+            @endif
         </div>
         <div class="stat-card ok" style="position:relative;overflow:hidden">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-check-circle"></i></div>
             <div class="stat-label">Kehadiran</div>
             <div class="stat-value" style="color:var(--violet)">{{ number_format($kehadiran, 1) }}%</div>
             <div class="stat-change">{{ $totalHadir }} hari hadir</div>
+            @if($kehadiran >= 90)
+                <div style="margin-top:4px"><span style="background:#ECFDF5;color:#065F46;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px"><i class="fas fa-check-double"></i> Sangat Rajin</span></div>
+            @endif
         </div>
         <div class="stat-card" style="position:relative;overflow:hidden;border-left:3px solid var(--violet)">
             <div style="position:absolute;top:10px;right:14px;opacity:.1;font-size:48px"><i class="fas fa-trophy"></i></div>

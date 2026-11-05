@@ -6,6 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SIMANTAP')</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <meta name="theme-color" content="#1F3864">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>document.documentElement.classList.add('js')</script>
     @if(auth()->check() && auth()->user()->peran === 'siswa')
@@ -75,12 +80,24 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="topbar-title">
-                    <h1>@yield('page_title', 'Dashboard')</h1>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                        <h1 style="margin:0">@yield('page_title', 'Dashboard')</h1>
+                        @if($acad = semesterAktifLabel())
+                            <span class="topbar-academic-pill" title="Tahun Ajaran & Semester Aktif">
+                                <i class="fas fa-calendar-alt"></i> {{ $acad }}
+                            </span>
+                        @endif
+                    </div>
                     <div class="subtitle">@yield('page_subtitle', '')</div>
                 </div>
             </div>
             
             <div class="topbar-right">
+                <button type="button" class="topbar-search-btn" onclick="openCommandPalette()" title="Cari Menu Cepat (Ctrl+K)">
+                    <i class="fas fa-search"></i>
+                    <span class="search-hint">Cari menu...</span>
+                    <kbd>Ctrl K</kbd>
+                </button>
                 <div class="notif-wrap">
                     <button class="topbar-btn" title="Notifikasi" onclick="document.getElementById('notifPanel').classList.toggle('show')">
                         <i class="fas fa-bell"></i>
@@ -193,6 +210,8 @@
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
     </script>
+    <x-command-palette />
+    <x-mobile-bottom-nav />
     @stack('scripts')
 </body>
 </html>

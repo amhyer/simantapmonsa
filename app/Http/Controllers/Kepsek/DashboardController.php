@@ -155,10 +155,21 @@ class DashboardController extends Controller
             'persen_siap' => $tkaTotal > 0 ? round(($tkaSiap / $tkaTotal) * 100) : 0,
         ];
 
+        $todayStr = today()->toDateString();
+        $kehadiranSiswaHariIni = Kehadiran::whereDate('tanggal', $todayStr)->where('status', 'H')->count();
+        $presensiPegawaiHariIni = \App\Models\PresensiPegawai::whereDate('tanggal', $todayStr)->whereNotNull('jam_masuk')->count();
+        $presensiHariIni = [
+            'siswa_hadir' => $kehadiranSiswaHariIni,
+            'pegawai_hadir' => $presensiPegawaiHariIni,
+            'total_siswa' => $stats['total_siswa'],
+            'total_guru' => $stats['total_guru'],
+            'persen_siswa' => $stats['total_siswa'] > 0 ? round(($kehadiranSiswaHariIni / $stats['total_siswa']) * 100, 1) : 0,
+        ];
+
         return view('kepsek.dashboard', compact(
             'stats', 'rataNilai', 'predikatSekolah', 'persenHadir',
             'partisipasiOrtu', 'aktivitasGuru', 'topGuru',
-            'distribusiPredikat', 'perKelas', 'cbtRingkasan', 'tkaSekolah'
+            'distribusiPredikat', 'perKelas', 'cbtRingkasan', 'tkaSekolah', 'presensiHariIni'
         ));
     }
 

@@ -543,4 +543,20 @@ class PresensiTest extends TestCase
             ->assertSee('KARTU IDENTITAS SISWA')
             ->assertSee($this->siswa->nama_peserta_didik);
     }
+
+    public function test_guru_dapat_menandai_semua_siswa_hadir_pada_jadwal_hari_ini(): void
+    {
+        $this->actingAs($this->guru);
+        $jadwal = $this->jadwal();
+
+        $response = $this->post(route('guru.kehadiran.tandai-semua', $jadwal));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('kehadiran', [
+            'siswa_id' => $this->siswa->id,
+            'status' => 'H',
+            'metode' => 'manual',
+            'guru_id' => $this->guru->id,
+        ]);
+    }
 }

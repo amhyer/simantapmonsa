@@ -9,6 +9,14 @@
 
 @section('header_actions')
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+        @if($canRecordAttendance)
+            <form method="POST" action="{{ route('guru.kehadiran.tandai-semua', $jadwal) }}" onsubmit="return confirm('Tandai semua siswa yang belum tercatat sebagai Hadir?')">
+                @csrf
+                <button type="submit" class="btn btn-secondary btn-sm" title="Tandai Hadir seluruh siswa di kelas ini secara serentak">
+                    <i class="fas fa-check-double"></i> Tandai Semua Hadir
+                </button>
+            </form>
+        @endif
         <a href="{{ route('guru.kehadiran.kartu-kelas', $jadwal) }}" class="btn btn-ghost btn-sm">🪪 Cetak Kartu Kelas</a>
         <a href="{{ route('guru.kehadiran.index') }}" class="btn btn-ghost btn-sm">← Kembali</a>
     </div>

@@ -40,6 +40,9 @@ class DashboardController extends Controller
         $tkaReport = \App\Models\Tka\ParentReport::where('siswa_id', $anak->id)->latest()->first();
         $tkaDimensi = \App\Models\Dimensi::where('siswa_id', $anak->id)->pluck('skor');
         $tkaRata = $tkaDimensi->count() > 0 ? round($tkaDimensi->avg(), 2) : null;
+        $kehadiranHariIni = Kehadiran::where('siswa_id', $anak->id)
+            ->whereDate('tanggal', now()->toDateString())
+            ->first();
 
         $ringkasan = [
             'nilai_akhir' => $na['nilai_akhir'],
@@ -47,6 +50,7 @@ class DashboardController extends Controller
                 ? $nilaiService->getPredikat($na['nilai_akhir'], getKKM($anak->guru_id))
                 : null,
             'hadir_persen' => $totalKehadiran > 0 ? round($hadir / $totalKehadiran * 100, 1) : null,
+            'kehadiran_hari_ini' => $kehadiranHariIni,
             'kebiasaan_minggu' => Kebiasaan::where('siswa_id', $anak->id)
                 ->where('tanggal', '>=', now()->startOfWeek()->toDateString())
                 ->count(),
