@@ -65,6 +65,7 @@ class PresensiController extends Controller
         Request $request,
         StudentQrHasher $hasher,
         GeofenceService $geofence,
+        IdentityCardService $cardService,
     ) {
         $user = auth()->user();
         abort_unless($user && in_array($user->peran, self::PERAN_PEGAWAI, true), 403);
@@ -77,23 +78,25 @@ class PresensiController extends Controller
             'accuracy' => 'nullable|numeric|min:0|max:5000',
         ]);
 
-        if (!filled($user->qr_token_hash)) {
+        if (!filled($user->qr_token_hash) && !filled($user->qr_previous_token_hash)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kartu identitas Anda belum aktif. Muat ulang halaman atau minta admin menerbitkan kartu.',
             ], 422);
         }
 
-        $digest = $hasher->hash($validated['qr_payload']);
-        if (!hash_equals((string) $user->qr_token_hash, $digest)) {
-            if (User::where('qr_token_hash', $digest)->where('id', '!=', $user->id)->exists()) {
+        $resolvedUser = $cardService->resolvePegawaiFromPayload($validated['qr_payload']);
+
+        if (!$resolvedUser || (int) $resolvedUser->id !== (int) $user->id) {
+            if ($resolvedUser && (int) $resolvedUser->id !== (int) $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Kartu yang dipindai adalah milik guru/pegawai lain. Anda wajib memindai kartu identitas milik sendiri.',
                 ], 403);
             }
 
-            if (Siswa::where('qr_token_hash', $digest)->exists()) {
+            $resolvedSiswa = $cardService->resolveSiswaFromPayload($validated['qr_payload']);
+            if ($resolvedSiswa) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ini adalah kartu identitas siswa. Gunakan menu Kehadiran Siswa pada jadwal mengajar Anda.',
@@ -102,7 +105,7 @@ class PresensiController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'QR kartu identitas tidak dikenali atau sudah diganti dengan versi baru.',
+                'message' => 'QR kartu identitas tidak dikenali atau tidak sah.',
             ], 404);
         }
 

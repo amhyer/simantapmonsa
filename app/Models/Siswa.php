@@ -12,7 +12,7 @@ class Siswa extends Model
 {
     use BelongsToTenant, SoftDeletes;
     protected $table = 'siswa';
-    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash'];
+    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash'];
     protected $fillable = [
         'uuid',
         'tenant_id',
@@ -56,6 +56,9 @@ class Siswa extends Model
         'penerima_kip',
         'no_kip',
         'qr_card_version',
+        'qr_previous_token_hash',
+        'printed_at',
+        'printed_version',
         'archived_at',
     ];
 
@@ -66,6 +69,8 @@ class Siswa extends Model
             'rekaman' => 'array',
             'tanggal_lahir' => 'date',
             'qr_card_version' => 'integer',
+            'printed_version' => 'integer',
+            'printed_at' => 'datetime',
             'archived_at' => 'datetime',
         ];
     }

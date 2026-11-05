@@ -124,6 +124,7 @@ class KehadiranController extends Controller
         JadwalPelajaran $jadwal,
         StudentQrHasher $hasher,
         MapelAttendancePolicy $policy,
+        IdentityCardService $cardService,
     ) {
         $this->pastikanJadwalMilikGuru($jadwal);
         $this->pastikanWaktuJadwalTerbuka($jadwal);
@@ -132,13 +133,11 @@ class KehadiranController extends Controller
             'qr_payload' => 'required|string|max:2048',
         ]);
 
-        $digest = $hasher->hash($validated['qr_payload']);
-        $student = Siswa::where('qr_token_hash', $digest)
-            ->where('aktif', true)
-            ->first();
+        $student = $cardService->resolveSiswaFromPayload($validated['qr_payload']);
 
         if (!$student) {
-            if (User::where('qr_token_hash', $digest)->exists()) {
+            $staff = $cardService->resolvePegawaiFromPayload($validated['qr_payload']);
+            if ($staff) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ini adalah kartu identitas guru/pegawai. Gunakan menu Presensi Saya untuk scan mandiri pegawai.',
@@ -147,7 +146,7 @@ class KehadiranController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'QR belum terhubung ke data siswa. Minta admin menerbitkan atau menghubungkan kartu tersebut.',
+                'message' => 'QR belum terhubung ke data siswa atau versi kartu tidak dikenali. Minta admin menghubungkan atau menerbitkan kartu.',
             ], 404);
         }
 

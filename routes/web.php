@@ -130,6 +130,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');
         Route::get('/kartu-siswa/cetak-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakSiswaMassal'])->name('kartu.siswa.cetak-massal');
         Route::post('/kartu-siswa/{siswa:uuid}/terbitkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswa'])->middleware('throttle:60,1')->name('kartu.siswa.issue');
+        Route::post('/kartu-siswa/{siswa:uuid}/kembalikan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'rollbackSiswa'])->middleware('throttle:60,1')->name('kartu.siswa.rollback');
         Route::get('/kartu-siswa/{siswa:uuid}/cetak', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakSiswa'])->name('kartu.siswa.cetak');
         Route::post('/kartu-siswa/{siswa}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bind'])->middleware('throttle:60,1')->name('kartu.bind');
         Route::delete('/kartu-siswa/{siswa}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'reset'])->name('kartu.reset');
@@ -137,6 +138,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::post('/kartu-pegawai/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issuePegawaiMassal'])->middleware('throttle:10,1')->name('kartu.pegawai.issue-massal');
         Route::get('/kartu-pegawai/cetak-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakPegawaiMassal'])->name('kartu.pegawai.cetak-massal');
         Route::post('/kartu-pegawai/{pegawai:uuid}/terbitkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issuePegawai'])->middleware('throttle:60,1')->name('kartu.pegawai.issue');
+        Route::post('/kartu-pegawai/{pegawai:uuid}/kembalikan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'rollbackPegawai'])->middleware('throttle:60,1')->name('kartu.pegawai.rollback');
         Route::get('/kartu-pegawai/{pegawai:uuid}/cetak', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakPegawai'])->name('kartu.pegawai.cetak');
         Route::post('/kartu-pegawai/{pegawai:uuid}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bindPegawai'])->middleware('throttle:60,1')->name('kartu.pegawai.bind');
         Route::delete('/kartu-pegawai/{pegawai:uuid}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'resetPegawai'])->name('kartu.pegawai.reset');

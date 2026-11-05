@@ -23,6 +23,10 @@
         </a>
     </div>
 
+    <div class="note note-ok" style="margin-bottom:16px;background:#F0FDF4;border-color:#86EFAC">
+        🛡️ <strong>Proteksi Kartu Tercetak &amp; Multi-Versi:</strong> Jika kartu fisik sudah dicetak ke kertas/PVC dan admin tidak sengaja mengklik <em>Ganti QR</em>, <strong>kartu fisik lama tetap sah dan bisa digunakan siswa/guru untuk presensi</strong> karena dilindungi tanda tangan kriptografis sekolah. Admin juga dapat mengembalikan versi QR sistem ke versi fisik tercetak cukup dengan 1-klik tombol <strong>Pulihkan Cetak</strong> tanpa perlu mencetak ulang.
+    </div>
+
     @if(($jenis ?? 'siswa') === 'pegawai')
         <div class="note note-ok" style="margin-bottom:16px">
             Setiap Guru, Kepala Sekolah, dan Tenaga Kependidikan memiliki <strong>Kartu Identitas Ber-QR</strong> untuk <strong>scan mandiri</strong> jam masuk &amp; pulang pada menu <em>Presensi Saya</em>. Sistem hanya menyimpan fingerprint HMAC terenkripsi dari kode QR.
@@ -88,13 +92,25 @@
                     </thead>
                     <tbody>
                     @forelse($pegawai as $person)
+                        @php
+                            $isDiscrepant = (int) $person->printed_version > 0 && (int) $person->qr_card_version > (int) $person->printed_version;
+                        @endphp
                         <tr>
                             <td><strong>{{ $person->nama_lengkap }}</strong></td>
                             <td><span class="tag tag-primary">{{ ucfirst($person->peran) }}</span></td>
                             <td>{{ $person->nip ?: $person->nama_pengguna }}</td>
                             <td>
                                 @if($person->qr_token_hash && (int) $person->qr_card_version > 0)
-                                    <span class="tag tag-ok">Kartu QR Sistem (v{{ $person->qr_card_version }})</span>
+                                    @if($isDiscrepant)
+                                        <div><span class="tag tag-warn" style="background:#FEF08A;color:#713F12;font-weight:600">⚠️ QR Berubah (Sistem: v{{ $person->qr_card_version }} | Cetak: v{{ $person->printed_version }})</span></div>
+                                        <div style="font-size:11px;color:#B45309;margin-top:2px">Kartu fisik v{{ $person->printed_version }} tetap sah. Anda dapat memulihkan ke versi cetak kapan saja.</div>
+                                    @elseif((int) $person->printed_version > 0)
+                                        <div><span class="tag tag-ok">Kartu QR Sistem (v{{ $person->qr_card_version }})</span></div>
+                                        <div style="font-size:11px;color:#15803D;margin-top:2px">🖨️ Tercetak v{{ $person->printed_version }} ({{ $person->printed_at?->translatedFormat('d M Y') }})</div>
+                                    @else
+                                        <div><span class="tag tag-ok">Kartu QR Sistem (v{{ $person->qr_card_version }})</span></div>
+                                        <div style="font-size:11px;color:#6B7280;margin-top:2px">Belum pernah dicetak</div>
+                                    @endif
                                 @elseif($person->qr_token_hash)
                                     <span class="tag tag-gold">Kartu Fisik Eksternal</span>
                                 @else
@@ -103,7 +119,17 @@
                             </td>
                             <td style="white-space:nowrap;display:flex;gap:6px;flex-wrap:wrap">
                                 <a href="{{ route('admin.presensi.kartu.pegawai.cetak', $person) }}" class="btn btn-sm">🖨️ Cetak Kartu</a>
-                                <form method="POST" action="{{ route('admin.presensi.kartu.pegawai.issue', $person) }}" style="display:inline">
+                                @if($isDiscrepant)
+                                    <form method="POST" action="{{ route('admin.presensi.kartu.pegawai.rollback', $person) }}" style="display:inline" onsubmit="return confirm('Kembalikan QR kartu {{ addslashes($person->nama_lengkap) }} ke versi tercetak (v{{ $person->printed_version }})? Kartu fisik lama akan kembali 100% sinkron tanpa perlu cetak ulang.')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm" style="background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;font-weight:600" title="Pulihkan QR ke versi cetak kartu fisik">↩️ Pulihkan Cetak (v{{ $person->printed_version }})</button>
+                                    </form>
+                                @endif
+                                <form method="POST" action="{{ route('admin.presensi.kartu.pegawai.issue', $person) }}" style="display:inline"
+                                      @if((int) $person->printed_version > 0)
+                                          onsubmit="return confirm('PERHATIAN: Kartu identitas {{ addslashes($person->nama_lengkap) }} sudah pernah dicetak (v{{ $person->printed_version }}).\n\nJika Anda mengganti QR sekarang, versi sistem akan naik ke v{{ $person->qr_card_version + 1 }}. Kartu fisik lama masih bisa dipakai sementara, namun disarankan cetak ulang setelah diganti, atau Anda bisa memulihkannya nanti dengan tombol Pulihkan Cetak.\n\nLanjutkan ganti QR?')"
+                                      @endif
+                                >
                                     @csrf
                                     <button type="submit" class="btn btn-ghost btn-sm">{{ $person->qr_token_hash ? '🔄 Ganti QR' : '⚡ Terbitkan QR' }}</button>
                                 </form>
@@ -181,13 +207,25 @@
                     <thead><tr><th>Nama Siswa</th><th>NIS / NISN</th><th>Kelas</th><th>Status Kartu</th><th>Aksi</th></tr></thead>
                     <tbody>
                     @forelse($students as $student)
+                        @php
+                            $isDiscrepant = (int) $student->printed_version > 0 && (int) $student->qr_card_version > (int) $student->printed_version;
+                        @endphp
                         <tr>
                             <td><strong>{{ $student->nama_peserta_didik }}</strong></td>
                             <td>{{ $student->nis }}{{ $student->nisn ? ' / ' . $student->nisn : '' }}</td>
                             <td>{{ $student->rombel?->nama_rombel ?? $student->kelas ?? '—' }}</td>
                             <td>
                                 @if($student->qr_token_hash && (int) $student->qr_card_version > 0)
-                                    <span class="tag tag-ok">Kartu QR Sistem (v{{ $student->qr_card_version }})</span>
+                                    @if($isDiscrepant)
+                                        <div><span class="tag tag-warn" style="background:#FEF08A;color:#713F12;font-weight:600">⚠️ QR Berubah (Sistem: v{{ $student->qr_card_version }} | Cetak: v{{ $student->printed_version }})</span></div>
+                                        <div style="font-size:11px;color:#B45309;margin-top:2px">Kartu fisik v{{ $student->printed_version }} tetap sah &amp; bisa discan. Admin dapat memulihkan ke versi cetak jika tidak sengaja.</div>
+                                    @elseif((int) $student->printed_version > 0)
+                                        <div><span class="tag tag-ok">Kartu QR Sistem (v{{ $student->qr_card_version }})</span></div>
+                                        <div style="font-size:11px;color:#15803D;margin-top:2px">🖨️ Tercetak v{{ $student->printed_version }} ({{ $student->printed_at?->translatedFormat('d M Y') }})</div>
+                                    @else
+                                        <div><span class="tag tag-ok">Kartu QR Sistem (v{{ $student->qr_card_version }})</span></div>
+                                        <div style="font-size:11px;color:#6B7280;margin-top:2px">Belum pernah dicetak</div>
+                                    @endif
                                 @elseif($student->qr_token_hash)
                                     <span class="tag tag-gold">Kartu Fisik Terhubung</span>
                                 @else
@@ -196,7 +234,17 @@
                             </td>
                             <td style="white-space:nowrap;display:flex;gap:6px;flex-wrap:wrap">
                                 <a href="{{ route('admin.presensi.kartu.siswa.cetak', $student) }}" class="btn btn-sm">🖨️ Cetak Kartu</a>
-                                <form method="POST" action="{{ route('admin.presensi.kartu.siswa.issue', $student) }}" style="display:inline">
+                                @if($isDiscrepant)
+                                    <form method="POST" action="{{ route('admin.presensi.kartu.siswa.rollback', $student) }}" style="display:inline" onsubmit="return confirm('Kembalikan QR kartu {{ addslashes($student->nama_peserta_didik) }} ke versi tercetak (v{{ $student->printed_version }})? Kartu fisik lama akan kembali 100% sinkron tanpa perlu cetak ulang.')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm" style="background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;font-weight:600" title="Pulihkan QR ke versi cetak kartu fisik">↩️ Pulihkan Cetak (v{{ $student->printed_version }})</button>
+                                    </form>
+                                @endif
+                                <form method="POST" action="{{ route('admin.presensi.kartu.siswa.issue', $student) }}" style="display:inline"
+                                      @if((int) $student->printed_version > 0)
+                                          onsubmit="return confirm('PERHATIAN: Kartu identitas {{ addslashes($student->nama_peserta_didik) }} sudah pernah dicetak (v{{ $student->printed_version }}).\n\nJika Anda mengganti QR sekarang, versi sistem akan naik ke v{{ $student->qr_card_version + 1 }}. Kartu fisik lama masih bisa dipakai sementara, namun disarankan cetak ulang setelah diganti, atau Anda bisa memulihkannya nanti dengan tombol Pulihkan Cetak.\n\nLanjutkan ganti QR?')"
+                                      @endif
+                                >
                                     @csrf
                                     <button type="submit" class="btn btn-ghost btn-sm">{{ $student->qr_token_hash ? '🔄 Ganti QR' : '⚡ Terbitkan QR' }}</button>
                                 </form>

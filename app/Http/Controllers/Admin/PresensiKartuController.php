@@ -184,6 +184,7 @@ class PresensiKartuController extends Controller
     public function cetakSiswa(Siswa $siswa, IdentityCardService $cards)
     {
         abort_unless($siswa->aktif, 404);
+        $cards->markSiswaAsPrinted($siswa);
         $siswa->loadMissing('rombel');
         $sekolah = SekolahSettings::query()->first();
 
@@ -208,6 +209,9 @@ class PresensiKartuController extends Controller
 
         $sekolah = SekolahSettings::query()->first();
         $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->limit(250)->get();
+        foreach ($list as $s) {
+            $cards->markSiswaAsPrinted($s);
+        }
         $cardItems = $list->map(fn (Siswa $s) => $cards->buildSiswaCardViewModel($s, $sekolah, true))->all();
 
         return view('presensi.kartu-cetak', [
@@ -219,6 +223,31 @@ class PresensiKartuController extends Controller
                 'rombel_id' => $request->query('rombel_id'),
             ])),
         ]);
+    }
+
+    public function rollbackSiswa(Siswa $siswa, IdentityCardService $cards)
+    {
+        abort_unless($siswa->aktif, 422, 'Siswa tidak aktif.');
+        abort_unless((int) $siswa->printed_version > 0, 422, 'Siswa belum memiliki versi kartu fisik yang tercetak.');
+
+        $oldVer = $siswa->qr_card_version;
+        $success = $cards->rollbackSiswaToPrintedVersion($siswa);
+
+        if ($success) {
+            AktivitasService::log(
+                'kehadiran',
+                'Pulihkan versi QR kartu siswa',
+                "Mengembalikan QR kartu {$siswa->nama_peserta_didik} dari v{$oldVer} ke versi cetak v{$siswa->printed_version}.",
+                'siswa',
+                $siswa->id,
+                ['versi_sebelum' => $oldVer],
+                ['versi_dipulihkan' => $siswa->printed_version],
+            );
+
+            return redirect()->back()->with('success', "QR kartu {$siswa->nama_peserta_didik} berhasil dikembalikan ke versi tercetak (v{$siswa->printed_version}). Kartu fisik lama dapat digunakan kembali!");
+        }
+
+        return redirect()->back()->with('error', 'Gagal memulihkan ke versi cetak.');
     }
 
     public function bindPegawai(Request $request, User $pegawai, StudentQrHasher $hasher)
@@ -349,6 +378,7 @@ class PresensiKartuController extends Controller
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             404
         );
+        $cards->markPegawaiAsPrinted($pegawai);
         $sekolah = SekolahSettings::query()->first();
 
         return view('presensi.kartu-cetak', [
@@ -372,6 +402,9 @@ class PresensiKartuController extends Controller
         $sekolah = SekolahSettings::query()->first();
         $ptkByDapodik = Ptk::query()->whereNotNull('dapodik_id')->get()->keyBy('dapodik_id');
         $list = $query->orderBy('peran')->orderBy('nama_lengkap')->get();
+        foreach ($list as $p) {
+            $cards->markPegawaiAsPrinted($p);
+        }
 
         $cardItems = $list->map(function (User $person) use ($cards, $sekolah, $ptkByDapodik) {
             $ptk = $person->dapodik_id ? $ptkByDapodik->get($person->dapodik_id) : null;
@@ -385,5 +418,34 @@ class PresensiKartuController extends Controller
             'cards' => $cardItems,
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'pegawai']),
         ]);
+    }
+
+    public function rollbackPegawai(User $pegawai, IdentityCardService $cards)
+    {
+        abort_unless(
+            $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
+            422,
+            'Akun bukan pegawai aktif.'
+        );
+        abort_unless((int) $pegawai->printed_version > 0, 422, 'Pegawai belum memiliki versi kartu fisik yang tercetak.');
+
+        $oldVer = $pegawai->qr_card_version;
+        $success = $cards->rollbackPegawaiToPrintedVersion($pegawai);
+
+        if ($success) {
+            AktivitasService::log(
+                'kehadiran',
+                'Pulihkan versi QR kartu pegawai',
+                "Mengembalikan QR kartu {$pegawai->nama_lengkap} dari v{$oldVer} ke versi cetak v{$pegawai->printed_version}.",
+                'users',
+                $pegawai->id,
+                ['versi_sebelum' => $oldVer],
+                ['versi_dipulihkan' => $pegawai->printed_version],
+            );
+
+            return redirect()->back()->with('success', "QR kartu {$pegawai->nama_lengkap} berhasil dikembalikan ke versi tercetak (v{$pegawai->printed_version}). Kartu fisik lama dapat digunakan kembali!");
+        }
+
+        return redirect()->back()->with('error', 'Gagal memulihkan ke versi cetak.');
     }
 }

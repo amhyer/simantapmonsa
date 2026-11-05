@@ -35,6 +35,9 @@ class User extends Authenticatable
         'nip',
         'foto',
         'qr_card_version',
+        'qr_previous_token_hash',
+        'printed_at',
+        'printed_version',
     ];
 
     protected $hidden = [
@@ -42,6 +45,7 @@ class User extends Authenticatable
         'remember_token',
         'terhubung_dengan',
         'qr_token_hash',
+        'qr_previous_token_hash',
     ];
 
     protected function casts(): array
@@ -53,6 +57,8 @@ class User extends Authenticatable
             'terakhir_masuk' => 'datetime',
             'force_password_change' => 'boolean',
             'qr_card_version' => 'integer',
+            'printed_version' => 'integer',
+            'printed_at' => 'datetime',
         ];
     }
 

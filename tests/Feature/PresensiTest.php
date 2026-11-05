@@ -559,4 +559,85 @@ class PresensiTest extends TestCase
             'guru_id' => $this->guru->id,
         ]);
     }
+
+    public function test_kartu_fisik_lama_tetap_bisa_discan_meskipun_admin_ganti_qr_dan_dapat_dipulihkan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $jadwal = $this->jadwal('Bahasa Inggris');
+
+        // 1. Terbitkan kartu v1 dan cetak kartu fisik
+        $payloadV1 = $cardService->issueSiswaCard($this->siswa, true);
+        $this->actingAs($admin)->get(route('admin.presensi.kartu.siswa.cetak', $this->siswa))->assertOk();
+
+        $this->siswa->refresh();
+        $this->assertSame(1, (int) $this->siswa->qr_card_version);
+        $this->assertSame(1, (int) $this->siswa->printed_version);
+        $this->assertNotNull($this->siswa->printed_at);
+
+        // 2. Admin tiba-tiba klik "Ganti QR" sehingga versi sistem naik ke v2
+        $this->actingAs($admin)->post(route('admin.presensi.kartu.siswa.issue', $this->siswa))
+            ->assertSessionHas('success');
+
+        $this->siswa->refresh();
+        $this->assertSame(2, (int) $this->siswa->qr_card_version);
+        $this->assertSame(1, (int) $this->siswa->printed_version);
+        $this->assertNotNull($this->siswa->qr_previous_token_hash);
+
+        // 3. Siswa memindai kartu fisik lamanya (v1) di kelas guru -> HARUS TETAP BERHASIL!
+        $scanResponse = $this->actingAs($this->guru)->postJson(route('guru.kehadiran.scan', $jadwal), [
+            'qr_payload' => $payloadV1,
+        ]);
+
+        $scanResponse->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('student.id', $this->siswa->id);
+
+        // 4. Admin menyadari salah klik, lalu klik "Kembalikan ke Versi Tercetak (Rollback)"
+        $rollbackResponse = $this->actingAs($admin)->post(route('admin.presensi.kartu.siswa.rollback', $this->siswa));
+        $rollbackResponse->assertSessionHas('success');
+
+        $this->siswa->refresh();
+        $this->assertSame(1, (int) $this->siswa->qr_card_version);
+        $this->assertSame(1, (int) $this->siswa->printed_version);
+    }
+
+    public function test_kartu_fisik_lama_pegawai_tetap_sah_setelah_admin_ganti_qr_dan_bisa_dipulihkan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+
+        // 1. Terbitkan kartu v1 dan cetak untuk guru
+        $payloadV1 = $cardService->issuePegawaiCard($this->guru, true);
+        $this->actingAs($admin)->get(route('admin.presensi.kartu.pegawai.cetak', $this->guru))->assertOk();
+
+        $this->guru->refresh();
+        $this->assertSame(1, (int) $this->guru->qr_card_version);
+        $this->assertSame(1, (int) $this->guru->printed_version);
+
+        // 2. Admin klik "Ganti QR" sehingga versi pegawai naik ke v2
+        $this->actingAs($admin)->post(route('admin.presensi.kartu.pegawai.issue', $this->guru))
+            ->assertSessionHas('success');
+
+        $this->guru->refresh();
+        $this->assertSame(2, (int) $this->guru->qr_card_version);
+        $this->assertSame(1, (int) $this->guru->printed_version);
+
+        // 3. Guru scan mandiri menggunakan kartu fisik v1 -> HARUS TETAP DITERIMA!
+        $scanResponse = $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $payloadV1,
+            'jenis' => 'masuk',
+        ]);
+
+        $scanResponse->assertOk()
+            ->assertJsonPath('success', true);
+
+        // 4. Admin pulihkan versi pegawai
+        $rollbackResponse = $this->actingAs($admin)->post(route('admin.presensi.kartu.pegawai.rollback', $this->guru));
+        $rollbackResponse->assertSessionHas('success');
+
+        $this->guru->refresh();
+        $this->assertSame(1, (int) $this->guru->qr_card_version);
+        $this->assertSame(1, (int) $this->guru->printed_version);
+    }
 }
