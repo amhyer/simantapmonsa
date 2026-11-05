@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Kehadiran extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
     protected $table = 'kehadiran';
     protected $fillable = [
         'uuid',
+        'tenant_id',
         'guru_id',
         'siswa_id',
         'tanggal',

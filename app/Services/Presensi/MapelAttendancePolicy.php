@@ -8,13 +8,20 @@ use Illuminate\Support\Str;
 
 class MapelAttendancePolicy
 {
-    public function requiresSeparateAttendance(string $subject): bool
+    public function requiresSeparateAttendance(string $subject, ?JadwalPelajaran $jadwal = null): bool
     {
+        if ($jadwal !== null) {
+            $rombel = $jadwal->relationLoaded('rombel') ? $jadwal->rombel : $jadwal->rombel()->first();
+            if ($rombel && $rombel->guru_id && (int) $jadwal->guru_id !== (int) $rombel->guru_id) {
+                return true;
+            }
+        }
+
         $normalized = $this->normalize($subject);
 
         foreach (config('presensi.mapel_terpisah', []) as $keyword) {
             $needle = $this->normalize($keyword);
-            $matches = in_array($needle, ['pai', 'pak'], true)
+            $matches = in_array($needle, ['pai', 'pak', 'tik', 'btq'], true)
                 ? (bool) preg_match('/(^| )' . preg_quote($needle, '/') . '($| )/', $normalized)
                 : Str::contains($normalized, $needle);
             if ($matches) {

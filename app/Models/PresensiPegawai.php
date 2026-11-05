@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class PresensiPegawai extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'presensi_pegawai';
 
     protected $fillable = [
+        'tenant_id',
         'user_id',
         'tanggal',
         'status',

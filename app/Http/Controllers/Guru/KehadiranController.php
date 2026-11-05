@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\JadwalPelajaran;
 use App\Models\Kehadiran;
 use App\Models\KehadiranMapel;
+use App\Models\SekolahSettings;
 use App\Models\Siswa;
+use App\Models\User;
+use App\Services\Presensi\IdentityCardService;
 use App\Services\Presensi\MapelAttendancePolicy;
 use App\Services\Presensi\StudentQrHasher;
 use App\Traits\SyncableToSheet;
@@ -22,6 +25,7 @@ class KehadiranController extends Controller
     public function index(MapelAttendancePolicy $policy)
     {
         $hariIni = now()->locale('id')->translatedFormat('l');
+        $today = now()->toDateString();
         $jadwalHariIni = JadwalPelajaran::with('rombel')
             ->where('guru_id', auth()->id())
             ->where('hari', $hariIni)
@@ -29,7 +33,17 @@ class KehadiranController extends Controller
             ->get();
 
         foreach ($jadwalHariIni as $jadwal) {
-            $jadwal->presensi_mapel_terpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran);
+            $jadwal->presensi_mapel_terpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal);
+            $jadwal->sedang_dibuka = $this->waktuJadwalTerbuka($jadwal);
+            $jadwal->jumlah_hadir_hari_ini = $jadwal->presensi_mapel_terpisah
+                ? KehadiranMapel::where('jadwal_pelajaran_id', $jadwal->id)
+                    ->whereDate('tanggal', $today)
+                    ->where('status', 'H')
+                    ->count()
+                : Kehadiran::where('jadwal_pelajaran_id', $jadwal->id)
+                    ->whereDate('tanggal', $today)
+                    ->where('status', 'H')
+                    ->count();
         }
 
         $kehadiran = Kehadiran::with('siswa')
@@ -37,12 +51,44 @@ class KehadiranController extends Controller
             ->latest('tanggal')
             ->limit(100)
             ->get();
-        return view('guru.kehadiran.index', compact('kehadiran', 'jadwalHariIni'));
+
+        $kehadiranMapel = KehadiranMapel::with('siswa')
+            ->where('guru_id', auth()->id())
+            ->latest('tanggal')
+            ->limit(50)
+            ->get();
+
+        return view('guru.kehadiran.index', compact('kehadiran', 'kehadiranMapel', 'jadwalHariIni'));
+    }
+
+    public function cetakKartuKelas(
+        JadwalPelajaran $jadwal,
+        MapelAttendancePolicy $policy,
+        IdentityCardService $cards,
+    ) {
+        abort_unless((int) $jadwal->guru_id === (int) auth()->id(), 403, 'Jadwal ini bukan tanggung jawab Anda.');
+        $jadwal->loadMissing('rombel');
+        $students = $this->siswaUntukJadwal($jadwal, $policy);
+        $sekolah = SekolahSettings::query()->first();
+
+        $cardItems = $students->map(function (Siswa $siswa) use ($cards, $sekolah) {
+            $siswa->loadMissing('rombel');
+
+            return $cards->buildSiswaCardViewModel($siswa, $sekolah, true);
+        })->all();
+
+        return view('presensi.kartu-cetak', [
+            'judul' => 'Kartu Identitas Siswa — ' . ($jadwal->rombel?->nama_rombel ?? $jadwal->kelas),
+            'subjudul' => $jadwal->mata_pelajaran . ' (' . count($cardItems) . ' siswa)',
+            'cards' => $cardItems,
+            'kembaliUrl' => route('guru.kehadiran.index'),
+        ]);
     }
 
     public function jadwal(JadwalPelajaran $jadwal, MapelAttendancePolicy $policy)
     {
         $this->pastikanJadwalMilikGuru($jadwal);
+        $jadwal->loadMissing('rombel');
 
         $students = $this->siswaUntukJadwal($jadwal, $policy);
         $ids = $students->pluck('id');
@@ -53,7 +99,7 @@ class KehadiranController extends Controller
             ->keyBy('siswa_id');
 
         $presensiMapel = collect();
-        $presensiMapelTerpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran);
+        $presensiMapelTerpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal);
         if ($presensiMapelTerpisah) {
             $presensiMapel = KehadiranMapel::where('jadwal_pelajaran_id', $jadwal->id)
                 ->whereDate('tanggal', $today)
@@ -63,7 +109,7 @@ class KehadiranController extends Controller
         }
 
         return view('guru.kehadiran.jadwal', [
-            'jadwal' => $jadwal->load('rombel'),
+            'jadwal' => $jadwal,
             'students' => $students,
             'kehadiranHarian' => $kehadiranHarian,
             'presensiMapel' => $presensiMapel,
@@ -81,18 +127,27 @@ class KehadiranController extends Controller
     ) {
         $this->pastikanJadwalMilikGuru($jadwal);
         $this->pastikanWaktuJadwalTerbuka($jadwal);
+        $jadwal->loadMissing('rombel');
         $validated = $request->validate([
             'qr_payload' => 'required|string|max:2048',
         ]);
 
-        $student = Siswa::where('qr_token_hash', $hasher->hash($validated['qr_payload']))
+        $digest = $hasher->hash($validated['qr_payload']);
+        $student = Siswa::where('qr_token_hash', $digest)
             ->where('aktif', true)
             ->first();
 
         if (!$student) {
+            if (User::where('qr_token_hash', $digest)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ini adalah kartu identitas guru/pegawai. Gunakan menu Presensi Saya untuk scan mandiri pegawai.',
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'QR belum terhubung ke data siswa. Minta admin mendaftarkan kartu tersebut.',
+                'message' => 'QR belum terhubung ke data siswa. Minta admin menerbitkan atau menghubungkan kartu tersebut.',
             ], 404);
         }
 
@@ -105,7 +160,7 @@ class KehadiranController extends Controller
 
         $now = now();
         $today = $now->toDateString();
-        $mapelTerpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran);
+        $mapelTerpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal);
 
         $result = DB::transaction(function () use ($student, $jadwal, $now, $today, $mapelTerpisah): array {
             $daily = Kehadiran::withTrashed()->where('siswa_id', $student->id)
@@ -237,7 +292,8 @@ class KehadiranController extends Controller
             'keterangan' => 'nullable|string|max:255',
         ]);
 
-        if ($validated['cakupan'] === 'mapel' && !$policy->requiresSeparateAttendance($jadwal->mata_pelajaran)) {
+        $jadwal->loadMissing('rombel');
+        if ($validated['cakupan'] === 'mapel' && !$policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Absensi terpisah belum diaktifkan untuk mata pelajaran ini.',

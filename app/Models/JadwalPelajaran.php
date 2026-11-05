@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class JadwalPelajaran extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'jadwal_pelajaran';
     protected $fillable = [
-        'guru_id', 'dapodik_id', 'semester_id', 'rombel_id',
+        'tenant_id', 'guru_id', 'dapodik_id', 'semester_id', 'rombel_id',
         'kelas', 'mata_pelajaran', 'hari', 'jam_mulai', 'jam_selesai', 'ruangan',
     ];
 

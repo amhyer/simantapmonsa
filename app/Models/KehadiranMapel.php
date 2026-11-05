@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class KehadiranMapel extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'kehadiran_mapel';
 
     protected $fillable = [
         'uuid',
+        'tenant_id',
         'jadwal_pelajaran_id',
         'siswa_id',
         'guru_id',

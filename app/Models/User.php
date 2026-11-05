@@ -32,12 +32,16 @@ class User extends Authenticatable
         'archived_at',
         'dapodik_id',
         'tenant_id',
+        'nip',
+        'foto',
+        'qr_card_version',
     ];
 
     protected $hidden = [
         'kata_sandi',
         'remember_token',
         'terhubung_dengan',
+        'qr_token_hash',
     ];
 
     protected function casts(): array
@@ -48,6 +52,7 @@ class User extends Authenticatable
             'aktif' => 'boolean',
             'terakhir_masuk' => 'datetime',
             'force_password_change' => 'boolean',
+            'qr_card_version' => 'integer',
         ];
     }
 

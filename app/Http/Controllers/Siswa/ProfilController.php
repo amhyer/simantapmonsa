@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\SekolahSettings;
+use App\Services\Presensi\IdentityCardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -10,13 +12,36 @@ class ProfilController extends Controller
 {
     use HasSiswaLookup;
 
-    public function show()
+    public function show(IdentityCardService $cards)
     {
         $siswa = $this->getSiswa();
         if (!$siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
-        return view('siswa.profil.show', compact('siswa'));
+
+        $siswa->loadMissing('rombel');
+        $sekolah = SekolahSettings::query()->first();
+        $kartuSaya = $cards->buildSiswaCardViewModel($siswa, $sekolah, true);
+
+        return view('siswa.profil.show', compact('siswa', 'kartuSaya'));
+    }
+
+    public function kartu(IdentityCardService $cards)
+    {
+        $siswa = $this->getSiswa();
+        if (!$siswa) {
+            return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
+        }
+
+        $siswa->loadMissing('rombel');
+        $sekolah = SekolahSettings::query()->first();
+
+        return view('presensi.kartu-cetak', [
+            'judul' => 'Kartu Identitas Siswa — ' . $siswa->nama_peserta_didik,
+            'subjudul' => $siswa->rombel?->nama_rombel ?? $siswa->kelas ?? 'Siswa Aktif',
+            'cards' => [$cards->buildSiswaCardViewModel($siswa, $sekolah, true)],
+            'kembaliUrl' => route('siswa.profil.show'),
+        ]);
     }
 
     public function edit()

@@ -55,6 +55,7 @@ class Siswa extends Model
         'foto',
         'penerima_kip',
         'no_kip',
+        'qr_card_version',
         'archived_at',
     ];
 
@@ -64,6 +65,7 @@ class Siswa extends Model
             'aktif' => 'boolean',
             'rekaman' => 'array',
             'tanggal_lahir' => 'date',
+            'qr_card_version' => 'integer',
             'archived_at' => 'datetime',
         ];
     }

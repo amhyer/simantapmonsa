@@ -89,10 +89,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->name('force-password-change.update');
 });
 
-// Presensi mandiri pegawai (guru, kepala sekolah, dan tendik), dilindungi geofence sekolah.
+// Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
 Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change'])
     ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Pegawai\PresensiController::class, 'index'])->name('index');
+        Route::get('/kartu-identitas', [\App\Http\Controllers\Pegawai\PresensiController::class, 'kartuSaya'])->name('kartu');
+        Route::post('/scan', [\App\Http\Controllers\Pegawai\PresensiController::class, 'scanMandiri'])->middleware('throttle:20,1')->name('scan');
         Route::post('/masuk', [\App\Http\Controllers\Pegawai\PresensiController::class, 'masuk'])->middleware('throttle:10,1')->name('masuk');
         Route::post('/pulang', [\App\Http\Controllers\Pegawai\PresensiController::class, 'pulang'])->middleware('throttle:10,1')->name('pulang');
     });
@@ -125,8 +127,19 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
         Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
+        Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');
+        Route::get('/kartu-siswa/cetak-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakSiswaMassal'])->name('kartu.siswa.cetak-massal');
+        Route::post('/kartu-siswa/{siswa:uuid}/terbitkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswa'])->middleware('throttle:60,1')->name('kartu.siswa.issue');
+        Route::get('/kartu-siswa/{siswa:uuid}/cetak', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakSiswa'])->name('kartu.siswa.cetak');
         Route::post('/kartu-siswa/{siswa}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bind'])->middleware('throttle:60,1')->name('kartu.bind');
         Route::delete('/kartu-siswa/{siswa}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'reset'])->name('kartu.reset');
+
+        Route::post('/kartu-pegawai/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issuePegawaiMassal'])->middleware('throttle:10,1')->name('kartu.pegawai.issue-massal');
+        Route::get('/kartu-pegawai/cetak-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakPegawaiMassal'])->name('kartu.pegawai.cetak-massal');
+        Route::post('/kartu-pegawai/{pegawai:uuid}/terbitkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issuePegawai'])->middleware('throttle:60,1')->name('kartu.pegawai.issue');
+        Route::get('/kartu-pegawai/{pegawai:uuid}/cetak', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakPegawai'])->name('kartu.pegawai.cetak');
+        Route::post('/kartu-pegawai/{pegawai:uuid}/hubungkan', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'bindPegawai'])->middleware('throttle:60,1')->name('kartu.pegawai.bind');
+        Route::delete('/kartu-pegawai/{pegawai:uuid}', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'resetPegawai'])->name('kartu.pegawai.reset');
     });
 
     // Profile (cermin menu Profile e-Rapor)
@@ -363,6 +376,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change'])->prefix('guru'
     
     // Kehadiran harian dan catatan tambahan mapel melalui QR.
     Route::get('/kehadiran/jadwal/{jadwal}', [KehadiranController::class, 'jadwal'])->name('kehadiran.jadwal');
+    Route::get('/kehadiran/jadwal/{jadwal}/kartu-kelas', [KehadiranController::class, 'cetakKartuKelas'])->name('kehadiran.kartu-kelas');
     Route::post('/kehadiran/jadwal/{jadwal}/scan', [KehadiranController::class, 'scan'])->middleware('throttle:120,1')->name('kehadiran.scan');
     Route::post('/kehadiran/jadwal/{jadwal}/siswa/{siswa}/status', [KehadiranController::class, 'setStatus'])->middleware('throttle:120,1')->name('kehadiran.status');
     Route::resource('kehadiran', KehadiranController::class)->only(['index', 'store', 'destroy']);
@@ -411,6 +425,7 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change'])->prefix('sisw
     Route::get('/nilai', [SiswaNilaiController::class, 'index'])->name('nilai.index');
     Route::get('/nilai/{jenis}', [SiswaNilaiController::class, 'detail'])->name('nilai.detail');
     Route::get('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'show'])->name('profil.show');
+    Route::get('/kartu-identitas', [\App\Http\Controllers\Siswa\ProfilController::class, 'kartu'])->name('kartu.cetak');
     Route::get('/profil/edit', [\App\Http\Controllers\Siswa\ProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'update'])->name('profil.update');
 

@@ -353,4 +353,194 @@ class PresensiTest extends TestCase
             ->assertRedirect(route('presensi.pegawai.index'));
         $this->actingAs($tendik)->get(route('presensi.pegawai.index'))->assertOk();
     }
+
+    public function test_admin_dapat_menerbitkan_dan_mencetak_kartu_identitas_siswa_dan_pegawai(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+
+        // Siswa sebelum diterbitkan
+        $this->assertNull($this->siswa->qr_token_hash);
+
+        // Terbitkan kartu siswa
+        $this->actingAs($admin)->post(route('admin.presensi.kartu.siswa.issue', $this->siswa))
+            ->assertSessionHas('success');
+        $this->siswa->refresh();
+        $this->assertNotNull($this->siswa->qr_token_hash);
+        $this->assertSame(1, $this->siswa->qr_card_version);
+
+        // Cetak kartu siswa (halaman HTML cetak offline dengan SVG QR lokal)
+        $printSiswa = $this->actingAs($admin)->get(route('admin.presensi.kartu.siswa.cetak', $this->siswa));
+        $printSiswa->assertOk()
+            ->assertSee('KARTU IDENTITAS SISWA')
+            ->assertSee($this->siswa->nama_peserta_didik)
+            ->assertSee('<svg', false);
+
+        // Terbitkan kartu pegawai (guru)
+        $this->actingAs($admin)->post(route('admin.presensi.kartu.pegawai.issue', $this->guru))
+            ->assertSessionHas('success');
+        $this->guru->refresh();
+        $this->assertNotNull($this->guru->qr_token_hash);
+        $this->assertSame(1, $this->guru->qr_card_version);
+
+        // Cetak kartu pegawai
+        $printPegawai = $this->actingAs($admin)->get(route('admin.presensi.kartu.pegawai.cetak', $this->guru));
+        $printPegawai->assertOk()
+            ->assertSee('KARTU IDENTITAS GURU')
+            ->assertSee($this->guru->nama_lengkap)
+            ->assertSee('<svg', false);
+    }
+
+    public function test_guru_dan_pegawai_dapat_scan_mandiri_kartu_identitas_sendiri_untuk_masuk_dan_pulang(): void
+    {
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $payload = $cardService->issuePegawaiCard($this->guru, false);
+
+        // 1. Scan mandiri jam masuk
+        $responseMasuk = $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $payload,
+            'jenis' => 'masuk',
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $this->assertTrue(
+            \DB::table('presensi_pegawai')
+                ->where(['user_id' => $this->guru->id, 'metode' => 'qr', 'status' => 'hadir'])
+                ->whereDate('tanggal', now()->toDateString())
+                ->exists(),
+            'Presensi masuk via scan mandiri kartu identitas tidak tercatat.'
+        );
+
+        // 2. Scan ulang jam masuk ditolak (sudah tercatat)
+        $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $payload,
+            'jenis' => 'masuk',
+        ])->assertStatus(409);
+
+        // 3. Scan mandiri jam pulang
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 16:00:00', config('app.timezone')));
+        $responsePulang = $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $payload,
+            'jenis' => 'pulang',
+        ])->assertOk()->assertJsonPath('success', true)
+            ->assertJsonPath('record.waktu_pulang', '16:00:00');
+
+        $this->assertTrue(
+            \DB::table('presensi_pegawai')
+                ->where(['user_id' => $this->guru->id, 'metode' => 'qr'])
+                ->whereNotNull('waktu_pulang')
+                ->exists(),
+            'Presensi pulang via scan mandiri kartu identitas tidak tercatat.'
+        );
+    }
+
+    public function test_scan_mandiri_menolak_kartu_milik_pegawai_lain_dan_kartu_siswa(): void
+    {
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService->issuePegawaiCard($this->guru, false);
+        $otherTeacher = User::factory()->guru()->create();
+        $otherPayload = $cardService->issuePegawaiCard($otherTeacher, false);
+        $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
+
+        // Guru scan kartu milik guru lain -> ditolak 403
+        $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $otherPayload,
+            'jenis' => 'masuk',
+        ])->assertForbidden()
+            ->assertJsonPath('message', 'Kartu yang dipindai adalah milik guru/pegawai lain. Anda wajib memindai kartu identitas milik sendiri.');
+
+        // Guru scan kartu milik siswa di menu presensi mandiri pegawai -> ditolak 422
+        $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
+            'qr_payload' => $studentPayload,
+            'jenis' => 'masuk',
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'Ini adalah kartu identitas siswa. Gunakan menu Kehadiran Siswa pada jadwal mengajar Anda.');
+    }
+
+    public function test_guru_mapel_scan_kartu_siswa_pada_jadwal_hari_ini_mencatat_kehadiran_mapel(): void
+    {
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
+        $jadwal = $this->jadwal('Bahasa Inggris');
+
+        // Guru mengajar scan kartu identitas siswa
+        $this->actingAs($this->guru)->postJson(route('guru.kehadiran.scan', $jadwal), [
+            'qr_payload' => $studentPayload,
+        ])->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('student.id', $this->siswa->id)
+            ->assertJsonPath('daily.status', 'H')
+            ->assertJsonPath('mapel.status', 'H');
+
+        $this->assertDatabaseHas('kehadiran_mapel', [
+            'jadwal_pelajaran_id' => $jadwal->id,
+            'siswa_id' => $this->siswa->id,
+            'guru_id' => $this->guru->id,
+            'status' => 'H',
+            'metode' => 'qr',
+        ]);
+    }
+
+    public function test_guru_tidak_dapat_scan_siswa_jika_bukan_jadwal_hari_ini_atau_bukan_pengampu(): void
+    {
+        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
+
+        // 1. Jadwal bukan hari ini (misal Minggu)
+        $jadwalBukanHariIni = JadwalPelajaran::create([
+            'guru_id' => $this->guru->id,
+            'semester_id' => $this->rombel->semester_id,
+            'rombel_id' => $this->rombel->id,
+            'kelas' => $this->rombel->nama_rombel,
+            'mata_pelajaran' => 'Bahasa Inggris',
+            'hari' => 'Minggu',
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '09:00:00',
+        ]);
+
+        $this->actingAs($this->guru)->postJson(route('guru.kehadiran.scan', $jadwalBukanHariIni), [
+            'qr_payload' => $studentPayload,
+        ])->assertForbidden();
+
+        // 2. Jadwal milik guru lain
+        $otherTeacher = User::factory()->guru()->create();
+        $jadwalOther = JadwalPelajaran::create([
+            'guru_id' => $otherTeacher->id,
+            'semester_id' => $this->rombel->semester_id,
+            'rombel_id' => $this->rombel->id,
+            'kelas' => $this->rombel->nama_rombel,
+            'mata_pelajaran' => 'Bahasa Inggris',
+            'hari' => now()->locale('id')->translatedFormat('l'),
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '09:00:00',
+        ]);
+
+        $this->actingAs($this->guru)->postJson(route('guru.kehadiran.scan', $jadwalOther), [
+            'qr_payload' => $studentPayload,
+        ])->assertForbidden();
+    }
+
+    public function test_guru_dan_siswa_dapat_melihat_dan_mencetak_kartu_identitas_sendiri(): void
+    {
+        // Guru melihat halaman Presensi Saya dan kartu cetaknya
+        $this->actingAs($this->guru)->get(route('presensi.pegawai.index'))
+            ->assertOk()
+            ->assertSee('Kartu Identitas Saya')
+            ->assertSee('Scan Mandiri Kartu Identitas');
+
+        $this->actingAs($this->guru)->get(route('presensi.pegawai.kartu'))
+            ->assertOk()
+            ->assertSee('KARTU IDENTITAS GURU')
+            ->assertSee($this->guru->nama_lengkap);
+
+        // Siswa melihat kartu identitas pada profilnya dan cetak kartu
+        $siswaUser = User::factory()->siswa()->create(['nama_pengguna' => $this->siswa->nis]);
+        $this->actingAs($siswaUser)->get(route('siswa.profil.show'))
+            ->assertOk()
+            ->assertSee('Kartu Identitas Absensi Saya');
+
+        $this->actingAs($siswaUser)->get(route('siswa.kartu.cetak'))
+            ->assertOk()
+            ->assertSee('KARTU IDENTITAS SISWA')
+            ->assertSee($this->siswa->nama_peserta_didik);
+    }
 }

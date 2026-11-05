@@ -96,7 +96,10 @@
                         <td>
                             @if(!$record)<span class="tag tag-mut">Belum tercatat</span>
                             @else<span class="tag {{ in_array($record->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">{{ ucfirst($record->status) }}</span>@endif
-                            @if($record?->metode === 'gps')<br><small>GPS</small>@elseif($record?->metode === 'admin')<br><small>Input/koreksi admin</small>@endif
+                            @if($record?->metode === 'qr')<br><small>Scan Kartu QR</small>
+                            @elseif($record?->metode === 'qr+gps')<br><small>Scan Kartu QR + GPS</small>
+                            @elseif($record?->metode === 'gps')<br><small>GPS</small>
+                            @elseif($record?->metode === 'admin')<br><small>Input/koreksi admin</small>@endif
                         </td>
                         <td style="min-width:310px">
                             <form method="POST" action="{{ route('admin.presensi.pegawai.koreksi') }}" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
