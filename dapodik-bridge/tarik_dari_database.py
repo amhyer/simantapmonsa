@@ -13,23 +13,17 @@ print("=" * 70)
 print("SIMANTAP Dapodik Bridge - Direct Database Query v2")
 print("=" * 70)
 
-# Konfigurasi Database
-DB_HOST = "localhost"
-DB_PORT = 54532
-DB_NAME = "pendataan"
-DB_USER = "postgres"
+import os
+import getpass
 
-# Coba berbagai password
-DB_PASSWORDS = [
-    "",                    # Empty password
-    "postgres",           # Default
-    "123456",
-    "root",
-    "password",
-    "dapodik",
-    "P@ssw0rd",
-    "Dapodik123",
-]
+# Konfigurasi Database
+DB_HOST = os.environ.get("DAPODIK_DB_HOST", "localhost")
+DB_PORT = int(os.environ.get("DAPODIK_DB_PORT", 54532))
+DB_NAME = os.environ.get("DAPODIK_DB_NAME", "pendataan")
+DB_USER = os.environ.get("DAPODIK_DB_USER", "postgres")
+
+# Password dari environment atau input interaktif
+target_password = os.environ.get("DAPODIK_DB_PASSWORD")
 
 CSV_FOLDER = Path("csv_files")
 CSV_FOLDER.mkdir(exist_ok=True)
@@ -40,39 +34,36 @@ print(f"  Database: {DB_NAME}")
 print(f"  User: {DB_USER}")
 print(f"  CSV Folder: {CSV_FOLDER}")
 
-# Step 1: Coba koneksi
-print("\n[STEP 1] Trying database connections...")
+# Step 1: Koneksi aman
+print("\n[STEP 1] Connecting to database...")
 
 connection = None
 password_used = None
 
-for password in DB_PASSWORDS:
+if not target_password:
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=password,
-            connect_timeout=5
-        )
-        print(f"  [SUCCESS] Password: '{password}'")
-        connection = conn
-        password_used = password
-        break
-    except psycopg2.OperationalError as e:
-        error_msg = str(e)
-        if "password" in error_msg.lower():
-            print(f"  [TRYING] Password '{password}': FAIL")
-        elif "connection refused" in error_msg.lower():
-            print(f"  [ERROR] Connection refused - port not open")
-            break
-    except Exception as e:
-        pass
+        target_password = getpass.getpass("  Masukkan password database Dapodik: ")
+    except Exception:
+        target_password = ""
+
+try:
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+        user=DB_USER,
+        password=target_password,
+        connect_timeout=5
+    )
+    print("  [SUCCESS] Koneksi database Dapodik berhasil.")
+    connection = conn
+    password_used = target_password
+except psycopg2.OperationalError as e:
+    print(f"  [ERROR] Gagal konek ke database: {e}")
 
 if not connection:
     print("\n[ERROR] Could not connect to database")
-    print("  Tried passwords:", DB_PASSWORDS)
+    print("  Pastikan layanan PostgreSQL Dapodik berjalan dan kredensial sudah sesuai.")
     print("\n[SOLUTION]")
     print("  Option 1: Contact Dapodik admin for database password")
     print("  Option 2: Use CSV manual export method")

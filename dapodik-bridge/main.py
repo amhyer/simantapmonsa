@@ -148,9 +148,29 @@ def dapodik_fetch_all(protocol, host, port, token, npsn):
 
 # ─── SIMANTAP SERVER ─────────────────────────────────────────────
 
+def is_local_url(url: str) -> bool:
+    """Cek apakah URL mengarah ke loopback/localhost lokal."""
+    lower = (url or "").lower()
+    return "localhost" in lower or "127.0.0.1" in lower or "::1" in lower or lower.startswith("http://192.168.") or lower.startswith("http://10.")
+
+
+def validate_server_security(url: str) -> tuple:
+    """Wajibkan protokol HTTPS jika server berada di internet/cloud hosting."""
+    cleaned = (url or "").strip().rstrip("/")
+    if not cleaned:
+        return False, "URL server SIMANTAP tidak boleh kosong."
+    if not is_local_url(cleaned) and not cleaned.startswith("https://"):
+        return False, "Demi keamanan data pribadi siswa (UU PDP) dan API key, koneksi ke server internet wajib menggunakan protokol aman HTTPS (https://...)."
+    return True, ""
+
+
 def simantap_test(url):
+    ok, err = validate_server_security(url)
+    if not ok:
+        return False, err
+
     try:
-        resp = requests.post(f"{url}/api/dapodik/ping", timeout=10)
+        resp = requests.post(f"{url.rstrip('/')}/api/dapodik/ping", timeout=10)
         if resp.status_code == 200:
             return True, resp.json().get("message", "OK")
         return False, f"HTTP {resp.status_code}"
@@ -161,9 +181,13 @@ def simantap_test(url):
 
 
 def simantap_sync_module(url, api_key, modul, data, semester_id, tahun_ajaran, nama_semester):
+    ok, err = validate_server_security(url)
+    if not ok:
+        return {"success": False, "message": err}
+
     try:
         resp = requests.post(
-            f"{url}/api/dapodik/sync/{modul}",
+            f"{url.rstrip('/')}/api/dapodik/sync/{modul}",
             headers={"X-API-Key": api_key, "Content-Type": "application/json"},
             json={
                 "semester_id": semester_id,

@@ -203,10 +203,16 @@
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
                 <div style="flex:1;min-width:200px">
                     <p style="font-size:13px;color:#667085;margin:0 0 8px 0">Aplikasi desktop untuk menghubungkan Dapodik lokal dengan server SIMANTAP. Jalankan di laptop yang terinstall Dapodik.</p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                         <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary"><i class="fas fa-download"></i> Download Bridge v3.0</a>
-                        <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px"><i class="fas fa-file"></i> SIMANTAP-Bridge.exe (~41 MB)</span>
+                        <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px"><i class="fas fa-file"></i> SIMANTAP-Bridge.exe ({{ $bridgeSize ? round($bridgeSize / (1024*1024), 1) . ' MB' : '~41 MB' }})</span>
                     </div>
+                    @if($bridgeChecksum)
+                        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                            <span class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:600;font-family:monospace;padding:2px 6px;border-radius:4px">SHA-256 Integritas</span>
+                            <code style="font-size:11px;background:#f1f5f9;padding:3px 8px;border-radius:4px;word-break:break-all;color:#334155;border:1px solid #e2e8f0">{{ $bridgeChecksum }}</code>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

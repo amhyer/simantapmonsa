@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class HasilKuis extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'hasil_kuis';
     protected $fillable = [
+        'tenant_id',
         'uuid',
         'guru_id',
         'kuis_id',

@@ -43,7 +43,14 @@ class DapodikImportController extends Controller
         $ptkList = Ptk::with('semester')->orderBy('nama')->limit(50)->get();
         $rombelList = Rombel::with('semester')->orderBy('nama_rombel')->limit(50)->get();
 
-        return view('admin.dapodik.index', compact('logs', 'stats', 'semesters', 'ptkList', 'rombelList'));
+        $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
+        if (!file_exists($bridgePath)) {
+            $bridgePath = base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe');
+        }
+        $bridgeChecksum = file_exists($bridgePath) ? hash_file('sha256', $bridgePath) : null;
+        $bridgeSize = file_exists($bridgePath) ? filesize($bridgePath) : null;
+
+        return view('admin.dapodik.index', compact('logs', 'stats', 'semesters', 'ptkList', 'rombelList', 'bridgeChecksum', 'bridgeSize'));
     }
 
     public function import(Request $request)

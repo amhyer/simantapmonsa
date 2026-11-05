@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Catatan extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
     protected $table = 'catatan';
     protected $fillable = [
+        'tenant_id',
         'uuid',
         'guru_id',
         'siswa_id',

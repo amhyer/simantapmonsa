@@ -130,8 +130,10 @@
                     <i class="fas fa-chevron-down chevron"></i>
                     <div class="dropdown-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:180px;z-index:200;overflow:hidden">
                         <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
-                        @if($currentUser && $currentUser->peran === 'siswa')
-                            <a href="{{ route('siswa.profil.edit') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user" style="width:16px"></i> Profil Saya</a>
+                        @if($currentUser && $currentUser->peran === 'admin')
+                            <a href="{{ route('admin.profile') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user-shield" style="width:16px"></i> Profil Admin</a>
+                        @elseif($currentUser && $currentUser->peran === 'siswa')
+                            <a href="{{ route('siswa.profil.show') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user" style="width:16px"></i> Profil Saya</a>
                         @endif
                         <div style="border-top:1px solid var(--line)"></div>
                         <form method="POST" action="{{ route('logout') }}">
