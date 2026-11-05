@@ -14,15 +14,16 @@ class SchoolLookupController extends Controller
 
     public function lookup(Request $request)
     {
-        $request->validate([
-            'npsn' => 'required|string|size:8|regex:/^[0-9]+$/',
-        ], [
-            'npsn.required' => 'NPSN wajib diisi.',
-            'npsn.size' => 'NPSN harus 8 digit.',
-            'npsn.regex' => 'NPSN hanya boleh berisi angka.',
-        ]);
+        $npsn = trim((string) ($request->input('npsn') ?? $request->json('npsn') ?? ''));
 
-        $sekolah = $this->schoolService->getByNpsn($request->npsn);
+        if (!preg_match('/^[0-9]{8}$/', $npsn)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NPSN harus terdiri dari 8 digit angka.',
+            ], 422);
+        }
+
+        $sekolah = $this->schoolService->getByNpsn($npsn);
 
         if (!$sekolah) {
             return response()->json([
