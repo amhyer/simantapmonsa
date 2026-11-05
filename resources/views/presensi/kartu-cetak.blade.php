@@ -80,6 +80,30 @@
             @endif
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            @if(!empty($rombels) && $rombels->isNotEmpty())
+                <form method="GET" action="{{ url()->current() }}" style="display:flex;align-items:center;gap:6px">
+                    <select name="rombel_id" onchange="this.form.submit()" style="padding:4px 8px;font-size:13px;border:1px solid #D0D5DD;border-radius:6px;background:#fff">
+                        <option value="">Semua Kelas (Batch)</option>
+                        @foreach($rombels as $r)
+                            <option value="{{ $r->id }}" @selected((string)$current_rombel_id === (string)$r->id)>Kelas {{ $r->nama_rombel }}</option>
+                        @endforeach
+                    </select>
+                </form>
+            @endif
+
+            @if(!empty($pagination) && ($pagination['total_pages'] ?? 1) > 1)
+                <div style="display:flex;gap:4px;align-items:center;background:#F2F4F7;padding:3px;border-radius:6px">
+                    <span style="font-size:12px;color:#475467;padding:0 6px">Batch:</span>
+                    @for($p = 1; $p <= $pagination['total_pages']; $p++)
+                        <a href="{{ request()->fullUrlWithQuery(['page' => $p]) }}"
+                           class="btn btn-sm"
+                           style="padding:2px 8px;font-size:12px;{{ ($pagination['current'] ?? 1) === $p ? 'background:#1D2939;color:#fff;border-color:#1D2939' : 'background:#fff;color:#344054' }}">
+                            {{ $p }}
+                        </a>
+                    @endfor
+                </div>
+            @endif
+
             @if(!empty($kembaliUrl))
                 <a href="{{ $kembaliUrl }}" class="btn btn-ghost btn-sm">← Kembali</a>
             @endif

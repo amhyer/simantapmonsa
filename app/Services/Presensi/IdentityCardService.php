@@ -11,6 +11,8 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class IdentityCardService
@@ -145,6 +147,19 @@ class IdentityCardService
         ])->save();
     }
 
+    public function markManySiswaAsPrinted($siswas): void
+    {
+        $ids = collect($siswas)->pluck('id')->filter()->all();
+        if (empty($ids)) {
+            return;
+        }
+
+        Siswa::whereIn('id', $ids)->update([
+            'printed_at' => now(),
+            'printed_version' => DB::raw('CASE WHEN qr_card_version > 0 THEN qr_card_version ELSE 1 END'),
+        ]);
+    }
+
     public function markPegawaiAsPrinted(User $user, ?int $version = null): void
     {
         $ver = $version ?? max(1, (int) $user->qr_card_version);
@@ -152,6 +167,19 @@ class IdentityCardService
             'printed_at' => now(),
             'printed_version' => $ver,
         ])->save();
+    }
+
+    public function markManyPegawaiAsPrinted($pegawais): void
+    {
+        $ids = collect($pegawais)->pluck('id')->filter()->all();
+        if (empty($ids)) {
+            return;
+        }
+
+        User::whereIn('id', $ids)->update([
+            'printed_at' => now(),
+            'printed_version' => DB::raw('CASE WHEN qr_card_version > 0 THEN qr_card_version ELSE 1 END'),
+        ]);
     }
 
     public function rollbackSiswaToPrintedVersion(Siswa $siswa): bool
@@ -310,14 +338,18 @@ class IdentityCardService
 
     public function svgQr(string $payload, int $size = 156): string
     {
-        $renderer = new ImageRenderer(
-            new RendererStyle($size, 2),
-            new SvgImageBackEnd()
-        );
-        $writer = new Writer($renderer);
-        $svg = $writer->writeString($payload, 'UTF-8', ErrorCorrectionLevel::M());
+        $cacheKey = 'simantap_qr_svg_' . md5($payload . ':' . $size);
 
-        return trim((string) preg_replace('/^<\?xml[^>]*\?>\s*/i', '', $svg));
+        return Cache::rememberForever($cacheKey, function () use ($payload, $size) {
+            $renderer = new ImageRenderer(
+                new RendererStyle($size, 2),
+                new SvgImageBackEnd()
+            );
+            $writer = new Writer($renderer);
+            $svg = $writer->writeString($payload, 'UTF-8', ErrorCorrectionLevel::M());
+
+            return trim((string) preg_replace('/^<\?xml[^>]*\?>\s*/i', '', $svg));
+        });
     }
 
     public function sekolahInfo(?SekolahSettings $sekolah = null): array

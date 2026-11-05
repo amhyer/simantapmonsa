@@ -198,30 +198,55 @@ class PresensiKartuController extends Controller
 
     public function cetakSiswaMassal(Request $request, IdentityCardService $cards)
     {
+        @set_time_limit(180);
         $query = Siswa::query()->with('rombel')->where('aktif', true);
         $subjudul = 'Semua Kelas';
+        $currentRombel = null;
 
         if ($request->filled('rombel_id')) {
-            $rombel = Rombel::findOrFail((int) $request->query('rombel_id'));
-            $query->where('rombel_id', $rombel->id);
-            $subjudul = 'Kelas ' . $rombel->nama_rombel;
+            $currentRombel = Rombel::findOrFail((int) $request->query('rombel_id'));
+            $query->where('rombel_id', $currentRombel->id);
+            $subjudul = 'Kelas ' . $currentRombel->nama_rombel;
         }
 
         $sekolah = SekolahSettings::query()->first();
-        $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->limit(250)->get();
-        foreach ($list as $s) {
-            $cards->markSiswaAsPrinted($s);
+        $totalSiswa = (clone $query)->count();
+
+        // Ketika mencetak semua kelas, bagi menjadi batch (80 kartu/halaman) agar browser dan printer responsif
+        $perPage = 80;
+        $page = max(1, (int) $request->query('page', 1));
+        $totalPages = (int) max(1, ceil($totalSiswa / $perPage));
+
+        if (!$request->filled('rombel_id') && $totalSiswa > $perPage) {
+            $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')
+                ->forPage($page, $perPage)
+                ->get();
+            $subjudul = "Semua Kelas · Batch {$page} dari {$totalPages} (" . count($list) . " dari {$totalSiswa} siswa)";
+        } else {
+            $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->get();
         }
+
+        $cards->markManySiswaAsPrinted($list);
         $cardItems = $list->map(fn (Siswa $s) => $cards->buildSiswaCardViewModel($s, $sekolah, true))->all();
+        $rombels = Rombel::query()->orderBy('tingkat')->orderBy('nama_rombel')->get(['id', 'nama_rombel']);
 
         return view('presensi.kartu-cetak', [
             'judul' => 'Cetak Kartu Identitas Siswa',
-            'subjudul' => $subjudul . ' (' . count($cardItems) . ' kartu)',
+            'subjudul' => $subjudul,
             'cards' => $cardItems,
             'kembaliUrl' => route('admin.presensi.kartu.index', array_filter([
                 'jenis' => 'siswa',
                 'rombel_id' => $request->query('rombel_id'),
             ])),
+            'pagination' => [
+                'current' => $page,
+                'total_pages' => $totalPages,
+                'total_items' => $totalSiswa,
+                'per_page' => $perPage,
+                'rombel_id' => $request->query('rombel_id'),
+            ],
+            'rombels' => $rombels,
+            'current_rombel_id' => $request->query('rombel_id'),
         ]);
     }
 
@@ -391,6 +416,7 @@ class PresensiKartuController extends Controller
 
     public function cetakPegawaiMassal(Request $request, IdentityCardService $cards)
     {
+        @set_time_limit(180);
         $query = User::query()
             ->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)
             ->where('aktif', true);
@@ -402,9 +428,7 @@ class PresensiKartuController extends Controller
         $sekolah = SekolahSettings::query()->first();
         $ptkByDapodik = Ptk::query()->whereNotNull('dapodik_id')->get()->keyBy('dapodik_id');
         $list = $query->orderBy('peran')->orderBy('nama_lengkap')->get();
-        foreach ($list as $p) {
-            $cards->markPegawaiAsPrinted($p);
-        }
+        $cards->markManyPegawaiAsPrinted($list);
 
         $cardItems = $list->map(function (User $person) use ($cards, $sekolah, $ptkByDapodik) {
             $ptk = $person->dapodik_id ? $ptkByDapodik->get($person->dapodik_id) : null;
