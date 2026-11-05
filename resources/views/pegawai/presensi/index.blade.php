@@ -118,13 +118,22 @@
         </div>
 
         <div style="display:grid;gap:16px">
-            <div class="card">
-                <div class="card-header">
-                    <h3>🪪 Kartu Identitas Saya</h3>
+            <div class="card" x-data="{ sisi: 'depan' }">
+                <div class="card-header" style="gap:8px;flex-wrap:wrap">
+                    <h3 style="margin-right:auto">🪪 Kartu Identitas Saya</h3>
+                    <div style="display:flex;gap:3px;background:#F2F4F7;padding:2px;border-radius:6px;border:1px solid #E4E7EC">
+                        <button type="button" class="btn btn-xs" :style="sisi === 'depan' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'depan'">Depan</button>
+                        <button type="button" class="btn btn-xs" :style="sisi === 'belakang' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'belakang'">Belakang</button>
+                    </div>
                     <a href="{{ route('presensi.pegawai.kartu') }}" class="btn btn-ghost btn-sm">🖨️ Cetak Kartu</a>
                 </div>
                 <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:12px">
-                    @include('presensi.partials.id-card', ['card' => $kartuSaya])
+                    <div x-show="sisi === 'depan'" style="width:100%;display:flex;justify-content:center">
+                        @include('presensi.partials.id-card', ['card' => $kartuSaya])
+                    </div>
+                    <div x-show="sisi === 'belakang'" x-cloak style="width:100%;display:flex;justify-content:center">
+                        @include('presensi.partials.id-card-back', ['card' => $kartuSaya])
+                    </div>
                     <p style="margin:0;font-size:12px;color:#667085;text-align:center">
                         Cetak kartu ini untuk dipindai setiap hari saat jam masuk &amp; jam pulang. Hanya kartu identitas milik akun Anda sendiri yang diterima pada pemindaian mandiri.
                     </p>

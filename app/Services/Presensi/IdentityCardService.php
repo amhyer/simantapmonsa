@@ -359,8 +359,16 @@ class IdentityCardService
         return [
             'nama' => $sekolah?->nama_sekolah ?: 'SIMANTAP Sekolah',
             'npsn' => $sekolah?->npsn ?: '-',
+            'alamat' => $sekolah?->alamat ?: 'Alamat Sekolah',
             'kota' => $sekolah?->kota ?: ($sekolah?->kecamatan ?: 'Indonesia'),
+            'kecamatan' => $sekolah?->kecamatan ?: '-',
+            'provinsi' => $sekolah?->provinsi ?: '-',
+            'kode_pos' => $sekolah?->kode_pos ?: '-',
+            'telepon' => $sekolah?->telepon ?: '-',
+            'email' => $sekolah?->email ?: '-',
+            'website' => $sekolah?->website ?: '-',
             'kepala_sekolah' => $sekolah?->kepala_sekolah ?: '-',
+            'akreditasi' => $sekolah?->akreditasi ?: 'A',
         ];
     }
 
