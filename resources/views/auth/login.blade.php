@@ -57,7 +57,10 @@
             <button type="submit" class="btn">Masuk</button>
         </form>
 
-        <a class="forgot" href="{{ route('password.request') }}">Lupa kata sandi?</a>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px">
+            <a class="forgot" style="margin-top:0" href="{{ route('password.request') }}">Lupa kata sandi?</a>
+            <a href="{{ route('sekolah.register') }}" style="color:var(--navy);text-decoration:none;font-weight:600">Daftar Sekolah &rarr;</a>
+        </div>
 
         @if(app()->environment('local'))
             <div class="demo">

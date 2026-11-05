@@ -80,6 +80,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/lupa-sandi', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
     Route::get('/reset-sandi/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-sandi', [ResetPasswordController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
+
+    // Pendaftaran Sekolah Baru (Multi-Tenant SaaS)
+    Route::get('/daftar-sekolah', [\App\Http\Controllers\Auth\RegisterSekolahController::class, 'create'])->name('sekolah.register');
+    Route::post('/daftar-sekolah', [\App\Http\Controllers\Auth\RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
 });
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('throttle:30,1')->name('logout');
 
