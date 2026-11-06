@@ -63,31 +63,35 @@ try {
                "WHERE C.CHECKTIME >= #" + $awal.ToString('yyyy-MM-dd HH:mm:ss') + "# " +
                "AND C.CHECKTIME < #" + $akhir.ToString('yyyy-MM-dd HH:mm:ss') + "# " +
                "ORDER BY C.CHECKTIME"
+    } else {
+        $sql = "SELECT U.BADGENUMBER AS NIK, U.NAME AS NAMA, C.CHECKTIME AS WAKTU, C.CHECKTYPE AS TIPE " +
+               "FROM CHECKINOUT C INNER JOIN USERINFO U ON U.USERID = C.USERID " +
+               "ORDER BY C.CHECKTIME"
+    }
 
-        $rs = $koneksi.Execute($sql)
-        $daftar = New-Object System.Collections.ArrayList
+    $rs = $koneksi.Execute($sql)
+    $daftar = New-Object System.Collections.ArrayList
 
-        while (-not $rs.EOF) {
-            $waktu = $rs.Fields.Item('WAKTU').Value
-            if ($waktu -is [datetime]) {
-                $waktuTeks = $waktu.ToString('yyyy-MM-dd HH:mm:ss')
-            } else {
-                $waktuTeks = [string]$waktu
-            }
-
-            [void]$daftar.Add([ordered]@{
-                nik   = [string]$rs.Fields.Item('NIK').Value
-                nama  = [string]$rs.Fields.Item('NAMA').Value
-                waktu = $waktuTeks
-                tipe  = [string]$rs.Fields.Item('TIPE').Value
-            })
-            $rs.MoveNext()
+    while (-not $rs.EOF) {
+        $waktu = $rs.Fields.Item('WAKTU').Value
+        if ($waktu -is [datetime]) {
+            $waktuTeks = $waktu.ToString('yyyy-MM-dd HH:mm:ss')
+        } else {
+            $waktuTeks = [string]$waktu
         }
 
-        $rs.Close()
-        $hasil.scans = $daftar.ToArray()
-        $hasil.jumlah_scan_rentang = $daftar.Count
+        [void]$daftar.Add([ordered]@{
+            nik   = [string]$rs.Fields.Item('NIK').Value
+            nama  = [string]$rs.Fields.Item('NAMA').Value
+            waktu = $waktuTeks
+            tipe  = [string]$rs.Fields.Item('TIPE').Value
+        })
+        $rs.MoveNext()
     }
+
+    $rs.Close()
+    $hasil.scans = $daftar.ToArray()
+    $hasil.jumlah_scan_rentang = $daftar.Count
 
     $koneksi.Close()
     Tulis-Hasil $hasil

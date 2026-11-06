@@ -13,6 +13,14 @@
     <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-sm btn-ghost">
         &larr; Kembali ke Katalog
     </a>
+    @if($admin)
+        <form method="POST" action="{{ route('superadmin.tenants.impersonate', $tenant->uuid) }}" style="display:inline">
+            @csrf
+            <button type="submit" class="btn btn-sm" style="background:#4338CA;color:#fff" title="Masuk langsung ke dasbor sekolah ini">
+                <i class="fas fa-sign-in-alt"></i> Masuk sebagai Admin Sekolah
+            </button>
+        </form>
+    @endif
     <form method="POST" action="{{ route('superadmin.tenants.toggle', $tenant->uuid) }}" style="display:inline">
         @csrf
         <button type="submit" class="btn btn-sm {{ $tenant->aktif ? 'btn-warn' : 'btn-primary' }}" onclick="return confirm('Ubah status akses sekolah ini?')">
@@ -241,6 +249,30 @@
                                 </td>
                             </tr>
                         </table>
+                    </div>
+
+                    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #E4E7EC">
+                        <form method="POST" action="{{ route('superadmin.tenants.impersonate', $tenant->uuid) }}" style="margin-bottom:10px">
+                            @csrf
+                            <button type="submit" class="btn btn-sm" style="background:#4338CA;color:#fff;width:100%">
+                                <i class="fas fa-sign-in-alt"></i> Masuk sebagai Admin Ini
+                            </button>
+                        </form>
+
+                        <details style="font-size:12.5px">
+                            <summary style="cursor:pointer;color:#4338CA;font-weight:600">
+                                <i class="fas fa-key"></i> Reset Sandi Akun Admin Sekolah
+                            </summary>
+                            <form method="POST" action="{{ route('superadmin.tenants.reset-admin-password', $tenant->uuid) }}" style="margin-top:10px">
+                                @csrf
+                                <div class="form-group" style="margin-bottom:8px">
+                                    <input type="password" name="password_baru" class="form-control form-control-sm" placeholder="Password baru (min 8 karakter)" required>
+                                </div>
+                                <button type="submit" class="btn btn-xs btn-warn" onclick="return confirm('Reset kata sandi admin ini?')">
+                                    Simpan Password Baru
+                                </button>
+                            </form>
+                        </details>
                     </div>
                 @else
                     <div class="empty-state" style="padding:16px">

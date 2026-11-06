@@ -80,6 +80,20 @@
     </aside>
     
     <div class="main-content">
+        @if(session()->has('impersonator_id'))
+            <div style="background:linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 3px 12px rgba(67,56,202,0.3);position:sticky;top:0;z-index:999">
+                <div style="display:flex;align-items:center;gap:12px;font-size:13px">
+                    <span style="background:#EF4444;color:#fff;font-weight:800;padding:3px 10px;border-radius:999px;font-size:11px;letter-spacing:0.5px">SUPER ADMIN CONNECT</span>
+                    <span>Anda terhubung masuk sebagai <b>{{ auth()->user()->nama_lengkap }}</b> ({{ auth()->user()->nama_pengguna }}). Sedang mengelola data sekolah ini.</span>
+                </div>
+                <form method="POST" action="{{ route('superadmin.impersonate.leave') }}" style="margin:0">
+                    @csrf
+                    <button type="submit" class="btn btn-sm" style="background:#fff;color:#4338CA;font-weight:700;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.2);cursor:pointer;white-space:nowrap">
+                        <i class="fas fa-arrow-left"></i> Kembali ke Super Admin
+                    </button>
+                </form>
+            </div>
+        @endif
         <header class="topbar">
             <div class="topbar-left">
                 <button class="topbar-toggle" onclick="toggleSidebar()">

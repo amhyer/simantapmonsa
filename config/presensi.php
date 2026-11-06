@@ -57,6 +57,7 @@ return [
         'D:\\ZKTime\\bin\\att2000.mdb',
         'E:\\ZKTime\\bin\\att2000.mdb',
         'C:\\ZKTime\\bin\\att2000.mdb',
+        'C:\\Program Files (x86)\\Solution\\ATT2000.MDB',
         'C:\\Program Files (x86)\\ZKTime\\bin\\att2000.mdb',
         'C:\\Program Files\\ZKTime\\bin\\att2000.mdb',
     ],

@@ -243,7 +243,13 @@
                                     @endif
                                 </td>
                                 <td style="padding:11px 14px;text-align:center">
-                                    <div style="display:flex;gap:6px;justify-content:center">
+                                    <div style="display:flex;gap:6px;justify-content:center;align-items:center">
+                                        <form method="POST" action="{{ route('superadmin.tenants.impersonate', $tenant->uuid) }}" style="display:inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-xs" style="background:#EEF2FF;color:#4338CA;font-weight:700" title="Masuk langsung ke dasbor sekolah ini">
+                                                <i class="fas fa-sign-in-alt"></i> Masuk
+                                            </button>
+                                        </form>
                                         <a href="{{ route('superadmin.tenants.show', $tenant->uuid) }}" class="btn btn-ghost btn-sm">
                                             Kelola
                                         </a>

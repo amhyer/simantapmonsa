@@ -227,4 +227,75 @@ class TenantController extends Controller
 
         return view('superadmin.users.index', compact('users', 'search', 'peran'));
     }
+
+    public function impersonate(Tenant $tenant)
+    {
+        $admin = User::where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+
+        if (! $admin) {
+            return back()->with('error', "Gagal: Sekolah '{$tenant->nama_sekolah}' belum memiliki akun administrator.");
+        }
+
+        $superAdminId = auth()->id();
+        session([
+            'impersonator_id' => $superAdminId,
+            'impersonator_tenant_uuid' => $tenant->uuid,
+        ]);
+
+        auth()->login($admin);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Berhasil masuk ke dasbor sekolah '{$tenant->nama_sekolah}'. Anda sedang dalam mode supervisi.");
+    }
+
+    public function leaveImpersonate()
+    {
+        $superAdminId = session('impersonator_id');
+        $tenantUuid = session('impersonator_tenant_uuid');
+
+        if (! $superAdminId) {
+            return redirect()->route('home');
+        }
+
+        $superAdmin = User::find($superAdminId);
+        if (! $superAdmin || $superAdmin->peran !== 'super_admin') {
+            session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
+            auth()->logout();
+            return redirect()->route('login');
+        }
+
+        session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
+        auth()->login($superAdmin);
+
+        if ($tenantUuid) {
+            return redirect()->route('superadmin.tenants.show', $tenantUuid)
+                ->with('success', 'Kembali ke sesi Super Administrator.');
+        }
+
+        return redirect()->route('superadmin.dashboard')
+            ->with('success', 'Kembali ke sesi Super Administrator.');
+    }
+
+    public function resetAdminPassword(Request $request, Tenant $tenant)
+    {
+        $admin = User::where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+
+        if (! $admin) {
+            return back()->with('error', "Gagal: Sekolah '{$tenant->nama_sekolah}' belum memiliki akun administrator.");
+        }
+
+        $validated = $request->validate([
+            'password_baru' => 'required|string|min:8',
+        ]);
+
+        $admin->kata_sandi = Hash::make($validated['password_baru']);
+        $admin->force_password_change = false;
+        $admin->save();
+
+        return back()->with('success', "Kata sandi admin sekolah '{$admin->nama_lengkap}' ({$admin->nama_pengguna}) berhasil direset!");
+    }
 }

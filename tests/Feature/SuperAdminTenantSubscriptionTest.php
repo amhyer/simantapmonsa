@@ -90,4 +90,58 @@ class SuperAdminTenantSubscriptionTest extends TestCase
 
         $response->assertStatus(402);
     }
+
+    public function test_superadmin_dapat_impersonasi_dan_kembali_dari_akun_admin_sekolah(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307004',
+            'nama_sekolah' => 'SMP Impersonate Test',
+            'subdomain' => 'smpimpersonate',
+            'aktif' => true,
+        ]);
+
+        $adminSekolah = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+
+        // 1. SuperAdmin masuk sebagai Admin Sekolah
+        $res = $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.impersonate', $tenant->uuid));
+
+        $res->assertRedirect(route('admin.dashboard'));
+        $this->assertSame($adminSekolah->id, auth()->id());
+        $this->assertSame($superAdmin->id, session('impersonator_id'));
+
+        // 2. Dari dalam akun admin sekolah, SuperAdmin dapat kembali ke sesi Super Admin
+        $resLeave = $this->post(route('superadmin.impersonate.leave'));
+        $resLeave->assertRedirect(route('superadmin.tenants.show', $tenant->uuid));
+        $this->assertSame($superAdmin->id, auth()->id());
+        $this->assertFalse(session()->has('impersonator_id'));
+    }
+
+    public function test_superadmin_dapat_mereset_kata_sandi_admin_sekolah(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307005',
+            'nama_sekolah' => 'SMP Reset Pass Test',
+            'subdomain' => 'smpresetpass',
+            'aktif' => true,
+        ]);
+
+        $adminSekolah = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+
+        $res = $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.reset-admin-password', $tenant->uuid), [
+                'password_baru' => 'PasswordBaru2026!',
+            ]);
+
+        $res->assertSessionHas('success');
+        $adminSekolah->refresh();
+
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('PasswordBaru2026!', $adminSekolah->kata_sandi));
+    }
 }

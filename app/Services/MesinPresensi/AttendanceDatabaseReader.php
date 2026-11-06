@@ -218,13 +218,103 @@ class AttendanceDatabaseReader
     }
 
     /**
+     * Ambil rentang waktu scan yang tersedia di database mesin, dipakai tombol
+     * "Tarik Semua Data" supaya admin tidak perlu mengetik rentang tanggal.
+     *
+     * @return array{min: ?Carbon, maks: ?Carbon}
+     */
+    public function rentang(): array
+    {
+        $path = $this->path();
+        if ($path === null) {
+            throw new RuntimeException('Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.');
+        }
+        if (! is_file($path)) {
+            throw new RuntimeException('Database Attendance Management tidak ditemukan di '.$path.'.');
+        }
+        if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::EKSTENSI, true)) {
+            throw new RuntimeException('File database mesin harus berekstensi .mdb atau .accdb.');
+        }
+
+        $engine = $this->engine();
+        if ($engine === 'tidak-tersedia') {
+            throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
+        }
+
+        $data = $this->bacaMentah($path, $engine);
+
+        $min = null;
+        $maks = null;
+        foreach ((array) ($data['scans'] ?? []) as $row) {
+            $waktu = $this->parseWaktu($row['waktu'] ?? null);
+            if ($waktu === null) {
+                continue;
+            }
+
+            if ($min === null || $waktu->lt($min)) {
+                $min = $waktu;
+            }
+            if ($maks === null || $waktu->gt($maks)) {
+                $maks = $waktu;
+            }
+        }
+
+        return ['min' => $min, 'maks' => $maks];
+    }
+
+    /**
      * @return array{jumlah_pegawai?: int, jumlah_scan?: int, pegawai?: list<array<string, mixed>>, scans?: list<array<string, mixed>>}
      */
     private function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
     {
-        return $engine === 'odbc'
+        $hasil = $engine === 'odbc'
             ? $this->bacaLewatOdbc($path, $dari, $sampai)
             : $this->bacaLewatPowerShell($path, $dari, $sampai);
+
+        if ($dari === null && $sampai === null) {
+            // Tanpa rentang waktu, baca seluruh isi tabel CHECKINOUT.
+            $hasil['scans'] = $this->bacaSemuaLewat($engine, $path);
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Baca seluruh scan CHECKINOUT tanpa rentang waktu.
+     *
+     * @return array{scans?: list<array<string, mixed>>}
+     */
+    private function bacaSemuaLewat(string $engine, string $path): array
+    {
+        if ($engine === 'odbc') {
+            $dsn = 'odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq='.$path.';';
+            $pdo = new \PDO($dsn, '', '', [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+            $pdo->setAttribute(\PDO::ATTR_TIMEOUT, (int) config('presensi.mesin_db_timeout', 30));
+
+            $hasil = ['scans' => []];
+
+            $sql = 'SELECT U.BADGENUMBER AS NIK, U.NAME AS NAMA, C.CHECKTIME AS WAKTU, C.CHECKTYPE AS TIPE
+              FROM CHECKINOUT C INNER JOIN USERINFO U ON U.USERID = C.USERID
+              ORDER BY C.CHECKTIME';
+
+            foreach ($pdo->query($sql) as $row) {
+                $hasil['scans'][] = [
+                    'nik' => $row['NIK'] ?? null,
+                    'nama' => $row['NAMA'] ?? null,
+                    'waktu' => $row['WAKTU'] ?? null,
+                    'tipe' => $row['TIPE'] ?? null,
+                ];
+            }
+
+            return $hasil;
+        }
+
+        $sempre = Carbon::parse('1900-01-01');
+        $sampaiSekarang = Carbon::parse('2100-01-01');
+
+        $hasil = $this->bacaLewatPowerShell($path, $sempre, $sampaiSekarang);
+
+        return ['scans' => (array) ($hasil['scans'] ?? [])];
     }
 
     /**

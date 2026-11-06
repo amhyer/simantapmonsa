@@ -127,8 +127,14 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change'])->prefix
     Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
     Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
     Route::post('/tenants/{tenant}/toggle', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleActive'])->name('tenants.toggle');
+    Route::post('/tenants/{tenant}/impersonate', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'impersonate'])->name('tenants.impersonate');
+    Route::post('/tenants/{tenant}/reset-admin-password', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'resetAdminPassword'])->name('tenants.reset-admin-password');
     Route::get('/users', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'users'])->name('users.index');
 });
+
+Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'leaveImpersonate'])
+    ->middleware('auth')
+    ->name('superadmin.impersonate.leave');
 
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {
