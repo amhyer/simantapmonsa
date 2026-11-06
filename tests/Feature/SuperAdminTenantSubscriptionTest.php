@@ -144,4 +144,65 @@ class SuperAdminTenantSubscriptionTest extends TestCase
 
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('PasswordBaru2026!', $adminSekolah->kata_sandi));
     }
+
+    public function test_superadmin_dapat_memisahkan_daftar_akun_pengguna_per_sekolah_dan_per_wilayah(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $sekolahA = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307010',
+            'nama_sekolah' => 'SD Negeri Biringkanaya 1',
+            'subdomain' => 'biringkanaya1',
+            'wilayah' => 'Kec. Biringkanaya',
+            'aktif' => true,
+        ]);
+
+        $sekolahB = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307011',
+            'nama_sekolah' => 'SD Negeri Panakkukang 2',
+            'subdomain' => 'panakkukang2',
+            'wilayah' => 'Kec. Panakkukang',
+            'aktif' => true,
+        ]);
+
+        $siswaA = User::factory()->siswa()->create([
+            'tenant_id' => $sekolahA->id,
+            'nama_lengkap' => 'Ahmad Biringkanaya',
+        ]);
+
+        $guruB = User::factory()->guru()->create([
+            'tenant_id' => $sekolahB->id,
+            'nama_lengkap' => 'Siti Panakkukang',
+        ]);
+
+        // 1. Filter per wilayah Kec. Biringkanaya -> hanya siswaA yang muncul
+        $resWilayah = $this->actingAs($superAdmin)
+            ->get(route('superadmin.users.index', ['wilayah' => 'Kec. Biringkanaya']));
+        $resWilayah->assertOk();
+        $resWilayah->assertSee('Ahmad Biringkanaya');
+        $resWilayah->assertDontSee('Siti Panakkukang');
+
+        // 2. Filter per sekolah sekolahB -> hanya guruB yang muncul
+        $resSekolah = $this->actingAs($superAdmin)
+            ->get(route('superadmin.users.index', ['tenant_id' => $sekolahB->id]));
+        $resSekolah->assertOk();
+        $resSekolah->assertSee('Siti Panakkukang');
+        $resSekolah->assertDontSee('Ahmad Biringkanaya');
+
+        // 3. Tab per-sekolah menampilkan rekapitulasi sekolah
+        $resTabSekolah = $this->actingAs($superAdmin)
+            ->get(route('superadmin.users.index', ['tab' => 'per_sekolah']));
+        $resTabSekolah->assertOk();
+        $resTabSekolah->assertSee('SD Negeri Biringkanaya 1');
+        $resTabSekolah->assertSee('SD Negeri Panakkukang 2');
+
+        // 4. Tab per-wilayah menampilkan rekapitulasi per wilayah
+        $resTabWilayah = $this->actingAs($superAdmin)
+            ->get(route('superadmin.users.index', ['tab' => 'per_wilayah']));
+        $resTabWilayah->assertOk();
+        $resTabWilayah->assertSee('Kec. Biringkanaya');
+        $resTabWilayah->assertSee('Kec. Panakkukang');
+    }
 }

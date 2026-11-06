@@ -119,6 +119,7 @@ class TenantController extends Controller
     {
         $validated = $request->validate([
             'nama_sekolah' => 'required|string|max:255',
+            'wilayah' => 'nullable|string|max:100',
             'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom,' . $tenant->id,
             'paket' => 'required|string|in:standar,pro,enterprise',
             'kuota_siswa' => 'required|integer|min:10|max:100000',
@@ -154,6 +155,7 @@ class TenantController extends Controller
         $validated = $request->validate([
             'npsn' => 'required|string|max:16|unique:tenants,npsn',
             'nama_sekolah' => 'required|string|max:255',
+            'wilayah' => 'nullable|string|max:100',
             'subdomain' => 'required|string|max:64|alpha_dash|unique:tenants,subdomain',
             'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom',
             'paket' => 'nullable|string|in:standar,pro,enterprise',
@@ -177,6 +179,7 @@ class TenantController extends Controller
                 'uuid' => (string) Str::uuid(),
                 'npsn' => $validated['npsn'],
                 'nama_sekolah' => $validated['nama_sekolah'],
+                'wilayah' => $validated['wilayah'] ?? null,
                 'subdomain' => strtolower($validated['subdomain']),
                 'domain_kustom' => ! empty($validated['domain_kustom']) ? strtolower(trim($validated['domain_kustom'])) : null,
                 'paket' => $validated['paket'] ?? 'standar',
@@ -208,6 +211,9 @@ class TenantController extends Controller
     {
         $search = trim((string) $request->get('q', ''));
         $peran = $request->get('peran');
+        $wilayah = $request->get('wilayah');
+        $tenantId = $request->get('tenant_id');
+        $tab = $request->get('tab', 'semua'); // 'semua', 'per_sekolah', 'per_wilayah'
 
         $query = User::with('tenant')->whereNotNull('tenant_id');
 
@@ -223,9 +229,73 @@ class TenantController extends Controller
             $query->where('peran', $peran);
         }
 
+        if ($tenantId !== null && $tenantId !== '') {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        if ($wilayah !== null && $wilayah !== '') {
+            $query->whereHas('tenant', fn($q) => $q->where('wilayah', $wilayah));
+        }
+
         $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        return view('superadmin.users.index', compact('users', 'search', 'peran'));
+        // Daftar wilayah unik untuk filter & rekap
+        $wilayahList = Tenant::whereNotNull('wilayah')
+            ->where('wilayah', '!=', '')
+            ->distinct()
+            ->orderBy('wilayah')
+            ->pluck('wilayah');
+
+        // Daftar sekolah untuk filter
+        $tenantsList = Tenant::query()
+            ->when($wilayah, fn($q) => $q->where('wilayah', $wilayah))
+            ->orderBy('nama_sekolah')
+            ->get(['id', 'nama_sekolah', 'wilayah', 'npsn', 'subdomain']);
+
+        // Rekap per-sekolah
+        $rekapSekolah = Tenant::withCount([
+            'users as total_akun',
+            'users as guru_count' => fn($q) => $q->where('peran', 'guru'),
+            'users as siswa_count' => fn($q) => $q->where('peran', 'siswa'),
+            'users as admin_count' => fn($q) => $q->where('peran', 'admin'),
+            'users as tendik_count' => fn($q) => $q->whereIn('peran', ['tendik', 'kepsek']),
+        ])
+        ->when($wilayah, fn($q) => $q->where('wilayah', $wilayah))
+        ->orderBy('nama_sekolah')
+        ->get();
+
+        // Rekap per-wilayah
+        $rekapWilayah = Tenant::query()
+            ->whereNotNull('wilayah')
+            ->where('wilayah', '!=', '')
+            ->select('wilayah', DB::raw('count(id) as total_sekolah'))
+            ->groupBy('wilayah')
+            ->orderBy('wilayah')
+            ->get()
+            ->map(function ($rw) {
+                $tenantIds = Tenant::where('wilayah', $rw->wilayah)->pluck('id');
+                $rw->total_akun = User::whereIn('tenant_id', $tenantIds)->count();
+                $rw->total_siswa = User::whereIn('tenant_id', $tenantIds)->where('peran', 'siswa')->count();
+                $rw->total_guru = User::whereIn('tenant_id', $tenantIds)->where('peran', 'guru')->count();
+                $rw->total_admin = User::whereIn('tenant_id', $tenantIds)->where('peran', 'admin')->count();
+                return $rw;
+            });
+
+        $totalUsersPlatform = User::whereNotNull('tenant_id')->count();
+
+        return view('superadmin.users.index', compact(
+            'users',
+            'search',
+            'peran',
+            'wilayah',
+            'tenantId',
+            'tab',
+            'wilayahList',
+            'tenantsList',
+            'rekapSekolah',
+            'rekapWilayah',
+            'totalUsersPlatform'
+        ));
     }
 
     public function impersonate(Tenant $tenant)

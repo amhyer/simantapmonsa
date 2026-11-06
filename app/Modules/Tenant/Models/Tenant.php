@@ -13,6 +13,7 @@ class Tenant extends Model
         'uuid',
         'npsn',
         'nama_sekolah',
+        'wilayah',
         'subdomain',
         'domain_kustom',
         'paket',
@@ -73,6 +74,11 @@ class Tenant extends Model
             }
             \Illuminate\Support\Facades\Cache::forget("tenant:id:{$tenant->id}");
         });
+    }
+
+    public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\User::class, 'tenant_id');
     }
 
     public function getRouteKeyName(): string

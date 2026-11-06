@@ -25,12 +25,14 @@ class TenantBackfillCommand extends Command
         $subdomain = 'mongisidi1';
 
         $tenant = Tenant::where('npsn', $npsn)->orWhere('subdomain', $subdomain)->first();
+        $wilayah = $sekolah?->kecamatan ?: 'Kec. Makasar';
 
         if (! $tenant) {
             $tenant = Tenant::create([
                 'uuid' => (string) Str::uuid(),
                 'npsn' => $npsn,
                 'nama_sekolah' => $namaSekolah,
+                'wilayah' => $wilayah,
                 'subdomain' => $subdomain,
                 'paket' => 'enterprise',
                 'kuota_siswa' => 1000,
@@ -41,9 +43,12 @@ class TenantBackfillCommand extends Command
                     'migrated_at' => now()->toIso8601String(),
                 ],
             ]);
-            $this->info("✓ Tenant baru dibuat: [ID: {$tenant->id}] {$tenant->nama_sekolah}");
+            $this->info("✓ Tenant baru dibuat: [ID: {$tenant->id}] {$tenant->nama_sekolah} ({$wilayah})");
         } else {
-            $this->info("Tenant sudah ada: [ID: {$tenant->id}] {$tenant->nama_sekolah}");
+            if (empty($tenant->wilayah)) {
+                $tenant->update(['wilayah' => $wilayah]);
+            }
+            $this->info("Tenant sudah ada: [ID: {$tenant->id}] {$tenant->nama_sekolah} ({$tenant->wilayah})");
         }
 
         $tables = [

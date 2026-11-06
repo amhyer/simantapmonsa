@@ -7,7 +7,7 @@
 @endsection
 
 @section('page_title', $tenant->nama_sekolah)
-@section('page_subtitle', 'NPSN: ' . $tenant->npsn . ' • Subdomain: ' . $tenant->subdomain . ($tenant->domain_kustom ? ' • Domain: ' . $tenant->domain_kustom : ''))
+@section('page_subtitle', 'NPSN: ' . $tenant->npsn . ($tenant->wilayah ? ' • Wilayah: ' . $tenant->wilayah : '') . ' • Subdomain: ' . $tenant->subdomain . ($tenant->domain_kustom ? ' • Domain: ' . $tenant->domain_kustom : ''))
 
 @section('header_actions')
     <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-sm btn-ghost" style="border:1px solid #E4E7EC">
@@ -120,9 +120,15 @@
                 @csrf
                 @method('PUT')
 
-                <div class="form-group" style="margin-bottom:14px">
-                    <label class="form-label">Nama Sekolah Resmi <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="nama_sekolah" class="form-control" value="{{ old('nama_sekolah', $tenant->nama_sekolah) }}" required>
+                <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
+                    <div class="form-group">
+                        <label class="form-label">Nama Sekolah Resmi <span style="color:var(--bad)">*</span></label>
+                        <input type="text" name="nama_sekolah" class="form-control" value="{{ old('nama_sekolah', $tenant->nama_sekolah) }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Wilayah / Kecamatan</label>
+                        <input type="text" name="wilayah" class="form-control" value="{{ old('wilayah', $tenant->wilayah) }}" placeholder="Contoh: Kec. Makasar / Wilayah 1">
+                    </div>
                 </div>
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
@@ -191,6 +197,10 @@
             <div class="card-body">
                 <div class="table-wrapper">
                     <table style="width:100%;font-size:13px;line-height:2">
+                        <tr>
+                            <td style="color:var(--muted)">Wilayah / Kecamatan</td>
+                            <td><b>{{ $tenant->wilayah ?? '—' }}</b></td>
+                        </tr>
                         <tr>
                             <td style="color:var(--muted)">Bank Soal CBT</td>
                             <td><b>{{ number_format($cbtBankCount) }}</b> paket soal</td>
@@ -288,7 +298,7 @@
 <div class="card">
     <div class="card-header" style="justify-content:space-between">
         <h3><i class="fas fa-users" style="margin-right:8px;color:#4338CA"></i>Akun Pengguna Terdaftar ({{ $recentUsers->count() }} Terbaru)</h3>
-        <a href="{{ route('superadmin.users.index') }}?q={{ urlencode($tenant->nama_sekolah) }}" class="btn btn-ghost btn-sm">Lihat Semua Pengguna</a>
+        <a href="{{ route('superadmin.users.index', ['tenant_id' => $tenant->id]) }}" class="btn btn-ghost btn-sm">Lihat Semua Pengguna</a>
     </div>
     <div class="card-body tight">
         @if($recentUsers->count() > 0)

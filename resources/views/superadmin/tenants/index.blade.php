@@ -30,7 +30,7 @@
             <div style="font-weight:700;font-size:14px;color:#4338CA;margin-bottom:12px">
                 <i class="fas fa-school"></i> 1. Identitas &amp; Domain Sekolah
             </div>
-            <div class="grid grid-3" style="gap:16px;margin-bottom:16px">
+            <div class="grid grid-4" style="gap:16px;margin-bottom:16px">
                 <div class="form-group">
                     <label class="form-label">NPSN Resmi <span style="color:var(--bad)">*</span></label>
                     <input type="text" name="npsn" class="form-control @error('npsn') is-invalid @enderror" value="{{ old('npsn') }}" required placeholder="Contoh: 40307000">
@@ -40,6 +40,11 @@
                     <label class="form-label">Nama Sekolah <span style="color:var(--bad)">*</span></label>
                     <input type="text" name="nama_sekolah" class="form-control @error('nama_sekolah') is-invalid @enderror" value="{{ old('nama_sekolah') }}" required placeholder="Contoh: SMP Negeri 1 Makassar">
                     @error('nama_sekolah') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wilayah / Kecamatan</label>
+                    <input type="text" name="wilayah" class="form-control @error('wilayah') is-invalid @enderror" value="{{ old('wilayah') }}" placeholder="Contoh: Kec. Makasar">
+                    @error('wilayah') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
                     <label class="form-label">Subdomain Bawaan <span style="color:var(--bad)">*</span></label>
