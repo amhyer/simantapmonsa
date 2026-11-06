@@ -135,10 +135,12 @@ class PresensiMesinImportController extends Controller
                     if (count($contohTidakCocok) < 8) {
                         $contohTidakCocok[] = $nama;
                     }
+
                     continue;
                 }
                 if (count($kandidat) > 1) {
                     $hasil['ambigu']++;
+
                     continue;
                 }
 
@@ -148,16 +150,19 @@ class PresensiMesinImportController extends Controller
 
                 if ($nikLama !== null && $nikLama !== $nik) {
                     $hasil['bentrok']++;
+
                     continue;
                 }
                 if ($nikLama === $nik) {
                     $hasil['tetap']++;
+
                     continue;
                 }
 
                 $pemilik = $nikTerpakai[$nik] ?? null;
                 if ($pemilik !== null && $pemilik !== $user->id) {
                     $hasil['bentrok']++;
+
                     continue;
                 }
 
@@ -243,6 +248,7 @@ class PresensiMesinImportController extends Controller
             $nik = $this->normalizeNikCell($row[$nikIndex] ?? null);
             if ($nik === null) {
                 $barisDiabaikan++;
+
                 continue;
             }
 
@@ -250,16 +256,19 @@ class PresensiMesinImportController extends Controller
                 $waktu = $this->parseDateTimeCell($row[$dateTimeIndex] ?? null);
                 if ($waktu === null) {
                     $barisDiabaikan++;
+
                     continue;
                 }
                 $jenis = $this->jenisScan($statusIndex !== null ? (string) ($row[$statusIndex]['fmt'] ?? '') : '', $waktu);
                 $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
+
                 continue;
             }
 
             $tanggal = $this->parseDateCell($row[$tanggalIndex] ?? null);
             if ($tanggal === null) {
                 $barisDiabaikan++;
+
                 continue;
             }
 
@@ -277,7 +286,7 @@ class PresensiMesinImportController extends Controller
                 $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
             }
 
-            if (!$adaJam) {
+            if (! $adaJam) {
                 $barisDiabaikan++;
             }
         }
@@ -291,7 +300,7 @@ class PresensiMesinImportController extends Controller
             $tanggal = $scan['waktu']->copy()->startOfDay();
             $key = $scan['nik'].'|'.$tanggal->toDateString();
 
-            if (!isset($groups[$key])) {
+            if (! isset($groups[$key])) {
                 $groups[$key] = [
                     'nik' => $scan['nik'],
                     'tanggal' => $tanggal,
@@ -337,6 +346,7 @@ class PresensiMesinImportController extends Controller
                     if (count($contohNikTidakDikenal) < 8) {
                         $contohNikTidakDikenal[] = $group['nik'];
                     }
+
                     continue;
                 }
 
@@ -350,6 +360,7 @@ class PresensiMesinImportController extends Controller
                     if (in_array($record->metode, self::METODE_DILINDUNGI, true)
                         || in_array($record->status, self::STATUS_DILINDUNGI, true)) {
                         $hasil['dilindungi']++;
+
                         continue;
                     }
 
@@ -428,7 +439,7 @@ class PresensiMesinImportController extends Controller
         ]);
 
         $ext = strtolower((string) $request->file('file')->getClientOriginalExtension());
-        if (!in_array($ext, self::EKSTENSI_DIIZINKAN, true)) {
+        if (! in_array($ext, self::EKSTENSI_DIIZINKAN, true)) {
             return back()->withErrors(['file' => 'Format file harus XLS, XLSX, CSV, atau TXT.']);
         }
 
@@ -484,7 +495,7 @@ class PresensiMesinImportController extends Controller
 
     private function makeCsvReader(UploadedFile $file): CsvReader
     {
-        $reader = new CsvReader();
+        $reader = new CsvReader;
         $reader->setInputEncoding('UTF-8');
         $reader->setEnclosure('"');
 
@@ -713,7 +724,7 @@ class PresensiMesinImportController extends Controller
         }
 
         foreach (array_slice($panjang, count($pendek)) as $token) {
-            if (mb_strlen($token) > 2 && !in_array($token, self::TOKEN_GELAR, true)) {
+            if (mb_strlen($token) > 2 && ! in_array($token, self::TOKEN_GELAR, true)) {
                 return false;
             }
         }

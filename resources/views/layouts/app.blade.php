@@ -21,6 +21,14 @@
             --navy-dark: var(--violet-dark);
         }
     </style>
+    @elseif(auth()->check() && in_array(auth()->user()->peran, ['super_admin', 'fkkg'], true))
+    <style>
+        :root {
+            --navy: #4338CA;
+            --navy-light: #6366F1;
+            --navy-dark: #312E81;
+        }
+    </style>
     @endif
     @stack('styles')
 </head>

@@ -74,6 +74,24 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'peran' => 'super_admin',
+            'nama_pengguna' => 'superadmin_' . Str::random(5),
+            'tenant_id' => null,
+        ]);
+    }
+
+    public function fkkg(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'peran' => 'fkkg',
+            'nama_pengguna' => 'fkkg_' . Str::random(5),
+            'tenant_id' => null,
+        ]);
+    }
+
     public function forcePasswordChange(): static
     {
         return $this->state(fn (array $attributes) => [

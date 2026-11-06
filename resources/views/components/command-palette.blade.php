@@ -4,7 +4,14 @@
 
     $commandMenu = [];
 
-    if ($role === 'admin') {
+    if ($role === 'super_admin' || $role === 'fkkg') {
+        $commandMenu = [
+            ['title' => 'Dasbor Platform Multi-Sekolah', 'route' => route('superadmin.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
+            ['title' => 'Katalog Sekolah Terdaftar (Tenants)', 'route' => route('superadmin.tenants.index'), 'cat' => 'Sekolah', 'icon' => 'fas fa-school'],
+            ['title' => 'Tambah Sekolah Baru', 'route' => route('superadmin.tenants.index') . '#tambah', 'cat' => 'Sekolah', 'icon' => 'fas fa-plus-circle'],
+            ['title' => 'Akun Pengguna Seluruh Sekolah', 'route' => route('superadmin.users.index'), 'cat' => 'Pengguna', 'icon' => 'fas fa-users'],
+        ];
+    } elseif ($role === 'admin') {
         $commandMenu = [
             ['title' => 'Dasbor Sistem', 'route' => route('admin.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
             ['title' => 'Profil Sekolah', 'route' => route('admin.sekolah.index'), 'cat' => 'Master Data', 'icon' => 'fas fa-school'],

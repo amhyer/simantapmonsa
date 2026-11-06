@@ -108,6 +108,7 @@ Route::get('/dashboard', function () {
     if (!auth()->check()) return redirect()->route('login');
     $user = auth()->user();
     return match($user->peran) {
+        'super_admin', 'fkkg' => redirect()->route('superadmin.dashboard'),
         'admin' => redirect()->route('admin.dashboard'),
         'guru' => redirect()->route('guru.dashboard'),
         'siswa' => redirect()->route('siswa.dashboard'),
@@ -117,6 +118,16 @@ Route::get('/dashboard', function () {
         default => redirect()->route('login'),
     };
 })->name('home');
+
+// ==================== SUPER ADMIN / FKKG ROUTES ====================
+Route::middleware(['auth', 'role:super_admin,fkkg', 'force.password.change'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
+    Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
+    Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
+    Route::post('/tenants/{tenant}/toggle', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleActive'])->name('tenants.toggle');
+    Route::get('/users', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'users'])->name('users.index');
+});
 
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admin')->name('admin.')->group(function () {

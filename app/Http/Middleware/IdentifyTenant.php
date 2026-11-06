@@ -38,7 +38,10 @@ class IdentifyTenant
         $user = $request->user();
         $userTenantId = ($user && $user->tenant_id !== null) ? (int) $user->tenant_id : null;
 
-        if ($userTenantId !== null) {
+        // Super Admin / FKKG dan rute portal /superadmin tidak dibatasi oleh tenant tunggal
+        if ($request->is('superadmin*') || ($user && in_array($user->peran, ['super_admin', 'fkkg'], true) && $requestedSubdomain === null)) {
+            $resolvedTenantId = null;
+        } elseif ($userTenantId !== null) {
             if ($resolvedTenantId !== null && $resolvedTenantId !== $userTenantId) {
                 abort(403, 'Akses lintas sekolah (cross-tenant) tidak diizinkan.');
             }
