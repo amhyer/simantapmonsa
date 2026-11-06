@@ -170,7 +170,7 @@ class PresensiMesinImportController extends Controller
         });
 
         AktivitasService::log(
-            'import',
+            'tambah',
             'Import NIK karyawan dari mesin presensi',
             "Import data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
             'users',
@@ -401,7 +401,7 @@ class PresensiMesinImportController extends Controller
         });
 
         AktivitasService::log(
-            'import',
+            'tambah',
             'Import log presensi mesin',
             "Import log mesin: {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, {$hasil['tetap']} tetap, {$hasil['dilindungi']} dilindungi, {$hasil['nik_tidak_dikenal']} NIK tidak dikenal.",
             'presensi_pegawai',
