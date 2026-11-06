@@ -204,4 +204,85 @@ class PresensiMesinTarikTest extends TestCase
             ])
             ->assertForbidden();
     }
+
+    public function test_tarik_karyawan_mengisi_nik_berdasarkan_nama(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create(['nama_lengkap' => 'Amirullah']);
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('pegawai')->once()->andReturn([
+                ['nik' => '0000000002', 'nama' => 'Amirullah, S.Pd'],
+                ['nik' => '0000000003', 'nama' => 'Bukan Pegawai Sekolah Ini'],
+            ]);
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.karyawan.tarik'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertSame('0000000002', $guru->fresh()->nik);
+    }
+
+    public function test_tarik_karyawan_tidak_menimpa_nik_berbeda(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create([
+            'nama_lengkap' => 'Amirullah',
+            'nik' => '7309082109930003',
+        ]);
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('pegawai')->once()->andReturn([
+                ['nik' => '0000000002', 'nama' => 'Amirullah, S.Pd'],
+            ]);
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.karyawan.tarik'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('7309082109930003', $guru->fresh()->nik);
+    }
+
+    public function test_tarik_karyawan_tanpa_data_pegawai_tetap_berhasil(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('pegawai')->once()->andReturn([]);
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.karyawan.tarik'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+    }
+
+    public function test_tarik_karyawan_melaporkan_gagal_baca_database(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('pegawai')->once()->andThrow(new RuntimeException('Database terkunci.'));
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.karyawan.tarik'))
+            ->assertRedirect()
+            ->assertSessionHasErrors('mesin');
+    }
+
+    public function test_non_admin_tidak_boleh_menarik_karyawan(): void
+    {
+        $guru = User::factory()->guru()->create();
+
+        $this->actingAs($guru)
+            ->post(route('admin.presensi.mesin.karyawan.tarik'))
+            ->assertForbidden();
+    }
 }
