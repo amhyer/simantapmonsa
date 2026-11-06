@@ -15,7 +15,7 @@
         <div class="card-header"><h3>Alur Import</h3></div>
         <div class="card-body">
             <ol style="margin:0;padding-left:20px;font-size:14px;color:#344054;line-height:1.8">
-                <li><strong>Tarik langsung</strong> — klik <em>Tarik Data Sekarang</em> untuk membaca database Attendance Management (<code>att2000.mdb</code>) di komputer mesin. Tidak perlu mengunduh file.</li>
+                <li><strong>Tarik langsung</strong> — klik <em>Tarik Data Sekarang</em> untuk membaca database Attendance Management (<code>att2000.mdb</code>) di komputer mesin. Tidak perlu mengunduh file. Ada juga tombol <em>Tarik Semua Data (1 Klik)</em> yang otomatis menelusuri seluruh rentang scan.</li>
                 <li><strong>Import data karyawan</strong> — unggah file berisi <code>NIK</code> dan <code>Nama</code>, atau klik <em>Tarik NIK dari Database Mesin</em>. Sistem mencocokkan nama ke akun guru/kepsek/tendik lalu menyimpan NIK.</li>
                 <li><strong>Import log mesin</strong> — unggah export mesin (mis. <code>InOutData.xls</code>) atau template CSV. Sistem mengambil scan masuk paling awal dan pulang paling akhir per pegawai per hari.</li>
                 <li>Data hasil koreksi manual, serta status <code>izin</code>/<code>sakit</code>, tidak akan ditimpa.</li>
@@ -77,6 +77,11 @@
                 <div>
                     <button type="submit" id="btn-tarik" class="btn btn-sm" style="background:#1F3864;color:#fff">Tarik Data Sekarang</button>
                 </div>
+            </form>
+
+            <form action="{{ route('admin.presensi.mesin.tarik.semua') }}" method="POST" style="margin-top:12px">
+                @csrf
+                <button type="submit" id="btn-tarik-semua" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang? Proses ini akan menelusuri seluruh rentang scan tersedia.')">Tarik Semua Data (1 Klik)</button>
             </form>
 
             <div id="hasil-tes" style="font-size:13px;margin-top:10px;color:#475467"></div>
@@ -202,6 +207,16 @@
             form.addEventListener('submit', function () {
                 tombolTarik.disabled = true;
                 tombolTarik.textContent = 'Menarik data...';
+            });
+        }
+
+        const formSemua = document.getElementById('form-tarik-semua');
+        const tombolTarikSemua = document.getElementById('btn-tarik-semua');
+
+        if (formSemua && tombolTarikSemua) {
+            formSemua.addEventListener('submit', function () {
+                tombolTarikSemua.disabled = true;
+                tombolTarikSemua.textContent = 'Menarik semua data...';
             });
         }
     })();

@@ -181,6 +181,10 @@ class PresensiMesinTarikTest extends TestCase
                 'jumlah_pegawai' => 10,
                 'jumlah_scan' => 100,
             ]);
+            $mock->shouldReceive('rentang')->once()->andReturn([
+                'min' => Carbon::parse('2026-06-01'),
+                'maks' => Carbon::parse('2026-06-02'),
+            ]);
         });
 
         $this->actingAs($admin)
@@ -191,6 +195,65 @@ class PresensiMesinTarikTest extends TestCase
                 'engine' => 'powershell',
                 'jumlah_pegawai' => 10,
             ]);
+    }
+
+    public function test_tarik_semua_memproses_seluruh_rentang_scan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create(['nama_lengkap' => 'Amirullah', 'nik' => '0000000002']);
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('rentang')->once()->andReturn([
+                'min' => Carbon::parse('2026-06-01'),
+                'maks' => Carbon::parse('2026-06-02'),
+            ]);
+            $mock->shouldReceive('baca')->once()->andReturn([
+                ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 06:55:00'), 'jenis' => 'masuk'],
+                ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 14:10:00'), 'jenis' => 'pulang'],
+            ]);
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik.semua'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseCount('presensi_pegawai', 1);
+    }
+
+    public function test_tarik_semua_mendapatkan_error_jika_tidak_bisa_membaca(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('rentang')->once()->andThrow(new RuntimeException('Database terkunci.'));
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik.semua'))
+            ->assertRedirect()
+            ->assertSessionHasErrors('mesin');
+
+        $this->assertDatabaseCount('presensi_pegawai', 0);
+    }
+
+    public function test_tarik_semua_dengan_tanpa_scan_membuat_tidak_ada_data(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('rentang')->once()->andReturn([
+                'min' => null,
+                'maks' => null,
+            ]);
+        });
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik.semua'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
     }
 
     public function test_non_admin_tidak_boleh_menarik_data_mesin(): void

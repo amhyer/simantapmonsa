@@ -156,6 +156,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::get('/mesin/template-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateLog'])->name('mesin.template.log');
         Route::post('/mesin/import-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importLog'])->middleware('throttle:10,1')->name('mesin.log.import');
         Route::post('/mesin/tarik', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarik'])->middleware('throttle:10,1')->name('mesin.tarik');
+        Route::post('/mesin/tarik-semua', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikSemua'])->middleware('throttle:5,1')->name('mesin.tarik.semua');
         Route::post('/mesin/tes-koneksi', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tesKoneksi'])->middleware('throttle:30,1')->name('mesin.tes');
 
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');

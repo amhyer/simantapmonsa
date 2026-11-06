@@ -441,12 +441,107 @@ class PresensiMesinImportController extends Controller
         ));
     }
 
+    public function tarikSemua(AttendanceDatabaseReader $reader, PresensiMesinService $presensi): RedirectResponse
+    {
+        try {
+            $rentang = $reader->rentang();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
+        }
+
+        $dari = $rentang['min'];
+        $sampai = $rentang['maks'];
+
+        if ($dari === null || $sampai === null) {
+            Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+
+            return back()->with('success', 'Database mesin berhasil dibaca, tetapi tidak ada scan pada database.');
+        }
+
+        $hasil = [
+            'scans' => 0,
+            'dibuat' => 0,
+            'diperbarui' => 0,
+            'tetap' => 0,
+            'dilindungi' => 0,
+            'nik_tidak_dikenal' => 0,
+            'contoh_nik_tidak_dikenal' => [],
+            'baris_diabaikan' => 0,
+        ];
+
+        $mulai = $dari->copy()->startOfDay();
+        $batasAkhir = $sampai->copy()->startOfDay();
+
+        while ($mulai->lte($batasAkhir)) {
+            $batasChunk = $mulai->copy()->addDays(self::MAKS_HARI_TARIK - 1);
+            $sampaiChunk = $batasChunk->lt($batasAkhir) ? $batasChunk : $batasAkhir;
+
+            try {
+                $scans = $reader->baca($mulai, $sampaiChunk);
+            } catch (\Throwable $e) {
+                report($e);
+
+                return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
+            }
+
+            $hasil['scans'] += count($scans);
+
+            if ($scans !== []) {
+                $r = $presensi->importScans($scans, auth()->id());
+                $hasil['dibuat'] += $r['dibuat'];
+                $hasil['diperbarui'] += $r['diperbarui'];
+                $hasil['tetap'] += $r['tetap'];
+                $hasil['dilindungi'] += $r['dilindungi'];
+                $hasil['nik_tidak_dikenal'] += $r['nik_tidak_dikenal'];
+                $hasil['contoh_nik_tidak_dikenal'] = array_values(array_unique(array_merge(
+                    (array) $hasil['contoh_nik_tidak_dikenal'],
+                    (array) $r['contoh_nik_tidak_dikenal'],
+                )));
+            }
+
+            if ($sampaiChunk->eq($batasAkhir)) {
+                break;
+            }
+
+            $mulai = $sampaiChunk->copy()->addDay();
+        }
+
+        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+
+        AktivitasService::log(
+            'tambah',
+            'Tarik presensi dari database mesin',
+            "Tarik data mesin {$dari->toDateString()} s/d {$sampai->toDateString()}: {$hasil['scans']} scan, {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, {$hasil['tetap']} tetap, {$hasil['dilindungi']} dilindungi, {$hasil['nik_tidak_dikenal']} NIK tidak dikenal.",
+            'presensi_pegawai',
+            null,
+            null,
+            $hasil,
+        );
+
+        return back()->with('success', $this->pesanHasil($hasil, 'Tarik semua data mesin selesai'));
+    }
+
     /**
      * Cek apakah database Attendance Management bisa dibaca dari server ini.
      */
     public function tesKoneksi(AttendanceDatabaseReader $reader): JsonResponse
     {
-        return response()->json($reader->status());
+        $status = $reader->status();
+
+        if ($status['ok'] ?? false) {
+            try {
+                $rentang = $reader->rentang();
+                if ($rentang['maks'] !== null) {
+                    $status['terakhir_scan'] = $rentang['maks']->toDateTimeString();
+                }
+            } catch (\Throwable) {
+                // Lewati informasi rentang waktu bila pembacaan gagal.
+            }
+        }
+
+        return response()->json($status);
     }
 
     /**
