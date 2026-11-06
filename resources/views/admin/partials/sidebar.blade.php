@@ -125,6 +125,7 @@
             ]],
             ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
                 ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
+                ['route' => 'admin.presensi.mesin.index', 'icon' => 'lucide-upload', 'label' => 'Import Presensi Mesin'],
                 ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Kartu QR Siswa & Pegawai'],
             ]],
             ['label' => 'DATA KOKURIKULER (P5)', 'icon' => 'lucide-notebook-pen', 'children' => [

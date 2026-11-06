@@ -130,6 +130,13 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
         Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
         Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
+
+        Route::get('/mesin', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'index'])->name('mesin.index');
+        Route::get('/mesin/template-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateKaryawan'])->name('mesin.template.karyawan');
+        Route::post('/mesin/import-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importKaryawan'])->middleware('throttle:10,1')->name('mesin.karyawan.import');
+        Route::get('/mesin/template-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateLog'])->name('mesin.template.log');
+        Route::post('/mesin/import-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importLog'])->middleware('throttle:10,1')->name('mesin.log.import');
+
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
         Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');
         Route::get('/kartu-siswa/cetak-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'cetakSiswaMassal'])->name('kartu.siswa.cetak-massal');

@@ -19,6 +19,16 @@
     </div>
 
     <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+            <h3 style="margin-right:auto">Import dari Mesin Fingerprint</h3>
+            <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-sm">Import Presensi Mesin</a>
+        </div>
+        <div class="card-body">
+            <p style="margin:0;color:#667085;font-size:13px">Tarik data absensi dari mesin fingerprint (XLS/XLSX/CSV) ke presensi pegawai. Data koreksi manual dan izin/sakit tetap dilindungi.</p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
         <div class="card-header"><h3>📍 Area yang Diizinkan untuk Absensi</h3></div>
         <div class="card-body">
             <p style="margin:0 0 14px;color:#667085;font-size:13px">Pegawai hanya dapat mencatat masuk/pulang dari titik aktif dalam radius yang ditentukan. Gunakan lokasi perangkat admin atau isi koordinat secara manual.</p>
