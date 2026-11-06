@@ -205,4 +205,81 @@ class SuperAdminTenantSubscriptionTest extends TestCase
         $resTabWilayah->assertSee('Kec. Biringkanaya');
         $resTabWilayah->assertSee('Kec. Panakkukang');
     }
+
+    public function test_ketika_sekolah_dihapus_data_pengguna_tetap_ada_dan_ditarik_ke_superadmin(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $sekolah = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307099',
+            'nama_sekolah' => 'SD Negeri Dihapus 99',
+            'subdomain' => 'sdndihapus99',
+            'aktif' => true,
+        ]);
+
+        $guru = User::factory()->guru()->create([
+            'tenant_id' => $sekolah->id,
+            'nama_lengkap' => 'Guru Yang Tetap Selamat',
+        ]);
+
+        $siswa = User::factory()->siswa()->create([
+            'tenant_id' => $sekolah->id,
+            'nama_lengkap' => 'Siswa Yang Tetap Tersimpan',
+        ]);
+
+        // Hapus sekolah
+        $deleteRes = $this->actingAs($superAdmin)
+            ->delete(route('superadmin.tenants.destroy', $sekolah->uuid));
+
+        $deleteRes->assertRedirect(route('superadmin.tenants.index'));
+        $deleteRes->assertSessionHas('success');
+
+        // Sekolah terhapus dari database
+        $this->assertDatabaseMissing('tenants', ['id' => $sekolah->id]);
+
+        // DATA PENGGUNA TETAP ADA DI DATABASE! (Tidak hilang / tidak terhapus)
+        $this->assertDatabaseHas('users', ['id' => $guru->id, 'nama_lengkap' => 'Guru Yang Tetap Selamat']);
+        $this->assertDatabaseHas('users', ['id' => $siswa->id, 'nama_lengkap' => 'Siswa Yang Tetap Tersimpan']);
+
+        // Data ditarik kembali ke Super Admin Pusat (tenant_id = null)
+        $guru->refresh();
+        $siswa->refresh();
+        $this->assertNull($guru->tenant_id);
+        $this->assertNull($siswa->tenant_id);
+
+        // Super Admin dapat melihat akun yang ditarik ini di filter unassigned
+        $resUnassigned = $this->actingAs($superAdmin)
+            ->get(route('superadmin.users.index', ['tenant_id' => 'unassigned']));
+        $resUnassigned->assertOk();
+        $resUnassigned->assertSee('Guru Yang Tetap Selamat');
+        $resUnassigned->assertSee('Siswa Yang Tetap Tersimpan');
+    }
+
+    public function test_superadmin_dapat_menautkan_kembali_akun_ke_sekolah_lain(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $sekolahBaru = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40307088',
+            'nama_sekolah' => 'SD Negeri Tujuan Baru',
+            'subdomain' => 'tujuanbaru',
+            'aktif' => true,
+        ]);
+
+        $akunBebas = User::factory()->guru()->create([
+            'tenant_id' => null,
+            'nama_lengkap' => 'Guru Pindahan',
+        ]);
+
+        $res = $this->actingAs($superAdmin)
+            ->post(route('superadmin.users.assign-tenant', $akunBebas->id), [
+                'tenant_id' => $sekolahBaru->id,
+            ]);
+
+        $res->assertSessionHas('success');
+        $akunBebas->refresh();
+        $this->assertSame($sekolahBaru->id, $akunBebas->tenant_id);
+    }
 }

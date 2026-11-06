@@ -126,10 +126,12 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change'])->prefix
     Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
     Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
+    Route::delete('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('tenants.destroy');
     Route::post('/tenants/{tenant}/toggle', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleActive'])->name('tenants.toggle');
     Route::post('/tenants/{tenant}/impersonate', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'impersonate'])->name('tenants.impersonate');
     Route::post('/tenants/{tenant}/reset-admin-password', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'resetAdminPassword'])->name('tenants.reset-admin-password');
     Route::get('/users', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'users'])->name('users.index');
+    Route::post('/users/{user}/assign-tenant', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'assignTenant'])->name('users.assign-tenant');
 });
 
 Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'leaveImpersonate'])

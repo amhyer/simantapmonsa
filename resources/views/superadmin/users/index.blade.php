@@ -232,6 +232,9 @@
                 <div style="flex:1.5;min-width:180px">
                     <select name="tenant_id" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Sekolah</option>
+                        <option value="unassigned" {{ $tenantId === 'unassigned' ? 'selected' : '' }} style="color:#B45309;font-weight:700">
+                            📦 Tanpa Sekolah / Ditarik ke Pusat ({{ $totalUnassigned }})
+                        </option>
                         @foreach($tenantsList as $t)
                             <option value="{{ $t->id }}" {{ (string)$tenantId === (string)$t->id ? 'selected' : '' }}>
                                 {{ $t->nama_sekolah }} {{ $t->wilayah ? "({$t->wilayah})" : '' }}
@@ -272,7 +275,11 @@
                     <i class="fas fa-map-marker-alt" style="margin-right:4px"></i> Wilayah: {{ $wilayah }}
                 </span>
             @endif
-            @if($tenantId)
+            @if($tenantId === 'unassigned')
+                <span class="tag" style="background:#FEF3C7;color:#92400E;font-weight:700">
+                    <i class="fas fa-archive" style="margin-right:4px"></i> Sekolah: Ditarik ke Pusat / Tanpa Sekolah
+                </span>
+            @elseif($tenantId)
                 @php $tObj = $tenantsList->firstWhere('id', $tenantId); @endphp
                 <span class="tag" style="background:#EEF2FF;color:#4338CA;font-weight:700">
                     <i class="fas fa-school" style="margin-right:4px"></i> Sekolah: {{ $tObj?->nama_sekolah ?? $tenantId }}
@@ -330,8 +337,15 @@
                                                 {{ $u->tenant->nama_sekolah }}
                                             </a>
                                             <div style="font-size:11px;color:var(--muted)">NPSN: {{ $u->tenant->npsn }}</div>
+                                        @elseif($u->peran === 'super_admin')
+                                            <span class="tag" style="background:#EEF2FF;color:#4338CA;font-weight:700">Super Admin Pusat</span>
                                         @else
-                                            <span style="color:var(--muted)">Pusat Platform</span>
+                                            <div>
+                                                <span class="tag" style="background:#FEF3C7;color:#92400E;font-weight:700">
+                                                    <i class="fas fa-archive" style="margin-right:4px"></i>Ditarik ke Pusat
+                                                </span>
+                                            </div>
+                                            <div style="font-size:11px;color:var(--muted);margin-top:2px">Menunggu penugasan sekolah</div>
                                         @endif
                                     </td>
                                     <td style="padding:11px 14px;font-weight:600">{{ $u->nama_lengkap }}</td>

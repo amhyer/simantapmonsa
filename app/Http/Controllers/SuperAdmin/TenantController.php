@@ -150,6 +150,23 @@ class TenantController extends Controller
         return back()->with('success', "Sekolah '{$tenant->nama_sekolah}' berhasil {$statusStr}.");
     }
 
+    public function destroy(Tenant $tenant)
+    {
+        $namaSekolah = $tenant->nama_sekolah;
+        $jumlahUser = User::where('tenant_id', $tenant->id)->count();
+
+        DB::transaction(function () use ($tenant) {
+            // Foreign key nullOnDelete menjamin data tidak hilang.
+            // Update eksplisit untuk kepastian data ditarik ke Super Admin Pusat.
+            User::where('tenant_id', $tenant->id)->update(['tenant_id' => null]);
+            Siswa::where('tenant_id', $tenant->id)->update(['tenant_id' => null]);
+            $tenant->delete();
+        });
+
+        return redirect()->route('superadmin.tenants.index')
+            ->with('success', "Sekolah '{$namaSekolah}' berhasil dihapus dari sistem. Seluruh {$jumlahUser} akun pengguna tetap aman di database dan otomatis ditarik kembali ke Super Admin Pusat.");
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -215,7 +232,7 @@ class TenantController extends Controller
         $tenantId = $request->get('tenant_id');
         $tab = $request->get('tab', 'semua'); // 'semua', 'per_sekolah', 'per_wilayah'
 
-        $query = User::with('tenant')->whereNotNull('tenant_id');
+        $query = User::with('tenant');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -229,7 +246,9 @@ class TenantController extends Controller
             $query->where('peran', $peran);
         }
 
-        if ($tenantId !== null && $tenantId !== '') {
+        if ($tenantId === 'unassigned') {
+            $query->whereNull('tenant_id');
+        } elseif ($tenantId !== null && $tenantId !== '') {
             $query->where('tenant_id', $tenantId);
         }
 
@@ -281,7 +300,8 @@ class TenantController extends Controller
                 return $rw;
             });
 
-        $totalUsersPlatform = User::whereNotNull('tenant_id')->count();
+        $totalUsersPlatform = User::count();
+        $totalUnassigned = User::whereNull('tenant_id')->where('peran', '!=', 'super_admin')->count();
 
         return view('superadmin.users.index', compact(
             'users',
@@ -294,8 +314,26 @@ class TenantController extends Controller
             'tenantsList',
             'rekapSekolah',
             'rekapWilayah',
-            'totalUsersPlatform'
+            'totalUsersPlatform',
+            'totalUnassigned'
         ));
+    }
+
+    public function assignTenant(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'tenant_id' => 'required|exists:tenants,id',
+        ]);
+
+        $tenant = Tenant::findOrFail($validated['tenant_id']);
+        $user->tenant_id = $tenant->id;
+        $user->save();
+
+        if ($user->peran === 'siswa' && ! empty($user->nama_pengguna)) {
+            Siswa::where('nisn', $user->nama_pengguna)->update(['tenant_id' => $tenant->id]);
+        }
+
+        return back()->with('success', "Akun '{$user->nama_lengkap}' berhasil ditautkan kembali ke sekolah {$tenant->nama_sekolah}.");
     }
 
     public function impersonate(Tenant $tenant)

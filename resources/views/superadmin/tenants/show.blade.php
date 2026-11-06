@@ -346,6 +346,33 @@
     </div>
 </div>
 
+{{-- Zona Bahaya: Hapus Sekolah & Tarik Data ke Pusat --}}
+<div class="card" style="margin-top:20px;border:1px solid #FECACA">
+    <div class="card-header" style="background:#FEF2F2;justify-content:space-between">
+        <h3 style="color:#991B1B"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Tindakan Khusus: Hapus / Lepas Sekolah</h3>
+        <span class="tag tag-bad">Zona Bahaya</span>
+    </div>
+    <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div style="max-width:700px">
+                <div style="font-weight:700;font-size:14px;color:#991B1B;margin-bottom:4px">
+                    Hapus Pendaftaran Sekolah "{{ $tenant->nama_sekolah }}" dari Sistem
+                </div>
+                <div style="font-size:12.5px;color:#4B5563;line-height:1.5">
+                    <b>Proteksi Integritas Data Super Admin:</b> Menghapus sekolah ini <u>TIDAK</u> akan menghapus akun siswa, guru, atau nilai riwayat ujian dari database PostgreSQL. Seluruh data akun dan hasil ujian tetap utuh tersimpan di database dan otomatis <b>ditarik kembali ke akun Super Admin Pusat</b> (status <i>Ditarik ke Pusat / Unassigned</i>). Anda dapat melihat dan menautkannya kembali kapan saja.
+                </div>
+            </div>
+            <form method="POST" action="{{ route('superadmin.tenants.destroy', $tenant->uuid) }}" onsubmit="return confirm('PERINGATAN: Apakah Anda yakin ingin menghapus sekolah {{ $tenant->nama_sekolah }}? Seluruh data akun dan nilai akan tetap aman tersimpan di database dan otomatis ditarik kembali ke akun Super Admin.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm btn-bad">
+                    <i class="fas fa-trash-alt"></i> Hapus Sekolah &amp; Tarik Data ke Pusat
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function setPerpanjang(months) {
     const d = new Date();
