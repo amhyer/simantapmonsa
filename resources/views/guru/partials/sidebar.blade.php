@@ -16,7 +16,7 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
-        ['label' => 'CBT, TRYOUT & TKA', 'items' => [
+        ['label' => 'CBT, TRYOUT & TKA', 'asesmen' => true, 'items' => [
             ['label' => 'Ujian CBT', 'icon' => 'lucide-monitor', 'open' => request()->routeIs('cbt.*'), 'children' => [
                 ['route' => 'cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
                 ['route' => 'cbt.question-banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],

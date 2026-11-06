@@ -73,6 +73,8 @@ if (!function_exists('activeAdminTab')) {
             'admin.referensi.guru',
             'admin.referensi.pembelajaran',
             'admin.referensi.foto-siswa',
+            'admin.referensi.ekstrakurikuler',
+            'admin.referensi.kelompok-mapel',
             'admin.peta-kelas.*',
             'admin.mapel.*',
             'admin.semester.*',
@@ -82,6 +84,7 @@ if (!function_exists('activeAdminTab')) {
             'admin.modul.*',
             'admin.bobot.*',
             'admin.backup.*',
+            'admin.api-keys.*',
             'admin.log.*',
             'admin.sheet.*'
         )) {

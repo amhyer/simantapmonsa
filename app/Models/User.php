@@ -33,6 +33,7 @@ class User extends Authenticatable
         'dapodik_id',
         'tenant_id',
         'nip',
+        'nik',
         'foto',
         'qr_card_version',
         'qr_previous_token_hash',

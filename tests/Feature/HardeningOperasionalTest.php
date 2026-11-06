@@ -130,7 +130,7 @@ class HardeningOperasionalTest extends TestCase
         $this->actingAs($guru)
             ->get('/admin/dashboard')
             ->assertStatus(403)
-            ->assertSee('Akses ditolak');
+            ->assertSee('Akses Ditolak');
     }
 
     public function test_halaman_419_memakai_tampilan_simantap(): void

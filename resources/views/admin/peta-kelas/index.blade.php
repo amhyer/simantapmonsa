@@ -5,6 +5,10 @@
 @section('page_title', 'Peta Kelas')
 @section('page_subtitle', 'Pemetaan guru dan siswa per kelas — seret siswa untuk pindah kelas')
 
+@section('header_actions')
+    <a href="{{ route('admin.peta-kelas.daftar') }}" class="btn btn-sm btn-ghost">Daftar Rombel</a>
+@endsection
+
 @section('content')
     @if(session('success'))
         <div class="toast toast-success" style="position:static;margin-bottom:16px">✅ {{ session('success') }}</div>

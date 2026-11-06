@@ -125,7 +125,7 @@
             ]],
             ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
                 ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
-                ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Pemetaan QR Kartu Siswa'],
+                ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Kartu QR Siswa & Pegawai'],
             ]],
             ['label' => 'DATA KOKURIKULER (P5)', 'icon' => 'lucide-notebook-pen', 'children' => [
                 ['route' => 'admin.kokurikuler.tema', 'icon' => 'lucide-target', 'label' => 'Daftar Tema'],

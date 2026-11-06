@@ -9,6 +9,12 @@
 @section('page_title', 'Profil Saya')
 @section('page_subtitle', 'Data lengkap dari Dapodik')
 
+@section('header_actions')
+    <a href="{{ route('siswa.profil.edit') }}" class="btn btn-sm btn-ghost">
+        <i class="fas fa-edit"></i> Edit Profil
+    </a>
+@endsection
+
 @section('content')
     @if(session('success'))
         <div class="note note-ok" style="margin-bottom:16px">
@@ -102,35 +108,6 @@
         </div>
     </div>
 
-    @if(isset($kartuSaya))
-        <div class="card" style="margin-bottom:20px" x-data="{ sisi: 'depan' }">
-            <div class="card-header" style="gap:10px;flex-wrap:wrap">
-                <h3 style="margin-right:auto"><i class="fas fa-id-card" style="margin-right:8px;color:var(--navy)"></i>Kartu Identitas Absensi Saya</h3>
-                <div style="display:flex;gap:4px;background:#F2F4F7;padding:3px;border-radius:8px;border:1px solid #E4E7EC">
-                    <button type="button" class="btn btn-xs" :style="sisi === 'depan' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'depan'">Tampak Depan</button>
-                    <button type="button" class="btn btn-xs" :style="sisi === 'belakang' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'belakang'">Tampak Belakang</button>
-                </div>
-                <a href="{{ route('siswa.kartu.cetak') }}" class="btn btn-sm" style="background:var(--navy);color:#fff">🖨️ Cetak Kartu Identitas</a>
-            </div>
-            <div class="card-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
-                <div x-show="sisi === 'depan'">
-                    @include('presensi.partials.id-card', ['card' => $kartuSaya])
-                </div>
-                <div x-show="sisi === 'belakang'" x-cloak>
-                    @include('presensi.partials.id-card-back', ['card' => $kartuSaya])
-                </div>
-                <div style="flex:1;min-width:220px;font-size:13px;color:var(--muted)">
-                    <p style="margin-top:0;color:var(--text);font-weight:600">Cara Menggunakan Kartu Identitas Absensi:</p>
-                    <ul style="padding-left:18px;margin-bottom:0;line-height:1.6">
-                        <li>Tunjukkan atau cetak kartu identitas ini untuk dipindai oleh <strong>Guru yang mengajar pada hari itu</strong> sesuai jadwal mata pelajaran maupun wali kelas.</li>
-                        <li>Sisi belakang memuat tata tertib pemakaian resmi dan kontak sekolah jika kartu tercecer.</li>
-                        <li>Jangan membagikan foto kode QR kepada orang lain agar catatan kehadiran tetap akurat.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    @endif
-
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">
             <h3><i class="fas fa-map-marker-alt" style="margin-right:8px;color:var(--bad)"></i>Alamat</h3>
@@ -171,35 +148,6 @@
             </div>
         </div>
     </div>
-
-    @if(isset($kartuSaya))
-        <div class="card" style="margin-bottom:20px" x-data="{ sisi: 'depan' }">
-            <div class="card-header" style="gap:10px;flex-wrap:wrap">
-                <h3 style="margin-right:auto"><i class="fas fa-id-card" style="margin-right:8px;color:var(--navy)"></i>Kartu Identitas Absensi Saya</h3>
-                <div style="display:flex;gap:4px;background:#F2F4F7;padding:3px;border-radius:8px;border:1px solid #E4E7EC">
-                    <button type="button" class="btn btn-xs" :style="sisi === 'depan' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'depan'">Tampak Depan</button>
-                    <button type="button" class="btn btn-xs" :style="sisi === 'belakang' ? 'background:#1D2939;color:#fff;font-weight:700' : 'background:transparent;color:#475467'" @click="sisi = 'belakang'">Tampak Belakang</button>
-                </div>
-                <a href="{{ route('siswa.kartu.cetak') }}" class="btn btn-sm" style="background:var(--navy);color:#fff">🖨️ Cetak Kartu Identitas</a>
-            </div>
-            <div class="card-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
-                <div x-show="sisi === 'depan'">
-                    @include('presensi.partials.id-card', ['card' => $kartuSaya])
-                </div>
-                <div x-show="sisi === 'belakang'" x-cloak>
-                    @include('presensi.partials.id-card-back', ['card' => $kartuSaya])
-                </div>
-                <div style="flex:1;min-width:220px;font-size:13px;color:var(--muted)">
-                    <p style="margin-top:0;color:var(--text);font-weight:600">Cara Menggunakan Kartu Identitas Absensi:</p>
-                    <ul style="padding-left:18px;margin-bottom:0;line-height:1.6">
-                        <li>Tunjukkan atau cetak kartu identitas ini untuk dipindai oleh <strong>Guru yang mengajar pada hari itu</strong> sesuai jadwal mata pelajaran maupun wali kelas.</li>
-                        <li>Sisi belakang memuat tata tertib pemakaian resmi dan kontak sekolah jika kartu tercecer.</li>
-                        <li>Jangan membagikan foto kode QR kepada orang lain agar catatan kehadiran tetap akurat.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    @endif
 
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">

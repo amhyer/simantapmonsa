@@ -67,6 +67,12 @@
             ['title' => 'Catatan dari Guru', 'route' => route('ortu.catatan.index'), 'cat' => 'Pemantauan', 'icon' => 'fas fa-sticky-note'],
             ['title' => 'Laporan / Rapor Anak', 'route' => route('ortu.laporan.index'), 'cat' => 'Pelaporan', 'icon' => 'fas fa-file-alt'],
         ];
+    } elseif ($role === 'tendik') {
+        $commandMenu = [
+            ['title' => 'Presensi Mandiri Saya', 'route' => route('presensi.pegawai.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-user-check'],
+            ['title' => 'Kartu Identitas Presensi', 'route' => route('presensi.pegawai.kartu'), 'cat' => 'Identitas', 'icon' => 'fas fa-id-card'],
+            ['title' => 'Ganti Kata Sandi', 'route' => route('force-password-change.show'), 'cat' => 'Keamanan', 'icon' => 'fas fa-key'],
+        ];
     }
 @endphp
 
