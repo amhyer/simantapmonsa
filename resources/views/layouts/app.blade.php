@@ -21,7 +21,7 @@
             --navy-dark: var(--violet-dark);
         }
     </style>
-    @elseif(auth()->check() && in_array(auth()->user()->peran, ['super_admin', 'fkkg'], true))
+    @elseif(auth()->check() && auth()->user()->peran === 'super_admin')
     <style>
         :root {
             --navy: #4338CA;

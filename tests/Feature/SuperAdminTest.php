@@ -17,7 +17,7 @@ class SuperAdminTest extends TestCase
         $this->artisan('superadmin:create', [
             '--user' => 'pusat_admin',
             '--pass' => 'Pusat12345!',
-            '--name' => 'Admin Pusat FKKG',
+            '--name' => 'Super Administrator Pusat',
             '--email' => 'pusat@simantap.id',
         ])->assertSuccessful();
 

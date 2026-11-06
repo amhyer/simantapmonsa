@@ -108,7 +108,7 @@ Route::get('/dashboard', function () {
     if (!auth()->check()) return redirect()->route('login');
     $user = auth()->user();
     return match($user->peran) {
-        'super_admin', 'fkkg' => redirect()->route('superadmin.dashboard'),
+        'super_admin' => redirect()->route('superadmin.dashboard'),
         'admin' => redirect()->route('admin.dashboard'),
         'guru' => redirect()->route('guru.dashboard'),
         'siswa' => redirect()->route('siswa.dashboard'),
@@ -119,8 +119,8 @@ Route::get('/dashboard', function () {
     };
 })->name('home');
 
-// ==================== SUPER ADMIN / FKKG ROUTES ====================
-Route::middleware(['auth', 'role:super_admin,fkkg', 'force.password.change'])->prefix('superadmin')->name('superadmin.')->group(function () {
+// ==================== SUPER ADMIN ROUTES ====================
+Route::middleware(['auth', 'role:super_admin', 'force.password.change'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
     Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');

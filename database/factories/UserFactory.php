@@ -83,15 +83,6 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function fkkg(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'peran' => 'fkkg',
-            'nama_pengguna' => 'fkkg_' . Str::random(5),
-            'tenant_id' => null,
-        ]);
-    }
-
     public function forcePasswordChange(): static
     {
         return $this->state(fn (array $attributes) => [

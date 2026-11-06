@@ -1,7 +1,7 @@
 @php
     $user = auth()->user();
     $peranLabel = match ($user?->peran) {
-        'super_admin', 'fkkg' => 'Super Administrator (FKKG)',
+        'super_admin' => 'Super Administrator',
         'admin' => 'Administrator Sekolah',
         'guru' => 'Guru',
         'kepsek' => 'Kepala Sekolah',
@@ -12,7 +12,7 @@
     };
 
     $targetDashboard = match ($user?->peran) {
-        'super_admin', 'fkkg' => route('superadmin.dashboard'),
+        'super_admin' => route('superadmin.dashboard'),
         'admin' => route('admin.dashboard'),
         'guru' => route('guru.dashboard'),
         'kepsek' => route('kepsek.dashboard'),

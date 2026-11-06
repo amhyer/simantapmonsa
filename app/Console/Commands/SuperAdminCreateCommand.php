@@ -15,12 +15,12 @@ class SuperAdminCreateCommand extends Command
                             {--name= : Nama lengkap superadmin}
                             {--email= : Email superadmin}';
 
-    protected $description = 'Membuat akun Super Administrator / FKKG untuk mengelola multi-tenant SIMANTAP';
+    protected $description = 'Membuat akun Super Administrator untuk mengelola multi-tenant SIMANTAP';
 
     public function handle(): int
     {
         $user = $this->option('user') ?: $this->ask('Username Superadmin', 'superadmin');
-        $name = $this->option('name') ?: $this->ask('Nama Lengkap', 'Administrator Pusat FKKG');
+        $name = $this->option('name') ?: $this->ask('Nama Lengkap', 'Super Administrator');
         $email = $this->option('email') ?: $this->ask('Email (opsional)', 'pusat@simantap.id');
         $pass = $this->option('pass') ?: $this->secret('Password (min 8 karakter)') ?: 'SuperAdmin123!';
 

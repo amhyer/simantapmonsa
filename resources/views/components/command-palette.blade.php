@@ -4,7 +4,7 @@
 
     $commandMenu = [];
 
-    if ($role === 'super_admin' || $role === 'fkkg') {
+    if ($role === 'super_admin') {
         $commandMenu = [
             ['title' => 'Dasbor Platform Multi-Sekolah', 'route' => route('superadmin.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
             ['title' => 'Katalog Sekolah Terdaftar (Tenants)', 'route' => route('superadmin.tenants.index'), 'cat' => 'Sekolah', 'icon' => 'fas fa-school'],

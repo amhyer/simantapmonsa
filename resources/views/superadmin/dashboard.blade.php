@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dasbor Super Admin / FKKG - SIMANTAP')
+@section('title', 'Dasbor Super Admin - SIMANTAP')
 
 @section('sidebar')
     @include('superadmin.partials.sidebar')
@@ -34,7 +34,7 @@
                 <i class="fas fa-shield-halved"></i>
             </div>
             <div>
-                <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;opacity:0.85">Otoritas Pusat Platform &bull; FKKG</div>
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;opacity:0.85">Otoritas Pusat Platform &bull; Super Administrator</div>
                 <h2 style="font-size:20px;font-weight:800;margin:2px 0 4px 0;color:#fff">Pusat Layanan Multi-Tenant SIMANTAP</h2>
                 <div style="font-size:13px;opacity:0.9">Mengawasi seluruh sekolah, isolasi data, dan keandalan ujian serentak.</div>
             </div>
