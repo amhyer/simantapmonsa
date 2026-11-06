@@ -125,6 +125,7 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change'])->prefix
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
     Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
+    Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
     Route::post('/tenants/{tenant}/toggle', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'toggleActive'])->name('tenants.toggle');
     Route::get('/users', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'users'])->name('users.index');
 });
@@ -145,8 +146,11 @@ Route::middleware(['auth', 'role:admin', 'force.password.change'])->prefix('admi
         Route::get('/mesin', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'index'])->name('mesin.index');
         Route::get('/mesin/template-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateKaryawan'])->name('mesin.template.karyawan');
         Route::post('/mesin/import-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importKaryawan'])->middleware('throttle:10,1')->name('mesin.karyawan.import');
+    Route::post('/mesin/tarik-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikKaryawan'])->middleware('throttle:10,1')->name('mesin.karyawan.tarik');
         Route::get('/mesin/template-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateLog'])->name('mesin.template.log');
         Route::post('/mesin/import-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importLog'])->middleware('throttle:10,1')->name('mesin.log.import');
+        Route::post('/mesin/tarik', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarik'])->middleware('throttle:10,1')->name('mesin.tarik');
+        Route::post('/mesin/tes-koneksi', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tesKoneksi'])->middleware('throttle:30,1')->name('mesin.tes');
 
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
         Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');

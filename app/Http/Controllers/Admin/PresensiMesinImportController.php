@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\PresensiPegawai;
 use App\Models\User;
 use App\Services\AktivitasService;
+use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\PresensiMesinService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -20,11 +23,11 @@ class PresensiMesinImportController extends Controller
 {
     private const PERAN_PEGAWAI = ['guru', 'kepsek', 'tendik'];
 
-    private const STATUS_DILINDUNGI = ['izin', 'sakit', 'cuti'];
-
-    private const METODE_DILINDUNGI = ['admin', 'manual'];
-
     private const EKSTENSI_DIIZINKAN = ['xls', 'xlsx', 'csv', 'txt'];
+
+    private const KUNCI_SINKRON_TERAKHIR = 'presensi.mesin.terakhir_tarik';
+
+    private const MAKS_HARI_TARIK = 31;
 
     /**
      * Potongan gelar yang boleh muncul di belakang nama tanpa membuat nama dianggap berbeda.
@@ -38,7 +41,7 @@ class PresensiMesinImportController extends Controller
         'st', 'mt', 'ssi', 'sst', 'spt', 'skm', 'sip', 'shi', 'sag',
     ];
 
-    public function index()
+    public function index(AttendanceDatabaseReader $reader)
     {
         $jumlahPegawai = User::whereIn('peran', self::PERAN_PEGAWAI)->where('aktif', true)->count();
         $sudahAdaNik = User::whereIn('peran', self::PERAN_PEGAWAI)
@@ -46,7 +49,10 @@ class PresensiMesinImportController extends Controller
             ->where('nik', '<>', '')
             ->count();
 
-        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik'));
+        $koneksi = $reader->status();
+        $terakhirTarik = Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+
+        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik'));
     }
 
     public function templateKaryawan()
@@ -98,6 +104,72 @@ class PresensiMesinImportController extends Controller
             return back()->withErrors(['file' => 'Kolom NIK dan Nama tidak ditemukan. Gunakan template yang disediakan.']);
         }
 
+        $pasangan = [];
+        foreach ($dataRows as $row) {
+            $nik = $this->normalizeNikCell($row[$nikIndex] ?? null);
+            $nama = trim((string) ($row[$namaIndex]['fmt'] ?? ''));
+
+            if ($nik === null || $nama === '') {
+                continue;
+            }
+
+            $pasangan[] = ['nik' => $nik, 'nama' => $nama];
+        }
+
+        $hasil = $this->simpanNikKaryawan($pasangan);
+
+        AktivitasService::log(
+            'tambah',
+            'Import NIK karyawan dari mesin presensi',
+            "Import data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
+            'users',
+            null,
+            null,
+            $hasil,
+        );
+
+        return back()->with('success', $this->pesanKaryawan($hasil));
+    }
+
+    /**
+     * Ambil daftar pegawai (NIK/No.PIN + nama) langsung dari database mesin
+     * lalu cocokkan dengan akun pegawai SIMANTAP berdasarkan nama.
+     */
+    public function tarikKaryawan(AttendanceDatabaseReader $reader): RedirectResponse
+    {
+        try {
+            $pegawai = $reader->pegawai();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['mesin' => 'Gagal membaca daftar pegawai dari database mesin: '.$e->getMessage()]);
+        }
+
+        if ($pegawai === []) {
+            return back()->with('success', 'Database mesin berhasil dibaca, tetapi belum ada data pegawai di dalamnya.');
+        }
+
+        $hasil = $this->simpanNikKaryawan($pegawai);
+
+        AktivitasService::log(
+            'tambah',
+            'Tarik NIK karyawan dari database mesin',
+            "Tarik data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
+            'users',
+            null,
+            null,
+            $hasil,
+        );
+
+        return back()->with('success', $this->pesanKaryawan($hasil));
+    }
+
+    /**
+     * @param  list<array{nik: string, nama: string}>  $pasangan
+     * @return array{baris: int, diperbarui: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok: list<string>}
+     */
+    private function simpanNikKaryawan(array $pasangan): array
+    {
         $users = User::whereIn('peran', self::PERAN_PEGAWAI)->get();
 
         $nikTerpakai = [];
@@ -115,13 +187,13 @@ class PresensiMesinImportController extends Controller
             'tidak_cocok' => 0,
             'ambigu' => 0,
             'bentrok' => 0,
+            'contoh_tidak_cocok' => [],
         ];
-        $contohTidakCocok = [];
 
-        DB::transaction(function () use ($dataRows, $nikIndex, $namaIndex, $users, &$nikTerpakai, &$hasil, &$contohTidakCocok) {
-            foreach ($dataRows as $row) {
-                $nik = $this->normalizeNikCell($row[$nikIndex] ?? null);
-                $nama = trim((string) ($row[$namaIndex]['fmt'] ?? ''));
+        DB::transaction(function () use ($pasangan, $users, &$nikTerpakai, &$hasil) {
+            foreach ($pasangan as $item) {
+                $nik = $this->normalizeNikValue($item['nik']);
+                $nama = trim((string) $item['nama']);
 
                 if ($nik === null || $nama === '') {
                     continue;
@@ -132,8 +204,8 @@ class PresensiMesinImportController extends Controller
                 $kandidat = $this->matchUsersByName($nama, $users);
                 if ($kandidat === []) {
                     $hasil['tidak_cocok']++;
-                    if (count($contohTidakCocok) < 8) {
-                        $contohTidakCocok[] = $nama;
+                    if (count($hasil['contoh_tidak_cocok']) < 8) {
+                        $hasil['contoh_tidak_cocok'][] = $nama;
                     }
 
                     continue;
@@ -174,27 +246,26 @@ class PresensiMesinImportController extends Controller
             }
         });
 
-        AktivitasService::log(
-            'tambah',
-            'Import NIK karyawan dari mesin presensi',
-            "Import data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
-            'users',
-            null,
-            null,
-            $hasil,
-        );
-
-        $pesan = "Import data karyawan selesai: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, "
-            ."{$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.";
-
-        if ($contohTidakCocok !== []) {
-            $pesan .= ' Contoh nama tidak cocok: '.implode(', ', $contohTidakCocok).'.';
-        }
-
-        return back()->with('success', $pesan);
+        return $hasil;
     }
 
-    public function importLog(Request $request): RedirectResponse
+    /**
+     * @param  array{diperbarui: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok?: list<string>}  $hasil
+     */
+    private function pesanKaryawan(array $hasil): string
+    {
+        $pesan = "Data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, "
+            ."{$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.";
+
+        $contoh = (array) ($hasil['contoh_tidak_cocok'] ?? []);
+        if ($contoh !== []) {
+            $pesan .= ' Contoh nama tidak cocok: '.implode(', ', $contoh).'.';
+        }
+
+        return $pesan;
+    }
+
+    public function importLog(Request $request, PresensiMesinService $presensi): RedirectResponse
     {
         if ($response = $this->validateUpload($request)) {
             return $response;
@@ -295,121 +366,8 @@ class PresensiMesinImportController extends Controller
             return back()->withErrors(['file' => 'Tidak ada baris presensi yang valid. Periksa format tanggal dan jam pada file.']);
         }
 
-        $groups = [];
-        foreach ($scans as $scan) {
-            $tanggal = $scan['waktu']->copy()->startOfDay();
-            $key = $scan['nik'].'|'.$tanggal->toDateString();
-
-            if (! isset($groups[$key])) {
-                $groups[$key] = [
-                    'nik' => $scan['nik'],
-                    'tanggal' => $tanggal,
-                    'masuk' => null,
-                    'pulang' => null,
-                ];
-            }
-
-            if ($scan['jenis'] === 'masuk') {
-                if ($groups[$key]['masuk'] === null || $scan['waktu']->lt($groups[$key]['masuk'])) {
-                    $groups[$key]['masuk'] = $scan['waktu'];
-                }
-            } elseif ($groups[$key]['pulang'] === null || $scan['waktu']->gt($groups[$key]['pulang'])) {
-                $groups[$key]['pulang'] = $scan['waktu'];
-            }
-        }
-
-        $usersByNik = [];
-        foreach (User::whereIn('peran', self::PERAN_PEGAWAI)->get() as $user) {
-            $nik = $this->normalizeNikValue($user->nik);
-            if ($nik !== null) {
-                $usersByNik[$nik] = $user;
-            }
-        }
-
-        $hasil = [
-            'scan' => count($scans),
-            'baris_diabaikan' => $barisDiabaikan,
-            'pegawai' => 0,
-            'dibuat' => 0,
-            'diperbarui' => 0,
-            'tetap' => 0,
-            'nik_tidak_dikenal' => 0,
-            'dilindungi' => 0,
-        ];
-        $contohNikTidakDikenal = [];
-
-        DB::transaction(function () use ($groups, $usersByNik, &$hasil, &$contohNikTidakDikenal) {
-            foreach ($groups as $group) {
-                $user = $usersByNik[$group['nik']] ?? null;
-                if ($user === null) {
-                    $hasil['nik_tidak_dikenal']++;
-                    if (count($contohNikTidakDikenal) < 8) {
-                        $contohNikTidakDikenal[] = $group['nik'];
-                    }
-
-                    continue;
-                }
-
-                $hasil['pegawai']++;
-
-                $record = PresensiPegawai::where('user_id', $user->id)
-                    ->whereDate('tanggal', $group['tanggal']->toDateString())
-                    ->first();
-
-                if ($record !== null) {
-                    if (in_array($record->metode, self::METODE_DILINDUNGI, true)
-                        || in_array($record->status, self::STATUS_DILINDUNGI, true)) {
-                        $hasil['dilindungi']++;
-
-                        continue;
-                    }
-
-                    $berubah = false;
-
-                    if ($group['masuk'] !== null
-                        && ($record->waktu_masuk === null || $group['masuk']->lt($record->waktu_masuk))) {
-                        $record->waktu_masuk = $group['masuk'];
-                        $berubah = true;
-                    }
-
-                    if ($group['pulang'] !== null
-                        && ($record->waktu_pulang === null || $group['pulang']->gt($record->waktu_pulang))) {
-                        $record->waktu_pulang = $group['pulang'];
-                        $berubah = true;
-                    }
-
-                    if ($group['masuk'] !== null) {
-                        $status = $this->statusMasuk($group);
-                        if ($record->status !== $status) {
-                            $record->status = $status;
-                            $berubah = true;
-                        }
-                    }
-
-                    if ($berubah) {
-                        $record->metode = 'mesin';
-                        $record->diperbarui_oleh = auth()->id();
-                        $record->save();
-                        $hasil['diperbarui']++;
-                    } else {
-                        $hasil['tetap']++;
-                    }
-
-                    continue;
-                }
-
-                PresensiPegawai::create([
-                    'user_id' => $user->id,
-                    'tanggal' => $group['tanggal']->toDateString(),
-                    'status' => $this->statusMasuk($group),
-                    'waktu_masuk' => $group['masuk'],
-                    'waktu_pulang' => $group['pulang'],
-                    'metode' => 'mesin',
-                    'diperbarui_oleh' => auth()->id(),
-                ]);
-                $hasil['dibuat']++;
-            }
-        });
+        $hasil = $presensi->importScans($scans, auth()->id());
+        $hasil['baris_diabaikan'] = $barisDiabaikan;
 
         AktivitasService::log(
             'tambah',
@@ -421,15 +379,97 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        $pesan = "Import log mesin selesai: {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, "
-            ."{$hasil['tetap']} tidak berubah, {$hasil['dilindungi']} dilindungi (koreksi manual/izin/sakit), "
-            ."{$hasil['nik_tidak_dikenal']} NIK tidak dikenal, {$hasil['baris_diabaikan']} baris diabaikan.";
+        return back()->with('success', $this->pesanHasil($hasil, 'Import log mesin selesai'));
+    }
 
-        if ($contohNikTidakDikenal !== []) {
-            $pesan .= ' Contoh NIK tidak dikenal: '.implode(', ', $contohNikTidakDikenal).'.';
+    /**
+     * Tarik langsung dari database Attendance Management tanpa unggah file.
+     */
+    public function tarik(Request $request, AttendanceDatabaseReader $reader, PresensiMesinService $presensi): RedirectResponse
+    {
+        $data = $request->validate([
+            'dari' => ['required', 'date'],
+            'sampai' => ['required', 'date', 'after_or_equal:dari'],
+        ]);
+
+        $dari = Carbon::parse($data['dari'], config('app.timezone'))->startOfDay();
+        $sampai = Carbon::parse($data['sampai'], config('app.timezone'))->startOfDay();
+
+        if ((int) $dari->diffInDays($sampai) > self::MAKS_HARI_TARIK - 1) {
+            return back()
+                ->withErrors(['dari' => 'Rentang tarik data maksimal '.self::MAKS_HARI_TARIK.' hari agar proses tetap cepat.'])
+                ->withInput();
         }
 
-        return back()->with('success', $pesan);
+        try {
+            $scans = $reader->baca($dari, $sampai);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()
+                ->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()])
+                ->withInput();
+        }
+
+        if ($scans === []) {
+            Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+
+            return back()->with(
+                'success',
+                'Database mesin berhasil dibaca, tetapi tidak ada scan pada '.$dari->format('d/m/Y').' – '.$sampai->format('d/m/Y').'.',
+            );
+        }
+
+        $hasil = $presensi->importScans($scans, auth()->id());
+        $hasil['baris_diabaikan'] = 0;
+
+        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+
+        AktivitasService::log(
+            'tambah',
+            'Tarik presensi dari database mesin',
+            "Tarik data mesin {$dari->toDateString()} s/d {$sampai->toDateString()}: {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, {$hasil['tetap']} tetap, {$hasil['dilindungi']} dilindungi, {$hasil['nik_tidak_dikenal']} NIK tidak dikenal.",
+            'presensi_pegawai',
+            null,
+            null,
+            $hasil,
+        );
+
+        return back()->with('success', $this->pesanHasil(
+            $hasil,
+            'Tarik data mesin '.$dari->format('d/m/Y').' – '.$sampai->format('d/m/Y').' selesai',
+        ));
+    }
+
+    /**
+     * Cek apakah database Attendance Management bisa dibaca dari server ini.
+     */
+    public function tesKoneksi(AttendanceDatabaseReader $reader): JsonResponse
+    {
+        return response()->json($reader->status());
+    }
+
+    /**
+     * @param  array<string, mixed>  $hasil
+     */
+    private function pesanHasil(array $hasil, string $awalan): string
+    {
+        $pesan = "{$awalan}: {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, "
+            ."{$hasil['tetap']} tidak berubah, {$hasil['dilindungi']} dilindungi (koreksi manual/izin/sakit), "
+            ."{$hasil['nik_tidak_dikenal']} NIK tidak dikenal";
+
+        if (($hasil['baris_diabaikan'] ?? 0) > 0) {
+            $pesan .= ", {$hasil['baris_diabaikan']} baris diabaikan";
+        }
+
+        $pesan .= '.';
+
+        $contoh = (array) ($hasil['contoh_nik_tidak_dikenal'] ?? []);
+        if ($contoh !== []) {
+            $pesan .= ' Contoh NIK tidak dikenal: '.implode(', ', $contoh).'.';
+        }
+
+        return $pesan;
     }
 
     private function validateUpload(Request $request): ?RedirectResponse
@@ -899,23 +939,6 @@ class PresensiMesinImportController extends Controller
         }
 
         return $waktu->hour >= 12 ? 'pulang' : 'masuk';
-    }
-
-    /**
-     * @param  array{nik: string, tanggal: Carbon, masuk: ?Carbon, pulang: ?Carbon}  $group
-     */
-    private function statusMasuk(array $group): string
-    {
-        if ($group['masuk'] === null) {
-            return 'hadir';
-        }
-
-        $batas = Carbon::parse(
-            $group['tanggal']->toDateString().' '.config('presensi.mesin_jam_masuk', '07:15'),
-            config('app.timezone'),
-        );
-
-        return $group['masuk']->gt($batas) ? 'terlambat' : 'hadir';
     }
 
     /**

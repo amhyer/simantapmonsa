@@ -26,26 +26,51 @@ class IdentifyTenant
         $previousTenantId = TenantContext::id();
         $resolvedTenantId = $previousTenantId;
 
-        $requestedSubdomain = $this->extractSubdomain($request);
-        if ($requestedSubdomain !== null) {
-            $tenantInfo = $this->resolveBySubdomain($requestedSubdomain);
-            if ($tenantInfo === null || ! $tenantInfo['aktif']) {
+        $tenantInfo = null;
+        $customDomain = $this->extractCustomDomain($request);
+        if ($customDomain !== null) {
+            $tenantInfo = $this->resolveByCustomDomain($customDomain);
+        }
+
+        $requestedSubdomain = null;
+        if ($tenantInfo === null) {
+            $requestedSubdomain = $this->extractSubdomain($request);
+            if ($requestedSubdomain !== null) {
+                $tenantInfo = $this->resolveBySubdomain($requestedSubdomain);
+            }
+        }
+
+        if ($tenantInfo !== null) {
+            if (! $tenantInfo['aktif']) {
                 abort(404, 'Sekolah (tenant) tidak ditemukan atau sedang dinonaktifkan.');
             }
+
+            if (! empty($tenantInfo['tgl_kedaluwarsa']) && strtotime($tenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
+                abort(402, 'Masa aktif langganan sekolah telah berakhir. Silakan hubungi Super Administrator untuk perpanjangan layanan.');
+            }
+
             $resolvedTenantId = $tenantInfo['id'];
+        } elseif ($requestedSubdomain !== null || $customDomain !== null) {
+            abort(404, 'Sekolah (tenant) tidak ditemukan atau sedang dinonaktifkan.');
         }
 
         $user = $request->user();
         $userTenantId = ($user && $user->tenant_id !== null) ? (int) $user->tenant_id : null;
 
         // Super Admin dan rute portal /superadmin tidak dibatasi oleh tenant tunggal
-        if ($request->is('superadmin*') || ($user && in_array($user->peran, ['super_admin'], true) && $requestedSubdomain === null)) {
+        if ($request->is('superadmin*') || ($user && in_array($user->peran, ['super_admin'], true) && $requestedSubdomain === null && $customDomain === null)) {
             $resolvedTenantId = null;
         } elseif ($userTenantId !== null) {
             if ($resolvedTenantId !== null && $resolvedTenantId !== $userTenantId) {
                 abort(403, 'Akses lintas sekolah (cross-tenant) tidak diizinkan.');
             }
             $resolvedTenantId = $userTenantId;
+
+            // Periksa kedaluwarsa langganan akun pengguna
+            $userTenantInfo = $this->resolveById($userTenantId);
+            if ($userTenantInfo && ! empty($userTenantInfo['tgl_kedaluwarsa']) && strtotime($userTenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
+                abort(402, 'Masa aktif langganan sekolah akun Anda telah berakhir. Silakan hubungi Super Administrator.');
+            }
         }
 
         TenantContext::set($resolvedTenantId);
@@ -55,6 +80,30 @@ class IdentifyTenant
         } finally {
             TenantContext::set($previousTenantId);
         }
+    }
+
+    private function extractCustomDomain(Request $request): ?string
+    {
+        $header = trim((string) $request->header('X-Tenant-Domain', ''));
+        if ($header !== '') {
+            return strtolower($header);
+        }
+
+        if (! config('simantap.multi_tenant_enabled', false)) {
+            return null;
+        }
+
+        $host = strtolower($request->getHost());
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true) || filter_var($host, FILTER_VALIDATE_IP)) {
+            return null;
+        }
+
+        $appHost = parse_url(config('app.url', ''), PHP_URL_HOST);
+        if ($appHost && $host === strtolower($appHost)) {
+            return null;
+        }
+
+        return $host;
     }
 
     private function extractSubdomain(Request $request): ?string
@@ -82,7 +131,7 @@ class IdentifyTenant
     }
 
     /**
-     * @return array{id: int, aktif: bool}|null
+     * @return array{id: int, aktif: bool, tgl_kedaluwarsa: ?string, paket: string, kuota_siswa: int}|null
      */
     private function resolveBySubdomain(string $subdomain): ?array
     {
@@ -90,7 +139,7 @@ class IdentifyTenant
         return Cache::remember("tenant:subdomain:{$subdomain}", 60, function () use ($subdomain): ?array {
             $row = Tenant::query()
                 ->where('subdomain', $subdomain)
-                ->first(['id', 'aktif']);
+                ->first(['id', 'aktif', 'tgl_kedaluwarsa', 'paket', 'kuota_siswa']);
 
             if (! $row) {
                 return null;
@@ -99,6 +148,57 @@ class IdentifyTenant
             return [
                 'id' => (int) $row->id,
                 'aktif' => (bool) $row->aktif,
+                'tgl_kedaluwarsa' => $row->tgl_kedaluwarsa ? (is_string($row->tgl_kedaluwarsa) ? $row->tgl_kedaluwarsa : $row->tgl_kedaluwarsa->toDateString()) : null,
+                'paket' => (string) ($row->paket ?? 'standar'),
+                'kuota_siswa' => (int) ($row->kuota_siswa ?? 500),
+            ];
+        });
+    }
+
+    /**
+     * @return array{id: int, aktif: bool, tgl_kedaluwarsa: ?string, paket: string, kuota_siswa: int}|null
+     */
+    private function resolveByCustomDomain(string $domain): ?array
+    {
+        return Cache::remember("tenant:domain:{$domain}", 60, function () use ($domain): ?array {
+            $row = Tenant::query()
+                ->where('domain_kustom', $domain)
+                ->first(['id', 'aktif', 'tgl_kedaluwarsa', 'paket', 'kuota_siswa']);
+
+            if (! $row) {
+                return null;
+            }
+
+            return [
+                'id' => (int) $row->id,
+                'aktif' => (bool) $row->aktif,
+                'tgl_kedaluwarsa' => $row->tgl_kedaluwarsa ? (is_string($row->tgl_kedaluwarsa) ? $row->tgl_kedaluwarsa : $row->tgl_kedaluwarsa->toDateString()) : null,
+                'paket' => (string) ($row->paket ?? 'standar'),
+                'kuota_siswa' => (int) ($row->kuota_siswa ?? 500),
+            ];
+        });
+    }
+
+    /**
+     * @return array{id: int, aktif: bool, tgl_kedaluwarsa: ?string, paket: string, kuota_siswa: int}|null
+     */
+    private function resolveById(int $id): ?array
+    {
+        return Cache::remember("tenant:id:{$id}", 60, function () use ($id): ?array {
+            $row = Tenant::query()
+                ->where('id', $id)
+                ->first(['id', 'aktif', 'tgl_kedaluwarsa', 'paket', 'kuota_siswa']);
+
+            if (! $row) {
+                return null;
+            }
+
+            return [
+                'id' => (int) $row->id,
+                'aktif' => (bool) $row->aktif,
+                'tgl_kedaluwarsa' => $row->tgl_kedaluwarsa ? (is_string($row->tgl_kedaluwarsa) ? $row->tgl_kedaluwarsa : $row->tgl_kedaluwarsa->toDateString()) : null,
+                'paket' => (string) ($row->paket ?? 'standar'),
+                'kuota_siswa' => (int) ($row->kuota_siswa ?? 500),
             ];
         });
     }

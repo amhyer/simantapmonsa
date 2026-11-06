@@ -42,4 +42,22 @@ return [
     // Batas jam masuk untuk presensi hasil impor mesin fingerprint.
     // Scan masuk setelah jam ini ditandai sebagai "terlambat".
     'mesin_jam_masuk' => env('PRESENSI_MESIN_JAM_MASUK', '07:15'),
+
+    /*
+    | Tarik langsung dari database Attendance Management (ZKTeco).
+    | PRESENSI_MESIN_DB_PATH diarahkan ke file att2000.mdb / .accdb.
+    | Bila dikosongkan, sistem mencari di lokasi pemasangan yang umum.
+    */
+    'mesin_db_path' => env('PRESENSI_MESIN_DB_PATH'),
+    'mesin_db_engine' => env('PRESENSI_MESIN_DB_ENGINE', 'auto'),
+    'mesin_db_timeout' => (int) env('PRESENSI_MESIN_DB_TIMEOUT', 120),
+    'mesin_db_script' => env('PRESENSI_MESIN_DB_SCRIPT', base_path('tools/attendance-mdb-export.ps1')),
+    'mesin_db_powershell' => env('PRESENSI_MESIN_DB_POWERSHELL'),
+    'mesin_db_kandidat' => [
+        'D:\\ZKTime\\bin\\att2000.mdb',
+        'E:\\ZKTime\\bin\\att2000.mdb',
+        'C:\\ZKTime\\bin\\att2000.mdb',
+        'C:\\Program Files (x86)\\ZKTime\\bin\\att2000.mdb',
+        'C:\\Program Files\\ZKTime\\bin\\att2000.mdb',
+    ],
 ];

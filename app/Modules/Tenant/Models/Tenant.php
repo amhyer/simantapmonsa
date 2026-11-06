@@ -14,6 +14,12 @@ class Tenant extends Model
         'npsn',
         'nama_sekolah',
         'subdomain',
+        'domain_kustom',
+        'paket',
+        'kuota_siswa',
+        'kuota_storage_mb',
+        'tgl_kedaluwarsa',
+        'catatan_langganan',
         'aktif',
         'meta',
     ];
@@ -23,7 +29,33 @@ class Tenant extends Model
         return [
             'aktif' => 'boolean',
             'meta' => 'array',
+            'kuota_siswa' => 'integer',
+            'kuota_storage_mb' => 'integer',
+            'tgl_kedaluwarsa' => 'date',
         ];
+    }
+
+    public function isExpired(): bool
+    {
+        return ! empty($this->tgl_kedaluwarsa) && $this->tgl_kedaluwarsa->isPast();
+    }
+
+    public function sisaHariLangganan(): ?int
+    {
+        if (empty($this->tgl_kedaluwarsa)) {
+            return null; // Unlimited / Tanpa Batas Waktu
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->tgl_kedaluwarsa->startOfDay(), false);
+    }
+
+    public function labelPaket(): string
+    {
+        return match (strtolower($this->paket ?? 'standar')) {
+            'pro' => 'Pro (Custom Domain)',
+            'enterprise' => 'Enterprise (Dedicated Server/DB)',
+            default => 'Standar (Shared Cloud)',
+        };
     }
 
     protected static function booted(): void
@@ -32,6 +64,14 @@ class Tenant extends Model
             if (empty($tenant->uuid)) {
                 $tenant->uuid = (string) Str::uuid();
             }
+        });
+
+        static::saved(function (Tenant $tenant): void {
+            \Illuminate\Support\Facades\Cache::forget("tenant:subdomain:{$tenant->subdomain}");
+            if (! empty($tenant->domain_kustom)) {
+                \Illuminate\Support\Facades\Cache::forget("tenant:domain:{$tenant->domain_kustom}");
+            }
+            \Illuminate\Support\Facades\Cache::forget("tenant:id:{$tenant->id}");
         });
     }
 
