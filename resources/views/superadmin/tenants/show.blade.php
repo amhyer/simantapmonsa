@@ -10,21 +10,21 @@
 @section('page_subtitle', 'NPSN: ' . $tenant->npsn . ' • Subdomain: ' . $tenant->subdomain . ($tenant->domain_kustom ? ' • Domain: ' . $tenant->domain_kustom : ''))
 
 @section('header_actions')
-    <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-sm btn-ghost">
-        &larr; Kembali ke Katalog
+    <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-sm btn-ghost" style="border:1px solid #E4E7EC">
+        <i class="fas fa-arrow-left"></i> Kembali
     </a>
     @if($admin)
         <form method="POST" action="{{ route('superadmin.tenants.impersonate', $tenant->uuid) }}" style="display:inline">
             @csrf
             <button type="submit" class="btn btn-sm" style="background:#4338CA;color:#fff" title="Masuk langsung ke dasbor sekolah ini">
-                <i class="fas fa-sign-in-alt"></i> Masuk sebagai Admin Sekolah
+                <i class="fas fa-sign-in-alt"></i> Masuk Dasbor Sekolah
             </button>
         </form>
     @endif
     <form method="POST" action="{{ route('superadmin.tenants.toggle', $tenant->uuid) }}" style="display:inline">
         @csrf
         <button type="submit" class="btn btn-sm {{ $tenant->aktif ? 'btn-warn' : 'btn-primary' }}" onclick="return confirm('Ubah status akses sekolah ini?')">
-            {{ $tenant->aktif ? 'Nonaktifkan Akses' : 'Aktifkan Akses' }}
+            {{ $tenant->aktif ? 'Nonaktifkan' : 'Aktifkan' }}
         </button>
     </form>
 @endsection

@@ -122,6 +122,12 @@
                     </div>
                 </div>
                 
+                @if(View::hasSection('header_actions'))
+                    <div class="header-actions" style="display:flex;align-items:center;gap:8px">
+                        @yield('header_actions')
+                    </div>
+                @endif
+
                 <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
                     @if($userFoto)
                         <img src="{{ asset('storage/' . $userFoto) }}" alt="Foto" class="avatar-sm" style="object-fit:cover">
@@ -144,8 +150,6 @@
                         </form>
                     </div>
                 </div>
-                
-                @yield('header_actions')
             </div>
         </header>
         

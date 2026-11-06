@@ -9,6 +9,12 @@
 @section('page_title', 'Akun Seluruh Sekolah')
 @section('page_subtitle', 'Pantau akun pengguna di semua tenant platform')
 
+@section('header_actions')
+    <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-sm btn-ghost" style="border:1px solid #E4E7EC">
+        <i class="fas fa-school"></i> Lihat Sekolah
+    </a>
+@endsection
+
 @section('content')
 <style>
     :root {

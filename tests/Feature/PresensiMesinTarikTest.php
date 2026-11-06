@@ -205,9 +205,9 @@ class PresensiMesinTarikTest extends TestCase
         $this->mock(AttendanceDatabaseReader::class, function ($mock) {
             $mock->shouldReceive('rentang')->once()->andReturn([
                 'min' => Carbon::parse('2026-06-01'),
-                'maks' => Carbon::parse('2026-06-02'),
+                'maks' => Carbon::parse('2026-07-31'),
             ]);
-            $mock->shouldReceive('baca')->once()->andReturn([
+            $mock->shouldReceive('baca')->twice()->andReturn([
                 ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 06:55:00'), 'jenis' => 'masuk'],
                 ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 14:10:00'), 'jenis' => 'pulang'],
             ]);

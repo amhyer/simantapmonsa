@@ -267,54 +267,10 @@ class AttendanceDatabaseReader
      */
     private function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
     {
-        $hasil = $engine === 'odbc'
+        // Tanpa rentang waktu (null), kedua mesin pembaca membaca seluruh isi CHECKINOUT.
+        return $engine === 'odbc'
             ? $this->bacaLewatOdbc($path, $dari, $sampai)
             : $this->bacaLewatPowerShell($path, $dari, $sampai);
-
-        if ($dari === null && $sampai === null) {
-            // Tanpa rentang waktu, baca seluruh isi tabel CHECKINOUT.
-            $hasil['scans'] = $this->bacaSemuaLewat($engine, $path);
-        }
-
-        return $hasil;
-    }
-
-    /**
-     * Baca seluruh scan CHECKINOUT tanpa rentang waktu.
-     *
-     * @return array{scans?: list<array<string, mixed>>}
-     */
-    private function bacaSemuaLewat(string $engine, string $path): array
-    {
-        if ($engine === 'odbc') {
-            $dsn = 'odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq='.$path.';';
-            $pdo = new \PDO($dsn, '', '', [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
-            $pdo->setAttribute(\PDO::ATTR_TIMEOUT, (int) config('presensi.mesin_db_timeout', 30));
-
-            $hasil = ['scans' => []];
-
-            $sql = 'SELECT U.BADGENUMBER AS NIK, U.NAME AS NAMA, C.CHECKTIME AS WAKTU, C.CHECKTYPE AS TIPE
-              FROM CHECKINOUT C INNER JOIN USERINFO U ON U.USERID = C.USERID
-              ORDER BY C.CHECKTIME';
-
-            foreach ($pdo->query($sql) as $row) {
-                $hasil['scans'][] = [
-                    'nik' => $row['NIK'] ?? null,
-                    'nama' => $row['NAMA'] ?? null,
-                    'waktu' => $row['WAKTU'] ?? null,
-                    'tipe' => $row['TIPE'] ?? null,
-                ];
-            }
-
-            return $hasil;
-        }
-
-        $sempre = Carbon::parse('1900-01-01');
-        $sampaiSekarang = Carbon::parse('2100-01-01');
-
-        $hasil = $this->bacaLewatPowerShell($path, $sempre, $sampaiSekarang);
-
-        return ['scans' => (array) ($hasil['scans'] ?? [])];
     }
 
     /**
@@ -343,12 +299,8 @@ class AttendanceDatabaseReader
             ];
         }
 
-        if ($dari === null || $sampai === null) {
-            return $hasil;
-        }
-
-        $awal = $dari->copy()->startOfDay();
-        $akhir = $sampai->copy()->addDay()->startOfDay();
+        $awal = ($dari ?? Carbon::parse('1900-01-01'))->copy()->startOfDay();
+        $akhir = ($sampai ?? Carbon::parse('2100-01-01'))->copy()->addDay()->startOfDay();
 
         $sql = sprintf(
             'SELECT U.BADGENUMBER AS NIK, U.NAME AS NAMA, C.CHECKTIME AS WAKTU, C.CHECKTYPE AS TIPE
@@ -467,8 +419,11 @@ class AttendanceDatabaseReader
             return null;
         }
 
+        // Access kadang mengembalikan pemisah "." alih/kultur (mis. "07.15.00").
+        $value = (string) preg_replace('/(\d{1,2})\.(\d{2})\.(\d{2})/', '$1:$2:$3', $value);
+
         // Access kadang mengembalikan tanggal dalam format Amerika atau serial.
-        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'm/d/Y H:i:s', 'm/d/Y H:i', 'd/m/Y H:i:s', 'd/m/Y H:i'] as $format) {
+        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'm/d/Y H:i:s', 'm/d/Y H:i', 'd/m/Y H:i:s', 'd/m/Y H:i', 'Y-m-d H.i.s', 'Y-m-d H.i'] as $format) {
             try {
                 $waktu = Carbon::createFromFormat($format, $value, config('app.timezone'));
                 if ($waktu !== false) {

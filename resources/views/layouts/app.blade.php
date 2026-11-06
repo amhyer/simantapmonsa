@@ -28,6 +28,9 @@
             --navy-light: #6366F1;
             --navy-dark: #312E81;
         }
+        @media (max-width: 992px) {
+            .superadmin-top-nav { display: none !important; }
+        }
     </style>
     @endif
     @stack('styles')
@@ -102,7 +105,11 @@
                 <div class="topbar-title">
                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                         <h1 style="margin:0">@yield('page_title', 'Dashboard')</h1>
-                        @if($acad = semesterAktifLabel())
+                        @if($currentUser && $currentUser->peran === 'super_admin')
+                            <span class="topbar-academic-pill" style="background:#EEF2FF;color:#4338CA;border-color:#C7D2FE;font-weight:700">
+                                <i class="fas fa-shield-halved"></i> SUPER ADMIN PLATFORM
+                            </span>
+                        @elseif($acad = semesterAktifLabel())
                             <span class="topbar-academic-pill" title="Tahun Ajaran & Semester Aktif">
                                 <i class="fas fa-calendar-alt"></i> {{ $acad }}
                             </span>
@@ -110,9 +117,30 @@
                     </div>
                     <div class="subtitle">@yield('page_subtitle', '')</div>
                 </div>
+
+                @if($currentUser && $currentUser->peran === 'super_admin')
+                    <nav class="superadmin-top-nav" style="display:flex;align-items:center;gap:6px;margin-left:14px;padding-left:14px;border-left:1px solid #E4E7EC">
+                        <a href="{{ route('superadmin.dashboard') }}" class="btn btn-xs {{ request()->routeIs('superadmin.dashboard') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.dashboard') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
+                            <i class="fas fa-chart-pie"></i> Dasbor
+                        </a>
+                        <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-xs {{ request()->routeIs('superadmin.tenants.*') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.tenants.*') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
+                            <i class="fas fa-school"></i> Katalog Sekolah
+                        </a>
+                        <a href="{{ route('superadmin.users.index') }}" class="btn btn-xs {{ request()->routeIs('superadmin.users.*') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.users.*') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
+                            <i class="fas fa-users"></i> Seluruh Pengguna
+                        </a>
+                    </nav>
+                @endif
             </div>
             
             <div class="topbar-right">
+                {{-- Aksi Halaman (Diposisikan di kiri Profil Pengguna) --}}
+                @if(View::hasSection('header_actions'))
+                    <div class="header-actions" style="display:flex;align-items:center;gap:8px">
+                        @yield('header_actions')
+                    </div>
+                @endif
+
                 <button type="button" class="topbar-search-btn" onclick="openCommandPalette()" title="Cari Menu Cepat (Ctrl+K)">
                     <i class="fas fa-search"></i>
                     <span class="search-hint">Cari menu...</span>
@@ -142,6 +170,7 @@
                     </div>
                 </div>
                 
+                {{-- Profil Pengguna Selalu di Posisi Paling Kanan --}}
                 <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
                     @if($userFoto)
                         <img src="{{ asset('storage/' . $userFoto) }}" alt="Foto" class="avatar-sm" style="object-fit:cover">
@@ -150,12 +179,20 @@
                     @endif
                     <span class="user-name">{{ $currentUser ? $currentUser->nama_lengkap : 'Guest' }}</span>
                     <i class="fas fa-chevron-down chevron"></i>
-                    <div class="dropdown-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:180px;z-index:200;overflow:hidden">
-                        <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
-                        @if($currentUser && $currentUser->peran === 'admin')
+                    <div class="dropdown-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:210px;z-index:200;overflow:hidden">
+                        @if($currentUser && $currentUser->peran === 'super_admin')
+                            <div style="padding:10px 16px 6px;font-size:11px;font-weight:700;color:#4338CA;text-transform:uppercase;letter-spacing:0.5px">Super Administrator</div>
+                            <a href="{{ route('superadmin.dashboard') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-tachometer-alt" style="width:16px;color:#4338CA"></i> Dasbor Multi-Sekolah</a>
+                            <a href="{{ route('superadmin.tenants.index') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-school" style="width:16px;color:#4338CA"></i> Katalog Sekolah</a>
+                            <a href="{{ route('superadmin.users.index') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-users" style="width:16px;color:#4338CA"></i> Semua Pengguna</a>
+                        @elseif($currentUser && $currentUser->peran === 'admin')
+                            <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
                             <a href="{{ route('admin.profile') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user-shield" style="width:16px"></i> Profil Admin</a>
                         @elseif($currentUser && $currentUser->peran === 'siswa')
+                            <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
                             <a href="{{ route('siswa.profil.show') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user" style="width:16px"></i> Profil Saya</a>
+                        @else
+                            <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
                         @endif
                         <div style="border-top:1px solid var(--line)"></div>
                         <form method="POST" action="{{ route('logout') }}">
@@ -164,8 +201,6 @@
                         </form>
                     </div>
                 </div>
-                
-                @yield('header_actions')
             </div>
         </header>
         
