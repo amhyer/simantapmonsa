@@ -28,11 +28,19 @@
             --navy-light: #6366F1;
             --navy-dark: #312E81;
         }
-        @media (max-width: 992px) {
-            .superadmin-top-nav { display: none !important; }
-        }
     </style>
     @endif
+    <style>
+        @media (max-width: 768px) {
+            .topbar { padding: 0 12px; gap: 8px; }
+            .topbar-left { min-width: 0; flex: 1; overflow: hidden; }
+            .topbar-title { min-width: 0; flex: 1; }
+            .topbar-title h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .topbar-academic-pill { display: none !important; }
+            .topbar-right { gap: 6px; flex-shrink: 0; }
+            .header-actions .btn { padding: 5px 8px; font-size: 11.5px; }
+        }
+    </style>
     @stack('styles')
 </head>
 <body>
@@ -99,7 +107,7 @@
         @endif
         <header class="topbar">
             <div class="topbar-left">
-                <button class="topbar-toggle" onclick="toggleSidebar()">
+                <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Buka Menu Navigasi">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="topbar-title">
@@ -107,7 +115,7 @@
                         <h1 style="margin:0">@yield('page_title', 'Dashboard')</h1>
                         @if($currentUser && $currentUser->peran === 'super_admin')
                             <span class="topbar-academic-pill" style="background:#EEF2FF;color:#4338CA;border-color:#C7D2FE;font-weight:700">
-                                <i class="fas fa-shield-halved"></i> SUPER ADMIN PLATFORM
+                                <i class="fas fa-shield-halved"></i> SUPER ADMIN
                             </span>
                         @elseif($acad = semesterAktifLabel())
                             <span class="topbar-academic-pill" title="Tahun Ajaran & Semester Aktif">
@@ -117,20 +125,6 @@
                     </div>
                     <div class="subtitle">@yield('page_subtitle', '')</div>
                 </div>
-
-                @if($currentUser && $currentUser->peran === 'super_admin')
-                    <nav class="superadmin-top-nav" style="display:flex;align-items:center;gap:6px;margin-left:14px;padding-left:14px;border-left:1px solid #E4E7EC">
-                        <a href="{{ route('superadmin.dashboard') }}" class="btn btn-xs {{ request()->routeIs('superadmin.dashboard') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.dashboard') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
-                            <i class="fas fa-chart-pie"></i> Dasbor
-                        </a>
-                        <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-xs {{ request()->routeIs('superadmin.tenants.*') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.tenants.*') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
-                            <i class="fas fa-school"></i> Katalog Sekolah
-                        </a>
-                        <a href="{{ route('superadmin.users.index') }}" class="btn btn-xs {{ request()->routeIs('superadmin.users.*') ? 'btn-primary' : 'btn-ghost' }}" style="{{ request()->routeIs('superadmin.users.*') ? 'background:#4338CA;color:#fff' : 'color:#4B5563' }}">
-                            <i class="fas fa-users"></i> Seluruh Pengguna
-                        </a>
-                    </nav>
-                @endif
             </div>
             
             <div class="topbar-right">
