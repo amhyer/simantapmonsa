@@ -61,4 +61,11 @@ return [
         'C:\\Program Files (x86)\\ZKTime\\bin\\att2000.mdb',
         'C:\\Program Files\\ZKTime\\bin\\att2000.mdb',
     ],
+
+    /*
+    | Komunikasi langsung ke mesin fingerprint via TCP (port default ZKTeco: 4370).
+    | Digunakan bila mesin dapat dijangkau di jaringan lokal yang sama.
+    */
+    'mesin_db_tcp_host' => env('PRESENSI_MESIN_DB_TCP_HOST', '192.168.1.7'),
+    'mesin_db_tcp_port' => env('PRESENSI_MESIN_DB_TCP_PORT', 4370),
 ];

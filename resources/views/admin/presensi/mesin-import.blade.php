@@ -43,7 +43,7 @@
             <div style="display:flex;gap:8px 18px;flex-wrap:wrap;font-size:13px;color:#475467;margin-bottom:12px">
                 <span>Database: <code>{{ $koneksi['path'] ?? 'belum diatur' }}</code></span>
                 <span>Pembaca: <strong>{{ $koneksi['engine'] ?? '-' }}</strong></span>
-                @if(isset($koneksi['jumlah_pegawai']))
+                @if(isset($koneksi['jumlah_pegawai']) && ($koneksi['engine'] ?? '') !== 'tcp')
                     <span>Pegawai di mesin: <strong>{{ $koneksi['jumlah_pegawai'] }}</strong></span>
                     <span>Total scan: <strong>{{ $koneksi['jumlah_scan'] }}</strong></span>
                 @endif

@@ -22,6 +22,20 @@ class AttendanceDatabaseReader
 {
     private const EKSTENSI = ['mdb', 'accdb'];
 
+    private const COMMAND_CONNECT = 1000;
+    private const COMMAND_EXIT = 1001;
+    private const COMMAND_ENABLE_DEVICE = 1002;
+    private const COMMAND_DISABLE_DEVICE = 1003;
+    private const COMMAND_ACK_OK = 2000;
+    private const COMMAND_ACK_ERROR = 2001;
+    private const COMMAND_ACK_DATA = 2002;
+    private const COMMAND_PREPARE_DATA = 1500;
+    private const COMMAND_DATA = 1501;
+    private const COMMAND_FREE_DATA = 1502;
+    private const COMMAND_ATTLOG_RRQ = 13;
+
+    private const MESIN_EPOCH = '2000-01-01 00:00:00';
+
     private PresensiMesinService $presensi;
 
     public function __construct(PresensiMesinService $presensi)
@@ -53,6 +67,17 @@ class AttendanceDatabaseReader
     public function engine(): string
     {
         $pilihan = strtolower((string) config('presensi.mesin_db_engine', 'auto'));
+
+        if ($pilihan === 'tcp') {
+            $host = trim((string) config('presensi.mesin_db_tcp_host', ''));
+            $port = (int) config('presensi.mesin_db_tcp_port', 4370);
+
+            if ($host === '' || $port <= 0) {
+                return 'tidak-tersedia';
+            }
+
+            return 'tcp';
+        }
 
         if ($pilihan === 'odbc') {
             return in_array('odbc', \PDO::getAvailableDrivers(), true) ? 'odbc' : 'tidak-tersedia';
@@ -115,6 +140,43 @@ class AttendanceDatabaseReader
             ];
         }
 
+        if ($engine === 'tcp') {
+            $tcpHost = trim((string) config('presensi.mesin_db_tcp_host', ''));
+            $tcpPort = (int) config('presensi.mesin_db_tcp_port', 4370);
+
+            if ($tcpHost === '') {
+                return [
+                    'ok' => false,
+                    'pesan' => 'Lokasi mesin belum diatur. Isi PRESENSI_MESIN_DB_TCP_HOST di .env.',
+                    'path' => null,
+                    'engine' => $engine,
+                ];
+            }
+
+            $timeoutTcp = (float) config('presensi.mesin_db_timeout', 120);
+            $errnoTcp = 0;
+            $errstrTcp = '';
+            $socketTcp = @fsockopen($tcpHost, $tcpPort, $errnoTcp, $errstrTcp, $timeoutTcp);
+            if ($socketTcp === false) {
+                return [
+                    'ok' => false,
+                    'pesan' => 'Tidak dapat terhubung ke mesin via TCP ('.$tcpHost.':'.$tcpPort.') : '.$errstrTcp,
+                    'path' => $tcpHost.':'.$tcpPort,
+                    'engine' => $engine,
+                ];
+            }
+            fclose($socketTcp);
+
+            return [
+                'ok' => true,
+                'pesan' => 'Terhubung ke mesin via TCP.',
+                'path' => $tcpHost.':'.$tcpPort,
+                'engine' => $engine,
+                'jumlah_pegawai' => 0,
+                'jumlah_scan' => null,
+            ];
+        }
+
         try {
             $data = $this->bacaMentah($path, $engine);
 
@@ -141,6 +203,33 @@ class AttendanceDatabaseReader
      */
     public function baca(Carbon $dari, Carbon $sampai): array
     {
+        $engine = $this->engine();
+        if ($engine === 'tidak-tersedia') {
+            throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
+        }
+
+        if ($engine === 'tcp') {
+            $scans = [];
+            foreach ($this->bacaLewatTcp(
+                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
+                (int) config('presensi.mesin_db_tcp_port', 4370),
+            ) as $row) {
+                $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
+                $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                if ($nik === null || $waktu === null) {
+                    continue;
+                }
+
+                $scans[] = [
+                    'nik' => $nik,
+                    'waktu' => $waktu,
+                    'jenis' => $this->presensi->jenisScan((string) ($row['tipe'] ?? ''), $waktu),
+                ];
+            }
+
+            return $scans;
+        }
+
         $path = $this->path();
         if ($path === null) {
             throw new RuntimeException('Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.');
@@ -150,11 +239,6 @@ class AttendanceDatabaseReader
         }
         if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::EKSTENSI, true)) {
             throw new RuntimeException('File database mesin harus berekstensi .mdb atau .accdb.');
-        }
-
-        $engine = $this->engine();
-        if ($engine === 'tidak-tersedia') {
-            throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
         }
 
         $data = $this->bacaMentah($path, $engine, $dari, $sampai);
@@ -385,6 +469,274 @@ class AttendanceDatabaseReader
         } finally {
             @unlink($out);
         }
+    }
+
+    /**
+     * Baca log presensi langsung dari mesin ZKTeco via TCP (port default: 4370).
+     *
+     * @return array{ok: bool, pesan: string, scans?: list<array<string, mixed>>}
+     */
+    private function bacaLewatTcp(string $host, int $port): array
+    {
+        $timeout = (float) config('presensi.mesin_db_timeout', 120);
+        $errno = 0;
+        $errstr = '';
+        $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+        if ($socket === false) {
+            throw new RuntimeException('Gagal koneksi ke mesin via TCP ('.$host.':'.$port.') : '.$errstr);
+        }
+
+        try {
+            // Sesi: kirim CMD_CONNECT lalu tunggu ACK.
+            $replyId = 0;
+            $this->kirimPaketTcp($socket, self::COMMAND_CONNECT, 0, $replyId, '');
+            $replyId++;
+            $resp = $this->terimaPaketTcp($socket);
+            if ((int) $resp['command'] !== self::COMMAND_ACK_OK) {
+                throw new RuntimeException('Mesin menolak sesi koneksi (kode: '.$resp['command'].').');
+            }
+            $sessionId = (int) $resp['sessionId'];
+            $replyId = 1;
+
+            // Matikan sementara mode capture (best effort).
+            $this->kirimPaketTcp($socket, self::COMMAND_DISABLE_DEVICE, $sessionId, $replyId, '');
+            $replyId++;
+            try {
+                $this->terimaPaketTcp($socket);
+            } catch (Throwable) {
+                // Tidak ada respons yang diharapkan.
+            }
+
+            // Minta log presensi (CMD_ATTLOG_RRQ).
+            $rawData = '';
+            $this->kirimPaketTcp($socket, self::COMMAND_ATTLOG_RRQ, $sessionId, $replyId, '');
+            $replyId++;
+            $resp = $this->terimaPaketTcp($socket);
+
+            if ((int) $resp['command'] === self::COMMAND_ACK_DATA) {
+                if (strlen((string) $resp['data']) >= 4) {
+                    $dataSize = unpack('V', (string) substr((string) $resp['data'], 0, 4))[1];
+                    if ((int) $dataSize > 0 && strlen((string) $resp['data']) - 4 >= $dataSize) {
+                        $rawData = substr((string) $resp['data'], 4, (int) $dataSize);
+                    }
+                } elseif (strlen((string) $resp['data']) > 0) {
+                    $rawData = (string) $resp['data'];
+                }
+            } elseif ((int) $resp['command'] === self::COMMAND_PREPARE_DATA) {
+                if (strlen((string) $resp['data']) >= 4) {
+                    $dataSize = unpack('V', (string) substr((string) $resp['data'], 0, 4))[1];
+                    $buffer = '';
+                    $maksBaca = max((int) $dataSize, 1);
+                    while (strlen($buffer) < $maksBaca) {
+                        $this->kirimPaketTcp($socket, self::COMMAND_DATA, $sessionId, $replyId, '');
+                        $replyId++;
+                        $chunk = $this->terimaPaketTcp($socket);
+                        if ((int) $chunk['command'] !== self::COMMAND_DATA) {
+                            break;
+                        }
+                        $buffer .= (string) $chunk['data'];
+                    }
+                    $rawData = $buffer;
+                }
+            }
+
+            // Bebas buffer (best effort).
+            $this->kirimPaketTcp($socket, self::COMMAND_FREE_DATA, $sessionId, $replyId, '');
+            $replyId++;
+            try {
+                $this->terimaPaketTcp($socket);
+            } catch (Throwable) {
+                // Tidak ada respons yang diharapkan.
+            }
+
+            // Aktifkan kembali mesin (best effort).
+            $this->kirimPaketTcp($socket, self::COMMAND_ENABLE_DEVICE, $sessionId, $replyId, '');
+            $replyId++;
+            try {
+                $this->terimaPaketTcp($socket);
+            } catch (Throwable) {
+                // Tidak ada respons yang diharapkan.
+            }
+
+            // Tutup sesi (best effort).
+            $this->kirimPaketTcp($socket, self::COMMAND_EXIT, $sessionId, $replyId, '');
+
+            $scans = [];
+            $dataTeks = $rawData;
+            $recordSize = $this->deteksiUkuranRecord($dataTeks);
+            if ($recordSize > 0) {
+                for ($i = 0; $i + $recordSize <= strlen($dataTeks); $i += $recordSize) {
+                    $record = substr($dataTeks, $i, $recordSize);
+                    $log = $this->parseRecordTcp($record, $recordSize);
+                    if ($log === null) {
+                        continue;
+                    }
+
+                    $scans[] = [
+                        'nik' => (string) $log['userId'],
+                        'nama' => 'Pegawai Mesin #'.$log['userId'],
+                        'waktu' => $log['waktu'],
+                        'tipe' => (string) $log['state'],
+                    ];
+                }
+            }
+
+            return ['ok' => true, 'pesan' => 'OK', 'scans' => $scans];
+        } finally {
+            @fclose($socket);
+        }
+    }
+
+    /**
+     * @return array{command: int, sessionId: int, replyId: int, data: string}
+     */
+    private function terimaPaketTcp($socket): array
+    {
+        $header = (string) fread($socket, 8);
+        if (strlen($header) < 8) {
+            throw new RuntimeException('Respons dari mesin via TCP terlalu pendek.');
+        }
+
+        $dataLen = unpack('v', substr($header, 2, 2))[1];
+        if ($dataLen < 6) {
+            $dataLen = 6;
+        }
+
+        $rest = (string) fread($socket, (int) $dataLen);
+        $buf = $header.$rest;
+
+        $command = unpack('v', substr($buf, 6, 2))[1];
+        $sessionId = unpack('v', substr($buf, 10, 2))[1];
+        $replyId = unpack('v', substr($buf, 12, 2))[1];
+        $data = strlen($buf) > 14 ? substr($buf, 14) : '';
+
+        return [
+            'command' => (int) $command,
+            'sessionId' => (int) $sessionId,
+            'replyId' => (int) $replyId,
+            'data' => $data,
+        ];
+    }
+
+    private function kirimPaketTcp($socket, int $command, int $sessionId, int $replyId, string $data): void
+    {
+        $packet = $this->buatPaketTcp($command, $sessionId, $replyId, $data);
+        fwrite($socket, $packet);
+    }
+
+    private function kirimPaketTcpDenganTunggu($socket, int $command, int $sessionId, int $replyId, string $data): array
+    {
+        $this->kirimPaketTcp($socket, $command, $sessionId, $replyId, $data);
+
+        $header = (string) fread($socket, 8);
+        if (strlen($header) < 8) {
+            throw new RuntimeException('Respons dari mesin via TCP terlalu pendek.');
+        }
+
+        $dataLen = unpack('v', substr($header, 2, 2))[1];
+        if ($dataLen < 6) {
+            $dataLen = 6;
+        }
+
+        $rest = (string) fread($socket, (int) $dataLen);
+        $buf = $header.$rest;
+
+        $commandTerkendali = unpack('v', substr($buf, 6, 2))[1];
+        $sessionIdTerkendali = unpack('v', substr($buf, 10, 2))[1];
+        $replyIdTerkendali = unpack('v', substr($buf, 12, 2))[1];
+        $dataTerkendali = strlen($buf) > 14 ? substr($buf, 14) : '';
+
+        return [
+            'command' => (int) $commandTerkendali,
+            'sessionId' => (int) $sessionIdTerkendali,
+            'replyId' => (int) $replyIdTerkendali,
+            'data' => $dataTerkendali,
+        ];
+    }
+
+    private function buatPaketTcp(int $command, int $sessionId, int $replyId, string $data): string
+    {
+        $packetLength = 8 + 6 + strlen($data);
+        $packet = chr(0x50).chr(0x50).pack('v', strlen($data) + 8).pack('v', 0).pack('v', $command);
+
+        $checksumInput = pack('v', $command).pack('v', 0).pack('v', $sessionId).pack('v', $replyId).$data;
+        $checksumSum = 0;
+        $panjang = strlen($checksumInput);
+        for ($i = 0; $i + 1 < $panjang; $i += 2) {
+            $checksumSum += ord($checksumInput[$i]).(ord($checksumInput[$i + 1]) * 256);
+        }
+        if ($panjang % 2 === 1) {
+            $checksumSum += ord($checksumInput[$panjang - 1]);
+        }
+        while ($checksumSum > 65535) {
+            $checksumSum = ($checksumSum & 0xFFFF) + intdiv($checksumSum, 65536);
+        }
+        $checksum = (~$checksumSum) & 0xFFFF;
+
+        return $packet.pack('v', $checksum).pack('v', $sessionId).pack('v', $replyId).$data;
+    }
+
+    /**
+     * @return array{userId: int, waktu: Carbon, state: int}|null
+     */
+    private function parseRecordTcp(string $record, int $recordSize): ?array
+    {
+        if ($recordSize === 8) {
+            $userId = unpack('v', substr($record, 0, 2))[1];
+            $timeSeconds = unpack('V', substr($record, 2, 4))[1];
+            $state = ord($record[6]);
+            $verifyType = ord($record[7]);
+        } elseif ($recordSize === 16) {
+            $userId = unpack('V', substr($record, 0, 4))[1];
+            $timeSeconds = unpack('V', substr($record, 4, 4))[1];
+            $state = ord($record[8]);
+            $verifyType = ord($record[9]);
+        } elseif ($recordSize === 40) {
+            $userIdTeks = substr($record, 0, 9);
+            $userIdTeks = rtrim($userIdTeks, "\x00");
+            $userId = (int) $userIdTeks;
+            $timeSeconds = unpack('V', substr($record, 24, 4))[1];
+            $state = ord($record[28]);
+            $verifyType = ord($record[29]);
+        } else {
+            return null;
+        }
+
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $waktu = Carbon::parse(self::MESIN_EPOCH)->addSeconds((int) $timeSeconds);
+
+        return [
+            'userId' => (int) $userId,
+            'waktu' => $waktu,
+            'state' => (int) $state,
+            'verifyType' => (int) $verifyType,
+        ];
+    }
+
+    /**
+     * Deteksi ukuran record presensi dari payload yang dibaca.
+     */
+    private function deteksiUkuranRecord(string $data): int
+    {
+        foreach ([40, 16, 8] as $ukuran) {
+            if (strlen($data) < $ukuran) {
+                continue;
+            }
+            if (strlen($data) % $ukuran !== 0) {
+                continue;
+            }
+
+            $sample = substr($data, 0, $ukuran);
+            $parsed = $this->parseRecordTcp($sample, $ukuran);
+            if ($parsed !== null && $parsed['userId'] > 0) {
+                return $ukuran;
+            }
+        }
+
+        return 0;
     }
 
     private function powershell(): ?string

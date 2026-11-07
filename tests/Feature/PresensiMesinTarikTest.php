@@ -256,6 +256,44 @@ class PresensiMesinTarikTest extends TestCase
             ->assertSessionHas('success');
     }
 
+    public function test_baca_menggunakan_engine_tcp_dan_gagal_koneksi(): void
+    {
+        config([
+            'presensi.mesin_db_engine' => 'tcp',
+            'presensi.mesin_db_tcp_host' => '127.0.0.1',
+            'presensi.mesin_db_tcp_port' => 59999,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+
+        app(AttendanceDatabaseReader::class)->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
+    }
+
+    public function test_status_dengan_engine_tcp_mengembalikan_gagal_koneksi(): void
+    {
+        config([
+            'presensi.mesin_db_engine' => 'tcp',
+            'presensi.mesin_db_tcp_host' => '127.0.0.1',
+            'presensi.mesin_db_tcp_port' => 59999,
+        ]);
+
+        $status = app(AttendanceDatabaseReader::class)->status();
+
+        $this->assertFalse($status['ok']);
+        $this->assertSame('tcp', $status['engine']);
+    }
+
+    public function test_engine_mengembalikan_tcp(): void
+    {
+        config([
+            'presensi.mesin_db_engine' => 'tcp',
+            'presensi.mesin_db_tcp_host' => '192.168.1.7',
+            'presensi.mesin_db_tcp_port' => 4370,
+        ]);
+
+        $this->assertSame('tcp', app(AttendanceDatabaseReader::class)->engine());
+    }
+
     public function test_non_admin_tidak_boleh_menarik_data_mesin(): void
     {
         $guru = User::factory()->guru()->create();
