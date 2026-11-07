@@ -482,7 +482,17 @@ class AttendanceDatabaseReader
                 throw new RuntimeException('Hasil pembacaan database mesin tidak valid.');
             }
             if (($data['ok'] ?? false) !== true) {
-                throw new RuntimeException((string) ($data['pesan'] ?? 'Gagal membaca database mesin.'));
+                $detailProses = trim((string) $process->getErrorOutput());
+                if ($detailProses === '') {
+                    $detailProses = trim((string) $process->getOutput());
+                }
+
+                $pesanAkhir = (string) ($data['pesan'] ?? 'Gagal membaca database mesin.');
+                if ($detailProses !== '') {
+                    $pesanAkhir .= ' ['.$detailProses.']';
+                }
+
+                throw new RuntimeException('Pembaca database mesin gagal: '.$pesanAkhir);
             }
 
             return $data;
