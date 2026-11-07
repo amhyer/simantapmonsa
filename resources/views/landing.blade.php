@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SIMANTAP - Platform pembelajaran terintegrasi untuk guru, siswa, orang tua, dan kepala sekolah. TKA, Pembelajaran Mendalam, dan Manajemen Kelas dalam satu aplikasi.">
-    <meta name="keywords" content="SIMANTAP, pembelajaran, TKA, sekolah, guru, siswa, orang tua, kurikulum merdeka">
+    <meta name="description" content="SIMANTAP_MONSA - Platform pembelajaran terintegrasi untuk guru, siswa, orang tua, dan kepala sekolah. TKA, Pembelajaran Mendalam, dan Manajemen Kelas dalam satu aplikasi. Dikembangkan oleh UPTD SD Negeri Unggulan Mongisidi 1 dari hasil Bimtek BBGTK Sulawesi Selatan.">
+    <meta name="keywords" content="SIMANTAP_MONSA, SIMANTAP, Mongisidi 1, BBGTK Sulsel, pembelajaran, TKA, sekolah, guru, siswa, orang tua, kurikulum merdeka">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="SIMANTAP - Platform Pembelajaran Terintegrasi">
-    <meta property="og:description" content="Satu ekosistem untuk tiga agenda sekolah: TKA, Pembelajaran Mendalam, dan Manajemen Kelas.">
+    <meta property="og:title" content="SIMANTAP_MONSA - Platform Pembelajaran Terintegrasi">
+    <meta property="og:description" content="Satu ekosistem untuk tiga agenda sekolah: TKA, Pembelajaran Mendalam, dan Manajemen Kelas. Karya UPTD SDN Unggulan Mongisidi 1 dari inspirasi Bimtek BBGTK.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url('/') }}">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SIMANTAP - Platform Pembelajaran Terintegrasi">
-    <meta name="twitter:description" content="Satu ekosistem untuk tiga agenda sekolah.">
+    <meta name="twitter:title" content="SIMANTAP_MONSA - Platform Pembelajaran Terintegrasi">
+    <meta name="twitter:description" content="Satu ekosistem untuk tiga agenda sekolah. Karya spektakuler UPTD SDN Unggulan Mongisidi 1 dari Bimtek BBGTK.">
     
-    <title>SIMANTAP - Situs Mandiri Terintegrasi Aplikasi Pembelajaran</title>
+    <title>SIMANTAP_MONSA - Situs Mandiri Terintegrasi Aplikasi Pembelajaran | UPTD SD Negeri Unggulan Mongisidi 1</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F3864'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='48' font-weight='bold' fill='%23B8860B' text-anchor='middle'%3ESM%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     
     {{-- Font (Inter), Font Awesome, dan AOS dibundel sendiri via Vite — bukan
         dari Google Fonts / cdnjs / unpkg. Lihat resources/css/halaman-publik.css --}}
@@ -226,6 +228,34 @@
         .project-updates-link { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 99px; background: var(--gold-gradient); color: #fff; font-weight: 700; text-decoration: none; transition: var(--transition); }
         .project-updates-link:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(184, 134, 11, 0.3); color: #fff; }
 
+        /* DEDIKASI & UCAPAN TERIMA KASIH */
+        .dedikasi-section { background: linear-gradient(180deg, #F8FAFC 0%, #EEF2F9 100%); padding: 90px 40px; position: relative; }
+        [data-theme="dark"] .dedikasi-section { background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%); }
+        .dedikasi-hero-card { background: #ffffff; border-radius: 24px; border: 1px solid var(--line); box-shadow: var(--shadow-lg); padding: 44px; position: relative; overflow: hidden; margin-bottom: 36px; }
+        [data-theme="dark"] .dedikasi-hero-card { background: #1a1a2e; border-color: #2a2a42; }
+        .dedikasi-hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #1F3864, #B8860B, #1F3864); }
+        .dedikasi-quote { font-size: 19px; font-weight: 600; color: var(--navy); line-height: 1.7; font-style: italic; text-align: center; max-width: 880px; margin: 0 auto; position: relative; }
+        [data-theme="dark"] .dedikasi-quote { color: #f0f0f0; }
+        .dedikasi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .dedikasi-card { background: #ffffff; border-radius: 18px; border: 1px solid var(--line); padding: 28px; transition: var(--transition); display: flex; flex-direction: column; justify-content: space-between; }
+        .dedikasi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--gold); }
+        [data-theme="dark"] .dedikasi-card { background: #16162a; border-color: #2a2a42; }
+        .dedikasi-card .card-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; width: fit-content; margin-bottom: 16px; }
+        .badge-bbgtk { background: rgba(31,56,100,0.12); color: var(--navy); }
+        .badge-monsa { background: rgba(184,134,11,0.15); color: var(--gold); }
+        .badge-sulsel { background: rgba(16,185,129,0.15); color: #059669; }
+        [data-theme="dark"] .badge-bbgtk { background: rgba(99,102,241,0.2); color: #818cf8; }
+        [data-theme="dark"] .badge-monsa { background: rgba(212,160,23,0.2); color: #fbbf24; }
+        [data-theme="dark"] .badge-sulsel { background: rgba(16,185,129,0.2); color: #34d399; }
+        .dedikasi-card h3 { font-size: 17px; font-weight: 800; color: var(--navy); margin-bottom: 12px; line-height: 1.4; }
+        [data-theme="dark"] .dedikasi-card h3 { color: #f0f0f0; }
+        .dedikasi-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.7; flex-grow: 1; }
+        .dedikasi-card .footer-tag { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); font-size: 12px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+        @media (max-width: 1024px) {
+            .dedikasi-grid { grid-template-columns: 1fr; }
+            .dedikasi-hero-card { padding: 30px 20px; }
+        }
+
         /* CTA */
         .cta-section { background: linear-gradient(135deg, var(--navy), var(--navy-dark)); color: #fff; text-align: center; padding: 80px 40px; }
         .cta-section h2 { font-size: 40px; font-weight: 900; letter-spacing: -1px; margin-bottom: 16px; }
@@ -350,13 +380,14 @@
 <nav class="navbar" id="navbar">
     <div class="container">
         <a href="{{ route('landing') }}" class="logo">
-            <div class="logo-icon">SM</div>
-            <span class="logo-text">SIMAN<span>TAP</span></span>
+            <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:42px;height:42px;border-radius:12px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.12);border:1.5px solid var(--gold);">
+            <span class="logo-text">SIMANTAP_<span>MONSA</span></span>
         </a>
         <ul class="nav-links" id="navLinks">
             <li><a href="#features">Fitur</a></li>
             <li><a href="#demo">Akses</a></li>
             <li><a href="#modules">Modul</a></li>
+            <li><a href="#dedikasi">Dedikasi & Harapan</a></li>
             <li><a href="#testimonials">Testimoni</a></li>
             <li><a href="#blog">Blog</a></li>
             <li><a href="#faq">FAQ</a></li>
@@ -374,9 +405,9 @@
 <section class="hero" id="hero">
     <div class="container">
         <div class="hero-content" data-aos="fade-up" data-aos-duration="800">
-            <div class="badge"><span class="dot"></span>Platform Pembelajaran Terintegrasi</div>
+            <div class="badge"><span class="dot"></span>Inspirasi Bimtek BBGTK · Inovasi Spektakuler UPTD SDN Unggulan Mongisidi 1</div>
             <h1>Satu Ekosistem untuk <br><span class="highlight">Tiga Agenda</span> Sekolah</h1>
-            <p>SIMANTAP menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Instalasi sekolah dapat mengaktifkan integrasi Google Sheet sesuai konfigurasi.</p>
+            <p><strong>SIMANTAP_MONSA</strong> menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Inovasi spektakuler yang berakar dari hasil gagasan Bimtek BBGTK dan dikembangkan oleh <strong>UPTD SD NEGERI UNGGULAN MONGISIDI 1</strong> sebagai solusi masa depan bagi pendidikan di Sulawesi Selatan.</p>
             <div class="cta-group">
                 <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
                 <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
@@ -388,28 +419,25 @@
             </div>
         </div>
         <div class="hero-image" data-aos="fade-left" data-aos-duration="800" data-aos-delay="200">
-            <div class="mockup">
-                <div class="screen">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-                        <span style="font-size:13px;font-weight:700;color:var(--gold)">📊 Dasbor Guru</span>
-                        <span style="font-size:11px;color:rgba(255,255,255,0.4)">Kelas V A · Matematika</span>
-                    </div>
-                    <div class="row"><div class="bar" style="flex:3"></div><div class="bar gold" style="flex:2"></div><div class="bar" style="flex:1"></div></div>
-                    <div class="row"><div class="bar" style="flex:4"></div><div class="bar" style="flex:1;background:var(--navy-light)"></div></div>
-                    <div class="stats">
-                        <div class="stat-box"><div class="number">32</div><div class="label">Siswa Aktif</div></div>
-                        <div class="stat-box"><div class="number">78.5</div><div class="label">Rata-rata</div></div>
-                        <div class="stat-box"><div class="number">85%</div><div class="label">Ketuntasan</div></div>
+            <div class="mockup" style="padding:12px;background:linear-gradient(145deg,#ffffff,#f8fafc);border:2px solid rgba(184,134,11,0.35);box-shadow:var(--shadow-lg)">
+                <div style="position:relative;border-radius:12px;overflow:hidden">
+                    <img src="{{ asset('images/logo.png') }}" alt="SIMANTAP_MONSA - UPTD SD Negeri Unggulan Mongisidi 1" style="width:100%;height:auto;display:block;border-radius:12px">
+                    <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top, rgba(21,42,74,0.92) 0%, rgba(21,42,74,0.65) 70%, transparent 100%);padding:22px 16px 14px;color:#fff;display:flex;align-items:flex-end;justify-content:space-between">
+                        <div>
+                            <div style="font-size:14px;font-weight:800;color:var(--gold);letter-spacing:0.5px">SIMANTAP_MONSA</div>
+                            <div style="font-size:11px;color:rgba(255,255,255,0.85)">UPTD SD Negeri Unggulan Mongisidi 1</div>
+                        </div>
+                        <span style="font-size:10px;background:var(--gold-gradient);padding:4px 10px;border-radius:99px;font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.2)">Bimtek BBGTK</span>
                     </div>
                 </div>
             </div>
             <div class="floating-badge floating-badge-1">
                 <div class="icon gold-bg">🏆</div>
-                <div class="text"><div class="title">Terintegrasi</div><div class="sub">Guru · Siswa · Orang Tua</div></div>
+                <div class="text"><div class="title">Terintegrasi</div><div class="sub">TKA · Pembelajaran Mendalam</div></div>
             </div>
             <div class="floating-badge floating-badge-2">
-                <div class="icon navy-bg">☁️</div>
-                <div class="text"><div class="title">Google Sheet</div><div class="sub">Integrasi sesuai konfigurasi</div></div>
+                <div class="icon navy-bg">🏛️</div>
+                <div class="text"><div class="title">Sulawesi Selatan</div><div class="sub">Solusi Mutu Pendidik & PTK</div></div>
             </div>
         </div>
     </div>
@@ -583,11 +611,68 @@
     </div>
 </section>
 
+<!-- DEDIKASI, UCAPAN TERIMA KASIH & HARAPAN -->
+<section class="dedikasi-section" id="dedikasi">
+    <div class="container">
+        <div class="section-header" data-aos="fade-up">
+            <div class="section-label"><i class="fas fa-award"></i> Dedikasi & Inspirasi</div>
+            <h2 class="section-title">Karya Spektakuler dari <span class="highlight">Bimtek BBGTK</span></h2>
+            <p class="section-subtitle">Lahir dari bimbingan teknis BBGTK, diwujudkan oleh UPTD SD Negeri Unggulan Mongisidi 1 untuk kemajuan pendidikan Sulawesi Selatan.</p>
+        </div>
+
+        <div class="dedikasi-hero-card" data-aos="fade-up" data-aos-delay="100">
+            <div style="display:flex;justify-content:center;margin-bottom:18px;">
+                <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:99px;background:rgba(184,134,11,0.12);color:var(--gold);font-weight:700;font-size:13px;">
+                    <i class="fas fa-handshake"></i> Sinergi Transformasi Pendidik & Tenaga Kependidikan
+                </span>
+            </div>
+            <p class="dedikasi-quote">
+                &ldquo;SIMANTAP_MONSA berawal dari percikan ide berharga pada kegiatan Bimbingan Teknis BBGTK yang kemudian dikembangkan dengan penuh dedikasi oleh UPTD SD NEGERI UNGGULAN MONGISIDI 1 menjadi sebuah karya inovasi spektakuler &mdash; hadir membawa harapan besar untuk menjadi solusi digital bagi seluruh sekolah di Sulawesi Selatan dalam memajukan Pendidik dan Tenaga Kependidikan.&rdquo;
+            </p>
+        </div>
+
+        <div class="dedikasi-grid">
+            <div class="dedikasi-card" data-aos="fade-up" data-aos-delay="150">
+                <div>
+                    <span class="card-badge badge-bbgtk"><i class="fas fa-lightbulb"></i> Sumber Inspirasi</span>
+                    <h3>Ucapan Terima Kasih kepada BBGTK Sulsel</h3>
+                    <p>
+                        Apresiasi setinggi-tingginya dan terima kasih yang mendalam kepada <strong>Balai Besar Guru Penggerak / Balai Guru dan Tenaga Kependidikan (BBGTK) Provinsi Sulawesi Selatan</strong>. Program Bimbingan Teknis (Bimtek) yang diselenggarakan telah membuka cakrawala, memicu semangat berkarya, dan menjadi fondasi utama lahirnya inovasi aplikasi pembelajaran ini.
+                    </p>
+                </div>
+                <div class="footer-tag"><i class="fas fa-certificate"></i> Tim Kerja 4 BBGTK Sulsel</div>
+            </div>
+
+            <div class="dedikasi-card" data-aos="fade-up" data-aos-delay="250">
+                <div>
+                    <span class="card-badge badge-monsa"><i class="fas fa-school"></i> Inovator & Pengembang</span>
+                    <h3>Dikembangkan oleh UPTD SDN Unggulan Mongisidi 1</h3>
+                    <p>
+                        Buah ide dari bimtek tersebut dirancang, dimatangkan, dan dikembangkan secara mandiri oleh tim pendidik dan tenaga kependidikan di <strong>UPTD SD NEGERI UNGGULAN MONGISIDI 1 (MONSA)</strong>. Menjadi wujud nyata keberanian sekolah dalam melakukan terobosan teknologi pendidikan yang berdaya guna tinggi.
+                    </p>
+                </div>
+                <div class="footer-tag"><i class="fas fa-star"></i> Inovasi Unggulan MONSA</div>
+            </div>
+
+            <div class="dedikasi-card" data-aos="fade-up" data-aos-delay="350">
+                <div>
+                    <span class="card-badge badge-sulsel"><i class="fas fa-map-marked-alt"></i> Visi Masa Depan</span>
+                    <h3>Solusi bagi Sekolah se-Sulawesi Selatan</h3>
+                    <p>
+                        Harapan luhur kami ke depan, <strong>SIMANTAP_MONSA</strong> dapat diadaptasi dan menjadi solusi terdepan bagi sekolah-sekolah di seluruh kabupaten/kota di <strong>Sulawesi Selatan</strong> dalam meningkatkan mutu, kompetensi, dan tata kelola <strong>Pendidik dan Tenaga Kependidikan (PTK)</strong> secara berkelanjutan.
+                    </p>
+                </div>
+                <div class="footer-tag"><i class="fas fa-rocket"></i> Bersama Memajukan PTK Sulsel</div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CTA -->
 <section class="cta-section" id="cta">
     <div class="container">
         <h2 data-aos="fade-up">Siap Mewujudkan <span class="highlight">Pembelajaran</span> yang Terintegrasi?</h2>
-        <p data-aos="fade-up" data-aos-delay="100">Mulai gunakan SIMANTAP di sekolah Anda. Pengelolaan hosting, database, dan integrasi spreadsheet mengikuti konfigurasi sekolah.</p>
+        <p data-aos="fade-up" data-aos-delay="100">Mulai gunakan SIMANTAP_MONSA di sekolah Anda. Solusi terpadu bagi Pendidik dan Tenaga Kependidikan.</p>
         <div class="cta-buttons" data-aos="fade-up" data-aos-delay="200">
             <a href="{{ route('login') }}" class="btn-cta btn-cta-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
             <a href="#features" class="btn-cta btn-cta-secondary"><i class="fas fa-star"></i> Lihat Fitur</a>
@@ -1070,7 +1155,7 @@
 <section class="project-updates" id="updates">
     <div class="container">
         <div class="project-updates-content" data-aos="fade-up">
-            <h3>📬 Pembaruan Proyek SIMANTAP</h3>
+            <h3>📬 Pembaruan Proyek SIMANTAP_MONSA</h3>
             <p>Newsletter email belum tersedia. Pantau perubahan dan rilis proyek melalui repositori resmi.</p>
             <a class="project-updates-link" href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-github" aria-hidden="true"></i> Lihat repositori dan rilis
@@ -1085,14 +1170,14 @@
         <div class="section-header" data-aos="fade-up">
             <div class="section-label"><i class="fas fa-question-circle"></i> FAQ</div>
             <h2 class="section-title">Pertanyaan <span class="highlight">Umum</span></h2>
-            <p class="section-subtitle">Jawaban atas pertanyaan yang sering diajukan tentang SIMANTAP.</p>
+            <p class="section-subtitle">Jawaban atas pertanyaan yang sering diajukan tentang SIMANTAP_MONSA.</p>
         </div>
         <div class="faq-list">
             @foreach([
-                ['Apa itu SIMANTAP?', 'SIMANTAP adalah aplikasi pembelajaran yang menggabungkan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam, serta manajemen kelas seperti nilai, kehadiran, materi, kuis, dan catatan. Integrasi Google Sheet bersifat opsional dan bergantung pada konfigurasi sekolah.'],
-                ['Berapa biaya menggunakan SIMANTAP?', 'Biaya hosting, database, dan layanan eksternal bergantung pada cara sekolah memasang dan mengoperasikan aplikasi. Tanyakan kepada administrator tentang biaya instalasi sekolah Anda.'],
+                ['Apa itu SIMANTAP_MONSA?', 'SIMANTAP_MONSA adalah aplikasi pembelajaran yang menggabungkan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam, serta manajemen kelas seperti nilai, kehadiran, materi, kuis, dan catatan. Merupakan karya inovasi spektakuler hasil tindak lanjut Bimtek BBGTK yang dikembangkan oleh UPTD SD Negeri Unggulan Mongisidi 1 untuk kemajuan pendidikan di Sulawesi Selatan. Integrasi Google Sheet bersifat opsional dan bergantung pada konfigurasi sekolah.'],
+                ['Berapa biaya menggunakan SIMANTAP_MONSA?', 'Biaya hosting, database, dan layanan eksternal bergantung pada cara sekolah memasang dan mengoperasikan aplikasi. Tanyakan kepada administrator tentang biaya instalasi sekolah Anda.'],
                 ['Bagaimana cara menyimpan data?', 'Data inti disimpan pada database instalasi aplikasi. Integrasi Google Sheet dapat digunakan jika dikonfigurasi oleh administrator sekolah.'],
-                ['Siapa saja yang bisa menggunakan SIMANTAP?', 'SIMANTAP dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Akun dibuat dan dikelola oleh administrator sekolah; tidak ada pendaftaran mandiri.'],
+                ['Siapa saja yang bisa menggunakan SIMANTAP_MONSA?', 'SIMANTAP_MONSA dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Akun dibuat dan dikelola oleh administrator sekolah; tidak ada pendaftaran mandiri.'],
                 ['Bagaimana data dikelola?', 'Akses aplikasi dibatasi berdasarkan peran. Integrasi dapat mengirim data ke layanan eksternal seperti Google Sheet jika diaktifkan. Administrator sekolah bertanggung jawab mengatur izin dan kebijakan privasi instalasinya.'],
                 ['Bagaimana cara memulai?', 'Hubungi administrator sekolah untuk pembuatan akun. Setelah akun aktif, administrator dapat menghubungkan akun siswa dan orang tua dengan data yang sesuai.'],
             ] as $i => $faq)
@@ -1107,7 +1192,7 @@
 
 <!-- SHARE -->
 <div class="share-section">
-    <span>Bagikan SIMANTAP:</span>
+    <span>Bagikan SIMANTAP_MONSA:</span>
     <button class="share-btn twitter" onclick="sharePage('twitter')" aria-label="Twitter"><i class="fab fa-twitter"></i></button>
     <button class="share-btn facebook" onclick="sharePage('facebook')" aria-label="Facebook"><i class="fab fa-facebook"></i></button>
     <button class="share-btn whatsapp" onclick="sharePage('whatsapp')" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></button>
@@ -1120,17 +1205,20 @@
     <div class="container">
         <div class="footer-grid">
             <div class="footer-brand">
-                <div class="logo"><div class="icon">SM</div><span class="text">SIMANTAP</span></div>
-                <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — platform untuk pembelajaran dan pengelolaan kelas. Integrasi spreadsheet dapat diaktifkan sesuai konfigurasi sekolah.</p>
+                <div class="logo">
+                    <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1.5px solid var(--gold);">
+                    <span class="text">SIMANTAP_MONSA</span>
+                </div>
+                <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — Sebuah karya spektakuler hasil inspirasi Bimtek BBGTK yang dikembangkan oleh UPTD SD Negeri Unggulan Mongisidi 1 sebagai solusi bagi Pendidik dan Tenaga Kependidikan di Sulawesi Selatan.</p>
             </div>
-            <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
+            <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#dedikasi">Dedikasi & Harapan</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
             <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Login</a></div>
             <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
         </div>
         <div class="footer-bottom">
-            <span>&copy; {{ date('Y') }} SIMANTAP — Tim Kerja 4 BBGTK Sulawesi Selatan</span>
+            <span>&copy; {{ date('Y') }} SIMANTAP_MONSA — UPTD SD Negeri Unggulan Mongisidi 1 & Tim Kerja 4 BBGTK Sulawesi Selatan</span>
             <div class="socials">
-                <a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer" aria-label="Repositori GitHub SIMANTAP"><i class="fab fa-github"></i></a>
+                <a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer" aria-label="Repositori GitHub SIMANTAP_MONSA"><i class="fab fa-github"></i></a>
             </div>
         </div>
     </div>
@@ -1150,7 +1238,7 @@
 
 <!-- COOKIE CONSENT -->
 <div class="cookie-consent" id="cookieConsent" role="region" aria-label="Informasi penyimpanan browser">
-    <p>🍪 SIMANTAP memakai cookie sesi esensial untuk keamanan login serta penyimpanan lokal untuk mengingat preferensi tampilan. Cookie sesi tetap diperlukan saat memakai akun.</p>
+    <p>🍪 SIMANTAP_MONSA memakai cookie sesi esensial untuk keamanan login serta penyimpanan lokal untuk mengingat preferensi tampilan. Cookie sesi tetap diperlukan saat memakai akun.</p>
     <div class="cookie-actions">
         <button type="button" class="btn-cookie btn-cookie-accept" onclick="acknowledgeCookieNotice()">Mengerti</button>
     </div>
@@ -1258,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Share
     window.sharePage = function(platform) {
-        var url = encodeURIComponent(window.location.href), text = encodeURIComponent('SIMANTAP - Platform Pembelajaran Terintegrasi');
+        var url = encodeURIComponent(window.location.href), text = encodeURIComponent('SIMANTAP_MONSA - Platform Pembelajaran Terintegrasi');
         var urls = { twitter: 'https://twitter.com/intent/tweet?text='+text+'&url='+url, facebook: 'https://www.facebook.com/sharer/sharer.php?u='+url, whatsapp: 'https://wa.me/?text='+text+'%20'+url, linkedin: 'https://www.linkedin.com/sharing/share-offsite/?url='+url, telegram: 'https://t.me/share/url?url='+url+'&text='+text };
         if (urls[platform]) window.open(urls[platform], '_blank', 'width=600,height=500');
     };

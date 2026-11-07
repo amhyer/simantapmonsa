@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - SIMANTAP</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Login - SIMANTAP_MONSA</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <style>
         :root { --navy: #1F3864; --gold: #B8860B; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,8 +34,9 @@
 <body>
     <div class="login-card">
         <div class="brand">
-            <h1><span class="dot"></span>SIMANTAP</h1>
-            <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran</p>
+            <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:72px;height:72px;border-radius:16px;object-fit:cover;margin:0 auto 12px;display:block;box-shadow:0 6px 20px rgba(31,56,100,.18);border:2px solid #B8860B">
+            <h1><span class="dot"></span>SIMANTAP_MONSA</h1>
+            <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran<br><span style="font-size:11px;color:#1F3864;font-weight:600">UPTD SD Negeri Unggulan Mongisidi 1</span></p>
         </div>
 
         @if($errors->any())

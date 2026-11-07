@@ -268,6 +268,9 @@ class BackupController extends Controller
         $dihapus = [];
         $gagal = [];
         $driver = DB::getDriverName();
+        $tenantId = auth()->user()?->tenant_id ?? \App\Modules\Tenant\Contexts\TenantContext::id();
+        $isMultiTenant = config('simantap.multi_tenant_enabled', false) && $tenantId !== null;
+
         Schema::disableForeignKeyConstraints();
         try {
             foreach ($tabelData as $tabel) {
@@ -275,17 +278,24 @@ class BackupController extends Controller
                     continue;
                 }
                 try {
-                    if ($driver === 'pgsql') {
-                        // CASCADE agar constraint FK antar tabel data ikut teratasi;
-                        // RESTART IDENTITY agar ID mulai lagi dari 1.
-                        DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
+                    if ($isMultiTenant && Schema::hasColumn($tabel, 'tenant_id')) {
+                        DB::table($tabel)->where('tenant_id', $tenantId)->delete();
+                    } elseif ($isMultiTenant && Schema::hasColumn($tabel, 'siswa_id') && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id')) {
+                        $siswaIds = DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id');
+                        DB::table($tabel)->whereIn('siswa_id', $siswaIds)->delete();
                     } else {
-                        // MySQL / SQLite: truncate tanpa sintaks Postgres.
-                        DB::table($tabel)->truncate();
+                        if ($driver === 'pgsql') {
+                            // CASCADE agar constraint FK antar tabel data ikut teratasi;
+                            // RESTART IDENTITY agar ID mulai lagi dari 1.
+                            DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
+                        } else {
+                            // MySQL / SQLite: truncate tanpa sintaks Postgres.
+                            DB::table($tabel)->truncate();
+                        }
                     }
                     $dihapus[] = $tabel;
                 } catch (\Exception $e) {
-                    Log::warning('Gagal truncate tabel ' . $tabel . ': ' . $e->getMessage());
+                    Log::warning('Gagal mengosongkan tabel ' . $tabel . ': ' . $e->getMessage());
                     $gagal[] = $tabel;
                 }
             }

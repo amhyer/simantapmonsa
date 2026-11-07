@@ -365,6 +365,12 @@ class DapodikSyncController extends Controller
                         ->where('semester_id', $semester->id)
                         ->first();
                 }
+                if (!$existing && !empty($r['nama'] ?? $r['nama_rombel'])) {
+                    $namaRombel = $r['nama'] ?? $r['nama_rombel'];
+                    $existing = Rombel::where('nama_rombel', $namaRombel)
+                        ->where('semester_id', $semester->id)
+                        ->first();
+                }
 
                 $guruId = null;
                 $waliKelasPtkId = $r['ptk_id'] ?? $r['guru_id'] ?? $r['wali_kelas_ptk_id'] ?? null;
@@ -417,6 +423,13 @@ class DapodikSyncController extends Controller
                 if ($dapodikId) {
                     $existing = JadwalPelajaran::where('dapodik_id', $dapodikId)
                         ->where('semester_id', $semester->id)
+                        ->first();
+                }
+                if (!$existing && !empty($j['nama_rombel'] ?? $j['kelas']) && !empty($j['hari']) && !empty($j['jam_mulai'])) {
+                    $existing = JadwalPelajaran::where('semester_id', $semester->id)
+                        ->where('kelas', $j['nama_rombel'] ?? $j['kelas'])
+                        ->where('hari', $j['hari'])
+                        ->where('jam_mulai', $j['jam_mulai'])
                         ->first();
                 }
 

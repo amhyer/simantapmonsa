@@ -14,7 +14,7 @@ from pathlib import Path
 import requests
 import PySimpleGUI as sg
 
-APP_NAME = "SIMANTAP Dapodik Bridge"
+APP_NAME = "SIMANTAP_MONSA Dapodik Bridge"
 APP_VERSION = "4.0.0"
 CONFIG_FILE = "config.json"
 
@@ -240,9 +240,23 @@ def create_gui():
          sg.Combo(["ganjil", "genap"], default_value=cfg["nama_semester"], key="-NSEM-", size=(10, 1))],
     ]
 
+    base_dir = getattr(sys, '_MEIPASS', Path(__file__).resolve().parent)
+    icon_file = os.path.join(base_dir, "icon.ico")
+    logo_file = os.path.join(base_dir, "logo_gui.png")
+
+    header_row = []
+    if os.path.exists(logo_file):
+        header_row.append(sg.Image(logo_file))
+    header_row.extend([
+        sg.Column([
+            [sg.Text(APP_NAME, font=("Segoe UI", 15, "bold"), text_color="white")],
+            [sg.Text("UPTD SD Negeri Unggulan Mongisidi 1 · Inovasi Bimtek BBGTK", font=("Segoe UI", 8), text_color="#D4A017")],
+        ]),
+        sg.Text(f"v{APP_VERSION}", font=("Segoe UI", 9), text_color="gray", justification="right", expand_x=True)
+    ])
+
     layout = [
-        [sg.Text(APP_NAME, font=("Segoe UI", 16, "bold"), text_color="white"),
-         sg.Text(f"v{APP_VERSION}", font=("Segoe UI", 9), text_color="gray", justification="right", expand_x=True)],
+        header_row,
         [sg.HorizontalSeparator()],
         [sg.TabGroup([
             [sg.Tab("Dapodik Lokal", tab_dapodik)],
@@ -266,7 +280,13 @@ def create_gui():
         [sg.StatusBar("Siap", key="-STATUS-", size=(70, 1))],
     ]
 
-    window = sg.Window(APP_NAME, layout, finalize=True, resizable=True)
+    window = sg.Window(
+        APP_NAME,
+        layout,
+        finalize=True,
+        resizable=True,
+        icon=icon_file if os.path.exists(icon_file) else None
+    )
 
     def log(msg):
         ts = datetime.now().strftime("%H:%M:%S")

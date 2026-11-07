@@ -9,7 +9,10 @@ pip install -r requirements.txt
 
 echo [2/3] Building EXE with PyInstaller...
 pyinstaller --onefile --windowed --name "SIMANTAP-Bridge" ^
+    --icon "icon.ico" ^
     --add-data "config.json;." ^
+    --add-data "icon.ico;." ^
+    --add-data "logo_gui.png;." ^
     --clean ^
     main.py
 

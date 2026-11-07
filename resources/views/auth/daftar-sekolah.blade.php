@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Pendaftaran Sekolah Baru - SIMANTAP</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Pendaftaran Sekolah Baru - SIMANTAP_MONSA</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <style>
         :root {
             --navy: #1F3864;
@@ -188,8 +190,9 @@
 <body>
     <div class="register-container">
         <div class="header">
-            <a href="{{ route('home') }}" class="brand">
-                <span class="dot"></span>SIMANTAP
+            <a href="{{ route('home') }}" class="brand" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none">
+                <img src="{{ asset('images/logo-128.png') }}" alt="Logo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1.5px solid var(--gold)">
+                <span>SIMANTAP_MONSA</span>
             </a>
             <p>Pendaftaran Akun Sekolah Baru (Multi-Tenant Platform)</p>
         </div>

@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SIMANTAP')</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>@yield('title', config('app.name', 'SIMANTAP_MONSA'))</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <meta name="theme-color" content="#1F3864">
     <meta name="mobile-web-app-capable" content="yes">
@@ -48,11 +50,11 @@
     
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <a href="{{ route('home') }}">
-                <div class="logo-icon">SM</div>
+            <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+                <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid #B8860B;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
                 <div>
-                    <div class="brand-text">SIMANTAP</div>
-                    <div class="brand-sub">Situs Mandiri Terintegrasi</div>
+                    <div class="brand-text">SIMANTAP_MONSA</div>
+                    <div class="brand-sub">UPTD SDN Unggulan Mongisidi 1</div>
                 </div>
             </a>
         </div>

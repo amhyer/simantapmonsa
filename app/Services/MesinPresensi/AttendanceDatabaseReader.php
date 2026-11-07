@@ -203,37 +203,57 @@ class AttendanceDatabaseReader
      */
     public function baca(Carbon $dari, Carbon $sampai): array
     {
+        $path = $this->path();
         $engine = $this->engine();
         if ($engine === 'tidak-tersedia') {
             throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
         }
 
         if ($engine === 'tcp') {
-            $scans = [];
-            foreach ($this->bacaLewatTcp(
-                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
-                (int) config('presensi.mesin_db_tcp_port', 4370),
-            ) as $row) {
-                $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
-                $waktu = $this->parseWaktu($row['waktu'] ?? null);
-                if ($nik === null || $waktu === null) {
-                    continue;
+            $host = (string) config('presensi.mesin_db_tcp_host', '192.168.1.7');
+            $port = (int) config('presensi.mesin_db_tcp_port', 4370);
+
+            try {
+                $hasilTcp = $this->bacaLewatTcp($host, $port);
+                $scans = [];
+                foreach ((array) ($hasilTcp['scans'] ?? []) as $row) {
+                    $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
+                    $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                    if ($nik === null || $waktu === null) {
+                        continue;
+                    }
+
+                    $scans[] = [
+                        'nik' => $nik,
+                        'waktu' => $waktu,
+                        'jenis' => $this->presensi->jenisScan((string) ($row['tipe'] ?? ''), $waktu),
+                    ];
                 }
 
-                $scans[] = [
-                    'nik' => $nik,
-                    'waktu' => $waktu,
-                    'jenis' => $this->presensi->jenisScan((string) ($row['tipe'] ?? ''), $waktu),
-                ];
+                return $scans;
+            } catch (Throwable $e) {
+                // TCP gagal (misal mesin sedang tidak aktif/reachable) -> fallback ke database.
+                $data = $this->bacaMentah($path, 'powershell', $dari, $sampai);
+
+                $scans = [];
+                foreach ((array) ($data['scans'] ?? []) as $row) {
+                    $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
+                    $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                    if ($nik === null || $waktu === null) {
+                        continue;
+                    }
+
+                    $scans[] = [
+                        'nik' => $nik,
+                        'waktu' => $waktu,
+                        'jenis' => $this->presensi->jenisScan($row['tipe'] ?? null, $waktu),
+                    ];
+                }
+
+                return $scans;
             }
-
-            return $scans;
         }
 
-        $path = $this->path();
-        if ($path === null) {
-            throw new RuntimeException('Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.');
-        }
         if (! is_file($path)) {
             throw new RuntimeException('Database Attendance Management tidak ditemukan di '.$path.'.');
         }

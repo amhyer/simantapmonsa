@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Lupa Kata Sandi - SIMANTAP</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <title>Lupa Kata Sandi - SIMANTAP_MONSA</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <style>
         :root { --navy: #1F3864; --gold: #B8860B; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,7 +33,8 @@
 <body>
     <div class="login-card">
         <div class="brand">
-            <h1><span class="dot"></span>SIMANTAP</h1>
+            <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:64px;height:64px;border-radius:14px;object-fit:cover;margin:0 auto 10px;display:block;box-shadow:0 4px 16px rgba(31,56,100,.15);border:2px solid #B8860B">
+            <h1><span class="dot"></span>SIMANTAP_MONSA</h1>
             <p>Atur ulang kata sandi akun</p>
         </div>
 

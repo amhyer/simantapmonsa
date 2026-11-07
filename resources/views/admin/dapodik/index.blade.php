@@ -197,14 +197,15 @@
     {{-- Download Bridge --}}
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">
-            <h3><i class="fas fa-download" style="color:var(--ok)"></i> Download SIMANTAP Bridge</h3>
+            <h3><i class="fas fa-download" style="color:var(--ok)"></i> Download SIMANTAP_MONSA Bridge</h3>
         </div>
         <div class="card-body">
-            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+                <img src="{{ asset('images/logo-128.png') }}" alt="SIMANTAP_MONSA Bridge" style="width:72px;height:72px;border-radius:14px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 14px rgba(31,56,100,0.15);flex-shrink:0">
                 <div style="flex:1;min-width:200px">
-                    <p style="font-size:13px;color:#667085;margin:0 0 8px 0">Aplikasi desktop untuk menghubungkan Dapodik lokal dengan server SIMANTAP. Jalankan di laptop yang terinstall Dapodik.</p>
+                    <p style="font-size:13.5px;color:#344054;margin:0 0 8px 0;line-height:1.5">Aplikasi desktop resmi <b>SIMANTAP_MONSA Bridge</b> untuk menghubungkan Dapodik lokal sekolah dengan server aplikasi. Inovasi UPTD SD Negeri Unggulan Mongisidi 1.</p>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                        <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary"><i class="fas fa-download"></i> Download Bridge v3.0</a>
+                        <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary"><i class="fas fa-download"></i> Download Bridge</a>
                         <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px"><i class="fas fa-file"></i> SIMANTAP-Bridge.exe ({{ $bridgeSize ? round($bridgeSize / (1024*1024), 1) . ' MB' : '~41 MB' }})</span>
                     </div>
                     @if($bridgeChecksum)

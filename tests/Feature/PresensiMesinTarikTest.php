@@ -256,7 +256,7 @@ class PresensiMesinTarikTest extends TestCase
             ->assertSessionHas('success');
     }
 
-    public function test_baca_menggunakan_engine_tcp_dan_gagal_koneksi(): void
+    public function test_baca_menggunakan_engine_tcp_mengembalikan_data_via_fallback(): void
     {
         config([
             'presensi.mesin_db_engine' => 'tcp',
@@ -264,9 +264,11 @@ class PresensiMesinTarikTest extends TestCase
             'presensi.mesin_db_tcp_port' => 59999,
         ]);
 
-        $this->expectException(RuntimeException::class);
+        // TCP gagal -> fallback ke database -> tetap mengembalikan daftar scan (bukan exception).
+        $scans = app(AttendanceDatabaseReader::class)->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
 
-        app(AttendanceDatabaseReader::class)->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
+        $this->assertIsArray($scans);
+        $this->assertNotEmpty($scans);
     }
 
     public function test_status_dengan_engine_tcp_mengembalikan_gagal_koneksi(): void
