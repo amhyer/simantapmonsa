@@ -10,7 +10,9 @@ use App\Models\Tka\AdaptiveSimulation;
 use App\Models\Tka\EraporSyncLog;
 use App\Models\Tka\LearningRecommendation;
 use App\Services\Tka\TkaCognitiveAnalyticsService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -261,7 +263,18 @@ class TkaInovasiController extends Controller
             try {
                 $analytics->syncStudentToErapor($siswa, $guru, $validated);
                 $berhasil++;
-            } catch (RuntimeException) {
+            } catch (RuntimeException $exception) {
+                // QueryException juga turunan RuntimeException. Tanpa pemisahan ini,
+                // kegagalan simpan (mis. SQLSTATE PostgreSQL) tersamar sebagai
+                // "belum ada data TKA" dan penyebabnya hilang dari log.
+                if ($exception instanceof QueryException) {
+                    Log::warning('Sinkronisasi TKA ke e-Rapor gagal (SQL).', [
+                        'siswa_id' => $siswa->id,
+                        'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
+                        'message' => mb_substr($exception->getMessage(), 0, 600),
+                    ]);
+                }
+
                 $dilewati++;
             }
         }

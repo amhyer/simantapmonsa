@@ -354,16 +354,28 @@ class TkaInnovationsTest extends TestCase
             ->assertOk()
             ->assertSee('Andi Unggul Kognitif');
 
-        $this->actingAs($this->guruA)
+        $response = $this->actingAs($this->guruA)
             ->post(route('guru.tka.integrasi-erapor.sync'), [
                 'kelas' => '6A',
                 'mata_pelajaran' => 'Matematika',
                 'komponen_target' => 'sumatif',
                 'semester' => 'Ganjil',
                 'tahun_ajaran' => '2026/2027',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
+            ]);
+
+        $response->assertRedirect();
+
+        // Bila sinkronisasi gagal, sertakan pesan error sesi/validasi supaya
+        // kegagalannya tidak sekadar berbunyi "Session is missing expected key [success]".
+        $session = $this->app['session.store'];
+        $errorBag = $session->get('errors');
+        $this->assertTrue(
+            $session->has('success'),
+            'Sinkronisasi e-Rapor tidak mengembalikan pesan sukses. session.error: '
+            .json_encode($session->get('error'))
+            .' | validation: '.json_encode($errorBag ? $errorBag->all() : [])
+            ." | status: {$response->getStatusCode()} | target: {$response->headers->get('Location')}"
+        );
 
         $nilai = Nilai::where('siswa_id', $this->siswaUnggul->id)
             ->where('mata_pelajaran', 'Matematika')

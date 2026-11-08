@@ -489,6 +489,9 @@ class TkaCognitiveAnalyticsService
                     'siswa_id' => $siswa->id,
                     'guru_id' => $guru->id,
                     'mata_pelajaran' => $mapel,
+                    // `nilai.jenis` adalah enum (Tugas/Ulangan Harian/Praktik/PTS/PAS):
+                    // nilai di luar daftar itu melanggar check constraint PostgreSQL
+                    // (nilai_jenis_check) dan membuat sinkronisasi gagal diam-diam.
                     'jenis' => $jenisNilai,
                     'judul_penilaian' => $judulPenilaian,
                 ],

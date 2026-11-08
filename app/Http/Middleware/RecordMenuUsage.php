@@ -61,9 +61,13 @@ class RecordMenuUsage
             });
         } catch (Throwable $exception) {
             // Telemetry tidak boleh menggagalkan halaman yang sedang dibuka.
+            // Sertakan pesan asli: tanpa pesan, kegagalan SQL hanya tampak sebagai
+            // "transaksi PostgreSQL aborted" di request berikutnya dan penyebab
+            // pertamanya hilang dari log.
             Log::warning('Pencatatan penggunaan menu gagal.', [
                 'route_name' => $routeName,
                 'exception' => $exception::class,
+                'message' => mb_substr($exception->getMessage(), 0, 500),
             ]);
         }
 
