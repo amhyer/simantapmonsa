@@ -260,6 +260,12 @@ jobs:
             grep -a 'SQLSTATE\[' /tmp/phpunit-postgres.log | grep -v '25P02' | head -n 30 || true
             echo "--- Diagnostik impor Dapodik ---"
             grep -a -E 'Gagal (import baris|auto-create akun user siswa|commit chunk import dapodik|update log import dapodik)' storage/logs/laravel.log | tail -n 20 || true
+            echo "--- laravel.log: kegagalan yang ditelan aplikasi (ERROR/WARNING) ---"
+            grep -a -E '^\[[^]]+\] [a-z]+\.(ERROR|WARNING|CRITICAL|ALERT|EMERGENCY)' storage/logs/laravel.log | tail -n 40 || true
+            echo "--- laravel.log: baris berisi SQLSTATE selain transaksi aborted ---"
+            grep -a 'SQLSTATE' storage/logs/laravel.log | grep -av '25P02' | tail -n 30 || true
+            echo "--- laporan endpoint 5xx (PostgreSQL) ---"
+            head -n 60 storage/logs/route-health-report.txt 2>/dev/null || echo "(laporan tidak tersedia)"
             echo "--- akhir log ---"
             tail -n 80 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'

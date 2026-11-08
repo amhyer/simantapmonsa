@@ -11,7 +11,9 @@ use App\Models\Tka\ParentReport;
 use App\Models\Exam\Attempt as ExamAttempt;
 use Database\Seeders\E2eFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Tests\Feature\Support\RouteExpectationRegistry;
 use Tests\TestCase;
@@ -108,12 +110,35 @@ class RouteSweepTest extends TestCase
         $failures = [];
         $tested = 0;
         $lastSql = null;
+        $swallowed = [];
         $isPostgres = \DB::connection()->getDriverName() === 'pgsql';
         if ($isPostgres) {
             \DB::connection()->beforeExecuting(function ($sql) use (&$lastSql) {
                 $lastSql = $sql;
             });
         }
+
+        // Aplikasi menelan sebagian kegagalan DB (mis. telemetri menu) dan hanya
+        // mencatatnya sebagai log. Di PostgreSQL, statement yang gagal membuat
+        // transaksi test aborted sehingga error aslinya tidak pernah sampai ke
+        // response. Rekam log agar penyebab pertama tetap terlihat.
+        Log::listen(function (MessageLogged $message) use (&$swallowed): void {
+            if (! in_array($message->level, ['warning', 'error', 'critical', 'alert', 'emergency'], true)) {
+                return;
+            }
+
+            if (count($swallowed) >= 15) {
+                return;
+            }
+
+            $context = $message->context;
+            if (($context['exception'] ?? null) instanceof \Throwable) {
+                $context['exception'] = $context['exception']::class.': '.$context['exception']->getMessage();
+            }
+
+            $swallowed[] = $message->level.' | '.$message->message.' | '
+                .json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        });
 
         foreach (Route::getRoutes() as $route) {
             if (! in_array('GET', $route->methods(), true)) {
@@ -149,7 +174,11 @@ class RouteSweepTest extends TestCase
                     try {
                         \DB::connection()->getPdo()->query('select 1');
                     } catch (\PDOException $exception) {
-                        $this->fail("Transaksi PostgreSQL aborted setelah {$role} GET {$path} ({$name}); query terakhir: {$lastSql}. {$exception->getMessage()}");
+                        $this->fail(
+                            "Transaksi PostgreSQL aborted setelah {$role} GET {$path} ({$name}); "
+                            ."query terakhir: {$lastSql}. {$exception->getMessage()}".
+                            $this->formatSwallowedErrors($swallowed)
+                        );
                     }
                 }
 
@@ -168,7 +197,11 @@ class RouteSweepTest extends TestCase
         fwrite(STDOUT, $report.PHP_EOL);
 
         $this->assertGreaterThan(1000, $tested, 'Sweep harus menguji seluruh route GET terhadap akun fixture lintas peran.');
-        $this->assertSame([], $failures, "Route GET menghasilkan 5xx:\n".implode("\n", array_slice($failures, 0, 50)));
+        $this->assertSame(
+            [],
+            $failures,
+            "Route GET menghasilkan 5xx:\n".implode("\n", array_slice($failures, 0, 50)).$this->formatSwallowedErrors($swallowed)
+        );
     }
 
     public function test_denied_cbt_requests_leave_result_and_integrity_state_unchanged(): void
@@ -333,5 +366,21 @@ class RouteSweepTest extends TestCase
         }
 
         return $path;
+    }
+
+    /**
+     * Ringkas log kegagalan DB yang ditelan aplikasi agar error asli PostgreSQL
+     * (yang biasanya tertutup oleh SQLSTATE[25P02]) tetap terbaca di CI.
+     *
+     * @param  array<int, string>  $entries
+     */
+    private function formatSwallowedErrors(array $entries): string
+    {
+        if ($entries === []) {
+            return ' Tidak ada log kegagalan DB yang tertangkap.';
+        }
+
+        return PHP_EOL.PHP_EOL.'Log kegagalan yang ditelan aplikasi (kandidat penyebab transaksi aborted):'.PHP_EOL
+            .'- '.implode(PHP_EOL.'- ', $entries);
     }
 }
