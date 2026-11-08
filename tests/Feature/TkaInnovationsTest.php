@@ -354,6 +354,20 @@ class TkaInnovationsTest extends TestCase
             ->assertOk()
             ->assertSee('Andi Unggul Kognitif');
 
+        // Diagnostik sementara: profil dihitung langsung (tanpa HTTP request) dan
+        // semua query ke tabel simulasi selama request direkam.
+        $profileLangsung = app(\App\Services\Tka\TkaCognitiveAnalyticsService::class)
+            ->buildStudentCognitiveProfile($this->siswaUnggul);
+        $simRows = \DB::table('tka_adaptive_simulations')
+            ->get(['id', 'siswa_id', 'tenant_id', 'status', 'submitted_at'])
+            ->toJson();
+        $sqlSimulasi = [];
+        \DB::listen(function ($query) use (&$sqlSimulasi): void {
+            if (str_contains($query->sql, 'tka_adaptive_simulations')) {
+                $sqlSimulasi[] = $query->sql.' :: '.json_encode($query->bindings);
+            }
+        });
+
         $response = $this->actingAs($this->guruA)
             ->post(route('guru.tka.integrasi-erapor.sync'), [
                 'kelas' => '6A',
@@ -375,6 +389,10 @@ class TkaInnovationsTest extends TestCase
             .json_encode($session->get('error'))
             .' | validation: '.json_encode($errorBag ? $errorBag->all() : [])
             ." | status: {$response->getStatusCode()} | target: {$response->headers->get('Location')}"
+            .' | profil_langsung_jumlah_pengujian: '.json_encode($profileLangsung['jumlah_pengujian'])
+            .' | profil_langsung_skor: '.json_encode($profileLangsung['skor_kognitif'])
+            .' | baris_simulasi: '.$simRows
+            .' | sql_simulasi_request: '.json_encode($sqlSimulasi)
         );
 
         $nilai = Nilai::where('siswa_id', $this->siswaUnggul->id)
