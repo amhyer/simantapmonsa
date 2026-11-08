@@ -552,6 +552,28 @@ class PresensiMesinImportController extends Controller
     }
 
     /**
+     * Mode live monitor: baca scan terbaru dari mesin ZKTeco via TCP.
+     */
+    public function live(AttendanceDatabaseReader $reader): JsonResponse
+    {
+        $hasil = $reader->bacaLive();
+
+        return response()->json([
+            'ok' => (bool) ($hasil['ok'] ?? false),
+            'pesan' => (string) ($hasil['pesan'] ?? ''),
+            'scans' => array_map(
+                fn (array $scan): array => [
+                    'nik' => (string) ($scan['nik'] ?? ''),
+                    'nama' => (string) ($scan['nama'] ?? ''),
+                    'waktu' => isset($scan['waktu']) ? (string) $scan['waktu']->toDateTimeString() : null,
+                    'jenis' => (string) ($scan['jenis'] ?? 'masuk'),
+                ],
+                (array) ($hasil['scans'] ?? []),
+            ),
+        ]);
+    }
+
+    /**
      * Simpan pengaturan pembacaan mesin (engine) dari halaman admin.
      * Nilai disimpan di tabel sekolah_settings (kolom pengaturan JSON).
      */

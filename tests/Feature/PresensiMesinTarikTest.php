@@ -509,4 +509,36 @@ class PresensiMesinTarikTest extends TestCase
             ->get(route('admin.presensi.dashboard.mesin'))
             ->assertForbidden();
     }
+
+    public function test_live_monitor_membaca_scan_terbaru_via_tcp(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('bacaLive')->once()->andReturn([
+                'ok' => true,
+                'pesan' => 'OK',
+                'scans' => [
+                    ['nik' => '7309082109930003', 'waktu' => Carbon::parse('2026-11-08 06:55:00'), 'jenis' => 'masuk'],
+                ],
+            ]);
+        });
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.presensi.mesin.live'))
+            ->assertOk()
+            ->assertJsonStructure(['ok', 'pesan', 'scans'])
+            ->assertJsonPath('ok', true)
+            ->assertJsonCount(1, 'scans');
+    }
+
+    public function test_live_monitor_mengembalikan_gagal_jika_engine_bukan_tcp(): void
+    {
+        config(['presensi.mesin_db_engine' => 'powershell']);
+
+        $result = app(AttendanceDatabaseReader::class)->bacaLive();
+
+        $this->assertFalse($result['ok']);
+        $this->assertSame([], $result['scans']);
+    }
 }

@@ -398,6 +398,57 @@ class AttendanceDatabaseReader
     /**
      * @return array{jumlah_pegawai?: int, jumlah_scan?: int, pegawai?: list<array<string, mixed>>, scans?: list<array<string, mixed>>}
      */
+    /**
+     * Mode live monitor: baca scan terbaru dari mesin ZKTeco via TCP.
+     *
+     * @return array{ok: bool, pesan: string, scans: list<array{nik: string, waktu: Carbon, jenis: string}>}
+     */
+    public function bacaLive(): array
+    {
+        $engine = $this->engine();
+        if ($engine === 'tidak-tersedia') {
+            return [
+                'ok' => false,
+                'pesan' => 'Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.',
+                'scans' => [],
+            ];
+        }
+
+        if ($engine !== 'tcp') {
+            return [
+                'ok' => false,
+                'pesan' => 'Mode live memakai mesin ZKTeco via TCP. Aktifkan pembaca TCP (PRESENSI_MESIN_DB_TCP_HOST).',
+                'scans' => [],
+            ];
+        }
+
+        try {
+            $hasilTcp = $this->bacaLewatTcp(
+                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
+                (int) config('presensi.mesin_db_tcp_port', 4370),
+            );
+
+            $scans = [];
+            foreach ((array) ($hasilTcp['scans'] ?? []) as $row) {
+                $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
+                $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                if ($nik === null || $waktu === null) {
+                    continue;
+                }
+
+                $scans[] = [
+                    'nik' => $nik,
+                    'waktu' => $waktu,
+                    'jenis' => $this->presensi->jenisScan((string) ($row['tipe'] ?? ''), $waktu),
+                ];
+            }
+
+            return ['ok' => true, 'pesan' => 'OK', 'scans' => $scans];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'pesan' => 'Gagal membaca data live dari mesin via TCP: '.$e->getMessage(), 'scans' => []];
+        }
+    }
+
     private function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
     {
         // Tanpa rentang waktu (null), kedua mesin pembaca membaca seluruh isi CHECKINOUT.

@@ -87,6 +87,12 @@
                 <button type="submit" id="btn-tarik-semua" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang? Proses ini akan menelusuri seluruh rentang scan tersedia.')">Tarik Semua Data (1 Klik)</button>
             </form>
 
+            <div style="border-top:1px dashed #D0D5DD;margin-top:12px;padding-top:12px">
+                <p style="font-size:13px;color:#344054;margin:0 0 10px">Live Monitor — baca scan terbaru dari mesin ZKTeco via TCP.</p>
+                <button type="button" class="btn btn-sm" id="btn-baca-live" style="background:#1F3864;color:#fff">Baca Scan Terkini</button>
+                <div id="hasil-live" style="font-size:13px;margin-top:10px;color:#475467;white-space:pre-wrap"></div>
+            </div>
+
             <form action="{{ route('admin.presensi.mesin.pengaturan') }}" method="POST" style="margin-top:12px;border-top:1px dashed #D0D5DD;padding-top:12px">
                 @csrf
                 <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
@@ -246,6 +252,41 @@
             formSemua.addEventListener('submit', function () {
                 tombolTarikSemua.disabled = true;
                 tombolTarikSemua.textContent = 'Menarik semua data...';
+            });
+        }
+
+        const tombolLive = document.getElementById('btn-baca-live');
+        const kotakLive = document.getElementById('hasil-live');
+
+        if (tombolLive) {
+            tombolLive.addEventListener('click', async function () {
+                tombolLive.disabled = true;
+                kotakLive.style.color = '#475467';
+                kotakLive.textContent = 'Membaca scan terbaru dari mesin...';
+
+                try {
+                    const res = await fetch(@json(route('admin.presensi.mesin.live')), {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                    });
+
+                    const data = await res.json();
+                    if (data.ok) {
+                        kotakLive.style.color = '#12805C';
+                        const daftar = (data.scans ?? []).map((s) => (s.waktu ?? '-') + ' | NIK ' + (s.nik ?? '-') + ' | ' + (s.jenis ?? '')).join('\n');
+                        kotakLive.textContent = 'Mesin OK. Scan terkini:\n' + (daftar || 'Belum ada scan.');
+                    } else {
+                        kotakLive.style.color = '#B42318';
+                        kotakLive.textContent = 'Gagal: ' + (data.pesan || 'Tidak ada data');
+                    }
+                } catch (e) {
+                    kotakLive.style.color = '#B42318';
+                    kotakLive.textContent = 'Gagal menghubungi server: ' + e.message;
+                } finally {
+                    tombolLive.disabled = false;
+                }
             });
         }
     })();

@@ -94,14 +94,14 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 
 ## Task 5: Live Monitor via TCP
 
-**Files:**
+**Files:** 
 - Modify: `AttendanceDatabaseReader` (method read live), controller tes/baca, view mesin.
 
-**Interfaces:**
+**Interfaces:** 
 - Consumes: protokol TCP (sudah ada).
 - Produces: endpoint baca live terkini.
 
-- [ ] **Step 1..5:** tulis test → implement → pass → commit.
+- [x] **Step 1..5:** tulis test → implement → pass → commit.
 
 ---
 
