@@ -183,7 +183,8 @@
             </div>
         </div>
 
-        {{-- Ujian CBT & Tryout --}}
+        {{-- Rute CBT didaftarkan hanya saat modul aktif. --}}
+        @if(config('simantap.cbt_enabled', false) && Route::has('cbt.sessions.index') && Route::has('cbt.question-banks.index'))
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-laptop-code" style="margin-right:8px;color:#2563EB"></i>Ujian CBT & Bank Soal</h3>
@@ -212,6 +213,7 @@
                 @endif
             </div>
         </div>
+        @endif
     </div>
 
     <div class="grid grid-2" style="margin-bottom:20px">

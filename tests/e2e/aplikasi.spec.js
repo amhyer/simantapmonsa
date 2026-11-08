@@ -111,7 +111,9 @@ test('memuat chunk QR secara malas hanya saat tombol Aktifkan kamera ditekan', a
     // Pustaka QR harus BELUM dimuat saat halaman dibuka — itu inti penghematannya.
     // Yang diperiksa spesifik chunk `esm-*` (html5-qrcode), bukan semua aset JS,
     // agar test tidak rapuh bila halaman ini nanti menambah aset lain.
-    const tombolMulai = page.locator('[data-qr-start]').first();
+    const detailsSiswa = page.locator('details').filter({ has: page.locator('[data-mode="bind-card"]') });
+    await detailsSiswa.locator('summary').click();
+    const tombolMulai = detailsSiswa.locator('[data-qr-start]');
     await expect(tombolMulai).toBeVisible({ timeout: 15_000 });
     const chunkQrSebelumKlik = [...setelahMuat].filter((u) => /\/assets\/esm-[^/]*\.js/.test(u));
     expect(

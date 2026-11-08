@@ -33,6 +33,7 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         expect(instructions?.status()).toBe(200);
         await expect(page.getByRole('heading', { name: 'Petunjuk Ujian CBT' })).toBeVisible();
         await expect(page.getByText('5 soal pilihan ganda, satu percobaan.')).toBeVisible();
+        page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: 'Mulai ujian sekarang' }).click();
         await expect(page.locator('#exam-form')).toBeVisible();
 

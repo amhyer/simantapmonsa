@@ -243,6 +243,10 @@ jobs:
             # Sertakan awal daftar kegagalan agar penyebab pertama tidak
             # tertutup rentetan error transaksi PostgreSQL yang menyusul.
             sed -r 's/\x1B\[[0-9;]*[[:alpha:]]//g' /tmp/phpunit-postgres.log 2>/dev/null | sed -n '/^[[:space:]]*FAILED /,$p' | head -n 220 || true
+            echo "--- SQLSTATE asal selain transaksi sudah gagal ---"
+            grep -a 'SQLSTATE\[' /tmp/phpunit-postgres.log | grep -v '25P02' | head -n 30 || true
+            echo "--- Peringatan query cache siswa ---"
+            grep -a 'Gagal membersihkan cache foto orang tua' storage/logs/laravel.log | tail -n 5 || true
             echo "--- akhir log ---"
             tail -n 80 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'

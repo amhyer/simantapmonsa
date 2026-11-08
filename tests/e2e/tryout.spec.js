@@ -35,7 +35,8 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
             response.url().includes('/tryout/student/9411/answer')
             && response.request().method() === 'POST'
         );
-        await answerControl.check();
+        // Kontrol radio tersembunyi secara visual; pengguna mengklik labelnya.
+        await page.locator('label[for="q9404_A"]').click();
         const answerResponse = await answerResponsePromise;
         expect(answerResponse.status()).toBe(200);
         expect(await answerResponse.json()).toEqual({ success: true });

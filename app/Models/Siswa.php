@@ -6,6 +6,8 @@ use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Siswa extends Model
@@ -89,10 +91,13 @@ class Siswa extends Model
         $flush = function (Siswa $siswa) {
             $ids = User::where('nama_pengguna', $siswa->nis)->pluck('id');
             try {
-                $linked = User::whereJsonContains('terhubung_dengan', $siswa->id)->pluck('id');
+                // Pada PostgreSQL, error query yang ditangkap tetap membatalkan
+                // transaksi induk. Savepoint menjaga perubahan siswa tetap utuh.
+                $linked = DB::transaction(fn () => User::whereJsonContains('terhubung_dengan', $siswa->id)->pluck('id'));
                 $ids = $ids->merge($linked);
-            } catch (\Throwable) {
-                // Driver DB tanpa dukungan JSON contains (abaikan relasi ortu di sini).
+            } catch (\Throwable $exception) {
+                // Driver tanpa dukungan JSON contains: cache ortu harus direkonsiliasi.
+                Log::warning('Gagal membersihkan cache foto orang tua.', ['exception' => $exception->getMessage()]);
             }
             foreach ($ids as $id) {
                 Cache::forget('layout-foto-' . $id);
