@@ -2,6 +2,7 @@
 
 namespace App\Services\MesinPresensi;
 
+use App\Models\SekolahSettings;
 use App\Services\PresensiMesinService;
 use Illuminate\Support\Carbon;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -23,15 +24,25 @@ class AttendanceDatabaseReader
     private const EKSTENSI = ['mdb', 'accdb'];
 
     private const COMMAND_CONNECT = 1000;
+
     private const COMMAND_EXIT = 1001;
+
     private const COMMAND_ENABLE_DEVICE = 1002;
+
     private const COMMAND_DISABLE_DEVICE = 1003;
+
     private const COMMAND_ACK_OK = 2000;
+
     private const COMMAND_ACK_ERROR = 2001;
+
     private const COMMAND_ACK_DATA = 2002;
+
     private const COMMAND_PREPARE_DATA = 1500;
+
     private const COMMAND_DATA = 1501;
+
     private const COMMAND_FREE_DATA = 1502;
+
     private const COMMAND_ATTLOG_RRQ = 13;
 
     private const MESIN_EPOCH = '2000-01-01 00:00:00';
@@ -114,11 +125,11 @@ class AttendanceDatabaseReader
     private function pengaturanMesin(): array
     {
         try {
-            $sekolah = \App\Models\SekolahSettings::query()->first();
+            $sekolah = SekolahSettings::query()->first();
             $data = $sekolah?->pengaturan;
 
             return is_array($data) ? $data : [];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
     }
@@ -130,44 +141,7 @@ class AttendanceDatabaseReader
      */
     public function status(): array
     {
-        $path = $this->path();
-
-        if ($path === null) {
-            return [
-                'ok' => false,
-                'pesan' => 'Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.',
-                'path' => null,
-                'engine' => $this->engine(),
-            ];
-        }
-
-        if (! is_file($path)) {
-            return [
-                'ok' => false,
-                'pesan' => 'Database tidak ditemukan di '.$path.'.',
-                'path' => $path,
-                'engine' => $this->engine(),
-            ];
-        }
-
-        if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::EKSTENSI, true)) {
-            return [
-                'ok' => false,
-                'pesan' => 'File database harus berekstensi .mdb atau .accdb.',
-                'path' => $path,
-                'engine' => $this->engine(),
-            ];
-        }
-
         $engine = $this->engine();
-        if ($engine === 'tidak-tersedia') {
-            return [
-                'ok' => false,
-                'pesan' => 'Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.',
-                'path' => $path,
-                'engine' => $engine,
-            ];
-        }
 
         if ($engine === 'tcp') {
             $tcpHost = trim((string) config('presensi.mesin_db_tcp_host', ''));
@@ -203,6 +177,44 @@ class AttendanceDatabaseReader
                 'engine' => $engine,
                 'jumlah_pegawai' => 0,
                 'jumlah_scan' => null,
+            ];
+        }
+
+        $path = $this->path();
+
+        if ($path === null) {
+            return [
+                'ok' => false,
+                'pesan' => 'Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.',
+                'path' => null,
+                'engine' => $engine,
+            ];
+        }
+
+        if (! is_file($path)) {
+            return [
+                'ok' => false,
+                'pesan' => 'Database tidak ditemukan di '.$path.'.',
+                'path' => $path,
+                'engine' => $engine,
+            ];
+        }
+
+        if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::EKSTENSI, true)) {
+            return [
+                'ok' => false,
+                'pesan' => 'File database harus berekstensi .mdb atau .accdb.',
+                'path' => $path,
+                'engine' => $engine,
+            ];
+        }
+
+        if ($engine === 'tidak-tersedia') {
+            return [
+                'ok' => false,
+                'pesan' => 'Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.',
+                'path' => $path,
+                'engine' => $engine,
             ];
         }
 
@@ -262,7 +274,19 @@ class AttendanceDatabaseReader
                 return $scans;
             } catch (Throwable $e) {
                 // TCP gagal (misal mesin sedang tidak aktif/reachable) -> fallback ke database.
-                $data = $this->bacaMentah($path, 'powershell', $dari, $sampai);
+                if ($path === null || ! is_file($path)) {
+                    throw new RuntimeException(
+                        'Gagal koneksi ke mesin via TCP ('.$e->getMessage().') dan database cadangan Attendance Management tidak ditemukan.',
+                        0,
+                        $e
+                    );
+                }
+                if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::EKSTENSI, true)) {
+                    throw new RuntimeException('File database mesin harus berekstensi .mdb atau .accdb.', 0, $e);
+                }
+
+                $fallbackEngine = in_array('odbc', \PDO::getAvailableDrivers(), true) ? 'odbc' : 'powershell';
+                $data = $this->bacaMentah($path, $fallbackEngine, $dari, $sampai);
 
                 $scans = [];
                 foreach ((array) ($data['scans'] ?? []) as $row) {
@@ -283,6 +307,9 @@ class AttendanceDatabaseReader
             }
         }
 
+        if ($path === null) {
+            throw new RuntimeException('Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.');
+        }
         if (! is_file($path)) {
             throw new RuntimeException('Database Attendance Management tidak ditemukan di '.$path.'.');
         }
@@ -449,7 +476,7 @@ class AttendanceDatabaseReader
         }
     }
 
-    private function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
+    protected function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
     {
         // Tanpa rentang waktu (null), kedua mesin pembaca membaca seluruh isi CHECKINOUT.
         return $engine === 'odbc'

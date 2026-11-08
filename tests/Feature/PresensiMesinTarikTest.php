@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\PresensiPegawai;
+use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\PresensiMesinService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -291,31 +293,77 @@ class PresensiMesinTarikTest extends TestCase
 
     public function test_baca_menggunakan_engine_tcp_mengembalikan_data_via_fallback(): void
     {
+        $tmpMdb = sys_get_temp_dir().DIRECTORY_SEPARATOR.'att2000-test-'.uniqid('', true).'.mdb';
+        file_put_contents($tmpMdb, 'stub-mdb');
+
+        try {
+            config([
+                'presensi.mesin_db_path' => $tmpMdb,
+                'presensi.mesin_db_engine' => 'tcp',
+                'presensi.mesin_db_tcp_host' => '127.0.0.1',
+                'presensi.mesin_db_tcp_port' => 59999,
+                'presensi.mesin_db_timeout' => 1,
+            ]);
+
+            $reader = new class(app(PresensiMesinService::class)) extends AttendanceDatabaseReader
+            {
+                protected function bacaMentah(string $path, string $engine, ?Carbon $dari = null, ?Carbon $sampai = null): array
+                {
+                    return [
+                        'scans' => [
+                            ['nik' => '7309082109930003', 'waktu' => '2026-11-02 06:58:00', 'tipe' => 'I'],
+                            ['nik' => '7309082109930003', 'waktu' => '2026-11-02 14:12:00', 'tipe' => 'O'],
+                        ],
+                    ];
+                }
+            };
+
+            // TCP gagal -> fallback ke database -> tetap mengembalikan daftar scan (bukan exception).
+            $scans = $reader->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
+
+            $this->assertIsArray($scans);
+            $this->assertCount(2, $scans);
+            $this->assertSame('7309082109930003', $scans[0]['nik']);
+            $this->assertSame('masuk', $scans[0]['jenis']);
+            $this->assertSame('pulang', $scans[1]['jenis']);
+        } finally {
+            @unlink($tmpMdb);
+        }
+    }
+
+    public function test_baca_engine_tcp_tanpa_db_cadangan_melempar_runtime_exception(): void
+    {
         config([
+            'presensi.mesin_db_path' => '',
+            'presensi.mesin_db_kandidat' => [],
             'presensi.mesin_db_engine' => 'tcp',
             'presensi.mesin_db_tcp_host' => '127.0.0.1',
             'presensi.mesin_db_tcp_port' => 59999,
+            'presensi.mesin_db_timeout' => 1,
         ]);
 
-        // TCP gagal -> fallback ke database -> tetap mengembalikan daftar scan (bukan exception).
-        $scans = app(AttendanceDatabaseReader::class)->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('database cadangan Attendance Management tidak ditemukan');
 
-        $this->assertIsArray($scans);
-        $this->assertNotEmpty($scans);
+        app(AttendanceDatabaseReader::class)->baca(Carbon::parse('2026-11-01'), Carbon::parse('2026-11-04'));
     }
 
     public function test_status_dengan_engine_tcp_mengembalikan_gagal_koneksi(): void
     {
         config([
+            'presensi.mesin_db_path' => '',
+            'presensi.mesin_db_kandidat' => [],
             'presensi.mesin_db_engine' => 'tcp',
             'presensi.mesin_db_tcp_host' => '127.0.0.1',
             'presensi.mesin_db_tcp_port' => 59999,
+            'presensi.mesin_db_timeout' => 1,
         ]);
 
         $status = app(AttendanceDatabaseReader::class)->status();
 
         $this->assertFalse($status['ok']);
         $this->assertSame('tcp', $status['engine']);
+        $this->assertStringContainsString('TCP', $status['pesan']);
     }
 
     public function test_engine_mengembalikan_tcp(): void
@@ -425,7 +473,7 @@ class PresensiMesinTarikTest extends TestCase
     public function test_simpan_pengaturan_mesin_mengubah_engine(): void
     {
         $admin = User::factory()->admin()->create();
-        \App\Models\SekolahSettings::create([
+        SekolahSettings::create([
             'nama_sekolah' => 'Sekolah Uji Mesin',
             'pengaturan' => ['presensi_mesin_engine' => 'powershell'],
         ]);
@@ -436,7 +484,7 @@ class PresensiMesinTarikTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
 
-        $sekolah = \App\Models\SekolahSettings::query()->first();
+        $sekolah = SekolahSettings::query()->first();
         $this->assertSame('tcp', $sekolah?->pengaturan['presensi_mesin_engine'] ?? null);
     }
 
@@ -453,7 +501,7 @@ class PresensiMesinTarikTest extends TestCase
     public function test_reader_menggunakan_engine_dari_pengaturan_website(): void
     {
         config(['presensi.mesin_db_engine' => 'powershell']);
-        \App\Models\SekolahSettings::query()->firstOrCreate([], [
+        SekolahSettings::query()->firstOrCreate([], [
             'nama_sekolah' => 'Sekolah Uji Mesin',
             'pengaturan' => ['presensi_mesin_engine' => 'tcp'],
         ]);

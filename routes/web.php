@@ -146,6 +146,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // Presensi pegawai, area geofence, dan pemetaan QR kartu siswa.
     Route::prefix('presensi')->name('presensi.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PresensiController::class, 'index'])->name('index');
+        Route::get('/dashboard-mesin', [\App\Http\Controllers\Admin\PresensiController::class, 'dashboardMesin'])->name('dashboard.mesin');
         Route::get('/laporan', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'index'])->name('laporan');
         Route::get('/laporan/export', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'export'])->name('laporan.export');
         Route::get('/laporan/cetak', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'cetak'])->name('laporan.cetak');
@@ -163,6 +164,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::post('/mesin/tarik', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarik'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.tarik');
         Route::post('/mesin/tarik-semua', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikSemua'])->middleware(['throttle:5,1', 'data.single-school'])->name('mesin.tarik.semua');
         Route::post('/mesin/tes-koneksi', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tesKoneksi'])->middleware(['throttle:30,1', 'data.single-school'])->name('mesin.tes');
+        Route::get('/mesin/live', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'live'])->middleware(['throttle:30,1', 'data.single-school'])->name('mesin.live');
+        Route::post('/mesin/pengaturan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'updatePengaturan'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.pengaturan');
 
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
         Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');
