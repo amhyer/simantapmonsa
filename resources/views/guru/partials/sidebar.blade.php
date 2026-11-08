@@ -16,20 +16,20 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
-        ['label' => 'CBT, TRYOUT & TKA', 'asesmen' => true, 'items' => [
-            ['label' => 'Ujian CBT', 'icon' => 'lucide-monitor', 'open' => request()->routeIs('cbt.*'), 'children' => [
+        ['label' => 'CBT, TRYOUT & TKA', 'items' => [
+            ['label' => 'Ujian CBT', 'asesmen' => true, 'icon' => 'lucide-monitor', 'open' => request()->routeIs('cbt.*'), 'children' => [
                 ['route' => 'cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'],
                 ['route' => 'cbt.question-banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
             ]],
-            ['label' => 'Tryout', 'icon' => 'lucide-package', 'open' => request()->routeIs('tryout.*'), 'children' => [
+            ['label' => 'Tryout', 'asesmen' => true, 'icon' => 'lucide-package', 'open' => request()->routeIs('tryout.*'), 'children' => [
                 ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
             ]],
             ['label' => 'Asesmen & Simulasi TKA', 'icon' => 'lucide-award', 'open' => request()->routeIs('tka.*', 'guru.tka.*'), 'children' => [
                 ['route' => 'guru.tka.index', 'icon' => 'lucide-gauge', 'label' => 'Monitoring Kesiapan TKA'],
                 ['route' => 'guru.tka.analysis', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Kognitif Kelas'],
-                ['route' => 'tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi & Kisi-kisi TKA'],
-                ['route' => 'tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian Diagnostik TKA'],
+                ['route' => 'tka.dimensions.index', 'asesmen' => true, 'icon' => 'lucide-layers', 'label' => 'Dimensi & Kisi-kisi TKA'],
+                ['route' => 'tka.assessments.index', 'asesmen' => true, 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian Diagnostik TKA'],
             ]],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
@@ -49,20 +49,19 @@
         ]],
     ];
     $isActive = function ($route) {
-        return request()->routeIs($route, $route . '.*');
+        return sidebarRouteActive($route);
     };
 @endphp
 
 @foreach($menuGuru as $group)
-    {{-- Grup yang menaut ke modul asesmen disembunyikan saat modul dimatikan
-         (route-nya dijawab 404 oleh middleware module.asesmen). --}}
-    @continue(($group['asesmen'] ?? false) && !modulAsesmenAktif())
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
+        @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())
         @if(isset($item['children']))
-            @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
+            @php $childActive = collect($item['children'])->contains(fn($c) => (!(($c['asesmen'] ?? false)) || modulAsesmenAktif()) && $isActive($c['route'])); @endphp
             <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">
                 @foreach($item['children'] as $child)
+                    @continue(($child['asesmen'] ?? false) && !modulAsesmenAktif())
                     <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endforeach
             </x-sidebar-submenu>

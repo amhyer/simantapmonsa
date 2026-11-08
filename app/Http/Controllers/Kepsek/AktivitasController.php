@@ -16,7 +16,7 @@ class AktivitasController extends Controller
             ->limit(100)
             ->get();
 
-        $guruAktif = User::where('peran', 'guru')
+        $guruAktif = User::forSchool()->where('peran', 'guru')
             ->whereNotNull('terakhir_masuk')
             ->orderBy('terakhir_masuk', 'desc')
             ->get();
@@ -25,13 +25,13 @@ class AktivitasController extends Controller
             ->groupBy('jenis')
             ->get();
 
-        $penggunaAktif = User::whereNotNull('terakhir_masuk')
+        $penggunaAktif = User::forSchool()->whereNotNull('terakhir_masuk')
             ->where('terakhir_masuk', '>=', now()->subDays(7))
             ->count();
 
         $totalAktivitas = Aktivitas::count();
 
-        $penggunaAktifList = User::whereNotNull('terakhir_masuk')
+        $penggunaAktifList = User::forSchool()->whereNotNull('terakhir_masuk')
             ->orderBy('terakhir_masuk', 'desc')
             ->limit(10)
             ->get();
@@ -63,12 +63,12 @@ class AktivitasController extends Controller
         $chartSiswaData = $this->getChartPerRole('siswa', 7);
         $chartAdminData = $this->getChartPerRole('admin', 7);
 
-        $chartDistribusiData = User::select('peran', DB::raw('count(*) as jumlah'))
+        $chartDistribusiData = User::forSchool()->select('peran', DB::raw('count(*) as jumlah'))
             ->groupBy('peran')
             ->pluck('jumlah', 'peran')
             ->toArray();
 
-        $siswaAktif = User::where('peran', 'siswa')
+        $siswaAktif = User::forSchool()->where('peran', 'siswa')
             ->whereNotNull('terakhir_masuk')
             ->where('terakhir_masuk', '>=', now()->subDays(7))
             ->count();

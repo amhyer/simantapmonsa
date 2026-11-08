@@ -12,7 +12,7 @@ class Siswa extends Model
 {
     use BelongsToTenant, SoftDeletes;
     protected $table = 'siswa';
-    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash'];
+    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash', 'qr_generation_nonce'];
     protected $fillable = [
         'uuid',
         'tenant_id',

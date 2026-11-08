@@ -8,6 +8,10 @@ use App\Models\Siswa;
 use App\Models\NilaiErapot;
 use App\Services\AktivitasService;
 use App\Jobs\ProsesAkunMassalJob;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -15,9 +19,33 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    private function accounts(): Builder
+    {
+        $tenantId = TenantContext::id();
+        abort_if($tenantId === null && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+
+        return User::query()->where('tenant_id', $tenantId)->where('peran', '!=', 'super_admin');
+    }
+
+    private function ensureAccountAccessible(User $user): void
+    {
+        abort_unless($this->accounts()->whereKey($user->id)->exists(), 404);
+    }
+
+    private function validateStudentLinks(array $studentIds): void
+    {
+        if ($studentIds === []) {
+            return;
+        }
+        $ids = array_unique($studentIds);
+        if (Siswa::whereIn('id', $ids)->count() !== count($ids)) {
+            throw ValidationException::withMessages(['terhubung_dengan' => 'Siswa yang dipilih tidak tersedia untuk sekolah ini.']);
+        }
+    }
+
     public function index()
     {
-        $users = User::select('id', 'uuid', 'nama_lengkap', 'nama_pengguna', 'email', 'peran', 'terhubung_dengan', 'kelas_mata_pelajaran', 'aktif', 'created_at')
+        $users = $this->accounts()->select('id', 'uuid', 'nama_lengkap', 'nama_pengguna', 'email', 'peran', 'terhubung_dengan', 'kelas_mata_pelajaran', 'aktif', 'created_at')
             ->orderBy('peran')
             ->orderBy('nama_lengkap')
             ->get();
@@ -29,12 +57,14 @@ class UserController extends Controller
 
     public function create()
     {
+        $this->accounts();
         $siswa = Siswa::all();
         return view('admin.users.create', compact('siswa'));
     }
 
     public function store(Request $request)
     {
+        $this->accounts();
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users',
@@ -42,9 +72,12 @@ class UserController extends Controller
             'kata_sandi' => 'required|string|min:8',
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
+            'terhubung_dengan.*' => 'integer|distinct',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
             'aktif' => 'boolean',
         ]);
+
+        $this->validateStudentLinks($validated['terhubung_dengan'] ?? []);
 
         $user = User::create([
             'uuid' => Str::uuid(),
@@ -89,12 +122,14 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $this->ensureAccountAccessible($user);
         $siswa = Siswa::all();
         return view('admin.users.edit', compact('user', 'siswa'));
     }
 
     public function update(Request $request, User $user)
     {
+        $this->ensureAccountAccessible($user);
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,' . $user->id,
@@ -102,9 +137,12 @@ class UserController extends Controller
             'kata_sandi' => 'nullable|string|min:8',
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
+            'terhubung_dengan.*' => 'integer|distinct',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
             'aktif' => 'boolean',
         ]);
+
+        $this->validateStudentLinks($validated['terhubung_dengan'] ?? []);
 
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
@@ -159,6 +197,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $this->ensureAccountAccessible($user);
         if ($user->nama_pengguna === 'admin') {
             return redirect()->back()->with('error', 'Akun admin utama tidak dapat dihapus.');
         }
@@ -185,6 +224,10 @@ class UserController extends Controller
 
     public function destroyAll(Request $request, string $peran)
     {
+        $accounts = $this->accounts();
+        if (TenantContext::check()) {
+            return response()->json(['success' => false, 'message' => 'Hapus massal dinonaktifkan untuk multi-sekolah sampai seluruh relasi data terisolasi.'], 503);
+        }
         $allowed = ['guru', 'siswa', 'ortu', 'tendik'];
         if (!in_array($peran, $allowed)) {
             return response()->json(['success' => false, 'message' => 'Peran tidak valid.'], 400);
@@ -200,7 +243,7 @@ class UserController extends Controller
             ], 422);
         }
 
-        $users = User::where('peran', $peran)->where('nama_pengguna', '!=', 'admin')->get();
+        $users = $accounts->where('peran', $peran)->where('nama_pengguna', '!=', 'admin')->get();
         $count = $users->count();
 
         if ($count === 0) {
@@ -268,13 +311,18 @@ class UserController extends Controller
 
     public function akunMassal()
     {
+        $this->accounts();
         $siswa = Siswa::with('guru')->get();
-        $users = User::all();
+        $users = $this->accounts()->get();
         return view('admin.users.massal', compact('siswa', 'users'));
     }
 
-public function prosesAkunMassal(Request $request)
+    public function prosesAkunMassal(Request $request)
     {
+        $this->accounts();
+        if (TenantContext::check()) {
+            return response()->json(['success' => false, 'message' => 'Proses akun massal belum tersedia untuk multi-sekolah.'], 503);
+        }
         $request->validate([
             'siswa_ids' => 'required|array',
             'siswa_ids.*' => 'exists:siswa,id',
@@ -293,7 +341,7 @@ public function prosesAkunMassal(Request $request)
 
     public function siswaIndex()
     {
-        $users = User::all();
+        $users = $this->accounts()->get();
         $siswa = Siswa::with('guru')->orderBy('nama_peserta_didik')->get();
         return view('admin.users.siswa', compact('users', 'siswa'));
     }

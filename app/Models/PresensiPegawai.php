@@ -27,6 +27,8 @@ class PresensiPegawai extends Model
         'pulang_akurasi_meter',
         'pulang_lokasi_id',
         'metode',
+        'metode_masuk',
+        'metode_pulang',
         'diperbarui_oleh',
         'alasan_koreksi',
     ];

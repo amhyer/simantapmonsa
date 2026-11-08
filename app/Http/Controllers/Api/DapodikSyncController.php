@@ -11,6 +11,8 @@ use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +22,13 @@ class DapodikSyncController extends Controller
 {
     public function store(Request $request, string $modul)
     {
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sinkronisasi Bridge lama dinonaktifkan untuk multi-sekolah sampai seluruh data terisolasi.',
+            ], 503);
+        }
+
         $request->validate([
             'semester_id' => 'required|string',
             'tahun_ajaran' => 'required|string',
@@ -447,11 +456,12 @@ class DapodikSyncController extends Controller
 
     public function status(Request $request)
     {
-        $semesters = Semester::orderByDesc('semester_id')->get();
+        $isTenant = TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists();
+        $semesters = $isTenant ? collect() : Semester::orderByDesc('semester_id')->get();
         $stats = [
             'semesters' => $semesters->count(),
             'siswa' => Siswa::count(),
-            'ptk' => Ptk::count(),
+            'ptk' => $isTenant ? null : Ptk::count(),
             'rombel' => Rombel::count(),
             'jadwal' => JadwalPelajaran::count(),
         ];

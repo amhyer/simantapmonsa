@@ -21,7 +21,15 @@ class AktivitasService
             return null;
         }
 
-        return Aktivitas::create([
+        if ($user->tenant_id === null
+            && ($user->tenant_owned || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::query()->exists())) {
+            // Jangan membuat log tanpa pemilik ketika akun belum terhubung ke sekolah.
+            return null;
+        }
+
+        return \App\Modules\Tenant\Contexts\TenantContext::run($user->tenant_id === null ? null : (int) $user->tenant_id, fn () => Aktivitas::create([
+            // Login terjadi sebelum middleware bisa mengenali akun; sumbernya akun terautentikasi.
+            'tenant_id' => $user->tenant_id,
             'uuid' => Str::uuid(),
             'guru_id' => $user->id,
             'nama_guru' => $user->nama_lengkap,
@@ -32,7 +40,7 @@ class AktivitasService
             'record_id' => $recordId,
             'data_lama' => $dataLama,
             'data_baru' => $dataBaru,
-        ]);
+        ]));
     }
 
     public static function login(?string $detail = null): ?Aktivitas

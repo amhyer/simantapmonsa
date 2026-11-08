@@ -13,6 +13,8 @@ use App\Models\Rombel;
 use App\Models\JadwalPelajaran;
 use App\Models\User;
 use App\Jobs\ImportDapodikJob;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,6 +25,9 @@ class DapodikImportController extends Controller
 {
     public function index()
     {
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        $tenantId = TenantContext::id();
+        $isTenant = $tenantId !== null;
         $logs = DapodikSyncLog::with('user')
             ->orderBy('created_at', 'desc')
             ->limit(20)
@@ -33,14 +38,14 @@ class DapodikImportController extends Controller
             'dari_dapodik' => Siswa::where('dapodik_id', '!=', null)->count(),
             'sinkron_terakhir' => DapodikSyncLog::orderBy('created_at', 'desc')->value('created_at'),
             'semesters' => Semester::count(),
-            'ptk' => Ptk::count(),
-            'guru_users' => User::where('peran', 'guru')->count(),
+            'ptk' => $isTenant ? null : Ptk::count(),
+            'guru_users' => User::where('tenant_id', $tenantId)->where('peran', 'guru')->count(),
             'rombel' => Rombel::count(),
             'jadwal' => JadwalPelajaran::count(),
         ];
 
         $semesters = Semester::orderByDesc('semester_id')->get();
-        $ptkList = Ptk::with('semester')->orderBy('nama')->limit(50)->get();
+        $ptkList = $isTenant ? collect() : Ptk::with('semester')->orderBy('nama')->limit(50)->get();
         $rombelList = Rombel::with('semester')->orderBy('nama_rombel')->limit(50)->get();
 
         $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
@@ -50,11 +55,12 @@ class DapodikImportController extends Controller
         $bridgeChecksum = file_exists($bridgePath) ? hash_file('sha256', $bridgePath) : null;
         $bridgeSize = file_exists($bridgePath) ? filesize($bridgePath) : null;
 
-        return view('admin.dapodik.index', compact('logs', 'stats', 'semesters', 'ptkList', 'rombelList', 'bridgeChecksum', 'bridgeSize'));
+        return view('admin.dapodik.index', compact('logs', 'stats', 'semesters', 'ptkList', 'rombelList', 'bridgeChecksum', 'bridgeSize', 'isTenant'));
     }
 
     public function import(Request $request)
     {
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
         $validator = Validator::make($request->all(), [
             'sekolah' => 'required|array',
             'sekolah.npsn' => 'required|string',
@@ -80,7 +86,7 @@ class DapodikImportController extends Controller
         $data = $validator->validated();
         $tipeSync = $data['tipe_sync'] ?? 'semua';
 
-$log = DapodikSyncLog::create([
+        $log = DapodikSyncLog::create([
             'uuid' => Str::uuid(),
             'user_id' => auth()->id(),
             'sekolah_npsn' => $data['sekolah']['npsn'] ?? null,
@@ -113,6 +119,7 @@ $log = DapodikSyncLog::create([
 
     public function preview(Request $request)
     {
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
         $validator = Validator::make($request->all(), ['siswa' => 'required|array']);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()]);

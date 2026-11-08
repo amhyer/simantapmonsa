@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Modules\Tenant\Traits\HasSchoolOwnership;
 
 class Ekstrakurikuler extends Model
 {
+    use HasSchoolOwnership;
+
     protected $table = 'ekstrakurikuler';
 
     protected $fillable = [

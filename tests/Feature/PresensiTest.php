@@ -23,6 +23,8 @@ class PresensiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Skenario QR-only lama sengaja dijalankan dengan kebijakan GPS opsional.
+        config(['presensi.wajib_gps_scan_qr_pegawai' => false]);
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
 
         $this->guru = User::factory()->guru()->create();

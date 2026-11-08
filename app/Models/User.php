@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -47,6 +48,7 @@ class User extends Authenticatable
         'terhubung_dengan',
         'qr_token_hash',
         'qr_previous_token_hash',
+        'qr_generation_nonce',
     ];
 
     protected function casts(): array
@@ -66,12 +68,27 @@ class User extends Authenticatable
     protected static function boot(): void
     {
         parent::boot();
+        static::saving(function ($model) {
+            if ($model->tenant_id !== null) $model->tenant_owned = true;
+        });
         static::creating(function ($model) {
             if (!$model->uuid) $model->uuid = Str::uuid();
             if (empty($model->tenant_id) && TenantContext::check()) {
                 $model->tenant_id = TenantContext::id();
             }
+            if ($model->tenant_id !== null) $model->tenant_owned = true;
         });
+    }
+
+    public function scopeForSchool(Builder $query): Builder
+    {
+        if (TenantContext::check()) {
+            return $query->where('users.tenant_id', TenantContext::id());
+        }
+        if (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            return $query->whereRaw('1 = 0');
+        }
+        return $query->whereNull('users.tenant_id')->where('users.tenant_owned', false);
     }
 
     public function tenant(): BelongsTo

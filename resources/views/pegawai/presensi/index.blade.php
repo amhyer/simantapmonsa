@@ -39,7 +39,7 @@
                         <small data-lokasi-masuk>
                             @if($record?->lokasiMasuk)
                                 {{ $record->lokasiMasuk->nama }}
-                            @elseif($record?->waktu_masuk && str_starts_with((string) $record?->metode, 'qr'))
+                            @elseif($record?->waktu_masuk && str_starts_with((string) $record?->metode_masuk, 'qr'))
                                 Scan Kartu Identitas
                             @else
                                 —
@@ -52,7 +52,7 @@
                         <small data-lokasi-pulang>
                             @if($record?->lokasiPulang)
                                 {{ $record->lokasiPulang->nama }}
-                            @elseif($record?->waktu_pulang && str_starts_with((string) $record?->metode, 'qr'))
+                            @elseif($record?->waktu_pulang && str_starts_with((string) $record?->metode_pulang, 'qr'))
                                 Scan Kartu Identitas
                             @else
                                 —
@@ -101,7 +101,11 @@
                 <div style="border-top:1px solid #E4E7EC;padding-top:12px">
                     <div style="font-size:12.5px;font-weight:600;color:#475467;margin-bottom:8px">📍 Alternatif Presensi Berbasis Titik GPS Sekolah</div>
                     @if(!$bisaGps)
-                        <p style="font-size:12px;color:#667085;margin:0 0 8px">Titik lokasi GPS belum diatur admin. Gunakan <strong>Scan Mandiri Kartu Identitas</strong> di atas.</p>
+                        @if(config('presensi.wajib_gps_scan_qr_pegawai'))
+                            <p style="font-size:12px;color:#b42318;margin:0 0 8px">GPS wajib, tetapi titik sekolah belum diatur. Hubungi admin sebelum presensi QR atau GPS.</p>
+                        @else
+                            <p style="font-size:12px;color:#667085;margin:0 0 8px">Titik GPS belum diatur; kebijakan saat ini mengizinkan QR tanpa GPS.</p>
+                        @endif
                     @endif
                     <div style="display:flex;gap:10px;flex-wrap:wrap">
                         <button type="button" class="btn btn-ghost btn-sm" data-pegawai-clock="masuk" data-endpoint="{{ route('presensi.pegawai.masuk') }}" @disabled(!$bisaGps || $sudahMasuk)>Catat Masuk via GPS</button>
@@ -118,6 +122,9 @@
         </div>
 
         <div style="display:grid;gap:16px">
+            @if(!config('presensi.wajib_gps_scan_qr_pegawai', false))
+                <div class="note note-warn">Scan QR tidak mewajibkan lokasi GPS pada konfigurasi saat ini.</div>
+            @endif
             <div class="card" x-data="{ sisi: 'depan' }">
                 <div class="card-header" style="gap:8px;flex-wrap:wrap">
                     <h3 style="margin-right:auto">🪪 Kartu Identitas Saya</h3>
@@ -176,13 +183,7 @@
                             <td>{{ $row->waktu_masuk?->format('H:i:s') ?? '—' }}</td>
                             <td>{{ $row->waktu_pulang?->format('H:i:s') ?? '—' }}</td>
                             <td>
-                                @if($row->metode === 'qr' || $row->metode === 'qr+gps')
-                                    <span class="tag tag-primary">Scan Kartu QR</span>
-                                @elseif($row->metode === 'gps')
-                                    <span class="tag tag-mut">GPS Lokasi</span>
-                                @else
-                                    <span class="tag tag-gold">{{ ucfirst((string) $row->metode) }}</span>
-                                @endif
+                                <small>Masuk: {{ $row->metode_masuk ?? 'tidak diketahui' }}<br>Pulang: {{ $row->metode_pulang ?? 'tidak diketahui' }}</small>
                             </td>
                             <td><span class="tag {{ in_array($row->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">{{ ucfirst($row->status) }}</span></td>
                         </tr>

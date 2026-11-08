@@ -25,7 +25,7 @@ class RekapController extends Controller
         $rataRata = $ringkasan->avg('rata_rata') ?: 0;
         $ketuntasan = $ringkasan->avg('ketuntasan_persen') ?: 0;
         $kehadiran = $ringkasan->avg('kehadiran_persen') ?: 0;
-        $guruTanpaData = User::where('peran', 'guru')->whereDoesntHave('ringkasanGuru')->get();
+        $guruTanpaData = User::forSchool()->where('peran', 'guru')->whereDoesntHave('ringkasanGuru')->get();
 
         return view('kepsek.rekap.index', compact(
             'ringkasan', 'totalSiswa', 'rataRata', 'ketuntasan', 'kehadiran', 'guruTanpaData'

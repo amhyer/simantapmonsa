@@ -7,6 +7,8 @@ use App\Models\DapodikSyncLog;
 use App\Models\OrangTuaSiswa;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -27,16 +29,39 @@ class ImportDapodikJob implements ShouldQueue
 
     protected string $namaGuru;
 
-    public function __construct(array $data, $logId = null, string $tipeSync = 'semua', $userId = null, string $namaGuru = 'Dapodik Bridge')
+    // Null default juga aman untuk job lama yang sudah terserialisasi.
+    protected ?int $tenantId = null;
+
+    public function __construct(array $data, $logId = null, string $tipeSync = 'semua', $userId = null, string $namaGuru = 'Dapodik Bridge', ?int $tenantId = null)
     {
         $this->data = $data;
         $this->logId = $logId;
         $this->tipeSync = $tipeSync;
         $this->userId = $userId;
         $this->namaGuru = $namaGuru;
+        $this->tenantId = $tenantId ?? TenantContext::id();
     }
 
     public function handle(): void
+    {
+        // Job lama yang tidak menyimpan konteks sekolah tidak boleh menulis
+        // tanpa scope pada instalasi multi-tenant atau milik akun ber-tenant.
+        if ($this->tenantId === null && (config('simantap.multi_tenant_enabled', false)
+            || Tenant::query()->exists()
+            || ($this->userId && User::whereKey($this->userId)->whereNotNull('tenant_id')->exists()))) {
+            throw new \RuntimeException('Impor Dapodik tidak memiliki konteks sekolah. Jalankan ulang impor dari akun sekolah.');
+        }
+
+        if ($this->tenantId !== null && (! Tenant::whereKey($this->tenantId)->where('aktif', true)->exists()
+            || ! $this->userId
+            || ! User::whereKey($this->userId)->where('tenant_id', $this->tenantId)->where('aktif', true)->exists())) {
+            throw new \RuntimeException('Sekolah atau akun pemilik impor tidak lagi valid. Jalankan ulang impor.');
+        }
+
+        TenantContext::run($this->tenantId, fn () => $this->import());
+    }
+
+    private function import(): void
     {
         set_time_limit(0);
 
@@ -160,6 +185,9 @@ class ImportDapodikJob implements ShouldQueue
         }
 
         try {
+            if (TenantContext::check()) {
+                return;
+            }
             Aktivitas::create([
                 'uuid' => Str::uuid(),
                 'guru_id' => $this->userId,
@@ -230,6 +258,7 @@ class ImportDapodikJob implements ShouldQueue
         try {
             $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id);
             $user = User::where('peran', 'siswa')
+                ->where('tenant_id', TenantContext::id())
                 ->where(function ($q) use ($siswa, $username) {
                     $q->whereJsonContains('terhubung_dengan', $siswa->id)
                       ->orWhere('nama_pengguna', $username)
@@ -249,16 +278,22 @@ class ImportDapodikJob implements ShouldQueue
                     'terhubung_dengan' => array_values(array_unique($terhubung)),
                 ]);
             } else {
+                // Username unik secara global. Jangan mengubah akun sekolah lain.
+                if (User::withTrashed()->where('nama_pengguna', $username)->exists()) {
+                    Log::warning("Akun siswa tidak dibuat: username sudah digunakan ({$username}).");
+                    return;
+                }
                 User::create([
                     'uuid' => (string) Str::uuid(),
                     'nama_lengkap' => $siswa->nama_peserta_didik,
                     'nama_pengguna' => $username,
-                    'kata_sandi' => bcrypt('siswa123'),
+                    // Akun baru harus diaktifkan melalui reset sandi oleh admin.
+                    'kata_sandi' => bcrypt(Str::random(32)),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [$siswa->id],
                     'kelas_mata_pelajaran' => $siswa->kelas,
                     'aktif' => (bool) $siswa->aktif,
-                    'force_password_change' => false,
+                    'force_password_change' => true,
                 ]);
             }
         } catch (\Exception $e) {

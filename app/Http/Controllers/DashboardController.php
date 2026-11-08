@@ -22,6 +22,8 @@ use App\Models\Aktivitas;
 use App\Models\Semester;
 use App\Models\TanggalRapor;
 use App\Models\TemaKokurikuler;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +36,33 @@ class DashboardController extends Controller
 
     public function admin()
     {
+        $tenantId = TenantContext::id();
+        if ($tenantId !== null) {
+            // Dashboard lama menggunakan beberapa tabel global yang belum
+            // memiliki tenant_id. Tampilkan hanya metrik yang benar-benar
+            // memiliki pemilik sekolah sampai tabel-tabel itu diisolasi.
+            $data = Cache::remember('admin-dashboard:tenant:v3:'.$tenantId, 120, function () use ($tenantId) {
+                return [
+                    'totalUsers' => User::where('tenant_id', $tenantId)->count(),
+                    'guru' => User::where('tenant_id', $tenantId)->where('peran', 'guru')->where('aktif', true)->count(),
+                    'siswa' => Siswa::count(),
+                    'siswaAktif' => Siswa::where('aktif', true)->count(),
+                    'rombel' => Rombel::count(),
+                ];
+            });
+            $data['tenant'] = Tenant::findOrFail($tenantId);
+            $data['syncLogs'] = DapodikSyncLog::orderByDesc('created_at')->orderByDesc('id')->take(5)->get();
+
+            return view('admin.dashboard-tenant', $data);
+        }
+
+        abort_if(config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists(), 403, 'Akun admin belum terhubung ke sekolah.');
+
         // Seluruh angka dashboard di-cache 120 detik: ~30 query + scan
         // filesystem diringkas menjadi 0 query saat cache hit.
         // Model Eloquent TIDAK ikut di-cache (pernah menjadi objek korup
         // saat unserialize); diambil segar di bawah setiap request.
-        $data = Cache::remember('admin-dashboard:v2', 120, function () {
+        $data = Cache::remember('admin-dashboard:single:v3', 120, function () {
             $totalUsers = User::count();
             $siswa = Siswa::count();
             $siswaAktif = Siswa::where('aktif', true)->count();

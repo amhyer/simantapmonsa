@@ -33,10 +33,15 @@ class PresensiMesinService
         $groups = $this->kelompokkan($scans);
 
         $usersByNik = [];
-        foreach (User::whereIn('peran', self::PERAN_PEGAWAI)->get() as $user) {
+        foreach (User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)->where('aktif', true)->whereNull('archived_at')->get() as $user) {
             $nik = $this->normalizeNik($user->nik);
             if ($nik !== null) {
-                $usersByNik[$nik] = $user;
+                // Jangan memilih salah satu akun jika PIN ambigu dalam sekolah.
+                if (array_key_exists($nik, $usersByNik)) {
+                    $usersByNik[$nik] = null;
+                } else {
+                    $usersByNik[$nik] = $user;
+                }
             }
         }
 
@@ -69,6 +74,12 @@ class PresensiMesinService
                     ->whereDate('tanggal', $group['tanggal']->toDateString())
                     ->first();
 
+                // Scan pulang saja hanya dapat melengkapi catatan dengan jam masuk.
+                if ($group['masuk'] === null && (!$record || !$record->waktu_masuk)) {
+                    $hasil['dilindungi']++;
+                    continue;
+                }
+
                 if ($record !== null) {
                     if (in_array($record->metode, self::METODE_DILINDUNGI, true)
                         || in_array($record->status, self::STATUS_DILINDUNGI, true)) {
@@ -82,17 +93,19 @@ class PresensiMesinService
                     if ($group['masuk'] !== null
                         && ($record->waktu_masuk === null || $group['masuk']->lt($record->waktu_masuk))) {
                         $record->waktu_masuk = $group['masuk'];
+                        $record->metode_masuk = 'mesin';
                         $berubah = true;
                     }
 
                     if ($group['pulang'] !== null
                         && ($record->waktu_pulang === null || $group['pulang']->gt($record->waktu_pulang))) {
                         $record->waktu_pulang = $group['pulang'];
+                        $record->metode_pulang = 'mesin';
                         $berubah = true;
                     }
 
                     if ($group['masuk'] !== null) {
-                        $status = $this->statusMasuk($group);
+                        $status = $this->statusMasuk(array_merge($group, ['masuk' => $record->waktu_masuk]));
                         if ($record->status !== $status) {
                             $record->status = $status;
                             $berubah = true;
@@ -118,6 +131,8 @@ class PresensiMesinService
                     'waktu_masuk' => $group['masuk'],
                     'waktu_pulang' => $group['pulang'],
                     'metode' => 'mesin',
+                    'metode_masuk' => $group['masuk'] ? 'mesin' : null,
+                    'metode_pulang' => $group['pulang'] ? 'mesin' : null,
                     'diperbarui_oleh' => $userId,
                 ]);
                 $hasil['dibuat']++;

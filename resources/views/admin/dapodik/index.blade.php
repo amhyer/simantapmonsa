@@ -11,6 +11,11 @@
 
 @section('content')
 
+@if($isTenant)
+<div role="status" style="padding:12px 16px;border-radius:8px;background:#fff4d6;color:#714b00;margin-bottom:16px">
+    Integrasi Bridge dan pengaturan/pengiriman Dapodik lama dinonaktifkan untuk multi-sekolah karena data PTK dan konfigurasi belum terisolasi. Endpoint impor manual siswa dan riwayat log sekolah tetap tersedia. Data PTK global disembunyikan.
+</div>
+@endif
 <div id="globalAlert" style="display:none;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
 
 {{-- Stats Cards --}}
@@ -294,7 +299,7 @@
                         <i class="fas fa-chalkboard-teacher" style="color:#B8860B"></i>
                         <b style="font-size:13px">Guru / PTK</b>
                     </div>
-                    <p style="font-size:11px;color:#667085;margin:0">{{ number_format($stats['ptk'] ?? 0) }} PTK, {{ $stats['guru_users'] ?? 0 }} akun aktif</p>
+                    <p style="font-size:11px;color:#667085;margin:0">{{ ($stats['ptk'] === null ? '–' : number_format($stats['ptk'])) }} PTK, {{ $stats['guru_users'] ?? 0 }} akun aktif</p>
                 </div>
                 <div style="padding:16px;background:#E6F5F0;border-radius:10px;border-left:3px solid #059669">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -326,7 +331,7 @@
             </div>
             <div class="card-body tight">
                 <div style="padding:20px;text-align:center">
-                    <div style="font-size:32px;font-weight:800;color:var(--gold)">{{ number_format($stats['ptk'] ?? 0) }}</div>
+                    <div style="font-size:32px;font-weight:800;color:var(--gold)">{{ ($stats['ptk'] === null ? '–' : number_format($stats['ptk'])) }}</div>
                     <div style="font-size:12px;color:#667085;margin-top:4px">PTK terdaftar</div>
                     <div style="font-size:11px;color:#667085;margin-top:2px">{{ $stats['guru_users'] ?? 0 }} akun aktif</div>
                 </div>
@@ -348,7 +353,7 @@
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">
             <h3><i class="fas fa-list" style="color:var(--navy)"></i> Daftar PTK</h3>
-            <span class="tag tag-secondary">{{ $ptkList->count() }} data</span>
+            <span class="tag tag-secondary">{{ $isTenant ? 'Tidak tersedia' : $ptkList->count().' data' }}</span>
         </div>
         <div class="card-body tight">
             @if($ptkList->count())
@@ -858,14 +863,15 @@ async function loadStats() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadConfig();
+    const isTenant = @json($isTenant);
+    if (!isTenant) loadConfig();
     const totalSiswa = '{{ $stats["total_siswa"] ?? 0 }}';
     const ptk = '{{ $stats["ptk"] ?? 0 }}';
     const guruUsers = '{{ $stats["guru_users"] ?? 0 }}';
     const rombel = '{{ $stats["rombel"] ?? 0 }}';
     const sinkronTerakhir = '{{ $stats["sinkron_terakhir"] ?? "" }}';
     document.getElementById('statTotalSiswa').textContent = fmtNumber(parseInt(totalSiswa));
-    document.getElementById('statPtk').textContent = fmtNumber(parseInt(ptk)) + ' / ' + fmtNumber(parseInt(guruUsers)) + ' akun';
+    document.getElementById('statPtk').textContent = isTenant ? 'PTK tidak tersedia / ' + fmtNumber(parseInt(guruUsers)) + ' akun' : fmtNumber(parseInt(ptk)) + ' / ' + fmtNumber(parseInt(guruUsers)) + ' akun';
     document.getElementById('statRombel').textContent = fmtNumber(parseInt(rombel));
     if (sinkronTerakhir) {
         const dt = new Date(sinkronTerakhir);

@@ -7,16 +7,16 @@
         ]],
         ['label' => 'MULTI-TENANT & SEKOLAH', 'items' => [
             ['route' => 'superadmin.tenants.index', 'icon' => 'lucide-building-2', 'label' => 'Katalog Sekolah', 'badge' => $totalSekolah > 0 ? (string)$totalSekolah : null, 'badgeType' => 'ok'],
-            ['href' => route('superadmin.tenants.index') . '#tambah', 'icon' => 'lucide-plus-circle', 'label' => 'Daftarkan Sekolah Baru'],
+            ['href' => route('superadmin.tenants.index', ['tambah' => 1]) . '#tambah', 'icon' => 'lucide-plus-circle', 'label' => 'Daftarkan Sekolah Baru'],
         ]],
-        ['label' => 'PENGGUNA & LISENSI', 'items' => [
+        ['label' => 'PENGGUNA', 'items' => [
             ['route' => 'superadmin.users.index', 'icon' => 'lucide-users', 'label' => 'Semua Akun Pengguna'],
         ]],
     ];
 
     $isActive = function ($item) {
         if (isset($item['route'])) {
-            return request()->routeIs($item['route'], $item['route'] . '.*');
+            return sidebarRouteActive($item['route']);
         }
         return false;
     };

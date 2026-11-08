@@ -18,7 +18,7 @@
         ]],
     ];
     $isActive = function ($route) {
-        return request()->routeIs($route, $route . '.*');
+        return sidebarRouteActive($route);
     };
 @endphp
 

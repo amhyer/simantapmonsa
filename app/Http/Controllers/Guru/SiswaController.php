@@ -258,6 +258,17 @@ class SiswaController extends Controller
             }
         }
 
+        // Unik guru_id masih global. Jangan menimpa ringkasan lama/sekolah lain
+        // atau memicu duplicate key saat kepemilikannya belum direkonsiliasi.
+        if (\App\Models\RingkasanGuru::withoutGlobalScope('schoolOwnership')->where('guru_id', $guruId)->exists()
+            && ! \App\Models\RingkasanGuru::where('guru_id', $guruId)->exists()) {
+            \Illuminate\Support\Facades\Log::warning('Ringkasan guru belum diperbarui karena kepemilikan data lama harus direkonsiliasi.', ['guru_id' => $guruId]);
+            if (request()->hasSession()) {
+                session()->flash('warning', 'Ringkasan guru belum diperbarui. Hubungi administrator untuk rekonsiliasi data lama.');
+            }
+            return;
+        }
+
         \App\Models\RingkasanGuru::updateOrCreate(
             ['guru_id' => $guruId],
             [

@@ -6,6 +6,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use App\Models\User;
 use App\Models\Siswa;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +25,12 @@ class ProsesAkunMassalJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Job lama tidak menyimpan konteks tenant dan memakai insert mentah.
+        // Jangan mengeksekusi job yang sudah antre pada instalasi ber-tenant.
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            throw new \RuntimeException('Proses akun massal belum aman untuk multi-sekolah.');
+        }
+
         $siswa = Siswa::whereIn('id', $this->requestData['siswa_ids'] ?? [])->get();
         $created = 0;
         $usersToInsert = [];

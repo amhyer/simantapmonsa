@@ -68,9 +68,14 @@ class IdentifyTenant
 
             // Periksa kedaluwarsa langganan akun pengguna
             $userTenantInfo = $this->resolveById($userTenantId);
-            if ($userTenantInfo && ! empty($userTenantInfo['tgl_kedaluwarsa']) && strtotime($userTenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
+            if (! $userTenantInfo || ! $userTenantInfo['aktif']) {
+                abort(403, 'Sekolah akun Anda tidak aktif atau tidak ditemukan.');
+            }
+            if (! empty($userTenantInfo['tgl_kedaluwarsa']) && strtotime($userTenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
                 abort(402, 'Masa aktif langganan sekolah akun Anda telah berakhir. Silakan hubungi Super Administrator.');
             }
+        } elseif ($user && $resolvedTenantId !== null) {
+            abort(403, 'Akun belum terhubung ke sekolah tersebut.');
         }
 
         TenantContext::set($resolvedTenantId);
@@ -184,22 +189,18 @@ class IdentifyTenant
      */
     private function resolveById(int $id): ?array
     {
-        return Cache::remember("tenant:id:{$id}", 60, function () use ($id): ?array {
-            $row = Tenant::query()
-                ->where('id', $id)
-                ->first(['id', 'aktif', 'tgl_kedaluwarsa', 'paket', 'kuota_siswa']);
-
-            if (! $row) {
-                return null;
-            }
-
-            return [
-                'id' => (int) $row->id,
-                'aktif' => (bool) $row->aktif,
-                'tgl_kedaluwarsa' => $row->tgl_kedaluwarsa ? (is_string($row->tgl_kedaluwarsa) ? $row->tgl_kedaluwarsa : $row->tgl_kedaluwarsa->toDateString()) : null,
-                'paket' => (string) ($row->paket ?? 'standar'),
-                'kuota_siswa' => (int) ($row->kuota_siswa ?? 500),
-            ];
-        });
+        // Status aktif tidak boleh tertunda oleh cache ketika sekolah dinonaktifkan.
+        $row = Tenant::query()->whereKey($id)
+            ->first(['id', 'aktif', 'tgl_kedaluwarsa', 'paket', 'kuota_siswa']);
+        if (! $row) {
+            return null;
+        }
+        return [
+            'id' => (int) $row->id,
+            'aktif' => (bool) $row->aktif,
+            'tgl_kedaluwarsa' => $row->tgl_kedaluwarsa ? (is_string($row->tgl_kedaluwarsa) ? $row->tgl_kedaluwarsa : $row->tgl_kedaluwarsa->toDateString()) : null,
+            'paket' => (string) ($row->paket ?? 'standar'),
+            'kuota_siswa' => (int) ($row->kuota_siswa ?? 500),
+        ];
     }
 }

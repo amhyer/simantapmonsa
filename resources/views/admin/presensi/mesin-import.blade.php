@@ -24,6 +24,9 @@
         </div>
     </div>
 
+    @if($directDisabled)
+        <div class="note note-warn" style="margin-bottom:16px">Tarik langsung dari database mesin dinonaktifkan untuk sekolah bertenant. Gunakan impor file sekolah sendiri.</div>
+    @else
     <div class="card" style="margin-bottom:16px;border-left:4px solid {{ ($koneksi['ok'] ?? false) ? '#12805C' : '#B54708' }}">
         <div class="card-header">
             <h3>C. Tarik Langsung dari Database Mesin</h3>
@@ -98,6 +101,8 @@
         </div>
     </div>
 
+    @endif
+
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px">
         <div class="card">
             <div class="card-header">
@@ -116,6 +121,7 @@
                         <button type="submit" class="btn btn-sm">Import NIK</button>
                     </div>
                 </form>
+                @unless($directDisabled)
                 <div style="border-top:1px dashed #D0D5DD;margin:12px 0;padding-top:12px">
                     <p style="font-size:13px;color:#344054;margin:0 0 8px">Atau ambil daftar <code>NIK</code> dan <code>Nama</code> langsung dari tabel <code>USERINFO</code> pada database mesin yang sedang terhubung.</p>
                     <form action="{{ route('admin.presensi.mesin.karyawan.tarik') }}" method="POST" onsubmit="return confirm('Tarik NIK karyawan dari database mesin sekarang?')">
@@ -126,6 +132,7 @@
                         <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
                     @enderror
                 </div>
+                @endunless
                 @error('file')
                     <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
                 @enderror
