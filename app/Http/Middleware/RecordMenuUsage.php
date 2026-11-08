@@ -39,23 +39,26 @@ class RecordMenuUsage
         $now = now();
 
         try {
-            DB::table('menu_usage_daily')->upsert(
-                [[
-                    'visit_date' => $now->toDateString(),
-                    'scope_key' => $scopeKey,
-                    'tenant_id' => $tenantId,
-                    'role' => substr($role, 0, 24),
-                    'route_name' => $routeName,
-                    'visits' => 1,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]],
-                ['visit_date', 'scope_key', 'role', 'route_name'],
-                [
-                    'visits' => DB::raw('visits + 1'),
-                    'updated_at' => $now,
-                ]
-            );
+            // A savepoint keeps a telemetry write failure from poisoning a surrounding PostgreSQL test/request transaction.
+            DB::transaction(function () use ($now, $scopeKey, $tenantId, $role, $routeName): void {
+                DB::table('menu_usage_daily')->upsert(
+                    [[
+                        'visit_date' => $now->toDateString(),
+                        'scope_key' => $scopeKey,
+                        'tenant_id' => $tenantId,
+                        'role' => substr($role, 0, 24),
+                        'route_name' => $routeName,
+                        'visits' => 1,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]],
+                    ['visit_date', 'scope_key', 'role', 'route_name'],
+                    [
+                        'visits' => DB::raw('menu_usage_daily.visits + 1'),
+                        'updated_at' => $now,
+                    ]
+                );
+            });
         } catch (Throwable $exception) {
             // Telemetry tidak boleh menggagalkan halaman yang sedang dibuka.
             Log::warning('Pencatatan penggunaan menu gagal.', [
