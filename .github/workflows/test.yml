@@ -247,6 +247,8 @@ jobs:
             grep -a -C 3 'Transaksi PostgreSQL aborted setelah' /tmp/phpunit-postgres.log | head -n 30 || true
             echo "--- SQLSTATE asal selain transaksi sudah gagal ---"
             grep -a 'SQLSTATE\[' /tmp/phpunit-postgres.log | grep -v '25P02' | head -n 30 || true
+            echo "--- Diagnostik impor Dapodik ---"
+            grep -a -E 'Gagal import baris|Gagal auto-create akun user siswa|Gagal commit chunk import dapodik' storage/logs/laravel.log | tail -n 10 || true
             echo "--- akhir log ---"
             tail -n 80 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'

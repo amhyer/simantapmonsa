@@ -487,14 +487,14 @@ class PresensiTest extends TestCase
         $cardService = app(\App\Services\Presensi\IdentityCardService::class);
         $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
 
-        // 1. Jadwal bukan hari ini (misal Minggu)
+        // 1. Jadwal bukan hari ini (tanggal pengujian adalah Senin).
         $jadwalBukanHariIni = JadwalPelajaran::create([
             'guru_id' => $this->guru->id,
             'semester_id' => $this->rombel->semester_id,
             'rombel_id' => $this->rombel->id,
             'kelas' => $this->rombel->nama_rombel,
             'mata_pelajaran' => 'Bahasa Inggris',
-            'hari' => 'Minggu',
+            'hari' => 'Selasa',
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '09:00:00',
         ]);
