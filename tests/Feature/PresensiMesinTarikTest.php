@@ -388,4 +388,43 @@ class PresensiMesinTarikTest extends TestCase
             ->post(route('admin.presensi.mesin.karyawan.tarik'))
             ->assertForbidden();
     }
+
+    public function test_simpan_pengaturan_mesin_mengubah_engine(): void
+    {
+        $admin = User::factory()->admin()->create();
+        \App\Models\SekolahSettings::create([
+            'nama_sekolah' => 'Sekolah Uji Mesin',
+            'pengaturan' => ['presensi_mesin_engine' => 'powershell'],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.pengaturan'), ['mesin_engine' => 'tcp'])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $sekolah = \App\Models\SekolahSettings::query()->first();
+        $this->assertSame('tcp', $sekolah?->pengaturan['presensi_mesin_engine'] ?? null);
+    }
+
+    public function test_simpan_pengaturan_mesin_menolak_engine_tidak_valid(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.pengaturan'), ['mesin_engine' => 'engine-ngawur'])
+            ->assertRedirect()
+            ->assertSessionHasErrors('mesin_engine');
+    }
+
+    public function test_reader_menggunakan_engine_dari_pengaturan_website(): void
+    {
+        config(['presensi.mesin_db_engine' => 'powershell']);
+        \App\Models\SekolahSettings::query()->firstOrCreate([], [
+            'nama_sekolah' => 'Sekolah Uji Mesin',
+            'pengaturan' => ['presensi_mesin_engine' => 'tcp'],
+        ]);
+
+        $this->assertSame('tcp', app(AttendanceDatabaseReader::class)->engineTerpilih());
+    }
 }

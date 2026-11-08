@@ -66,7 +66,9 @@ class AttendanceDatabaseReader
 
     public function engine(): string
     {
-        $pilihan = strtolower((string) config('presensi.mesin_db_engine', 'auto'));
+        // Prioritas: pengaturan disimpan di database sekolah (bisa diubah via website),
+        // lalu fallback ke nilai dari file konfigurasi (.env / PRESENSI_MESIN_DB_ENGINE).
+        $pilihan = strtolower((string) ($this->pengaturanMesin()['presensi_mesin_engine'] ?? config('presensi.mesin_db_engine', 'auto')));
 
         if ($pilihan === 'tcp') {
             $host = trim((string) config('presensi.mesin_db_tcp_host', ''));
@@ -92,6 +94,33 @@ class AttendanceDatabaseReader
         }
 
         return $this->powershell() !== null ? 'powershell' : 'tidak-tersedia';
+    }
+
+    /**
+     * Nama engine pembacaan mesin yang sedang dipakai (dari pengaturan website atau .env).
+     */
+    public function engineTerpilih(): string
+    {
+        $pilihan = strtolower((string) ($this->pengaturanMesin()['presensi_mesin_engine'] ?? config('presensi.mesin_db_engine', 'auto')));
+
+        return in_array($pilihan, ['auto', 'tcp', 'powershell', 'odbc'], true) ? $pilihan : 'auto';
+    }
+
+    /**
+     * Ambil pengaturan mesin dari tabel settings sekolah (JSON).
+     *
+     * @return array<string, mixed>
+     */
+    private function pengaturanMesin(): array
+    {
+        try {
+            $sekolah = \App\Models\SekolahSettings::query()->first();
+            $data = $sekolah?->pengaturan;
+
+            return is_array($data) ? $data : [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

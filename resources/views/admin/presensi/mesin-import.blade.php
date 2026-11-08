@@ -87,6 +87,28 @@
                 <button type="submit" id="btn-tarik-semua" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang? Proses ini akan menelusuri seluruh rentang scan tersedia.')">Tarik Semua Data (1 Klik)</button>
             </form>
 
+            <form action="{{ route('admin.presensi.mesin.pengaturan') }}" method="POST" style="margin-top:12px;border-top:1px dashed #D0D5DD;padding-top:12px">
+                @csrf
+                <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+                    <div>
+                        <label class="form-label">Pembaca mesin (engine)</label>
+                        <select name="mesin_engine" class="form-control">
+                            @foreach(['auto' => 'Auto (Default)', 'tcp' => 'TCP Langsung (ZKTeco)', 'powershell' => 'Database (PowerShell)', 'odbc' => 'Database (ODBC)'] as $nilai => $label)
+                                <option value="{{ $nilai }}" {{ (old('mesin_engine', $mesinEngineTerpilih ?? 'auto')) === $nilai ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">Simpan Pengaturan</button>
+                    </div>
+                </div>
+                <p style="font-size:12px;color:#667085;margin:8px 0 0">Pengaturan disimpan di tabel settings dan langsung dipakai oleh tombol Tarik / Tes Koneksi.</p>
+            </form>
+
+            @error('mesin_engine')
+                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+            @enderror
+
             <div id="hasil-tes" style="font-size:13px;margin-top:10px;color:#475467"></div>
 
             @error('mesin')

@@ -52,8 +52,9 @@ class PresensiMesinImportController extends Controller
         $directDisabled = \App\Modules\Tenant\Contexts\TenantContext::check();
         $koneksi = $directDisabled ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null] : $reader->status();
         $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+        $mesinEngineTerpilih = $directDisabled ? (string) config('presensi.mesin_db_engine', 'auto') : $reader->engineTerpilih();
 
-        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled'));
+        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled', 'mesinEngineTerpilih'));
     }
 
     public function templateKaryawan()
@@ -543,6 +544,37 @@ class PresensiMesinImportController extends Controller
         }
 
         return response()->json($status);
+    }
+
+    /**
+     * Simpan pengaturan pembacaan mesin (engine) dari halaman admin.
+     * Nilai disimpan di tabel sekolah_settings (kolom pengaturan JSON).
+     */
+    public function updatePengaturan(Request $request): RedirectResponse
+    {
+        $engine = strtolower(trim((string) $request->input('mesin_engine', '')));
+
+        if (! in_array($engine, ['auto', 'tcp', 'powershell', 'odbc'], true)) {
+            return back()->withErrors(['mesin_engine' => 'Pembaca mesin tidak valid. Pilih: Auto, TCP, Database (PowerShell), atau ODBC.'])->withInput();
+        }
+
+        try {
+            $sekolah = \App\Models\SekolahSettings::query()->first();
+            $pengaturan = is_array($sekolah?->pengaturan ?? null) ? $sekolah->pengaturan : [];
+            $pengaturan['presensi_mesin_engine'] = $engine;
+
+            if ($sekolah) {
+                $sekolah->update(['pengaturan' => $pengaturan]);
+            } else {
+                \App\Models\SekolahSettings::create(['pengaturan' => $pengaturan]);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['mesin' => 'Gagal menyimpan pengaturan mesin: '.$e->getMessage()])->withInput();
+        }
+
+        return back()->with('success', 'Pengaturan pembacaan mesin berhasil disimpan (mesin_engine: '.$engine.').');
     }
 
     /**
