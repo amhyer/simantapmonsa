@@ -31,12 +31,35 @@
                 </div>
                 <div style="text-align:right">
                     <div style="font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#667085">Persentase Hadir</div>
-                    <div style="font-size:34px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $persentase >= 90 ? '#12805C' : ($persentase >= 75 ? '#B8860B' : '#B42318') }}">{{ $persentase }}%</div>
+                    <div style="font-size:34px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $persentase >= 90 ? '#12805C' : ($persentase >= 75 ? '#B8860B' : '#B42318') }}">{{ $total ? $persentase . '%' : '—' }}</div>
                 </div>
             </div>
         </div>
 
+        <p style="font-size:12px;color:#667085">Persentase berdasarkan hari yang sudah dicatat, bukan seluruh hari efektif sekolah.</p>
         @include('ortu.partials.pilih-anak', ['route' => 'ortu.kehadiran.index', 'terpilih' => $anak, 'anakList' => $anakList])
+        <div class="card" style="margin:16px 0">
+            <div class="card-header"><h3>Pengajuan izin / sakit</h3></div>
+            <div class="card-body">
+                <p>Ajukan untuk hari ini atau tujuh hari sebelumnya. Kehadiran berubah hanya setelah wali kelas menyetujui. Jangan tulis rincian diagnosis atau data medis yang tidak diperlukan.</p>
+                <form method="POST" action="{{ route('ortu.kehadiran.izin.store') }}" style="display:grid;gap:8px">
+                    @csrf
+                    <input type="hidden" name="siswa_id" value="{{ $anak->id }}">
+                    <label>Tanggal <input type="date" name="tanggal" min="{{ today()->subDays(7)->toDateString() }}" max="{{ today()->toDateString() }}" value="{{ old('tanggal', today()->toDateString()) }}" required></label>
+                    <label>Jenis <select name="jenis"><option value="I">Izin</option><option value="S">Sakit</option></select></label>
+                    <label>Alasan <input name="alasan" maxlength="500" value="{{ old('alasan') }}" required></label>
+                    @if($errors->any()) <div role="alert">{{ $errors->first() }}</div> @endif
+                    <button class="btn btn-sm" type="submit">Kirim ke wali kelas</button>
+                </form>
+                @if($pengajuan->isNotEmpty())
+                    <div class="table-wrapper"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Status</th><th>Catatan wali</th></tr></thead><tbody>
+                    @foreach($pengajuan as $item)
+                        <tr><td>{{ $item->tanggal->format('d/m/Y') }}</td><td>{{ $item->jenis === 'S' ? 'Sakit' : 'Izin' }}</td><td>{{ ucfirst($item->status) }}</td><td>{{ $item->catatan_pemeriksa ?? '—' }}</td></tr>
+                    @endforeach
+                    </tbody></table></div>
+                @endif
+            </div>
+        </div>
         @php
             $totalSakit = $kehadiran->where('status', 'S')->count();
             $totalIzin = $kehadiran->where('status', 'I')->count();
@@ -48,7 +71,7 @@
                 <i class="fas fa-check-circle stat-icon"></i>
                 <div class="stat-label">Hadir</div>
                 <div class="stat-value">{{ $totalHadir }}</div>
-                <div class="stat-change">dari {{ $total }} hari</div>
+                <div class="stat-change">dari {{ $total }} hari tercatat</div>
             </div>
             <div class="stat-card gold">
                 <i class="fas fa-procedures stat-icon"></i>

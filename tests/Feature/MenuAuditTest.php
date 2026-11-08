@@ -17,6 +17,7 @@ class MenuAuditTest extends TestCase
 
     public function test_audit_semua_menu(): void
     {
+        $superAdmin = User::factory()->superAdmin()->create();
         $admin = User::factory()->admin()->create();
         $guru = User::factory()->guru()->create();
         $kepsek = User::factory()->kepsek()->create();
@@ -41,6 +42,9 @@ class MenuAuditTest extends TestCase
         $tendik = User::factory()->tendik()->create();
 
         $map = [
+            'super_admin' => [$superAdmin, [
+                'superadmin.dashboard', 'superadmin.tenants.index', 'superadmin.users.index',
+            ]],
             'admin' => [$admin, [
                 'admin.dashboard', 'admin.profile', 'admin.dapodik.index',
                 'admin.users.index', 'admin.sekolah.index', 'admin.referensi.guru',
@@ -59,7 +63,7 @@ class MenuAuditTest extends TestCase
                 'admin.kode-akses.index', 'admin.modul.index', 'admin.bobot.index',
                 'admin.sheet.index', 'admin.backup.index', 'admin.api-keys.index',
                 'admin.log.index',
-                'admin.presensi.index',
+                'admin.presensi.index', 'admin.presensi.mesin.index',
                 'admin.presensi.kartu.index',
                 'admin.presensi.kartu.siswa.cetak-massal',
                 'admin.presensi.kartu.pegawai.cetak-massal',
@@ -109,7 +113,7 @@ class MenuAuditTest extends TestCase
                     }
                     $empty = preg_match('/empty-state|Belum ada data|belum ada data|Tidak ada data|belum tersedia/i', $html) ? 'YA' : '-';
                     $rows[] = [$role, $name, $status, strlen($html), $bodyRows, $empty];
-                    if ($status >= 500) {
+                    if ($status >= 400) {
                         $errors[] = "{$role} {$name} => HTTP {$status}";
                     }
                 } catch (\Throwable $e) {

@@ -23,7 +23,7 @@ class PresensiController extends Controller
         ]);
         $tanggal = $validated['tanggal'] ?? now()->toDateString();
 
-        $pegawai = User::whereIn('peran', self::PERAN_PEGAWAI)
+        $pegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
             ->where('aktif', true)
             ->orderBy('peran')
             ->orderBy('nama_lengkap')
@@ -31,6 +31,7 @@ class PresensiController extends Controller
 
         $catatan = PresensiPegawai::with(['lokasiMasuk', 'lokasiPulang', 'editor'])
             ->whereDate('tanggal', $tanggal)
+            ->whereIn('user_id', $pegawai->pluck('id'))
             ->get()
             ->keyBy('user_id');
 
@@ -126,12 +127,17 @@ class PresensiController extends Controller
             'alasan_koreksi' => 'required|string|max:500',
         ]);
 
-        $user = User::whereKey($validated['user_id'])
+        $user = User::forSchool()->whereKey($validated['user_id'])
             ->whereIn('peran', self::PERAN_PEGAWAI)
             ->firstOrFail();
 
         if (($validated['jam_pulang'] ?? null) && !($validated['jam_masuk'] ?? null)) {
             return back()->withInput()->with('error', 'Jam masuk harus diisi jika jam pulang dicatat.');
+        }
+
+        if (($validated['jam_masuk'] ?? null) && ($validated['jam_pulang'] ?? null)
+            && $validated['jam_pulang'] <= $validated['jam_masuk']) {
+            return back()->withInput()->with('error', 'Jam pulang harus setelah jam masuk pada tanggal yang sama.');
         }
 
         $record = DB::transaction(function () use ($validated, $user) {
@@ -149,6 +155,8 @@ class PresensiController extends Controller
             $record->waktu_masuk = $this->tanggalDanWaktu($validated['tanggal'], $validated['jam_masuk'] ?? null);
             $record->waktu_pulang = $this->tanggalDanWaktu($validated['tanggal'], $validated['jam_pulang'] ?? null);
             $record->metode = 'admin';
+            $record->metode_masuk = $record->waktu_masuk ? 'admin' : null;
+            $record->metode_pulang = $record->waktu_pulang ? 'admin' : null;
             $record->diperbarui_oleh = auth()->id();
             $record->alasan_koreksi = $validated['alasan_koreksi'];
             $record->save();

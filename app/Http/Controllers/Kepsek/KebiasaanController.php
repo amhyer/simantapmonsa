@@ -12,12 +12,12 @@ class KebiasaanController extends Controller
     public function index()
     {
         $siswaList = Siswa::where('aktif', true)
-            ->with('guru')
+            ->with(['guru' => fn ($q) => $q->forSchool()])
             ->orderBy('nama_peserta_didik')
             ->get();
 
         $kebiasaan = Kebiasaan::whereIn('siswa_id', $siswaList->pluck('id'))
-            ->with(['siswa', 'siswa.guru'])
+            ->with(['siswa', 'siswa.guru' => fn ($q) => $q->forSchool()])
             ->latest('tanggal')
             ->get()
             ->groupBy('siswa_id');
@@ -43,7 +43,7 @@ class KebiasaanController extends Controller
             ];
         });
 
-        $ortuAktif = User::where('peran', 'ortu')->where('aktif', true)->count();
+        $ortuAktif = User::forSchool()->where('peran', 'ortu')->where('aktif', true)->count();
 
         $totalSiswa = $siswaList->count();
         $partisipasiRataRata = $rekapKebiasaan->count()

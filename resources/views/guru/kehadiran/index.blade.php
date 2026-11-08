@@ -10,10 +10,12 @@
 @section('page_subtitle', 'Pindai Kartu Identitas Siswa sesuai jadwal mengajar Anda pada hari ini')
 
 @section('header_actions')
+    <a href="{{ route('guru.kehadiran.izin.index') }}" class="btn btn-sm">Pengajuan Izin Wali</a>
     <a href="{{ route('presensi.pegawai.index') }}" class="btn btn-sm btn-ghost">🪪 Kartu Identitas &amp; Scan Mandiri Saya</a>
 @endsection
 
 @section('content')
+<div class="note note-warn" style="margin-bottom:16px">{{ $menungguIzin }} pengajuan izin menunggu verifikasi wali kelas. Belum dicatat bukan berarti alpa. <a href="{{ route('guru.kehadiran.izin.index') }}">Lihat pengajuan</a></div>
 <div class="card" style="margin-bottom:16px">
     <div class="card-header">
         <h3>🗓️ Jadwal Mengajar Saya Hari Ini</h3>
@@ -36,7 +38,7 @@
                             <strong>{{ $jadwal->rombel?->nama_rombel ?? $jadwal->kelas }}</strong> · {{ $jadwal->jam_mulai }}–{{ $jadwal->jam_selesai }}
                         </div>
                         <div style="font-size:12px;color:#667085;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
-                            <span>Hadir tercatat: <strong>{{ $jadwal->jumlah_hadir_hari_ini ?? 0 }}</strong> siswa</span>
+                            <span>Hadir: <strong>{{ $jadwal->jumlah_hadir_hari_ini ?? 0 }}</strong> · Belum dicatat: <strong>{{ $jadwal->jumlah_belum_dicatat ?? 0 }}</strong></span>
                             @if($jadwal->sedang_dibuka)
                                 <span class="tag tag-ok">Jam Buka</span>
                             @endif

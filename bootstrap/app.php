@@ -17,8 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         // Isolasi data multi-tenant (aktif saat user memiliki tenant_id atau mode SaaS diaktifkan).
-        $middleware->web(append: [
+        $middleware->web(remove: [\Illuminate\Routing\Middleware\SubstituteBindings::class], append: [
             \App\Http\Middleware\IdentifyTenant::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
 
         $middleware->alias([
@@ -27,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
             'module.asesmen' => \App\Http\Middleware\EnsureModuleEnabled::class,
             'tenant' => \App\Http\Middleware\IdentifyTenant::class,
+            'dapodik.single-school' => \App\Http\Middleware\EnsureSingleSchoolDapodik::class,
+            'school.context' => \App\Http\Middleware\EnsureSchoolContext::class,
+            'data.single-school' => \App\Http\Middleware\EnsureSingleSchoolData::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

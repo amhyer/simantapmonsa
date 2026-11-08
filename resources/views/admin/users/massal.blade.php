@@ -7,11 +7,14 @@
 
 @section('content')
 
+@if(\App\Modules\Tenant\Contexts\TenantContext::check())
+<div role="status" style="padding:12px;background:#fff4d6;color:#714b00;margin-bottom:16px">Pembuatan akun massal sementara dinonaktifkan untuk multi-sekolah sampai isolasi antrean selesai.</div>
+@endif
 <div class="card" style="margin-bottom:16px">
     <div class="card-header"><h3>Buat Akun Massal</h3><a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">Kembali</a></div>
     <div class="card-body">
         <div style="background:#EEF2FF;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#4338CA">
-            <b>Cara kerja:</b> Sistem akan membuat akun login untuk setiap siswa yang belum punya akun. Password default: <code>NISN siswa</code>.
+            <b>Cara kerja:</b> Sistem akan membuat akun login untuk setiap siswa yang belum punya akun. Sandi awal dibuat secara acak; administrator perlu menetapkan sandi melalui pengelolaan akun.
         </div>
         <form id="formMassal">
             @csrf
@@ -46,7 +49,7 @@
                 </div>
             </div>
             <div style="display:flex;gap:10px;align-items:center">
-                <button type="submit" id="btnSubmit" class="btn btn-sm" style="background:#1F3864;color:#fff">Buat Akun Terpilih</button>
+                <button type="submit" id="btnSubmit" {{ \App\Modules\Tenant\Contexts\TenantContext::check() ? "disabled" : "" }} class="btn btn-sm" style="background:#1F3864;color:#fff">Buat Akun Terpilih</button>
                 <span id="countInfo" style="font-size:12px;color:#667085"></span>
             </div>
         </form>

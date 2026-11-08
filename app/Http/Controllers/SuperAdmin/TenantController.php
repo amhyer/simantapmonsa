@@ -152,19 +152,10 @@ class TenantController extends Controller
 
     public function destroy(Tenant $tenant)
     {
-        $namaSekolah = $tenant->nama_sekolah;
-        $jumlahUser = User::where('tenant_id', $tenant->id)->count();
-
-        DB::transaction(function () use ($tenant) {
-            // Foreign key nullOnDelete menjamin data tidak hilang.
-            // Update eksplisit untuk kepastian data ditarik ke Super Admin Pusat.
-            User::where('tenant_id', $tenant->id)->update(['tenant_id' => null]);
-            Siswa::where('tenant_id', $tenant->id)->update(['tenant_id' => null]);
-            $tenant->delete();
-        });
-
+        // Banyak tabel lama masih memakai nullOnDelete tanpa penanda kepemilikan.
+        // Menghapus tenant dapat membuat data privat terlihat sebagai sekolah tunggal.
         return redirect()->route('superadmin.tenants.index')
-            ->with('success', "Sekolah '{$namaSekolah}' berhasil dihapus dari sistem. Seluruh {$jumlahUser} akun pengguna tetap aman di database dan otomatis ditarik kembali ke Super Admin Pusat.");
+            ->with('error', 'Penghapusan sekolah sementara dinonaktifkan. Nonaktifkan sekolah sampai prosedur penghapusan data per tenant tersedia dan diuji.');
     }
 
     public function store(Request $request)
@@ -326,12 +317,13 @@ class TenantController extends Controller
         ]);
 
         $tenant = Tenant::findOrFail($validated['tenant_id']);
+        if ($user->tenant_id !== null && (int) $user->tenant_id !== (int) $tenant->id) {
+            return back()->with('error', 'Pemindahan akun antar sekolah dinonaktifkan sampai riwayat datanya dapat dipindahkan dengan aman.');
+        }
         $user->tenant_id = $tenant->id;
         $user->save();
 
-        if ($user->peran === 'siswa' && ! empty($user->nama_pengguna)) {
-            Siswa::where('nisn', $user->nama_pengguna)->update(['tenant_id' => $tenant->id]);
-        }
+        // NISN tidak cukup menjadi bukti untuk memindahkan data siswa lama.
 
         return back()->with('success', "Akun '{$user->nama_lengkap}' berhasil ditautkan kembali ke sekolah {$tenant->nama_sekolah}.");
     }

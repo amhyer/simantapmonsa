@@ -411,6 +411,7 @@
             <div class="cta-group">
                 <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
                 <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
+                <a href="#demo" class="btn-hero btn-hero-secondary">Akses Aplikasi</a>
             </div>
             <div class="trust">
                 <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>

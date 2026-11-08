@@ -23,6 +23,8 @@ class PresensiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Skenario QR-only lama sengaja dijalankan dengan kebijakan GPS opsional.
+        config(['presensi.wajib_gps_scan_qr_pegawai' => false]);
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
 
         $this->guru = User::factory()->guru()->create();
@@ -485,14 +487,14 @@ class PresensiTest extends TestCase
         $cardService = app(\App\Services\Presensi\IdentityCardService::class);
         $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
 
-        // 1. Jadwal bukan hari ini (misal Minggu)
+        // 1. Jadwal bukan hari ini (tanggal pengujian adalah Senin).
         $jadwalBukanHariIni = JadwalPelajaran::create([
             'guru_id' => $this->guru->id,
             'semester_id' => $this->rombel->semester_id,
             'rombel_id' => $this->rombel->id,
             'kelas' => $this->rombel->nama_rombel,
             'mata_pelajaran' => 'Bahasa Inggris',
-            'hari' => 'Minggu',
+            'hari' => 'Selasa',
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '09:00:00',
         ]);

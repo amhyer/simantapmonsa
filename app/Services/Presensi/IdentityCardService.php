@@ -34,7 +34,7 @@ class IdentityCardService
         $sig = substr(
             hash_hmac(
                 'sha256',
-                "simantap-id:siswa:{$siswa->id}:{$siswa->uuid}:v{$ver}",
+                "simantap-id:siswa:{$siswa->id}:{$siswa->uuid}:v{$ver}" . ($siswa->qr_generation_nonce ? ":{$siswa->qr_generation_nonce}" : ''),
                 (string) config('app.key')
             ),
             0,
@@ -54,7 +54,7 @@ class IdentityCardService
         $sig = substr(
             hash_hmac(
                 'sha256',
-                "simantap-id:pegawai:{$user->id}:{$user->uuid}:v{$ver}",
+                "simantap-id:pegawai:{$user->id}:{$user->uuid}:v{$ver}" . ($user->qr_generation_nonce ? ":{$user->qr_generation_nonce}" : ''),
                 (string) config('app.key')
             ),
             0,
@@ -69,271 +69,178 @@ class IdentityCardService
      */
     public function ensureSiswaCard(Siswa $siswa): ?string
     {
-        if (filled($siswa->qr_token_hash) && (int) $siswa->qr_card_version === 0) {
-            return null;
-        }
-
-        if (filled($siswa->qr_token_hash) && (int) $siswa->qr_card_version > 0) {
-            return $this->payloadForSiswa($siswa, (int) $siswa->qr_card_version);
-        }
-
-        return $this->issueSiswaCard($siswa, false);
+        return DB::transaction(function () use ($siswa) {
+            $locked = Siswa::whereKey($siswa->id)->lockForUpdate()->firstOrFail();
+            $siswa->setRawAttributes($locked->getAttributes(), true);
+            if ($locked->qr_revoked || (filled($locked->qr_token_hash) && (int) $locked->qr_card_version === 0)) {
+                return null;
+            }
+            $payload = filled($locked->qr_token_hash)
+                ? $this->payloadForSiswa($locked, (int) $locked->qr_card_version)
+                : $this->issueSiswaCard($locked, false);
+            $siswa->setRawAttributes($locked->getAttributes(), true);
+            return $payload && hash_equals((string) $locked->qr_token_hash, $this->hasher->hash($payload)) ? $payload : null;
+        });
     }
 
-    public function issueSiswaCard(Siswa $siswa, bool $rotate = true): string
+    public function issueSiswaCard(Siswa $siswa, bool $rotate = true): ?string
     {
-        $nextVersion = $rotate
-            ? ((int) $siswa->qr_card_version + 1)
-            : max(1, (int) $siswa->qr_card_version);
-
-        $payload = $this->payloadForSiswa($siswa, $nextVersion);
-        $updates = [
-            'qr_card_version' => $nextVersion,
-            'qr_token_hash' => $this->hasher->hash($payload),
-        ];
-
-        if ($rotate && filled($siswa->qr_token_hash)) {
-            $updates['qr_previous_token_hash'] = $siswa->qr_token_hash;
-        }
-
-        $siswa->forceFill($updates)->save();
-
-        return $payload;
+        return DB::transaction(function () use ($siswa, $rotate) {
+            $locked = Siswa::whereKey($siswa->id)->lockForUpdate()->firstOrFail();
+            // Jangan diam-diam mengganti kartu fisik ketika hanya diminta memastikan kartu.
+            if (!$rotate && filled($locked->qr_token_hash) && (int) $locked->qr_card_version === 0) return null;
+            $next = !$rotate && filled($locked->qr_token_hash)
+                ? max(1, (int) $locked->qr_card_version)
+                : max((int) $locked->qr_card_version, (int) $locked->qr_version_counter) + 1;
+            $hadHash = filled($locked->qr_token_hash);
+            if ((!$hadHash || !$locked->qr_generation_nonce) && ($rotate || !$hadHash)) {
+                $locked->qr_generation_nonce = Str::random(32);
+            }
+            $payload = $this->payloadForSiswa($locked, $next);
+            $updates = [
+                'qr_generation_nonce' => $locked->qr_generation_nonce,
+                'qr_card_version' => $next,
+                'qr_version_counter' => max((int) $locked->qr_version_counter, $next),
+                'qr_revoked' => false,
+                'qr_token_hash' => $this->hasher->hash($payload),
+            ];
+            if ($rotate && $hadHash) $updates['qr_previous_token_hash'] = $locked->qr_token_hash;
+            if (!$hadHash) $updates['qr_previous_token_hash'] = null;
+            $locked->forceFill($updates)->save();
+            $siswa->setRawAttributes($locked->getAttributes(), true);
+            return $payload;
+        });
     }
 
-    /**
-     * Pastikan kartu QR sistem pegawai (guru, kepsek, tendik) tersedia.
-     */
     public function ensurePegawaiCard(User $user): ?string
     {
-        if (filled($user->qr_token_hash) && (int) $user->qr_card_version === 0) {
-            return null;
-        }
-
-        if (filled($user->qr_token_hash) && (int) $user->qr_card_version > 0) {
-            return $this->payloadForPegawai($user, (int) $user->qr_card_version);
-        }
-
-        return $this->issuePegawaiCard($user, false);
+        return DB::transaction(function () use ($user) {
+            $locked = User::forSchool()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $user->setRawAttributes($locked->getAttributes(), true);
+            if ($locked->qr_revoked || (filled($locked->qr_token_hash) && (int) $locked->qr_card_version === 0)) {
+                return null;
+            }
+            $payload = filled($locked->qr_token_hash)
+                ? $this->payloadForPegawai($locked, (int) $locked->qr_card_version)
+                : $this->issuePegawaiCard($locked, false);
+            $user->setRawAttributes($locked->getAttributes(), true);
+            return $payload && hash_equals((string) $locked->qr_token_hash, $this->hasher->hash($payload)) ? $payload : null;
+        });
     }
 
-    public function issuePegawaiCard(User $user, bool $rotate = true): string
+    public function issuePegawaiCard(User $user, bool $rotate = true): ?string
     {
-        $nextVersion = $rotate
-            ? ((int) $user->qr_card_version + 1)
-            : max(1, (int) $user->qr_card_version);
-
-        $payload = $this->payloadForPegawai($user, $nextVersion);
-        $updates = [
-            'qr_card_version' => $nextVersion,
-            'qr_token_hash' => $this->hasher->hash($payload),
-        ];
-
-        if ($rotate && filled($user->qr_token_hash)) {
-            $updates['qr_previous_token_hash'] = $user->qr_token_hash;
-        }
-
-        $user->forceFill($updates)->save();
-
-        return $payload;
+        return DB::transaction(function () use ($user, $rotate) {
+            $locked = User::forSchool()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if (!$rotate && filled($locked->qr_token_hash) && (int) $locked->qr_card_version === 0) return null;
+            $next = !$rotate && filled($locked->qr_token_hash)
+                ? max(1, (int) $locked->qr_card_version)
+                : max((int) $locked->qr_card_version, (int) $locked->qr_version_counter) + 1;
+            $hadHash = filled($locked->qr_token_hash);
+            if ((!$hadHash || !$locked->qr_generation_nonce) && ($rotate || !$hadHash)) {
+                $locked->qr_generation_nonce = Str::random(32);
+            }
+            $payload = $this->payloadForPegawai($locked, $next);
+            $updates = [
+                'qr_generation_nonce' => $locked->qr_generation_nonce,
+                'qr_card_version' => $next,
+                'qr_version_counter' => max((int) $locked->qr_version_counter, $next),
+                'qr_revoked' => false,
+                'qr_token_hash' => $this->hasher->hash($payload),
+            ];
+            if ($rotate && $hadHash) $updates['qr_previous_token_hash'] = $locked->qr_token_hash;
+            if (!$hadHash) $updates['qr_previous_token_hash'] = null;
+            $locked->forceFill($updates)->save();
+            $user->setRawAttributes($locked->getAttributes(), true);
+            return $payload;
+        });
     }
 
     public function markSiswaAsPrinted(Siswa $siswa, ?int $version = null): void
     {
-        $ver = $version ?? max(1, (int) $siswa->qr_card_version);
-        $siswa->forceFill([
-            'printed_at' => now(),
-            'printed_version' => $ver,
-        ])->save();
+        $ver = $version ?? (int) $siswa->qr_card_version;
+        if ($ver < 1 || !$siswa->qr_token_hash || $siswa->qr_revoked) return;
+        Siswa::whereKey($siswa->id)->where('qr_revoked', false)->where('qr_card_version', $ver)
+            ->where('qr_token_hash', $siswa->qr_token_hash)->update(['printed_at' => now(), 'printed_version' => $ver]);
     }
 
     public function markManySiswaAsPrinted($siswas): void
     {
-        $ids = collect($siswas)->pluck('id')->filter()->all();
-        if (empty($ids)) {
-            return;
-        }
-
-        Siswa::whereIn('id', $ids)->update([
-            'printed_at' => now(),
-            'printed_version' => DB::raw('CASE WHEN qr_card_version > 0 THEN qr_card_version ELSE 1 END'),
-        ]);
+        foreach ($siswas as $siswa) $this->markSiswaAsPrinted($siswa);
     }
 
     public function markPegawaiAsPrinted(User $user, ?int $version = null): void
     {
-        $ver = $version ?? max(1, (int) $user->qr_card_version);
-        $user->forceFill([
-            'printed_at' => now(),
-            'printed_version' => $ver,
-        ])->save();
+        $ver = $version ?? (int) $user->qr_card_version;
+        if ($ver < 1 || !$user->qr_token_hash || $user->qr_revoked) return;
+        User::forSchool()->whereKey($user->id)->where('qr_revoked', false)->where('qr_card_version', $ver)
+            ->where('qr_token_hash', $user->qr_token_hash)->update(['printed_at' => now(), 'printed_version' => $ver]);
     }
 
     public function markManyPegawaiAsPrinted($pegawais): void
     {
-        $ids = collect($pegawais)->pluck('id')->filter()->all();
-        if (empty($ids)) {
-            return;
-        }
-
-        User::whereIn('id', $ids)->update([
-            'printed_at' => now(),
-            'printed_version' => DB::raw('CASE WHEN qr_card_version > 0 THEN qr_card_version ELSE 1 END'),
-        ]);
+        foreach ($pegawais as $user) $this->markPegawaiAsPrinted($user);
     }
 
     public function rollbackSiswaToPrintedVersion(Siswa $siswa): bool
     {
-        $printedVer = (int) $siswa->printed_version;
-        if ($printedVer <= 0) {
-            return false;
-        }
-
-        $payload = $this->payloadForSiswa($siswa, $printedVer);
-        $siswa->forceFill([
-            'qr_card_version' => $printedVer,
-            'qr_token_hash' => $this->hasher->hash($payload),
-            'qr_previous_token_hash' => null,
-        ])->save();
-
-        return true;
+        return DB::transaction(function () use ($siswa) {
+            $locked = Siswa::whereKey($siswa->id)->lockForUpdate()->firstOrFail();
+            $version = (int) $locked->printed_version;
+            if ($version <= 0 || $locked->qr_revoked) return false;
+            $nonce = $locked->qr_generation_nonce;
+            $digest = $this->hasher->hash($this->payloadForSiswa($locked, $version));
+            if (!in_array($digest, [$locked->qr_token_hash, $locked->qr_previous_token_hash], true) && $nonce) {
+                // Versi transisi lama dapat memakai format sebelum nonce diperkenalkan.
+                $locked->qr_generation_nonce = null;
+                $digest = $this->hasher->hash($this->payloadForSiswa($locked, $version));
+            }
+            if (!in_array($digest, [$locked->qr_token_hash, $locked->qr_previous_token_hash], true)) return false;
+            $locked->forceFill(['qr_card_version' => $version, 'qr_token_hash' => $digest, 'qr_previous_token_hash' => null])->save();
+            $siswa->setRawAttributes($locked->getAttributes(), true);
+            return true;
+        });
     }
 
     public function rollbackPegawaiToPrintedVersion(User $user): bool
     {
-        $printedVer = (int) $user->printed_version;
-        if ($printedVer <= 0) {
-            return false;
-        }
-
-        $payload = $this->payloadForPegawai($user, $printedVer);
-        $user->forceFill([
-            'qr_card_version' => $printedVer,
-            'qr_token_hash' => $this->hasher->hash($payload),
-            'qr_previous_token_hash' => null,
-        ])->save();
-
-        return true;
+        return DB::transaction(function () use ($user) {
+            $locked = User::forSchool()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $version = (int) $locked->printed_version;
+            if ($version <= 0 || $locked->qr_revoked) return false;
+            $nonce = $locked->qr_generation_nonce;
+            $digest = $this->hasher->hash($this->payloadForPegawai($locked, $version));
+            if (!in_array($digest, [$locked->qr_token_hash, $locked->qr_previous_token_hash], true) && $nonce) {
+                // Versi transisi lama dapat memakai format sebelum nonce diperkenalkan.
+                $locked->qr_generation_nonce = null;
+                $digest = $this->hasher->hash($this->payloadForPegawai($locked, $version));
+            }
+            if (!in_array($digest, [$locked->qr_token_hash, $locked->qr_previous_token_hash], true)) return false;
+            $locked->forceFill(['qr_card_version' => $version, 'qr_token_hash' => $digest, 'qr_previous_token_hash' => null])->save();
+            $user->setRawAttributes($locked->getAttributes(), true);
+            return true;
+        });
     }
 
-    /**
-     * Cari siswa dari raw payload QR dengan toleransi mundur multi-versi:
-     * 1. Hash cocok dengan qr_token_hash aktif.
-     * 2. Hash cocok dengan qr_previous_token_hash (kartu fisik versi sebelumnya yang belum ditarik).
-     * 3. HMAC valid dan versi kartu <= qr_card_version (kartu sah yang diterbitkan resmi sistem).
-     */
+    /** Hanya token aktif dan satu token transisi yang eksplisit dapat dipakai. */
     public function resolveSiswaFromPayload(string $rawPayload): ?Siswa
     {
-        $trimmed = trim($rawPayload);
-        if ($trimmed === '') {
-            return null;
-        }
-
-        $digest = $this->hasher->hash($trimmed);
-
-        // 1. Cek token aktif saat ini
-        $siswa = Siswa::where('qr_token_hash', $digest)->where('aktif', true)->first();
-        if ($siswa) {
-            return $siswa;
-        }
-
-        // 2. Cek token versi sebelumnya (sebelum admin klik ganti QR)
-        $siswa = Siswa::where('qr_previous_token_hash', $digest)->where('aktif', true)->first();
-        if ($siswa) {
-            return $siswa;
-        }
-
-        // 3. Verifikasi payload sistem bertanda tangan HMAC (SIMANTAP:SISWA:{uuid}:v{ver}:{sig})
-        if (str_starts_with($trimmed, 'SIMANTAP:SISWA:')) {
-            $parts = explode(':', $trimmed);
-            if (count($parts) >= 5) {
-                $uuid = $parts[2];
-                $verStr = $parts[3];
-                $sig = $parts[4];
-                $ver = (int) ltrim($verStr, 'v');
-
-                if ($ver > 0) {
-                    $found = Siswa::where('uuid', $uuid)->where('aktif', true)->first();
-                    if ($found) {
-                        $expectedSig = substr(
-                            hash_hmac(
-                                'sha256',
-                                "simantap-id:siswa:{$found->id}:{$found->uuid}:v{$ver}",
-                                (string) config('app.key')
-                            ),
-                            0,
-                            28
-                        );
-
-                        if (hash_equals($expectedSig, $sig) && $ver <= (int) $found->qr_card_version) {
-                            return $found;
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
+        if (trim($rawPayload) === '') return null;
+        $digest = $this->hasher->hash($rawPayload);
+        return Siswa::where('aktif', true)->where('qr_revoked', false)
+            ->whereNotNull('qr_token_hash')
+            ->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))
+            ->first();
     }
 
-    /**
-     * Cari pegawai dari raw payload QR dengan toleransi mundur multi-versi:
-     * 1. Hash cocok dengan qr_token_hash aktif.
-     * 2. Hash cocok dengan qr_previous_token_hash.
-     * 3. HMAC valid dan versi kartu <= qr_card_version.
-     */
     public function resolvePegawaiFromPayload(string $rawPayload): ?User
     {
-        $trimmed = trim($rawPayload);
-        if ($trimmed === '') {
-            return null;
-        }
-
-        $digest = $this->hasher->hash($trimmed);
-
-        // 1. Cek token aktif saat ini
-        $user = User::where('qr_token_hash', $digest)->where('aktif', true)->first();
-        if ($user) {
-            return $user;
-        }
-
-        // 2. Cek token versi sebelumnya
-        $user = User::where('qr_previous_token_hash', $digest)->where('aktif', true)->first();
-        if ($user) {
-            return $user;
-        }
-
-        // 3. Verifikasi payload sistem bertanda tangan HMAC (SIMANTAP:PEGAWAI:{uuid}:v{ver}:{sig})
-        if (str_starts_with($trimmed, 'SIMANTAP:PEGAWAI:')) {
-            $parts = explode(':', $trimmed);
-            if (count($parts) >= 5) {
-                $uuid = $parts[2];
-                $verStr = $parts[3];
-                $sig = $parts[4];
-                $ver = (int) ltrim($verStr, 'v');
-
-                if ($ver > 0) {
-                    $found = User::where('uuid', $uuid)->where('aktif', true)->first();
-                    if ($found) {
-                        $expectedSig = substr(
-                            hash_hmac(
-                                'sha256',
-                                "simantap-id:pegawai:{$found->id}:{$found->uuid}:v{$ver}",
-                                (string) config('app.key')
-                            ),
-                            0,
-                            28
-                        );
-
-                        if (hash_equals($expectedSig, $sig) && $ver <= (int) $found->qr_card_version) {
-                            return $found;
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
+        if (trim($rawPayload) === '') return null;
+        $digest = $this->hasher->hash($rawPayload);
+        return User::forSchool()->where('aktif', true)->where('qr_revoked', false)
+            ->whereNotNull('qr_token_hash')
+            ->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))
+            ->first();
     }
 
     public function svgQr(string $payload, int $size = 156): string
@@ -407,7 +314,8 @@ class IdentityCardService
                 . ((int) $siswa->qr_card_version > 0 ? '-V' . $siswa->qr_card_version : '-EXT'),
             'qr_svg' => $payload ? $this->svgQr($payload, 152) : null,
             'qr_aktif' => filled($siswa->qr_token_hash),
-            'eksternal_terhubung' => $payload === null && filled($siswa->qr_token_hash),
+            'eksternal_terhubung' => $payload === null && filled($siswa->qr_token_hash) && (int) $siswa->qr_card_version === 0 && !$siswa->qr_revoked,
+            'qr_revoked' => (bool) $siswa->qr_revoked,
             'instruksi_scan' => 'Tunjukkan kartu ini kepada Guru pada jadwal masuk / mata pelajaran hari ini.',
             'sekolah' => $this->sekolahInfo($sekolah),
             'printed_version' => (int) $siswa->printed_version,
@@ -478,7 +386,8 @@ class IdentityCardService
                 . ((int) $user->qr_card_version > 0 ? '-V' . $user->qr_card_version : '-EXT'),
             'qr_svg' => $payload ? $this->svgQr($payload, 152) : null,
             'qr_aktif' => filled($user->qr_token_hash),
-            'eksternal_terhubung' => $payload === null && filled($user->qr_token_hash),
+            'eksternal_terhubung' => $payload === null && filled($user->qr_token_hash) && (int) $user->qr_card_version === 0 && !$user->qr_revoked,
+            'qr_revoked' => (bool) $user->qr_revoked,
             'instruksi_scan' => 'Pindai mandiri kartu ini pada menu Presensi Saya saat jam masuk & pulang.',
             'sekolah' => $this->sekolahInfo($sekolah),
             'printed_version' => (int) $user->printed_version,

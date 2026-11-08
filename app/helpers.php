@@ -52,6 +52,28 @@ if (!function_exists('getKKM')) {
     }
 }
 
+if (!function_exists('sidebarRouteActive')) {
+    /** Cocokkan halaman daftar/profil dengan halaman detail atau editnya,
+     * tanpa mengaktifkan menu saudara seperti statistik atau daftar lain.
+     */
+    function sidebarRouteActive(string $route): bool
+    {
+        if (request()->routeIs($route)) {
+            return true;
+        }
+
+        if (str_ends_with($route, '.index') || str_ends_with($route, '.show')) {
+            $prefix = substr($route, 0, strrpos($route, '.'));
+
+            return request()->routeIs(
+                $prefix.'.show', $prefix.'.detail', $prefix.'.edit', $prefix.'.create'
+            );
+        }
+
+        return request()->routeIs($route.'.*');
+    }
+}
+
 if (!function_exists('activeAdminTab')) {
     function activeAdminTab(): string
     {
@@ -112,11 +134,10 @@ if (!function_exists('modulAsesmenAktif')) {
     /**
      * Apakah modul asesmen (CBT / Tryout / TKA) dapat diakses.
      *
-     * Seluruh route modul asesmen dilindungi middleware `module.asesmen`
-     * (App\Http\Middleware\EnsureModuleEnabled) yang menjawab 404 selama
-     * `config('simantap.cbt_enabled')` bernilai false. Karena route-nya tetap
-     * terdaftar, menu yang menaut ke sana tampak normal padahal selalu gagal —
-     * jadi menu disembunyikan dengan penjaga ini, bukan dibiarkan menipu.
+     * Menu CBT, Tryout dan TKA yang bergantung pada flag disembunyikan saat
+     * `simantap.cbt_enabled` false. Sebagian route CBT tidak didaftarkan
+     * sama sekali; middleware modul lainnya memiliki pengecualian admin.
+     * TKA guru dan simulasi siswa mandiri tidak bergantung pada flag ini.
      */
     function modulAsesmenAktif(): bool
     {
@@ -136,7 +157,12 @@ if (!function_exists('semesterAktifLabel')) {
                 if (!\Illuminate\Support\Facades\Schema::hasTable('semesters')) {
                     return null;
                 }
-                $semester = \App\Models\Semester::where('is_aktif', true)->first();
+                // Skema Dapodik standar tidak memiliki kolom is_aktif.
+                // Jangan mencoba query yang gagal: PostgreSQL membatalkan
+                // transaksi meskipun exception kemudian ditangkap.
+                $semester = \Illuminate\Support\Facades\Schema::hasColumn('semesters', 'is_aktif')
+                    ? \App\Models\Semester::where('is_aktif', true)->first()
+                    : null;
                 if (!$semester) {
                     $semester = \App\Models\Semester::orderByDesc('semester_id')->first();
                 }

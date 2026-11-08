@@ -7,14 +7,13 @@ import { expect, test } from '@playwright/test';
  * jadi ada akun `e2e_admin` yang bisa langsung masuk (tanpa `force_password_change`).
  */
 
-const KREDENSIAL = { nama_pengguna: 'e2e_admin', kata_sandi: 'e2e-sandi-aman' };
+// Gunakan akun fixture yang sudah diautentikasi global-setup; kata sandi
+// dihasilkan acak oleh CI dan tidak boleh bergantung pada akun seeder lain.
+test.use({ storageState: 'playwright/.auth/admin.json' });
 
 async function masukSebagaiAdmin(page) {
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
-    await page.fill('#nama_pengguna', KREDENSIAL.nama_pengguna);
-    await page.fill('#kata_sandi', KREDENSIAL.kata_sandi);
-    await page.getByRole('button', { name: 'Masuk' }).click();
-    await page.waitForURL(/\/admin\/dashboard$/, { timeout: 20_000 });
+    const response = await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+    expect(response?.status()).toBe(200);
 }
 
 /**
@@ -112,7 +111,9 @@ test('memuat chunk QR secara malas hanya saat tombol Aktifkan kamera ditekan', a
     // Pustaka QR harus BELUM dimuat saat halaman dibuka — itu inti penghematannya.
     // Yang diperiksa spesifik chunk `esm-*` (html5-qrcode), bukan semua aset JS,
     // agar test tidak rapuh bila halaman ini nanti menambah aset lain.
-    const tombolMulai = page.locator('[data-qr-start]').first();
+    const detailsSiswa = page.locator('details').filter({ has: page.locator('[data-mode="bind-card"]') });
+    await detailsSiswa.locator('summary').click();
+    const tombolMulai = detailsSiswa.locator('[data-qr-start]');
     await expect(tombolMulai).toBeVisible({ timeout: 15_000 });
     const chunkQrSebelumKlik = [...setelahMuat].filter((u) => /\/assets\/esm-[^/]*\.js/.test(u));
     expect(

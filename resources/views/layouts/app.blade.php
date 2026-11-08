@@ -201,6 +201,9 @@
         </header>
         
         <main class="page-content">
+            @if(session('warning'))
+                <div class="alert alert-warning" role="alert">{{ session('warning') }}</div>
+            @endif
             @if(session('success'))
                 <div class="note note-ok" style="margin-bottom:16px">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}

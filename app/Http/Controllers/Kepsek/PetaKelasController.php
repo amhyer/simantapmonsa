@@ -12,7 +12,7 @@ class PetaKelasController extends Controller
 {
     public function index()
     {
-        $guruList = User::where('peran', 'guru')
+        $guruList = User::forSchool()->where('peran', 'guru')
             ->where('aktif', true)
             ->with(['pengaturanGuru', 'siswa' => function ($q) {
                 $q->where('aktif', true);
@@ -54,7 +54,7 @@ class PetaKelasController extends Controller
 
     public function detail($guruId)
     {
-        $guru = User::where('peran', 'guru')->where('id', $guruId)->firstOrFail();
+        $guru = User::forSchool()->where('peran', 'guru')->where('id', $guruId)->firstOrFail();
         $pengaturan = PengaturanGuru::where('guru_id', $guruId)->first();
         $siswaList = Siswa::where('guru_id', $guruId)
             ->where('aktif', true)

@@ -37,7 +37,7 @@ return [
     'akurasi_gps_maksimal_default' => (int) env('PRESENSI_AKURASI_GPS_MAKSIMAL', 150),
 
     // Jika true, scan mandiri kartu QR pegawai tetap wajib mengirim koordinat GPS di dalam area sekolah.
-    'wajib_gps_scan_qr_pegawai' => (bool) env('PRESENSI_WAJIB_GPS_SCAN_QR_PEGAWAI', false),
+    'wajib_gps_scan_qr_pegawai' => (bool) env('PRESENSI_WAJIB_GPS_SCAN_QR_PEGAWAI', true),
 
     // Batas jam masuk untuk presensi hasil impor mesin fingerprint.
     // Scan masuk setelah jam ini ditandai sebagai "terlambat".

@@ -33,6 +33,7 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         expect(instructions?.status()).toBe(200);
         await expect(page.getByRole('heading', { name: 'Petunjuk Ujian CBT' })).toBeVisible();
         await expect(page.getByText('5 soal pilihan ganda, satu percobaan.')).toBeVisible();
+        page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: 'Mulai ujian sekarang' }).click();
         await expect(page.locator('#exam-form')).toBeVisible();
 
@@ -46,7 +47,8 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
             response.url().includes(`/cbt/student/${resultId}/answer`)
             && response.request().method() === 'POST'
         );
-        await firstAnswer.check();
+        await firstAnswer.locator("xpath=..").click();
+        await expect(firstAnswer).toBeChecked();
         expect((await firstSave).status()).toBe(200);
         await expect(page.getByRole('status')).toContainText('tersimpan');
 
@@ -75,11 +77,13 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         for (let index = 0; index < choiceCount; index++) {
             const choice = answerChoices.nth(index);
             if (await choice.isChecked()) continue;
+            await page.locator(`#palette-btn-${index + 1}`).click();
             const saved = page.waitForResponse(response =>
                 response.url().includes(`/cbt/student/${resultId}/answer`)
                 && response.request().method() === 'POST'
             );
-            await choice.check();
+            await choice.locator("xpath=..").click();
+            await expect(choice).toBeChecked();
             expect((await saved).status()).toBe(200);
         }
         await expect(page.getByRole('status')).toContainText('Semua perubahan jawaban tersimpan di server.');
@@ -159,7 +163,7 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         const adminPage = await adminContext.newPage();
         const adminResponse = await adminPage.goto('/admin/cbt/sessions/9311', { waitUntil: 'domcontentloaded' });
         expect(adminResponse?.status()).toBe(200);
-        const exportLink = adminPage.getByRole('link', { name: /Ekspor CSV/ });
+        const exportLink = adminPage.getByRole('link', { name: /Export CSV/ });
         await expect(exportLink).toBeVisible();
 
         const downloadPromise = adminPage.waitForEvent('download');

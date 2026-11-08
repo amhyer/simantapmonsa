@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\JadwalPelajaran;
 use App\Models\Kehadiran;
 use App\Models\KehadiranMapel;
+use App\Models\PengajuanIzinPresensi;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Services\Presensi\IdentityCardService;
+use App\Services\AktivitasService;
 use App\Services\Presensi\MapelAttendancePolicy;
 use App\Services\Presensi\StudentQrHasher;
 use App\Traits\SyncableToSheet;
@@ -33,6 +35,8 @@ class KehadiranController extends Controller
             ->get();
 
         foreach ($jadwalHariIni as $jadwal) {
+            $eligibleIds = ($jadwal->rombel_id || filled($jadwal->kelas))
+                ? $this->siswaUntukJadwal($jadwal, $policy)->pluck('id') : collect();
             $jadwal->presensi_mapel_terpisah = $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal);
             $jadwal->sedang_dibuka = $this->waktuJadwalTerbuka($jadwal);
             $jadwal->jumlah_hadir_hari_ini = $jadwal->presensi_mapel_terpisah
@@ -40,10 +44,14 @@ class KehadiranController extends Controller
                     ->whereDate('tanggal', $today)
                     ->where('status', 'H')
                     ->count()
-                : Kehadiran::where('jadwal_pelajaran_id', $jadwal->id)
+                : Kehadiran::whereIn('siswa_id', $eligibleIds)
                     ->whereDate('tanggal', $today)
                     ->where('status', 'H')
                     ->count();
+            $tercatat = $jadwal->presensi_mapel_terpisah
+                ? KehadiranMapel::where('jadwal_pelajaran_id', $jadwal->id)->whereDate('tanggal', $today)->whereIn('siswa_id', $eligibleIds)->distinct()->count('siswa_id')
+                : Kehadiran::whereDate('tanggal', $today)->whereIn('siswa_id', $eligibleIds)->distinct()->count('siswa_id');
+            $jadwal->jumlah_belum_dicatat = max(0, $eligibleIds->count() - $tercatat);
         }
 
         $kehadiran = Kehadiran::with('siswa')
@@ -58,7 +66,14 @@ class KehadiranController extends Controller
             ->limit(50)
             ->get();
 
-        return view('guru.kehadiran.index', compact('kehadiran', 'kehadiranMapel', 'jadwalHariIni'));
+        $guruId = auth()->id();
+        $menungguIzin = PengajuanIzinPresensi::where('status', 'menunggu')->whereHas('siswa', function ($q) use ($guruId) {
+            $q->where('aktif', true)->where(function ($nested) use ($guruId) {
+                $nested->whereHas('rombel', fn ($r) => $r->where('guru_id', $guruId))
+                    ->orWhere(fn ($fallback) => $fallback->whereNull('rombel_id')->where('guru_id', $guruId));
+            });
+        })->count();
+        return view('guru.kehadiran.index', compact('kehadiran', 'kehadiranMapel', 'jadwalHariIni', 'menungguIzin'));
     }
 
     public function cetakKartuKelas(
@@ -166,6 +181,9 @@ class KehadiranController extends Controller
                 ->whereDate('tanggal', $today)
                 ->lockForUpdate()
                 ->first();
+            if ($daily && !$daily->trashed() && in_array($daily->status, ['S', 'I'], true)) {
+                abort(409, 'Status sakit/izin sudah tercatat. Verifikasi dan ubah secara manual sebelum melakukan scan.');
+            }
             if ($daily?->trashed()) {
                 $daily->restore();
             }
@@ -211,6 +229,9 @@ class KehadiranController extends Controller
                     && $mapelAttendance?->waktu_hadir !== null
                     && $mapelAttendance?->metode === 'qr';
 
+                if ($mapelAttendance && in_array($mapelAttendance->status, ['S', 'I'], true)) {
+                    abort(409, 'Status sakit/izin mapel sudah tercatat. Verifikasi sebelum melakukan scan.');
+                }
                 if (!$mapelAttendance) {
                     $mapelAttendance = KehadiranMapel::create([
                         'jadwal_pelajaran_id' => $jadwal->id,
@@ -243,6 +264,8 @@ class KehadiranController extends Controller
                 'mapel_already_present' => $mapelAlreadyPresent,
             ];
         });
+
+        AktivitasService::log('kehadiran', 'Scan kehadiran siswa', 'Kehadiran dicatat melalui QR.', 'kehadiran', $result['daily']->id, null, ['siswa_id' => $student->id, 'jadwal_id' => $jadwal->id]);
 
         // Sinkronkan hanya ringkasan harian yang lama; catatan mapel tetap tersimpan
         // di tabel terpisah agar tidak menabrak batas satu absensi harian per siswa.
@@ -303,6 +326,7 @@ class KehadiranController extends Controller
         $status = $validated['status'];
         $time = $status === 'H' ? now() : null;
 
+        $before = null;
         if ($validated['cakupan'] === 'harian') {
             // whereDate: cast 'date' menyimpan 'Y-m-d H:i:s' di SQLite, sehingga
             // kecocokan string persis ('Y-m-d') meleset (pola konsisten dgn scan()).
@@ -311,6 +335,7 @@ class KehadiranController extends Controller
                 ->whereDate('tanggal', $today)
                 ->first()
                 ?? new Kehadiran(['siswa_id' => $siswa->id, 'tanggal' => $today]);
+            $before = $record->exists ? $record->only(['status', 'waktu_masuk', 'keterangan']) : null;
             if ($record->trashed()) {
                 $record->restore();
             }
@@ -337,6 +362,7 @@ class KehadiranController extends Controller
                     'tanggal' => $today,
                     'siswa_id' => $siswa->id,
                 ]);
+            $before = $record->exists ? $record->only(['status', 'waktu_hadir', 'keterangan']) : null;
             $record->fill([
                 'guru_id' => auth()->id(),
                 'mata_pelajaran' => $jadwal->mata_pelajaran,
@@ -350,6 +376,11 @@ class KehadiranController extends Controller
                 $record->uuid ??= (string) Str::uuid();
             }
             $record->save();
+        }
+
+        AktivitasService::log('kehadiran', 'Ubah status kehadiran siswa', $validated['keterangan'] ?? null, $validated['cakupan'] === 'harian' ? 'kehadiran' : 'kehadiran_mapel', $record->id, $before, ['status' => $status, 'siswa_id' => $siswa->id]);
+        if ($validated['cakupan'] === 'harian') {
+            $this->syncToGoogleSheet('kehadiran', $record->fresh('siswa', 'guru'));
         }
 
         $recordedTime = $validated['cakupan'] === 'harian'
@@ -391,6 +422,7 @@ class KehadiranController extends Controller
                 'siswa_id' => $siswa->id,
                 'tanggal' => now()->toDateString(),
             ]);
+        $before = $record->exists ? $record->only(['status', 'waktu_masuk', 'keterangan']) : null;
         if ($record->trashed()) {
             $record->restore();
         }
@@ -404,6 +436,7 @@ class KehadiranController extends Controller
             'keterangan' => $validated['keterangan'] ?? null,
         ]);
         $record->save();
+        AktivitasService::log('kehadiran', 'Ubah status kehadiran siswa', null, 'kehadiran', $record->id, $before, ['status' => $record->status, 'siswa_id' => $siswa->id]);
 
         try {
             $this->syncToGoogleSheet('kehadiran', $record->fresh('siswa', 'guru'));
@@ -434,6 +467,7 @@ class KehadiranController extends Controller
         $today = now()->toDateString();
         $now = now();
         $updatedCount = 0;
+        $changedDaily = [];
 
         foreach ($students as $siswa) {
             $record = Kehadiran::withTrashed()
@@ -461,6 +495,7 @@ class KehadiranController extends Controller
                 ]);
                 $record->save();
                 $updatedCount++;
+                $changedDaily[] = $record;
             }
 
             if ($presensiMapelTerpisah) {
@@ -480,8 +515,8 @@ class KehadiranController extends Controller
                         'guru_id' => auth()->id(),
                         'mata_pelajaran' => $jadwal->mata_pelajaran,
                         'status' => 'H',
-                        'waktu_masuk' => $recordMapel->waktu_masuk ?? $now,
-                        'dicatat_oleh' => auth()->id(),
+                        'waktu_hadir' => $recordMapel->waktu_hadir ?? $now,
+                        'kelas' => $jadwal->kelas,
                         'metode' => 'manual',
                         'keterangan' => 'Tandai hadir serentak',
                     ]);
@@ -490,6 +525,10 @@ class KehadiranController extends Controller
             }
         }
 
+        AktivitasService::log('kehadiran', 'Tandai hadir serentak', null, 'jadwal_pelajaran', $jadwal->id, null, ['jumlah' => $updatedCount, 'tanggal' => $today]);
+        foreach ($changedDaily as $daily) {
+            $this->syncToGoogleSheet('kehadiran', $daily->fresh('siswa', 'guru'));
+        }
         return back()->with('success', "Berhasil menandai {$updatedCount} siswa sebagai Hadir.");
     }
 

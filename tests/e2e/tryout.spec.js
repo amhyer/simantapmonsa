@@ -35,17 +35,18 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
             response.url().includes('/tryout/student/9411/answer')
             && response.request().method() === 'POST'
         );
-        await answerControl.check();
+        // Kontrol radio tersembunyi secara visual; pengguna mengklik labelnya.
+        await page.locator('label[for="q9404_A"]').click();
         const answerResponse = await answerResponsePromise;
         expect(answerResponse.status()).toBe(200);
         expect(await answerResponse.json()).toEqual({ success: true });
-        await expect(page.locator('#progress-bar')).toHaveText('100.0%');
+        await expect(page.locator('#progress-bar')).toHaveText('100.0% (1/1)');
 
         // E2E-TRY-02: server-rendered response must be visibly selected after reload,
         // and the progress indicator must be restored from that same saved response.
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('input[name="q_9404"][value="A"]')).toBeChecked();
-        await expect(page.locator('#progress-bar')).toHaveText('100.0%');
+        await expect(page.locator('#progress-bar')).toHaveText('100.0% (1/1)');
 
         // E2E-TRY-03: complete the real attempt; scoring is performed by the server.
         const completionResponsePromise = page.waitForResponse(response =>
@@ -53,7 +54,7 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
             && response.request().method() === 'POST'
         );
         page.once('dialog', dialog => dialog.accept());
-        await page.getByRole('button', { name: /Selesaikan Tryout/ }).click();
+        await page.getByRole('button', { name: /Selesaikan Seluruh Tryout/ }).click();
         const completionResponse = await completionResponsePromise;
         const completionStatus = completionResponse.status();
         const completionError = completionStatus >= 400

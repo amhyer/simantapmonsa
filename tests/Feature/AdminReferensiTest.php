@@ -111,6 +111,12 @@ class AdminReferensiTest extends TestCase
             'predikat' => 'B',
         ]);
 
+        // Skema standar tanpa is_aktif tetap memilih semester terbaru dan
+        // tidak meninggalkan transaksi PostgreSQL dalam keadaan aborted.
+        \Illuminate\Support\Facades\Cache::forget('app_semester_aktif_label:v1');
+        $this->assertSame('2025/2026 (ganjil)', semesterAktifLabel());
+        $this->assertTrue(Semester::query()->exists());
+
         $routes = [
             'admin.referensi.guru',
             'admin.users.siswa',

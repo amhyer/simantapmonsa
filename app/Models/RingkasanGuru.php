@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Modules\Tenant\Traits\HasSchoolOwnership;
 
 class RingkasanGuru extends Model
 {
+    use HasSchoolOwnership;
+
     protected $table = 'ringkasan_guru';
     protected $fillable = [
         'guru_id',
@@ -53,6 +56,6 @@ class RingkasanGuru extends Model
 
     public function guru()
     {
-        return $this->belongsTo(User::class, 'guru_id');
+        return $this->belongsTo(User::class, 'guru_id')->forSchool();
     }
 }

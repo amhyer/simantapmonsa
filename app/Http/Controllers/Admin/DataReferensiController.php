@@ -14,10 +14,24 @@ use App\Models\NilaiErapot;
 use App\Models\TanggalRapor;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Support\Facades\Storage;
 
 class DataReferensiController extends Controller
 {
+    private function schoolGuruRule()
+    {
+        return Rule::exists('users', 'id')->where(function ($query) {
+            $query->where('peran', 'guru')->where('aktif', true)->whereNull('deleted_at');
+            if (TenantContext::check()) {
+                $query->where('tenant_id', TenantContext::id());
+            } else {
+                $query->whereNull('tenant_id')->where('tenant_owned', false);
+            }
+        });
+    }
+
     public function guru()
     {
         $ptk = Ptk::with('semester')->orderBy('nama')->get();
@@ -27,13 +41,13 @@ class DataReferensiController extends Controller
 
     public function pembelajaran()
     {
-        $jadwal = JadwalPelajaran::with(['guru', 'rombel', 'semester'])
+        $jadwal = JadwalPelajaran::with(['guru' => fn ($q) => $q->forSchool(), 'rombel', 'semester'])
             ->withCount('nilaiErapot')
             ->orderBy('hari')
             ->orderBy('jam_mulai')
             ->get();
         $daftarMapel = MataPelajaran::where('aktif', true)->orderBy('nama')->get();
-        $daftarGuru = User::where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
+        $daftarGuru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
 
         return view('admin.referensi.pembelajaran', compact('jadwal', 'daftarMapel', 'daftarGuru'));
     }
@@ -48,7 +62,7 @@ class DataReferensiController extends Controller
             'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
             'mata_pelajaran' => 'required|string|max:100',
             'kelas' => 'required|string|max:50',
-            'guru_id' => 'required|exists:users,id',
+            'guru_id' => ['required', $this->schoolGuruRule()],
             'jam_mulai' => 'required|string|max:10',
             'jam_selesai' => 'required|string|max:10',
             'ruangan' => 'nullable|string|max:50',
@@ -64,8 +78,9 @@ class DataReferensiController extends Controller
      * FK nullOnDelete: nilai terkait dipertahankan, kolomnya jadi NULL
      * (terlihat sebagai "belum terpetakan" di alignment-check).
      */
-    public function destroyPembelajaran(JadwalPelajaran $pembelajaran)
+    public function destroyPembelajaran($pembelajaran)
     {
+        $pembelajaran = JadwalPelajaran::findOrFail($pembelajaran);
         try {
             $pembelajaran->delete();
         } catch (\Illuminate\Database\QueryException $e) {
@@ -255,8 +270,8 @@ class DataReferensiController extends Controller
 
     public function ekstrakurikuler()
     {
-        $ekskul = Ekstrakurikuler::with('pembina')->orderBy('nama')->get();
-        $guru = User::where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
+        $ekskul = Ekstrakurikuler::with(['pembina' => fn ($q) => $q->forSchool()])->orderBy('nama')->get();
+        $guru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
 
         return view('admin.referensi.ekstrakurikuler', compact('ekskul', 'guru'));
     }
@@ -265,7 +280,7 @@ class DataReferensiController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:100',
-            'pembina_id' => 'nullable|exists:users,id',
+            'pembina_id' => ['nullable', $this->schoolGuruRule()],
             'deskripsi' => 'nullable|string',
         ]);
 
@@ -283,18 +298,21 @@ class DataReferensiController extends Controller
             'ptk.*.gelar_belakang' => 'nullable|string|max:100',
         ]);
 
+        $ids = array_keys($validated['ptk']);
+        abort_unless(count($ids) === Ptk::whereIn('id', $ids)->count(), 404);
         foreach ($validated['ptk'] as $id => $row) {
             Ptk::where('id', $id)->update([
-                'gelar_depan' => $row['gelar_depan'] ?: null,
-                'gelar_belakang' => $row['gelar_belakang'] ?: null,
+                'gelar_depan' => ($row['gelar_depan'] ?? null) ?: null,
+                'gelar_belakang' => ($row['gelar_belakang'] ?? null) ?: null,
             ]);
         }
 
         return back()->with('success', 'Gelar guru berhasil disimpan.');
     }
 
-    public function destroyEkstrakurikuler(Ekstrakurikuler $ekstrakurikuler)
+    public function destroyEkstrakurikuler($ekstrakurikuler)
     {
+        $ekstrakurikuler = Ekstrakurikuler::findOrFail($ekstrakurikuler);
         $ekstrakurikuler->delete();
 
         return redirect()->route('admin.referensi.ekstrakurikuler')

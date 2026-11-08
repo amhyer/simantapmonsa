@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\DapodikConfig;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Services\Dapodik\DapodikSyncService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,6 +18,11 @@ class DapodikAutoSyncJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Konfigurasi auto-sync lama masih global; jangan jalankan pada SaaS.
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            throw new \RuntimeException('Auto-sync Dapodik lama tidak aman untuk multi-sekolah.');
+        }
+
         $config = DapodikConfig::getInstance();
 
         if (!$config->auto_sync_enabled) {

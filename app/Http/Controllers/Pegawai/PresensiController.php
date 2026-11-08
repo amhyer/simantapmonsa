@@ -73,9 +73,9 @@ class PresensiController extends Controller
         $validated = $request->validate([
             'qr_payload' => 'required|string|max:2048',
             'jenis' => 'required|in:masuk,pulang',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'accuracy' => 'nullable|numeric|min:0|max:5000',
+            'latitude' => 'nullable|required_with:longitude,accuracy|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude,accuracy|numeric|between:-180,180',
+            'accuracy' => 'nullable|required_with:latitude,longitude|numeric|min:0|max:5000',
         ]);
 
         if (!filled($user->qr_token_hash) && !filled($user->qr_previous_token_hash)) {
@@ -120,6 +120,10 @@ class PresensiController extends Controller
                 'success' => false,
                 'message' => 'Kebijakan sekolah mewajibkan izin lokasi GPS aktif saat memindai kartu identitas.',
             ], 422);
+        }
+
+        if ($wajibGps && $zones->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Area GPS belum dikonfigurasi admin.'], 422);
         }
 
         $location = null;
@@ -222,6 +226,9 @@ class PresensiController extends Controller
                     ->first();
 
                 if ($jenis === 'masuk') {
+                    if ($record && in_array($record->status, ['izin', 'sakit'], true)) {
+                        abort(409, 'Presensi sudah berstatus izin atau sakit. Minta admin memverifikasi dan mengoreksi terlebih dahulu.');
+                    }
                     if ($record?->waktu_masuk) {
                         abort(409, 'Jam masuk hari ini sudah tercatat.');
                     }
@@ -232,6 +239,7 @@ class PresensiController extends Controller
                         'status' => 'hadir',
                     ]);
                     $record->waktu_masuk = now();
+                    $record->metode_masuk = $metode;
                     if ($coords) {
                         $record->masuk_latitude = $coords['latitude'];
                         $record->masuk_longitude = $coords['longitude'];
@@ -240,7 +248,8 @@ class PresensiController extends Controller
                     if ($location) {
                         $record->masuk_lokasi_id = $location->id;
                     }
-                    if (!in_array($record->status, ['izin', 'sakit', 'terlambat'], true)) {
+                    if ($record->status !== 'terlambat') {
+                        // Jadwal kerja per sekolah/pegawai belum tersedia; jangan menebak terlambat.
                         $record->status = 'hadir';
                     }
                 } else {
@@ -252,6 +261,7 @@ class PresensiController extends Controller
                     }
 
                     $record->waktu_pulang = now();
+                    $record->metode_pulang = $metode;
                     if ($coords) {
                         $record->pulang_latitude = $coords['latitude'];
                         $record->pulang_longitude = $coords['longitude'];

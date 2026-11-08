@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Services\Backup\BackupStreamWriter;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +21,10 @@ class ExportBackupJob implements ShouldQueue
      */
     public function handle(BackupStreamWriter $writer): void
     {
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            throw new RuntimeException('Job backup global tidak boleh dijalankan oleh admin sekolah dalam instalasi multi-tenant.');
+        }
+
         set_time_limit(0);
 
         $filename = 'backup-simantap-'.now()->format('Y-m-d-His').'.json';

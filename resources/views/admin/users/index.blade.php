@@ -46,13 +46,13 @@
         <button onclick="switchTab('kepsek')" id="tab-kepsek" class="btn btn-sm btn-ghost tab-btn">Kepala Sekolah ({{ $kepsekUsers->count() }})</button>
         <button onclick="switchTab('tendik')" id="tab-tendik" class="btn btn-sm btn-ghost tab-btn">Tendik ({{ $tendikUsers->count() }})</button>
         <button onclick="switchTab('tanpa-akun')" id="tab-tanpa-akun" class="btn btn-sm btn-ghost tab-btn" style="border:1px dashed #B8860B;color:#B8860B">Belum Punya Akun ({{ $siswaWithoutUser->count() }})</button>
-        @if($guruUsers->count())
+        @if($guruUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
             <button onclick="hapusSemua('guru', {{ $guruUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318;margin-left:auto">Hapus Semua Guru</button>
         @endif
-        @if($siswaUsers->count())
+        @if($siswaUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
             <button onclick="hapusSemua('siswa', {{ $siswaUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318">Hapus Semua Siswa</button>
         @endif
-        @if($ortuUsers->count())
+        @if($ortuUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
             <button onclick="hapusSemua('ortu', {{ $ortuUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318">Hapus Semua Orang Tua</button>
         @endif
     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ApiKey;
+use App\Modules\Tenant\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -57,10 +58,21 @@ class ApiKeyMiddleware
             ], 403);
         }
 
+        $user = $key->user;
+        if (! $user || ! $user->aktif || $user->archived_at) {
+            return response()->json(['success' => false, 'message' => 'Pemilik API Key tidak aktif atau tidak tersedia.'], 401);
+        }
+        if ((config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) && $user->tenant_id === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'API Key harus terhubung ke akun dan sekolah yang valid.',
+            ], 403);
+        }
+
         $key->update(['last_used_at' => now()]);
 
-        if ($key->user) {
-            auth()->login($key->user);
+        if ($user) {
+            auth()->login($user);
         }
         $request->merge(['_api_key' => $key]);
 

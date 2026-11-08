@@ -43,31 +43,32 @@ class PresensiMesinImportController extends Controller
 
     public function index(AttendanceDatabaseReader $reader)
     {
-        $jumlahPegawai = User::whereIn('peran', self::PERAN_PEGAWAI)->where('aktif', true)->count();
-        $sudahAdaNik = User::whereIn('peran', self::PERAN_PEGAWAI)
+        $jumlahPegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)->where('aktif', true)->count();
+        $sudahAdaNik = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
             ->whereNotNull('nik')
             ->where('nik', '<>', '')
             ->count();
 
-        $koneksi = $reader->status();
-        $terakhirTarik = Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+        $directDisabled = \App\Modules\Tenant\Contexts\TenantContext::check();
+        $koneksi = $directDisabled ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null] : $reader->status();
+        $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
 
-        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik'));
+        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled'));
     }
 
     public function templateKaryawan()
     {
         return $this->csvDownload('template-import-karyawan-mesin.csv', ['nik', 'nama'], [
-            ['7309082109930003', 'Amirullah, S.Pd'],
-            ['7371140103860006', 'A. Apti Aspirandi, S.Pd'],
+            ['PIN001', 'Contoh Pegawai A'],
+            ['PIN002', 'Contoh Pegawai B'],
         ]);
     }
 
     public function templateLog()
     {
         return $this->csvDownload('template-import-log-mesin.csv', ['nik', 'tanggal', 'jam_masuk', 'jam_pulang'], [
-            ['7309082109930003', now()->toDateString(), '07:05', '14:10'],
-            ['7371140103860006', now()->toDateString(), '07:20', '14:05'],
+            ['PIN001', now()->toDateString(), '07:05', '14:10'],
+            ['PIN002', now()->toDateString(), '07:20', '14:05'],
         ]);
     }
 
@@ -170,7 +171,7 @@ class PresensiMesinImportController extends Controller
      */
     private function simpanNikKaryawan(array $pasangan): array
     {
-        $users = User::whereIn('peran', self::PERAN_PEGAWAI)->get();
+        $users = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)->get();
 
         $nikTerpakai = [];
         foreach ($users as $user) {
