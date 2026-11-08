@@ -1,14 +1,15 @@
 {{-- Sidebar admin — SATU SUMBER.
      Semua grup menu disimpan di sini, dikelompokkan per tab:
-       erapor → menu lengkap (e-Rapor, Dapodik, presensi, data referensi, CBT/Tryout, TKA, transkrip, cetak, sistem)
-       cbt   → menu fokus CBT & Tryout
-       tka   → menu fokus TKA
-       setup → menu fokus setup & master data
+       erapor → dasbor, penilaian, pengaturan rapor, transkrip, cetak
+       cbt   → pengelolaan sesi CBT dan Tryout
+       tka   → kesiapan, penilaian, dan peringatan TKA
+       setup → sekolah, data akademik, integrasi, presensi, akun, dan sistem
      Renderer (loop, active, planned) berasal dari komponen <x-admin-menu />.
      Menu ditentukan lewat @include dari layout admin dengan data ['tab' => ...]. --}}
 @php
     // Status sinkron dipisah menggunakan tenant_id yang ditetapkan server.
     $lastSyncAt = \App\Services\Dapodik\SidebarSyncStatus::latest()['created_at'] ?? null;
+    $multiSchoolMode = \App\Modules\Tenant\Support\TenantMode::isMultiSchool();
     // Aturan: grup yang punya 'children' dirender sebagai header lipat
     // (<details>), TANPA label grup terpisah — persis pola e-Rapor.
     // Item 'planned' => true berarti backend belum ada (Fase 2): tampil
@@ -28,7 +29,7 @@
     $menuAdmin = [
         'erapor' => [
             ['label' => 'UTAMA', 'items' => [
-                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Sistem'],
+                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
                 ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profile'],
             ]],
             ['label' => 'STATUS PENILAIAN', 'icon' => 'lucide-graduation-cap', 'children' => [
@@ -44,6 +45,7 @@
                 ['route' => 'admin.referensi.tanggal-rapor', 'icon' => 'lucide-calendar', 'label' => 'Tanggal Rapor'],
                 ['route' => 'admin.referensi.logo-ttd', 'icon' => 'lucide-image', 'label' => 'Logo dan TTD'],
                 ['route' => 'admin.referensi.alignment', 'icon' => 'lucide-link', 'label' => 'Cek Alignment'],
+                ['route' => 'admin.bobot.index', 'icon' => 'lucide-scale', 'label' => 'Bobot & Ketuntasan'],
             ]],
             ['label' => 'TRANSKRIP IJAZAH', 'icon' => 'lucide-file-text', 'children' => [
                 ['route' => 'admin.transkrip.setting', 'icon' => 'lucide-settings', 'label' => 'Setting Transkrip'],
@@ -60,7 +62,6 @@
         ],
         'cbt' => [
             ['label' => 'UTAMA', 'items' => [
-                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Utama (E-Rapor)'],
                 ['route' => 'admin.tryout.statistics', 'icon' => 'lucide-bar-chart-3', 'label' => 'Statistik Ujian'],
             ]],
             ['label' => 'MANAJEMEN UJIAN CBT', 'icon' => 'lucide-monitor', 'children' => [
@@ -71,10 +72,6 @@
                 ['route' => 'admin.tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'admin.tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
                 ['route' => 'admin.tryout.results.index', 'icon' => 'lucide-chart-line', 'label' => 'Hasil Tryout'],
-            ]],
-            ['label' => 'SISTEM', 'icon' => 'lucide-server-cog', 'children' => [
-                ['route' => 'admin.modul.index', 'icon' => 'lucide-box', 'label' => 'Modul & Tampilan (Setup)'],
-                ['route' => 'admin.log.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas (Setup)'],
             ]],
         ],
         'tka' => [
@@ -88,20 +85,20 @@
             ],
         ],
         'setup' => [
-            ['label' => 'DAPODIK (INTEGRASI 1-PINTU)', 'icon' => 'lucide-database-zap', 'children' => [
-                ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Tarik Data Dapodik', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
+            ['label' => 'INTEGRASI & IMPOR DATA', 'icon' => 'lucide-database-zap', 'children' => [
+                ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Dapodik & Impor Data', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
                 ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
             ]],
-            ['label' => 'DATA SEKOLAH & SEMESTER', 'icon' => 'lucide-building-2', 'children' => [
+            ['label' => 'DATA SEKOLAH & PERIODE', 'icon' => 'lucide-building-2', 'children' => [
                 ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Profil Sekolah'],
                 ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Data Semester & Tahun Ajaran'],
             ]],
-            ['label' => 'DATA GURU & SISWA', 'icon' => 'lucide-users', 'children' => [
+            ['label' => 'PENDIDIK & PESERTA DIDIK', 'icon' => 'lucide-users', 'children' => [
                 ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru & PTK'],
                 ['route' => 'admin.users.siswa', 'icon' => 'lucide-graduation-cap', 'label' => 'Data Siswa'],
                 ['route' => 'admin.referensi.foto-siswa', 'icon' => 'lucide-camera', 'label' => 'Foto Siswa'],
             ]],
-            ['label' => 'ROMBEL & PEMBELAJARAN', 'icon' => 'lucide-school', 'children' => [
+            ['label' => 'KELAS & PEMBELAJARAN', 'icon' => 'lucide-school', 'children' => [
                 ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Rombel & Peta Kelas'],
                 ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Mata Pelajaran'],
                 ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
@@ -118,14 +115,13 @@
                 ['route' => 'admin.presensi.mesin.index', 'icon' => 'lucide-upload', 'label' => 'Import Presensi Mesin'],
                 ['route' => 'admin.presensi.kartu.index', 'icon' => 'lucide-scan-line', 'label' => 'Kartu QR Siswa & Pegawai'],
             ]],
-            ['label' => 'DATA KOKURIKULER (P5)', 'icon' => 'lucide-notebook-pen', 'children' => [
+            ['label' => 'KOKURIKULER', 'icon' => 'lucide-notebook-pen', 'children' => [
                 ['route' => 'admin.kokurikuler.tema', 'icon' => 'lucide-target', 'label' => 'Daftar Tema'],
                 ['route' => 'admin.kokurikuler.kegiatan', 'icon' => 'lucide-list-checks', 'label' => 'Kegiatan Kokurikuler'],
                 ['route' => 'admin.kokurikuler.kelompok', 'icon' => 'lucide-users', 'label' => 'Kelompok Kokurikuler'],
             ]],
-            ['label' => 'SISTEM & MODUL', 'icon' => 'lucide-server-cog', 'children' => [
+            ['label' => 'SISTEM & KEAMANAN', 'icon' => 'lucide-server-cog', 'children' => [
                 ['route' => 'admin.modul.index', 'icon' => 'lucide-box', 'label' => 'Modul & Tampilan'],
-                ['route' => 'admin.bobot.index', 'icon' => 'lucide-scale', 'label' => 'Bobot & Ketuntasan'],
                 ['route' => 'admin.sheet.index', 'icon' => 'lucide-table', 'label' => 'Penyimpanan Data'],
                 ['route' => 'admin.backup.index', 'icon' => 'lucide-database', 'label' => 'Backup & Restore'],
                 ['route' => 'admin.api-keys.index', 'icon' => 'lucide-key-round', 'label' => 'Kunci API Bridge'],
@@ -135,7 +131,7 @@
     ];
 
     // Sembunyikan fitur data global yang belum aman untuk tenant.
-    if (\App\Modules\Tenant\Contexts\TenantContext::check() || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::query()->exists()) {
+    if ($multiSchoolMode) {
         foreach ($menuAdmin as &$groups) {
             foreach ($groups as &$group) {
                 if (isset($group['children'])) {

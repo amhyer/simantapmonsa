@@ -13,7 +13,7 @@
 
 @if($isTenant)
 <div role="status" style="padding:12px 16px;border-radius:8px;background:#fff4d6;color:#714b00;margin-bottom:16px">
-    Integrasi Bridge dan pengaturan/pengiriman Dapodik lama dinonaktifkan untuk multi-sekolah karena data PTK dan konfigurasi belum terisolasi. Endpoint impor manual siswa dan riwayat log sekolah tetap tersedia. Data PTK global disembunyikan.
+    Dapodik Bridge dan sinkronisasi lama belum aman untuk multi-sekolah, jadi kontrolnya disembunyikan. Gunakan bagian <strong>Kelola Langsung</strong> untuk impor berkas sekolah ini. Data PTK global tidak ditampilkan.
 </div>
 @endif
 <div id="globalAlert" style="display:none;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
@@ -26,6 +26,8 @@
     <div class="stat-card" id="statSyncCard"><div class="stat-value" id="statSyncTerakhir" style="font-size:16px">-</div><div class="stat-label">Sinkron Terakhir</div></div>
 </div>
 
+{{-- Bridge hanya ditampilkan bila integrasi single-school tersedia. --}}
+@unless($isTenant)
 {{-- Method Selector --}}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
     <button type="button" onclick="switchTab('bridge')" id="tabBtnBridge"
@@ -49,8 +51,10 @@
         </div>
     </button>
 </div>
+@endunless
 
 {{-- ═══════════════ TAB: DAPODIK BRIDGE ═══════════════ --}}
+@unless($isTenant)
 <div id="tabBridge">
 
     {{-- Steps --}}
@@ -277,16 +281,17 @@
     </div>
 
 </div>
+@endunless
 
 {{-- ═══════════════ TAB: KELOLA LANGSUNG ═══════════════ --}}
-<div id="tabManual" style="display:none">
+<div id="tabManual" style="{{ $isTenant ? '' : 'display:none' }}">
 
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">
             <h3><i class="fas fa-file-import" style="color:var(--gold)"></i> Import Data</h3>
         </div>
         <div class="card-body">
-            <p style="font-size:13px;color:#667085;margin-bottom:16px">Gunakan Dapodik Bridge atau import manual dari file CSV/JSON untuk menambahkan data siswa, guru, dan kelas.</p>
+            <p style="font-size:13px;color:#667085;margin-bottom:16px">{{ $isTenant ? 'Import manual dari file CSV/JSON untuk menambahkan data siswa dan kelas di sekolah ini.' : 'Gunakan Dapodik Bridge atau import manual dari file CSV/JSON untuk menambahkan data siswa, guru, dan kelas.' }}</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
                 <div style="padding:16px;background:#EEF2F9;border-radius:10px;border-left:3px solid #1F3864">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -384,7 +389,7 @@
                 <div class="empty-state">
                     <div class="icon"><i class="fas fa-inbox"></i></div>
                     <h4>Belum ada data PTK</h4>
-                    <p>Import data guru dari Dapodik atau input manual.</p>
+                    <p>{{ $isTenant ? 'Data PTK dari Bridge lama tidak ditampilkan di sini. Data PTK sekolah tersedia di menu Data Guru & PTK; akun guru dikelola melalui Manajemen Akun.' : 'Import data guru dari Dapodik atau input manual.' }}</p>
                 </div>
             @endif
         </div>

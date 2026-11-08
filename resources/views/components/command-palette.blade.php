@@ -12,24 +12,27 @@
             ['title' => 'Akun Pengguna Seluruh Sekolah', 'route' => route('superadmin.users.index'), 'cat' => 'Pengguna', 'icon' => 'fas fa-users'],
         ];
     } elseif ($role === 'admin') {
+        $multiSchoolMode = \App\Modules\Tenant\Support\TenantMode::isMultiSchool();
         $commandMenu = [
             ['title' => 'Dasbor Sistem', 'route' => route('admin.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
             ['title' => 'Profil Sekolah', 'route' => route('admin.sekolah.index'), 'cat' => 'Master Data', 'icon' => 'fas fa-school'],
-            ['title' => 'Data Guru & PTK', 'route' => route('admin.referensi.guru'), 'cat' => 'Data Guru & Siswa', 'icon' => 'fas fa-chalkboard-teacher'],
             ['title' => 'Data Siswa & Akun', 'route' => route('admin.users.siswa'), 'cat' => 'Data Guru & Siswa', 'icon' => 'fas fa-user-graduate'],
             ['title' => 'Presensi Pegawai & Lokasi', 'route' => route('admin.presensi.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-map-marker-alt'],
             ['title' => 'Pemetaan QR & Kartu Identitas', 'route' => route('admin.presensi.kartu.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-qrcode'],
             ['title' => 'Cetak Kode Akses Login', 'route' => route('admin.kode-akses.index'), 'cat' => 'Akun', 'icon' => 'fas fa-key'],
-            ['title' => 'Tarik Data Dapodik', 'route' => route('admin.dapodik.index'), 'cat' => 'Dapodik', 'icon' => 'fas fa-sync'],
+            ['title' => 'Dapodik & Impor Data', 'route' => route('admin.dapodik.index'), 'cat' => 'Dapodik', 'icon' => 'fas fa-sync'],
             ['title' => 'Status Penilaian per Guru', 'route' => route('admin.penilaian.status'), 'cat' => 'e-Rapor', 'icon' => 'fas fa-check-circle'],
             ['title' => 'Statistik Nilai Rapor', 'route' => route('admin.penilaian.statistik'), 'cat' => 'e-Rapor', 'icon' => 'fas fa-chart-bar'],
             ['title' => 'Cetak Leger Rapor', 'route' => route('admin.cetak.leger'), 'cat' => 'Cetak', 'icon' => 'fas fa-table'],
             ['title' => 'Cetak Nilai Rapor', 'route' => route('admin.cetak.nilai'), 'cat' => 'Cetak', 'icon' => 'fas fa-file-alt'],
             ['title' => 'Cetak Transkrip Ijazah', 'route' => route('admin.transkrip.cetak'), 'cat' => 'Transkrip', 'icon' => 'fas fa-certificate'],
             ['title' => 'Bank Soal CBT', 'route' => route('admin.cbt.banks.index'), 'cat' => 'CBT', 'icon' => 'fas fa-database'],
+            ['title' => 'Data Guru & PTK', 'route' => route('admin.referensi.guru'), 'cat' => 'Data Guru & Siswa', 'icon' => 'fas fa-chalkboard-teacher'],
             ['title' => 'Sesi Ujian CBT', 'route' => route('admin.cbt.sessions.index'), 'cat' => 'CBT', 'icon' => 'fas fa-laptop-code'],
-            ['title' => 'Backup & Restore Database', 'route' => route('admin.backup.index'), 'cat' => 'Sistem', 'icon' => 'fas fa-shield-alt'],
         ];
+        if (! $multiSchoolMode) {
+            $commandMenu[] = ['title' => 'Backup & Restore Database', 'route' => route('admin.backup.index'), 'cat' => 'Sistem', 'icon' => 'fas fa-shield-alt'];
+        }
     } elseif ($role === 'guru') {
         $commandMenu = [
             ['title' => 'Dasbor Guru', 'route' => route('guru.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
@@ -59,11 +62,13 @@
             ['title' => 'Dashboard Kepala Sekolah', 'route' => route('kepsek.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-tachometer-alt'],
             ['title' => 'Presensi Saya', 'route' => route('presensi.pegawai.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-user-check'],
             ['title' => 'Rekap Statistik Sekolah', 'route' => route('kepsek.rekap.index'), 'cat' => 'Statistik', 'icon' => 'fas fa-chart-pie'],
-            ['title' => 'Peta Kelas & Rombel', 'route' => route('kepsek.peta-kelas.index'), 'cat' => 'Pemetaan', 'icon' => 'fas fa-map'],
-            ['title' => 'Hasil Belajar Siswa', 'route' => route('kepsek.hasil-belajar.index'), 'cat' => 'Akademik', 'icon' => 'fas fa-graduation-cap'],
             ['title' => 'Pantau Aktivitas Guru', 'route' => route('kepsek.pantau.index'), 'cat' => 'Supervisi', 'icon' => 'fas fa-eye'],
             ['title' => 'Rekap 7 Kebiasaan Anak', 'route' => route('kepsek.kebiasaan.index'), 'cat' => 'Karakter', 'icon' => 'fas fa-star'],
         ];
+        if (! \App\Modules\Tenant\Support\TenantMode::isMultiSchool()) {
+            $commandMenu[] = ['title' => 'Peta Kelas & Rombel', 'route' => route('kepsek.peta-kelas.index'), 'cat' => 'Pemetaan', 'icon' => 'fas fa-map'];
+            $commandMenu[] = ['title' => 'Hasil Belajar Siswa', 'route' => route('kepsek.hasil-belajar.index'), 'cat' => 'Akademik', 'icon' => 'fas fa-graduation-cap'];
+        }
     } elseif ($role === 'ortu') {
         $commandMenu = [
             ['title' => 'Ringkasan Perkembangan Anak', 'route' => route('ortu.dashboard'), 'cat' => 'Utama', 'icon' => 'fas fa-home'],

@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Jobs\ImportDapodikJob;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -27,7 +28,7 @@ class DapodikImportController extends Controller
     {
         abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
         $tenantId = TenantContext::id();
-        $isTenant = $tenantId !== null;
+        $isTenant = TenantMode::isMultiSchool();
         $logs = DapodikSyncLog::with('user')
             ->orderBy('created_at', 'desc')
             ->limit(20)

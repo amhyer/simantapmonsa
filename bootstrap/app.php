@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'dapodik.single-school' => \App\Http\Middleware\EnsureSingleSchoolDapodik::class,
             'school.context' => \App\Http\Middleware\EnsureSchoolContext::class,
             'data.single-school' => \App\Http\Middleware\EnsureSingleSchoolData::class,
+            'menu.telemetry' => \App\Http\Middleware\RecordMenuUsage::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

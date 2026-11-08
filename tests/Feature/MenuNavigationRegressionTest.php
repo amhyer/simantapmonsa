@@ -109,7 +109,7 @@ class MenuNavigationRegressionTest extends TestCase
         config(['simantap.cbt_enabled' => false]);
         foreach ([
             'superadmin.partials.sidebar' => 'Dasbor Platform',
-            'admin.partials.sidebar' => 'Dasbor Sistem',
+            'admin.partials.sidebar' => 'Dasbor',
             'guru.partials.sidebar' => 'Materi Ajar',
             'siswa.partials.sidebar' => 'Profil Saya',
             'ortu.partials.sidebar' => 'Ringkasan',
