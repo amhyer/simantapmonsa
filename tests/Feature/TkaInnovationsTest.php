@@ -13,6 +13,8 @@ use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use App\Services\Tka\TkaAdaptiveBankService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -361,6 +363,10 @@ class TkaInnovationsTest extends TestCase
         $simRows = \DB::table('tka_adaptive_simulations')
             ->get(['id', 'siswa_id', 'tenant_id', 'status', 'submitted_at'])
             ->toJson();
+        $logSinkronisasi = [];
+        Log::listen(function (MessageLogged $message) use (&$logSinkronisasi): void {
+            $logSinkronisasi[] = $message->level.' | '.$message->message.' | '.json_encode($message->context);
+        });
         $sqlSimulasi = [];
         \DB::listen(function ($query) use (&$sqlSimulasi): void {
             if (str_contains($query->sql, 'tka_adaptive_simulations')) {
@@ -393,6 +399,7 @@ class TkaInnovationsTest extends TestCase
             .' | profil_langsung_skor: '.json_encode($profileLangsung['skor_kognitif'])
             .' | baris_simulasi: '.$simRows
             .' | sql_simulasi_request: '.json_encode($sqlSimulasi)
+            .' | log: '.json_encode($logSinkronisasi)
         );
 
         $nilai = Nilai::where('siswa_id', $this->siswaUnggul->id)
