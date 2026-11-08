@@ -478,15 +478,21 @@ class TkaCognitiveAnalyticsService
         ) {
             $judulPenilaian = "Integrasi Kognitif TKA ({$semesterLabel} {$tahunAjaran})";
 
+            $jenisNilai = match ($komponen) {
+                'formatif' => 'Tugas',
+                'sumatif_akhir' => 'PAS',
+                default => 'Ulangan Harian',
+            };
+
             $nilaiRow = Nilai::query()->updateOrCreate(
                 [
                     'siswa_id' => $siswa->id,
                     'guru_id' => $guru->id,
                     'mata_pelajaran' => $mapel,
-                    // Kolom `nilai.jenis` adalah enum (Tugas/Ulangan Harian/Praktik/PTS/PAS).
-                    // Nilai 'ulangan' melanggar check constraint PostgreSQL
-                    // (nilai_jenis_check) sehingga sinkronisasi selalu gagal diam-diam.
-                    'jenis' => 'Ulangan Harian',
+                    // `nilai.jenis` adalah enum (Tugas/Ulangan Harian/Praktik/PTS/PAS):
+                    // nilai di luar daftar itu melanggar check constraint PostgreSQL
+                    // (nilai_jenis_check) dan membuat sinkronisasi gagal diam-diam.
+                    'jenis' => $jenisNilai,
                     'judul_penilaian' => $judulPenilaian,
                 ],
                 [
