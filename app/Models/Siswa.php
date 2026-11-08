@@ -107,6 +107,15 @@ class Siswa extends Model
         static::deleted($flush);
     }
 
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if (($field ?? $this->getRouteKeyName()) === 'uuid' && ! Str::isUuid((string) $value)) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
+    }
+
     public function semester()
     {
         return $this->belongsTo(Semester::class);

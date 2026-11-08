@@ -183,9 +183,24 @@ class DapodikTenantIsolationTest extends TestCase
             ['nama' => 'Siswa Lain', 'nisn' => 'NIS-A-2', 'kelas' => '1', 'jenis_kelamin' => 'P'],
         ]];
         $job = new ImportDapodikJob($data, $log->id, 'semua', $adminA->id, 'Admin A', $a->id);
+        $lastSql = null;
+        $abortedAfter = null;
+        if (\DB::connection()->getDriverName() === 'pgsql') {
+            \DB::connection()->beforeExecuting(function ($sql) use (&$lastSql, &$abortedAfter) {
+                if ($abortedAfter === null) {
+                    try {
+                        \DB::connection()->getPdo()->query('select 1');
+                    } catch (\PDOException $exception) {
+                        $abortedAfter = $lastSql;
+                    }
+                }
+                $lastSql = $sql;
+            });
+        }
         TenantContext::set($b->id);
         $job->handle();
 
+        $this->assertNull($abortedAfter, 'PostgreSQL aborted after: '.$abortedAfter);
         $this->assertSame($b->id, TenantContext::id());
         $this->assertSame('Tidak Boleh Diubah', $other->fresh()->nama_lengkap);
         $this->assertDatabaseHas('siswa', ['tenant_id' => $a->id, 'nisn' => 'NIS-A-1']);
