@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
+use App\Models\PengaturanGuru;
+use App\Models\RingkasanGuru;
+use App\Models\Rombel;
 use App\Models\Siswa;
-use App\Models\User;
-use App\Models\OrangTuaSiswa;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\NilaiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SiswaController extends Controller
 {
@@ -26,12 +30,12 @@ class SiswaController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         if ($kelasList->isEmpty()) {
-            $kelasList = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+            $kelasList = Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
         }
 
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $guruId)->value('nama_rombel')
-            ?? \App\Models\PengaturanGuru::where('guru_id', $guruId)->value('kelas')
+            ?? Rombel::where('guru_id', $guruId)->value('nama_rombel')
+            ?? PengaturanGuru::where('guru_id', $guruId)->value('kelas')
             ?? Siswa::where('guru_id', $guruId)->value('kelas')
             ?? $kelasList->first();
 
@@ -58,9 +62,13 @@ class SiswaController extends Controller
 
     public function store(Request $request)
     {
+        $nisRule = Rule::unique('siswa', 'nis')->where(fn ($query) => TenantContext::check()
+            ? $query->where('tenant_id', TenantContext::id())
+            : $query->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:50|unique:siswa,nis',
+            'nis' => ['required', 'string', 'max:50', $nisRule],
             'jenis_kelamin' => 'required|in:L,P',
             'kelas' => 'required|string|max:50',
             'nama_orang_tua' => 'nullable|string|max:255',
@@ -69,9 +77,9 @@ class SiswaController extends Controller
 
         $guru = auth()->user();
 
-        $kodeOrtu = 'ORT' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+        $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
         while (Siswa::where('nama_orang_tua', $kodeOrtu)->exists()) {
-            $kodeOrtu = 'ORT' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
         }
 
         $siswa = Siswa::create([
@@ -97,6 +105,7 @@ class SiswaController extends Controller
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== auth()->id()) {
             abort(403);
         }
+
         return view('guru.siswa.edit', compact('siswa'));
     }
 
@@ -106,9 +115,15 @@ class SiswaController extends Controller
             abort(403);
         }
 
+        $nisRule = Rule::unique('siswa', 'nis')
+            ->ignore($siswa->id)
+            ->where(fn ($query) => TenantContext::check()
+                ? $query->where('tenant_id', TenantContext::id())
+                : $query->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:50|unique:siswa,nis,' . $siswa->id,
+            'nis' => ['required', 'string', 'max:50', $nisRule],
             'jenis_kelamin' => 'required|in:L,P',
             'kelas' => 'required|string|max:50',
             'nama_orang_tua' => 'nullable|string|max:255',
@@ -132,7 +147,7 @@ class SiswaController extends Controller
 
     public function destroy(Siswa $siswa)
     {
-        if (!empty($siswa->dapodik_id)) {
+        if (! empty($siswa->dapodik_id)) {
             return back()->with('error', 'Siswa Dapodik adalah data master terpusat sekolah dan tidak dapat dihapus manual.');
         }
 
@@ -173,24 +188,25 @@ class SiswaController extends Controller
             $csv .= implode(',', array_map(function ($field) {
                 $field = (string) ($field ?? '');
                 if (in_array(substr($field, 0, 1), ['=', '+', '-', '@'])) {
-                    $field = "'" . $field;
+                    $field = "'".$field;
                 }
                 if (str_contains($field, ',') || str_contains($field, '"') || str_contains($field, "\n")) {
-                    $field = '"' . str_replace('"', '""', $field) . '"';
+                    $field = '"'.str_replace('"', '""', $field).'"';
                 }
+
                 return $field;
-            }, $fields)) . "\n";
+            }, $fields))."\n";
         }
 
         return response($csv)
             ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="siswa-' . date('Y-m-d') . '.csv"');
+            ->header('Content-Disposition', 'attachment; filename="siswa-'.date('Y-m-d').'.csv"');
     }
 
     public function impor(Request $request)
     {
         $request->validate([
-            'csv' => 'required|string'
+            'csv' => 'required|string',
         ]);
 
         $rows = explode("\n", trim($request->csv));
@@ -199,18 +215,23 @@ class SiswaController extends Controller
 
         foreach ($rows as $row) {
             $data = str_getcsv($row);
-            if (count($data) < 2) continue;
-
-            if (strtolower($data[0]) === 'nama') continue;
-
-            if (Siswa::where('nis', $data[1])->exists()) {
-                $errors[] = "NIS {$data[1]} sudah ada.";
+            if (count($data) < 2) {
                 continue;
             }
 
-            $kodeOrtu = 'ORT' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            if (strtolower($data[0]) === 'nama') {
+                continue;
+            }
+
+            if (Siswa::where('nis', $data[1])->exists()) {
+                $errors[] = "NIS {$data[1]} sudah ada.";
+
+                continue;
+            }
+
+            $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             while (Siswa::where('nama_orang_tua', $kodeOrtu)->exists()) {
-                $kodeOrtu = 'ORT' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+                $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             }
 
             Siswa::create([
@@ -231,8 +252,8 @@ class SiswaController extends Controller
         $this->updateRingkasan(auth()->id());
 
         $message = "{$count} siswa berhasil diimpor.";
-        if (!empty($errors)) {
-            $message .= " Error: " . implode(' ', $errors);
+        if (! empty($errors)) {
+            $message .= ' Error: '.implode(' ', $errors);
         }
 
         return redirect()->route('guru.siswa.index')
@@ -242,9 +263,11 @@ class SiswaController extends Controller
     private function updateRingkasan($guruId)
     {
         $siswa = Siswa::where('guru_id', $guruId)->where('aktif', true)->get();
-        $pengaturan = \App\Models\PengaturanGuru::where('guru_id', $guruId)->first();
+        $pengaturan = PengaturanGuru::where('guru_id', $guruId)->first();
 
-        if (!$pengaturan) return;
+        if (! $pengaturan) {
+            return;
+        }
 
         $kkm = $pengaturan->kkm ?? 70;
         $nilaiAkhir = [];
@@ -254,22 +277,25 @@ class SiswaController extends Controller
             $na = $this->nilaiService->hitungNilaiAkhir($s->id);
             if ($na['nilai_akhir'] > 0) {
                 $nilaiAkhir[] = $na['nilai_akhir'];
-                if ($na['nilai_akhir'] >= $kkm) $tuntas++;
+                if ($na['nilai_akhir'] >= $kkm) {
+                    $tuntas++;
+                }
             }
         }
 
         // Unik guru_id masih global. Jangan menimpa ringkasan lama/sekolah lain
         // atau memicu duplicate key saat kepemilikannya belum direkonsiliasi.
-        if (\App\Models\RingkasanGuru::withoutGlobalScope('schoolOwnership')->where('guru_id', $guruId)->exists()
-            && ! \App\Models\RingkasanGuru::where('guru_id', $guruId)->exists()) {
-            \Illuminate\Support\Facades\Log::warning('Ringkasan guru belum diperbarui karena kepemilikan data lama harus direkonsiliasi.', ['guru_id' => $guruId]);
+        if (RingkasanGuru::withoutGlobalScope('schoolOwnership')->where('guru_id', $guruId)->exists()
+            && ! RingkasanGuru::where('guru_id', $guruId)->exists()) {
+            Log::warning('Ringkasan guru belum diperbarui karena kepemilikan data lama harus direkonsiliasi.', ['guru_id' => $guruId]);
             if (request()->hasSession()) {
                 session()->flash('warning', 'Ringkasan guru belum diperbarui. Hubungi administrator untuk rekonsiliasi data lama.');
             }
+
             return;
         }
 
-        \App\Models\RingkasanGuru::updateOrCreate(
+        RingkasanGuru::updateOrCreate(
             ['guru_id' => $guruId],
             [
                 'nama_guru' => auth()->user()->nama_lengkap,
@@ -325,23 +351,27 @@ class SiswaController extends Controller
 
         foreach ($request->siswa_ids as $siswaId) {
             $asal = Siswa::find($siswaId);
-            if (!$asal || $asal->guru_id === $guru->id) continue;
+            if (! $asal || $asal->guru_id === $guru->id) {
+                continue;
+            }
 
             $existing = Siswa::where('nis', $asal->nis)
                 ->where('guru_id', $guru->id)
                 ->first();
 
-            if ($existing) continue;
+            if ($existing) {
+                continue;
+            }
 
             $kodeOrtu = $asal->nama_orang_tua;
-            if (!$kodeOrtu || $kodeOrtu === 'ORT' . substr($asal->nis, -4)) {
-                $kodeOrtu = 'ORT' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            if (! $kodeOrtu || $kodeOrtu === 'ORT'.substr($asal->nis, -4)) {
+                $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             }
 
             // Generate unique NIS with prefix for target class
-            $newNis = $guru->id . '-' . $asal->nis;
+            $newNis = $guru->id.'-'.$asal->nis;
             if (Siswa::where('nis', $newNis)->exists()) {
-                $newNis = $guru->id . '-' . $asal->nis . '-' . Str::random(4);
+                $newNis = $guru->id.'-'.$asal->nis.'-'.Str::random(4);
             }
 
             Siswa::create([

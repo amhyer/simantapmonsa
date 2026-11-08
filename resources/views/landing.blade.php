@@ -52,7 +52,7 @@
 
         /* NAVBAR */
         .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 16px 40px; background: transparent; transition: var(--transition); }
-        .navbar.scrolled { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); box-shadow: 0 1px 20px rgba(0,0,0,0.08); padding: 12px 40px; }
+        .navbar.scrolled { background: rgba(255,255,255,0.95); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 1px 20px rgba(0,0,0,0.08); padding: 12px 40px; }
         .navbar .container { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
         .navbar .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .navbar .logo-icon { width: 42px; height: 42px; background: var(--gold-gradient); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #fff; }
@@ -84,7 +84,7 @@
         .btn-hero { padding: 14px 32px; border-radius: 99px; font-weight: 700; font-size: 15px; text-decoration: none; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; }
         .btn-hero-primary { background: var(--gold-gradient); color: #fff; box-shadow: 0 8px 30px rgba(184,134,11,0.3); }
         .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(184,134,11,0.4); }
-        .btn-hero-secondary { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); color: var(--navy); border: 1.5px solid rgba(31,56,100,0.15); }
+        .btn-hero-secondary { background: rgba(255,255,255,0.8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--navy); border: 1.5px solid rgba(31,56,100,0.15); }
         .btn-hero-secondary:hover { background: #fff; border-color: var(--navy); transform: translateY(-3px); }
         .hero-content .trust { display: flex; align-items: center; gap: 24px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
         .hero-content .trust .item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
@@ -393,7 +393,15 @@
             <li><a href="#faq">FAQ</a></li>
         </ul>
         <div class="nav-actions">
-            <a href="{{ route('login') }}" class="btn-nav btn-nav-primary">Login</a>
+            @auth
+                <a href="{{ route('home') }}" class="btn-nav btn-nav-primary"><i class="fas fa-th-large"></i> Dashboard</a>
+                <form action="{{ route('logout') }}" method="POST" style="display:inline;margin:0">
+                    @csrf
+                    <button type="submit" class="btn-nav btn-nav-outline" style="cursor:pointer">Keluar</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="btn-nav btn-nav-primary">Login</a>
+            @endauth
             <button class="hamburger" id="hamburger" aria-label="Menu">
                 <span></span><span></span><span></span>
             </button>
@@ -409,7 +417,15 @@
             <h1>Satu Ekosistem untuk <br><span class="highlight">Tiga Agenda</span> Sekolah</h1>
             <p><strong>SIMANTAP_MONSA</strong> menyatukan <strong>Tes Kemampuan Akademik (TKA)</strong>, <strong>Pembelajaran Mendalam</strong>, dan <strong>Manajemen Kelas</strong>. Inovasi spektakuler yang berakar dari hasil gagasan Bimtek BBGTK dan dikembangkan oleh <strong>UPTD SD NEGERI UNGGULAN MONGISIDI 1</strong> sebagai solusi masa depan bagi pendidikan di Sulawesi Selatan.</p>
             <div class="cta-group">
-                <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
+                @auth
+                    <a href="{{ route('home') }}" class="btn-hero btn-hero-primary"><i class="fas fa-th-large"></i> Lanjut ke Dashboard ({{ auth()->user()->nama_pengguna }})</a>
+                    <form action="{{ route('logout') }}" method="POST" style="display:inline;margin:0">
+                        @csrf
+                        <button type="submit" class="btn-hero btn-hero-secondary" style="cursor:pointer"><i class="fas fa-sign-out-alt"></i> Ganti Akun / Keluar</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
+                @endauth
                 <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
                 <a href="#demo" class="btn-hero btn-hero-secondary">Akses Aplikasi</a>
             </div>

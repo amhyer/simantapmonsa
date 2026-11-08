@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transkrip Nilai - {{ $siswa->nama_peserta_didik }}</title>
     <style>
         body { font-family: "Times New Roman", Times, serif; color: #000; margin: 32px; }

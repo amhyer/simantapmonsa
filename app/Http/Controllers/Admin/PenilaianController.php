@@ -16,7 +16,7 @@ class PenilaianController extends Controller
 {
     public function status()
     {
-        $guru = User::where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
+        $guru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
 
         $rows = $guru->map(function ($g) {
             $jmlSiswa = Siswa::where('guru_id', $g->id)->count();
@@ -57,6 +57,7 @@ class PenilaianController extends Controller
 
         $sebaran = collect(['A', 'B', 'C', 'D'])->mapWithKeys(function ($p) use ($nilai, $total) {
             $jml = $nilai->where('predikat', $p)->count();
+
             return [$p => ['jumlah' => $jml, 'persen' => $total > 0 ? round($jml / $total * 100, 1) : 0]];
         });
 

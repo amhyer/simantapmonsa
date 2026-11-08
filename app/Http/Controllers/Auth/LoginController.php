@@ -16,12 +16,13 @@ class LoginController extends Controller
         if (auth()->check()) {
             return redirect()->route('home');
         }
+
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
-        $throttleKey = 'login:' . $request->ip();
+        $throttleKey = 'login:'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -40,7 +41,7 @@ class LoginController extends Controller
 
             // PERBAIKAN: kolom `aktif`/`archived_at` sebelumnya tidak pernah
             // diperiksa — akun yang dinonaktifkan admin tetap bisa login.
-            if (!$user->aktif || $user->archived_at !== null) {
+            if (! $user->aktif || $user->archived_at !== null) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -51,14 +52,21 @@ class LoginController extends Controller
                 ])->onlyInput('nama_pengguna');
             }
 
+            try {
+                $user->update(['terakhir_masuk' => now()]);
+                AktivitasService::login('Login sebagai '.$user->peran.' dari IP '.$request->ip());
+            } catch (\Throwable $e) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                throw $e;
+            }
+
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
-            $user->update(['terakhir_masuk' => now()]);
-
-            AktivitasService::login('Login sebagai ' . $user->peran . ' dari IP ' . $request->ip());
-
-            return match($user->peran) {
+            return match ($user->peran) {
+                'super_admin' => redirect()->route('superadmin.dashboard'),
                 'admin' => redirect()->route('admin.dashboard'),
                 'guru' => redirect()->route('guru.dashboard'),
                 'siswa' => redirect()->route('siswa.dashboard'),
@@ -81,6 +89,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

@@ -2,9 +2,15 @@
 
 namespace App\Providers;
 
-use App\Services\Dapodik\SidebarSyncStatus;
+use App\Models\CbtQuestion;
+use App\Models\CbtQuestionBank;
+use App\Models\CbtResult;
+use App\Models\CbtTestSession;
 use App\Models\NilaiErapot;
 use App\Models\Siswa;
+use App\Models\Tka\StudentAssessment;
+use App\Models\Tryout\Result;
+use App\Models\Tryout\Session;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use App\Observers\NilaiErapotObserver;
@@ -12,14 +18,18 @@ use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
+use App\Policies\TkaAssessmentPolicy;
 use App\Policies\TryoutResultPolicy;
 use App\Policies\TryoutSessionPolicy;
-use App\Policies\TkaAssessmentPolicy;
+use App\Services\Dapodik\SidebarSyncStatus;
+use Carbon\Carbon;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,17 +46,20 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(Schedule $schedule): void
     {
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
         // Policies modul asesmen (Fase 2). Didaftarkan eksplisit agar model
         // bernamespace (Tryout\*) tidak bergantung pada auto-discovery.
-        Gate::policy(\App\Models\CbtQuestionBank::class, CbtQuestionBankPolicy::class);
-        Gate::policy(\App\Models\CbtQuestion::class, CbtQuestionPolicy::class);
-        Gate::policy(\App\Models\CbtTestSession::class, CbtTestSessionPolicy::class);
-        Gate::policy(\App\Models\CbtResult::class, CbtResultPolicy::class);
-        Gate::policy(\App\Models\Tryout\Session::class, TryoutSessionPolicy::class);
-        Gate::policy(\App\Models\Tryout\Result::class, TryoutResultPolicy::class);
-        Gate::policy(\App\Models\Tka\StudentAssessment::class, TkaAssessmentPolicy::class);
+        Gate::policy(CbtQuestionBank::class, CbtQuestionBankPolicy::class);
+        Gate::policy(CbtQuestion::class, CbtQuestionPolicy::class);
+        Gate::policy(CbtTestSession::class, CbtTestSessionPolicy::class);
+        Gate::policy(CbtResult::class, CbtResultPolicy::class);
+        Gate::policy(Session::class, TryoutSessionPolicy::class);
+        Gate::policy(Result::class, TryoutResultPolicy::class);
+        Gate::policy(StudentAssessment::class, TkaAssessmentPolicy::class);
 
         // Jejak audit nilai e-Rapor: observer memastikan input guru, import,
         // dan sinkronisasi memakai rantai hash yang sama.
@@ -63,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
 
             if ($user) {
                 $foto = Cache::remember(
-                    'layout-foto-' . $user->id,
+                    'layout-foto-'.$user->id,
                     300,
                     function () use ($user) {
                         $siswa = Siswa::query()
@@ -96,7 +109,7 @@ class AppServiceProvider extends ServiceProvider
                     $notifs[] = [
                         'icon' => 'fas fa-sync',
                         'teks' => "Sinkron Dapodik: {$last['berhasil']} berhasil, {$last['gagal']} gagal",
-                        'waktu' => $last['created_at'] ? \Carbon\Carbon::parse($last['created_at'])->diffForHumans() : '-',
+                        'waktu' => $last['created_at'] ? Carbon::parse($last['created_at'])->diffForHumans() : '-',
                     ];
                 }
                 if (! TenantContext::check() && ! config('simantap.multi_tenant_enabled', false)
@@ -114,5 +127,8 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('layoutNotifs', $notifs);
         });
+
+        // Auto-sync presensi harian dari database mesin fingerprint.
+        $schedule->call('presensi:mesin-sync')->dailyAt('07:35')->name('presensi-mesin-sync')->withoutOverlapping();
     }
 }

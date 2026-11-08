@@ -42,12 +42,12 @@ class RegisterSekolahController extends Controller
             'kata_sandi' => 'required|string|min:8|confirmed',
         ], [
             'npsn.digits' => 'NPSN harus terdiri dari 8 digit angka.',
-            'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP.',
+            'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP_MONSA.',
             'subdomain.regex' => 'Subdomain hanya boleh berupa huruf kecil, angka, dan tanda hubung (-).',
             'subdomain.unique' => 'Subdomain ini sudah digunakan sekolah lain. Pilih subdomain lain.',
             'nama_pengguna.unique' => 'Nama pengguna admin ini sudah dipakai. Gunakan nama pengguna lain.',
             'nama_pengguna.regex' => 'Nama pengguna hanya boleh mengandung huruf, angka, titik, atau garis bawah.',
-            'email.unique' => 'Email ini sudah terdaftar di SIMANTAP.',
+            'email.unique' => 'Email ini sudah terdaftar di SIMANTAP_MONSA.',
             'kata_sandi.min' => 'Kata sandi minimal 8 karakter.',
             'kata_sandi.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);

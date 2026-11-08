@@ -241,8 +241,8 @@
             <span style="font-size:12px;color:#6b7280">Ditemukan {{ count($rows) }} data</span>
         </div>
 
-        <div class="table-wrapper">
-            @if($kategori !== 'siswa')
+        @if($kategori !== 'siswa')
+            <div class="table-wrapper">
                 {{-- TABEL PEGAWAI (GURU & TENDIK) --}}
                 <table class="table" style="width:100%;border-collapse:collapse">
                     <thead>
@@ -366,7 +366,9 @@
                         @endforelse
                     </tbody>
                 </table>
-            @else
+            </div>
+        @else
+            <div class="table-wrapper">
                 {{-- TABEL SISWA --}}
                 <table class="table" style="width:100%;border-collapse:collapse">
                     <thead>
@@ -455,8 +457,8 @@
                         @endforelse
                     </tbody>
                 </table>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 
     {{-- Footer Tanda Tangan Cetak --}}

@@ -2,7 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Siswa - SIMANTAP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Siswa - SIMANTAP_MONSA</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; color: #000; }

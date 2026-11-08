@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Statistik TKA Nasional — SIMANTAP</title>
+    <title>Statistik TKA Nasional — SIMANTAP_MONSA</title>
     {{-- Bootstrap & Font Awesome dibundel sendiri via Vite — bukan dari
         jsdelivr / cdnjs. Lihat resources/css/tka-statistik.css --}}
     @vite('resources/css/tka-statistik.css')

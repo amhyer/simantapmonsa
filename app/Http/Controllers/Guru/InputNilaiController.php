@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\Nilai;
 use App\Models\Kuis;
+use App\Models\Nilai;
 use App\Models\PengaturanGuru;
+use App\Models\Rombel;
+use App\Models\Siswa;
+use App\Services\NilaiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 
 class InputNilaiController extends Controller
@@ -31,7 +33,7 @@ class InputNilaiController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $user->id)->value('nama_rombel')
+            ?? Rombel::where('guru_id', $user->id)->value('nama_rombel')
             ?? $pengaturan?->kelas
             ?? $kelasList->first();
 
@@ -55,13 +57,13 @@ class InputNilaiController extends Controller
         // Default & normalisasi jenis: 'UH' (nilai lama dari UI lama) dipetakan
         // ke 'Ulangan Harian' supaya cocok dengan enum DB.
         $jenis = $request->jenis === 'UH' ? 'Ulangan Harian' : ($request->jenis ?? 'Ulangan Harian');
-        if (!in_array($jenis, self::JENIS_VALID, true)) {
+        if (! in_array($jenis, self::JENIS_VALID, true)) {
             $jenis = 'Ulangan Harian';
         }
         $judul = $request->judul ?? '';
 
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $user->id)->value('nama_rombel')
+            ?? Rombel::where('guru_id', $user->id)->value('nama_rombel')
             ?? PengaturanGuru::where('guru_id', $user->id)->value('kelas');
 
         $query = Siswa::where('aktif', true)->whereNull('archived_at');
@@ -77,7 +79,7 @@ class InputNilaiController extends Controller
 
         $nilaiData = Nilai::where('guru_id', $user->id)
             ->where('jenis', $jenis)
-            ->when($judul, fn($q) => $q->where('judul_penilaian', $judul))
+            ->when($judul, fn ($q) => $q->where('judul_penilaian', $judul))
             ->get()
             ->keyBy('siswa_id');
 
@@ -111,7 +113,7 @@ class InputNilaiController extends Controller
         $validated = $request->validate([
             // 'UH' diterima demi kompatibilitas UI lama, lalu dinormalkan.
             'jenis' => ['required', 'string', Rule::in([...self::JENIS_VALID, 'UH'])],
-            'judul_penilaian' => 'nullable|string',
+            'judul_penilaian' => 'nullable|string|max:255',
             'nilai' => 'required|array',
             'nilai.*.siswa_id' => 'required|exists:siswa,id',
             'nilai.*.nilai' => 'nullable|numeric|between:0,100',
@@ -122,16 +124,20 @@ class InputNilaiController extends Controller
         $saved = 0;
         $ownedSiswa = Siswa::where(function ($q) use ($user) {
             $q->where('guru_id', $user->id)
-              ->orWhereNotNull('dapodik_id')
-              ->orWhereNull('guru_id');
+                ->orWhereNotNull('dapodik_id')
+                ->orWhereNull('guru_id');
         })->where('aktif', true)->whereNull('archived_at')->get(['id', 'nama_peserta_didik']);
         $ownedSiswaIds = $ownedSiswa->pluck('id')->toArray();
         $namaBySiswa = $ownedSiswa->pluck('nama_peserta_didik', 'id');
 
         DB::transaction(function () use ($validated, $user, $ownedSiswaIds, $namaBySiswa, $jenis, &$saved) {
             foreach ($validated['nilai'] as $item) {
-                if ($item['nilai'] === null || $item['nilai'] === '') continue;
-                if (!in_array($item['siswa_id'], $ownedSiswaIds)) continue;
+                if ($item['nilai'] === null || $item['nilai'] === '') {
+                    continue;
+                }
+                if (! in_array($item['siswa_id'], $ownedSiswaIds)) {
+                    continue;
+                }
 
                 Nilai::updateOrCreate(
                     [
@@ -217,9 +223,12 @@ class InputNilaiController extends Controller
 
     private function getPredikat($nilai, $kkm = null)
     {
-        if ($nilai === null) return '-';
+        if ($nilai === null) {
+            return '-';
+        }
+
         // Satu sumber kebenaran predikat: NilaiService (relatif terhadap KKM).
-        return app(\App\Services\NilaiService::class)
+        return app(NilaiService::class)
             ->getPredikat($nilai, $kkm ?? getKKM())['huruf'] ?? '-';
     }
 }

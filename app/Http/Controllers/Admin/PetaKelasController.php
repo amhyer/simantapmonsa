@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Rombel;
-use App\Models\User;
-use App\Models\Siswa;
 use App\Models\PengaturanGuru;
-use Illuminate\Http\Request;
+use App\Models\Rombel;
+use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PetaKelasController extends Controller
 {
@@ -28,23 +28,24 @@ class PetaKelasController extends Controller
 
     public function detail(Rombel $rombel)
     {
-        $rombel->load(['guru', 'semester', 'siswa' => fn($q) => $q->orderBy('nama_peserta_didik')]);
+        $rombel->load(['guru', 'semester', 'siswa' => fn ($q) => $q->orderBy('nama_peserta_didik')]);
 
         return view('admin.peta-kelas.detail', compact('rombel'));
     }
 
     public function index()
     {
-        $guru = User::where('peran', 'guru')->orderBy('nama_lengkap')->get();
+        $guru = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get();
         $siswa = Siswa::with('guru')->orderBy('nama_peserta_didik')->get();
         $pengaturanGuru = PengaturanGuru::all();
 
         $siswaPerGuru = $siswa->groupBy('guru_id');
-        $tidakDitugaskan = $siswa->filter(fn($s) => empty($s->guru_id));
+        $tidakDitugaskan = $siswa->filter(fn ($s) => empty($s->guru_id));
 
         $guruStats = $guru->map(function ($g) use ($siswaPerGuru, $pengaturanGuru) {
             $count = $siswaPerGuru->get($g->id, collect())->count();
             $kelasList = $pengaturanGuru->where('guru_id', $g->id)->pluck('kelas')->unique()->values();
+
             return [
                 'guru' => $g,
                 'jumlah_siswa' => $count,
@@ -63,7 +64,7 @@ class PetaKelasController extends Controller
             'mata_pelajaran' => 'nullable|string|max:255',
         ]);
 
-        $guru = User::findOrFail($validated['guru_id']);
+        $guru = User::forSchool()->where('peran', 'guru')->findOrFail($validated['guru_id']);
 
         $pengaturan = PengaturanGuru::updateOrCreate(
             ['guru_id' => $guru->id],
@@ -73,7 +74,7 @@ class PetaKelasController extends Controller
                 'mata_pelajaran' => $validated['mata_pelajaran'] ?? null,
                 'kkm' => getKKM(),
                 'semester' => 'Ganjil',
-                'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+                'tahun_pelajaran' => date('Y').'/'.(date('Y') + 1),
                 'pembaruan' => now(),
             ]
         );
@@ -111,7 +112,7 @@ class PetaKelasController extends Controller
         ]);
 
         $siswa = Siswa::findOrFail($validated['siswa_id']);
-        $guru = User::findOrFail($validated['guru_id']);
+        $guru = User::forSchool()->where('peran', 'guru')->findOrFail($validated['guru_id']);
 
         $siswa->update([
             'guru_id' => $guru->id,
@@ -126,7 +127,7 @@ class PetaKelasController extends Controller
                 'kelas' => $validated['kelas'],
                 'kkm' => getKKM(),
                 'semester' => 'Ganjil',
-                'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+                'tahun_pelajaran' => date('Y').'/'.(date('Y') + 1),
                 'pembaruan' => now(),
             ]
         );

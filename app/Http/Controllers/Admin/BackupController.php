@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Aktivitas;
-use App\Services\Backup\BackupJsonStreamReader;
 use App\Jobs\ExportBackupJob;
+use App\Models\Aktivitas;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
+use App\Services\Backup\BackupJsonStreamReader;
 use App\Services\NilaiErapotAuditService;
 use App\Support\BackupTables;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +24,7 @@ class BackupController extends Controller
     /** @var array<string, list<string>> */
     private array $restoreColumns = [];
 
-    /** @var array<string, class-string<\Illuminate\Database\Eloquent\Model>|null> */
+    /** @var array<string, class-string<Model>|null> */
     private array $restoreModels = [];
 
     public function index()
@@ -47,7 +50,7 @@ class BackupController extends Controller
     {
         // Job query + tulis backup sendiri secara streaming (hemat memori).
         // Tanpa payload agar antrean tetap ringan.
-        dispatch(new ExportBackupJob());
+        dispatch(new ExportBackupJob);
 
         return response()->json([
             'success' => true,
@@ -184,7 +187,7 @@ class BackupController extends Controller
         }
 
         if ($modelClass) {
-            \Illuminate\Database\Eloquent\Model::unguarded(function () use ($modelClass, $id, $row): void {
+            Model::unguarded(function () use ($modelClass, $id, $row): void {
                 $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
                 if ($id !== null) {
                     $query->updateOrCreate(['id' => $id], $row);
@@ -259,7 +262,7 @@ class BackupController extends Controller
             'password.current_password' => 'Kata sandi salah. Gunakan kata sandi akun Anda yang sedang login.',
         ]);
 
-        Log::info('Wipe data diminta oleh: ' . (auth()->user()?->nama_pengguna ?? '?') . ' IP: ' . request()->ip());
+        Log::info('Wipe data diminta oleh: '.(auth()->user()?->nama_pengguna ?? '?').' IP: '.request()->ip());
 
         // Daftar wipe diturunkan dari registry backup, dengan pengecualian
         // eksplisit untuk tabel identitas yang harus tetap ada.
@@ -268,26 +271,48 @@ class BackupController extends Controller
         $dihapus = [];
         $gagal = [];
         $driver = DB::getDriverName();
-        $tenantId = auth()->user()?->tenant_id ?? \App\Modules\Tenant\Contexts\TenantContext::id();
-        $isMultiTenant = config('simantap.multi_tenant_enabled', false) && $tenantId !== null;
+        $tenantId = auth()->user()?->tenant_id ?? TenantContext::id();
+        $hasTenants = Schema::hasTable('tenants') && Tenant::query()->exists();
+        $isMultiTenant = config('simantap.multi_tenant_enabled', false) || $tenantId !== null || $hasTenants;
+
+        if ($isMultiTenant && $tenantId === null) {
+            abort(403, 'Akun admin belum terhubung ke sekolah.');
+        }
+
+        $siswaIds = ($isMultiTenant && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id'))
+            ? DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id')
+            : collect();
+        $userIds = ($isMultiTenant && Schema::hasTable('users') && Schema::hasColumn('users', 'tenant_id'))
+            ? DB::table('users')->where('tenant_id', $tenantId)->pluck('id')
+            : collect();
 
         Schema::disableForeignKeyConstraints();
         try {
             foreach ($tabelData as $tabel) {
-                if (!Schema::hasTable($tabel)) {
+                if (! Schema::hasTable($tabel)) {
                     continue;
                 }
                 try {
-                    if ($isMultiTenant && Schema::hasColumn($tabel, 'tenant_id')) {
-                        DB::table($tabel)->where('tenant_id', $tenantId)->delete();
-                    } elseif ($isMultiTenant && Schema::hasColumn($tabel, 'siswa_id') && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id')) {
-                        $siswaIds = DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id');
-                        DB::table($tabel)->whereIn('siswa_id', $siswaIds)->delete();
+                    if ($isMultiTenant) {
+                        // DILARANG mengeksekusi TRUNCATE global saat multi-sekolah aktif.
+                        if (Schema::hasColumn($tabel, 'tenant_id')) {
+                            DB::table($tabel)->where('tenant_id', $tenantId)->delete();
+                        } elseif (Schema::hasColumn($tabel, 'siswa_id')) {
+                            DB::table($tabel)->whereIn('siswa_id', $siswaIds)->delete();
+                        } elseif (Schema::hasColumn($tabel, 'guru_id')) {
+                            DB::table($tabel)->whereIn('guru_id', $userIds)->delete();
+                        } elseif (Schema::hasColumn($tabel, 'user_id')) {
+                            DB::table($tabel)->whereIn('user_id', $userIds)->delete();
+                        } else {
+                            // Tabel referensi/anak tanpa kolom kepemilikan langsung dilewati
+                            // agar data sekolah lain tetap 100% utuh.
+                            continue;
+                        }
                     } else {
                         if ($driver === 'pgsql') {
                             // CASCADE agar constraint FK antar tabel data ikut teratasi;
                             // RESTART IDENTITY agar ID mulai lagi dari 1.
-                            DB::statement('TRUNCATE TABLE "' . $tabel . '" RESTART IDENTITY CASCADE');
+                            DB::statement('TRUNCATE TABLE "'.$tabel.'" RESTART IDENTITY CASCADE');
                         } else {
                             // MySQL / SQLite: truncate tanpa sintaks Postgres.
                             DB::table($tabel)->truncate();
@@ -295,7 +320,7 @@ class BackupController extends Controller
                     }
                     $dihapus[] = $tabel;
                 } catch (\Exception $e) {
-                    Log::warning('Gagal mengosongkan tabel ' . $tabel . ': ' . $e->getMessage());
+                    Log::warning('Gagal mengosongkan tabel '.$tabel.': '.$e->getMessage());
                     $gagal[] = $tabel;
                 }
             }
@@ -306,8 +331,8 @@ class BackupController extends Controller
         if (count($dihapus) === 0) {
             return redirect()->route('admin.backup.index')->with(
                 'error',
-                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.' .
-                (count($gagal) ? ' Gagal pada: ' . implode(', ', $gagal) . '.' : '')
+                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.'.
+                (count($gagal) ? ' Gagal pada: '.implode(', ', $gagal).'.' : '')
             );
         }
 
@@ -319,16 +344,16 @@ class BackupController extends Controller
                 'nama_guru' => $guru?->nama_lengkap ?? 'Admin',
                 'jenis' => 'pengaturan',
                 'judul' => 'Hapus Semua Data',
-                'deskripsi' => 'Mengosongkan ' . count($dihapus) . ' tabel: ' . implode(', ', $dihapus),
+                'deskripsi' => 'Mengosongkan '.count($dihapus).' tabel: '.implode(', ', $dihapus),
                 'tabel_terkait' => null,
             ]);
         } catch (\Exception $e) {
-            Log::warning('Gagal catat aktivitas hapus data: ' . $e->getMessage());
+            Log::warning('Gagal catat aktivitas hapus data: '.$e->getMessage());
         }
 
-        $pesan = 'Berhasil mengosongkan ' . count($dihapus) . ' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
+        $pesan = 'Berhasil mengosongkan '.count($dihapus).' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
         if (count($gagal) > 0) {
-            $pesan .= ' Sebagian gagal: ' . implode(', ', $gagal) . '.';
+            $pesan .= ' Sebagian gagal: '.implode(', ', $gagal).'.';
         }
 
         return redirect()->route('admin.backup.index')->with('success', $pesan);

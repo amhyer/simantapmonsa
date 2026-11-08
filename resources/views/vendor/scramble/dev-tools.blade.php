@@ -15,7 +15,7 @@
     @if($viteServerUrl = \Dedoc\Scramble\Support\DevTools::viteServerUrl())
         <script type="module" src="{{ $viteServerUrl }}/@@vite/client"></script>
         <script type="module" src="{{ $viteServerUrl }}/resources/js/devtools.tsx"></script>
-    @else
+    @elseif(\Illuminate\Support\Facades\Route::has('scramble.dev-tools.asset'))
         <script type="module" src="{{ route('scramble.dev-tools.asset') }}"></script>
     @endif
 @endif
