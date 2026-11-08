@@ -163,7 +163,7 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         const adminPage = await adminContext.newPage();
         const adminResponse = await adminPage.goto('/admin/cbt/sessions/9311', { waitUntil: 'domcontentloaded' });
         expect(adminResponse?.status()).toBe(200);
-        const exportLink = adminPage.getByRole('link', { name: /Ekspor CSV/ });
+        const exportLink = adminPage.getByRole('link', { name: /Export CSV/ });
         await expect(exportLink).toBeVisible();
 
         const downloadPromise = adminPage.waitForEvent('download');

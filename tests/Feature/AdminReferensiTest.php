@@ -59,19 +59,6 @@ class AdminReferensiTest extends TestCase
      */
     public function test_halaman_tabel_memakai_table_wrapper(): void
     {
-        // Temporary CI diagnosis: identify the statement that first poisoned a
-        // PostgreSQL test transaction, even if application code caught it.
-        if (\DB::connection()->getDriverName() === 'pgsql') {
-            $previousSql = null;
-            \DB::connection()->beforeExecuting(function ($sql) use (&$previousSql) {
-                try {
-                    \DB::connection()->getPdo()->query('select 1');
-                } catch (\PDOException $exception) {
-                    throw new \RuntimeException('PostgreSQL transaction aborted after: '.$previousSql, 0, $exception);
-                }
-                $previousSql = $sql;
-            });
-        }
         $admin = User::factory()->admin()->create();
         $guru = User::factory()->guru()->create();
 
@@ -123,6 +110,12 @@ class AdminReferensiTest extends TestCase
             'nilai_akhir' => 85,
             'predikat' => 'B',
         ]);
+
+        // Skema standar tanpa is_aktif tetap memilih semester terbaru dan
+        // tidak meninggalkan transaksi PostgreSQL dalam keadaan aborted.
+        \Illuminate\Support\Facades\Cache::forget('app_semester_aktif_label:v1');
+        $this->assertSame('2025/2026 (ganjil)', semesterAktifLabel());
+        $this->assertTrue(Semester::query()->exists());
 
         $routes = [
             'admin.referensi.guru',

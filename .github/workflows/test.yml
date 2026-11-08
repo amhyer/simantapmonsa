@@ -218,11 +218,6 @@ jobs:
           npm ci
           npm run build
 
-      - name: Diagnose PostgreSQL transaction origin
-        continue-on-error: true
-        run: |
-          php artisan test --filter=test_halaman_tabel_memakai_table_wrapper > /tmp/pg-diagnosis.log 2>&1 || true
-
       - name: Run test suite against PostgreSQL
         run: |
           set -o pipefail
@@ -248,12 +243,8 @@ jobs:
             # Sertakan awal daftar kegagalan agar penyebab pertama tidak
             # tertutup rentetan error transaksi PostgreSQL yang menyusul.
             sed -r 's/\x1B\[[0-9;]*[[:alpha:]]//g' /tmp/phpunit-postgres.log 2>/dev/null | sed -n '/^[[:space:]]*FAILED /,$p' | head -n 220 || true
-            echo "--- Diagnosis transaksi ---"
-            grep -a -C 3 'PostgreSQL transaction aborted after:' /tmp/pg-diagnosis.log | head -n 30 || true
             echo "--- SQLSTATE asal selain transaksi sudah gagal ---"
             grep -a 'SQLSTATE\[' /tmp/phpunit-postgres.log | grep -v '25P02' | head -n 30 || true
-            echo "--- Peringatan query cache siswa ---"
-            grep -a 'Gagal membersihkan cache foto orang tua' storage/logs/laravel.log | tail -n 5 || true
             echo "--- akhir log ---"
             tail -n 80 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'

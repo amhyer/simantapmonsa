@@ -157,7 +157,12 @@ if (!function_exists('semesterAktifLabel')) {
                 if (!\Illuminate\Support\Facades\Schema::hasTable('semesters')) {
                     return null;
                 }
-                $semester = \App\Models\Semester::where('is_aktif', true)->first();
+                // Skema Dapodik standar tidak memiliki kolom is_aktif.
+                // Jangan mencoba query yang gagal: PostgreSQL membatalkan
+                // transaksi meskipun exception kemudian ditangkap.
+                $semester = \Illuminate\Support\Facades\Schema::hasColumn('semesters', 'is_aktif')
+                    ? \App\Models\Semester::where('is_aktif', true)->first()
+                    : null;
                 if (!$semester) {
                     $semester = \App\Models\Semester::orderByDesc('semester_id')->first();
                 }

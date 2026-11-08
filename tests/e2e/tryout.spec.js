@@ -54,7 +54,7 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
             && response.request().method() === 'POST'
         );
         page.once('dialog', dialog => dialog.accept());
-        await page.getByRole('button', { name: /Selesaikan Tryout/ }).click();
+        await page.getByRole('button', { name: /Selesaikan Seluruh Tryout/ }).click();
         const completionResponse = await completionResponsePromise;
         const completionStatus = completionResponse.status();
         const completionError = completionStatus >= 400
