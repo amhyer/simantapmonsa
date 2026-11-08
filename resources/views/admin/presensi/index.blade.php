@@ -5,20 +5,14 @@
 @section('page_subtitle', 'Atur area absensi dan pantau presensi guru, kepala sekolah, serta tendik')
 
 @section('content')
-    @php
-        $hadirCount = $catatan->filter(fn ($row) => in_array($row->status, ['hadir', 'terlambat'], true))->count();
-        $sudahMasuk = $catatan->filter(fn ($row) => $row->waktu_masuk !== null)->count();
-        $sudahPulang = $catatan->filter(fn ($row) => $row->waktu_pulang !== null)->count();
-    @endphp
-
     <div class="grid grid-4" style="margin-bottom:16px">
-        <div class="stat"><div class="label">Pegawai Aktif</div><div class="value">{{ $pegawai->count() }}</div></div>
-        <div class="stat ok"><div class="label">Hadir / Terlambat</div><div class="value">{{ $hadirCount }}</div></div>
-        <div class="stat gold"><div class="label">Sudah Masuk</div><div class="value">{{ $sudahMasuk }}</div></div>
-        <div class="stat primary"><div class="label">Sudah Pulang</div><div class="value">{{ $sudahPulang }}</div></div>
+        <div class="stat"><div class="label">Pegawai Aktif</div><div class="value">{{ $rekap['total_pegawai'] }}</div></div>
+        <div class="stat ok"><div class="label">Hadir / Terlambat</div><div class="value">{{ $rekap['hadir'] }}</div></div>
+        <div class="stat warn"><div class="label">Belum Tercatat</div><div class="value">{{ $rekap['belum_tercatat'] }}</div></div>
+        <div class="stat"><div class="label">Belum Pulang</div><div class="value">{{ $rekap['belum_pulang'] }}</div></div>
     </div>
 
-    <div class="note note-warn" style="margin-bottom:16px">{{ max(0, $pegawai->count() - $catatan->count()) }} pegawai belum memiliki catatan pada tanggal ini. Belum tercatat tidak otomatis berarti alpa.</div>
+    <div class="note note-warn" style="margin-bottom:16px">{{ $rekap['belum_tercatat'] }} pegawai belum memiliki catatan pada tanggal ini. Belum tercatat tidak otomatis berarti alpa.</div>
 
     <div class="card" style="margin-bottom:16px">
         <div class="card-header">

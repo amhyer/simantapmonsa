@@ -8,9 +8,9 @@ use App\Models\PresensiPegawai;
 use App\Models\User;
 use App\Services\AktivitasService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class PresensiController extends Controller
 {
@@ -26,10 +26,11 @@ class PresensiController extends Controller
         $data = $this->dataPresensiHarian($tanggal);
         $pegawai = $data['pegawai'];
         $catatan = $data['catatan'];
+        $rekap = $data['rekap'];
 
         $lokasi = PresensiLokasi::with('pembuat')->orderByDesc('aktif')->orderBy('nama')->get();
 
-        return view('admin.presensi.index', compact('tanggal', 'pegawai', 'catatan', 'lokasi'));
+        return view('admin.presensi.index', compact('tanggal', 'pegawai', 'catatan', 'rekap', 'lokasi'));
     }
 
     /**
@@ -71,7 +72,7 @@ class PresensiController extends Controller
         AktivitasService::log(
             'kehadiran',
             'Tambah area presensi pegawai',
-            'Area presensi "' . $location->nama . '" dibuat.',
+            'Area presensi "'.$location->nama.'" dibuat.',
             'presensi_lokasi',
             $location->id,
             null,
@@ -99,7 +100,7 @@ class PresensiController extends Controller
         AktivitasService::log(
             'kehadiran',
             'Ubah area presensi pegawai',
-            'Area presensi "' . $lokasi->nama . '" diperbarui.',
+            'Area presensi "'.$lokasi->nama.'" diperbarui.',
             'presensi_lokasi',
             $lokasi->id,
             $before,
@@ -119,7 +120,7 @@ class PresensiController extends Controller
         AktivitasService::log(
             'kehadiran',
             'Hapus area presensi pegawai',
-            'Area presensi "' . $name . '" dihapus.',
+            'Area presensi "'.$name.'" dihapus.',
             'presensi_lokasi',
             null,
             $old,
@@ -145,7 +146,7 @@ class PresensiController extends Controller
             ->whereIn('peran', self::PERAN_PEGAWAI)
             ->firstOrFail();
 
-        if (($validated['jam_pulang'] ?? null) && !($validated['jam_masuk'] ?? null)) {
+        if (($validated['jam_pulang'] ?? null) && ! ($validated['jam_masuk'] ?? null)) {
             return back()->withInput()->with('error', 'Jam masuk harus diisi jika jam pulang dicatat.');
         }
 
@@ -177,7 +178,7 @@ class PresensiController extends Controller
 
             AktivitasService::log(
                 'kehadiran',
-                'Koreksi presensi pegawai: ' . $user->nama_lengkap,
+                'Koreksi presensi pegawai: '.$user->nama_lengkap,
                 $validated['alasan_koreksi'],
                 'presensi_pegawai',
                 $record->id,
@@ -189,12 +190,12 @@ class PresensiController extends Controller
         });
 
         return redirect()->route('admin.presensi.index', ['tanggal' => $validated['tanggal']])
-            ->with('success', 'Presensi ' . $user->nama_lengkap . ' berhasil dikoreksi.');
+            ->with('success', 'Presensi '.$user->nama_lengkap.' berhasil dikoreksi.');
     }
 
     private function tanggalDanWaktu(string $tanggal, ?string $waktu): mixed
     {
-        return $waktu ? Carbon::parse($tanggal . ' ' . $waktu, config('app.timezone')) : null;
+        return $waktu ? Carbon::parse($tanggal.' '.$waktu, config('app.timezone')) : null;
     }
 
     /**
@@ -202,8 +203,8 @@ class PresensiController extends Controller
      * pada tanggal tertentu, lengkap dengan ringkasan kehadiran.
      *
      * @return array{
-     *     pegawai: \Illuminate\Support\Collection<int, \App\Models\User>,
-     *     catatan: \Illuminate\Support\Collection<int, \App\Models\PresensiPegawai>,
+     *     pegawai: Collection<int, User>,
+     *     catatan: Collection<int, PresensiPegawai>,
      *     rekap: array<string, int>
      * }
      */
@@ -237,6 +238,7 @@ class PresensiController extends Controller
 
             if ($record === null) {
                 $rekap['belum_tercatat']++;
+
                 continue;
             }
 
