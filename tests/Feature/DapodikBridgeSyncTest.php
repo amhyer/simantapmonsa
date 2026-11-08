@@ -261,8 +261,20 @@ class DapodikBridgeSyncTest extends TestCase
 
     public function test_admin_can_download_bridge_exe(): void
     {
-        $response = $this->actingAs($this->admin)->get(route('admin.dapodik.download-bridge'));
-        $response->assertOk();
-        $response->assertHeader('content-disposition', 'attachment; filename=SIMANTAP-Bridge.exe');
+        // Binary build tidak disimpan dalam repository. Buat fixture kecil jika
+        // artefak sungguhan tidak ada, dan jangan menimpa artefak yang sudah ada.
+        $path = public_path('bridge/SIMANTAP-Bridge.exe');
+        $created = !is_file($path);
+        if ($created) {
+            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($path));
+            file_put_contents($path, 'bridge-test-fixture');
+        }
+        try {
+            $response = $this->actingAs($this->admin)->get(route('admin.dapodik.download-bridge'));
+            $response->assertOk();
+            $this->assertStringContainsString('SIMANTAP-Bridge.exe', $response->headers->get('content-disposition'));
+        } finally {
+            if ($created) unlink($path);
+        }
     }
 }

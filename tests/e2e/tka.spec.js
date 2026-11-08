@@ -81,7 +81,7 @@ test('E2E-TKA-01..06: ownership, weighted scoring/readiness, nested-item protect
         const parentAPage = await parentAContext.newPage();
         const parentAResponse = await parentAPage.goto('/tka/parent/9561', { waitUntil: 'domcontentloaded' });
         expect(parentAResponse?.status()).toBe(200);
-        await expect(parentAPage.getByText('Siswa E2E A1')).toBeVisible();
+        await expect(parentAPage.getByRole('cell', { name: 'Siswa E2E A1', exact: true })).toBeVisible();
 
         parentBContext = await tracedContext(browser, 'ortu_b1');
         const parentBPage = await parentBContext.newPage();

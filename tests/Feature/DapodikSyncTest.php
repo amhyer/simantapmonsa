@@ -39,6 +39,8 @@ class DapodikSyncTest extends TestCase
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
+            $table->boolean('tenant_owned')->default(false);
             $table->string('sekolah_npsn', 20)->nullable();
             $table->string('nama_sekolah')->nullable();
             $table->string('tipe')->nullable();

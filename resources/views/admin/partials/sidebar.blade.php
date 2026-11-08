@@ -7,19 +7,8 @@
      Renderer (loop, active, planned) berasal dari komponen <x-admin-menu />.
      Menu ditentukan lewat @include dari layout admin dengan data ['tab' => ...]. --}}
 @php
-    use App\Models\DapodikSyncLog;
-    use App\Models\Siswa;
-    use Illuminate\Support\Facades\Cache;
-    // Di-cache 120 dtk: sidebar dirender di SEMUA halaman admin.
-    // Hanya skalar yang di-cache (model korup saat unserialize -> 500 massal).
-    [$lastSyncAt, $syncedCount] = Cache::remember('admin-sidebar-sync:v2', 120, function () {
-        $last = DapodikSyncLog::orderByDesc('created_at')->first();
-
-        return [
-            $last?->created_at?->toIso8601String(),
-            Siswa::whereNotNull('dapodik_id')->count(),
-        ];
-    });
+    // Status sinkron dipisah menggunakan tenant_id yang ditetapkan server.
+    $lastSyncAt = \App\Services\Dapodik\SidebarSyncStatus::latest()['created_at'] ?? null;
     // Aturan: grup yang punya 'children' dirender sebagai header lipat
     // (<details>), TANPA label grup terpisah — persis pola e-Rapor.
     // Item 'planned' => true berarti backend belum ada (Fase 2): tampil
@@ -27,7 +16,7 @@
 
     $isActive = function ($route) {
         try {
-            return request()->routeIs($route, $route . '.*');
+            return sidebarRouteActive($route);
         } catch (\Exception $e) {
             return false;
         }
@@ -71,7 +60,7 @@
         ],
         'cbt' => [
             ['label' => 'UTAMA', 'items' => [
-                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Utama'],
+                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor Utama (E-Rapor)'],
                 ['route' => 'admin.tryout.statistics', 'icon' => 'lucide-bar-chart-3', 'label' => 'Statistik Ujian'],
             ]],
             ['label' => 'MANAJEMEN UJIAN CBT', 'icon' => 'lucide-monitor', 'children' => [
@@ -84,8 +73,8 @@
                 ['route' => 'admin.tryout.results.index', 'icon' => 'lucide-chart-line', 'label' => 'Hasil Tryout'],
             ]],
             ['label' => 'SISTEM', 'icon' => 'lucide-server-cog', 'children' => [
-                ['route' => 'admin.modul.index', 'icon' => 'lucide-box', 'label' => 'Modul & Tampilan'],
-                ['route' => 'admin.log.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas'],
+                ['route' => 'admin.modul.index', 'icon' => 'lucide-box', 'label' => 'Modul & Tampilan (Setup)'],
+                ['route' => 'admin.log.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas (Setup)'],
             ]],
         ],
         'tka' => [
@@ -143,6 +132,21 @@
             ]],
         ],
     ];
+
+    // Sembunyikan fitur data global yang belum aman untuk tenant.
+    if (\App\Modules\Tenant\Contexts\TenantContext::check() || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::query()->exists()) {
+        foreach ($menuAdmin as &$groups) {
+            foreach ($groups as &$group) {
+                if (isset($group['children'])) {
+                    $group['children'] = array_values(array_filter($group['children'], fn ($item) =>
+                        ! in_array($item['route'] ?? '', ['admin.dapodik.push.index', 'admin.backup.index', 'admin.log.index'], true)
+                    ));
+                }
+            }
+            unset($group);
+        }
+        unset($groups);
+    }
 
     $tabSekarang = $tab ?? 'erapor';
     $grupMenu = $menuAdmin[$tabSekarang] ?? $menuAdmin['erapor'];

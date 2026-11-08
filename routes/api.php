@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\DapodikSyncController;
 use App\Http\Controllers\Api\SchoolLookupController;
 
 // Legacy Dapodik sync (multi-module, for Bridge)
-Route::middleware(['apikey:dapodik:import', 'throttle:120,1'])->prefix('dapodik/sync')->group(function () {
+Route::middleware(['apikey:dapodik:import', 'tenant', 'throttle:120,1'])->prefix('dapodik/sync')->group(function () {
     Route::post('/{modul}', [DapodikSyncController::class, 'store']);
     Route::get('/status', [DapodikSyncController::class, 'status']);
 });

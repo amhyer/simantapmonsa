@@ -21,9 +21,9 @@ class DashboardController extends Controller
     {
         $stats = [
             'total_siswa' => Siswa::where('aktif', true)->count(),
-            'total_guru' => User::where('peran', 'guru')->where('aktif', true)->count(),
+            'total_guru' => User::forSchool()->where('peran', 'guru')->where('aktif', true)->count(),
             'total_kelas' => Siswa::where('aktif', true)->distinct('kelas')->count('kelas'),
-            'total_orang_tua' => User::where('peran', 'ortu')->where('aktif', true)->count(),
+            'total_orang_tua' => User::forSchool()->where('peran', 'ortu')->where('aktif', true)->count(),
         ];
 
         $rataNilai = NilaiErapot::avg('nilai_akhir') ?? 0;
@@ -62,7 +62,7 @@ class DashboardController extends Controller
             ];
         }
 
-        $guruUsers = User::where('peran', 'guru')->where('aktif', true)->get();
+        $guruUsers = User::forSchool()->where('peran', 'guru')->where('aktif', true)->get();
         $guruIds = $guruUsers->pluck('id');
 
         $nilaiPerGuru = NilaiErapot::whereIn('guru_id', $guruIds)->get()->groupBy('guru_id');
@@ -175,7 +175,7 @@ class DashboardController extends Controller
 
     public function pantau(Request $request)
     {
-        $guru = User::where('peran', 'guru')->where('aktif', true)->get();
+        $guru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->get();
         $filterGuru = $request->get('guru_id');
         $filterTanggal = $request->get('tanggal');
 
@@ -219,7 +219,7 @@ class DashboardController extends Controller
     protected function getPredikat($nilai, $kkm = null)
     {
         $predikat = app(\App\Services\NilaiService::class)
-            ->getPredikat((float) $nilai, $kkm ?? getKKM());
+            ->getPredikat((float) $nilai, $kkm ?? (\App\Modules\Tenant\Contexts\TenantContext::check() ? 70 : getKKM()));
 
         $kelas = match ($predikat['huruf']) {
             'A' => 'ok',

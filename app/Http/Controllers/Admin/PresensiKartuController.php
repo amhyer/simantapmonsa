@@ -39,7 +39,7 @@ class PresensiKartuController extends Controller
         $students = $studentQuery->orderBy('kelas')->orderBy('nama_peserta_didik')->paginate(40)->withQueryString();
         $rombels = Rombel::query()->orderBy('tingkat')->orderBy('nama_rombel')->get(['id', 'nama_rombel', 'tingkat']);
 
-        $pegawaiQuery = User::query()
+        $pegawaiQuery = User::forSchool()
             ->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)
             ->where('aktif', true);
         if ($request->filled('peran') && in_array($request->query('peran'), IdentityCardService::PERAN_PEGAWAI, true)) {
@@ -60,8 +60,8 @@ class PresensiKartuController extends Controller
         $ringkasan = [
             'siswa_total' => Siswa::query()->where('aktif', true)->count(),
             'siswa_berkartu' => Siswa::query()->where('aktif', true)->whereNotNull('qr_token_hash')->count(),
-            'pegawai_total' => User::query()->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)->where('aktif', true)->count(),
-            'pegawai_berkartu' => User::query()->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)->where('aktif', true)->whereNotNull('qr_token_hash')->count(),
+            'pegawai_total' => User::forSchool()->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)->where('aktif', true)->count(),
+            'pegawai_berkartu' => User::forSchool()->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)->where('aktif', true)->whereNotNull('qr_token_hash')->count(),
         ];
 
         return view('admin.presensi.kartu', compact('students', 'rombels', 'pegawai', 'jenis', 'ringkasan'));
@@ -75,8 +75,10 @@ class PresensiKartuController extends Controller
         ]);
         $digest = $hasher->hash($validated['qr_payload']);
 
-        $otherStudent = Siswa::where('qr_token_hash', $digest)->where('id', '!=', $siswa->id)->first();
-        $otherStaff = User::where('qr_token_hash', $digest)->first();
+        // Cek semua pemilik tanpa mengungkap identitas, termasuk token transisi.
+        $otherStudent = Siswa::withoutGlobalScopes()->where('id', '!=', $siswa->id)
+            ->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))->exists();
+        $otherStaff = User::withTrashed()->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))->exists();
         if ($otherStudent || $otherStaff) {
             return response()->json([
                 'success' => false,
@@ -87,7 +89,11 @@ class PresensiKartuController extends Controller
         $hadCard = filled($siswa->qr_token_hash);
         $siswa->forceFill([
             'qr_token_hash' => $digest,
+            'qr_revoked' => false,
             'qr_card_version' => 0,
+            'qr_previous_token_hash' => null,
+            'printed_version' => 0,
+            'printed_at' => null,
         ])->save();
 
         AktivitasService::log(
@@ -112,7 +118,11 @@ class PresensiKartuController extends Controller
         abort_unless(filled($siswa->qr_token_hash), 404);
         $siswa->forceFill([
             'qr_token_hash' => null,
+            'qr_revoked' => true,
             'qr_card_version' => 0,
+            'qr_previous_token_hash' => null,
+            'printed_version' => 0,
+            'printed_at' => null,
         ])->save();
 
         AktivitasService::log(
@@ -161,8 +171,7 @@ class PresensiKartuController extends Controller
 
         $jumlah = 0;
         foreach ($query->cursor() as $siswa) {
-            $cards->issueSiswaCard($siswa, $putarUlang);
-            $jumlah++;
+            if ($cards->issueSiswaCard($siswa, $putarUlang) !== null) $jumlah++;
         }
 
         AktivitasService::log(
@@ -184,14 +193,15 @@ class PresensiKartuController extends Controller
     public function cetakSiswa(Siswa $siswa, IdentityCardService $cards)
     {
         abort_unless($siswa->aktif, 404);
-        $cards->markSiswaAsPrinted($siswa);
         $siswa->loadMissing('rombel');
         $sekolah = SekolahSettings::query()->first();
+        $card = $cards->buildSiswaCardViewModel($siswa, $sekolah, true);
+        if ($card['qr_svg']) $cards->markSiswaAsPrinted($siswa);
 
         return view('presensi.kartu-cetak', [
             'judul' => 'Kartu Identitas Siswa — ' . $siswa->nama_peserta_didik,
             'subjudul' => ($siswa->rombel?->nama_rombel ?? $siswa->kelas ?? 'Siswa Aktif'),
-            'cards' => [$cards->buildSiswaCardViewModel($siswa, $sekolah, true)],
+            'cards' => [$card],
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'siswa']),
         ]);
     }
@@ -226,8 +236,11 @@ class PresensiKartuController extends Controller
             $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->get();
         }
 
-        $cards->markManySiswaAsPrinted($list);
-        $cardItems = $list->map(fn (Siswa $s) => $cards->buildSiswaCardViewModel($s, $sekolah, true))->all();
+        $cardItems = $list->map(function (Siswa $s) use ($cards, $sekolah) {
+            $card = $cards->buildSiswaCardViewModel($s, $sekolah, true);
+            if ($card['qr_svg']) $cards->markSiswaAsPrinted($s);
+            return $card;
+        })->all();
         $rombels = Rombel::query()->orderBy('tingkat')->orderBy('nama_rombel')->get(['id', 'nama_rombel']);
 
         return view('presensi.kartu-cetak', [
@@ -277,6 +290,7 @@ class PresensiKartuController extends Controller
 
     public function bindPegawai(Request $request, User $pegawai, StudentQrHasher $hasher)
     {
+        $pegawai = User::forSchool()->findOrFail($pegawai->id);
         abort_unless(
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             422,
@@ -288,8 +302,10 @@ class PresensiKartuController extends Controller
         ]);
         $digest = $hasher->hash($validated['qr_payload']);
 
-        $otherStaff = User::where('qr_token_hash', $digest)->where('id', '!=', $pegawai->id)->first();
-        $otherStudent = Siswa::where('qr_token_hash', $digest)->first();
+        $otherStaff = User::withTrashed()->where('id', '!=', $pegawai->id)
+            ->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))->exists();
+        $otherStudent = Siswa::withoutGlobalScopes()
+            ->where(fn ($q) => $q->where('qr_token_hash', $digest)->orWhere('qr_previous_token_hash', $digest))->exists();
         if ($otherStaff || $otherStudent) {
             return response()->json([
                 'success' => false,
@@ -300,7 +316,11 @@ class PresensiKartuController extends Controller
         $hadCard = filled($pegawai->qr_token_hash);
         $pegawai->forceFill([
             'qr_token_hash' => $digest,
+            'qr_revoked' => false,
             'qr_card_version' => 0,
+            'qr_previous_token_hash' => null,
+            'printed_version' => 0,
+            'printed_at' => null,
         ])->save();
 
         AktivitasService::log(
@@ -322,6 +342,7 @@ class PresensiKartuController extends Controller
 
     public function issuePegawai(User $pegawai, IdentityCardService $cards)
     {
+        $pegawai = User::forSchool()->findOrFail($pegawai->id);
         abort_unless(
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             422,
@@ -346,7 +367,7 @@ class PresensiKartuController extends Controller
 
     public function issuePegawaiMassal(Request $request, IdentityCardService $cards)
     {
-        $query = User::query()
+        $query = User::forSchool()
             ->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)
             ->where('aktif', true);
 
@@ -357,8 +378,7 @@ class PresensiKartuController extends Controller
 
         $jumlah = 0;
         foreach ($query->cursor() as $person) {
-            $cards->issuePegawaiCard($person, $putarUlang);
-            $jumlah++;
+            if ($cards->issuePegawaiCard($person, $putarUlang) !== null) $jumlah++;
         }
 
         AktivitasService::log(
@@ -377,10 +397,15 @@ class PresensiKartuController extends Controller
 
     public function resetPegawai(User $pegawai)
     {
+        $pegawai = User::forSchool()->findOrFail($pegawai->id);
         abort_unless(filled($pegawai->qr_token_hash), 404);
         $pegawai->forceFill([
             'qr_token_hash' => null,
+            'qr_revoked' => true,
             'qr_card_version' => 0,
+            'qr_previous_token_hash' => null,
+            'printed_version' => 0,
+            'printed_at' => null,
         ])->save();
 
         AktivitasService::log(
@@ -399,17 +424,19 @@ class PresensiKartuController extends Controller
 
     public function cetakPegawai(User $pegawai, IdentityCardService $cards)
     {
+        $pegawai = User::forSchool()->findOrFail($pegawai->id);
         abort_unless(
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             404
         );
-        $cards->markPegawaiAsPrinted($pegawai);
         $sekolah = SekolahSettings::query()->first();
+        $card = $cards->buildPegawaiCardViewModel($pegawai, $sekolah, null, true);
+        if ($card['qr_svg']) $cards->markPegawaiAsPrinted($pegawai);
 
         return view('presensi.kartu-cetak', [
             'judul' => 'Kartu Identitas Pegawai — ' . $pegawai->nama_lengkap,
             'subjudul' => ucfirst((string) $pegawai->peran),
-            'cards' => [$cards->buildPegawaiCardViewModel($pegawai, $sekolah, null, true)],
+            'cards' => [$card],
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'pegawai']),
         ]);
     }
@@ -417,7 +444,7 @@ class PresensiKartuController extends Controller
     public function cetakPegawaiMassal(Request $request, IdentityCardService $cards)
     {
         @set_time_limit(180);
-        $query = User::query()
+        $query = User::forSchool()
             ->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)
             ->where('aktif', true);
 
@@ -428,12 +455,13 @@ class PresensiKartuController extends Controller
         $sekolah = SekolahSettings::query()->first();
         $ptkByDapodik = Ptk::query()->whereNotNull('dapodik_id')->get()->keyBy('dapodik_id');
         $list = $query->orderBy('peran')->orderBy('nama_lengkap')->get();
-        $cards->markManyPegawaiAsPrinted($list);
 
         $cardItems = $list->map(function (User $person) use ($cards, $sekolah, $ptkByDapodik) {
             $ptk = $person->dapodik_id ? $ptkByDapodik->get($person->dapodik_id) : null;
 
-            return $cards->buildPegawaiCardViewModel($person, $sekolah, $ptk, true);
+            $card = $cards->buildPegawaiCardViewModel($person, $sekolah, $ptk, true);
+            if ($card['qr_svg']) $cards->markPegawaiAsPrinted($person);
+            return $card;
         })->all();
 
         return view('presensi.kartu-cetak', [
@@ -446,6 +474,7 @@ class PresensiKartuController extends Controller
 
     public function rollbackPegawai(User $pegawai, IdentityCardService $cards)
     {
+        $pegawai = User::forSchool()->findOrFail($pegawai->id);
         abort_unless(
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             422,

@@ -19,7 +19,7 @@
 </style>
 
 {{-- Form Tambah Sekolah Baru (Collapsible) --}}
-<details class="card" id="tambah" style="margin-bottom:20px" {{ $errors->any() ? 'open' : '' }}>
+<details class="card" id="tambah" style="margin-bottom:20px" {{ $errors->any() || request('tambah') === '1' ? 'open' : '' }}>
     <summary class="card-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
         <h3 style="margin:0"><i class="fas fa-plus-circle" style="margin-right:8px;color:#4338CA"></i>Daftarkan Sekolah Baru &amp; Atur Paket</h3>
         <span class="btn btn-sm btn-ghost" style="pointer-events:none">Buka / Tutup Form</span>
@@ -283,3 +283,17 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('a[href]');
+        if (!link) return;
+        const target = new URL(link.href, window.location.href);
+        if (target.pathname === window.location.pathname && target.hash === '#tambah') {
+            const form = document.getElementById('tambah');
+            if (form) form.open = true;
+        }
+    });
+</script>
+@endpush

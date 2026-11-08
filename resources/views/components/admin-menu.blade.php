@@ -6,7 +6,7 @@
 @php
     $isActive = function ($route) {
         try {
-            return request()->routeIs($route, $route . '.*');
+            return sidebarRouteActive($route);
         } catch (\Exception $e) {
             return false;
         }
@@ -29,6 +29,7 @@
             @endforeach
         </x-sidebar-submenu>
     @else
+        <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
         @foreach($group['items'] as $item)
             <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" :badge="$item['badge'] ?? null" :badge-type="$item['badge_type'] ?? null" />
         @endforeach

@@ -12,7 +12,7 @@ class Siswa extends Model
 {
     use BelongsToTenant, SoftDeletes;
     protected $table = 'siswa';
-    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash'];
+    protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash', 'qr_generation_nonce'];
     protected $fillable = [
         'uuid',
         'tenant_id',
@@ -105,6 +105,15 @@ class Siswa extends Model
             }
         });
         static::deleted($flush);
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if (($field ?? $this->getRouteKeyName()) === 'uuid' && ! Str::isUuid((string) $value)) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
     }
 
     public function semester()

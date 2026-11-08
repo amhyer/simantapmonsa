@@ -10,6 +10,9 @@
 @section('page_subtitle', 'Monitoring aktivitas sekolah secara real-time')
 
 @section('content')
+@if(\App\Modules\Tenant\Contexts\TenantContext::check())
+    <div class="alert alert-warning">Predikat pada dashboard menggunakan KKM sementara 70. Peta Kelas dan Hasil Belajar sementara dinonaktifkan karena pengaturan guru lama belum dapat dipastikan milik sekolah ini.</div>
+@endif
 <div class="grid grid-4" style="margin-bottom:16px">
     <div class="stat-card primary"><div class="stat-value">{{ number_format($stats['total_siswa']) }}</div><div class="stat-label">Total Siswa</div></div>
     <div class="stat-card gold"><div class="stat-value">{{ $stats['total_guru'] }}</div><div class="stat-label">Total Guru</div></div>
@@ -167,9 +170,13 @@
     <div class="card-body">
         <div style="display:flex;gap:10px;flex-wrap:wrap">
             <a href="{{ route('kepsek.rekap.index') }}" class="btn btn-sm" style="background:#1F3864;color:#fff">📊 Rekap Lengkap</a>
+            @unless(\App\Modules\Tenant\Contexts\TenantContext::check())
             <a href="{{ route('kepsek.hasil-belajar.index') }}" class="btn btn-ghost btn-sm">🎓 Hasil Belajar</a>
+            @endunless
             <a href="{{ route('kepsek.pantau.index') }}" class="btn btn-ghost btn-sm">📡 Pantau Aktivitas</a>
+            @unless(\App\Modules\Tenant\Contexts\TenantContext::check())
             <a href="{{ route('kepsek.peta-kelas.index') }}" class="btn btn-ghost btn-sm">🏫 Peta Kelas</a>
+            @endunless
         </div>
     </div>
 </div>
@@ -221,7 +228,9 @@
                 {{-- Sebelumnya menaut ke admin.cbt.sessions.index (khusus admin) sehingga
                      kepala sekolah selalu mendapat 403. Arahkan ke analisis yang bisa
                      diakses peran kepsek. --}}
+            @unless(\App\Modules\Tenant\Contexts\TenantContext::check())
                 <a href="{{ route('kepsek.hasil-belajar.index') }}" class="btn btn-ghost btn-sm">Lihat Analisis Nilai</a>
+            @endunless
             </div>
         </div>
     </div>

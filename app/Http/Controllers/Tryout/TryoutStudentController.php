@@ -226,7 +226,7 @@ class TryoutStudentController extends Controller
                 'detail_nilai_mapel' => $detailNilaiMapel,
                 'analisis_kelemahan' => $weakSubjects,
                 'waktu_selesai' => now(),
-                'durasi_total_detik' => now()->diffInSeconds($result->waktu_mulai),
+                'durasi_total_detik' => (int) now()->diffInSeconds($result->waktu_mulai),
             ]);
 
             return redirect()->route('tryout.student.result', $result)

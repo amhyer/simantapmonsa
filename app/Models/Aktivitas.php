@@ -3,15 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Modules\Tenant\Traits\HasSchoolOwnership;
 use Illuminate\Support\Str;
 
 class Aktivitas extends Model
 {
+    use HasSchoolOwnership;
+
     protected $table = 'aktivitas';
     protected $hidden = ['data_lama', 'data_baru'];
 
     protected $fillable = [
-        'uuid',
+        'tenant_id', 'uuid',
         'guru_id',
         'nama_guru',
         'jenis',
@@ -41,6 +44,6 @@ class Aktivitas extends Model
 
     public function guru()
     {
-        return $this->belongsTo(User::class, 'guru_id');
+        return $this->belongsTo(User::class, 'guru_id')->forSchool();
     }
 }

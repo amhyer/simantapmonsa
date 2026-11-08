@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
-use App\Models\DapodikSyncLog;
+use App\Services\Dapodik\SidebarSyncStatus;
 use App\Models\NilaiErapot;
 use App\Models\Siswa;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Observers\NilaiErapotObserver;
 use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
@@ -89,29 +91,25 @@ class AppServiceProvider extends ServiceProvider
             $user = Auth::user();
 
             if ($user && $user->peran === 'admin') {
-                $notifs = Cache::remember('layout-notif-admin', 60, function () {
-                    $items = [];
-                    $last = DapodikSyncLog::orderByDesc('created_at')->first();
-                    if ($last) {
-                        $items[] = [
-                            'icon' => 'fas fa-sync',
-                            'teks' => "Sinkron Dapodik: {$last->berhasil} berhasil, {$last->gagal} gagal",
-                            'waktu' => $last->created_at?->diffForHumans() ?? '-',
+                $last = SidebarSyncStatus::latest();
+                if ($last) {
+                    $notifs[] = [
+                        'icon' => 'fas fa-sync',
+                        'teks' => "Sinkron Dapodik: {$last['berhasil']} berhasil, {$last['gagal']} gagal",
+                        'waktu' => $last['created_at'] ? \Carbon\Carbon::parse($last['created_at'])->diffForHumans() : '-',
+                    ];
+                }
+                if (! TenantContext::check() && ! config('simantap.multi_tenant_enabled', false)
+                    && ! Tenant::query()->exists() && Schema::hasTable('failed_jobs')) {
+                    $gagal = DB::table('failed_jobs')->count();
+                    if ($gagal > 0) {
+                        $notifs[] = [
+                            'icon' => 'fas fa-exclamation-triangle',
+                            'teks' => "{$gagal} job antrean gagal perlu perhatian",
+                            'waktu' => 'sekarang',
                         ];
                     }
-                    if (Schema::hasTable('failed_jobs')) {
-                        $gagal = DB::table('failed_jobs')->count();
-                        if ($gagal > 0) {
-                            $items[] = [
-                                'icon' => 'fas fa-exclamation-triangle',
-                                'teks' => "{$gagal} job antrean gagal perlu perhatian",
-                                'waktu' => 'sekarang',
-                            ];
-                        }
-                    }
-
-                    return $items;
-                });
+                }
             }
 
             $view->with('layoutNotifs', $notifs);

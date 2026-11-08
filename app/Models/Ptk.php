@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Modules\Tenant\Traits\HasSchoolOwnership;
 
 class Ptk extends Model
 {
+    use HasSchoolOwnership;
+
     protected $table = 'ptk';
     protected $fillable = [
         'dapodik_id', 'semester_id', 'nama', 'nip', 'nuptk', 'jk',

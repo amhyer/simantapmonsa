@@ -18,6 +18,8 @@
         <div class="stat primary"><div class="label">Sudah Pulang</div><div class="value">{{ $sudahPulang }}</div></div>
     </div>
 
+    <div class="note note-warn" style="margin-bottom:16px">{{ max(0, $pegawai->count() - $catatan->count()) }} pegawai belum memiliki catatan pada tanggal ini. Belum tercatat tidak otomatis berarti alpa.</div>
+
     <div class="card" style="margin-bottom:16px">
         <div class="card-header">
             <h3 style="margin-right:auto">Import dari Mesin Fingerprint</h3>
@@ -101,8 +103,8 @@
                     @php $record = $catatan->get($person->id); @endphp
                     <tr>
                         <td><strong>{{ $person->nama_lengkap }}</strong><br><small>{{ ucfirst($person->peran) }} · {{ $person->nama_pengguna }}</small></td>
-                        <td>{{ $record?->waktu_masuk?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiMasuk?->nama ?? '' }}</small></td>
-                        <td>{{ $record?->waktu_pulang?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiPulang?->nama ?? '' }}</small></td>
+                        <td>{{ $record?->waktu_masuk?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiMasuk?->nama ?? '' }} · {{ $record?->metode_masuk ?? 'metode tidak diketahui' }}</small></td>
+                        <td>{{ $record?->waktu_pulang?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiPulang?->nama ?? '' }} · {{ $record?->metode_pulang ?? 'metode tidak diketahui' }}</small></td>
                         <td>
                             @if(!$record)<span class="tag tag-mut">Belum tercatat</span>
                             @else<span class="tag {{ in_array($record->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">{{ ucfirst($record->status) }}</span>@endif

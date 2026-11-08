@@ -43,12 +43,17 @@ class MapelAttendancePolicy
         $religion = match (true) {
             Str::contains($subject, 'agama islam') || preg_match('/(^| )pai($| )/', $subject) => 'islam',
             Str::contains($subject, 'agama kristen') || preg_match('/(^| )pak($| )/', $subject) => 'kristen',
+            Str::contains($subject, 'agama katolik') || Str::contains($subject, 'agama katholik') => 'katolik',
+            Str::contains($subject, 'agama hindu') => 'hindu',
+            Str::contains($subject, 'agama buddha') || Str::contains($subject, 'agama budha') => 'bud',
+            Str::contains($subject, 'agama khonghucu') || Str::contains($subject, 'agama konghucu') => 'konghucu',
             default => null,
         };
 
         $result = [];
         foreach ($students as $student) {
             $agama = $this->normalize((string) ($student->agama ?? ''));
+            $agama = str_replace(['katholik', 'khonghucu'], ['katolik', 'konghucu'], $agama);
             if ($religion && $agama !== '' && !Str::contains($agama, $religion)) {
                 continue;
             }
