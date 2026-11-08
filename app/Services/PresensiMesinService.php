@@ -108,7 +108,7 @@ class PresensiMesinService
                     }
 
                     if ($group['masuk'] !== null) {
-                        $status = $this->statusMasuk(array_merge($group, ['masuk' => $record->waktu_masuk]));
+                        $status = $this->statusMasuk(array_merge($group, ['masuk' => $record->waktu_masuk]), $user->jenjang);
                         if ($statusLama !== $status) {
                             $record->status = $status;
                             $berubah = true;
@@ -137,7 +137,7 @@ class PresensiMesinService
                     continue;
                 }
 
-                $statusBaru = $this->statusMasuk($group);
+                $statusBaru = $this->statusMasuk($group, $user->jenjang);
 
                 PresensiPegawai::create([
                     'user_id' => $user->id,
@@ -202,18 +202,34 @@ class PresensiMesinService
         return $groups;
     }
 
-    public function statusMasuk(array $group): string
+    public function statusMasuk(array $group, ?string $jenjang = null): string
     {
         if ($group['masuk'] === null) {
             return 'hadir';
         }
 
         $batas = Carbon::parse(
-            $group['tanggal']->toDateString().' '.config('presensi.mesin_jam_masuk', '07:15'),
+            $group['tanggal']->toDateString().' '.$this->jamMasuk($jenjang),
             config('app.timezone'),
         );
 
         return $group['masuk']->gt($batas) ? 'terlambat' : 'hadir';
+    }
+
+    /**
+     * Batas jam masuk presensi mesin untuk suatu jenjang.
+     * Default ke `presensi.mesin_jam_masuk` bila jenjang belum dikenal.
+     */
+    public function jamMasuk(?string $jenjang = null): string
+    {
+        $nilaiJenjang = strtoupper(trim((string) ($jenjang ?? '')));
+        $jamPerJenjang = (array) config('presensi.mesin_jam_masuk_jenjang', []);
+
+        if ($nilaiJenjang !== '' && array_key_exists($nilaiJenjang, $jamPerJenjang)) {
+            return (string) $jamPerJenjang[$nilaiJenjang];
+        }
+
+        return (string) config('presensi.mesin_jam_masuk', '07:15');
     }
 
     public function normalizeNik($value): ?string

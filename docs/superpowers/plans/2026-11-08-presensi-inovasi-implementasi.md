@@ -82,7 +82,7 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 
 ## Task 4: Jam Kerja per Jenjang
 
-**Files:**
+**Files:** 
 - Modify: `config/presensi.php`, `PresensiMesinService` (normalisasi jam).
 - Test: `tests/Feature/PresensiMesin*`.
 
@@ -90,7 +90,7 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 - Consumes: `mesin_jam_masuk` + data jenjang.
 - Produces: jam masuk per jenjang.
 
-- [ ] **Step 1..5:** tulis test → implement → pass → commit.
+- [x] **Step 1..5:** tulis test → implement → pass → commit.
 
 ## Task 5: Live Monitor via TCP
 

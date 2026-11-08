@@ -43,6 +43,20 @@ return [
     // Scan masuk setelah jam ini ditandai sebagai "terlambat".
     'mesin_jam_masuk' => env('PRESENSI_MESIN_JAM_MASUK', '07:15'),
 
+    // Batas jam masuk mesin per jenjang (PAUD/SD/MI/SMP/MTs/SMA/MA/SMK/SLB).
+    // Nilai default mengikuti `PRESENSI_MESIN_JAM_MASUK`; tiap jenjang bisa
+    // di-override lewat env `PRESENSI_MESIN_JAM_MASUK_JENJANG_<JENJANG>`.
+    'mesin_jam_masuk_jenjang' => [
+        'SD' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_SD', '07:15'),
+        'MI' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_MI', '07:15'),
+        'SMP' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_SMP', '07:15'),
+        'MTs' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_MTS', '07:15'),
+        'SMA' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_SMA', '07:15'),
+        'MA' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_MA', '07:15'),
+        'SMK' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_SMK', '07:15'),
+        'SLB' => env('PRESENSI_MESIN_JAM_MASUK_JENJANG_SLB', '07:15'),
+    ],
+
     /*
     | Tarik langsung dari database Attendance Management (ZKTeco).
     | PRESENSI_MESIN_DB_PATH diarahkan ke file att2000.mdb / .accdb.
