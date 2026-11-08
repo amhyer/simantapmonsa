@@ -104,6 +104,14 @@ jobs:
           set -o pipefail
           php artisan test 2>&1 | tee /tmp/phpunit.log
 
+      - name: Simpan matriks audit menu
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: menu-inventory
+          path: storage/logs/menu-inventory.md
+          if-no-files-found: ignore
+
       - name: Simpan laporan endpoint 5xx
         if: always()
         uses: actions/upload-artifact@v4
