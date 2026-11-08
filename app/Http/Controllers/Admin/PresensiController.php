@@ -23,17 +23,9 @@ class PresensiController extends Controller
         ]);
         $tanggal = $validated['tanggal'] ?? now()->toDateString();
 
-        $pegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
-            ->where('aktif', true)
-            ->orderBy('peran')
-            ->orderBy('nama_lengkap')
-            ->get();
-
-        $catatan = PresensiPegawai::with(['lokasiMasuk', 'lokasiPulang', 'editor'])
-            ->whereDate('tanggal', $tanggal)
-            ->whereIn('user_id', $pegawai->pluck('id'))
-            ->get()
-            ->keyBy('user_id');
+        $data = $this->dataPresensiHarian($tanggal);
+        $pegawai = $data['pegawai'];
+        $catatan = $data['catatan'];
 
         $lokasi = PresensiLokasi::with('pembuat')->orderByDesc('aktif')->orderBy('nama')->get();
 
@@ -52,55 +44,14 @@ class PresensiController extends Controller
         ]);
         $tanggal = $validated['tanggal'] ?? now()->toDateString();
 
-        $pegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
-            ->where('aktif', true)
-            ->orderBy('peran')
-            ->orderBy('nama_lengkap')
-            ->get();
+        $data = $this->dataPresensiHarian($tanggal);
 
-        $catatan = PresensiPegawai::with(['lokasiMasuk', 'lokasiPulang', 'editor'])
-            ->whereDate('tanggal', $tanggal)
-            ->whereIn('user_id', $pegawai->pluck('id'))
-            ->get()
-            ->keyBy('user_id');
-
-        $rekap = [
-            'total_pegawai' => 0,
-            'hadir' => 0,
-            'terlambat' => 0,
-            'belum_tercatat' => 0,
-            'izin_sakit_cuti' => 0,
-            'belum_pulang' => 0,
-        ];
-
-        foreach ($pegawai as $person) {
-            $rekap['total_pegawai']++;
-
-            $record = $catatan->get($person->id);
-
-            if ($record === null) {
-                $rekap['belum_tercatat']++;
-                continue;
-            }
-
-            if (in_array($record->status, ['hadir', 'terlambat'], true)) {
-                $rekap['hadir']++;
-            }
-
-            if ($record->status === 'terlambat') {
-                $rekap['terlambat']++;
-            }
-
-            if (in_array($record->status, ['izin', 'sakit', 'cuti'], true)) {
-                $rekap['izin_sakit_cuti']++;
-            }
-
-            if (in_array($record->status, ['hadir', 'terlambat'], true) && $record->waktu_pulang === null) {
-                $rekap['belum_pulang']++;
-            }
-        }
-
-        return view('admin.presensi.dashboard-mesin', compact('tanggal', 'pegawai', 'catatan', 'rekap'));
+        return view('admin.presensi.dashboard-mesin', [
+            'tanggal' => $tanggal,
+            'pegawai' => $data['pegawai'],
+            'catatan' => $data['catatan'],
+            'rekap' => $data['rekap'],
+        ]);
     }
 
     public function storeLocation(Request $request)
@@ -244,5 +195,72 @@ class PresensiController extends Controller
     private function tanggalDanWaktu(string $tanggal, ?string $waktu): mixed
     {
         return $waktu ? Carbon::parse($tanggal . ' ' . $waktu, config('app.timezone')) : null;
+    }
+
+    /**
+     * Data presensi harian untuk pegawai aktif (guru, kepala sekolah, tendik)
+     * pada tanggal tertentu, lengkap dengan ringkasan kehadiran.
+     *
+     * @return array{
+     *     pegawai: \Illuminate\Support\Collection<int, \App\Models\User>,
+     *     catatan: \Illuminate\Support\Collection<int, \App\Models\PresensiPegawai>,
+     *     rekap: array<string, int>
+     * }
+     */
+    private function dataPresensiHarian(string $tanggal): array
+    {
+        $pegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
+            ->where('aktif', true)
+            ->orderBy('peran')
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        $catatan = PresensiPegawai::with(['lokasiMasuk', 'lokasiPulang', 'editor'])
+            ->whereDate('tanggal', $tanggal)
+            ->whereIn('user_id', $pegawai->pluck('id'))
+            ->get()
+            ->keyBy('user_id');
+
+        $rekap = [
+            'total_pegawai' => 0,
+            'hadir' => 0,
+            'terlambat' => 0,
+            'belum_tercatat' => 0,
+            'izin_sakit_cuti' => 0,
+            'belum_pulang' => 0,
+        ];
+
+        foreach ($pegawai as $person) {
+            $rekap['total_pegawai']++;
+
+            $record = $catatan->get($person->id);
+
+            if ($record === null) {
+                $rekap['belum_tercatat']++;
+                continue;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true)) {
+                $rekap['hadir']++;
+            }
+
+            if ($record->status === 'terlambat') {
+                $rekap['terlambat']++;
+            }
+
+            if (in_array($record->status, ['izin', 'sakit', 'cuti'], true)) {
+                $rekap['izin_sakit_cuti']++;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true) && $record->waktu_pulang === null) {
+                $rekap['belum_pulang']++;
+            }
+        }
+
+        return [
+            'pegawai' => $pegawai,
+            'catatan' => $catatan,
+            'rekap' => $rekap,
+        ];
     }
 }
