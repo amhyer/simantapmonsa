@@ -27,7 +27,7 @@ test('landing memakai CTA yang jujur dan interaksi FAQ bekerja di Chromium', asy
     await expect(page.getByRole('link', { name: 'Lihat repositori dan rilis' }))
         .toHaveAttribute('href', 'https://github.com/amhyer/simantapmonsa');
 
-    const faq = page.getByRole('button', { name: 'Apa itu SIMANTAP?' });
+    const faq = page.getByRole('button', { name: /^Apa itu SIMANTAP/ });
     await faq.click();
     await expect(faq).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#faq-answer-0')).toHaveClass(/open/);
