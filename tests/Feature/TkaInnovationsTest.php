@@ -367,7 +367,7 @@ class TkaInnovationsTest extends TestCase
 
         $nilai = Nilai::where('siswa_id', $this->siswaUnggul->id)
             ->where('mata_pelajaran', 'Matematika')
-            ->where('jenis', 'ulangan')
+            ->where('jenis', 'Ulangan Harian')
             ->first();
         $this->assertNotNull($nilai);
         $this->assertEquals(86.0, (float) $nilai->nilai);

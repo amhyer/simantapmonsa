@@ -478,12 +478,18 @@ class TkaCognitiveAnalyticsService
         ) {
             $judulPenilaian = "Integrasi Kognitif TKA ({$semesterLabel} {$tahunAjaran})";
 
+            $jenisNilai = match ($komponen) {
+                'formatif' => 'Tugas',
+                'sumatif_akhir' => 'PAS',
+                default => 'Ulangan Harian',
+            };
+
             $nilaiRow = Nilai::query()->updateOrCreate(
                 [
                     'siswa_id' => $siswa->id,
                     'guru_id' => $guru->id,
                     'mata_pelajaran' => $mapel,
-                    'jenis' => 'ulangan',
+                    'jenis' => $jenisNilai,
                     'judul_penilaian' => $judulPenilaian,
                 ],
                 [
