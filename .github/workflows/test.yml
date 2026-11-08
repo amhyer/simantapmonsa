@@ -98,11 +98,22 @@ jobs:
       - name: Compile all Blade views
         run: php artisan view:cache
 
+      - name: Audit menu dan hasilkan matriks
+        run: php artisan test --filter=MenuInventoryTest
+
       # Seluruh suite wajib hijau, termasuk RouteSweepTest (core-status, no-mutation, dan 0 endpoint 5xx).
       - name: Run test suite (wajib hijau)
         run: |
           set -o pipefail
           php artisan test 2>&1 | tee /tmp/phpunit.log
+
+      - name: Simpan matriks audit menu
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: menu-inventory
+          path: storage/logs/menu-inventory.md
+          if-no-files-found: ignore
 
       - name: Simpan laporan endpoint 5xx
         if: always()
