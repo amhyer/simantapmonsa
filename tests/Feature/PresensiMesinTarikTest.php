@@ -67,6 +67,39 @@ class PresensiMesinTarikTest extends TestCase
         $this->assertSame('07:25:00', $kedua->waktu_masuk->format('H:i:s'));
     }
 
+    public function test_tarik_terlambat_mencatat_perubahan_kehadiran(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guru = User::factory()->guru()->create([
+            'nama_lengkap' => 'Guru Terlambat',
+            'nik' => '7309082109930003',
+        ]);
+
+        $this->readerDenganScan([
+            ['nik' => '7309082109930003', 'waktu' => Carbon::parse('2026-06-01 07:25:00'), 'jenis' => 'masuk'],
+            ['nik' => '7309082109930003', 'waktu' => Carbon::parse('2026-06-01 14:05:00'), 'jenis' => 'pulang'],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik'), [
+                'dari' => '2026-06-01',
+                'sampai' => '2026-06-02',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('presensi_pegawai', [
+            'user_id' => $guru->id,
+            'status' => 'terlambat',
+            'metode' => 'mesin',
+        ]);
+
+        $this->assertDatabaseHas('aktivitas', [
+            'guru_id' => $admin->id,
+            'jenis' => 'kehadiran',
+        ]);
+    }
+
     public function test_tarik_menghormati_koreksi_manual_dan_status_izin(): void
     {
         $admin = User::factory()->admin()->create();

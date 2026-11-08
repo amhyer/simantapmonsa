@@ -26,7 +26,7 @@ class PresensiMesinService
 
     /**
      * @param  list<array{nik: string, waktu: Carbon, jenis: string}>  $scans
-     * @return array{scan: int, pegawai: int, dibuat: int, diperbarui: int, tetap: int, dilindungi: int, nik_tidak_dikenal: int, contoh_nik_tidak_dikenal: list<string>}
+     * @return array{scan: int, pegawai: int, dibuat: int, diperbarui: int, tetap: int, dilindungi: int, nik_tidak_dikenal: int, contoh_nik_tidak_dikenal: list<string>, perubahan: list<array<string, mixed>>}
      */
     public function importScans(array $scans, ?int $userId = null): array
     {
@@ -54,6 +54,7 @@ class PresensiMesinService
             'dilindungi' => 0,
             'nik_tidak_dikenal' => 0,
             'contoh_nik_tidak_dikenal' => [],
+            'perubahan' => [],
         ];
 
         DB::transaction(function () use ($groups, $usersByNik, $userId, &$hasil) {
@@ -89,6 +90,8 @@ class PresensiMesinService
                     }
 
                     $berubah = false;
+                    $statusLama = $record->status;
+                    $status = $statusLama;
 
                     if ($group['masuk'] !== null
                         && ($record->waktu_masuk === null || $group['masuk']->lt($record->waktu_masuk))) {
@@ -106,7 +109,7 @@ class PresensiMesinService
 
                     if ($group['masuk'] !== null) {
                         $status = $this->statusMasuk(array_merge($group, ['masuk' => $record->waktu_masuk]));
-                        if ($record->status !== $status) {
+                        if ($statusLama !== $status) {
                             $record->status = $status;
                             $berubah = true;
                         }
@@ -117,6 +120,16 @@ class PresensiMesinService
                         $record->diperbarui_oleh = $userId;
                         $record->save();
                         $hasil['diperbarui']++;
+
+                        if ($status === 'terlambat') {
+                            $hasil['perubahan'][] = [
+                                'user_id' => $user->id,
+                                'nik' => $group['nik'],
+                                'tanggal' => $group['tanggal']->toDateString(),
+                                'status' => $status,
+                                'waktu_masuk' => $group['masuk']?->toDateTimeString(),
+                            ];
+                        }
                     } else {
                         $hasil['tetap']++;
                     }
@@ -124,10 +137,12 @@ class PresensiMesinService
                     continue;
                 }
 
+                $statusBaru = $this->statusMasuk($group);
+
                 PresensiPegawai::create([
                     'user_id' => $user->id,
                     'tanggal' => $group['tanggal']->toDateString(),
-                    'status' => $this->statusMasuk($group),
+                    'status' => $statusBaru,
                     'waktu_masuk' => $group['masuk'],
                     'waktu_pulang' => $group['pulang'],
                     'metode' => 'mesin',
@@ -135,6 +150,17 @@ class PresensiMesinService
                     'metode_pulang' => $group['pulang'] ? 'mesin' : null,
                     'diperbarui_oleh' => $userId,
                 ]);
+
+                if ($statusBaru === 'terlambat') {
+                    $hasil['perubahan'][] = [
+                        'user_id' => $user->id,
+                        'nik' => $group['nik'],
+                        'tanggal' => $group['tanggal']->toDateString(),
+                        'status' => $statusBaru,
+                        'waktu_masuk' => $group['masuk']?->toDateTimeString(),
+                    ];
+                }
+
                 $hasil['dibuat']++;
             }
         });

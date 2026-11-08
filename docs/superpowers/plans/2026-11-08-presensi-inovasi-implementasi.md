@@ -78,7 +78,7 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 - Consumes: hasil import (dibuat/diperbarui/tetap).
 - Produces: notifikasi perubahan status terlambat.
 
-- [ ] **Step 1..5:** tulis test notifikasi → implement → pass → commit.
+- [x] **Step 1..5:** tulis test notifikasi → implement → pass → commit.
 
 ## Task 4: Jam Kerja per Jenjang
 

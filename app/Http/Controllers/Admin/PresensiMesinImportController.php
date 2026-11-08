@@ -371,6 +371,8 @@ class PresensiMesinImportController extends Controller
         $hasil = $presensi->importScans($scans, auth()->id());
         $hasil['baris_diabaikan'] = $barisDiabaikan;
 
+        $this->catatPerubahanKehadiran($hasil);
+
         AktivitasService::log(
             'tambah',
             'Import log presensi mesin',
@@ -424,6 +426,8 @@ class PresensiMesinImportController extends Controller
 
         $hasil = $presensi->importScans($scans, auth()->id());
         $hasil['baris_diabaikan'] = 0;
+
+        $this->catatPerubahanKehadiran($hasil);
 
         Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
 
@@ -492,6 +496,7 @@ class PresensiMesinImportController extends Controller
 
             if ($scans !== []) {
                 $r = $presensi->importScans($scans, auth()->id());
+                $this->catatPerubahanKehadiran($r);
                 $hasil['dibuat'] += $r['dibuat'];
                 $hasil['diperbarui'] += $r['diperbarui'];
                 $hasil['tetap'] += $r['tetap'];
@@ -575,6 +580,29 @@ class PresensiMesinImportController extends Controller
         }
 
         return back()->with('success', 'Pengaturan pembacaan mesin berhasil disimpan (mesin_engine: '.$engine.').');
+    }
+
+    /**
+     * Mencatat perubahan kehadiran (mis. terdeteksi terlambat) ke log aktivitas
+     * sebagai notifikasi internal setelah proses import/tarik selesai.
+     *
+     * @param  array<string, mixed>  $hasil
+     */
+    private function catatPerubahanKehadiran(array $hasil): void
+    {
+        if (empty($hasil['perubahan'])) {
+            return;
+        }
+
+        AktivitasService::log(
+            'kehadiran',
+            'Perubahan kehadiran dari mesin fingerprint',
+            'Terdeteksi perubahan kehadiran (mis. terlambat): '.count($hasil['perubahan']).' kejadian.',
+            'presensi_pegawai',
+            null,
+            null,
+            $hasil['perubahan'],
+        );
     }
 
     /**
