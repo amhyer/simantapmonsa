@@ -61,11 +61,11 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 - Consumes: `AttendanceDatabaseReader`, `PresensiMesinService`.
 - Produces: command `presensi:mesin-sync`.
 
-- [ ] **Step 1: Write the failing test** — command signature/exit code.
-- [ ] **Step 2: Run, verify fail.**
-- [ ] **Step 3: Implement command + schedule.**
-- [ ] **Step 4: Run, pass.**
-- [ ] **Step 5: Commit.**
+- [x] **Step 1: Write the failing test** — command signature/exit code.
+- [x] **Step 2: Run, verify fail.**
+- [x] **Step 3: Implement command + schedule.**
+- [x] **Step 4: Run, pass.**
+- [x] **Step 5: Commit.**
 
 ## Task 3: Notifikasi Perubahan Kehadiran
 
