@@ -59,6 +59,19 @@ class AdminReferensiTest extends TestCase
      */
     public function test_halaman_tabel_memakai_table_wrapper(): void
     {
+        // Temporary CI diagnosis: identify the statement that first poisoned a
+        // PostgreSQL test transaction, even if application code caught it.
+        if (\DB::connection()->getDriverName() === 'pgsql') {
+            $previousSql = null;
+            \DB::connection()->beforeExecuting(function ($sql) use (&$previousSql) {
+                try {
+                    \DB::connection()->getPdo()->query('select 1');
+                } catch (\PDOException $exception) {
+                    throw new \RuntimeException('PostgreSQL transaction aborted after: '.$previousSql, 0, $exception);
+                }
+                $previousSql = $sql;
+            });
+        }
         $admin = User::factory()->admin()->create();
         $guru = User::factory()->guru()->create();
 

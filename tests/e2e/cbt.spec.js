@@ -47,7 +47,8 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
             response.url().includes(`/cbt/student/${resultId}/answer`)
             && response.request().method() === 'POST'
         );
-        await firstAnswer.check();
+        await firstAnswer.locator("xpath=..").click();
+        await expect(firstAnswer).toBeChecked();
         expect((await firstSave).status()).toBe(200);
         await expect(page.getByRole('status')).toContainText('tersimpan');
 
@@ -76,11 +77,13 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         for (let index = 0; index < choiceCount; index++) {
             const choice = answerChoices.nth(index);
             if (await choice.isChecked()) continue;
+            await page.locator(`#palette-btn-${index + 1}`).click();
             const saved = page.waitForResponse(response =>
                 response.url().includes(`/cbt/student/${resultId}/answer`)
                 && response.request().method() === 'POST'
             );
-            await choice.check();
+            await choice.locator("xpath=..").click();
+            await expect(choice).toBeChecked();
             expect((await saved).status()).toBe(200);
         }
         await expect(page.getByRole('status')).toContainText('Semua perubahan jawaban tersimpan di server.');

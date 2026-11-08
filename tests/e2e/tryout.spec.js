@@ -40,13 +40,13 @@ test('E2E-TRY-01..04: mulai, autosave/reload UI, hasil server nonzero, dan owner
         const answerResponse = await answerResponsePromise;
         expect(answerResponse.status()).toBe(200);
         expect(await answerResponse.json()).toEqual({ success: true });
-        await expect(page.locator('#progress-bar')).toHaveText('100.0%');
+        await expect(page.locator('#progress-bar')).toHaveText('100.0% (1/1)');
 
         // E2E-TRY-02: server-rendered response must be visibly selected after reload,
         // and the progress indicator must be restored from that same saved response.
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('input[name="q_9404"][value="A"]')).toBeChecked();
-        await expect(page.locator('#progress-bar')).toHaveText('100.0%');
+        await expect(page.locator('#progress-bar')).toHaveText('100.0% (1/1)');
 
         // E2E-TRY-03: complete the real attempt; scoring is performed by the server.
         const completionResponsePromise = page.waitForResponse(response =>
