@@ -10,6 +10,7 @@
             ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Hasil Belajar'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
+            ['route' => 'kepsek.tka-laporan.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Heatmap & Laporan TKA'],
             ['route' => 'kepsek.pantau.index', 'icon' => 'lucide-activity', 'label' => 'Pantau Aktivitas'],
             ['route' => 'kepsek.kebiasaan.index', 'icon' => 'lucide-star', 'label' => 'Rekap Kebiasaan'],
             ['route' => 'kepsek.aktivitas.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas'],

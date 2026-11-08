@@ -8,11 +8,12 @@
             ['route' => 'siswa.nilai.index', 'icon' => 'lucide-trending-up', 'label' => 'Nilaiku'],
             ['route' => 'siswa.profil.show', 'icon' => 'lucide-user', 'label' => 'Profil Saya'],
         ]],
-        // CBT dan Tryout bergantung pada modul; simulasi mandiri tidak.
+        // CBT dan Tryout bergantung pada modul; simulasi mandiri & adaptif tidak.
         ['label' => 'UJIAN & ASESMEN TKA', 'items' => [
             ['route' => 'cbt.student.index', 'asesmen' => true, 'icon' => 'lucide-monitor', 'label' => 'Ujian CBT'],
             ['route' => 'tryout.student.index', 'asesmen' => true, 'icon' => 'lucide-package', 'label' => 'Tryout Sekolah'],
-            ['route' => 'siswa.tka-simulasi.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi TKA Pusmendik'],
+            ['route' => 'siswa.tka-simulasi.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi TKA & Adaptif'],
+            ['route' => 'siswa.tka-simulasi.kognitif', 'icon' => 'lucide-trending-up', 'label' => 'Profil Kognitif & Latihanku'],
         ]],
     ];
     $isActive = function ($route) {

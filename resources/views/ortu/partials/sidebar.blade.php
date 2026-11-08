@@ -13,6 +13,7 @@
                 ['route' => 'ortu.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Anak'],
                 ['route' => 'ortu.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Guru'],
                 ['route' => 'ortu.laporan.index', 'icon' => 'lucide-file-text', 'label' => 'Laporan / Rapor'],
+                ['route' => 'ortu.tka-riwayat.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi & Kognitif TKA'],
                 ['route' => 'tka.parent.index', 'icon' => 'lucide-gauge', 'label' => 'Laporan TKA', 'asesmen' => true],
             ]],
         ]],

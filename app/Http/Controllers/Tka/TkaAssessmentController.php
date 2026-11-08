@@ -189,6 +189,23 @@ class TkaAssessmentController extends Controller
 
             DB::commit();
 
+            if (\Illuminate\Support\Facades\Schema::hasTable('tka_learning_recommendations')) {
+                $analytics = app(\App\Services\Tka\TkaCognitiveAnalyticsService::class);
+                $analytics->generateRecommendation($siswa, (int) $validated['semester_id'], (int) auth()->id());
+
+                if ($request->filled('sync_mata_pelajaran')) {
+                    try {
+                        $analytics->syncStudentToErapor($siswa, auth()->user(), [
+                            'mata_pelajaran' => (string) $request->input('sync_mata_pelajaran'),
+                            'komponen_target' => (string) $request->input('sync_komponen_target', 'sumatif'),
+                            'semester_id' => (int) $validated['semester_id'],
+                        ]);
+                    } catch (\Throwable) {
+                        // Jangan gagalkan simpan asesmen bila sinkronisasi opsional belum siap.
+                    }
+                }
+            }
+
             return redirect()->route('tka.assessments.show', $assessment)
                 ->with('success', 'Penilaian TKA berhasil disimpan');
 

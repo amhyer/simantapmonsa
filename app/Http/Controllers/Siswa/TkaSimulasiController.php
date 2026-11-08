@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
+use App\Models\Tka\AdaptiveSimulation;
+use App\Services\Tka\TkaAdaptiveBankService;
+use App\Services\Tka\TkaCognitiveAnalyticsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class TkaSimulasiController extends Controller
 {
@@ -35,23 +39,23 @@ class TkaSimulasiController extends Controller
                             'A' => 'Penangkapan ikan secara berlebihan di kawasan pesisir pantai',
                             'B' => 'Peningkatan suhu air laut yang menyebabkan karang melepaskan alga zooxanthellae',
                             'C' => 'Gelombang laut yang terlalu tenang dan kekurangan oksigen terlarut',
-                            'D' => 'Kurangnya biota laut yang hidup di sekitar ekosistem terumbu karang'
+                            'D' => 'Kurangnya biota laut yang hidup di sekitar ekosistem terumbu karang',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Paragraf kedua menyatakan secara eksplisit bahwa suhu laut yang meningkat menyebabkan karang mengalami stres sehingga melepaskan alga simbiotik zooxanthellae, yang berakibat pada pemutihan karang.'
+                        'pembahasan' => 'Paragraf kedua menyatakan secara eksplisit bahwa suhu laut yang meningkat menyebabkan karang mengalami stres sehingga melepaskan alga simbiotik zooxanthellae, yang berakibat pada pemutihan karang.',
                     ],
                     [
                         'id' => 2,
-                        'stimulus' => "Terumbu karang merupakan salah satu ekosistem paling produktif di muka bumi. Meskipun hanya menempati kurang dari 0,1% dasar laut, terumbu karang menjadi rumah bagi lebih dari 25% biota laut. Selain sebagai habitat ikan, terumbu karang berfungsi sebagai pemecah gelombang alami yang melindungi wilayah pesisir dari abrasi dan badai hebat.",
+                        'stimulus' => 'Terumbu karang merupakan salah satu ekosistem paling produktif di muka bumi. Meskipun hanya menempati kurang dari 0,1% dasar laut, terumbu karang menjadi rumah bagi lebih dari 25% biota laut. Selain sebagai habitat ikan, terumbu karang berfungsi sebagai pemecah gelombang alami yang melindungi wilayah pesisir dari abrasi dan badai hebat.',
                         'prompt' => 'Manakah pernyataan berikut yang menunjukkan peran fisik terumbu karang bagi kawasan pemukiman pesisir pantai?',
                         'options' => [
                             'A' => 'Menjadi habitat bagi lebih dari seperempat seluruh biota laut',
                             'B' => 'Mengurangi kadar garam air laut di muara sungai',
                             'C' => 'Sebagai peredam alami tenaga gelombang laut dari abrasi dan badai',
-                            'D' => 'Sebagai sumber utama penghasil oksigen untuk atmosfer bumi'
+                            'D' => 'Sebagai sumber utama penghasil oksigen untuk atmosfer bumi',
                         ],
                         'kunci' => 'C',
-                        'pembahasan' => 'Teks menyebutkan bahwa fungsi fisik terumbu karang bagi wilayah pesisir adalah sebagai pemecah gelombang alami yang melindungi kawasan dari ancaman abrasi dan badai laut.'
+                        'pembahasan' => 'Teks menyebutkan bahwa fungsi fisik terumbu karang bagi wilayah pesisir adalah sebagai pemecah gelombang alami yang melindungi kawasan dari ancaman abrasi dan badai laut.',
                     ],
                     [
                         'id' => 3,
@@ -61,23 +65,23 @@ class TkaSimulasiController extends Controller
                             'A' => 'Biaya instalasi kabel transmisi bawah laut yang mahal',
                             'B' => 'Menghasilkan gas rumah kaca dalam jumlah besar pada siang hari',
                             'C' => 'Sifat intermitensi yang bergantung pada cuaca dan membutuhkan sistem baterai',
-                            'D' => 'Menghabiskan lahan pertanian produktif masyarakat di pedesaan'
+                            'D' => 'Menghabiskan lahan pertanian produktif masyarakat di pedesaan',
                         ],
                         'kunci' => 'C',
-                        'pembahasan' => 'Tantangan operasional yang disebutkan adalah sifat intermitensi (ketergantungan pada kondisi cuaca dan ketiadaan cahaya matahari di malam hari), yang menuntut teknologi penyimpanan baterai.'
+                        'pembahasan' => 'Tantangan operasional yang disebutkan adalah sifat intermitensi (ketergantungan pada kondisi cuaca dan ketiadaan cahaya matahari di malam hari), yang menuntut teknologi penyimpanan baterai.',
                     ],
                     [
                         'id' => 4,
-                        'stimulus' => "Penggunaan energi terbarukan seperti panel surya dan turbin angin di Indonesia mengalami peningkatan signifikan dalam kurun waktu lima tahun terakhir. Data Kementerian ESDM menunjukkan kapasitas pembangkit listrik tenaga surya (PLTS) atap naik hingga 300%.",
+                        'stimulus' => 'Penggunaan energi terbarukan seperti panel surya dan turbin angin di Indonesia mengalami peningkatan signifikan dalam kurun waktu lima tahun terakhir. Data Kementerian ESDM menunjukkan kapasitas pembangkit listrik tenaga surya (PLTS) atap naik hingga 300%.',
                         'prompt' => 'Apa kesimpulan yang dapat ditarik mengenai tren adopsi teknologi PLTS di Indonesia?',
                         'options' => [
                             'A' => 'Masyarakat menolak pemasangan PLTS karena biaya listrik menjadi lebih tinggi',
                             'B' => 'Terjadi percepatan adopsi PLTS atap yang tercermin dari kenaikan kapasitas 300%',
                             'C' => 'PLTS telah menggantikan seluruh pembangkit listrik batu bara di Indonesia',
-                            'D' => 'Teknologi turbin angin lebih dominan berkembang dibandingkan PLTS'
+                            'D' => 'Teknologi turbin angin lebih dominan berkembang dibandingkan PLTS',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Lonjakan kapasitas terpasang PLTS atap hingga 300% dalam lima tahun terakhir menunjukkan tren percepatan adopsi yang sangat positif.'
+                        'pembahasan' => 'Lonjakan kapasitas terpasang PLTS atap hingga 300% dalam lima tahun terakhir menunjukkan tren percepatan adopsi yang sangat positif.',
                     ],
                     [
                         'id' => 5,
@@ -87,12 +91,12 @@ class TkaSimulasiController extends Controller
                             'A' => 'Pola makan buruk hanya berdampak pada berat badan tanpa memengaruhi mental',
                             'B' => 'Kesehatan flora usus dapat memengaruhi konsentrasi belajar dan kondisi suasana hati',
                             'C' => 'Sistem saraf pusat bekerja terpisah dan tidak berhubungan dengan pencernaan',
-                            'D' => 'Antioksidan merusak flora usus yang sehat pada saluran pencernaan'
+                            'D' => 'Antioksidan merusak flora usus yang sehat pada saluran pencernaan',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Paragraf menjelaskan bahwa ketidakseimbangan flora usus dapat memengaruhi suasana hati, kecemasan, dan konsentrasi belajar melalui komunikasi gut-brain axis.'
+                        'pembahasan' => 'Paragraf menjelaskan bahwa ketidakseimbangan flora usus dapat memengaruhi suasana hati, kecemasan, dan konsentrasi belajar melalui komunikasi gut-brain axis.',
                     ],
-                ]
+                ],
             ],
             'numerasi' => [
                 'id' => 'numerasi',
@@ -112,23 +116,23 @@ class TkaSimulasiController extends Controller
                             'A' => 'Rp7.000,00',
                             'B' => 'Rp8.000,00',
                             'C' => 'Rp9.000,00',
-                            'D' => 'Rp10.000,00'
+                            'D' => 'Rp10.000,00',
                         ],
                         'kunci' => 'A',
-                        'pembahasan' => 'Jumlahkan kedua persamaan: (3b + 2p) + (2b + 3p) = 19.000 + 16.000 => 5b + 5p = 35.000 => b + p = 35.000 / 5 = Rp7.000,00.'
+                        'pembahasan' => 'Jumlahkan kedua persamaan: (3b + 2p) + (2b + 3p) = 19.000 + 16.000 => 5b + 5p = 35.000 => b + p = 35.000 / 5 = Rp7.000,00.',
                     ],
                     [
                         'id' => 2,
-                        'stimulus' => "Sebuah bak penampungan air berbentuk balok berukuran panjang 120 cm, lebar 80 cm, dan tinggi 100 cm. Bak tersebut awalnya terisi air sebanyak 3/4 bagian. Seseorang menggunakan air sebanyak 180 liter untuk menyiram tanaman dan membersihkan halaman.",
+                        'stimulus' => 'Sebuah bak penampungan air berbentuk balok berukuran panjang 120 cm, lebar 80 cm, dan tinggi 100 cm. Bak tersebut awalnya terisi air sebanyak 3/4 bagian. Seseorang menggunakan air sebanyak 180 liter untuk menyiram tanaman dan membersihkan halaman.',
                         'prompt' => 'Berapa liter sisa air yang ada di dalam bak penampungan tersebut sekarang? (Catatan: 1.000 cm³ = 1 liter)',
                         'options' => [
                             'A' => '420 liter',
                             'B' => '540 liter',
                             'C' => '720 liter',
-                            'D' => '780 liter'
+                            'D' => '780 liter',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Volume total bak = 120 * 80 * 100 = 960.000 cm³ = 960 liter. Volume awal (3/4) = 3/4 * 960 = 720 liter. Sisa air setelah dipakai = 720 - 180 = 540 liter.'
+                        'pembahasan' => 'Volume total bak = 120 * 80 * 100 = 960.000 cm³ = 960 liter. Volume awal (3/4) = 3/4 * 960 = 720 liter. Sisa air setelah dipakai = 720 - 180 = 540 liter.',
                     ],
                     [
                         'id' => 3,
@@ -138,23 +142,23 @@ class TkaSimulasiController extends Controller
                             'A' => '20 orang',
                             'B' => '25 orang',
                             'C' => '30 orang',
-                            'D' => '35 orang'
+                            'D' => '35 orang',
                         ],
                         'kunci' => 'C',
-                        'pembahasan' => 'Jumlah siswa yang gemar setidaknya satu buah = 100 - 15 = 85. Dengan rumus himpunan: n(A ∪ B) = n(A) + n(B) - n(A ∩ B) => 85 = 55 + 60 - x => x = 115 - 85 = 30 orang.'
+                        'pembahasan' => 'Jumlah siswa yang gemar setidaknya satu buah = 100 - 15 = 85. Dengan rumus himpunan: n(A ∪ B) = n(A) + n(B) - n(A ∩ B) => 85 = 55 + 60 - x => x = 115 - 85 = 30 orang.',
                     ],
                     [
                         'id' => 4,
-                        'stimulus' => "Sebuah mobil menempuh perjalanan dari Kota X ke Kota Y dengan kecepatan rata-rata 60 km/jam dalam waktu 3 jam 30 menit. Pada perjalanan pulang dari Kota Y ke Kota X dengan rute yang sama, pengemudi meningkatkan kecepatan rata-ratanya menjadi 70 km/jam.",
+                        'stimulus' => 'Sebuah mobil menempuh perjalanan dari Kota X ke Kota Y dengan kecepatan rata-rata 60 km/jam dalam waktu 3 jam 30 menit. Pada perjalanan pulang dari Kota Y ke Kota X dengan rute yang sama, pengemudi meningkatkan kecepatan rata-ratanya menjadi 70 km/jam.',
                         'prompt' => 'Berapa lama waktu yang ditempuh pada perjalanan pulang tersebut?',
                         'options' => [
                             'A' => '2 jam 45 menit',
                             'B' => '3 jam 00 menit',
                             'C' => '3 jam 15 menit',
-                            'D' => '3 jam 30 menit'
+                            'D' => '3 jam 30 menit',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Jarak = Kecepatan * Waktu = 60 * 3,5 = 210 km. Waktu tempuh pulang = Jarak / Kecepatan baru = 210 / 70 = 3 jam (3 jam 00 menit).'
+                        'pembahasan' => 'Jarak = Kecepatan * Waktu = 60 * 3,5 = 210 km. Waktu tempuh pulang = Jarak / Kecepatan baru = 210 / 70 = 3 jam (3 jam 00 menit).',
                     ],
                     [
                         'id' => 5,
@@ -164,12 +168,12 @@ class TkaSimulasiController extends Controller
                             'A' => '26 butir',
                             'B' => '27 butir',
                             'C' => '28 butir',
-                            'D' => '29 butir'
+                            'D' => '29 butir',
                         ],
                         'kunci' => 'C',
-                        'pembahasan' => 'Misal benar = b, salah = s. b + s = 35 => s = 35 - b. Skor: 4b - 1s = 105 => 4b - (35 - b) = 105 => 5b = 140 => b = 28 butir.'
+                        'pembahasan' => 'Misal benar = b, salah = s. b + s = 35 => s = 35 - b. Skor: 4b - 1s = 105 => 4b - (35 - b) = 105 => 5b = 140 => b = 28 butir.',
                     ],
-                ]
+                ],
             ],
             'sains' => [
                 'id' => 'sains',
@@ -189,36 +193,36 @@ class TkaSimulasiController extends Controller
                             'A' => 'Jumlah air yang disiramkan setiap pagi',
                             'B' => 'Intensitas cahaya matahari yang diterima tanaman',
                             'C' => 'Tinggi batang tanaman yang diukur setelah 7 hari',
-                            'D' => 'Jenis biji kacang hijau dan wadah pot'
+                            'D' => 'Jenis biji kacang hijau dan wadah pot',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Variabel bebas/manipulasi adalah kondisi yang sengaja divariasikan atau diubah-ubah oleh peneliti, yaitu intensitas cahaya (gelap, redup, terang langsung).'
+                        'pembahasan' => 'Variabel bebas/manipulasi adalah kondisi yang sengaja divariasikan atau diubah-ubah oleh peneliti, yaitu intensitas cahaya (gelap, redup, terang langsung).',
                     ],
                     [
                         'id' => 2,
-                        'stimulus' => "Hasil eksperimen menunjukkan tanaman pada Pot A (gelap) batangnya tumbuh sangat tinggi dan kurus serta daunnya pucat kekuningan (mengalami etiolasi). Sedangkan tanaman pada Pot C (cahaya penuh) batangnya kokoh dan daunnya hijau segar.",
+                        'stimulus' => 'Hasil eksperimen menunjukkan tanaman pada Pot A (gelap) batangnya tumbuh sangat tinggi dan kurus serta daunnya pucat kekuningan (mengalami etiolasi). Sedangkan tanaman pada Pot C (cahaya penuh) batangnya kokoh dan daunnya hijau segar.',
                         'prompt' => 'Mengapa tanaman pada Pot A mengalami pertumbuhan batang yang memanjang sangat cepat namun lemah?',
                         'options' => [
                             'A' => 'Aktivitas hormon auksin bekerja maksimal memicu pemanjangan sel saat tidak ada cahaya',
                             'B' => 'Tanaman menyerap oksigen lebih banyak di tempat gelap daripada siang hari',
                             'C' => 'Proses fotosintesis berlangsung lebih cepat tanpa adanya sinar matahari',
-                            'D' => 'Klorofil pada daun menstimulasi pembelahan sel secara liar'
+                            'D' => 'Klorofil pada daun menstimulasi pembelahan sel secara liar',
                         ],
                         'kunci' => 'A',
-                        'pembahasan' => 'Hormon auksin terurai oleh cahaya. Pada kondisi gelap (etiolasi), auksin bekerja secara optimal mendorong pemanjangan sel batang yang cepat namun dinding selnya rapuh.'
+                        'pembahasan' => 'Hormon auksin terurai oleh cahaya. Pada kondisi gelap (etiolasi), auksin bekerja secara optimal mendorong pemanjangan sel batang yang cepat namun dinding selnya rapuh.',
                     ],
                     [
                         'id' => 3,
-                        'stimulus' => "Pada ekosistem danau, populasi fitoplankton dikonsumsi oleh zooplankton, yang kemudian dimakan oleh ikan-ikan kecil, dan ikan kecil dimangsa oleh burung pelikan. Suatu hari, limbah detergen fosfat dalam jumlah besar masuk ke danau sehingga memicu ledakan populasi alga (eutrofikasi). Ketika alga tersebut mati massal, dekomposer mengurai bangkainya dan menghabiskan sebagian besar oksigen terlarut di air.",
+                        'stimulus' => 'Pada ekosistem danau, populasi fitoplankton dikonsumsi oleh zooplankton, yang kemudian dimakan oleh ikan-ikan kecil, dan ikan kecil dimangsa oleh burung pelikan. Suatu hari, limbah detergen fosfat dalam jumlah besar masuk ke danau sehingga memicu ledakan populasi alga (eutrofikasi). Ketika alga tersebut mati massal, dekomposer mengurai bangkainya dan menghabiskan sebagian besar oksigen terlarut di air.',
                         'prompt' => 'Apakah dampak berantai paling awal yang menimpa populasi ikan kecil di danau tersebut?',
                         'options' => [
                             'A' => 'Ikan kecil berkembang biak lebih pesat karena air lebih hangat',
                             'B' => 'Populasi ikan kecil menurun drastis akibat kekurangan pasokan oksigen terlarut',
                             'C' => 'Ikan kecil bermigrasi ke daratan menjadi hewan amfibi',
-                            'D' => 'Burung pelikan kehilangan minat mencari makan di danau'
+                            'D' => 'Burung pelikan kehilangan minat mencari makan di danau',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Eutrofikasi menyebabkan deplesi (penurunan drastis) kadar oksigen terlarut (anoksia), sehingga organisme akuatik seperti ikan mengalami kematian massal akibat kekurangan oksigen.'
+                        'pembahasan' => 'Eutrofikasi menyebabkan deplesi (penurunan drastis) kadar oksigen terlarut (anoksia), sehingga organisme akuatik seperti ikan mengalami kematian massal akibat kekurangan oksigen.',
                     ],
                     [
                         'id' => 4,
@@ -228,39 +232,60 @@ class TkaSimulasiController extends Controller
                             'A' => 'ρX lebih besar daripada ρY',
                             'B' => 'ρX lebih kecil daripada ρY',
                             'C' => 'ρX sama besar dengan ρY',
-                            'D' => 'Tidak dapat ditentukan tanpa mengetahui volume zat cair'
+                            'D' => 'Tidak dapat ditentukan tanpa mengetahui volume zat cair',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Benda melayang (Y) memiliki massa jenis sama dengan zat cair (ρY = ρcair). Benda terapung (X) memiliki massa jenis lebih kecil dari zat cair (ρX = 2/3 ρcair). Oleh karena itu, ρX < ρY.'
+                        'pembahasan' => 'Benda melayang (Y) memiliki massa jenis sama dengan zat cair (ρY = ρcair). Benda terapung (X) memiliki massa jenis lebih kecil dari zat cair (ρX = 2/3 ρcair). Oleh karena itu, ρX < ρY.',
                     ],
                     [
                         'id' => 5,
-                        'stimulus' => "Sebuah termometer tak berskala dicelupkan ke dalam es yang sedang melebur dan menunjukkan panjang kolom raksa 4 cm. Ketika dicelupkan ke dalam air yang sedang mendidih pada tekanan 1 atm, panjang kolom raksa menjadi 24 cm. Suatu larutan diukur dan menunjukkan panjang kolom raksa 14 cm.",
+                        'stimulus' => 'Sebuah termometer tak berskala dicelupkan ke dalam es yang sedang melebur dan menunjukkan panjang kolom raksa 4 cm. Ketika dicelupkan ke dalam air yang sedang mendidih pada tekanan 1 atm, panjang kolom raksa menjadi 24 cm. Suatu larutan diukur dan menunjukkan panjang kolom raksa 14 cm.',
                         'prompt' => 'Berapa suhu larutan tersebut dalam skala Celsius (°C)?',
                         'options' => [
                             'A' => '40°C',
                             'B' => '50°C',
                             'C' => '60°C',
-                            'D' => '70°C'
+                            'D' => '70°C',
                         ],
                         'kunci' => 'B',
-                        'pembahasan' => 'Titik beku (0°C) = 4 cm. Titik didih (100°C) = 24 cm. Rentang = 24 - 4 = 20 cm. Pada 14 cm: Suhu = (14 - 4) / 20 * 100°C = 10 / 20 * 100°C = 50°C.'
+                        'pembahasan' => 'Titik beku (0°C) = 4 cm. Titik didih (100°C) = 24 cm. Rentang = 24 - 4 = 20 cm. Pada 14 cm: Suhu = (14 - 4) / 20 * 100°C = 10 / 20 * 100°C = 50°C.',
                     ],
-                ]
-            ]
+                ],
+            ],
         ];
     }
 
     /**
      * Halaman Utama: Daftar Subtes Simulasi TKA
      */
-    public function index()
+    public function index(TkaAdaptiveBankService $adaptiveBank, TkaCognitiveAnalyticsService $analytics)
     {
         $siswa = $this->getSiswa();
         $paketList = $this->getPaketList();
         $riwayat = session('tka_simulasi_riwayat', []);
+        $paketAdaptifList = $adaptiveBank->paketList();
+        $riwayatAdaptif = collect();
+        $profilKognitif = null;
 
-        return view('siswa.tka.index', compact('siswa', 'paketList', 'riwayat'));
+        if ($siswa && Schema::hasTable('tka_adaptive_simulations')) {
+            $riwayatAdaptif = AdaptiveSimulation::query()
+                ->where('siswa_id', $siswa->id)
+                ->where('status', 'selesai')
+                ->latest('submitted_at')
+                ->latest('id')
+                ->limit(6)
+                ->get();
+            $profilKognitif = $analytics->buildStudentCognitiveProfile($siswa);
+        }
+
+        return view('siswa.tka.index', compact(
+            'siswa',
+            'paketList',
+            'riwayat',
+            'paketAdaptifList',
+            'riwayatAdaptif',
+            'profilKognitif'
+        ));
     }
 
     /**
@@ -273,7 +298,7 @@ class TkaSimulasiController extends Controller
         abort_unless(isset($paketList[$id]), 404, 'Paket simulasi TKA tidak ditemukan.');
 
         $paket = $paketList[$id];
-        $token = 'TKA-' . strtoupper(substr(md5($id . auth()->id() . date('Ymd')), 0, 5));
+        $token = 'TKA-'.strtoupper(substr(md5($id.auth()->id().date('Ymd')), 0, 5));
 
         return view('siswa.tka.confirm', compact('siswa', 'paket', 'token'));
     }
@@ -286,7 +311,7 @@ class TkaSimulasiController extends Controller
         $paketList = $this->getPaketList();
         abort_unless(isset($paketList[$id]), 404);
 
-        $tokenExpected = 'TKA-' . strtoupper(substr(md5($id . auth()->id() . date('Ymd')), 0, 5));
+        $tokenExpected = 'TKA-'.strtoupper(substr(md5($id.auth()->id().date('Ymd')), 0, 5));
         $tokenInput = trim((string) $request->input('token'));
 
         if (strtoupper($tokenInput) !== $tokenExpected && $tokenInput !== 'SIMANTAP') {
@@ -294,7 +319,7 @@ class TkaSimulasiController extends Controller
         }
 
         // Inisialisasi sesi di memori pengerjaan
-        $sessionKey = 'tka_simulasi_' . $id;
+        $sessionKey = 'tka_simulasi_'.$id;
         $now = now();
         $deadline = $now->copy()->addMinutes($paketList[$id]['durasi']);
 
@@ -304,7 +329,7 @@ class TkaSimulasiController extends Controller
                 'started_at' => $now->toIso8601String(),
                 'deadline_at' => $deadline->toIso8601String(),
                 'answers' => [],
-            ]
+            ],
         ]);
 
         return redirect()->route('siswa.tka-simulasi.exam', $id);
@@ -319,10 +344,10 @@ class TkaSimulasiController extends Controller
         $paketList = $this->getPaketList();
         abort_unless(isset($paketList[$id]), 404);
 
-        $sessionKey = 'tka_simulasi_' . $id;
+        $sessionKey = 'tka_simulasi_'.$id;
         $activeSession = session($sessionKey);
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return redirect()->route('siswa.tka-simulasi.confirm', $id);
         }
 
@@ -339,7 +364,7 @@ class TkaSimulasiController extends Controller
      */
     public function answer(Request $request, string $id)
     {
-        $sessionKey = 'tka_simulasi_' . $id;
+        $sessionKey = 'tka_simulasi_'.$id;
         $activeSession = session($sessionKey, []);
 
         $qId = (int) $request->input('question_id');
@@ -354,7 +379,7 @@ class TkaSimulasiController extends Controller
         return response()->json([
             'saved' => true,
             'server_time' => now()->toIso8601String(),
-            'message' => 'Jawaban tersimpan di server simulasi.'
+            'message' => 'Jawaban tersimpan di server simulasi.',
         ]);
     }
 
@@ -366,7 +391,7 @@ class TkaSimulasiController extends Controller
         $paketList = $this->getPaketList();
         abort_unless(isset($paketList[$id]), 404);
 
-        $sessionKey = 'tka_simulasi_' . $id;
+        $sessionKey = 'tka_simulasi_'.$id;
         $activeSession = session($sessionKey, []);
         $answers = $request->input('answers', $activeSession['answers'] ?? []);
 
@@ -378,7 +403,9 @@ class TkaSimulasiController extends Controller
         foreach ($paket['soal'] as $q) {
             $userAns = $answers[$q['id']] ?? null;
             $isBenar = ($userAns === $q['kunci']);
-            if ($isBenar) $benar++;
+            if ($isBenar) {
+                $benar++;
+            }
 
             $detail[] = [
                 'soal' => $q,
@@ -431,8 +458,35 @@ class TkaSimulasiController extends Controller
         session(['tka_simulasi_riwayat' => $riwayat]);
 
         // Simpan result payload untuk ditampilkan di result view
-        session(['tka_simulasi_last_result_' . $id => $resultPayload]);
+        session(['tka_simulasi_last_result_'.$id => $resultPayload]);
         session()->forget($sessionKey);
+
+        // Rekam juga ke basis data agar masuk ke rekap kognitif siswa & laporan orang tua
+        $siswa = $this->getSiswa();
+        if ($siswa && Schema::hasTable('tka_adaptive_simulations')) {
+            $durasiDetik = 60;
+            if (! empty($activeSession['started_at'])) {
+                try {
+                    $durasiDetik = max(1, (int) Carbon::parse($activeSession['started_at'])->diffInSeconds(now()));
+                } catch (\Throwable) {
+                    $durasiDetik = 60;
+                }
+            }
+
+            app(TkaAdaptiveBankService::class)->recordStandaloneSubmission(
+                $siswa,
+                $id,
+                $paket['judul'],
+                $detail,
+                (float) $skor,
+                $level,
+                $durasiDetik
+            );
+
+            if (Schema::hasTable('tka_learning_recommendations')) {
+                app(TkaCognitiveAnalyticsService::class)->generateRecommendation($siswa);
+            }
+        }
 
         return redirect()->route('siswa.tka-simulasi.result', $id);
     }
@@ -446,13 +500,147 @@ class TkaSimulasiController extends Controller
         $paketList = $this->getPaketList();
         abort_unless(isset($paketList[$id]), 404);
 
-        $result = session('tka_simulasi_last_result_' . $id);
+        $result = session('tka_simulasi_last_result_'.$id);
 
-        if (!$result) {
+        if (! $result) {
             return redirect()->route('siswa.tka-simulasi.index')
                 ->with('error', 'Belum ada hasil simulasi yang tercatat untuk subtes ini.');
         }
 
         return view('siswa.tka.result', compact('siswa', 'result'));
+    }
+
+    /**
+     * Mulai sesi Simulasi Adaptif (CAT) bertingkat kesulitan dinamis.
+     */
+    public function startAdaptif(string $paket, TkaAdaptiveBankService $bank)
+    {
+        $paketAdaptif = $bank->paketList();
+        abort_unless(isset($paketAdaptif[$paket]), 404, 'Paket simulasi adaptif tidak ditemukan.');
+
+        $siswa = $this->getSiswa();
+        if (! $siswa) {
+            return redirect()->route('siswa.tka-simulasi.index')
+                ->with('error', 'Akun Anda belum terhubung ke profil peserta didik untuk memulai simulasi adaptif.');
+        }
+
+        $simulation = $bank->startSimulation($siswa, $paket);
+
+        return redirect()->route('siswa.tka-simulasi.adaptif.play', $simulation);
+    }
+
+    /**
+     * Halaman pengerjaan per butir pada Simulasi Adaptif (CAT).
+     */
+    public function playAdaptif(AdaptiveSimulation $simulation, TkaAdaptiveBankService $bank)
+    {
+        $siswa = $this->getSiswa();
+        abort_unless($siswa && (int) $simulation->siswa_id === (int) $siswa->id, 403, 'Sesi simulasi ini bukan milik Anda.');
+
+        if ($simulation->status === 'selesai') {
+            return redirect()->route('siswa.tka-simulasi.adaptif.result', $simulation);
+        }
+
+        $question = $bank->nextQuestionFor($simulation);
+        if (! $question) {
+            $bank->finalizeSimulation($simulation);
+
+            return redirect()->route('siswa.tka-simulasi.adaptif.result', $simulation);
+        }
+
+        $paket = $bank->getPaket($simulation->paket_kode);
+        $nomorUrut = (int) $simulation->total_soal + 1;
+
+        return view('siswa.tka.adaptif-play', compact('siswa', 'simulation', 'paket', 'question', 'nomorUrut'));
+    }
+
+    /**
+     * Simpan jawaban 1 langkah adaptif & sesuaikan tingkat kesulitan butir berikutnya.
+     */
+    public function answerAdaptif(
+        Request $request,
+        AdaptiveSimulation $simulation,
+        TkaAdaptiveBankService $bank,
+        TkaCognitiveAnalyticsService $analytics
+    ) {
+        $siswa = $this->getSiswa();
+        abort_unless($siswa && (int) $simulation->siswa_id === (int) $siswa->id, 403, 'Sesi simulasi ini bukan milik Anda.');
+
+        $validated = $request->validate([
+            'question_id' => 'required|string|max:30',
+            'answer' => 'required|string|in:A,B,C,D,a,b,c,d',
+            'durasi_detik' => 'nullable|integer|min:1|max:1800',
+        ]);
+
+        $simulation = $bank->recordStep(
+            $simulation,
+            $validated['question_id'],
+            $validated['answer'],
+            (int) ($validated['durasi_detik'] ?? 15)
+        );
+
+        if ($simulation->status === 'selesai') {
+            $analytics->generateRecommendation($siswa);
+
+            return redirect()->route('siswa.tka-simulasi.adaptif.result', $simulation)
+                ->with('success', 'Simulasi adaptif selesai! Hasil dan waktu pengerjaan telah dilaporkan juga ke akun Orang Tua/Wali.');
+        }
+
+        return redirect()->route('siswa.tka-simulasi.adaptif.play', $simulation);
+    }
+
+    /**
+     * Ringkasan hasil Simulasi Adaptif (skor berbobot, jejak kesulitan, waktu pengerjaan).
+     */
+    public function resultAdaptif(AdaptiveSimulation $simulation, TkaCognitiveAnalyticsService $analytics)
+    {
+        $siswa = $this->getSiswa();
+        abort_unless($siswa && (int) $simulation->siswa_id === (int) $siswa->id, 403, 'Sesi simulasi ini bukan milik Anda.');
+
+        if ($simulation->status !== 'selesai') {
+            return redirect()->route('siswa.tka-simulasi.adaptif.play', $simulation);
+        }
+
+        $profile = $analytics->buildStudentCognitiveProfile($siswa);
+        $rekomendasi = $profile['rekomendasi'];
+
+        return view('siswa.tka.adaptif-result', compact('siswa', 'simulation', 'profile', 'rekomendasi'));
+    }
+
+    /**
+     * Dashboard Profil Kognitif & Rekomendasi Belajar Personal untuk Siswa.
+     */
+    public function profilKognitif(TkaCognitiveAnalyticsService $analytics, TkaAdaptiveBankService $bank)
+    {
+        $siswa = $this->getSiswa();
+        $paketAdaptifList = $bank->paketList();
+
+        if (! $siswa) {
+            return view('siswa.tka.kognitif', [
+                'siswa' => null,
+                'profile' => null,
+                'rekomendasi' => null,
+                'riwayatSimulasi' => collect(),
+                'paketAdaptifList' => $paketAdaptifList,
+            ]);
+        }
+
+        $profile = $analytics->buildStudentCognitiveProfile($siswa);
+        $rekomendasi = $profile['rekomendasi'];
+        $riwayatSimulasi = AdaptiveSimulation::query()
+            ->where('siswa_id', $siswa->id)
+            ->where('status', 'selesai')
+            ->latest('submitted_at')
+            ->latest('id')
+            ->limit(15)
+            ->get();
+
+        return view('siswa.tka.kognitif', compact(
+            'siswa',
+            'profile',
+            'rekomendasi',
+            'riwayatSimulasi',
+            'paketAdaptifList'
+        ));
     }
 }

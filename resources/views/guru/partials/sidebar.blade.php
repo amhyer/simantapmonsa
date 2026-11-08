@@ -27,7 +27,10 @@
             ]],
             ['label' => 'Asesmen & Simulasi TKA', 'icon' => 'lucide-award', 'open' => request()->routeIs('tka.*', 'guru.tka.*'), 'children' => [
                 ['route' => 'guru.tka.index', 'icon' => 'lucide-gauge', 'label' => 'Monitoring Kesiapan TKA'],
-                ['route' => 'guru.tka.analysis', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Kognitif Kelas'],
+                ['route' => 'guru.tka.kognitif.index', 'icon' => 'lucide-brain', 'label' => 'Rekap Kognitif & Rekomendasi'],
+                ['route' => 'guru.tka.integrasi-erapor.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Integrasi TKA ke e-Rapor'],
+                ['route' => 'guru.tka.laporan-kelas.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Heatmap Kelas TKA'],
+                ['route' => 'guru.tka.analysis', 'icon' => 'lucide-trending-up', 'label' => 'Analisis Kognitif Kelas'],
                 ['route' => 'tka.dimensions.index', 'asesmen' => true, 'icon' => 'lucide-layers', 'label' => 'Dimensi & Kisi-kisi TKA'],
                 ['route' => 'tka.assessments.index', 'asesmen' => true, 'icon' => 'lucide-clipboard-check', 'label' => 'Penilaian Diagnostik TKA'],
             ]],

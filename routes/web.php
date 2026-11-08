@@ -440,9 +440,16 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
     Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan.index');
     Route::post('/pengaturan', [PengaturanController::class, 'update'])->name('pengaturan.update');
     
-    // Kesiapan TKA
+    // Kesiapan TKA & Inovasi Kognitif
     Route::get('/tka', [TKAController::class, 'index'])->name('tka.index');
     Route::get('/tka/analisis', [TKAController::class, 'analysis'])->name('tka.analysis');
+    Route::get('/tka/kognitif', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'kognitifIndex'])->name('tka.kognitif.index');
+    Route::get('/tka/kognitif/{siswaUuid}', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'kognitifShow'])->name('tka.kognitif.show');
+    Route::post('/tka/rekomendasi/generate', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'generateRekomendasi'])->name('tka.rekomendasi.generate');
+    Route::post('/tka/rekomendasi/{recommendation}', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'updateRekomendasi'])->name('tka.rekomendasi.update');
+    Route::get('/tka/integrasi-erapor', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'integrasiErapor'])->name('tka.integrasi-erapor.index');
+    Route::post('/tka/integrasi-erapor/sync', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'syncErapor'])->middleware('throttle:30,1')->name('tka.integrasi-erapor.sync');
+    Route::get('/tka/laporan-kelas', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'laporanKelas'])->name('tka.laporan-kelas.index');
     Route::get('/tka/{id}', [TKAController::class, 'show'])->name('tka.show');
     Route::post('/tka', [TKAController::class, 'store'])->name('tka.store');
     
@@ -477,9 +484,14 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
     Route::get('/profil/edit', [\App\Http\Controllers\Siswa\ProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'update'])->name('profil.update');
 
-    // Simulasi TKA Mandiri (Pusmendik Kemendikdasmen)
+    // Simulasi TKA Mandiri & Adaptif (Pusmendik Kemendikdasmen)
     Route::prefix('tka-simulasi')->name('tka-simulasi.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'index'])->name('index');
+        Route::get('/kognitif', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'profilKognitif'])->name('kognitif');
+        Route::post('/adaptif/{paket}/start', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'startAdaptif'])->name('adaptif.start');
+        Route::get('/adaptif/{simulation}/play', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'playAdaptif'])->name('adaptif.play');
+        Route::post('/adaptif/{simulation}/answer', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'answerAdaptif'])->middleware('throttle:120,1')->name('adaptif.answer');
+        Route::get('/adaptif/{simulation}/result', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'resultAdaptif'])->name('adaptif.result');
         Route::get('/{id}/confirm', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'confirm'])->name('confirm');
         Route::post('/{id}/start', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'start'])->name('start');
         Route::get('/{id}/exam', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'exam'])->name('exam');
@@ -500,6 +512,9 @@ Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context
     Route::post('/kehadiran/izin', [\App\Http\Controllers\Ortu\IzinPresensiController::class, 'store'])->middleware('throttle:10,1')->name('kehadiran.izin.store');
     Route::get('/catatan', [OrtuCatatanController::class, 'index'])->name('catatan.index');
     Route::get('/laporan', [OrtuLaporanController::class, 'index'])->name('laporan.index');
+    Route::get('/tka-riwayat', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'index'])->name('tka-riwayat.index');
+    Route::get('/tka-riwayat/{simulation}', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'show'])->name('tka-riwayat.show');
+    Route::post('/tka-riwayat/{simulation}/konfirmasi', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'konfirmasiBaca'])->middleware('throttle:30,1')->name('tka-riwayat.konfirmasi');
 });
 
 // ==================== KEPSEK ROUTES ====================
@@ -514,6 +529,8 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/hasil-belajar', [HasilBelajarController::class, 'index'])->middleware('data.single-school')->name('hasil-belajar.index');
     Route::get('/kebiasaan', [KepsekKebiasaanController::class, 'index'])->name('kebiasaan.index');
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
+    Route::get('/tka-laporan', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'index'])->name('tka-laporan.index');
+    Route::get('/tka-laporan/export-csv', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'exportCsv'])->name('tka-laporan.export');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================
@@ -672,6 +689,10 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
     // Export & Reports
     Route::post('/export', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'export'])->name('export');
     Route::post('/generate-report', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'generateReport'])->name('generate-report');
+    Route::get('/kognitif-siswa', [\App\Http\Controllers\Admin\Tka\TkaLaporanSekolahController::class, 'kognitifIndex'])->name('kognitif.index');
+    Route::get('/kognitif-siswa/{siswaUuid}', [\App\Http\Controllers\Admin\Tka\TkaLaporanSekolahController::class, 'kognitifShow'])->name('kognitif.show');
+    Route::get('/laporan-kelas', [\App\Http\Controllers\Admin\Tka\TkaLaporanSekolahController::class, 'laporanKelas'])->name('laporan-kelas.index');
+    Route::get('/laporan-kelas/export-csv', [\App\Http\Controllers\Admin\Tka\TkaLaporanSekolahController::class, 'exportCsv'])->name('laporan-kelas.export');
 });
 
 // ==================== TRYOUT ROUTES ====================

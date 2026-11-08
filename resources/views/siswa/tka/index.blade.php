@@ -28,12 +28,50 @@
             </div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="tag tag-violet"><i class="fas fa-check-circle"></i> Kisi-kisi Asesmenpedia</span>
             <span class="tag tag-ok"><i class="fas fa-bolt"></i> Evaluasi Instan</span>
+            <a href="{{ route('siswa.tka-simulasi.kognitif') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-brain"></i> Profil Kognitif & Rekomendasiku
+            </a>
         </div>
     </div>
 </div>
+
+{{-- Simulasi Adaptif TKA (CAT - Tingkat Kesulitan Menyesuaikan Siswa) --}}
+@if(!empty($paketAdaptifList))
+<div class="card" style="margin-bottom:24px;border:1.5px solid #DDD6FE">
+    <div class="card-header" style="background:#FAF5FF">
+        <h3><i class="fas fa-sliders-h" style="color:var(--violet);margin-right:8px"></i>Simulasi Adaptif TKA (Kesulitan Otomatis & Terlapor ke Orang Tua)</h3>
+        <span class="tag tag-violet">4 Subtes CAT Adaptif</span>
+    </div>
+    <div class="card-body">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px;line-height:1.5">
+            Tingkat kesulitan butir soal otomatis menyesuaikan ketepatan jawabanmu (<strong>Mudah ↔ Sedang ↔ Sulit</strong>), mencatat durasi pengerjaan aktual, menyusun paket latihan personalisasi, dan melaporkan hasilnya ke akun Orang Tua/Wali.
+        </p>
+        <div class="grid grid-2" style="gap:16px">
+            @foreach($paketAdaptifList as $kodeAdp => $adp)
+                <div style="background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:12px">
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <span class="tag tag-violet" style="font-weight:700">{{ $adp['label_kode'] }}</span>
+                            <span class="tag tag-ok">{{ $adp['target_soal'] }} Soal Bertingkat</span>
+                        </div>
+                        <h4 style="font-size:14.5px;font-weight:800;color:var(--navy);margin:0 0 6px">{{ $adp['judul'] }}</h4>
+                        <p style="font-size:12.5px;color:var(--muted);margin:0;line-height:1.5">{{ $adp['deskripsi'] }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('siswa.tka-simulasi.adaptif.start', $kodeAdp) }}">
+                        @csrf
+                        <button type="submit" class="btn btn-outline btn-sm" style="width:100%;font-weight:700;color:var(--violet);border-color:var(--violet)">
+                            <i class="fas fa-play"></i> Mulai Simulasi Adaptif
+                        </button>
+                    </form>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Subtest Packages Grid --}}
 <div class="card" style="margin-bottom:24px">

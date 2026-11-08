@@ -81,6 +81,8 @@
             [
                 'label' => 'TES KEMAMPUAN AKADEMIK (TKA)', 'icon' => 'lucide-award', 'children' => [
                     ['route' => 'admin.tka.dashboard', 'icon' => 'lucide-gauge', 'label' => 'Dashboard Kesiapan TKA'],
+                    ['route' => 'admin.tka.kognitif.index', 'icon' => 'lucide-brain', 'label' => 'Analisis Kognitif Siswa'],
+                    ['route' => 'admin.tka.laporan-kelas.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Laporan Kelas & Heatmap'],
                     ['route' => 'admin.tka.dimensions.index', 'icon' => 'lucide-layers', 'label' => 'Dimensi & Kisi-kisi TKA'],
                     ['route' => 'admin.tka.assessments.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Data Penilaian Peserta'],
                     ['route' => 'admin.tka.warnings.index', 'icon' => 'lucide-alert-triangle', 'label' => 'Early Warning Kesiapan'],
