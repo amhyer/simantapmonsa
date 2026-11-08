@@ -146,6 +146,9 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // Presensi pegawai, area geofence, dan pemetaan QR kartu siswa.
     Route::prefix('presensi')->name('presensi.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PresensiController::class, 'index'])->name('index');
+        Route::get('/laporan', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'index'])->name('laporan');
+        Route::get('/laporan/export', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'export'])->name('laporan.export');
+        Route::get('/laporan/cetak', [\App\Http\Controllers\Admin\PresensiLaporanController::class, 'cetak'])->name('laporan.cetak');
         Route::post('/lokasi', [\App\Http\Controllers\Admin\PresensiController::class, 'storeLocation'])->name('lokasi.store');
         Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
         Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
