@@ -35,7 +35,7 @@
 - Consumes: `PresensiPegawai` (sudah ada), `User`.
 - Produces: ringkasan harian hadir/terlambat/pulang.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 ```php
 public function test_dashboard_presensi_menampilkan_ringkasan(): void
 {
@@ -45,10 +45,10 @@ public function test_dashboard_presensi_menampilkan_ringkasan(): void
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code** — method ringkasan + view.
-- [ ] **Step 4: Run tests to pass.**
-- [ ] **Step 5: Commit.**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code** — method ringkasan + view.
+- [x] **Step 4: Run tests to pass.**
+- [x] **Step 5: Commit.**
 
 ## Task 2: Auto-Sync Scheduler
 
