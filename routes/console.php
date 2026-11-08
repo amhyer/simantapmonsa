@@ -10,6 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('simantap:backup')->dailyAt('02:00');
 Schedule::command('tka:refresh')->everySixHours();
+Schedule::command('menu:usage-prune')->dailyAt('03:30')->withoutOverlapping();
 
 // Menilai jawaban tersimpan walau browser siswa ditutup/terputus.
 \Illuminate\Support\Facades\Artisan::command('cbt:finalize-expired', function () {

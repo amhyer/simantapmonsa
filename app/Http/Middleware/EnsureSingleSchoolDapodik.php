@@ -2,8 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Modules\Tenant\Contexts\TenantContext;
-use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Support\TenantMode;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -12,7 +11,7 @@ class EnsureSingleSchoolDapodik
 {
     public function handle(Request $request, Closure $next)
     {
-        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        if (TenantMode::isMultiSchool()) {
             $message = 'Integrasi Dapodik lama dinonaktifkan untuk multi-sekolah sampai konfigurasi dan data PTK terisolasi per sekolah.';
 
             return $request->expectsJson()

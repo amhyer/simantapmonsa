@@ -20,6 +20,8 @@ return [
     // (jalankan `exam:backfill` lalu bandingkan), karena instalasi lama bisa
     // punya data yang belum punya padanan engine.
     'exam_engine_readers' => env('SIMANTAP_EXAM_ENGINE_READERS', false),
+    // Agregat kunjungan route HTML internal; tidak menyimpan identitas pengguna.
+    'menu_usage_telemetry' => env('SIMANTAP_MENU_USAGE_TELEMETRY', true),
 
     // Strategi autosave Redis-first murni (tanpa write DB per klik jawaban).
     // Default false = dual-write (buffer Redis/Cache + baris CbtResult tanpa

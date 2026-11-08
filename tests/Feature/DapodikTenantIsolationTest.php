@@ -102,6 +102,32 @@ class DapodikTenantIsolationTest extends TestCase
             ->getJson('/api/dapodik/sync/status')->assertForbidden();
     }
 
+    public function test_ui_tenant_menyembunyikan_bridge_lama_dan_menyisakan_impor_manual(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $tenant = $this->school('Sekolah A', '10000001');
+        $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+
+        $this->actingAs($admin)->get(route('admin.dapodik.index'))
+            ->assertOk()
+            ->assertSee('id="tabManual"', false)
+            ->assertDontSee('id="tabBridge"', false)
+            ->assertDontSee('id="tabBtnBridge"', false)
+            ->assertSee('Dapodik & Impor Data')
+            ->assertSee('Data Guru & PTK')
+            ->assertDontSee('Backup & Restore Database')
+            ->assertSee('Kelola Langsung')
+            ->assertSee('Dapodik Bridge dan sinkronisasi lama belum aman');
+
+        $this->actingAs($admin)->get(route('admin.presensi.mesin.index'))
+            ->assertOk()
+            ->assertSee('Tarik langsung dari database mesin dinonaktifkan untuk sekolah bertenant.')
+            ->assertSee('Import NIK')
+            ->assertDontSee('action="'.route('admin.presensi.mesin.tarik').'"', false)
+            ->assertDontSee('action="'.route('admin.presensi.mesin.tarik.semua').'"', false)
+            ->assertDontSee('action="'.route('admin.presensi.mesin.karyawan.tarik').'"', false);
+    }
+
     public function test_backup_global_log_aktivitas_dan_api_key_sekolah_lain_dilindungi(): void
     {
         config(['simantap.multi_tenant_enabled' => true]);

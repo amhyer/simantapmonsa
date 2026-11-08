@@ -12,7 +12,7 @@
         ['label' => 'UJIAN & ASESMEN TKA', 'items' => [
             ['route' => 'cbt.student.index', 'asesmen' => true, 'icon' => 'lucide-monitor', 'label' => 'Ujian CBT'],
             ['route' => 'tryout.student.index', 'asesmen' => true, 'icon' => 'lucide-package', 'label' => 'Tryout Sekolah'],
-            ['route' => 'siswa.tka-simulasi.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi TKA & Adaptif'],
+            ['route' => 'siswa.tka-simulasi.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi TKA Pusmendik'],
             ['route' => 'siswa.tka-simulasi.kognitif', 'icon' => 'lucide-trending-up', 'label' => 'Profil Kognitif & Latihanku'],
         ]],
     ];

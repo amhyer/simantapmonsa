@@ -94,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
-Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', 'school.context'])
+Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', 'school.context', 'menu.telemetry'])
     ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Pegawai\PresensiController::class, 'index'])->name('index');
         Route::get('/kartu-identitas', [\App\Http\Controllers\Pegawai\PresensiController::class, 'kartuSaya'])->name('kartu');
@@ -120,7 +120,7 @@ Route::get('/dashboard', function () {
 })->name('home');
 
 // ==================== SUPER ADMIN ROUTES ====================
-Route::middleware(['auth', 'role:super_admin', 'force.password.change'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.telemetry'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
     Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
@@ -139,7 +139,7 @@ Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\T
     ->name('superadmin.impersonate.leave');
 
 // ==================== ADMIN ROUTES ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.context'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
 
@@ -368,7 +368,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
 });
 
 // ==================== GURU ROUTES ====================
-Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context'])->prefix('guru')->name('guru.')->group(function () {
+Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('guru')->name('guru.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [GuruDashboard::class, 'index'])->name('dashboard');
     
@@ -470,7 +470,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
 });
 
 // ==================== SISWA ROUTES ====================
-Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.context'])->prefix('siswa')->name('siswa.')->group(function () {
+Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('siswa')->name('siswa.')->group(function () {
     Route::get('/dashboard', [SiswaDashboard::class, 'index'])->name('dashboard');
     Route::get('/materi', [SiswaMateriController::class, 'index'])->name('materi.index');
     Route::get('/materi/{id}', [SiswaMateriController::class, 'show'])->name('materi.show');
@@ -502,7 +502,7 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
 });
 
 // ==================== ORANG TUA ROUTES ====================
-Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context'])->prefix('ortu')->name('ortu.')->group(function () {
+Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('ortu')->name('ortu.')->group(function () {
     Route::get('/dashboard', [OrtuDashboard::class, 'index'])->name('dashboard');
     Route::get('/kebiasaan', [OrtuKebiasaanController::class, 'index'])->name('kebiasaan.index');
     Route::post('/kebiasaan', [OrtuKebiasaanController::class, 'store'])->name('kebiasaan.store');
@@ -518,7 +518,7 @@ Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context
 });
 
 // ==================== KEPSEK ROUTES ====================
-Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.context'])->prefix('kepsek')->name('kepsek.')->group(function () {
+Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('kepsek')->name('kepsek.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Kepsek\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/pantau', [\App\Http\Controllers\Kepsek\DashboardController::class, 'pantau'])->name('pantau.index');
     Route::get('/rekap', [RekapController::class, 'index'])->name('rekap.index');
@@ -592,7 +592,7 @@ if (config('simantap.cbt_enabled', false)) {
 }
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
     // Question Banks
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');
@@ -621,7 +621,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== ADMIN TRYOUT MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
     Route::get('/statistics', [\App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController::class, 'statistics'])->name('statistics');
     
     // Packages
@@ -659,7 +659,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== ADMIN TKA MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\Tka\TkaAdminController::class, 'index'])->name('dashboard');
     
     // Dimensions Management

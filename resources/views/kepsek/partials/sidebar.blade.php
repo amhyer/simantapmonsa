@@ -16,7 +16,7 @@
             ['route' => 'kepsek.aktivitas.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Log Aktivitas'],
         ]],
     ];
-    if (\App\Modules\Tenant\Contexts\TenantContext::check()) {
+    if (\App\Modules\Tenant\Support\TenantMode::isMultiSchool()) {
         $menuKepsek = array_values(array_filter($menuKepsek, fn ($group) => $group['label'] !== 'PEMETAAN'));
     }
     $isActive = function ($route) {

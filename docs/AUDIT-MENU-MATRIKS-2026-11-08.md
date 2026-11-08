@@ -2,79 +2,67 @@
 
 ## Ringkasan eksekutif
 
-**Rekomendasi: audit dan rapikan menu yang sudah ada terlebih dahulu; belum perlu menambah menu baru.** Inventaris sidebar saat audit berjumlah **113 entri** dari tujuh peran. Admin sendiri mempunyai **57 entri** (54 rute unik), sedangkan fitur bersekolah-banyak memiliki beberapa aksi lama yang masih terlihat tetapi sengaja ditolak middleware dengan HTTP 503. Ini berisiko terasa sebagai navigasi rusak, walaupun perlindungan datanya memang benar.
+Audit awal menemukan **113 entri sidebar** dari tujuh peran. Admin mempunyai 57 entri dan tiga tujuan berulang lintas tab. Ada pula aksi lama yang tampil pada mode multi-sekolah meski endpoint-nya ditolak middleware. Perubahan renovasi tahap pertama sudah merapikan duplikasi, menyelaraskan indikator mode tenant, serta menyembunyikan Bridge lama yang belum tenant-safe tanpa menutup opsi impor manual.
 
-Audit ini bersifat **statis**: ia memeriksa entri navigasi, keberadaan named route, target controller, middleware route, dan sebagian flag modul. Audit tidak menyimpulkan bahwa halaman “tidak dipakai” hanya karena tak ada tautan, dan tidak menyimpulkan menu “tak berguna” karena tabelnya sedang kosong. Untuk keputusan berdasarkan pemakaian riil diperlukan telemetry kunjungan per peran dan periode.
+Audit kode tidak bisa membuktikan menu benar-benar dipakai atau tidak. Karena itu sekarang aplikasi merekam **agregat harian kunjungan halaman HTML sukses** berdasarkan route, role, dan cakupan sekolah—tanpa menyimpan user ID, IP, user-agent, session, query string, atau isi request. Gunakan data minimal 30 hari sebelum memutuskan penghapusan/penambahan menu.
 
 ## Cara menjalankan dan membaca matriks
-
-Jalankan di root proyek setelah dependency tersedia:
 
 ```bash
 php artisan test --filter=MenuInventoryTest
 ```
 
-Tes ini memvalidasi bahwa setiap rute menu terdaftar serta tidak ada nama rute ganda dalam peran dan tab yang sama. Tes juga membuat **matriks lengkap** berisi peran, tab/grup, label, named route, URI, `Controller@method`, middleware efektif, dan flag modul di:
+Tes memvalidasi bahwa rute menu terdaftar dan tidak ada rute ganda dalam tab atau lintas tab Admin. Tes membuat matriks peran, tab, label, named route, URI, `Controller@method`, middleware, dan flag modul di `storage/logs/menu-inventory.md`. GitHub Actions mengunggah hasil sebagai artifact **`menu-inventory`**.
 
-```text
-storage/logs/menu-inventory.md
+## Snapshot hasil renovasi
+
+| Peran | Entri | Rute unik per peran |
+|---|---:|---:|
+| Admin | 55 | 55 |
+| Guru | 25 | 25 |
+| Siswa | 9 | 9 |
+| Orang tua | 8 | 8 |
+| Kepala sekolah | 8 | 8 |
+| Superadmin | 3 | 3 |
+| Pegawai | 3 | 3 |
+| **Total** | **111** | **111 dijumlahkan per peran** |
+
+Empat tab Admin sekarang: **e-Rapor 19**, **CBT 6**, **TKA 4**, **Setup 26**. Bobot & Ketuntasan dipindahkan ke pengaturan e-Rapor agar tidak tercampur dengan keamanan/sistem. Jumlah unik lintas peran akan lebih kecil karena beberapa halaman memang dibagikan antarperan.
+
+## Perubahan yang sudah dilakukan
+
+### 1. Duplikasi lintas tab Admin dibersihkan
+
+- `admin.dashboard` hanya ada di e-Rapor dan labelnya disederhanakan menjadi **Dasbor**.
+- `admin.modul.index` dan `admin.log.index` hanya ada di Setup, bukan lagi pintasan kedua di tab CBT.
+- Tes inventaris kini gagal bila nama route Admin muncul ulang lintas tab.
+
+### 2. Aksi tenant yang tidak tersedia diberi status jelas
+
+- Predicate tunggal `TenantMode::isMultiSchool()` sekarang dipakai middleware single-school/Dapodik, sidebar Admin/Kepsek, command palette, dan halaman impor presensi mesin. Kondisinya konsisten: tenant context aktif, flag multi-tenant aktif, atau data tenant sudah ada.
+- Di halaman Dapodik, Bridge lama tidak ditampilkan pada mode multi-sekolah. Banner menjelaskan batasannya dan tab **Kelola Langsung** tetap tersedia untuk impor berkas per sekolah. Data PTK global tidak dipaparkan.
+- Halaman impor presensi mesin tetap bisa dipakai untuk unggah file. Panel tarik langsung dan tombol yang akan ditolak middleware tidak ditampilkan saat mode tenant aktif.
+- Proteksi backend tetap dipertahankan; perubahan ini tidak membuka endpoint single-school.
+
+### 3. Setup dibuat lebih mudah dipindai tanpa menambah tab
+
+Pemetaan Setup dirapikan menjadi kelompok dengan label yang lebih jelas: Integrasi & Impor Data, Data Sekolah & Periode, Pendidik & Peserta Didik, Kelas & Pembelajaran, Akun & Kode Akses, Presensi, Kokurikuler, dan Sistem & Keamanan. Modul dan Log hanya tampil di kelompok Sistem & Keamanan.
+
+### 4. Pengukuran penggunaan 30–60 hari tersedia
+
+Middleware `menu.telemetry` mencatat hanya permintaan GET bernama yang menghasilkan HTTP 200 dan `text/html` pada grup route role terautentikasi. Satu baris diagregasikan per tanggal, route, role, dan tenant; data identitas pribadi tidak disimpan. Laporan dan retensi:
+
+```bash
+php artisan menu:usage-report --days=30
+php artisan menu:usage-report --days=60
+php artisan menu:usage-prune
 ```
 
-Di GitHub Actions, berkas tersebut diunggah sebagai artifact bernama **`menu-inventory`** pada workflow `Tests`, termasuk jika job gagal setelah tes berjalan. Artifact merupakan snapshot otomatis terkini; tabel rute/controller/middleware tidak disalin manual di dokumen ini agar tidak basi ketika route berubah.
+Scheduler menjalankan prune harian dan menyimpan maksimal 60 hari. Detail cakupan dan konfigurasi ada di [MENU-TELEMETRY.md](MENU-TELEMETRY.md). Jangan mengambil keputusan hanya dari angka klik: periksa siklus akademik, tugas role, dan status empty-state bersama pemilik proses.
 
-## Inventaris sidebar saat audit
+## Batasan
 
-| Peran | Entri | Rute unik | Catatan |
-|---|---:|---:|---|
-| Admin | 57 | 54 | Empat tab: e-Rapor 18, CBT 9, TKA 4, Setup 26 |
-| Guru | 25 | 25 | Ada grup asesmen yang dipengaruhi flag modul |
-| Siswa | 9 | 9 | Ada item asesmen yang dipengaruhi flag modul |
-| Orang tua | 8 | 8 | Ada item asesmen yang dipengaruhi flag modul |
-| Kepala sekolah | 8 | 8 | Grup pemetaan punya kondisi tenant yang perlu diselaraskan |
-| Superadmin | 3 | 3 | — |
-| Pegawai | 3 | 3 | Tautan ditulis langsung sebagai komponen Blade |
-| **Total** | **113** | **110 jika menjumlahkan unik per peran** | Angka ini bukan deduplikasi global; beberapa rute dipakai lintas peran |
-
-> Angka dihitung dari sumber sidebar pada tanggal audit. Jalankan tes untuk memperbarui angka dan matriks setelah perubahan.
-
-## Temuan dan tindakan
-
-### P1 — Tautan masih tampil, tetapi aksi backend diblokir pada mode multi-sekolah
-
-Middleware `data.single-school` / `dapodik.single-school` mengembalikan 503 ketika konteks tenant aktif, `simantap.multi_tenant_enabled` aktif, atau sudah ada tenant. Dampaknya:
-
-- **Admin → Setup → Tarik Data Dapodik** masih tampil. Halaman integrasi memanggil endpoint `admin.dapodik.api.config`, `admin.dapodik.api.test-connection`, `admin.dapodik.api.preview`, dan `admin.dapodik.api.sync`; endpoint aksi lama ini dibatasi middleware single-school. Halaman dapat terbuka tetapi tombol-tombolnya gagal.
-- **Admin → Presensi → Import Presensi Mesin** masih tampil. Aksi tarik/tes koneksi mesin (`admin.presensi.mesin.tarik*`, `admin.presensi.mesin.tes`) dibatasi `data.single-school`; tombol import berkas tidak otomatis sama statusnya, jadi jangan sembunyikan seluruh halaman tanpa menilai alur per aksinya.
-- Di sidebar admin saat ini hanya `admin.dapodik.push.index`, `admin.backup.index`, dan `admin.log.index` yang disaring ketika ada tenant. Itu belum mencakup UI Dapodik tarik maupun tombol tarik mesin.
-- Sidebar kepala sekolah menyembunyikan grup **PEMETAAN** hanya dengan `TenantContext::check()`, sedangkan middleware memakai tiga kondisi di atas. Saat flag multi-tenant aktif/tenant sudah ada tanpa context yang sedang terpasang, visibilitas dan akses tidak seragam.
-
-**Tindakan yang disarankan:** tentukan batas per fitur. Untuk aksi yang belum tenant-safe, sembunyikan/nonaktifkan tombol dengan pesan alasan yang jelas memakai predicate tenant yang sama; jangan sekadar membuang proteksi backend. Prioritas berikutnya adalah desain isolasi tenant jika integrasi itu harus tersedia untuk semua sekolah.
-
-### P2 — Tiga tautan duplikat antartab Admin
-
-Setiap duplikat berada pada tab berbeda sehingga tidak melanggar validasi duplikat per tab, tetapi berpotensi membingungkan bila pengguna mengira setiap tab punya fungsi terpisah:
-
-| Named route | Muncul sebagai |
-|---|---|
-| `admin.dashboard` | “Dasbor Sistem” (e-Rapor) dan “Dasbor Utama (E-Rapor)” (CBT) |
-| `admin.modul.index` | “Modul & Tampilan (Setup)” (CBT) dan “Modul & Tampilan” (Setup) |
-| `admin.log.index` | “Log Aktivitas (Setup)” (CBT) dan “Log Aktivitas” (Setup) |
-
-**Tindakan:** pertahankan hanya jika tab adalah pintasan kontekstual yang disengaja; jika tidak, pilih tab utama tunggal. Hindari dua label untuk tujuan identik.
-
-### P2 — Rute tanpa menu tidak otomatis yatim atau mati
-
-Matriks CI menyertakan daftar kandidat rute GET tanpa parameter yang tidak ditemukan sebagai rujukan di sidebar, tautan Blade, command palette, atau navigasi bawah. Kandidat itu harus ditinjau manual: halaman cetak/unduh, callback, halaman detail, dan endpoint alur internal memang sering tidak memiliki menu sendiri. Rute yang punya parameter dikecualikan dari daftar kandidat otomatis.
-
-Contoh yang **bukan** temuan yatim setelah verifikasi: `kepsek.hasil-belajar.index` sekarang ada di sidebar kepala sekolah; `admin.users.siswa` (`UserController::siswaIndex`) dipakai oleh sidebar, command palette, dan navigasi bawah. Temuan dokumentasi roadmap lama mengenai dua hal tersebut sudah usang.
-
-### P3 — Menu tanpa aktivitas/data belum dapat diputuskan dari scan kode
-
-Keberadaan named route membuktikan target navigasi terdaftar, bukan bahwa role benar-benar menggunakannya. Sebaliknya, halaman yang menampilkan empty state belum tentu tak terpakai. `MenuAuditTest` menguji sebagian navigasi dengan data contoh; tes itu juga bukan bukti pemakaian produksi. Untuk menemukan menu yang benar-benar jarang/tidak dipakai, tambahkan pencatatan kunjungan yang menjaga privasi: waktu, route, role, tenant (ID internal), tanpa payload sensitif; lalu evaluasi 30–60 hari mencakup siklus akademik yang relevan.
-
-## Batasan dan langkah berikut
-
-- Matriks route/controller/middleware dari artifact adalah hasil **konfigurasi test/CI**. Flag CBT/Tryout diaktifkan oleh test agar rute opsional ikut muncul; flag per-item `asesmen` dicatat dari deklarasi sidebar. Tampilkan kondisi deployment sebenar-benarnya secara eksplisit sebelum memutuskan menu mana yang dipublish.
-- Resolver statis tidak dapat membuktikan otorisasi efektif untuk tiap kombinasi role/tenant, apakah route benar-benar dapat dibuka dengan data nyata, atau apakah bisnis memakai fitur. Itu memerlukan feature tests dan telemetry.
-- `MenuAuditTest` dan `MenuNavigationRegressionTest` memang sudah ada; `MenuInventoryTest` menambahkan inventarisasi menu/rute, pemeriksaan rute dan duplikasi dalam CI, serta laporan matriks otomatis.
-- Urutan kerja yang disarankan: (1) bereskan visibilitas aksi yang return 503, (2) sepakati duplikat antar-tab, (3) review daftar rute kandidat tanpa menu pada artifact, (4) ukur penggunaan nyata, baru (5) putuskan penambahan/penghapusan menu.
+- Named route terdaftar bukan bukti bahwa role benar-benar memakai fitur; kunjungan HTML bukan bukti penyelesaian tugas bisnis.
+- Pengumpulan telemetri dapat dimatikan melalui `SIMANTAP_MENU_USAGE_TELEMETRY=false`.
+- Artifact matriks berasal dari konfigurasi test/CI; flag CBT/Tryout diaktifkan oleh test agar rute opsional ikut tercatat.
+- Daftar route tanpa pintu masuk sidebar tetap hanya kandidat review: halaman cetak/unduh, detail, dan alur internal dapat sah tanpa menu tersendiri.

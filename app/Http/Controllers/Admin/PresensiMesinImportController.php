@@ -49,7 +49,7 @@ class PresensiMesinImportController extends Controller
             ->where('nik', '<>', '')
             ->count();
 
-        $directDisabled = \App\Modules\Tenant\Contexts\TenantContext::check();
+        $directDisabled = \App\Modules\Tenant\Support\TenantMode::isMultiSchool();
         $koneksi = $directDisabled ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null] : $reader->status();
         $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
         $mesinEngineTerpilih = $directDisabled ? (string) config('presensi.mesin_db_engine', 'auto') : $reader->engineTerpilih();

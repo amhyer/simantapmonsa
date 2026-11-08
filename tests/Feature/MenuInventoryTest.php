@@ -105,6 +105,7 @@ class MenuInventoryTest extends TestCase
         $this->assertSame([], $missing, "Entri menu menunjuk rute yang tidak terdaftar:\n".implode("\n", $missing));
 
         $this->assertSame([], $this->duplicatesWithinRoleAndTab($inventory), 'Ada rute menu ganda dalam satu peran + tab.');
+        $this->assertSame([], $this->adminDuplicatesAcrossTabs($inventory), 'Ada rute Admin berulang antar-tab.');
 
         fwrite(STDOUT, "\nInventaris menu: ".count($inventory)." entri; laporan di storage/logs/menu-inventory.md\n");
     }

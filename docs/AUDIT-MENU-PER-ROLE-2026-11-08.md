@@ -1,5 +1,7 @@
 # Audit menu per role dan pengelompokan
 
+> **Snapshot historis sebelum renovasi menu tahap pertama.** Untuk kondisi terbaru, lihat [audit matriks menu 8 November 2026](AUDIT-MENU-MATRIKS-2026-11-08.md); matriks route/controller/middleware dihasilkan ulang lewat `php artisan test --filter=MenuInventoryTest`.
+
 Tanggal pemeriksaan: 8 November 2026. Acuan kode: commit `f70523d`.
 
 ## Cakupan dan batasan
