@@ -427,4 +427,53 @@ class PresensiMesinTarikTest extends TestCase
 
         $this->assertSame('tcp', app(AttendanceDatabaseReader::class)->engineTerpilih());
     }
+
+    public function test_dashboard_mesin_menampilkan_ringkasan_kehadiran(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $guruHadir = User::factory()->guru()->create(['nama_lengkap' => 'Guru Dashboard', 'nik' => '1234567890123456']);
+        $guruTerlambat = User::factory()->guru()->create(['nama_lengkap' => 'Guru Dashboard Terlambat', 'nik' => '1234567890123457']);
+        $guruBelumTercatat = User::factory()->guru()->create(['nama_lengkap' => 'Guru Dashboard Belum Tercatat', 'nik' => '1234567890123458']);
+
+        PresensiPegawai::create([
+            'user_id' => $guruHadir->id,
+            'tanggal' => '2026-11-08',
+            'status' => 'hadir',
+            'waktu_masuk' => '2026-11-08 07:00:00',
+            'waktu_pulang' => '2026-11-08 14:00:00',
+            'metode' => 'mesin',
+        ]);
+
+        PresensiPegawai::create([
+            'user_id' => $guruTerlambat->id,
+            'tanggal' => '2026-11-08',
+            'status' => 'terlambat',
+            'waktu_masuk' => '2026-11-08 07:25:00',
+            'waktu_pulang' => '2026-11-08 14:05:00',
+            'metode' => 'mesin',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.presensi.dashboard.mesin', ['tanggal' => '2026-11-08']));
+
+        $response->assertOk();
+        $response->assertSee('Guru Dashboard');
+        $response->assertSee('Guru Dashboard Terlambat');
+
+        $rekap = $response->viewData('rekap');
+        // 'hadir' = status hadir ATAU terlambat (gabungan kehadiran, konsisten dengan halaman Presensi).
+        $this->assertSame(3, $rekap['total_pegawai']);
+        $this->assertSame(2, $rekap['hadir']);
+        $this->assertSame(1, $rekap['terlambat']);
+        $this->assertSame(1, $rekap['belum_tercatat']);
+    }
+
+    public function test_dashboard_mesin_ditolak_untuk_non_admin(): void
+    {
+        $guru = User::factory()->guru()->create();
+
+        $this->actingAs($guru)
+            ->get(route('admin.presensi.dashboard.mesin'))
+            ->assertForbidden();
+    }
 }

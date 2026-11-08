@@ -40,6 +40,69 @@ class PresensiController extends Controller
         return view('admin.presensi.index', compact('tanggal', 'pegawai', 'catatan', 'lokasi'));
     }
 
+    /**
+     * Dashboard presensi interaktif dari data mesin fingerprint:
+     * ringkasan kehadiran harian (hadir/terlambat/belum tercatat) untuk
+     * pegawai guru, kepala sekolah, dan tendik.
+     */
+    public function dashboardMesin(Request $request)
+    {
+        $validated = $request->validate([
+            'tanggal' => 'nullable|date',
+        ]);
+        $tanggal = $validated['tanggal'] ?? now()->toDateString();
+
+        $pegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
+            ->where('aktif', true)
+            ->orderBy('peran')
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        $catatan = PresensiPegawai::with(['lokasiMasuk', 'lokasiPulang', 'editor'])
+            ->whereDate('tanggal', $tanggal)
+            ->whereIn('user_id', $pegawai->pluck('id'))
+            ->get()
+            ->keyBy('user_id');
+
+        $rekap = [
+            'total_pegawai' => 0,
+            'hadir' => 0,
+            'terlambat' => 0,
+            'belum_tercatat' => 0,
+            'izin_sakit_cuti' => 0,
+            'belum_pulang' => 0,
+        ];
+
+        foreach ($pegawai as $person) {
+            $rekap['total_pegawai']++;
+
+            $record = $catatan->get($person->id);
+
+            if ($record === null) {
+                $rekap['belum_tercatat']++;
+                continue;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true)) {
+                $rekap['hadir']++;
+            }
+
+            if ($record->status === 'terlambat') {
+                $rekap['terlambat']++;
+            }
+
+            if (in_array($record->status, ['izin', 'sakit', 'cuti'], true)) {
+                $rekap['izin_sakit_cuti']++;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true) && $record->waktu_pulang === null) {
+                $rekap['belum_pulang']++;
+            }
+        }
+
+        return view('admin.presensi.dashboard-mesin', compact('tanggal', 'pegawai', 'catatan', 'rekap'));
+    }
+
     public function storeLocation(Request $request)
     {
         $validated = $request->validate([
