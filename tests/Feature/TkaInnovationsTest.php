@@ -13,8 +13,6 @@ use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use App\Services\Tka\TkaAdaptiveBankService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Log\Events\MessageLogged;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -356,24 +354,6 @@ class TkaInnovationsTest extends TestCase
             ->assertOk()
             ->assertSee('Andi Unggul Kognitif');
 
-        // Diagnostik sementara: profil dihitung langsung (tanpa HTTP request) dan
-        // semua query ke tabel simulasi selama request direkam.
-        $profileLangsung = app(\App\Services\Tka\TkaCognitiveAnalyticsService::class)
-            ->buildStudentCognitiveProfile($this->siswaUnggul);
-        $simRows = \DB::table('tka_adaptive_simulations')
-            ->get(['id', 'siswa_id', 'tenant_id', 'status', 'submitted_at'])
-            ->toJson();
-        $logSinkronisasi = [];
-        Log::listen(function (MessageLogged $message) use (&$logSinkronisasi): void {
-            $logSinkronisasi[] = $message->level.' | '.$message->message.' | '.json_encode($message->context);
-        });
-        $sqlSimulasi = [];
-        \DB::listen(function ($query) use (&$sqlSimulasi): void {
-            if (str_contains($query->sql, 'tka_adaptive_simulations')) {
-                $sqlSimulasi[] = $query->sql.' :: '.json_encode($query->bindings);
-            }
-        });
-
         $response = $this->actingAs($this->guruA)
             ->post(route('guru.tka.integrasi-erapor.sync'), [
                 'kelas' => '6A',
@@ -385,8 +365,8 @@ class TkaInnovationsTest extends TestCase
 
         $response->assertRedirect();
 
-        // Diagnostik: bila sinkronisasi gagal, tampilkan pesan error sesi/validasi
-        // agar penyebabnya tidak sekadar "Session is missing expected key [success]".
+        // Bila sinkronisasi gagal, sertakan pesan error sesi/validasi supaya
+        // kegagalannya tidak sekadar berbunyi "Session is missing expected key [success]".
         $session = $this->app['session.store'];
         $errorBag = $session->get('errors');
         $this->assertTrue(
@@ -395,16 +375,11 @@ class TkaInnovationsTest extends TestCase
             .json_encode($session->get('error'))
             .' | validation: '.json_encode($errorBag ? $errorBag->all() : [])
             ." | status: {$response->getStatusCode()} | target: {$response->headers->get('Location')}"
-            .' | profil_langsung_jumlah_pengujian: '.json_encode($profileLangsung['jumlah_pengujian'])
-            .' | profil_langsung_skor: '.json_encode($profileLangsung['skor_kognitif'])
-            .' | baris_simulasi: '.$simRows
-            .' | sql_simulasi_request: '.json_encode($sqlSimulasi)
-            .' | log: '.json_encode($logSinkronisasi)
         );
 
         $nilai = Nilai::where('siswa_id', $this->siswaUnggul->id)
             ->where('mata_pelajaran', 'Matematika')
-            ->where('jenis', 'ulangan')
+            ->where('jenis', 'Ulangan Harian')
             ->first();
         $this->assertNotNull($nilai);
         $this->assertEquals(86.0, (float) $nilai->nilai);
