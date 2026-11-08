@@ -152,11 +152,12 @@ class PresensiMesinService
 
         foreach ($scans as $scan) {
             $tanggal = $scan['waktu']->copy()->startOfDay();
-            $key = $scan['nik'].'|'.$tanggal->toDateString();
+            $nik = $this->normalizeNik($scan['nik']) ?? trim((string) $scan['nik']);
+            $key = $nik.'|'.$tanggal->toDateString();
 
             if (! isset($groups[$key])) {
                 $groups[$key] = [
-                    'nik' => $scan['nik'],
+                    'nik' => $nik,
                     'tanggal' => $tanggal,
                     'masuk' => null,
                     'pulang' => null,

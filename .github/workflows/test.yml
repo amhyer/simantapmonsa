@@ -240,7 +240,11 @@ jobs:
             echo "CI PHPUnit (PostgreSQL) gagal. Potongan log diagnostik:"
             echo
             echo '```'
-            tail -n 180 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
+            # Sertakan awal daftar kegagalan agar penyebab pertama tidak
+            # tertutup rentetan error transaksi PostgreSQL yang menyusul.
+            sed -r 's/\x1B\[[0-9;]*[[:alpha:]]//g' /tmp/phpunit-postgres.log 2>/dev/null | sed -n '/^[[:space:]]*FAILED /,$p' | head -n 220 || true
+            echo "--- akhir log ---"
+            tail -n 80 /tmp/phpunit-postgres.log 2>/dev/null || echo "(log tidak tersedia)"
             echo '```'
           } > /tmp/postgres-ci-report.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/postgres-ci-report.md
@@ -434,7 +438,7 @@ jobs:
             echo "Authenticated Playwright E2E failed. The full traces/screenshots/videos are attached as the playwright-e2e-failure-artifacts workflow artifact."
             echo
             echo '```'
-            tail -n 180 /tmp/playwright-e2e.log 2>/dev/null || echo "(log unavailable)"
+            tail -n 420 /tmp/playwright-e2e.log 2>/dev/null || echo "(log unavailable)"
             echo '```'
           } > /tmp/e2e-ci-report.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/e2e-ci-report.md

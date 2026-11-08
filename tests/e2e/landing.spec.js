@@ -15,7 +15,7 @@ test('landing memakai CTA yang jujur dan interaksi FAQ bekerja di Chromium', asy
     await expect(page).toHaveURL(/#demo$/);
     await expect(page.getByRole('heading', { name: 'Akses Aplikasi SIMANTAP' })).toBeVisible();
 
-    const loginLink = page.getByRole('link', { name: 'Masuk ke aplikasi' });
+    const loginLink = page.locator('#demo').getByRole('link', { name: 'Masuk ke aplikasi' });
     await expect(loginLink).toHaveAttribute('href', /\/login$/);
     await expect(page.getByText('Video demo belum tersedia')).toBeVisible();
 

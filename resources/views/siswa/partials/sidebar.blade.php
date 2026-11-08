@@ -24,6 +24,7 @@
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())
+        @continue(!\Illuminate\Support\Facades\Route::has($item['route']))
         <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
     @endforeach
 @endforeach

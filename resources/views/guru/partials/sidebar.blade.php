@@ -57,11 +57,13 @@
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())
+        @continue(!isset($item['children']) && !\Illuminate\Support\Facades\Route::has($item['route']))
         @if(isset($item['children']))
             @php $childActive = collect($item['children'])->contains(fn($c) => (!(($c['asesmen'] ?? false)) || modulAsesmenAktif()) && $isActive($c['route'])); @endphp
             <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">
                 @foreach($item['children'] as $child)
                     @continue(($child['asesmen'] ?? false) && !modulAsesmenAktif())
+                    @continue(!\Illuminate\Support\Facades\Route::has($child['route']))
                     <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endforeach
             </x-sidebar-submenu>
