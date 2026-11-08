@@ -72,97 +72,42 @@ class ImportDapodikJob implements ShouldQueue
         $errors = [];
 
         $rows = $this->data['siswa'] ?? [];
-        $tipeSync = $this->tipeSync;
-
         foreach (array_chunk($rows, 50) as $chunkIndex => $chunk) {
             try {
-                DB::transaction(function () use ($chunk, $chunkIndex, $tipeSync, &$berhasil, &$gagal, &$diperbarui, &$dilewati, &$errors) {
+                DB::transaction(function () use ($chunk, $chunkIndex, &$berhasil, &$gagal, &$diperbarui, &$dilewati, &$errors) {
                     foreach ($chunk as $i => $s) {
                         $baris = $chunkIndex * 50 + $i + 1;
                         try {
-                            $existing = null;
-                            if (!empty($s['nisn'])) {
-                                $existing = Siswa::where('nisn', $s['nisn'])->first();
-                            }
-                            if (!$existing && !empty($s['nik'])) {
-                                $existing = Siswa::where('nik', $s['nik'])->first();
-                            }
-
-                            if ($existing && $tipeSync === 'baru') {
-                                $dilewati++;
-                                continue;
-                            }
-
-                            $siswaData = [
-                                'nis' => $s['nisn'] ?? $s['nis'] ?? 'DAPODIK-' . Str::random(8),
-                                'nisn' => $s['nisn'] ?? null,
-                                'nik' => $s['nik'] ?? null,
-                                'no_kk' => $s['no_kk'] ?? null,
-                                'nama_peserta_didik' => $s['nama'],
-                                'kelas' => $s['kelas'],
-                                'jenis_kelamin' => $s['jenis_kelamin'],
-                                'agama' => $s['agama'] ?? null,
-                                'tempat_lahir' => $s['tempat_lahir'] ?? null,
-                                'tanggal_lahir' => $s['tanggal_lahir'] ?? null,
-                                'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? 'ORT' . rand(1000, 9999),
-                                'anak_ke' => $s['anak_ke'] ?? null,
-                                'jumlah_saudara' => $s['jumlah_saudara'] ?? null,
-                                'tinggi_badan' => $s['tinggi_badan'] ?? null,
-                                'berat_badan' => $s['berat_badan'] ?? null,
-                                'golongan_darah' => $s['golongan_darah'] ?? null,
-                                'penerima_kip' => !empty($s['no_kip']),
-                                'no_kip' => $s['no_kip'] ?? null,
-                                'aktif' => true,
-                                'rekaman' => array_merge($s, [
-                                    'dapodik_imported_at' => now()->toIso8601String(),
-                                    'tahun_ajaran' => $this->data['tahun_ajaran'] ?? null,
-                                    'semester' => $this->data['semester'] ?? null,
-                                    'sekolah_npsn' => $this->data['sekolah']['npsn'] ?? null,
-                                    'alamat_lengkap' => $s['alamat'] ?? null,
-                                    'rt' => $s['rt'] ?? null,
-                                    'rw' => $s['rw'] ?? null,
-                                    'dusun' => $s['dusun'] ?? null,
-                                    'desa' => $s['desa'] ?? null,
-                                    'kecamatan' => $s['kecamatan'] ?? null,
-                                    'kabupaten' => $s['kabupaten'] ?? null,
-                                    'provinsi' => $s['provinsi'] ?? null,
-                                    'kode_pos' => $s['kode_pos'] ?? null,
-                                    'telepon' => $s['telepon'] ?? null,
-                                    'handphone' => $s['handphone'] ?? null,
-                                    'email' => $s['email'] ?? null,
-                                ]),
-                            ];
-
-                            if ($existing) {
-                                $existing->update($siswaData);
+                            // Savepoint per baris: pada PostgreSQL satu baris yang gagal
+                            // membuat seluruh transaksi "aborted" bila tidak di-rollback,
+                            // sehingga baris berikutnya ikut gagal dengan SQLSTATE 25P02.
+                            $hasil = DB::transaction(fn () => $this->importSiswaRow($s));
+                            if ($hasil === 'baru') {
+                                $berhasil++;
+                            } elseif ($hasil === 'update') {
                                 $diperbarui++;
                             } else {
-                                $existing = Siswa::create(array_merge($siswaData, [
-                                    'uuid' => Str::uuid(),
-                                    'guru_id' => null,
-                                    'nama_guru' => null,
-                                ]));
-                                $berhasil++;
+                                $dilewati++;
                             }
-
-                            $this->saveOrangTua($existing, $s);
-                            $this->ensureStudentUser($existing);
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             $gagal++;
                             $errors[] = 'Baris ' . $baris . ': ' . $e->getMessage();
                             Log::warning('Gagal import baris ' . $baris . ': ' . $e->getMessage());
                         }
                     }
                 });
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::error('Gagal commit chunk import dapodik: ' . $e->getMessage());
             }
         }
 
         if ($this->logId) {
             try {
-                $log = DapodikSyncLog::find($this->logId);
-                if ($log) {
+                DB::transaction(function () use ($rows, $berhasil, $gagal, $diperbarui, $dilewati, $errors) {
+                    $log = DapodikSyncLog::find($this->logId);
+                    if (! $log) {
+                        return;
+                    }
                     $log->update([
                         'berhasil' => $berhasil,
                         'gagal' => $gagal,
@@ -170,7 +115,7 @@ class ImportDapodikJob implements ShouldQueue
                         'dilewati' => $dilewati,
                         'errors' => $errors,
                         'finished_at' => now(),
-                        'duration_seconds' => now()->diffInSeconds($log->started_at ?? now()),
+                        'duration_seconds' => (int) now()->diffInSeconds($log->started_at ?? now()),
                         'summary' => [
                             'total_diterima' => count($rows),
                             'baru' => $berhasil,
@@ -178,8 +123,8 @@ class ImportDapodikJob implements ShouldQueue
                             'skip' => $dilewati,
                         ],
                     ]);
-                }
-            } catch (\Exception $e) {
+                });
+            } catch (\Throwable $e) {
                 Log::warning('Gagal update log import dapodik: ' . $e->getMessage());
             }
         }
@@ -188,7 +133,7 @@ class ImportDapodikJob implements ShouldQueue
             if (TenantContext::check()) {
                 return;
             }
-            Aktivitas::create([
+            DB::transaction(fn () => Aktivitas::create([
                 'uuid' => Str::uuid(),
                 'guru_id' => $this->userId,
                 'nama_guru' => $this->namaGuru,
@@ -199,10 +144,88 @@ class ImportDapodikJob implements ShouldQueue
                     $this->data['sekolah']['nama'] ?? '-', $berhasil, $diperbarui, $dilewati, $gagal
                 ),
                 'tabel_terkait' => 'siswa',
-            ]);
-        } catch (\Exception $e) {
+            ]));
+        } catch (\Throwable $e) {
             Log::warning('Gagal catat aktivitas import: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Impor satu baris siswa di dalam savepoint agar kegagalan satu baris
+     * tidak membatalkan transaksi PostgreSQL untuk baris lain.
+     *
+     * @return string 'baru'|'update'|'lewat'
+     */
+    private function importSiswaRow(array $s): string
+    {
+        $existing = null;
+        if (!empty($s['nisn'])) {
+            $existing = Siswa::where('nisn', $s['nisn'])->first();
+        }
+        if (!$existing && !empty($s['nik'])) {
+            $existing = Siswa::where('nik', $s['nik'])->first();
+        }
+
+        if ($existing && $this->tipeSync === 'baru') {
+            return 'lewat';
+        }
+
+        $siswaData = [
+            'nis' => $s['nisn'] ?? $s['nis'] ?? 'DAPODIK-' . Str::random(8),
+            'nisn' => $s['nisn'] ?? null,
+            'nik' => $s['nik'] ?? null,
+            'no_kk' => $s['no_kk'] ?? null,
+            'nama_peserta_didik' => $s['nama'],
+            'kelas' => $s['kelas'],
+            'jenis_kelamin' => $s['jenis_kelamin'],
+            'agama' => $s['agama'] ?? null,
+            'tempat_lahir' => $s['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $s['tanggal_lahir'] ?? null,
+            'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? 'ORT' . rand(1000, 9999),
+            'anak_ke' => $s['anak_ke'] ?? null,
+            'jumlah_saudara' => $s['jumlah_saudara'] ?? null,
+            'tinggi_badan' => $s['tinggi_badan'] ?? null,
+            'berat_badan' => $s['berat_badan'] ?? null,
+            'golongan_darah' => $s['golongan_darah'] ?? null,
+            'penerima_kip' => !empty($s['no_kip']),
+            'no_kip' => $s['no_kip'] ?? null,
+            'aktif' => true,
+            'rekaman' => array_merge($s, [
+                'dapodik_imported_at' => now()->toIso8601String(),
+                'tahun_ajaran' => $this->data['tahun_ajaran'] ?? null,
+                'semester' => $this->data['semester'] ?? null,
+                'sekolah_npsn' => $this->data['sekolah']['npsn'] ?? null,
+                'alamat_lengkap' => $s['alamat'] ?? null,
+                'rt' => $s['rt'] ?? null,
+                'rw' => $s['rw'] ?? null,
+                'dusun' => $s['dusun'] ?? null,
+                'desa' => $s['desa'] ?? null,
+                'kecamatan' => $s['kecamatan'] ?? null,
+                'kabupaten' => $s['kabupaten'] ?? null,
+                'provinsi' => $s['provinsi'] ?? null,
+                'kode_pos' => $s['kode_pos'] ?? null,
+                'telepon' => $s['telepon'] ?? null,
+                'handphone' => $s['handphone'] ?? null,
+                'email' => $s['email'] ?? null,
+            ]),
+        ];
+
+        if ($existing) {
+            $existing->update($siswaData);
+            $status = 'update';
+        } else {
+            $existing = Siswa::create(array_merge($siswaData, [
+                'uuid' => Str::uuid(),
+                'guru_id' => null,
+                'nama_guru' => null,
+            ]));
+            $status = 'baru';
+        }
+
+        $this->saveOrangTua($existing, $s);
+        $this->ensureStudentUser($existing);
+
+        return $status;
     }
 
     protected function saveOrangTua(?Siswa $siswa, array $s): void
@@ -256,48 +279,55 @@ class ImportDapodikJob implements ShouldQueue
     private function ensureStudentUser(Siswa $siswa): void
     {
         try {
-            $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id);
-            $user = User::where('peran', 'siswa')
-                ->where('tenant_id', TenantContext::id())
-                ->where(function ($q) use ($siswa, $username) {
-                    $q->whereJsonContains('terhubung_dengan', $siswa->id)
-                      ->orWhere('nama_pengguna', $username)
-                      ->orWhere('nama_pengguna', 'siswa' . $username);
-                })
-                ->first();
-
-            if ($user) {
-                $terhubung = (array) ($user->terhubung_dengan ?? []);
-                if (!in_array($siswa->id, $terhubung, true)) {
-                    $terhubung[] = $siswa->id;
-                }
-                $user->update([
-                    'nama_lengkap' => $siswa->nama_peserta_didik,
-                    'kelas_mata_pelajaran' => $siswa->kelas,
-                    'aktif' => (bool) $siswa->aktif,
-                    'terhubung_dengan' => array_values(array_unique($terhubung)),
-                ]);
-            } else {
-                // Username unik secara global. Jangan mengubah akun sekolah lain.
-                if (User::withTrashed()->where('nama_pengguna', $username)->exists()) {
-                    Log::warning("Akun siswa tidak dibuat: username sudah digunakan ({$username}).");
-                    return;
-                }
-                User::create([
-                    'uuid' => (string) Str::uuid(),
-                    'nama_lengkap' => $siswa->nama_peserta_didik,
-                    'nama_pengguna' => $username,
-                    // Akun baru harus diaktifkan melalui reset sandi oleh admin.
-                    'kata_sandi' => bcrypt(Str::random(32)),
-                    'peran' => 'siswa',
-                    'terhubung_dengan' => [$siswa->id],
-                    'kelas_mata_pelajaran' => $siswa->kelas,
-                    'aktif' => (bool) $siswa->aktif,
-                    'force_password_change' => true,
-                ]);
-            }
-        } catch (\Exception $e) {
+            // Savepoint sendiri: bila pembuatan akun gagal, transaksi induk
+            // tetap sehat dan baris siswa lain tidak ikut dibatalkan.
+            DB::transaction(fn () => $this->createOrUpdateStudentUser($siswa));
+        } catch (\Throwable $e) {
             Log::warning("Gagal auto-create akun user siswa {$siswa->id}: " . $e->getMessage());
+        }
+    }
+
+    private function createOrUpdateStudentUser(Siswa $siswa): void
+    {
+        $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id);
+        $user = User::where('peran', 'siswa')
+            ->where('tenant_id', TenantContext::id())
+            ->where(function ($q) use ($siswa, $username) {
+                $q->whereJsonContains('terhubung_dengan', $siswa->id)
+                  ->orWhere('nama_pengguna', $username)
+                  ->orWhere('nama_pengguna', 'siswa' . $username);
+            })
+            ->first();
+
+        if ($user) {
+            $terhubung = (array) ($user->terhubung_dengan ?? []);
+            if (!in_array($siswa->id, $terhubung, true)) {
+                $terhubung[] = $siswa->id;
+            }
+            $user->update([
+                'nama_lengkap' => $siswa->nama_peserta_didik,
+                'kelas_mata_pelajaran' => $siswa->kelas,
+                'aktif' => (bool) $siswa->aktif,
+                'terhubung_dengan' => array_values(array_unique($terhubung)),
+            ]);
+        } else {
+            // Username unik secara global. Jangan mengubah akun sekolah lain.
+            if (User::withTrashed()->where('nama_pengguna', $username)->exists()) {
+                Log::warning("Akun siswa tidak dibuat: username sudah digunakan ({$username}).");
+                return;
+            }
+            User::create([
+                'uuid' => (string) Str::uuid(),
+                'nama_lengkap' => $siswa->nama_peserta_didik,
+                'nama_pengguna' => $username,
+                // Akun baru harus diaktifkan melalui reset sandi oleh admin.
+                'kata_sandi' => bcrypt(Str::random(32)),
+                'peran' => 'siswa',
+                'terhubung_dengan' => [$siswa->id],
+                'kelas_mata_pelajaran' => $siswa->kelas,
+                'aktif' => (bool) $siswa->aktif,
+                'force_password_change' => true,
+            ]);
         }
     }
 }

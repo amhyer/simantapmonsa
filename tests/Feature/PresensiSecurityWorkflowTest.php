@@ -294,4 +294,15 @@ class PresensiSecurityWorkflowTest extends TestCase
         $this->assertDatabaseHas('kehadiran', ['siswa_id' => $student->id, 'status' => 'H', 'waktu_masuk' => '2026-10-19 08:30:00']);
     }
 
+    public function test_parameter_rute_bukan_uuid_tidak_pernah_sampai_ke_basis_data(): void
+    {
+        // PostgreSQL menolak string non-UUID untuk kolom uuid (SQLSTATE 22P02)
+        // dan membuat transaksi aborted. Penjaga ini harus mengembalikan null
+        // sehingga rute menjawab 404, bukan 500, dan tidak merusak transaksi.
+        $this->assertNull((new User)->resolveRouteBinding('1', 'uuid'));
+        $this->assertNull((new User)->resolveRouteBinding('bukan-uuid', 'uuid'));
+        $this->assertNull((new Siswa)->resolveRouteBinding('1', 'uuid'));
+        $this->assertNull((new Tenant)->resolveRouteBinding('bukan-uuid', 'uuid'));
+    }
+
 }

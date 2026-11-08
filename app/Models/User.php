@@ -91,6 +91,20 @@ class User extends Authenticatable
         return $query->whereNull('users.tenant_id')->where('users.tenant_owned', false);
     }
 
+    /**
+     * Parameter rute yang bukan UUID valid tidak boleh sampai ke query.
+     * Pada PostgreSQL kolom `uuid` menolak string seperti "1" dengan
+     * SQLSTATE 22P02 dan transaksi menjadi aborted; hasilnya 500, bukan 404.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if (($field ?? $this->getRouteKeyName()) === 'uuid' && ! Str::isUuid((string) $value)) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
+    }
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');

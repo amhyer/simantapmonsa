@@ -200,6 +200,16 @@ class DapodikTenantIsolationTest extends TestCase
         TenantContext::set($b->id);
         $job->handle();
 
+        // Pernyataan terakhir job dapat langsung menggagalkan transaksi tanpa
+        // sempat diperiksa oleh hook beforeExecuting; periksa sekali lagi.
+        if (\DB::connection()->getDriverName() === 'pgsql') {
+            try {
+                \DB::connection()->getPdo()->query('select 1');
+            } catch (\PDOException $exception) {
+                $abortedAfter ??= $lastSql;
+            }
+        }
+
         $this->assertNull($abortedAfter, 'PostgreSQL aborted after: '.$abortedAfter);
         $this->assertSame($b->id, TenantContext::id());
         $this->assertSame('Tidak Boleh Diubah', $other->fresh()->nama_lengkap);

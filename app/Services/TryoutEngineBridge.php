@@ -184,7 +184,7 @@ class TryoutEngineBridge
                 'waktu_mulai' => $attempt->mulai_at,
                 'waktu_selesai' => $sudahSelesai ? ($attempt->selesai_at ?? now()) : $attempt->selesai_at,
                 'durasi_total_detik' => $attempt->selesai_at && $attempt->mulai_at
-                    ? $attempt->selesai_at->diffInSeconds($attempt->mulai_at)
+                    ? (int) $attempt->selesai_at->diffInSeconds($attempt->mulai_at)
                     : 0,
             ]
         );
