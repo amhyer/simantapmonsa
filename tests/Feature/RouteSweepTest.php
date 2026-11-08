@@ -107,6 +107,13 @@ class RouteSweepTest extends TestCase
 
         $failures = [];
         $tested = 0;
+        $lastSql = null;
+        $isPostgres = \DB::connection()->getDriverName() === 'pgsql';
+        if ($isPostgres) {
+            \DB::connection()->beforeExecuting(function ($sql) use (&$lastSql) {
+                $lastSql = $sql;
+            });
+        }
 
         foreach (Route::getRoutes() as $route) {
             if (! in_array('GET', $route->methods(), true)) {
@@ -135,7 +142,15 @@ class RouteSweepTest extends TestCase
                     $status = $this->actingAs($user)->get($path)->getStatusCode();
                 } catch (\Throwable $exception) {
                     $failures[] = "{$role} GET {$path} ({$name}) => EXCEPTION: {$exception->getMessage()}";
-                    continue;
+                    $status = 500;
+                }
+
+                if ($isPostgres) {
+                    try {
+                        \DB::connection()->getPdo()->query('select 1');
+                    } catch (\PDOException $exception) {
+                        $this->fail("Transaksi PostgreSQL aborted setelah {$role} GET {$path} ({$name}); query terakhir: {$lastSql}. {$exception->getMessage()}");
+                    }
                 }
 
                 if ($status >= 500) {

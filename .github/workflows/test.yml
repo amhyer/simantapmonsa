@@ -243,6 +243,8 @@ jobs:
             # Sertakan awal daftar kegagalan agar penyebab pertama tidak
             # tertutup rentetan error transaksi PostgreSQL yang menyusul.
             sed -r 's/\x1B\[[0-9;]*[[:alpha:]]//g' /tmp/phpunit-postgres.log 2>/dev/null | sed -n '/^[[:space:]]*FAILED /,$p' | head -n 220 || true
+            echo "--- Diagnosis route sweep ---"
+            grep -a -C 3 'Transaksi PostgreSQL aborted setelah' /tmp/phpunit-postgres.log | head -n 30 || true
             echo "--- SQLSTATE asal selain transaksi sudah gagal ---"
             grep -a 'SQLSTATE\[' /tmp/phpunit-postgres.log | grep -v '25P02' | head -n 30 || true
             echo "--- akhir log ---"
