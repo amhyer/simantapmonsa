@@ -32,8 +32,10 @@ class ApiKey extends Model
     /**
      * Generate a new API key and return the plaintext key (shown once).
      * The hash is stored in key_hash column.
+     *
+     * @param  array<int, string>  $abilities
      */
-    public static function generate($userId, $description = 'Dapodik Bridge'): array
+    public static function generate($userId, string $description = 'Dapodik Bridge', array $abilities = ['dapodik:import']): array
     {
         $plaintextKey = Str::random(64);
         $keyHash = hash('sha256', $plaintextKey);
@@ -46,7 +48,7 @@ class ApiKey extends Model
             'name' => $description,
             'key' => null,
             'key_hash' => $keyHash,
-            'abilities' => ['dapodik:import'],
+            'abilities' => $abilities,
             'active' => true,
         ]);
 

@@ -1,0 +1,7 @@
+{
+    "server_url": "https://simantap.example.com",
+    "api_key": "GANTI_DENGAN_API_KEY",
+    "db_path": "C:\\Program Files (x86)\\Solution\\ATT2000.MDB",
+    "interval_menit": 5,
+    "maks_hari": 30
+}

@@ -24,6 +24,10 @@
         </div>
     </div>
 
+            <div class="note note-warn" style="margin-bottom:16px">
+                Mode <strong>tarik langsung</strong> saat ini memakai pembaca <code>{{ $koneksi['engine'] ?? 'auto' }}</code>. Bila SIMANTAP berjalan di hosting, gunakan <strong>Presensi Bridge</strong> (<code>presensi-bridge/</code>) di PC sekolah agar mesin absensi tetap terbaca otomatis.
+            </div>
+
     @if($directDisabled)
         <div class="note note-warn" style="margin-bottom:16px">Tarik langsung dari database mesin dinonaktifkan untuk sekolah bertenant. Gunakan impor file sekolah sendiri.</div>
     @else

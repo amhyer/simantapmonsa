@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\MesinPresensi\PresensiMesinKaryawanService;
 use App\Services\PresensiMesinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Csv as CsvReader;
@@ -29,17 +29,12 @@ class PresensiMesinImportController extends Controller
 
     private const MAKS_HARI_TARIK = 31;
 
-    /**
-     * Potongan gelar yang boleh muncul di belakang nama tanpa membuat nama dianggap berbeda.
-     *
-     * @var list<string>
-     */
-    private const TOKEN_GELAR = [
-        's', 'm', 'a', 'pd', 'si', 'sos', 'kom', 'ag', 'hi', 'ip', 'pt', 'ab',
-        'iq', 'fil', 'psi', 'keb', 'kes', 'farm', 'pod', 'kp', 'kep', 'th',
-        'mm', 'se', 'sh', 'ma', 'mba', 'phd', 'apt', 'drs', 'dra', 'prof',
-        'st', 'mt', 'ssi', 'sst', 'spt', 'skm', 'sip', 'shi', 'sag',
-    ];
+    private PresensiMesinKaryawanService $karyawan;
+
+    public function __construct(PresensiMesinKaryawanService $karyawan)
+    {
+        $this->karyawan = $karyawan;
+    }
 
     public function index(AttendanceDatabaseReader $reader)
     {
@@ -118,7 +113,7 @@ class PresensiMesinImportController extends Controller
             $pasangan[] = ['nik' => $nik, 'nama' => $nama];
         }
 
-        $hasil = $this->simpanNikKaryawan($pasangan);
+        $hasil = $this->karyawan->simpanNikKaryawan($pasangan);
 
         AktivitasService::log(
             'tambah',
@@ -151,7 +146,7 @@ class PresensiMesinImportController extends Controller
             return back()->with('success', 'Database mesin berhasil dibaca, tetapi belum ada data pegawai di dalamnya.');
         }
 
-        $hasil = $this->simpanNikKaryawan($pegawai);
+        $hasil = $this->karyawan->simpanNikKaryawan($pegawai);
 
         AktivitasService::log(
             'tambah',
@@ -164,91 +159,6 @@ class PresensiMesinImportController extends Controller
         );
 
         return back()->with('success', $this->pesanKaryawan($hasil));
-    }
-
-    /**
-     * @param  list<array{nik: string, nama: string}>  $pasangan
-     * @return array{baris: int, diperbarui: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok: list<string>}
-     */
-    private function simpanNikKaryawan(array $pasangan): array
-    {
-        $users = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)->get();
-
-        $nikTerpakai = [];
-        foreach ($users as $user) {
-            $nikLama = $this->normalizeNikValue($user->nik);
-            if ($nikLama !== null) {
-                $nikTerpakai[$nikLama] = $user->id;
-            }
-        }
-
-        $hasil = [
-            'baris' => 0,
-            'diperbarui' => 0,
-            'tetap' => 0,
-            'tidak_cocok' => 0,
-            'ambigu' => 0,
-            'bentrok' => 0,
-            'contoh_tidak_cocok' => [],
-        ];
-
-        DB::transaction(function () use ($pasangan, $users, &$nikTerpakai, &$hasil) {
-            foreach ($pasangan as $item) {
-                $nik = $this->normalizeNikValue($item['nik']);
-                $nama = trim((string) $item['nama']);
-
-                if ($nik === null || $nama === '') {
-                    continue;
-                }
-
-                $hasil['baris']++;
-
-                $kandidat = $this->matchUsersByName($nama, $users);
-                if ($kandidat === []) {
-                    $hasil['tidak_cocok']++;
-                    if (count($hasil['contoh_tidak_cocok']) < 8) {
-                        $hasil['contoh_tidak_cocok'][] = $nama;
-                    }
-
-                    continue;
-                }
-                if (count($kandidat) > 1) {
-                    $hasil['ambigu']++;
-
-                    continue;
-                }
-
-                /** @var User $user */
-                $user = $kandidat[0];
-                $nikLama = $this->normalizeNikValue($user->nik);
-
-                if ($nikLama !== null && $nikLama !== $nik) {
-                    $hasil['bentrok']++;
-
-                    continue;
-                }
-                if ($nikLama === $nik) {
-                    $hasil['tetap']++;
-
-                    continue;
-                }
-
-                $pemilik = $nikTerpakai[$nik] ?? null;
-                if ($pemilik !== null && $pemilik !== $user->id) {
-                    $hasil['bentrok']++;
-
-                    continue;
-                }
-
-                $user->nik = $nik;
-                $user->save();
-
-                $nikTerpakai[$nik] = $user->id;
-                $hasil['diperbarui']++;
-            }
-        });
-
-        return $hasil;
     }
 
     /**
@@ -875,81 +785,6 @@ class PresensiMesinImportController extends Controller
         return $best;
     }
 
-    /**
-     * @return list<User>
-     */
-    private function matchUsersByName(string $nama, $users): array
-    {
-        $target = $this->nameTokens($nama);
-        if ($target === []) {
-            return [];
-        }
-
-        $exact = [];
-        $variant = [];
-
-        foreach ($users as $user) {
-            $tokens = $this->nameTokens((string) $user->nama_lengkap);
-            if ($tokens === []) {
-                continue;
-            }
-
-            if ($tokens === $target) {
-                $exact[] = $user;
-            } elseif ($this->isTitleVariant($tokens, $target)) {
-                $variant[] = $user;
-            }
-        }
-
-        return $exact !== [] ? $exact : $variant;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function nameTokens(string $nama): array
-    {
-        $nama = str_replace("\u{FEFF}", '', $nama);
-        $nama = mb_strtolower(trim($nama));
-
-        $potongan = preg_split('/,/', $nama);
-        if (is_array($potongan) && isset($potongan[0])) {
-            $nama = $potongan[0];
-        }
-
-        $nama = preg_replace('/[^a-z0-9]+/u', ' ', $nama) ?? '';
-        $nama = preg_replace('/\s+/', ' ', $nama) ?? '';
-        $nama = trim($nama);
-
-        return $nama === '' ? [] : explode(' ', $nama);
-    }
-
-    /**
-     * @param  list<string>  $a
-     * @param  list<string>  $b
-     */
-    private function isTitleVariant(array $a, array $b): bool
-    {
-        $pendek = count($a) <= count($b) ? $a : $b;
-        $panjang = count($a) <= count($b) ? $b : $a;
-
-        if ($pendek === [] || count($panjang) <= count($pendek)) {
-            return false;
-        }
-
-        if (array_slice($panjang, 0, count($pendek)) !== $pendek) {
-            return false;
-        }
-
-        foreach (array_slice($panjang, count($pendek)) as $token) {
-            if (mb_strlen($token) > 2 && ! in_array($token, self::TOKEN_GELAR, true)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private function normalizeNikCell(?array $cell): ?string
     {
         if ($cell === null) {
@@ -967,19 +802,7 @@ class PresensiMesinImportController extends Controller
             }
         }
 
-        return $this->normalizeNikValue($value);
-    }
-
-    private function normalizeNikValue($value): ?string
-    {
-        $value = trim((string) ($value ?? ''));
-        if ($value === '') {
-            return null;
-        }
-
-        $value = preg_replace('/[^0-9A-Za-z]+/', '', $value) ?? '';
-
-        return $value === '' ? null : $value;
+        return $this->karyawan->normalizeNikValue($value);
     }
 
     private function parseDateTimeCell(?array $cell): ?Carbon

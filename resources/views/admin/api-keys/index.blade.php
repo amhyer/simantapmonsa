@@ -132,6 +132,14 @@
                         <label>Nama Aplikasi</label>
                         <input type="text" name="name" required placeholder="Contoh: Dapodik Bridge" value="Dapodik Bridge" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
+                    <div class="form-group">
+                        <label>Akses API Key</label>
+                        <select name="akses" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                            <option value="dapodik:import" @selected(old('akses', 'dapodik:import') === 'dapodik:import')>Dapodik (import data)</option>
+                            <option value="presensi:import" @selected(old('akses', 'dapodik:import') === 'presensi:import')>Presensi Mesin (sync fingerprint)</option>
+                            <option value="dapodik:import,presensi:import" @selected(old('akses', 'dapodik:import') === 'dapodik:import,presensi:import')>Semua (Dapodik + Presensi Mesin)</option>
+                        </select>
+                    </div>
                     <div style="background:#FFFBEB;border:1px solid #F59E0B;border-radius:8px;padding:10px;font-size:13px;color:#92400E">⚠️ API Key hanya ditampilkan sekali setelah dibuat.</div>
                 </div>
                 <div class="modal-footer">

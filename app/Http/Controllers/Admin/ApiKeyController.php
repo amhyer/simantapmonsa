@@ -46,9 +46,15 @@ class ApiKeyController extends Controller
         $this->tenantId();
         $request->validate([
             'name' => 'required|string|max:100',
+            'akses' => 'required|string|in:dapodik:import,presensi:import,dapodik:import,presensi:import',
         ]);
 
-        $result = ApiKey::generate(auth()->id(), $request->name);
+        $mapAkses = [
+            'dapodik:import' => ['dapodik:import'],
+            'presensi:import' => ['presensi:import'],
+            'dapodik:import,presensi:import' => ['dapodik:import', 'presensi:import'],
+        ];
+        $result = ApiKey::generate(auth()->id(), (string) $request->input('name'), (array) ($mapAkses[$request->input('akses')] ?? ['dapodik:import']));
 
         return redirect()->route('admin.api-keys.index')
             ->with('success', 'API Key berhasil dibuat.')
