@@ -128,7 +128,17 @@ class AppServiceProvider extends ServiceProvider
             $view->with('layoutNotifs', $notifs);
         });
 
-        // Auto-sync presensi harian dari database mesin fingerprint.
-        $schedule->call('presensi:mesin-sync')->dailyAt('07:35')->name('presensi-mesin-sync')->withoutOverlapping();
+        // Auto-sync presensi dari database mesin fingerprint: pagi (scan masuk)
+        // dan sore (scan pulang) agar data hari ini langsung terlihat di website.
+        // Wajib memakai command() agar artisan dipanggil; call() hanya menerima closure.
+        $schedule->command('presensi:mesin-sync')
+            ->dailyAt('07:35')
+            ->name('presensi-mesin-sync-pagi')
+            ->withoutOverlapping();
+
+        $schedule->command('presensi:mesin-sync')
+            ->dailyAt('15:35')
+            ->name('presensi-mesin-sync-sore')
+            ->withoutOverlapping();
     }
 }

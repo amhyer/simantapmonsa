@@ -50,6 +50,9 @@
                     <span>Pegawai di mesin: <strong>{{ $koneksi['jumlah_pegawai'] }}</strong></span>
                     <span>Total scan: <strong>{{ $koneksi['jumlah_scan'] }}</strong></span>
                 @endif
+                @if(!empty($koneksi['terakhir_scan']))
+                    <span>Scan terakhir: <strong>{{ \Illuminate\Support\Carbon::parse($koneksi['terakhir_scan'])->format('d/m/Y H:i') }}</strong></span>
+                @endif
                 @if($terakhirTarik)
                     <span>Terakhir tarik: <strong>{{ \Illuminate\Support\Carbon::parse($terakhirTarik)->format('d/m/Y H:i') }}</strong></span>
                 @endif
@@ -61,6 +64,14 @@
                     <br>
                     Atur lokasi database pada <code>PRESENSI_MESIN_DB_PATH</code> di file <code>.env</code>, misalnya
                     <code>PRESENSI_MESIN_DB_PATH="C:\\Program Files (x86)\\ZKTime\\bin\\att2000.mdb"</code>, lalu muat ulang halaman ini.
+                </div>
+            @endif
+
+            @if(!empty($koneksi['terakhir_scan']) && \Illuminate\Support\Carbon::parse($koneksi['terakhir_scan'])->lt(now()->subDays(2)))
+                <div style="background:#FEF3E2;border:1px solid #F5C27A;color:#B54708;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px">
+                    Scan terakhir di database mesin: <strong>{{ \Illuminate\Support\Carbon::parse($koneksi['terakhir_scan'])->format('d/m/Y H:i') }}</strong>.
+                    Kemungkinan mesin fingerprint atau aplikasi ZKTime/Attendance Management belum menyinkronkan data terbaru.
+                    Periksa koneksi mesin, lalu klik <em>Tarik Data Sekarang</em>.
                 </div>
             @endif
 

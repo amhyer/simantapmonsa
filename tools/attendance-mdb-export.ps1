@@ -30,7 +30,9 @@ try {
     }
 
     $koneksi = New-Object -ComObject ADODB.Connection
-    $koneksi.Open("Provider=$provider;Data Source=$DbPath;Persist Security Info=False;")
+    # Mode=Read mencegah SIMANTAP mengunci/mengubah database yang sedang
+    # dipakai aplikasi Attendance Management (ZKTime).
+    $koneksi.Open("Provider=$provider;Data Source=$DbPath;Mode=Read;Persist Security Info=False;")
 
     $hasil = [ordered]@{ ok = $true; pesan = 'OK'; jumlah_pegawai = 0; jumlah_scan = 0; pegawai = @(); scans = @() }
 

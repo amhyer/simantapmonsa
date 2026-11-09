@@ -44,4 +44,16 @@ class PresensiMesinSyncTest extends TestCase
         $this->artisan('presensi:mesin-sync', ['--dari' => '2026-06-01', '--sampai' => '2026-06-02'])
             ->assertExitCode(1);
     }
+
+    public function test_scheduler_menjalankan_perintah_sync_bukan_closure(): void
+    {
+        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+            ->filter(fn ($event) => str_contains((string) $event->command, 'presensi:mesin-sync'));
+
+        $this->assertNotEmpty($events, 'presensi:mesin-sync harus terdaftar di scheduler.');
+        $this->assertTrue(
+            $events->contains(fn ($event) => str_contains((string) $event->command, 'artisan')),
+            'Scheduler harus memakai command() agar artisan presensi:mesin-sync benar-benar dijalankan.',
+        );
+    }
 }

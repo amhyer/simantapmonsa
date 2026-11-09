@@ -137,7 +137,7 @@ class AttendanceDatabaseReader
     /**
      * Status singkat untuk tombol "Tes Koneksi".
      *
-     * @return array{ok: bool, pesan: string, path: ?string, engine: string, jumlah_pegawai?: int, jumlah_scan?: int}
+     * @return array{ok: bool, pesan: string, path: ?string, engine: string, jumlah_pegawai?: int, jumlah_scan?: int, terakhir_scan?: ?string}
      */
     public function status(): array
     {
@@ -221,6 +221,14 @@ class AttendanceDatabaseReader
         try {
             $data = $this->bacaMentah($path, $engine);
 
+            $terakhirScan = null;
+            foreach ((array) ($data['scans'] ?? []) as $row) {
+                $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                if ($waktu !== null && ($terakhirScan === null || $waktu->gt($terakhirScan))) {
+                    $terakhirScan = $waktu;
+                }
+            }
+
             return [
                 'ok' => true,
                 'pesan' => 'Database berhasil dibaca.',
@@ -228,6 +236,7 @@ class AttendanceDatabaseReader
                 'engine' => $engine,
                 'jumlah_pegawai' => (int) ($data['jumlah_pegawai'] ?? 0),
                 'jumlah_scan' => (int) ($data['jumlah_scan'] ?? 0),
+                'terakhir_scan' => $terakhirScan?->toDateTimeString(),
             ];
         } catch (Throwable $e) {
             return [
