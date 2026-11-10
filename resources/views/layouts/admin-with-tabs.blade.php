@@ -96,6 +96,12 @@
             </div>
             
             <div class="topbar-right">
+                @if(View::hasSection('header_actions'))
+                    <div class="header-actions">
+                        @yield('header_actions')
+                    </div>
+                @endif
+
                 <button type="button" class="topbar-search-btn" onclick="openCommandPalette()" title="Cari Menu Cepat (Ctrl+K)">
                     <i class="fas fa-search"></i>
                     <span class="search-hint">Cari menu...</span>
@@ -124,12 +130,6 @@
                         @endforelse
                     </div>
                 </div>
-                
-                @if(View::hasSection('header_actions'))
-                    <div class="header-actions" style="display:flex;align-items:center;gap:8px">
-                        @yield('header_actions')
-                    </div>
-                @endif
 
                 <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
                     @if($userFoto)

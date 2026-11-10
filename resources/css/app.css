@@ -206,7 +206,7 @@ table.filtering tbody tr:not(.table-empty) { animation: rowIn .18s ease; }
     border: 1px solid rgba(31, 56, 100, 0.15);
     margin-top: 4px;
 }
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
     .topbar-search-btn .search-hint,
     .topbar-search-btn kbd { display: none; }
     .topbar-search-btn { padding: 8px 10px; }
