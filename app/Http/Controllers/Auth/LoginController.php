@@ -36,7 +36,30 @@ class LoginController extends Controller
             'kata_sandi' => 'required|string',
         ]);
 
-        if (Auth::attempt(['nama_pengguna' => $credentials['nama_pengguna'], 'password' => $credentials['kata_sandi']])) {
+        $attemptSuccess = false;
+        if (\App\Modules\Tenant\Contexts\TenantContext::check()) {
+            $attemptSuccess = Auth::attempt([
+                'nama_pengguna' => $credentials['nama_pengguna'],
+                'password' => $credentials['kata_sandi'],
+                'tenant_id' => \App\Modules\Tenant\Contexts\TenantContext::id(),
+            ]);
+
+            // Izinkan Super Admin login dari portal mana saja
+            if (! $attemptSuccess) {
+                $attemptSuccess = Auth::attempt([
+                    'nama_pengguna' => $credentials['nama_pengguna'],
+                    'password' => $credentials['kata_sandi'],
+                    'peran' => 'super_admin',
+                ]);
+            }
+        } else {
+            $attemptSuccess = Auth::attempt([
+                'nama_pengguna' => $credentials['nama_pengguna'],
+                'password' => $credentials['kata_sandi'],
+            ]);
+        }
+
+        if ($attemptSuccess) {
             $user = auth()->user();
 
             // PERBAIKAN: kolom `aktif`/`archived_at` sebelumnya tidak pernah
