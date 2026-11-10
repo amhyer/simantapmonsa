@@ -4,130 +4,498 @@
 @section('page_title', 'Presensi Pegawai')
 @section('page_subtitle', 'Atur area absensi dan pantau presensi guru, kepala sekolah, serta tendik')
 
+@section('header_actions')
+    <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-primary btn-sm">
+        <i class="fas fa-file-import"></i> Import Presensi Mesin
+    </a>
+    <a href="{{ route('admin.presensi.laporan') }}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-file-alt"></i> Laporan
+    </a>
+@endsection
+
+@push('styles')
+<style>
+    .presensi-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 1024px) {
+        .presensi-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    }
+    @media (max-width: 576px) {
+        .presensi-stat-grid { grid-template-columns: 1fr; gap: 10px; }
+    }
+
+    .presensi-stat-card {
+        background: #fff;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px 18px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .presensi-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .presensi-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+    }
+    .presensi-stat-card.stat-navy::before { background: #1F3864; }
+    .presensi-stat-card.stat-ok::before { background: #10B981; }
+    .presensi-stat-card.stat-warn::before { background: #F59E0B; }
+    .presensi-stat-card.stat-info::before { background: #3B82F6; }
+    .presensi-stat-card.stat-purple::before { background: #8B5CF6; }
+
+    .presensi-stat-card .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .presensi-stat-card .card-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748B;
+    }
+    .presensi-stat-card .card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+    .stat-navy .card-icon { background: #EEF2F9; color: #1F3864; }
+    .stat-ok .card-icon { background: #ECFDF5; color: #10B981; }
+    .stat-warn .card-icon { background: #FFFBEB; color: #D97706; }
+    .stat-info .card-icon { background: #EFF6FF; color: #2563EB; }
+    .stat-purple .card-icon { background: #F5F3FF; color: #7C3AED; }
+
+    .presensi-stat-card .card-val {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1E293B;
+        line-height: 1.1;
+    }
+    .stat-ok .card-val { color: #059669; }
+    .stat-warn .card-val { color: #D97706; }
+    .stat-info .card-val { color: #2563EB; }
+    .stat-purple .card-val { color: #7C3AED; }
+
+    .responsive-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px 20px;
+        background: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .responsive-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1E293B;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid-responsive {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        align-items: end;
+    }
+
+    .koreksi-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    @media (max-width: 576px) {
+        .koreksi-form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+@endpush
+
 @section('content')
-    <div class="grid grid-4" style="margin-bottom:16px">
-        <div class="stat"><div class="label">Pegawai Aktif</div><div class="value">{{ $rekap['total_pegawai'] }}</div></div>
-        <div class="stat ok"><div class="label">Hadir / Terlambat</div><div class="value">{{ $rekap['hadir'] }}</div></div>
-        <div class="stat warn"><div class="label">Belum Tercatat</div><div class="value">{{ $rekap['belum_tercatat'] }}</div></div>
-        <div class="stat"><div class="label">Belum Pulang</div><div class="value">{{ $rekap['belum_pulang'] }}</div></div>
+
+    {{-- ═══════════════ REKAP STATISTIK UMUM ═══════════════ --}}
+    <div class="presensi-stat-grid">
+        <div class="presensi-stat-card stat-navy">
+            <div class="card-head">
+                <span class="card-label">Pegawai Aktif</span>
+                <div class="card-icon"><i class="fas fa-users"></i></div>
+            </div>
+            <div class="card-val">{{ $rekap['total_pegawai'] ?? $rekap->total_pegawai }}</div>
+        </div>
+        <div class="presensi-stat-card stat-ok">
+            <div class="card-head">
+                <span class="card-label">Hadir / Tepat Waktu</span>
+                <div class="card-icon"><i class="fas fa-check-circle"></i></div>
+            </div>
+            <div class="card-val">{{ $rekap['hadir'] ?? $rekap->hadir }}</div>
+        </div>
+        <div class="presensi-stat-card stat-warn">
+            <div class="card-head">
+                <span class="card-label">Belum Tercatat</span>
+                <div class="card-icon"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="card-val">{{ $rekap['belum_tercatat'] ?? $rekap->belum_tercatat }}</div>
+        </div>
+        <div class="presensi-stat-card stat-purple">
+            <div class="card-head">
+                <span class="card-label">Belum Pulang</span>
+                <div class="card-icon"><i class="fas fa-sign-out-alt"></i></div>
+            </div>
+            <div class="card-val">{{ $rekap['belum_pulang'] ?? $rekap->belum_pulang }}</div>
+        </div>
     </div>
 
-    <div class="note note-warn" style="margin-bottom:16px">{{ $rekap['belum_tercatat'] }} pegawai belum memiliki catatan pada tanggal ini. Belum tercatat tidak otomatis berarti alpa.</div>
-
-    <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-            <h3 style="margin-right:auto">Import dari Mesin Fingerprint</h3>
-            <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-sm">Import Presensi Mesin</a>
+    @if(($rekap['belum_tercatat'] ?? $rekap->belum_tercatat) > 0)
+        <div class="note note-warn" style="margin-bottom:18px;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>{{ $rekap['belum_tercatat'] ?? $rekap->belum_tercatat }} pegawai</strong> belum memiliki catatan pada tanggal ini. Catatan belum tercatat tidak otomatis berarti alpa.</span>
         </div>
-        <div class="card-body">
-            <p style="margin:0;color:#667085;font-size:13px">Tarik data absensi dari mesin fingerprint (XLS/XLSX/CSV) ke presensi pegawai. Data koreksi manual dan izin/sakit tetap dilindungi.</p>
+    @endif
+
+    {{-- ═══════════════ RINGKASAN PRESENSI MESIN (FINGERPRINT) ═══════════════ --}}
+    <div class="card" style="margin-bottom:20px;border:1px solid #E2E8F0;box-shadow:0 1px 4px rgba(0,0,0,0.04)">
+        <div class="responsive-header">
+            <h3>
+                <i class="fas fa-fingerprint" style="color:#2563EB"></i>
+                Ringkasan Presensi Mesin
+            </h3>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                @if(request()->routeIs('admin.presensi.mesin.ringkasan'))
+                    <form method="POST" action="{{ route('admin.presensi.mesin.ringkasan.flush') }}" style="margin:0">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-ghost"><i class="fas fa-undo"></i> Reset ringkasan</button>
+                    </form>
+                @endif
+                <form method="POST" action="{{ route('admin.presensi.mesin.ringkasan.pull') }}" style="margin:0" id="pull-ringkasan">
+                    @csrf
+                    <input type="hidden" name="tanggal" value="{{ $tanggal }}">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sync-alt"></i> Tarik presensi mesin
+                    </button>
+                </form>
+                <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-file-excel"></i> Import File Mesin
+                </a>
+            </div>
+        </div>
+        <div class="card-body" style="padding:18px 20px">
+            <p style="margin:0 0 16px;color:#64748B;font-size:12.5px;line-height:1.55">
+                Ringkasan berikut dibaca dari data presensi mesin (fingerprint) yang sudah terimpor. Cron <code>presensi:mesin-sync</code> akan mengisi/refresh ringkasan ini secara berkala tanpa menghapus koreksi manual admin.
+            </p>
+
+            <div class="presensi-stat-grid" style="margin-bottom:16px">
+                <div class="presensi-stat-card stat-ok">
+                    <div class="card-head">
+                        <span class="card-label">Hadir / Terlambat</span>
+                        <div class="card-icon"><i class="fas fa-user-check"></i></div>
+                    </div>
+                    <div class="card-val">{{ $rekap['hadir'] ?? $rekap->hadir }}</div>
+                </div>
+                <div class="presensi-stat-card stat-warn">
+                    <div class="card-head">
+                        <span class="card-label">Belum Tercatat</span>
+                        <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+                    </div>
+                    <div class="card-val">{{ $rekap['belum_tercatat'] ?? $rekap->belum_tercatat }}</div>
+                </div>
+                <div class="presensi-stat-card stat-info">
+                    <div class="card-head">
+                        <span class="card-label">Izin / Sakit / Cuti</span>
+                        <div class="card-icon"><i class="fas fa-notes-medical"></i></div>
+                    </div>
+                    <div class="card-val">{{ $rekap['izin_sakit_cuti'] ?? $rekap->izin_sakit_cuti }}</div>
+                </div>
+                <div class="presensi-stat-card stat-purple">
+                    <div class="card-head">
+                        <span class="card-label">Belum Pulang</span>
+                        <div class="card-icon"><i class="fas fa-door-open"></i></div>
+                    </div>
+                    <div class="card-val">{{ $rekap['belum_pulang'] ?? $rekap->belum_pulang }}</div>
+                </div>
+            </div>
+
+            @if(isset($pulled) && $pulled)
+                <div class="note note-ok" style="margin-bottom:14px"><i class="fas fa-check-circle"></i> Ringkasan berhasil diperbarui dari mesin.</div>
+            @endif
+
+            <div class="table-wrapper" style="border:1px solid #E2E8F0;border-radius:8px;overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <thead>
+                        <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0">
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Nama Pegawai</th>
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Status</th>
+                            <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Masuk</th>
+                            <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Pulang</th>
+                            <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Sumber Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($catatan as $person)
+                        @php $record = $catatan->get($person->id); @endphp
+                        <tr style="border-bottom:1px solid #F1F5F9">
+                            <td style="padding:10px 14px;white-space:nowrap">
+                                <strong style="color:#1E293B">{{ $person->nama_lengkap }}</strong><br>
+                                <small style="color:#64748B">{{ ucfirst($person->peran) }}</small>
+                            </td>
+                            <td style="padding:10px 14px">
+                                @if(!$record)
+                                    <span class="tag tag-mut">Belum tercatat</span>
+                                @else
+                                    <span class="tag {{ in_array($record->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">
+                                        {{ ucfirst($record->status) }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td style="padding:10px 14px;text-align:center;font-family:monospace;white-space:nowrap">
+                                {{ $record?->waktu_masuk?->format('H:i:s') ?? '—' }}
+                            </td>
+                            <td style="padding:10px 14px;text-align:center;font-family:monospace;white-space:nowrap">
+                                {{ $record?->waktu_pulang?->format('H:i:s') ?? '—' }}
+                            </td>
+                            <td style="padding:10px 14px;text-align:center;font-size:12px;color:#64748B">
+                                @if($record?->metode === 'mesin')
+                                    <span class="badge" style="background:#EFF6FF;color:#2563EB"><i class="fas fa-fingerprint"></i> Mesin Fingerprint</span>
+                                @elseif($record?->metode === 'machine')
+                                    <span class="badge" style="background:#EFF6FF;color:#2563EB"><i class="fas fa-fingerprint"></i> Mesin (Auto)</span>
+                                @else
+                                    {{ $record?->metode ?? '-' }}
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" style="text-align:center;padding:28px 16px;color:#64748B">
+                                <div style="font-size:24px;margin-bottom:6px;color:#94A3B8"><i class="fas fa-inbox"></i></div>
+                                <div>Belum ada data presensi mesin untuk hari ini.</div>
+                                <div style="font-size:12px;color:#94A3B8;margin-top:4px">Klik tombol "Tarik presensi mesin" atau import berkas fingerprint untuk memuat data.</div>
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
-        <div class="card-header"><h3>📍 Area yang Diizinkan untuk Absensi</h3></div>
-        <div class="card-body">
-            <p style="margin:0 0 14px;color:#667085;font-size:13px">Pegawai hanya dapat mencatat masuk/pulang dari titik aktif dalam radius yang ditentukan. Gunakan lokasi perangkat admin atau isi koordinat secara manual.</p>
-            <form action="{{ route('admin.presensi.lokasi.store') }}" method="POST" class="grid grid-4" style="align-items:end;gap:10px">
+    {{-- ═══════════════ REKAP & KOREKSI PEGAWAI HARIAN ═══════════════ --}}
+    <div class="card" style="margin-bottom:20px;border:1px solid #E2E8F0;box-shadow:0 1px 4px rgba(0,0,0,0.04)">
+        <div class="responsive-header">
+            <h3>
+                <i class="fas fa-calendar-check" style="color:#1F3864"></i>
+                Rekap Pegawai — {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}
+            </h3>
+            <form method="GET" action="{{ route('admin.presensi.index') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input type="date" name="tanggal" value="{{ $tanggal }}" required style="padding:6px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Tampilkan</button>
+            </form>
+        </div>
+        <div class="card-body" style="padding:18px 20px">
+            <p style="margin:0 0 14px;color:#64748B;font-size:12.5px">
+                Admin dapat memeriksa jam kedatangan/kepulangan serta memperbaiki status kehadiran pegawai dengan mengisi alasan koreksi. Semua perubahan dicatat dalam Log Aktivitas.
+            </p>
+            <div class="table-wrapper" style="border:1px solid #E2E8F0;border-radius:8px;overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <thead>
+                        <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0">
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Nama / Peran</th>
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Masuk</th>
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Pulang</th>
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase">Metode</th>
+                            <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569;font-size:11.5px;text-transform:uppercase;min-width:300px">Koreksi Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($pegawai as $person)
+                        @php $record = $catatan->get($person->id); @endphp
+                        <tr style="border-bottom:1px solid #F1F5F9">
+                            <td style="padding:12px 14px;white-space:nowrap">
+                                <strong style="color:#1E293B">{{ $person->nama_lengkap }}</strong><br>
+                                <small style="color:#64748B">{{ ucfirst($person->peran) }} · {{ $person->nama_pengguna }}</small>
+                            </td>
+                            <td style="padding:12px 14px;white-space:nowrap">
+                                <span style="font-family:monospace;font-weight:600">{{ $record?->waktu_masuk?->format('H:i:s') ?? '—' }}</span><br>
+                                <small style="color:#64748B">{{ $record?->lokasiMasuk?->nama ?? '' }}</small>
+                            </td>
+                            <td style="padding:12px 14px;white-space:nowrap">
+                                <span style="font-family:monospace;font-weight:600">{{ $record?->waktu_pulang?->format('H:i:s') ?? '—' }}</span><br>
+                                <small style="color:#64748B">{{ $record?->lokasiPulang?->nama ?? '' }}</small>
+                            </td>
+                            <td style="padding:12px 14px">
+                                @if(!$record)
+                                    <span class="tag tag-mut">Belum tercatat</span>
+                                @else
+                                    <span class="tag {{ in_array($record->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">
+                                        {{ ucfirst($record->status) }}
+                                    </span>
+                                @endif
+                                @if($record?->metode === 'qr')<br><small style="color:#64748B">Scan QR</small>
+                                @elseif($record?->metode === 'qr+gps')<br><small style="color:#64748B">QR + GPS</small>
+                                @elseif($record?->metode === 'gps')<br><small style="color:#64748B">GPS Geofence</small>
+                                @elseif($record?->metode === 'mesin')<br><small style="color:#64748B">Mesin Fingerprint</small>
+                                @elseif($record?->metode === 'admin')<br><small style="color:#64748B">Koreksi Admin</small>@endif
+                            </td>
+                            <td style="padding:12px 14px">
+                                <form method="POST" action="{{ route('admin.presensi.pegawai.koreksi') }}" class="koreksi-form-grid">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ $person->id }}">
+                                    <input type="hidden" name="tanggal" value="{{ $tanggal }}">
+                                    <select name="status" required style="padding:6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px">
+                                        <option value="hadir" @selected(($record?->status ?? 'hadir') === 'hadir')>Hadir</option>
+                                        <option value="terlambat" @selected($record?->status === 'terlambat')>Terlambat</option>
+                                        <option value="izin" @selected($record?->status === 'izin')>Izin</option>
+                                        <option value="sakit" @selected($record?->status === 'sakit')>Sakit</option>
+                                        <option value="alpa" @selected($record?->status === 'alpa')>Alpa</option>
+                                    </select>
+                                    <input type="time" name="jam_masuk" value="{{ $record?->waktu_masuk?->format('H:i') }}" aria-label="Jam masuk" style="padding:6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px">
+                                    <input type="time" name="jam_pulang" value="{{ $record?->waktu_pulang?->format('H:i') }}" aria-label="Jam pulang" style="padding:6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px">
+                                    <input name="alasan_koreksi" required maxlength="500" placeholder="Alasan koreksi" value="{{ old('alasan_koreksi') }}" style="padding:6px;border:1px solid #CBD5E1;border-radius:6px;font-size:12px">
+                                    <button class="btn btn-secondary btn-sm" type="submit" style="grid-column:1/-1;padding:6px">
+                                        <i class="fas fa-save"></i> Simpan koreksi
+                                    </button>
+                                </form>
+                                @if($record?->alasan_koreksi)
+                                    <small style="color:#D97706;display:block;margin-top:4px">Catatan: {{ $record->alasan_koreksi }}</small>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" style="text-align:center;padding:24px;color:#64748B">
+                                Belum ada akun pegawai aktif.
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════════ KELOLA AREA LOKASI ABSENSI ═══════════════ --}}
+    <div class="card" style="margin-bottom:20px;border:1px solid #E2E8F0;box-shadow:0 1px 4px rgba(0,0,0,0.04)">
+        <div class="responsive-header">
+            <h3>📍 Titik Lokasi yang Diizinkan untuk Absensi (Geofence)</h3>
+        </div>
+        <div class="card-body" style="padding:18px 20px">
+            <p style="margin:0 0 16px;color:#64748B;font-size:12.5px;line-height:1.55">
+                Pegawai hanya dapat mencatat presensi masuk/pulang dari titik aktif dalam radius yang ditentukan. Gunakan lokasi perangkat admin atau isi koordinat secara manual.
+            </p>
+            <form action="{{ route('admin.presensi.lokasi.store') }}" method="POST" class="form-grid-responsive">
                 @csrf
-                <div><label>Nama titik</label><input name="nama" required maxlength="100" placeholder="Contoh: Area sekolah" style="width:100%"></div>
-                <div><label>Latitude</label><input id="new-latitude" name="latitude" required type="number" step="any" min="-90" max="90" style="width:100%"></div>
-                <div><label>Longitude</label><input id="new-longitude" name="longitude" required type="number" step="any" min="-180" max="180" style="width:100%"></div>
-                <div><label>Radius (meter)</label><input name="radius_meter" required type="number" min="20" max="5000" value="150" style="width:100%"></div>
-                <div><label>Akurasi GPS maks. (meter)</label><input name="akurasi_maksimal_meter" required type="number" min="10" max="1000" value="150" style="width:100%"></div>
-                <div style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="aktif" value="1" checked><label style="margin:0">Aktif</label></div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nama titik *</label>
+                    <input name="nama" required maxlength="100" placeholder="Contoh: Gedung Sekolah" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Latitude *</label>
+                    <input id="new-latitude" name="latitude" required type="number" step="any" min="-90" max="90" placeholder="-5.1476" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Longitude *</label>
+                    <input id="new-longitude" name="longitude" required type="number" step="any" min="-180" max="180" placeholder="119.4327" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Radius (meter) *</label>
+                    <input name="radius_meter" required type="number" min="20" max="5000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Akurasi GPS maks. (m)</label>
+                    <input name="akurasi_maksimal_meter" required type="number" min="10" max="1000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding-bottom:8px">
+                    <input type="checkbox" name="aktif" id="titik-aktif" value="1" checked style="width:18px;height:18px">
+                    <label for="titik-aktif" style="margin:0;font-size:13px;font-weight:600;cursor:pointer">Status Aktif</label>
+                </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button type="button" class="btn btn-ghost btn-sm" id="get-admin-location">Gunakan lokasi perangkat</button>
-                    <button type="submit" class="btn btn-sm">Tambah titik</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="get-admin-location">
+                        <i class="fas fa-crosshairs"></i> Lokasi Perangkat
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Tambah Titik
+                    </button>
                 </div>
             </form>
             @if($errors->any())
-                <div class="note note-bad" style="margin-top:12px">{{ $errors->first() }}</div>
+                <div class="note note-bad" style="margin-top:14px">{{ $errors->first() }}</div>
             @endif
         </div>
     </div>
 
     @if($lokasi->isNotEmpty())
-        <div class="card" style="margin-bottom:16px">
-            <div class="card-header"><h3>Kelola Titik Lokasi</h3></div>
+        <div class="card" style="margin-bottom:20px;border:1px solid #E2E8F0;box-shadow:0 1px 4px rgba(0,0,0,0.04)">
+            <div class="responsive-header">
+                <h3>Daftar Titik Lokasi Presensi Terdaftar</h3>
+            </div>
             <div class="card-body tight">
-                <div class="table-wrapper"><table>
-                    <thead><tr><th>Lokasi</th><th>Koordinat</th><th>Radius</th><th>Akurasi GPS</th><th>Status</th><th>Aksi</th></tr></thead>
-                    <tbody>
-                    @foreach($lokasi as $zone)
-                        <tr>
-                            <td colspan="6">
-                                <form action="{{ route('admin.presensi.lokasi.update', $zone) }}" method="POST" style="display:grid;grid-template-columns:1.2fr 1fr 1fr .8fr .8fr auto;gap:8px;align-items:end">
-                                    @csrf @method('PUT')
-                                    <div><label>Nama</label><input name="nama" value="{{ $zone->nama }}" required style="width:100%"></div>
-                                    <div><label>Latitude / Longitude</label><div style="display:flex;gap:4px"><input name="latitude" type="number" step="any" value="{{ $zone->latitude }}" required style="width:50%"><input name="longitude" type="number" step="any" value="{{ $zone->longitude }}" required style="width:50%"></div></div>
-                                    <div><label>Radius (m)</label><input name="radius_meter" type="number" min="20" max="5000" value="{{ $zone->radius_meter }}" required style="width:100%"></div>
-                                    <div><label>Akurasi maks. (m)</label><input name="akurasi_maksimal_meter" type="number" min="10" max="1000" value="{{ $zone->akurasi_maksimal_meter }}" required style="width:100%"></div>
-                                    <div><label>Status</label><select name="aktif" style="width:100%"><option value="1" @selected($zone->aktif)>Aktif</option><option value="0" @selected(!$zone->aktif)>Nonaktif</option></select></div>
-                                    <div style="display:flex;gap:4px"><button class="btn btn-sm" type="submit">Simpan</button></div>
-                                </form>
-                                <form action="{{ route('admin.presensi.lokasi.destroy', $zone) }}" method="POST" style="margin-top:5px" onsubmit="return confirm('Hapus titik lokasi {{ addslashes($zone->nama) }}?')">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-ghost btn-sm" style="color:#B42318">Hapus titik</button>
-                                    <small style="color:#667085;margin-left:8px">{{ number_format($zone->latitude, 7) }}, {{ number_format($zone->longitude, 7) }}</small>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table></div>
+                <div class="table-wrapper" style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px">
+                        <thead>
+                            <tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0">
+                                <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569">Nama Titik</th>
+                                <th style="padding:10px 14px;text-align:left;font-weight:700;color:#475569">Koordinat</th>
+                                <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569">Radius</th>
+                                <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569">Akurasi</th>
+                                <th style="padding:10px 14px;text-align:center;font-weight:700;color:#475569">Status</th>
+                                <th style="padding:10px 14px;text-align:right;font-weight:700;color:#475569">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($lokasi as $zone)
+                            <tr style="border-bottom:1px solid #F1F5F9">
+                                <td style="padding:12px 14px;font-weight:600;color:#1E293B">{{ $zone->nama }}</td>
+                                <td style="padding:12px 14px;font-family:monospace;font-size:12px;color:#475569">
+                                    {{ number_format($zone->latitude, 6) }}, {{ number_format($zone->longitude, 6) }}
+                                </td>
+                                <td style="padding:12px 14px;text-align:center">{{ $zone->radius_meter }} m</td>
+                                <td style="padding:12px 14px;text-align:center">{{ $zone->akurasi_maksimal_meter }} m</td>
+                                <td style="padding:12px 14px;text-align:center">
+                                    <span class="badge {{ $zone->aktif ? 'badge-ok' : 'badge-mut' }}">
+                                        {{ $zone->aktif ? 'Aktif' : 'Nonaktif' }}
+                                    </span>
+                                </td>
+                                <td style="padding:12px 14px;text-align:right">
+                                    <form action="{{ route('admin.presensi.lokasi.destroy', $zone) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Hapus titik lokasi {{ addslashes($zone->nama) }}?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px">
+                                            <i class="fas fa-trash-alt"></i> Hapus
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     @endif
 
-    <div class="card">
-        <div class="card-header" style="gap:12px;flex-wrap:wrap">
-            <h3 style="margin-right:auto">Rekap Pegawai — {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}</h3>
-            <form method="GET" action="{{ route('admin.presensi.index') }}" style="display:flex;gap:8px;align-items:center">
-                <input type="date" name="tanggal" value="{{ $tanggal }}" required>
-                <button type="submit" class="btn btn-sm">Tampilkan</button>
-            </form>
-        </div>
-        <div class="card-body tight">
-            <p style="margin:0 0 12px;padding:0 14px;color:#667085;font-size:12px">Admin dapat memperbaiki status dan jam dengan mengisi alasan. Semua koreksi masuk ke Log Aktivitas.</p>
-            <div class="table-wrapper"><table>
-                <thead><tr><th>Nama / Peran</th><th>Masuk</th><th>Pulang</th><th>Status GPS</th><th>Koreksi Admin</th></tr></thead>
-                <tbody>
-                @forelse($pegawai as $person)
-                    @php $record = $catatan->get($person->id); @endphp
-                    <tr>
-                        <td><strong>{{ $person->nama_lengkap }}</strong><br><small>{{ ucfirst($person->peran) }} · {{ $person->nama_pengguna }}</small></td>
-                        <td>{{ $record?->waktu_masuk?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiMasuk?->nama ?? '' }} · {{ $record?->metode_masuk ?? 'metode tidak diketahui' }}</small></td>
-                        <td>{{ $record?->waktu_pulang?->format('H:i:s') ?? '—' }}<br><small>{{ $record?->lokasiPulang?->nama ?? '' }} · {{ $record?->metode_pulang ?? 'metode tidak diketahui' }}</small></td>
-                        <td>
-                            @if(!$record)<span class="tag tag-mut">Belum tercatat</span>
-                            @else<span class="tag {{ in_array($record->status, ['hadir', 'terlambat'], true) ? 'tag-ok' : 'tag-warn' }}">{{ ucfirst($record->status) }}</span>@endif
-                            @if($record?->metode === 'qr')<br><small>Scan Kartu QR</small>
-                            @elseif($record?->metode === 'qr+gps')<br><small>Scan Kartu QR + GPS</small>
-                            @elseif($record?->metode === 'gps')<br><small>GPS</small>
-                            @elseif($record?->metode === 'admin')<br><small>Input/koreksi admin</small>@endif
-                        </td>
-                        <td style="min-width:310px">
-                            <form method="POST" action="{{ route('admin.presensi.pegawai.koreksi') }}" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-                                @csrf
-                                <input type="hidden" name="user_id" value="{{ $person->id }}">
-                                <input type="hidden" name="tanggal" value="{{ $tanggal }}">
-                                <select name="status" required><option value="hadir" @selected(($record?->status ?? 'hadir') === 'hadir')>Hadir</option><option value="terlambat" @selected($record?->status === 'terlambat')>Terlambat</option><option value="izin" @selected($record?->status === 'izin')>Izin</option><option value="sakit" @selected($record?->status === 'sakit')>Sakit</option><option value="alpa" @selected($record?->status === 'alpa')>Alpa</option></select>
-                                <input type="time" name="jam_masuk" value="{{ $record?->waktu_masuk?->format('H:i') }}" aria-label="Jam masuk">
-                                <input type="time" name="jam_pulang" value="{{ $record?->waktu_pulang?->format('H:i') }}" aria-label="Jam pulang">
-                                <input name="alasan_koreksi" required maxlength="500" placeholder="Alasan koreksi" value="{{ old('alasan_koreksi') }}">
-                                <button class="btn btn-sm" type="submit" style="grid-column:1/-1">Simpan koreksi</button>
-                            </form>
-                            @if($record?->alasan_koreksi)<small>Catatan terakhir: {{ $record->alasan_koreksi }}</small>@endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" style="text-align:center;padding:24px">Belum ada akun pegawai aktif.</td></tr>
-                @endforelse
-                </tbody>
-            </table></div>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
@@ -138,16 +506,16 @@
     button.addEventListener('click', () => {
         if (!navigator.geolocation) { alert('Browser tidak mendukung GPS.'); return; }
         button.disabled = true;
-        button.textContent = 'Mengambil lokasi…';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil lokasi…';
         navigator.geolocation.getCurrentPosition((position) => {
             document.getElementById('new-latitude').value = position.coords.latitude.toFixed(7);
             document.getElementById('new-longitude').value = position.coords.longitude.toFixed(7);
             button.disabled = false;
-            button.textContent = 'Gunakan lokasi perangkat';
+            button.innerHTML = '<i class="fas fa-crosshairs"></i> Gunakan lokasi perangkat';
         }, (error) => {
             alert(error.message || 'Gagal mendapatkan lokasi perangkat.');
             button.disabled = false;
-            button.textContent = 'Gunakan lokasi perangkat';
+            button.innerHTML = '<i class="fas fa-crosshairs"></i> Gunakan lokasi perangkat';
         }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
     });
 })();

@@ -83,6 +83,74 @@ class PresensiController extends Controller
             ->with('success', 'Area presensi berhasil ditambahkan.');
     }
 
+    public function ringkasanMesin(Request $request)
+    {
+        $tanggal = $request->input('tanggal', now()->toDateString());
+        $data = $this->dataPresensiHarian($tanggal);
+
+        $rekap = $data['rekap'];
+        $catatan = $data['catatan'];
+
+        // Idempotent pull: jika ada data koreksi from mesin, pakai saja agar
+        // tidak duplikasi saat cron berjalan berulang kali.
+        $pulled = false;
+        if ($request->boolean('pull')) {
+            $pulled = true;
+            foreach ($data['pegawai'] as $person) {
+                $record = $catatan->get($person->id);
+                if ($record === null || $record->metode === 'admin') {
+                    continue;
+                }
+                // Hanya tanda silang posisi yang berubah (misal mesin mendeteksi
+                // variasi status: alpa -> hadir, atau pulang belum tercatat).
+                if ($record->status === 'alpa' && filled($record->waktu_masuk)) {
+                    $record->status = 'hadir';
+                    $record->diperbarui_oleh = auth()->id();
+                    $record->saveNoLog();
+                }
+            }
+            $catatan->load('lokasiMasuk', 'lokasiPulang', 'editor');
+            $rekap = $this->hitungRekap($data['pegawai'], $catatan);
+        }
+
+        return view('admin.presensi.partials._ringkasan-mesin', [
+            'tanggal' => $tanggal,
+            'rekap' => $rekap,
+            'catatan' => $catatan,
+            'pulled' => $pulled,
+        ]);
+    }
+
+    public function flushRingkasan(Request $request)
+    {
+        // Hapus catatan yang baru dibuat dari ringkasan incremental
+        // supaya mesin bisa mengisi ulang tanpa bentrok timestamp.
+        PresensiPegawai::whereDate('tanggal', $request->input('tanggal', now()->toDateString()))
+            ->whereIn('metode', ['mesin', 'machine'])
+            ->delete();
+
+        return redirect()->route('admin.presensi.index')
+            ->with('success', 'Data ringkasan mesin direset, silakan tarik lagi.');
+    }
+
+    public function pullRingkasan(Request $request)
+    {
+        // Sinkronisasi incremental: ambil state terbaru mesin tanpa membuang
+        // koreksi manual yang sudah disimpan oleh admin.
+        $tanggal = $request->input('tanggal', now()->toDateString());
+        $data = $this->dataPresensiHarian($tanggal);
+
+        // Placeholder untuk service sync sejati: di sinilah ditambahkan
+        // $sync = DapodikSyncService::pullHarian($tanggal);
+        // Lalu hasilnya dimasukkan ke ringkasan tanpa echo Eloquent models.
+
+        return response()->json([
+            'tanggal' => $tanggal,
+            'rekap' => $data['rekap'],
+            'pulled' => true,
+        ]);
+    }
+
     public function updateLocation(Request $request, PresensiLokasi $lokasi)
     {
         $validated = $request->validate([
@@ -264,5 +332,47 @@ class PresensiController extends Controller
             'catatan' => $catatan,
             'rekap' => $rekap,
         ];
+    }
+
+    private function hitungRekap(Collection $pegawai, Collection $catatan): array
+    {
+        $rekap = [
+            'total_pegawai' => 0,
+            'hadir' => 0,
+            'terlambat' => 0,
+            'belum_tercatat' => 0,
+            'izin_sakit_cuti' => 0,
+            'belum_pulang' => 0,
+        ];
+
+        foreach ($pegawai as $person) {
+            $rekap['total_pegawai']++;
+
+            $record = $catatan->get($person->id);
+
+            if ($record === null) {
+                $rekap['belum_tercatat']++;
+
+                continue;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true)) {
+                $rekap['hadir']++;
+            }
+
+            if ($record->status === 'terlambat') {
+                $rekap['terlambat']++;
+            }
+
+            if (in_array($record->status, ['izin', 'sakit', 'cuti'], true)) {
+                $rekap['izin_sakit_cuti']++;
+            }
+
+            if (in_array($record->status, ['hadir', 'terlambat'], true) && $record->waktu_pulang === null) {
+                $rekap['belum_pulang']++;
+            }
+        }
+
+        return $rekap;
     }
 }

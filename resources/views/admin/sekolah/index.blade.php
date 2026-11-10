@@ -115,10 +115,21 @@
                     <input type="url" name="website" id="website" value="{{ old('website', $sekolahSettings->website ?? '') }}" placeholder="https://" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
 
-                <div style="display:flex;gap:10px">
-                    <button type="submit" class="btn">💾 Simpan Identitas</button>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <button type="submit" class="btn btn-primary">💾 Simpan Identitas</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetFormFields()">🧹 Bersihkan Input Form</button>
+                    @if($sekolahSettings)
+                        <button type="button" class="btn btn-outline-danger" onclick="if(confirm('Yakin ingin mengosongkan identitas sekolah yang tersimpan di database?')) { document.getElementById('resetSekolahForm').submit(); }">
+                            <i class="fas fa-trash-alt"></i> Hapus Identitas Tersimpan
+                        </button>
+                    @endif
                 </div>
             </form>
+            @if($sekolahSettings)
+                <form id="resetSekolahForm" action="{{ route('admin.sekolah.reset') }}" method="POST" style="display:none">
+                    @csrf
+                </form>
+            @endif
         </div>
     </div>
 
@@ -176,9 +187,9 @@
                 statusEl.style.color = '#0f766e';
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + ' Silakan periksa dan edit jika perlu.';
             } else {
-                statusEl.style.color = '#B8860B';
-                statusEl.innerHTML = '<i class="fas fa-info-circle"></i> ' + (data.message || 'Tidak ditemukan di database lokal') + '. Mencoba dari API Dapodik...';
-                await lookupFromApi(npsn, statusEl);
+                statusEl.style.color = '#dc3545';
+                statusEl.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.message || 'Tidak ditemukan di database sekolah.') +
+                    ' <button type="button" class="btn btn-sm" onclick="lookupFromApi(\'' + npsn + '\')" style="margin-left:8px;padding:2px 8px;font-size:11px;background:#1F3864;color:#fff;border-radius:4px;border:none;cursor:pointer"><i class="fas fa-cloud-download-alt"></i> Tarik dari Kemdikbud?</button>';
             }
         } catch (err) {
             statusEl.style.color = '#dc3545';
@@ -189,7 +200,12 @@
         }
     }
 
-    async function lookupFromApi(npsn, statusEl) {
+    async function lookupFromApi(npsn) {
+        const statusEl = document.getElementById('lookupStatus');
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#667085';
+        statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghubungi API Referensi Kemdikbud...';
+
         try {
             const resp = await fetch('{{ url("/api/sekolah/lookup") }}', {
                 method: 'POST',
@@ -221,14 +237,26 @@
                     telepon: d.telepon,
                 });
                 statusEl.style.color = '#0f766e';
-                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Data berhasil diambil dari API Dapodik. Silakan periksa dan simpan.';
+                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Data berhasil ditarik dari Referensi Kemdikbud. Silakan periksa dan klik "Simpan Identitas".';
             } else {
                 statusEl.style.color = '#dc3545';
-                statusEl.textContent = 'Data tidak ditemukan di database lokal maupun API Dapodik.';
+                statusEl.textContent = 'Data sekolah tidak ditemukan di Referensi Kemdikbud.';
             }
         } catch (err) {
             statusEl.style.color = '#dc3545';
-            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <b>Error:</b> ' + err.message;
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <b>Gagal menarik dari API Kemdikbud:</b> ' + err.message;
+        }
+    }
+
+    function resetFormFields() {
+        ['nama_sekolah', 'npsn', 'jenis_sekolah', 'jenjang', 'akreditasi', 'kepala_sekolah', 'alamat', 'kecamatan', 'kota', 'provinsi', 'kode_pos', 'telepon', 'email', 'website'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        const statusEl = document.getElementById('lookupStatus');
+        if (statusEl) {
+            statusEl.style.display = 'none';
+            statusEl.textContent = '';
         }
     }
 

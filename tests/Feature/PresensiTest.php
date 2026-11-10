@@ -642,4 +642,31 @@ class PresensiTest extends TestCase
         $this->assertSame(1, (int) $this->guru->qr_card_version);
         $this->assertSame(1, (int) $this->guru->printed_version);
     }
+
+    public function test_admin_dapat_menambah_dan_menghapus_lokasi_presensi(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.presensi.lokasi.store'), [
+            'nama' => 'Kampus Utama',
+            'latitude' => -5.147665,
+            'longitude' => 119.432732,
+            'radius_meter' => 100,
+            'akurasi_maksimal_meter' => 50,
+            'aktif' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.presensi.index'))
+            ->assertSessionHas('success');
+
+        $lokasi = PresensiLokasi::where('nama', 'Kampus Utama')->first();
+        $this->assertNotNull($lokasi);
+        $this->assertSame(100, (int) $lokasi->radius_meter);
+
+        $deleteResponse = $this->actingAs($admin)->delete(route('admin.presensi.lokasi.destroy', $lokasi));
+        $deleteResponse->assertRedirect(route('admin.presensi.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('presensi_lokasi', ['id' => $lokasi->id]);
+    }
 }

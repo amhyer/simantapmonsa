@@ -4,20 +4,27 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SekolahSettings;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SekolahController extends Controller
 {
     public function index()
     {
-        $sekolahSettings = SekolahSettings::first();
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $query = SekolahSettings::query();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+        $sekolahSettings = $query->first();
 
         return view('admin.sekolah.index', compact('sekolahSettings'));
     }
 
     public function search(Request $request)
     {
-        $npsn = $request->input('npsn', '');
+        $npsn = trim((string) $request->input('npsn', ''));
 
         if (strlen($npsn) < 3) {
             return response()->json([
@@ -26,12 +33,17 @@ class SekolahController extends Controller
             ]);
         }
 
-        $sekolah = SekolahSettings::where('npsn', $npsn)->first();
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $query = SekolahSettings::where('npsn', $npsn);
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+        $sekolah = $query->first();
 
         if (!$sekolah) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data sekolah dengan NPSN ' . $npsn . ' tidak ditemukan di database.',
+                'message' => 'Data sekolah dengan NPSN ' . $npsn . ' tidak ditemukan di database sekolah Anda.',
             ]);
         }
 
@@ -54,7 +66,7 @@ class SekolahController extends Controller
                 'email' => $sekolah->email,
                 'website' => $sekolah->website,
             ],
-            'message' => 'Data ditemukan dari database lokal.',
+            'message' => 'Data ditemukan dari database sekolah.',
         ]);
     }
 
@@ -78,10 +90,16 @@ class SekolahController extends Controller
             'akreditasi' => 'nullable|string|max:10',
         ]);
 
-        $sekolahSettings = SekolahSettings::first();
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $query = SekolahSettings::query();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+        $sekolahSettings = $query->first();
 
         if (!$sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([
+                'tenant_id' => $tenantId,
                 'guru_id' => auth()->id(),
                 ...$validated,
             ]);
@@ -89,7 +107,30 @@ class SekolahController extends Controller
             $sekolahSettings->update($validated);
         }
 
+        if ($tenantId !== null) {
+            Cache::forget('tenant-nama-'.$tenantId);
+        }
+        Cache::forget('root-sekolah-nama');
+
         return redirect()->route('admin.sekolah.index')
             ->with('success', 'Identitas sekolah berhasil diperbarui.');
+    }
+
+    public function reset()
+    {
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $query = SekolahSettings::query();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+        $query->delete();
+
+        if ($tenantId !== null) {
+            Cache::forget('tenant-nama-'.$tenantId);
+        }
+        Cache::forget('root-sekolah-nama');
+
+        return redirect()->route('admin.sekolah.index')
+            ->with('success', 'Identitas sekolah telah dikosongkan.');
     }
 }
