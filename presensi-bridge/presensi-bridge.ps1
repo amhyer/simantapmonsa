@@ -23,13 +23,18 @@ function Get-Config {
         throw 'Isi server_url, api_key, dan db_path pada config.json.'
     }
 
+    $intervalMenit = 300
+    if ($raw.interval_menit) { $intervalMenit = [int]$raw.interval_menit }
+    $maksHari = 30
+    if ($raw.maks_hari) { $maksHari = [int]$raw.maks_hari }
+
     return @{
         server_url = ([string]$raw.server_url).TrimEnd('/')
         api_key    = [string]$raw.api_key
         db_path    = [string]$raw.db_path
         log_file   = [string]$raw.log_file
-        interval_menit = [int]($raw.interval_menit ?? 300)
-        maks_hari  = [int]($raw.maks_hari ?? 30)
+        interval_menit = $intervalMenit
+        maks_hari  = $maksHari
     }
 }
 
@@ -38,8 +43,8 @@ function Baca-State {
     if (Test-Path -LiteralPath $statePath) {
         try {
             $state = Get-Content -Raw -Path $statePath | ConvertFrom-Json
-            if ($state -and $state.'terakhir_sukses') {
-                return [datetime]::Parse([string]$state.'terakhir_sukses')
+            if ($state -and $state.terakhir_sukses) {
+                return [datetime]::Parse([string]$state.terakhir_sukses)
             }
         } catch {
             Write-Log 'state.json tidak valid; pakai rentang default.'
@@ -52,12 +57,13 @@ function Baca-State {
 function Simpan-State([datetime]$terakhir) {
     $state = [pscustomobject]@{ terakhir_sukses = $terakhir.ToString('yyyy-MM-dd HH:mm:ss') }
     $json = $state | ConvertTo-Json -Depth 3 -Compress
-    [System.IO.File]::WriteAllText -Path (Join-Path -Path $script:root -ChildPath 'state.json') -Value $json
+    [System.IO.File]::WriteAllText((Join-Path -Path $script:root -ChildPath 'state.json'), $json)
 }
 
 function Jalankan-Export([datetime]$dari, [datetime]$sampai) {
     $psExe = 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'
-    $exporter = [System.IO.Path]::GetFullPath((Join-Path -Path $script:root -ChildPath '..') + '/tools/attendance-mdb-export.ps1')
+    $exporter = Join-Path -Path (Split-Path -Parent $script:root) -ChildPath 'tools/attendance-mdb-export.ps1'
+    $exporter = [System.IO.Path]::GetFullPath($exporter)
     $out = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), ('simantap-mesin-bridge-{0}.json' -f $PID))
 
     $argList = @(
@@ -65,9 +71,9 @@ function Jalankan-Export([datetime]$dari, [datetime]$sampai) {
         '-File', $exporter, '-DbPath', $cfg.db_path, '-OutFile', $out,
         '-From', $dari.ToString('yyyy-MM-dd'), '-To', $sampai.ToString('yyyy-MM-dd')
     )
-    $proc = Start-Process -FilePath $psExe -ArgumentList $argList -NoNewWindow -Wait -PassThru -WorkingDirectory (Get-Location)
-    if ($proc.ExitCode -ne 0) {
-        throw "Pembaca database mesin gagal (exit $($proc.ExitCode))."
+    & $psExe @argList *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Pembaca database mesin gagal (exit $($LASTEXITCODE))."
     }
 
     $mentah = [string](Get-Content -Raw -Path $out)

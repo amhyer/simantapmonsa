@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
-use App\Services\MesinPresensi\PresensiMesinService;
+use App\Services\PresensiMesinService;
 use App\Http\Controllers\Controller;
 use App\Models\PresensiMesinSyncLog;
 use Illuminate\Http\JsonResponse;

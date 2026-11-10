@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\ApiKey;
 use App\Models\User;
-use App\Services\MesinPresensi\PresensiMesinService;
+use App\Services\MesinPresensi\PresensiMesinKaryawanService;
+use App\Services\PresensiMesinService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
