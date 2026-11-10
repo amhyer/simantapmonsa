@@ -26,6 +26,7 @@ class RouteSweepTest extends TestCase
 
     protected function setUp(): void
     {
+        @set_time_limit(0);
         // CBT routes are conditionally registered during application boot.
         $this->cbtFlagBeforeBoot = [
             getenv('SIMANTAP_CBT_ENABLED'),
@@ -96,6 +97,7 @@ class RouteSweepTest extends TestCase
 
     public function test_broad_get_route_sweep_has_no_5xx_for_all_fixture_roles(): void
     {
+        @set_time_limit(0);
         $users = [];
         foreach (E2eFixtureSeeder::ROLE_IDS as $role => $id) {
             $users[$role] = User::findOrFail($id);

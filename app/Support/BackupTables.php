@@ -54,6 +54,7 @@ class BackupTables
     {
         return [
             // ── Identitas & referensi induk ─────────────────────────────
+            'tenants' => ['class' => \App\Modules\Tenant\Models\Tenant::class, 'except' => []],
             'users' => ['class' => User::class, 'except' => ['kata_sandi', 'remember_token', 'dapodik_id', 'rekaman']],
             'semesters' => ['class' => Semester::class, 'except' => []],
             'sekolah_settings' => ['class' => SekolahSettings::class, 'except' => []],
@@ -159,6 +160,7 @@ class BackupTables
     public static function tidakDikosongkan(): array
     {
         return [
+            'tenants',
             'users',
             'semesters',
             'sekolah_settings',

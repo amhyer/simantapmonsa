@@ -156,9 +156,17 @@
 
 {{-- Tabel Data Tenants --}}
 <div class="card">
-    <div class="card-header" style="justify-content:space-between">
+    <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
         <h3><i class="fas fa-school" style="margin-right:8px;color:#4338CA"></i>Daftar Sekolah &amp; Status Resource</h3>
-        <span class="tag tag-mut">{{ $tenants->total() }} total sekolah</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <form method="POST" action="{{ route('superadmin.tenants.bulk-destroy-expired') }}" style="margin:0" onsubmit="return confirm('PERINGATAN: Seluruh sekolah yang telah melewati masa aktif langganan hosting atau nonaktif akan DIHAPUS PERMANEN dari sistem beserta seluruh data akun dan nilainya. Lanjutkan?')">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-danger" style="display:inline-flex;align-items:center;gap:6px">
+                    <i class="fas fa-calendar-times"></i> Hapus Sekolah Expired Hosting
+                </button>
+            </form>
+            <span class="tag tag-mut">{{ $tenants->total() }} total sekolah</span>
+        </div>
     </div>
     <div class="card-body tight">
         @if($tenants->count() > 0)
@@ -262,6 +270,14 @@
                                             @csrf
                                             <button type="submit" class="btn btn-xs {{ $tenant->aktif ? 'btn-ghost' : 'btn-primary' }}" onclick="return confirm('Ubah status aktifasi?')">
                                                 {{ $tenant->aktif ? 'Nonaktifkan' : 'Aktifkan' }}
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('superadmin.tenants.destroy', $tenant->uuid) }}" style="display:inline" onsubmit="return confirm('PERINGATAN: Yakin ingin menghapus permanen sekolah {{ addslashes($tenant->nama_sekolah) }}? Seluruh akun pengguna, data siswa, rombel, dan nilainya akan dihapus permanen.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="force" value="1">
+                                            <button type="submit" class="btn btn-xs btn-outline-danger" title="Hapus permanen sekolah ini">
+                                                <i class="fas fa-trash-alt"></i> Hapus
                                             </button>
                                         </form>
                                     </div>

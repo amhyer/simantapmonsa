@@ -359,14 +359,15 @@
                     Hapus Pendaftaran Sekolah "{{ $tenant->nama_sekolah }}" dari Sistem
                 </div>
                 <div style="font-size:12.5px;color:#4B5563;line-height:1.5">
-                    <b>Proteksi Integritas Data Super Admin:</b> Menghapus sekolah ini <u>TIDAK</u> akan menghapus akun siswa, guru, atau nilai riwayat ujian dari database PostgreSQL. Seluruh data akun dan hasil ujian tetap utuh tersimpan di database dan otomatis <b>ditarik kembali ke akun Super Admin Pusat</b> (status <i>Ditarik ke Pusat / Unassigned</i>). Anda dapat melihat dan menautkannya kembali kapan saja.
+                    <b>Tindakan Permanen:</b> Menghapus sekolah ini akan menghapus permanen sekolah beserta seluruh data siswa, rombel, akun pengguna yang terikat pada sekolah ini. Tindakan ini tidak dapat dibatalkan.
                 </div>
             </div>
-            <form method="POST" action="{{ route('superadmin.tenants.destroy', $tenant->uuid) }}" onsubmit="return confirm('PERINGATAN: Apakah Anda yakin ingin menghapus sekolah {{ $tenant->nama_sekolah }}? Seluruh data akun dan nilai akan tetap aman tersimpan di database dan otomatis ditarik kembali ke akun Super Admin.')">
+            <form method="POST" action="{{ route('superadmin.tenants.destroy', $tenant->uuid) }}" onsubmit="return confirm('PERINGATAN: Apakah Anda yakin ingin menghapus permanen sekolah {{ $tenant->nama_sekolah }} beserta seluruh data di dalamnya? Tindakan ini tidak dapat dibatalkan!')">
                 @csrf
                 @method('DELETE')
+                <input type="hidden" name="force" value="1">
                 <button type="submit" class="btn btn-sm btn-bad">
-                    <i class="fas fa-trash-alt"></i> Hapus Sekolah &amp; Tarik Data ke Pusat
+                    <i class="fas fa-trash-alt"></i> Hapus Permanen Sekolah
                 </button>
             </form>
         </div>

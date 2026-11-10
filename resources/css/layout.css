@@ -421,11 +421,20 @@
         .stat-card.violet::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--violet); }
         .stat-card.warn .stat-value { color: var(--warn); }
         .stat-card.warn::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--warn); }
-        .stat { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden; }
+        .stat { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .stat:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         .stat::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--navy); }
         .stat.gold::after { background: var(--gold); }
         .stat.ok::after { background: var(--ok); }
-        .stat.bad::after { background: var(--bad); }
+        .stat.warn::after { background: var(--warn, #f59e0b); }
+        .stat.bad::after { background: var(--bad, #ef4444); }
+        .stat.info::after { background: #3b82f6; }
+        .stat.violet::after { background: var(--violet, #8b5cf6); }
+        .stat.ok .value { color: var(--ok); }
+        .stat.warn .value { color: var(--warn, #d97706); }
+        .stat.bad .value { color: var(--bad, #dc2626); }
+        .stat.info .value { color: #2563eb; }
+        .stat.gold .value { color: var(--gold); }
         .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
         .stat .value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; }
         .stat .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -861,6 +870,8 @@
             .cbt-bottom-bar { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
             .cbt-bottom-bar > div { width: 100%; display: flex; justify-content: space-between; }
             .cbt-bottom-bar .btn { flex: 1; text-align: center; justify-content: center; }
+            .cbt-split-pane { grid-template-columns: 1fr !important; gap: 14px; }
+            .cbt-stimulus-col { max-height: 42vh; }
         }
 
         /* TKA Pusmendik Dual-Pane Stimulus Layout */

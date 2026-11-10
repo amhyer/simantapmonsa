@@ -159,11 +159,17 @@ class ImportDapodikJob implements ShouldQueue
     private function importSiswaRow(array $s): string
     {
         $existing = null;
-        if (!empty($s['nisn'])) {
+        if (!empty($s['dapodik_id'])) {
+            $existing = Siswa::where('dapodik_id', $s['dapodik_id'])->first();
+        }
+        if (!$existing && !empty($s['nisn'])) {
             $existing = Siswa::where('nisn', $s['nisn'])->first();
         }
         if (!$existing && !empty($s['nik'])) {
             $existing = Siswa::where('nik', $s['nik'])->first();
+        }
+        if (!$existing && !empty($s['nis'])) {
+            $existing = Siswa::where('nis', $s['nis'])->first();
         }
 
         if ($existing && $this->tipeSync === 'baru') {

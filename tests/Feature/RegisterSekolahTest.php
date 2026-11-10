@@ -25,12 +25,13 @@ class RegisterSekolahTest extends TestCase
             'nama_sekolah' => 'SMP Negeri 55 Makassar',
             'npsn' => '40319999',
             'jenjang' => 'SMP',
+            'kepala_sekolah' => 'Dr. H. Muhammad Ilyas, M.Pd.',
             'subdomain' => 'smpn55mks',
             'kota' => 'Kota Makassar',
             'alamat' => 'Jl. Pendidikan No. 55',
-            'nama_lengkap' => 'Kepala Lab Komputer',
-            'nama_pengguna' => 'admin_smpn55',
-            'email' => 'admin@smpn55.sch.id',
+            'nama_lengkap' => 'Muhammad Akbar (Operator Sekolah)',
+            'nama_pengguna' => 'operator_smpn55',
+            'email' => 'operator@smpn55.sch.id',
             'telepon' => '081234567890',
             'kata_sandi' => 'PasswordSuper123!',
             'kata_sandi_confirmation' => 'PasswordSuper123!',
@@ -51,24 +52,25 @@ class RegisterSekolahTest extends TestCase
         $tenant = Tenant::where('npsn', '40319999')->first();
         $this->assertNotNull($tenant);
 
-        // Cek Admin User berhasil dibuat dan terikat ke tenant
+        // Cek Admin User (Operator Sekolah) berhasil dibuat dan terikat ke tenant
         $this->assertDatabaseHas('users', [
-            'nama_pengguna' => 'admin_smpn55',
-            'email' => 'admin@smpn55.sch.id',
+            'nama_pengguna' => 'operator_smpn55',
+            'email' => 'operator@smpn55.sch.id',
             'peran' => 'admin',
             'tenant_id' => $tenant->id,
         ]);
 
-        // Cek SekolahSettings terbuat
+        // Cek SekolahSettings terbuat dengan Kepala Sekolah
         $this->assertDatabaseHas('sekolah_settings', [
             'tenant_id' => $tenant->id,
             'npsn' => '40319999',
             'nama_sekolah' => 'SMP Negeri 55 Makassar',
+            'kepala_sekolah' => 'Dr. H. Muhammad Ilyas, M.Pd.',
         ]);
 
         // Pastikan login otomatis aktif
         $this->assertAuthenticated();
-        $this->assertEquals('admin_smpn55', auth()->user()->nama_pengguna);
+        $this->assertEquals('operator_smpn55', auth()->user()->nama_pengguna);
     }
 
     public function test_validasi_npsn_duplikat_ditolak(): void
@@ -85,6 +87,7 @@ class RegisterSekolahTest extends TestCase
             'nama_sekolah' => 'Sekolah Mencoba Duplikat',
             'npsn' => '40319999',
             'jenjang' => 'SD',
+            'kepala_sekolah' => 'Kepsek Uji Coba',
             'subdomain' => 'sekolah-baru',
             'nama_lengkap' => 'Admin Baru',
             'nama_pengguna' => 'admin_baru',
@@ -95,5 +98,24 @@ class RegisterSekolahTest extends TestCase
 
         $response = $this->post(route('sekolah.register.store'), $payload);
         $response->assertSessionHasErrors(['npsn']);
+    }
+
+    public function test_validasi_nama_kepala_sekolah_wajib_diisi(): void
+    {
+        $payload = [
+            'nama_sekolah' => 'SD Negeri Contoh',
+            'npsn' => '40318888',
+            'jenjang' => 'SD',
+            'kepala_sekolah' => '', // kosong
+            'subdomain' => 'sdncontoh',
+            'nama_lengkap' => 'Operator Sekolah',
+            'nama_pengguna' => 'operator_contoh',
+            'email' => 'operator@sdcontoh.sch.id',
+            'kata_sandi' => 'Password123!',
+            'kata_sandi_confirmation' => 'Password123!',
+        ];
+
+        $response = $this->post(route('sekolah.register.store'), $payload);
+        $response->assertSessionHasErrors(['kepala_sekolah']);
     }
 }

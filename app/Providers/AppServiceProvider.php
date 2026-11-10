@@ -7,6 +7,7 @@ use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\NilaiErapot;
+use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\Tka\StudentAssessment;
 use App\Models\Tryout\Result;
@@ -68,9 +69,9 @@ class AppServiceProvider extends ServiceProvider
         // Share activeTab with all views for admin routes
         View::share('activeTab', activeAdminTab());
 
-        // Sediakan data user layout sekali per request (dengan cache 5 menit)
-        // agar layouts/app.blade.php tidak menjalankan query Siswa di tiap halaman.
-        View::composer('layouts.app', function ($view) {
+        // Sediakan data user layout dan identitas sekolah tenant (dengan cache 5 menit)
+        // agar layout tidak menjalankan query berulang di tiap halaman.
+        View::composer(['layouts.app', 'layouts.admin-with-tabs'], function ($view) {
             $user = Auth::user();
             $foto = null;
 
@@ -95,11 +96,86 @@ class AppServiceProvider extends ServiceProvider
                 );
             }
 
-            $view->with('layoutUser', $user)->with('layoutUserFoto', $foto);
+            // Nama sekolah dinamis sesuai tenant sekolah yang sedang aktif/login
+            $namaSekolah = 'UPTD SDN Unggulan Mongisidi 1';
+            if ($user) {
+                if ($user->peran === 'super_admin') {
+                    $namaSekolah = 'Administrator Sistem';
+                } elseif (! empty($user->tenant_id)) {
+                    $tenantId = (int) $user->tenant_id;
+                    $namaSekolah = Cache::remember(
+                        'tenant-nama-'.$tenantId,
+                        300,
+                        function () use ($tenantId) {
+                            $tenant = Tenant::query()->find($tenantId);
+                            if ($tenant && ! empty($tenant->nama_sekolah)) {
+                                return $tenant->nama_sekolah;
+                            }
+                            $settings = SekolahSettings::query()->where('tenant_id', $tenantId)->first(['nama_sekolah']);
+
+                            return $settings->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
+                        }
+                    );
+                } else {
+                    $namaSekolah = Cache::remember(
+                        'root-sekolah-nama',
+                        300,
+                        function () {
+                            $settings = SekolahSettings::query()->first(['nama_sekolah']);
+
+                            return $settings->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
+                        }
+                    );
+                }
+            } elseif (TenantContext::check()) {
+                $tenantId = TenantContext::id();
+                $namaSekolah = Cache::remember(
+                    'tenant-nama-'.$tenantId,
+                    300,
+                    function () use ($tenantId) {
+                        $tenant = Tenant::query()->find($tenantId);
+
+                        return $tenant->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
+                    }
+                );
+            }
+
+            $view->with('layoutUser', $user)
+                ->with('layoutUserFoto', $foto)
+                ->with('layoutNamaSekolah', $namaSekolah);
+        });
+
+        // Nama sekolah dinamis di halaman login (terutama saat diakses via subdomain sekolah)
+        View::composer('auth.login', function ($view) {
+            $namaSekolah = 'UPTD SD Negeri Unggulan Mongisidi 1';
+            if (TenantContext::check()) {
+                $tenantId = TenantContext::id();
+                $namaSekolah = Cache::remember(
+                    'tenant-nama-'.$tenantId,
+                    300,
+                    function () use ($tenantId) {
+                        $tenant = Tenant::query()->find($tenantId);
+
+                        return $tenant->nama_sekolah ?? 'UPTD SD Negeri Unggulan Mongisidi 1';
+                    }
+                );
+            } else {
+                $namaSekolah = Cache::remember(
+                    'root-sekolah-nama',
+                    300,
+                    function () {
+                        $settings = SekolahSettings::query()->first(['nama_sekolah']);
+
+                        return $settings->nama_sekolah ?? 'UPTD SD Negeri Unggulan Mongisidi 1';
+                    }
+                );
+            }
+
+            $view->with('layoutNamaSekolah', $namaSekolah);
         });
 
         // Notifikasi topbar untuk admin: hanya skalar (jangan cache model).
-        View::composer('layouts.app', function ($view) {
+        View::composer(['layouts.app', 'layouts.admin-with-tabs'], function ($view) {
             $notifs = [];
             $user = Auth::user();
 

@@ -354,8 +354,11 @@ class DapodikSyncService
                     $guruId = $waliUser?->id;
                 }
 
-                $existing = Rombel::where('dapodik_id', $dapodikId)
-                    ->where('semester_id', $semester->id)
+                $existing = Rombel::where('semester_id', $semester->id)
+                    ->where(function ($query) use ($dapodikId, $namaRombel) {
+                        $query->where('dapodik_id', $dapodikId)
+                            ->orWhere('nama_rombel', $namaRombel);
+                    })
                     ->first();
 
                 $data = [
@@ -595,23 +598,23 @@ class DapodikSyncService
                 }
                 $this->seenNis[$nis] = true;
 
-                // Match existing: by dapodik_id first, then nisn
-                $existing = null;
-                if ($dapodikId) {
-                    $existing = Siswa::where('dapodik_id', $dapodikId)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
-                if (!$existing && $nisn) {
-                    $existing = Siswa::where('nisn', $nisn)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
-                if (!$existing && $nipd) {
-                    $existing = Siswa::where('nis', $nipd)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
+                // Match existing: by dapodik_id first, then nisn, then nipd
+                $existing = Siswa::where('semester_id', $semester->id)
+                    ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
+                        $hasCondition = false;
+                        if (!empty($dapodikId)) {
+                            $query->where('dapodik_id', $dapodikId);
+                            $hasCondition = true;
+                        }
+                        if (!empty($nisn)) {
+                            $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
+                            $hasCondition = true;
+                        }
+                        if (!empty($nipd)) {
+                            $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
+                        }
+                    })
+                    ->first();
 
                 // Gender mapping
                 $jkRaw = $row['jenis_kelamin'] ?? null;
@@ -829,8 +832,11 @@ class DapodikSyncService
             }
             $this->seenRombel[$dapodikId] = true;
 
-            $existing = Rombel::where('dapodik_id', $dapodikId)
-                ->where('semester_id', $semester->id)
+            $existing = Rombel::where('semester_id', $semester->id)
+                ->where(function ($query) use ($dapodikId, $namaRombel) {
+                    $query->where('dapodik_id', $dapodikId)
+                        ->orWhere('nama_rombel', $namaRombel);
+                })
                 ->first();
 
             if ($existing) {
@@ -950,17 +956,22 @@ class DapodikSyncService
                 continue;
             }
 
-            $existing = null;
-            if ($dapodikId) {
-                $existing = Siswa::where('dapodik_id', $dapodikId)
-                    ->where('semester_id', $semester->id)
-                    ->first();
-            }
-            if (!$existing && $nisn) {
-                $existing = Siswa::where('nisn', $nisn)
-                    ->where('semester_id', $semester->id)
-                    ->first();
-            }
+            $existing = Siswa::where('semester_id', $semester->id)
+                ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
+                    $hasCondition = false;
+                    if (!empty($dapodikId)) {
+                        $query->where('dapodik_id', $dapodikId);
+                        $hasCondition = true;
+                    }
+                    if (!empty($nisn)) {
+                        $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
+                        $hasCondition = true;
+                    }
+                    if (!empty($nipd)) {
+                        $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
+                    }
+                })
+                ->first();
 
             if ($existing) {
                 $result['summary']['update']++;

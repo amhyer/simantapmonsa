@@ -18,6 +18,7 @@ use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -164,6 +165,202 @@ class DapodikImportController extends Controller
     {
         DapodikSyncLog::findOrFail($id)->delete();
         return redirect()->route('admin.dapodik.index')->with('success', 'Log dihapus.');
+    }
+
+    public function resetData(Request $request)
+    {
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+
+        $request->validate([
+            'konfirmasi' => 'required|in:KOSONGKAN DATA DAPODIK',
+            'password' => 'required|current_password',
+        ], [
+            'konfirmasi.required' => 'Ketik persis KOSONGKAN DATA DAPODIK untuk konfirmasi.',
+            'konfirmasi.in' => 'Teks konfirmasi salah. Ketik persis: KOSONGKAN DATA DAPODIK.',
+            'password.required' => 'Kata sandi wajib diisi untuk konfirmasi identitas.',
+            'password.current_password' => 'Kata sandi salah. Gunakan kata sandi akun Anda yang sedang login.',
+        ]);
+
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $currentUserId = auth()->id();
+        $totalSiswaDihapus = 0;
+        $totalRombelDihapus = 0;
+        $totalPtkDihapus = 0;
+        $totalUsersDihapus = 0;
+        $totalJadwalDihapus = 0;
+
+        Schema::disableForeignKeyConstraints();
+        DB::beginTransaction();
+        try {
+            // 1. Ambil ID Siswa milik sekolah ini
+            $siswaQuery = Siswa::query();
+            if ($tenantId !== null) {
+                $siswaQuery->where('tenant_id', $tenantId);
+            }
+            $siswaIds = $siswaQuery->pluck('id');
+
+            // Hapus semua data anak yang mereferensikan siswa_id
+            if ($siswaIds->isNotEmpty()) {
+                $allTables = Schema::getTableListing();
+                foreach ($allTables as $tbl) {
+                    if ($tbl === 'siswa') continue;
+                    if (Schema::hasColumn($tbl, 'siswa_id')) {
+                        DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
+                    }
+                }
+            }
+
+            // Hapus data fisik siswa
+            if ($tenantId !== null) {
+                Siswa::where('tenant_id', $tenantId)->update(['rombel_id' => null]);
+                $totalSiswaDihapus = Siswa::where('tenant_id', $tenantId)->forceDelete();
+            } else {
+                Siswa::query()->update(['rombel_id' => null]);
+                $totalSiswaDihapus = Siswa::query()->forceDelete();
+            }
+
+            // 2. Hapus Rombel milik sekolah ini
+            $rombelQuery = Rombel::query();
+            if ($tenantId !== null) {
+                $rombelQuery->where('tenant_id', $tenantId);
+            }
+            $rombelIds = $rombelQuery->pluck('id');
+
+            if ($rombelIds->isNotEmpty()) {
+                foreach (['jadwal_pelajaran', 'pembelajaran', 'anggota_rombel', 'penilaian', 'nilai', 'presensi'] as $tbl) {
+                    if (Schema::hasTable($tbl) && Schema::hasColumn($tbl, 'rombel_id')) {
+                        DB::table($tbl)->whereIn('rombel_id', $rombelIds)->delete();
+                    }
+                }
+            }
+
+            if ($tenantId !== null) {
+                $totalRombelDihapus = Rombel::where('tenant_id', $tenantId)->forceDelete();
+            } else {
+                $totalRombelDihapus = Rombel::query()->forceDelete();
+            }
+
+            // 3. Hapus PTK milik sekolah ini
+            if (Schema::hasTable('ptk')) {
+                $ptkQuery = Ptk::query();
+                if ($tenantId !== null && Schema::hasColumn('ptk', 'tenant_id')) {
+                    $ptkQuery->where('tenant_id', $tenantId);
+                }
+                $totalPtkDihapus = $ptkQuery->delete();
+            }
+
+            // 4. Hapus Jadwal Pelajaran milik sekolah ini
+            if (Schema::hasTable('jadwal_pelajaran')) {
+                $jadwalQuery = JadwalPelajaran::query();
+                if ($tenantId !== null && Schema::hasColumn('jadwal_pelajaran', 'tenant_id')) {
+                    $jadwalQuery->where('tenant_id', $tenantId);
+                }
+                $totalJadwalDihapus = $jadwalQuery->delete();
+            }
+
+            // 5. Hapus akun pengguna (users) yang bersumber dari Dapodik:
+            // - Semua akun siswa
+            // - Semua akun guru/tendik dengan dapodik_id
+            // Jangan hapus akun admin yang sedang login dan super_admin
+            $userQuery = User::query();
+            if ($tenantId !== null && Schema::hasColumn('users', 'tenant_id')) {
+                $userQuery->where('tenant_id', $tenantId);
+            }
+            $userQuery->where(function ($q) {
+                $q->where('peran', 'siswa')
+                  ->orWhereNotNull('dapodik_id');
+            });
+            if ($currentUserId) {
+                $userQuery->where('id', '!=', $currentUserId);
+            }
+            $userQuery->where('peran', '!=', 'super_admin');
+
+            $targetUserIds = $userQuery->pluck('id');
+            if ($targetUserIds->isNotEmpty()) {
+                if (Schema::hasTable('presensi_pegawai')) {
+                    DB::table('presensi_pegawai')->whereIn('user_id', $targetUserIds)->delete();
+                }
+                $totalUsersDihapus = User::whereIn('id', $targetUserIds)->forceDelete();
+            }
+
+            // 6. Hapus riwayat log sinkronisasi Dapodik milik sekolah ini
+            if (Schema::hasTable('dapodik_sync_logs')) {
+                $logQuery = DapodikSyncLog::query();
+                if ($tenantId !== null && Schema::hasColumn('dapodik_sync_logs', 'tenant_id')) {
+                    $logQuery->where('tenant_id', $tenantId);
+                }
+                $logQuery->delete();
+            }
+
+            // 7. Hapus identitas sekolah (sekolah_settings) milik sekolah ini
+            if (Schema::hasTable('sekolah_settings')) {
+                $settingsQuery = \App\Models\SekolahSettings::query();
+                if ($tenantId !== null && Schema::hasColumn('sekolah_settings', 'tenant_id')) {
+                    $settingsQuery->where('tenant_id', $tenantId);
+                }
+                $settingsQuery->delete();
+            }
+
+            // Flush cache aplikasi
+            \Illuminate\Support\Facades\Cache::flush();
+
+            // 7. Reset timestamp sinkronisasi Dapodik config
+            try {
+                \App\Models\DapodikConfig::getInstance()->update([
+                    'last_sync_at' => null,
+                    'last_sync_by' => null,
+                    'auto_sync_last_run_at' => null,
+                    'auto_sync_run_status' => null,
+                    'auto_sync_run_error' => null,
+                ]);
+            } catch (\Throwable $e) {
+                // Abaikan jika tabel config belum termuat
+            }
+
+            // 8. Reset PostgreSQL sequences jika driver pgsql
+            if (DB::getDriverName() === 'pgsql') {
+                foreach (['siswa', 'rombel', 'ptk', 'jadwal_pelajaran', 'dapodik_sync_logs'] as $table) {
+                    if (Schema::hasTable($table) && Schema::hasColumn($table, 'id')) {
+                        $seq = DB::selectOne("SELECT pg_get_serial_sequence(?, ?) AS seq", [$table, 'id'])?->seq;
+                        if ($seq) {
+                            $maxId = (int) DB::table($table)->max('id');
+                            DB::statement("SELECT setval(?, ?, ?)", [$seq, max($maxId, 1), $maxId > 0]);
+                        }
+                    }
+                }
+            }
+
+            // Catat aktivitas
+            $guru = auth()->user();
+            try {
+                Aktivitas::create([
+                    'uuid' => (string) Str::uuid(),
+                    'guru_id' => $guru?->id,
+                    'nama_guru' => $guru?->nama_lengkap ?? 'Admin',
+                    'jenis' => 'pengaturan',
+                    'judul' => 'Reset Data Dapodik',
+                    'deskripsi' => "Mengosongkan seluruh data Dapodik: {$totalSiswaDihapus} siswa, {$totalRombelDihapus} rombel, {$totalPtkDihapus} PTK, {$totalUsersDihapus} akun pengguna, dan {$totalJadwalDihapus} jadwal.",
+                    'tabel_terkait' => 'siswa,rombel,ptk,users,jadwal_pelajaran',
+                ]);
+            } catch (\Throwable $e) {
+                // Abaikan error logging aktivitas
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.dapodik.index')->with(
+                'success',
+                "Seluruh data Dapodik berhasil dikosongkan total ({$totalSiswaDihapus} siswa, {$totalRombelDihapus} rombel, {$totalPtkDihapus} PTK, {$totalUsersDihapus} akun pengguna Dapodik dihapus). Anda kini dapat melakukan penarikan data baru dari Dapodik secara bersih."
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->route('admin.dapodik.index')->with(
+                'error',
+                'Gagal mengosongkan data Dapodik: ' . $e->getMessage()
+            );
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 
     public function downloadBridge()

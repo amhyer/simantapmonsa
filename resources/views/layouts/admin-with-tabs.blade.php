@@ -24,6 +24,7 @@
         }
     </style>
     @endif
+    @stack('styles')
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -34,7 +35,7 @@
                 <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid #B8860B;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
                 <div>
                     <div class="brand-text">SIMANTAP_MONSA</div>
-                    <div class="brand-sub">UPTD SDN Unggulan Mongisidi 1</div>
+                    <div class="brand-sub" title="{{ $layoutNamaSekolah ?? 'UPTD SDN Unggulan Mongisidi 1' }}">{{ $layoutNamaSekolah ?? 'UPTD SDN Unggulan Mongisidi 1' }}</div>
                 </div>
             </a>
         </div>

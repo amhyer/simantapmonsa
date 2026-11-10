@@ -6,14 +6,39 @@
 @section('page_subtitle', 'Pilih metode sinkronisasi data Dapodik')
 
 @section('header_actions')
+    <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary btn-sm"><i class="fas fa-download"></i> Download Bridge (.exe)</a>
     <a href="{{ route('admin.api-keys.index') }}" class="btn btn-ghost btn-sm"><i class="fas fa-key"></i> API Keys</a>
+    <button type="button" class="btn btn-outline-danger btn-sm" onclick="document.getElementById('resetDapodikModal').style.display='flex'"><i class="fas fa-trash-alt"></i> Kosongkan Data Sekolah</button>
 @endsection
 
 @section('content')
 
+@if(session('success'))
+<div role="status" style="padding:12px 16px;border-radius:8px;background:#E6F5F0;color:#059669;margin-bottom:16px;font-weight:600">
+    <i class="fas fa-check-circle" style="margin-right:6px"></i> {{ session('success') }}
+</div>
+@endif
+@if(session('error'))
+<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:#DC2626;margin-bottom:16px;font-weight:600">
+    <i class="fas fa-exclamation-circle" style="margin-right:6px"></i> {{ session('error') }}
+</div>
+@endif
+@if($errors->any())
+<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:#DC2626;margin-bottom:16px;font-weight:600">
+    <ul style="margin:0;padding-left:20px">
+        @foreach($errors->all() as $err)
+            <li>{{ $err }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 @if($isTenant)
-<div role="status" style="padding:12px 16px;border-radius:8px;background:#fff4d6;color:#714b00;margin-bottom:16px">
-    Dapodik Bridge dan sinkronisasi lama belum aman untuk multi-sekolah, jadi kontrolnya disembunyikan. Gunakan bagian <strong>Kelola Langsung</strong> untuk impor berkas sekolah ini. Data PTK global tidak ditampilkan.
+<div role="status" style="padding:14px 18px;border-radius:10px;background:#EEF4FF;border:1px solid #C7D7FE;color:#1E40AF;margin-bottom:18px;font-size:13.5px;line-height:1.5">
+    <div style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#1E3A8A">
+        <i class="fas fa-info-circle"></i> Integrasi Dapodik Sekolah:
+    </div>
+    Gunakan aplikasi desktop <b>SIMANTAP Bridge</b> di bawah ini untuk menghubungkan Dapodik lokal sekolah Anda ke server SIMANTAP MONSA menggunakan <b>API Key</b> sekolah, atau gunakan opsi <b>Kelola Langsung</b> untuk impor berkas siswa dan rombel. (Dapodik Bridge dan sinkronisasi lama belum aman untuk multi-sekolah langsung).
 </div>
 @endif
 <div id="globalAlert" style="display:none;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
@@ -24,6 +49,56 @@
     <div class="stat-card gold"><div class="stat-value" id="statPtk">-</div><div class="stat-label">PTK (Guru/Tendik)</div></div>
     <div class="stat-card ok"><div class="stat-value" id="statRombel">-</div><div class="stat-label">Rombel</div></div>
     <div class="stat-card" id="statSyncCard"><div class="stat-value" id="statSyncTerakhir" style="font-size:16px">-</div><div class="stat-label">Sinkron Terakhir</div></div>
+</div>
+
+{{-- Card Download SIMANTAP Bridge (Selalu Tampil untuk Admin Sekolah) --}}
+<div class="card" style="margin-bottom:24px;border:1px solid #E2E8F0;border-left:4px solid #1F3864;box-shadow:0 2px 8px rgba(31,56,100,0.06)">
+    <div class="card-header" style="background:#F8FAFC;display:flex;justify-content:space-between;align-items:center;padding:14px 20px">
+        <h3 style="margin:0;font-size:16px;font-weight:700;color:#1F3864;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-plug" style="color:#2563EB"></i> Aplikasi Desktop SIMANTAP Bridge
+        </h3>
+        <span class="badge" style="background:#DBEAFE;color:#1E40AF;padding:4px 10px;border-radius:20px;font-weight:600;font-size:12px">Penghubung Resmi Dapodik</span>
+    </div>
+    <div class="card-body" style="padding:20px">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <img src="{{ asset('images/logo-128.png') }}" alt="SIMANTAP Bridge" style="width:68px;height:68px;border-radius:12px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 12px rgba(31,56,100,0.12);flex-shrink:0">
+            <div style="flex:1;min-width:260px">
+                <p style="font-size:14px;color:#334155;margin:0 0 10px 0;line-height:1.55">
+                    Aplikasi desktop <b>SIMANTAP Bridge</b> berjalan di laptop/komputer operator sekolah tempat aplikasi <b>Dapodik lokal</b> terpasang. Bridge bertugas membaca data Dapodik dan mengirimkannya secara aman ke server SIMANTAP MONSA.
+                </p>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+                    <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary" style="padding:8px 18px;font-weight:600;display:inline-flex;align-items:center;gap:8px">
+                        <i class="fas fa-download"></i> Unduh SIMANTAP-Bridge (.exe)
+                    </a>
+                    <a href="{{ route('admin.api-keys.index') }}" class="btn btn-secondary" style="padding:8px 16px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+                        <i class="fas fa-key"></i> Buat / Salin API Key Sekolah
+                    </a>
+                    <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;font-size:12px">
+                        <i class="fas fa-file-code"></i> Versi Windows ({{ $bridgeSize ? round($bridgeSize / (1024*1024), 1) . ' MB' : '~41 MB' }})
+                    </span>
+                </div>
+
+                @if($bridgeChecksum)
+                    <div style="margin-top:8px;font-size:12px;color:#64748B;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span style="font-weight:600;color:#475569">Checksum SHA-256:</span>
+                        <code style="font-size:11px;background:#F1F5F9;padding:2px 8px;border-radius:4px;word-break:break-all;color:#334155;border:1px solid #E2E8F0">{{ $bridgeChecksum }}</code>
+                    </div>
+                @endif
+
+                <div style="margin-top:16px;padding:12px 14px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px">
+                    <div style="font-size:12.5px;font-weight:700;color:#1E293B;margin-bottom:6px">
+                        <i class="fas fa-list-ol" style="color:#2563EB;margin-right:4px"></i> 3 Langkah Mudah Menghubungkan:
+                    </div>
+                    <ol style="margin:0;padding-left:18px;font-size:12px;color:#475569;line-height:1.6">
+                        <li>Unduh & jalankan <b>SIMANTAP-Bridge.exe</b> di komputer/laptop yang terpasang Dapodik (port 5774).</li>
+                        <li>Buka menu <a href="{{ route('admin.api-keys.index') }}" style="color:#2563EB;font-weight:600;text-decoration:underline">API Keys</a> di atas, lalu buat atau salin kunci API sekolah Anda.</li>
+                        <li>Buka aplikasi Bridge, masukkan <b>URL Server SIMANTAP</b> dan <b>API Key</b>, lalu klik <b>Sinkronkan Data</b>.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Bridge hanya ditampilkan bila integrasi single-school tersedia. --}}
@@ -203,30 +278,6 @@
         </div>
     </div>
 
-    {{-- Download Bridge --}}
-    <div class="card" style="margin-bottom:20px">
-        <div class="card-header">
-            <h3><i class="fas fa-download" style="color:var(--ok)"></i> Download SIMANTAP_MONSA Bridge</h3>
-        </div>
-        <div class="card-body">
-            <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-                <img src="{{ asset('images/logo-128.png') }}" alt="SIMANTAP_MONSA Bridge" style="width:72px;height:72px;border-radius:14px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 14px rgba(31,56,100,0.15);flex-shrink:0">
-                <div style="flex:1;min-width:200px">
-                    <p style="font-size:13.5px;color:#344054;margin:0 0 8px 0;line-height:1.5">Aplikasi desktop resmi <b>SIMANTAP_MONSA Bridge</b> untuk menghubungkan Dapodik lokal sekolah dengan server aplikasi. Inovasi UPTD SD Negeri Unggulan Mongisidi 1.</p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                        <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary"><i class="fas fa-download"></i> Download Bridge</a>
-                        <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px"><i class="fas fa-file"></i> SIMANTAP-Bridge.exe ({{ $bridgeSize ? round($bridgeSize / (1024*1024), 1) . ' MB' : '~41 MB' }})</span>
-                    </div>
-                    @if($bridgeChecksum)
-                        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                            <span class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:600;font-family:monospace;padding:2px 6px;border-radius:4px">SHA-256 Integritas</span>
-                            <code style="font-size:11px;background:#f1f5f9;padding:3px 8px;border-radius:4px;word-break:break-all;color:#334155;border:1px solid #e2e8f0">{{ $bridgeChecksum }}</code>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- Riwayat --}}
     <div class="card" style="margin-bottom:20px">
@@ -895,6 +946,34 @@ document.addEventListener('DOMContentLoaded', function() {
             <span id="syncModalBadge" class="tag tag-primary">Berjalan</span>
         </div>
         <div style="padding:20px 24px" id="syncModalBody"></div>
+    </div>
+</div>
+
+{{-- Modal Reset Data Dapodik --}}
+<div id="resetDapodikModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center">
+    <div style="background:#fff;border-radius:16px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden">
+        <div style="padding:18px 24px;background:#FEE9E7;border-bottom:1px solid #FECDCA;display:flex;align-items:center;justify-content:space-between">
+            <h3 style="font-size:16px;font-weight:700;color:#DC2626;margin:0"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Kosongkan Data Dapodik Sekolah</h3>
+            <button type="button" onclick="document.getElementById('resetDapodikModal').style.display='none'" style="background:none;border:none;font-size:18px;color:#98A2B3;cursor:pointer">&times;</button>
+        </div>
+        <form action="{{ route('admin.dapodik.reset') }}" method="POST" style="padding:24px">
+            @csrf
+            <p style="font-size:13px;color:#475467;margin-top:0;margin-bottom:16px;line-height:1.5">
+                Tindakan ini akan <strong>mengosongkan seluruh data yang diambil dari Dapodik</strong> (siswa, rombel, PTK, akun pengguna Dapodik, dan jadwal) milik sekolah ini di basis data. Akun admin Anda tetap aman. Anda dapat melakukan penarikan data baru dari Dapodik secara bersih kapan saja.
+            </p>
+            <div style="margin-bottom:16px">
+                <label style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Ketik persis konfirmasi: <code style="color:#DC2626;background:#FEE9E7;padding:2px 6px;border-radius:4px">KOSONGKAN DATA DAPODIK</code></label>
+                <input type="text" name="konfirmasi" required placeholder="KOSONGKAN DATA DAPODIK" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+            </div>
+            <div style="margin-bottom:20px">
+                <label style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Kata Sandi Akun Anda</label>
+                <input type="password" name="password" required placeholder="Masukkan kata sandi login" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+                <button type="button" onclick="document.getElementById('resetDapodikModal').style.display='none'" class="btn btn-ghost">Batal</button>
+                <button type="submit" class="btn btn-danger" style="background:#DC2626;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer"><i class="fas fa-trash-alt"></i> Ya, Kosongkan Data</button>
+            </div>
+        </form>
     </div>
 </div>
 @endpush

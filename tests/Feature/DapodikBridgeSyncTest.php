@@ -277,4 +277,102 @@ class DapodikBridgeSyncTest extends TestCase
             if ($created) unlink($path);
         }
     }
+
+    public function test_export_nilai_rapor_returns_data_for_bridge(): void
+    {
+        $semester = Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+
+        $siswa = Siswa::create([
+            'semester_id' => $semester->id,
+            'dapodik_id' => 'pd-export-001',
+            'nis' => 'EXP001',
+            'nisn' => '1234567890',
+            'nama_peserta_didik' => 'Siswa Export',
+            'kelas' => '6A',
+            'jenis_kelamin' => 'L',
+        ]);
+
+        \App\Models\NilaiErapot::create([
+            'guru_id' => $this->admin->id,
+            'siswa_id' => $siswa->id,
+            'mata_pelajaran' => 'Matematika',
+            'kelas' => '6A',
+            'semester' => 'ganjil',
+            'tahun_ajaran' => '2026/2027',
+            'nilai_akhir' => 88.5,
+            'predikat' => 'A',
+            'deskripsi_capaian' => 'Sangat menguasai konsep matematika dasar.',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->getJson('/api/dapodik/sync/export/nilai-rapor?semester_id=20261');
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'nilai-rapor',
+                'total' => 1,
+            ])
+            ->assertJsonPath('data.0.peserta_didik_id', 'pd-export-001')
+            ->assertJsonPath('data.0.mata_pelajaran', 'Matematika')
+            ->assertJsonPath('data.0.nilai_akhir', 88.5);
+    }
+
+    public function test_export_kehadiran_returns_data_for_bridge(): void
+    {
+        $semester = Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+
+        $siswa = Siswa::create([
+            'semester_id' => $semester->id,
+            'dapodik_id' => 'pd-export-002',
+            'nis' => 'EXP002',
+            'nama_peserta_didik' => 'Siswa Kehadiran',
+            'kelas' => '6A',
+            'jenis_kelamin' => 'P',
+        ]);
+
+        \App\Models\Kehadiran::create([
+            'guru_id' => $this->admin->id,
+            'siswa_id' => $siswa->id,
+            'tanggal' => '2026-11-09',
+            'status' => 'H',
+            'keterangan' => 'Hadir tepat waktu',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->getJson('/api/dapodik/sync/export/kehadiran?semester_id=20261');
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'kehadiran',
+                'total' => 1,
+            ])
+            ->assertJsonPath('data.0.peserta_didik_id', 'pd-export-002')
+            ->assertJsonPath('data.0.status', 'H');
+    }
+
+    public function test_export_rejects_unknown_module(): void
+    {
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->getJson('/api/dapodik/sync/export/modul-asing');
+
+        $response->assertNotFound()
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_export_requires_api_key(): void
+    {
+        $this->getJson('/api/dapodik/sync/export/nilai-rapor')
+            ->assertUnauthorized();
+    }
 }

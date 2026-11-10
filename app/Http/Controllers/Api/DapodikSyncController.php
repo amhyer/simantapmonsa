@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DapodikSyncLog;
 use App\Models\JadwalPelajaran;
+use App\Models\Kehadiran;
+use App\Models\NilaiErapot;
 use App\Models\Ptk;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
@@ -125,6 +127,12 @@ class DapodikSyncController extends Controller
             DB::transaction(function () use ($chunk, $rowHandler, $onError, &$stats) {
                 foreach ($chunk as $item) {
                     try {
+                        if (is_string($item)) {
+                            $decoded = json_decode($item, true);
+                            if (is_array($decoded)) {
+                                $item = $decoded;
+                            }
+                        }
                         $outcome = DB::transaction(fn () => $rowHandler($item));
                         if (isset($stats[$outcome])) {
                             $stats[$outcome]++;
@@ -194,18 +202,24 @@ class DapodikSyncController extends Controller
             function (array $pd) use ($semester): string {
                 $dapodikId = $pd['peserta_didik_id'] ?? $pd['dapodik_id'] ?? null;
                 $nisn = $pd['nisn'] ?? null;
+                $nipd = $pd['nis'] ?? $pd['nipd'] ?? null;
 
-                $existing = null;
-                if ($dapodikId) {
-                    $existing = Siswa::where('dapodik_id', $dapodikId)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
-                if (!$existing && $nisn) {
-                    $existing = Siswa::where('nisn', $nisn)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
+                $existing = Siswa::where('semester_id', $semester->id)
+                    ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
+                        $hasCondition = false;
+                        if (!empty($dapodikId)) {
+                            $query->where('dapodik_id', $dapodikId);
+                            $hasCondition = true;
+                        }
+                        if (!empty($nisn)) {
+                            $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
+                            $hasCondition = true;
+                        }
+                        if (!empty($nipd)) {
+                            $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
+                        }
+                    })
+                    ->first();
 
                 $rombelId = null;
                 $guruId = null;
@@ -367,19 +381,20 @@ class DapodikSyncController extends Controller
             $data,
             function (array $r) use ($semester): string {
                 $dapodikId = $r['rombongan_belajar_id'] ?? $r['dapodik_id'] ?? null;
+                $namaRombel = $r['nama'] ?? $r['nama_rombel'] ?? null;
 
-                $existing = null;
-                if ($dapodikId) {
-                    $existing = Rombel::where('dapodik_id', $dapodikId)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
-                if (!$existing && !empty($r['nama'] ?? $r['nama_rombel'])) {
-                    $namaRombel = $r['nama'] ?? $r['nama_rombel'];
-                    $existing = Rombel::where('nama_rombel', $namaRombel)
-                        ->where('semester_id', $semester->id)
-                        ->first();
-                }
+                $existing = Rombel::where('semester_id', $semester->id)
+                    ->where(function ($query) use ($dapodikId, $namaRombel) {
+                        $hasCondition = false;
+                        if (!empty($dapodikId)) {
+                            $query->where('dapodik_id', $dapodikId);
+                            $hasCondition = true;
+                        }
+                        if (!empty($namaRombel)) {
+                            $hasCondition ? $query->orWhere('nama_rombel', $namaRombel) : $query->where('nama_rombel', $namaRombel);
+                        }
+                    })
+                    ->first();
 
                 $guruId = null;
                 $waliKelasPtkId = $r['ptk_id'] ?? $r['guru_id'] ?? $r['wali_kelas_ptk_id'] ?? null;
@@ -486,6 +501,139 @@ class DapodikSyncController extends Controller
             'stats' => $stats,
             'semesters' => $semesters,
             'recent_logs' => $recentLogs,
+        ]);
+    }
+
+    /**
+     * Endpoint ekspor data SIMANTAP untuk dikirim ke Dapodik via Bridge.
+     */
+    public function export(Request $request, string $modul)
+    {
+        $semesterId = $request->query('semester_id');
+        $semester = $semesterId ? Semester::where('semester_id', $semesterId)->first() : null;
+
+        return match ($modul) {
+            'nilai-rapor' => $this->exportNilaiRapor($semester),
+            'kehadiran' => $this->exportKehadiran($semester),
+            'sekolah' => $this->exportSekolah(),
+            'peserta-didik' => $this->exportPesertaDidik($semester),
+            default => response()->json([
+                'success' => false,
+                'message' => "Modul export '{$modul}' tidak didukung. Pilihan: nilai-rapor, kehadiran, sekolah, peserta-didik.",
+            ], 404),
+        };
+    }
+
+    private function exportNilaiRapor(?Semester $semester)
+    {
+        $query = NilaiErapot::with('siswa');
+        if ($semester) {
+            $siswaIds = Siswa::where('semester_id', $semester->id)->pluck('id');
+            $query->whereIn('siswa_id', $siswaIds)
+                  ->where('tahun_ajaran', $semester->tahun_ajaran);
+        }
+
+        $items = $query->get()->map(function ($nilai) use ($semester) {
+            return [
+                'peserta_didik_id' => $nilai->siswa?->dapodik_id,
+                'nisn' => $nilai->siswa?->nisn,
+                'nama' => $nilai->siswa?->nama_peserta_didik,
+                'semester_id' => $semester?->semester_id ?? $nilai->semester,
+                'mata_pelajaran' => $nilai->mata_pelajaran,
+                'kelas' => $nilai->kelas,
+                'nilai_akhir' => (float) $nilai->nilai_akhir,
+                'predikat' => $nilai->predikat,
+                'deskripsi' => $nilai->deskripsi_capaian,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'modul' => 'nilai-rapor',
+            'total' => $items->count(),
+            'data' => $items,
+        ]);
+    }
+
+    private function exportKehadiran(?Semester $semester)
+    {
+        $query = Kehadiran::with('siswa');
+        if ($semester) {
+            $siswaIds = Siswa::where('semester_id', $semester->id)->pluck('id');
+            $query->whereIn('siswa_id', $siswaIds);
+        }
+
+        $items = $query->get()->map(function ($k) use ($semester) {
+            return [
+                'peserta_didik_id' => $k->siswa?->dapodik_id,
+                'nisn' => $k->siswa?->nisn,
+                'nama' => $k->siswa?->nama_peserta_didik,
+                'semester_id' => $semester?->semester_id ?? '',
+                'tanggal' => $k->tanggal?->format('Y-m-d'),
+                'status' => $k->status,
+                'keterangan' => $k->keterangan,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'modul' => 'kehadiran',
+            'total' => $items->count(),
+            'data' => $items,
+        ]);
+    }
+
+    private function exportSekolah()
+    {
+        $sekolah = SekolahSettings::first();
+        if (!$sekolah) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data sekolah belum dikonfigurasi.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'modul' => 'sekolah',
+            'total' => 1,
+            'data' => [
+                'npsn' => $sekolah->npsn,
+                'nama' => $sekolah->nama_sekolah,
+                'alamat' => $sekolah->alamat,
+                'telepon' => $sekolah->telepon,
+                'email' => $sekolah->email,
+                'kepala_sekolah' => $sekolah->kepala_sekolah,
+            ],
+        ]);
+    }
+
+    private function exportPesertaDidik(?Semester $semester)
+    {
+        $query = Siswa::where('aktif', true)->whereNull('archived_at');
+        if ($semester) {
+            $query->where('semester_id', $semester->id);
+        }
+
+        $items = $query->get()->map(function ($s) {
+            return [
+                'peserta_didik_id' => $s->dapodik_id,
+                'nisn' => $s->nisn,
+                'nipd' => $s->nis,
+                'nama' => $s->nama_peserta_didik,
+                'jenis_kelamin' => $s->jenis_kelamin,
+                'kelas' => $s->kelas,
+                'tempat_lahir' => $s->tempat_lahir,
+                'tanggal_lahir' => $s->tanggal_lahir?->format('Y-m-d'),
+                'agama' => $s->agama,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'modul' => 'peserta-didik',
+            'total' => $items->count(),
+            'data' => $items,
         ]);
     }
 }

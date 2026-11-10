@@ -9,6 +9,7 @@ use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class TenantController extends Controller
@@ -150,12 +151,108 @@ class TenantController extends Controller
         return back()->with('success', "Sekolah '{$tenant->nama_sekolah}' berhasil {$statusStr}.");
     }
 
-    public function destroy(Tenant $tenant)
+    public function destroy(Request $request, Tenant $tenant)
     {
-        // Banyak tabel lama masih memakai nullOnDelete tanpa penanda kepemilikan.
-        // Menghapus tenant dapat membuat data privat terlihat sebagai sekolah tunggal.
+        $today = now()->toDateString();
+        $isExpired = $tenant->tgl_kedaluwarsa && $tenant->tgl_kedaluwarsa < $today;
+        $isForced = $request->boolean('force') || $request->input('confirm') === '1';
+
+        // Sekolah aktif yang belum kedaluwarsa dilindungi kecuali ada konfirmasi paksa (force=1)
+        if ($tenant->aktif && ! $isExpired && ! $isForced) {
+            return redirect()->route('superadmin.tenants.index')
+                ->with('error', 'Penghapusan sekolah sementara dinonaktifkan. Nonaktifkan sekolah sampai prosedur penghapusan data per tenant tersedia dan diuji.');
+        }
+
+        $nama = $tenant->nama_sekolah;
+        $this->deleteTenantData($tenant);
+
         return redirect()->route('superadmin.tenants.index')
-            ->with('error', 'Penghapusan sekolah sementara dinonaktifkan. Nonaktifkan sekolah sampai prosedur penghapusan data per tenant tersedia dan diuji.');
+            ->with('success', "Sekolah '{$nama}' dan seluruh data akun/nilainya berhasil dihapus permanen.");
+    }
+
+    public function destroyExpiredTenants(Request $request)
+    {
+        $today = now()->toDateString();
+        $expiredTenants = Tenant::where(function ($q) use ($today) {
+            $q->whereNotNull('tgl_kedaluwarsa')
+              ->where('tgl_kedaluwarsa', '<', $today);
+        })->orWhere('aktif', false)->get();
+
+        if ($expiredTenants->isEmpty()) {
+            return back()->with('info', 'Tidak ditemukan sekolah dengan status hosting kedaluwarsa atau nonaktif.');
+        }
+
+        $count = 0;
+        foreach ($expiredTenants as $tenant) {
+            $this->deleteTenantData($tenant);
+            $count++;
+        }
+
+        return back()->with('success', "Sebanyak {$count} sekolah yang belum memperpanjang hosting / nonaktif berhasil dihapus permanen.");
+    }
+
+    protected function deleteTenantData(Tenant $tenant): void
+    {
+        $tenantId = $tenant->id;
+        Schema::disableForeignKeyConstraints();
+        DB::beginTransaction();
+        try {
+            // 1. Bersihkan tabel-tabel anak siswa_id
+            if (Schema::hasTable('siswa')) {
+                $siswaIds = DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id');
+                if ($siswaIds->isNotEmpty()) {
+                    foreach (Schema::getTableListing() as $tbl) {
+                        if ($tbl === 'siswa') continue;
+                        if (Schema::hasColumn($tbl, 'siswa_id')) {
+                            DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
+                        }
+                    }
+                }
+            }
+
+            // 2. Bersihkan tabel-tabel anak rombel_id
+            if (Schema::hasTable('rombel')) {
+                $rombelIds = DB::table('rombel')->where('tenant_id', $tenantId)->pluck('id');
+                if ($rombelIds->isNotEmpty()) {
+                    foreach (['jadwal_pelajaran', 'pembelajaran', 'anggota_rombel', 'penilaian', 'nilai', 'presensi'] as $tbl) {
+                        if (Schema::hasTable($tbl) && Schema::hasColumn($tbl, 'rombel_id')) {
+                            DB::table($tbl)->whereIn('rombel_id', $rombelIds)->delete();
+                        }
+                    }
+                }
+            }
+
+            // 3. Bersihkan presensi pegawai dan aktivitas sebelum hapus users
+            if (Schema::hasTable('users')) {
+                $userIds = DB::table('users')->where('tenant_id', $tenantId)->pluck('id');
+                if ($userIds->isNotEmpty()) {
+                    if (Schema::hasTable('presensi_pegawai')) {
+                        DB::table('presensi_pegawai')->whereIn('user_id', $userIds)->delete();
+                    }
+                    if (Schema::hasTable('aktivitas')) {
+                        DB::table('aktivitas')->whereIn('user_id', $userIds)->delete();
+                    }
+                }
+            }
+
+            // 4. Hapus seluruh data ber-tenant_id dari tabel-tabel terdaftar
+            foreach (Schema::getTableListing() as $tbl) {
+                if ($tbl === 'tenants') continue;
+                if (Schema::hasColumn($tbl, 'tenant_id')) {
+                    DB::table($tbl)->where('tenant_id', $tenantId)->delete();
+                }
+            }
+
+            // 5. Hapus record tenant itu sendiri
+            $tenant->delete();
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 
     public function store(Request $request)
@@ -397,5 +494,67 @@ class TenantController extends Controller
         $admin->save();
 
         return back()->with('success', "Kata sandi admin sekolah '{$admin->nama_lengkap}' ({$admin->nama_pengguna}) berhasil direset!");
+    }
+
+    public function destroyUser(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif.');
+        }
+
+        if ($user->peran === 'super_admin' && User::where('peran', 'super_admin')->count() <= 1) {
+            return back()->with('error', 'Tidak dapat menghapus Super Admin terakhir dalam sistem.');
+        }
+
+        $nama = $user->nama_lengkap ?? $user->nama_pengguna;
+
+        Schema::disableForeignKeyConstraints();
+        try {
+            if (Schema::hasTable('presensi_pegawai')) {
+                DB::table('presensi_pegawai')->where('user_id', $user->id)->delete();
+            }
+            if (Schema::hasTable('aktivitas')) {
+                DB::table('aktivitas')->where('user_id', $user->id)->delete();
+            }
+            $user->forceDelete();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        return back()->with('success', "Akun pengguna '{$nama}' berhasil dihapus permanen dari sistem.");
+    }
+
+    public function bulkDestroyUsers(Request $request)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ], [
+            'user_ids.required' => 'Pilih minimal satu akun pengguna yang ingin dihapus.',
+        ]);
+
+        $currentId = auth()->id();
+        $targetIds = array_diff($request->input('user_ids', []), [$currentId]);
+
+        if (empty($targetIds)) {
+            return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
+        }
+
+        Schema::disableForeignKeyConstraints();
+        try {
+            if (Schema::hasTable('presensi_pegawai')) {
+                DB::table('presensi_pegawai')->whereIn('user_id', $targetIds)->delete();
+            }
+            if (Schema::hasTable('aktivitas')) {
+                DB::table('aktivitas')->whereIn('user_id', $targetIds)->delete();
+            }
+            $count = User::whereIn('id', $targetIds)
+                ->where('peran', '!=', 'super_admin')
+                ->forceDelete();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        return back()->with('success', "Sebanyak {$count} akun pengguna berhasil dihapus permanen.");
     }
 }

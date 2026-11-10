@@ -292,99 +292,151 @@
     @endif
 
     {{-- Tabel Pengguna --}}
-    <div class="card">
-        <div class="card-header" style="justify-content:space-between">
-            <h3><i class="fas fa-users" style="margin-right:8px;color:#4338CA"></i>Daftar Akun Pengguna</h3>
-            <span class="tag tag-mut">{{ $users->total() }} akun ditemukan</span>
-        </div>
-        <div class="card-body tight">
-            @if($users->count() > 0)
-                <div class="table-wrapper">
-                    <table style="width:100%;border-collapse:collapse;font-size:13px">
-                        <thead>
-                            <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
-                                <th style="padding:11px 14px;text-align:center;width:40px;color:#667085">No</th>
-                                <th style="padding:11px 14px;text-align:left;color:#667085">Wilayah</th>
-                                <th style="padding:11px 14px;text-align:left;color:#667085">Sekolah (Tenant)</th>
-                                <th style="padding:11px 14px;text-align:left;color:#667085">Nama Lengkap</th>
-                                <th style="padding:11px 14px;text-align:left;color:#667085">Username / Email</th>
-                                <th style="padding:11px 14px;text-align:center;color:#667085">Peran</th>
-                                <th style="padding:11px 14px;text-align:center;color:#667085">Status</th>
-                                <th style="padding:11px 14px;text-align:right;color:#667085">Terakhir Masuk</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($users as $i => $u)
-                                <tr style="border-bottom:1px solid #F2F4F7">
-                                    <td style="padding:11px 14px;text-align:center;color:var(--muted)">
-                                        {{ $users->firstItem() + $i }}
-                                    </td>
-                                    <td style="padding:11px 14px">
-                                        @if($u->tenant && $u->tenant->wilayah)
-                                            <a href="{{ route('superadmin.users.index', ['wilayah' => $u->tenant->wilayah]) }}" 
-                                               style="text-decoration:none">
-                                                <span class="tag" style="background:#ECFDF5;color:#047857;font-weight:600;font-size:11px">
-                                                    {{ $u->tenant->wilayah }}
-                                                </span>
-                                            </a>
-                                        @else
-                                            <span style="color:var(--muted);font-size:11px">—</span>
-                                        @endif
-                                    </td>
-                                    <td style="padding:11px 14px">
-                                        @if($u->tenant)
-                                            <a href="{{ route('superadmin.tenants.show', $u->tenant->uuid) }}" style="font-weight:600;color:#4338CA;text-decoration:none">
-                                                {{ $u->tenant->nama_sekolah }}
-                                            </a>
-                                            <div style="font-size:11px;color:var(--muted)">NPSN: {{ $u->tenant->npsn }}</div>
-                                        @elseif($u->peran === 'super_admin')
-                                            <span class="tag" style="background:#EEF2FF;color:#4338CA;font-weight:700">Super Admin Pusat</span>
-                                        @else
-                                            <div>
-                                                <span class="tag" style="background:#FEF3C7;color:#92400E;font-weight:700">
-                                                    <i class="fas fa-archive" style="margin-right:4px"></i>Ditarik ke Pusat
-                                                </span>
-                                            </div>
-                                            <div style="font-size:11px;color:var(--muted);margin-top:2px">Menunggu penugasan sekolah</div>
-                                        @endif
-                                    </td>
-                                    <td style="padding:11px 14px;font-weight:600">{{ $u->nama_lengkap }}</td>
-                                    <td style="padding:11px 14px">
-                                        <span style="font-family:monospace">{{ $u->nama_pengguna }}</span>
-                                        @if($u->email)
-                                            <div style="font-size:11px;color:var(--muted)">{{ $u->email }}</div>
-                                        @endif
-                                    </td>
-                                    <td style="padding:11px 14px;text-align:center">
-                                        <span class="tag" style="background:#F2F4F7;text-transform:uppercase;font-size:10.5px">
-                                            {{ $u->peran }}
-                                        </span>
-                                    </td>
-                                    <td style="padding:11px 14px;text-align:center">
-                                        @if($u->aktif)
-                                            <span class="tag tag-ok">Aktif</span>
-                                        @else
-                                            <span class="tag tag-bad">Nonaktif</span>
-                                        @endif
-                                    </td>
-                                    <td style="padding:11px 14px;text-align:right;color:var(--muted)">
-                                        {{ $u->terakhir_masuk ? \Carbon\Carbon::parse($u->terakhir_masuk)->diffForHumans() : '—' }}
-                                    </td>
+    <form method="POST" action="{{ route('superadmin.users.bulk-destroy') }}" id="bulkDeleteForm" onsubmit="return confirm('PERINGATAN: Yakin ingin menghapus seluruh akun yang dipilih secara permanen?')">
+        @csrf
+        <div class="card">
+            <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <h3><i class="fas fa-users" style="margin-right:8px;color:#4338CA"></i>Daftar Akun Pengguna</h3>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <button type="submit" id="btnBulkDelete" class="btn btn-sm btn-outline-danger" style="display:none">
+                        <i class="fas fa-trash-alt"></i> Hapus Akun Terpilih (<span id="selectedCount">0</span>)
+                    </button>
+                    <span class="tag tag-mut">{{ $users->total() }} akun ditemukan</span>
+                </div>
+            </div>
+            <div class="card-body tight">
+                @if($users->count() > 0)
+                    <div class="table-wrapper">
+                        <table style="width:100%;border-collapse:collapse;font-size:13px">
+                            <thead>
+                                <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                                    <th style="padding:11px 14px;text-align:center;width:30px">
+                                        <input type="checkbox" id="selectAllUsers" onclick="toggleSelectAllUsers(this)" style="cursor:pointer">
+                                    </th>
+                                    <th style="padding:11px 14px;text-align:center;width:40px;color:#667085">No</th>
+                                    <th style="padding:11px 14px;text-align:left;color:#667085">Wilayah</th>
+                                    <th style="padding:11px 14px;text-align:left;color:#667085">Sekolah (Tenant)</th>
+                                    <th style="padding:11px 14px;text-align:left;color:#667085">Nama Lengkap</th>
+                                    <th style="padding:11px 14px;text-align:left;color:#667085">Username / Email</th>
+                                    <th style="padding:11px 14px;text-align:center;color:#667085">Peran</th>
+                                    <th style="padding:11px 14px;text-align:center;color:#667085">Status</th>
+                                    <th style="padding:11px 14px;text-align:right;color:#667085">Terakhir Masuk</th>
+                                    <th style="padding:11px 14px;text-align:center;color:#667085;width:80px">Aksi</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div style="padding:16px">
-                    {{ $users->links() }}
-                </div>
-            @else
-                <div class="empty-state" style="padding:32px">
-                    <h4>Tidak ada pengguna ditemukan</h4>
-                    <p>Coba gunakan kata kunci pencarian atau filter wilayah/sekolah yang lain.</p>
-                </div>
-            @endif
+                            </thead>
+                            <tbody>
+                                @foreach($users as $i => $u)
+                                    <tr style="border-bottom:1px solid #F2F4F7">
+                                        <td style="padding:11px 14px;text-align:center">
+                                            @if($u->id !== auth()->id() && $u->peran !== 'super_admin')
+                                                <input type="checkbox" name="user_ids[]" value="{{ $u->id }}" class="user-checkbox" onchange="updateSelectedCount()" style="cursor:pointer">
+                                            @endif
+                                        </td>
+                                        <td style="padding:11px 14px;text-align:center;color:var(--muted)">
+                                            {{ $users->firstItem() + $i }}
+                                        </td>
+                                        <td style="padding:11px 14px">
+                                            @if($u->tenant && $u->tenant->wilayah)
+                                                <a href="{{ route('superadmin.users.index', ['wilayah' => $u->tenant->wilayah]) }}"
+                                                   style="text-decoration:none">
+                                                    <span class="tag" style="background:#ECFDF5;color:#047857;font-weight:600;font-size:11px">
+                                                        {{ $u->tenant->wilayah }}
+                                                    </span>
+                                                </a>
+                                            @else
+                                                <span style="color:var(--muted);font-size:11px">—</span>
+                                            @endif
+                                        </td>
+                                        <td style="padding:11px 14px">
+                                            @if($u->tenant)
+                                                <a href="{{ route('superadmin.tenants.show', $u->tenant->uuid) }}" style="font-weight:600;color:#4338CA;text-decoration:none">
+                                                    {{ $u->tenant->nama_sekolah }}
+                                                </a>
+                                                <div style="font-size:11px;color:var(--muted)">NPSN: {{ $u->tenant->npsn }}</div>
+                                            @elseif($u->peran === 'super_admin')
+                                                <span class="tag" style="background:#EEF2FF;color:#4338CA;font-weight:700">Super Admin Pusat</span>
+                                            @else
+                                                <div>
+                                                    <span class="tag" style="background:#FEF3C7;color:#92400E;font-weight:700">
+                                                        <i class="fas fa-archive" style="margin-right:4px"></i>Ditarik ke Pusat
+                                                    </span>
+                                                </div>
+                                                <div style="font-size:11px;color:var(--muted);margin-top:2px">Menunggu penugasan sekolah</div>
+                                            @endif
+                                        </td>
+                                        <td style="padding:11px 14px;font-weight:600">{{ $u->nama_lengkap }}</td>
+                                        <td style="padding:11px 14px">
+                                            <span style="font-family:monospace">{{ $u->nama_pengguna }}</span>
+                                            @if($u->email)
+                                                <div style="font-size:11px;color:var(--muted)">{{ $u->email }}</div>
+                                            @endif
+                                        </td>
+                                        <td style="padding:11px 14px;text-align:center">
+                                            <span class="tag" style="background:#F2F4F7;text-transform:uppercase;font-size:10.5px">
+                                                {{ $u->peran }}
+                                            </span>
+                                        </td>
+                                        <td style="padding:11px 14px;text-align:center">
+                                            @if($u->aktif)
+                                                <span class="tag tag-ok">Aktif</span>
+                                            @else
+                                                <span class="tag tag-bad">Nonaktif</span>
+                                            @endif
+                                        </td>
+                                        <td style="padding:11px 14px;text-align:right;color:var(--muted)">
+                                            {{ $u->terakhir_masuk ? \Carbon\Carbon::parse($u->terakhir_masuk)->diffForHumans() : '—' }}
+                                        </td>
+                                        <td style="padding:11px 14px;text-align:center">
+                                            @if($u->id !== auth()->id())
+                                                <button type="button" class="btn btn-xs btn-outline-danger" title="Hapus akun permanen" onclick="if(confirm('Yakin ingin menghapus permanen akun {{ addslashes($u->nama_lengkap ?? $u->nama_pengguna) }}?')) { document.getElementById('delete-user-{{ $u->id }}').submit(); }">
+                                                    <i class="fas fa-trash-alt"></i> Hapus
+                                                </button>
+                                            @else
+                                                <span class="tag tag-mut" style="font-size:10px">Aktif</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="padding:16px">
+                        {{ $users->links() }}
+                    </div>
+                @else
+                    <div class="empty-state" style="padding:32px">
+                        <h4>Tidak ada pengguna ditemukan</h4>
+                        <p>Coba gunakan kata kunci pencarian atau filter wilayah/sekolah yang lain.</p>
+                    </div>
+                @endif
+            </div>
         </div>
-    </div>
+    </form>
+
+    {{-- Form tersembunyi untuk delete perorangan agar valid HTML di luar tabel --}}
+    @foreach($users as $u)
+        @if($u->id !== auth()->id())
+            <form id="delete-user-{{ $u->id }}" method="POST" action="{{ route('superadmin.users.destroy', $u->id) }}" style="display:none">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endif
+    @endforeach
+
+    <script>
+    function toggleSelectAllUsers(master) {
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const selected = document.querySelectorAll('.user-checkbox:checked').length;
+        const countEl = document.getElementById('selectedCount');
+        const btn = document.getElementById('btnBulkDelete');
+        if (countEl) countEl.textContent = selected;
+        if (btn) btn.style.display = selected > 0 ? 'inline-flex' : 'none';
+    }
+    </script>
 @endif
 @endsection

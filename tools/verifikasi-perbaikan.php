@@ -438,7 +438,7 @@ periksa('Registry backup konsisten: tidak ada tabel ganda & daftar pertahankan m
         return 'tabel tercatat dicadangkan sekaligus tidak dicadangkan: ' . implode(', ', $ganda);
     }
 
-    $bolehBertahan = ['users', 'semesters', 'sekolah_settings'];
+    $bolehBertahan = ['users', 'semesters', 'sekolah_settings', 'tenants'];
     $asing = array_values(array_diff($dipertahankan, $bolehBertahan));
     if ($asing !== []) {
         return 'tabel dipertahankan di luar daftar aman: ' . implode(', ', $asing);

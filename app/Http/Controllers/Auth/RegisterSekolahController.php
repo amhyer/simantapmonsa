@@ -30,11 +30,12 @@ class RegisterSekolahController extends Controller
             'nama_sekolah' => 'required|string|max:255',
             'npsn' => 'required|numeric|digits:8|unique:tenants,npsn',
             'jenjang' => 'required|in:SD,SMP,SMA,SMK',
+            'kepala_sekolah' => 'required|string|max:255',
             'subdomain' => 'required|string|min:3|max:30|regex:/^[a-z0-9\-]+$/|unique:tenants,subdomain',
             'alamat' => 'nullable|string|max:500',
             'kota' => 'nullable|string|max:100',
 
-            // Akun Administrator Sekolah
+            // Akun Operator Sekolah (Administrator)
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_\-\.]+$/|unique:users,nama_pengguna',
             'email' => 'required|email|max:255|unique:users,email',
@@ -43,9 +44,10 @@ class RegisterSekolahController extends Controller
         ], [
             'npsn.digits' => 'NPSN harus terdiri dari 8 digit angka.',
             'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP_MONSA.',
+            'kepala_sekolah.required' => 'Nama Kepala Sekolah wajib diisi.',
             'subdomain.regex' => 'Subdomain hanya boleh berupa huruf kecil, angka, dan tanda hubung (-).',
             'subdomain.unique' => 'Subdomain ini sudah digunakan sekolah lain. Pilih subdomain lain.',
-            'nama_pengguna.unique' => 'Nama pengguna admin ini sudah dipakai. Gunakan nama pengguna lain.',
+            'nama_pengguna.unique' => 'Nama pengguna operator ini sudah dipakai. Gunakan nama pengguna lain.',
             'nama_pengguna.regex' => 'Nama pengguna hanya boleh mengandung huruf, angka, titik, atau garis bawah.',
             'email.unique' => 'Email ini sudah terdaftar di SIMANTAP_MONSA.',
             'kata_sandi.min' => 'Kata sandi minimal 8 karakter.',
@@ -65,6 +67,7 @@ class RegisterSekolahController extends Controller
                 'meta' => [
                     'jenjang' => $validated['jenjang'],
                     'kota' => $validated['kota'] ?? null,
+                    'kepala_sekolah' => $validated['kepala_sekolah'],
                     'registered_at' => now()->toIso8601String(),
                     'ip' => $request->ip(),
                 ],
@@ -91,6 +94,7 @@ class RegisterSekolahController extends Controller
                 'nama_sekolah' => $validated['nama_sekolah'],
                 'npsn' => $validated['npsn'],
                 'jenjang' => $validated['jenjang'],
+                'kepala_sekolah' => $validated['kepala_sekolah'],
                 'alamat' => $validated['alamat'] ?? null,
                 'kota' => $validated['kota'] ?? null,
                 'email' => $validated['email'],

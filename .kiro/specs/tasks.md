@@ -4,7 +4,7 @@
 
 ### Task: Fix JadwalPelajaranResolver
 - id: fix-resolver
-- status: not_started
+- status: completed
 
 Add pilihKandidat method to JadwalPelajaranResolver service.
 
@@ -12,7 +12,7 @@ Add pilihKandidat method to JadwalPelajaranResolver service.
 
 ### Task: Verify Migrations
 - id: verify-migrations
-- status: not_started
+- status: completed
 
 Run and verify CBT migrations.
 
@@ -20,7 +20,7 @@ Run and verify CBT migrations.
 
 ### Task: Run Tests
 - id: run-tests
-- status: not_started
+- status: completed
 - dependencies: [fix-resolver, verify-migrations]
 
 Run all CBT and alignment tests.

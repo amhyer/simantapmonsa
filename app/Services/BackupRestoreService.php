@@ -124,13 +124,15 @@ class BackupRestoreService
 
             if ($modelClass) {
                 \Illuminate\Database\Eloquent\Model::unguarded(function () use ($modelClass, $id, $row) {
-                    $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
+                    $modelClass::withoutEvents(function () use ($modelClass, $id, $row) {
+                        $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
 
-                    if ($id !== null) {
-                        $query->updateOrCreate(['id' => $id], $row);
-                    } else {
-                        $modelClass::create($row);
-                    }
+                        if ($id !== null) {
+                            $query->updateOrCreate(['id' => $id], $row);
+                        } else {
+                            $modelClass::create($row);
+                        }
+                    });
                 });
 
                 $diproses++;

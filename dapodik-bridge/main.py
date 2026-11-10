@@ -204,6 +204,62 @@ def simantap_sync_module(url, api_key, modul, data, semester_id, tahun_ajaran, n
         return {"success": False, "message": str(e)}
 
 
+def dapodik_post(protocol, host, port, token, npsn, endpoint, payload):
+    """Kirim data ke Dapodik WebService (POST). Return (success, result)."""
+    base = dapodik_base(protocol, host, port)
+    url = f"{base}/{endpoint}"
+    params = {"npsn": npsn}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    for attempt in range(1, 4):
+        try:
+            resp = requests.post(url, headers=headers, params=params, json=payload, timeout=60)
+            if resp.status_code == 200:
+                try:
+                    return True, resp.json()
+                except Exception:
+                    return True, resp.text
+            elif resp.status_code >= 500:
+                if attempt < 3:
+                    time.sleep(1)
+                    continue
+                return False, f"Server error HTTP {resp.status_code}"
+            else:
+                return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
+        except requests.exceptions.ConnectionError:
+            if attempt < 3:
+                time.sleep(1)
+                continue
+            return False, f"Gagal koneksi ke {url}"
+        except Exception as e:
+            return False, str(e)
+
+    return False, "Koneksi gagal"
+
+
+def simantap_fetch_export(url, api_key, modul, semester_id):
+    """Ambil data dari server SIMANTAP untuk dikirim ke Dapodik."""
+    ok, err = validate_server_security(url)
+    if not ok:
+        return {"success": False, "message": err}
+
+    try:
+        resp = requests.get(
+            f"{url.rstrip('/')}/api/dapodik/sync/export/{modul}",
+            headers={"X-API-Key": api_key, "Accept": "application/json"},
+            params={"semester_id": semester_id},
+            timeout=120,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        return {"success": False, "message": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
 # ─── GUI ─────────────────────────────────────────────────────────
 
 def create_gui():
@@ -265,9 +321,10 @@ def create_gui():
         ], key="-TABS-")],
         [sg.HorizontalSeparator()],
         [
-            sg.Button("Test Dapodik", size=(14, 1), button_color=("white", "#1F3864")),
-            sg.Button("Test SIMANTAP", size=(14, 1), button_color=("white", "#1F3864")),
-            sg.Button("Tarik & Sinkron", size=(16, 1), button_color=("white", "green")),
+            sg.Button("Test Dapodik", size=(13, 1), button_color=("white", "#1F3864")),
+            sg.Button("Test SIMANTAP", size=(13, 1), button_color=("white", "#1F3864")),
+            sg.Button("Tarik & Sinkron", size=(15, 1), button_color=("white", "#059669"), tooltip="Tarik data Dapodik ke SIMANTAP"),
+            sg.Button("Kirim ke Dapodik", size=(16, 1), button_color=("white", "#2563EB"), tooltip="Kirim Nilai Rapor & Kehadiran dari SIMANTAP ke Dapodik"),
         ],
         [
             sg.Button("Simpan Config", size=(12, 1)),
@@ -424,6 +481,96 @@ def create_gui():
                     window.write_event_value("-SYNC_DONE-", False)
 
             threading.Thread(target=do_sync, daemon=True).start()
+
+        if event == "Kirim ke Dapodik":
+            c = get_cfg()
+
+            if not c["dapodik_token"]:
+                log("ERROR: Token Dapodik wajib diisi.")
+                continue
+            if not c["api_key"]:
+                log("ERROR: API Key SIMANTAP wajib diisi.")
+                continue
+            if not c["npsn"]:
+                log("ERROR: NPSN wajib diisi.")
+                continue
+
+            def do_push_to_dapodik():
+                try:
+                    log_sync = "Memulai pengiriman data dari SIMANTAP ke Dapodik..."
+                    window.write_event_value("-PROGRESS-", (5, log_sync))
+                    window.write_event_value("-SYNC_LOG-", log_sync)
+
+                    # 1. Kirim Nilai Rapor
+                    log_sync = "Mengambil Nilai Rapor dari server SIMANTAP..."
+                    window.write_event_value("-SYNC_LOG-", log_sync)
+                    res_nilai = simantap_fetch_export(c["server_url"], c["api_key"], "nilai-rapor", c["semester_id"])
+
+                    if res_nilai.get("success"):
+                        items = res_nilai.get("data", [])
+                        total = len(items)
+                        log_sync = f"Ditemukan {total} data Nilai Rapor untuk dikirim ke Dapodik."
+                        window.write_event_value("-SYNC_LOG-", log_sync)
+                        sukses_cnt = 0
+                        gagal_cnt = 0
+
+                        for idx, item in enumerate(items):
+                            ok, resp_dapodik = dapodik_post(
+                                c["dapodik_protocol"], c["dapodik_host"], c["dapodik_port"],
+                                c["dapodik_token"], c["npsn"], "saveNilaiRapor", item
+                            )
+                            if ok:
+                                sukses_cnt += 1
+                            else:
+                                gagal_cnt += 1
+                            if (idx + 1) % 10 == 0 or idx + 1 == total:
+                                pct = 10 + int(40 * (idx + 1) / max(total, 1))
+                                window.write_event_value("-PROGRESS-", (pct, f"Kirim Nilai: {idx+1}/{total}"))
+
+                        log_sync = f"Hasil Kirim Nilai Rapor: {sukses_cnt} berhasil, {gagal_cnt} gagal."
+                        window.write_event_value("-SYNC_LOG-", log_sync)
+                    else:
+                        window.write_event_value("-SYNC_LOG-", f"Gagal ambil nilai rapor: {res_nilai.get('message', '?')}")
+
+                    # 2. Kirim Kehadiran
+                    log_sync = "Mengambil Kehadiran dari server SIMANTAP..."
+                    window.write_event_value("-SYNC_LOG-", log_sync)
+                    res_hadir = simantap_fetch_export(c["server_url"], c["api_key"], "kehadiran", c["semester_id"])
+
+                    if res_hadir.get("success"):
+                        items = res_hadir.get("data", [])
+                        total = len(items)
+                        log_sync = f"Ditemukan {total} data Kehadiran untuk dikirim ke Dapodik."
+                        window.write_event_value("-SYNC_LOG-", log_sync)
+                        sukses_cnt = 0
+                        gagal_cnt = 0
+
+                        for idx, item in enumerate(items):
+                            ok, resp_dapodik = dapodik_post(
+                                c["dapodik_protocol"], c["dapodik_host"], c["dapodik_port"],
+                                c["dapodik_token"], c["npsn"], "saveKehadiran", item
+                            )
+                            if ok:
+                                sukses_cnt += 1
+                            else:
+                                gagal_cnt += 1
+                            if (idx + 1) % 10 == 0 or idx + 1 == total:
+                                pct = 50 + int(45 * (idx + 1) / max(total, 1))
+                                window.write_event_value("-PROGRESS-", (pct, f"Kirim Kehadiran: {idx+1}/{total}"))
+
+                        log_sync = f"Hasil Kirim Kehadiran: {sukses_cnt} berhasil, {gagal_cnt} gagal."
+                        window.write_event_value("-SYNC_LOG-", log_sync)
+                    else:
+                        window.write_event_value("-SYNC_LOG-", f"Gagal ambil kehadiran: {res_hadir.get('message', '?')}")
+
+                    window.write_event_value("-PROGRESS-", (100, "Pengiriman data ke Dapodik selesai!"))
+                    window.write_event_value("-SYNC_DONE-", True)
+
+                except Exception as e:
+                    window.write_event_value("-SYNC_LOG-", f"ERROR Kirim ke Dapodik: {e}")
+                    window.write_event_value("-SYNC_DONE-", False)
+
+            threading.Thread(target=do_push_to_dapodik, daemon=True).start()
 
         if event == "-SYNC_LOG-":
             log(values[event])

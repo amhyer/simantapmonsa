@@ -239,6 +239,13 @@
                            onkeyup="autoSlugSubdomain(this.value)">
                 </div>
 
+                <div class="form-group col-span-2">
+                    <label for="kepala_sekolah">Nama Kepala Sekolah <span class="req">*</span></label>
+                    <input type="text" id="kepala_sekolah" name="kepala_sekolah" class="form-control"
+                           value="{{ old('kepala_sekolah') }}" required placeholder="Contoh: Hj. Rosmiati, S.Pd., M.Pd.">
+                    <div class="hint">Nama Kepala Sekolah definitif / Plt. sesuai SK resmi Kemendikdasmen (terisi otomatis bila terdaftar di pangkalan data).</div>
+                </div>
+
                 <div class="form-group">
                     <label for="jenjang">Jenjang Pendidikan <span class="req">*</span></label>
                     <select id="jenjang" name="jenjang" class="form-control" required>
@@ -274,29 +281,29 @@
                 </div>
             </div>
 
-            <!-- Bagian 2: Akun Administrator Sekolah -->
+            <!-- Bagian 2: Akun Operator Sekolah (Administrator Sistem) -->
             <div class="section-title">
-                👤 2. Akun Administrator Sekolah
+                👤 2. Akun Operator Sekolah (Administrator Sistem)
             </div>
 
             <div class="form-grid">
                 <div class="form-group col-span-2">
-                    <label for="nama_lengkap">Nama Lengkap Administrator <span class="req">*</span></label>
+                    <label for="nama_lengkap">Nama Lengkap Operator Sekolah <span class="req">*</span></label>
                     <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control"
                            value="{{ old('nama_lengkap') }}" required placeholder="Contoh: Muhammad Akbar, S.Kom">
-                    <div class="hint">Akun ini memiliki kewenangan penuh mengelola data sekolah Anda.</div>
+                    <div class="hint">Operator sekolah bertindak sebagai Administrator utama (Admin) yang mengelola sistem, data sekolah, dan integrasi Dapodik.</div>
                 </div>
 
                 <div class="form-group">
-                    <label for="nama_pengguna">Nama Pengguna (Username Login) <span class="req">*</span></label>
+                    <label for="nama_pengguna">Nama Pengguna Operator (Username Login) <span class="req">*</span></label>
                     <input type="text" id="nama_pengguna" name="nama_pengguna" class="form-control"
-                           value="{{ old('nama_pengguna') }}" required placeholder="Contoh: admin_smpn2">
+                           value="{{ old('nama_pengguna') }}" required placeholder="Contoh: operator_smpn2">
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email Resmi Administrator <span class="req">*</span></label>
+                    <label for="email">Email Resmi Operator / Sekolah <span class="req">*</span></label>
                     <input type="email" id="email" name="email" class="form-control"
-                           value="{{ old('email') }}" required placeholder="admin@sekolah.sch.id">
+                           value="{{ old('email') }}" required placeholder="operator@sekolah.sch.id">
                 </div>
 
                 <div class="form-group col-span-2">
@@ -373,6 +380,38 @@
                         document.getElementById('nama_sekolah').value = data.nama_sekolah;
                         autoSlugSubdomain(data.nama_sekolah);
                     }
+                    if (data.kepala_sekolah) {
+                        document.getElementById('kepala_sekolah').value = data.kepala_sekolah;
+                    }
+                    if (data.operator) {
+                        const namaLengkapEl = document.getElementById('nama_lengkap');
+                        namaLengkapEl.value = data.operator;
+
+                        // Otomatis sarankan username operator jika belum diubah manual
+                        const usernameEl = document.getElementById('nama_pengguna');
+                        if (!usernameEl.value || usernameEl.dataset.auto) {
+                            let slugUser = data.operator.toLowerCase()
+                                .replace(/[^a-z0-9]/g, '')
+                                .substring(0, 20);
+                            if (slugUser.length < 3) {
+                                slugUser = 'operator_' + (data.npsn || 'sekolah');
+                            }
+                            usernameEl.value = slugUser;
+                            usernameEl.dataset.auto = 'true';
+                        }
+                    }
+                    if (data.email) {
+                        const emailEl = document.getElementById('email');
+                        if (!emailEl.value) {
+                            emailEl.value = data.email;
+                        }
+                    }
+                    if (data.telepon) {
+                        const telpEl = document.getElementById('telepon');
+                        if (!telpEl.value) {
+                            telpEl.value = data.telepon;
+                        }
+                    }
                     if (data.jenjang) {
                         const jenjangSelect = document.getElementById('jenjang');
                         for (let opt of jenjangSelect.options) {
@@ -396,7 +435,15 @@
                     statusEl.style.background = '#ECFDF3';
                     statusEl.style.color = '#027A48';
                     statusEl.style.border = '1px solid #A6F4C5';
-                    statusEl.innerHTML = '✓ <b>Data Resmi Ditemukan:</b> ' + (data.nama_sekolah || '') + ' (' + (data.kabupaten || '') + '). Formulir otomatis terisi!';
+
+                    let rincian = [];
+                    if (data.nama_sekolah) rincian.push('<b>Sekolah:</b> ' + data.nama_sekolah);
+                    if (data.kepala_sekolah) rincian.push('<b>Kepala Sekolah:</b> ' + data.kepala_sekolah);
+                    if (data.operator) rincian.push('<b>Operator:</b> ' + data.operator);
+
+                    statusEl.innerHTML = '✓ <b>Data Resmi Kemendikdasmen RI Berhasil Ditarik:</b><br>' +
+                                         rincian.join(' &nbsp;•&nbsp; ') +
+                                         '<br><span style="font-size:11.5px;color:#05603A">Identitas sekolah, kepala sekolah, dan operator otomatis terisi pada formulir.</span>';
                 } else {
                     statusEl.style.background = '#FFFAEB';
                     statusEl.style.color = '#B54708';
@@ -436,6 +483,10 @@
 
         document.getElementById('subdomain').addEventListener('input', function() {
             this.dataset.manual = 'true';
+        });
+
+        document.getElementById('nama_pengguna').addEventListener('input', function() {
+            delete this.dataset.auto;
         });
     </script>
 </body>

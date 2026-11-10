@@ -124,6 +124,7 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.te
     Route::get('/dashboard', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('tenants.index');
     Route::post('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('tenants.store');
+    Route::post('/tenants/bulk-destroy-expired', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroyExpiredTenants'])->name('tenants.bulk-destroy-expired');
     Route::get('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'show'])->name('tenants.show');
     Route::put('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('tenants.update');
     Route::delete('/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('tenants.destroy');
@@ -131,6 +132,8 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.te
     Route::post('/tenants/{tenant}/impersonate', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'impersonate'])->name('tenants.impersonate');
     Route::post('/tenants/{tenant}/reset-admin-password', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'resetAdminPassword'])->name('tenants.reset-admin-password');
     Route::get('/users', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'users'])->name('users.index');
+    Route::delete('/users/{user}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroyUser'])->name('users.destroy');
+    Route::post('/users/bulk-destroy', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'bulkDestroyUsers'])->name('users.bulk-destroy');
     Route::post('/users/{user}/assign-tenant', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'assignTenant'])->name('users.assign-tenant');
 });
 
@@ -154,6 +157,9 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::put('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'updateLocation'])->name('lokasi.update');
         Route::delete('/lokasi/{lokasi}', [\App\Http\Controllers\Admin\PresensiController::class, 'destroyLocation'])->name('lokasi.destroy');
         Route::post('/pegawai/koreksi', [\App\Http\Controllers\Admin\PresensiController::class, 'koreksi'])->middleware('throttle:30,1')->name('pegawai.koreksi');
+        Route::post('/mesin/ringkasan', [\App\Http\Controllers\Admin\PresensiController::class, 'ringkasanMesin'])->name('mesin.ringkasan');
+        Route::post('/mesin/ringkasan/flush', [\App\Http\Controllers\Admin\PresensiController::class, 'flushRingkasan'])->name('mesin.ringkasan.flush');
+        Route::post('/mesin/ringkasan/pull', [\App\Http\Controllers\Admin\PresensiController::class, 'pullRingkasan'])->name('mesin.ringkasan.pull');
 
         Route::get('/mesin', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'index'])->name('mesin.index');
         Route::get('/mesin/template-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateKaryawan'])->name('mesin.template.karyawan');
@@ -300,6 +306,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // Identitas Sekolah
     Route::get('/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::post('/sekolah/search', [SekolahController::class, 'search'])->name('sekolah.search');
+    Route::post('/sekolah/reset', [SekolahController::class, 'reset'])->name('sekolah.reset');
     Route::post('/sekolah', [SekolahController::class, 'update'])->name('sekolah.update');
     
     // Penyimpanan Data
@@ -339,6 +346,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::post('/preview', [\App\Http\Controllers\Admin\DapodikImportController::class, 'preview'])->name('preview');
         Route::get('/log/{id}', [\App\Http\Controllers\Admin\DapodikImportController::class, 'logDetail'])->name('log-detail');
         Route::delete('/log/{id}', [\App\Http\Controllers\Admin\DapodikImportController::class, 'logDestroy'])->name('log-destroy');
+        Route::post('/reset', [\App\Http\Controllers\Admin\DapodikImportController::class, 'resetData'])->middleware('throttle:10,5')->name('reset');
         Route::get('/download-bridge', [\App\Http\Controllers\Admin\DapodikImportController::class, 'downloadBridge'])->name('download-bridge');
     });
 
