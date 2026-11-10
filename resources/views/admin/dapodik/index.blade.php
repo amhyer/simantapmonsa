@@ -6,8 +6,6 @@
 @section('page_subtitle', 'Pilih metode sinkronisasi data Dapodik')
 
 @section('header_actions')
-    <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary btn-sm"><i class="fas fa-download"></i> Download Bridge</a>
-    <a href="{{ route('admin.api-keys.index') }}" class="btn btn-ghost btn-sm"><i class="fas fa-key"></i> API Keys</a>
     <button type="button" class="btn btn-outline-danger btn-sm" onclick="document.getElementById('resetDapodikModal').style.display='flex'"><i class="fas fa-trash-alt"></i> Kosongkan Data</button>
 @endsection
 
