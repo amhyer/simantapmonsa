@@ -162,6 +162,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::post('/mesin/ringkasan/pull', [\App\Http\Controllers\Admin\PresensiController::class, 'pullRingkasan'])->name('mesin.ringkasan.pull');
 
         Route::get('/mesin', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'index'])->name('mesin.index');
+        Route::get('/mesin/sinkron', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'sinkron'])->middleware(['throttle:30,1'])->name('mesin.sinkron');
         Route::get('/mesin/template-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateKaryawan'])->name('mesin.template.karyawan');
         Route::post('/mesin/import-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importKaryawan'])->middleware('throttle:10,1')->name('mesin.karyawan.import');
         Route::post('/mesin/tarik-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikKaryawan'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.karyawan.tarik');

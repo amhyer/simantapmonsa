@@ -19,6 +19,7 @@
             ['title' => 'Data Siswa & Akun', 'route' => route('admin.users.siswa'), 'cat' => 'Data Guru & Siswa', 'icon' => 'fas fa-user-graduate'],
             ['title' => 'Presensi Pegawai & Lokasi', 'route' => route('admin.presensi.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-map-marker-alt'],
             ['title' => 'Pemetaan QR & Kartu Identitas', 'route' => route('admin.presensi.kartu.index'), 'cat' => 'Presensi', 'icon' => 'fas fa-qrcode'],
+            ['title' => 'Riwayat Sinkron Mesin (Bridge)', 'route' => route('admin.presensi.mesin.sinkron'), 'cat' => 'Presensi', 'icon' => 'fas fa-history'],
             ['title' => 'Cetak Kode Akses Login', 'route' => route('admin.kode-akses.index'), 'cat' => 'Akun', 'icon' => 'fas fa-key'],
             ['title' => 'Dapodik & Impor Data', 'route' => route('admin.dapodik.index'), 'cat' => 'Dapodik', 'icon' => 'fas fa-sync'],
             ['title' => 'Status Penilaian per Guru', 'route' => route('admin.penilaian.status'), 'cat' => 'e-Rapor', 'icon' => 'fas fa-check-circle'],

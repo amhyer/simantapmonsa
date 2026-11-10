@@ -66,6 +66,7 @@ class MenuAuditTest extends TestCase
                 'admin.presensi.index',
                 'admin.presensi.laporan',
                 'admin.presensi.mesin.index',
+                'admin.presensi.mesin.sinkron',
                 'admin.presensi.kartu.index',
                 'admin.presensi.kartu.siswa.cetak-massal',
                 'admin.presensi.kartu.pegawai.cetak-massal',

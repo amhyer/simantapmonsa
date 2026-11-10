@@ -56,6 +56,21 @@ ATT2000.MDB  --(32-bit Jet OLEDB)-->  presensi-bridge.ps1  --(HTTPS + X-API-Key)
 3. Admin website → halaman **Presensi → Import Presensi Mesin** → **Tes Koneksi** / **Tarik Data Sekarang**.
 4. Admin → **Kunci API Bridge** menampilkan key terakhir dipakai.
 
+## Dashboard Riwayat Sinkron (hasil bridge)
+
+Setelah bridge mengirim scan, website menyimpan riwayat hasil sinkron di tabel
+`presensi_mesin_sync_logs` dan menampilkannya di:
+
+- **Admin → Presensi → Riwayat Sinkron Mesin** (`/admin/presensi/mesin/sinkron`).
+
+Halaman ini menampilkan:
+- Status sinkron terakhir (berhasil/gagal) + jumlah scan + data dibuat/diperbarui + dilindungi/NIK tidak dikenal.
+- Detail hasil sinkron terakhir (waktu, sumber, durasi, IP, pesan error bila gagal).
+- Riwayat sinkron terbaru (maks. 25) beserta ringkasan per sinkron.
+
+Gagal sinkron (mis. bridge tidak bisa menjangkau server) menuliskan status `gagal`
+pada log, sehingga admin bisa membedakan kegagalan dari kapan.
+
 ## Troubleshooting
 
 | Gejala | Penyebab | Perbaikan |

@@ -113,6 +113,7 @@
             ]],
             ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [
                 ['route' => 'admin.presensi.dashboard.mesin', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dashboard Presensi Mesin'],
+                ['route' => 'admin.presensi.mesin.sinkron', 'icon' => 'lucide-history', 'label' => 'Riwayat Sinkron Mesin'],
                 ['route' => 'admin.presensi.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Pegawai & Lokasi'],
                 ['route' => 'admin.presensi.laporan', 'icon' => 'lucide-file-text', 'label' => 'Laporan Presensi'],
                 ['route' => 'admin.presensi.mesin.index', 'icon' => 'lucide-upload', 'label' => 'Import Presensi Mesin'],

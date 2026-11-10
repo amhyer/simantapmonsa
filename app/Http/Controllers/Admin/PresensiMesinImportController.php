@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PresensiMesinSyncLog;
 use App\Models\User;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
 use App\Services\PresensiMesinService;
+use App\Modules\Tenant\Support\TenantMode;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,6 +53,35 @@ class PresensiMesinImportController extends Controller
         $mesinEngineTerpilih = $directDisabled ? (string) config('presensi.mesin_db_engine', 'auto') : $reader->engineTerpilih();
 
         return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled', 'mesinEngineTerpilih'));
+    }
+
+    /**
+     * Dashboard riwayat sinkron presensi mesin via bridge (hasil POST
+     * /api/presensi/mesin/sinkron dari PC sekolah ke website hosting).
+     */
+    public function sinkron(Request $request, AttendanceDatabaseReader $reader): View
+    {
+        $logs = PresensiMesinSyncLog::with('user')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(25)
+            ->get();
+        $terakhir = PresensiMesinSyncLog::orderByDesc('created_at')->orderByDesc('id')->first();
+        $terakhirTarik = \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
+            ? null
+            : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+
+        $koneksi = \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
+            ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null]
+            : $reader->status();
+
+        return view('admin.presensi.mesin-sinkron', [
+            'logs' => $logs,
+            'terakhir' => $terakhir,
+            'terakhirTarik' => $terakhirTarik,
+            'directDisabled' => \App\Modules\Tenant\Support\TenantMode::isMultiSchool(),
+            'koneksi' => $koneksi,
+        ]);
     }
 
     public function templateKaryawan()

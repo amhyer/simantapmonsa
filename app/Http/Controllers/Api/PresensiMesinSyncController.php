@@ -6,10 +6,12 @@ use App\Services\AktivitasService;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
 use App\Services\MesinPresensi\PresensiMesinService;
 use App\Http\Controllers\Controller;
+use App\Models\PresensiMesinSyncLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
  * Endpoint sinkron presensi dari bridge di sekolah (PC Windows dengan
@@ -86,8 +88,47 @@ class PresensiMesinSyncController extends Controller
             ], 422);
         }
 
-        $hasil = $presensi->importScans($scans, $request->user()?->id);
+        $startedAt = now();
+        try {
+            $hasil = $presensi->importScans($scans, $request->user()?->id);
+            $finishedAt = now();
+        } catch (\Throwable $e) {
+            PresensiMesinSyncLog::create([
+                'uuid' => (string) Str::uuid(),
+                'user_id' => $request->user()?->id,
+                'source' => 'presensi-bridge',
+                'status' => 'gagal',
+                'jumlah_scan' => count($scans),
+                'pesan_error' => $e->getMessage(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'started_at' => $startedAt,
+                'finished_at' => now(),
+            ]);
+
+            throw $e;
+        }
+
         Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+
+        PresensiMesinSyncLog::create([
+            'uuid' => (string) Str::uuid(),
+            'user_id' => $request->user()?->id,
+            'source' => 'presensi-bridge',
+            'status' => 'berhasil',
+            'jumlah_scan' => count($scans),
+            'dibuat' => (int) ($hasil['dibuat'] ?? 0),
+            'diperbarui' => (int) ($hasil['diperbarui'] ?? 0),
+            'tetap' => (int) ($hasil['tetap'] ?? 0),
+            'dilindungi' => (int) ($hasil['dilindungi'] ?? 0),
+            'nik_tidak_dikenal' => (int) ($hasil['nik_tidak_dikenal'] ?? 0),
+            'contoh_nik_tidak_dikenal' => (array) ($hasil['contoh_nik_tidak_dikenal'] ?? []),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'started_at' => $startedAt,
+            'finished_at' => $finishedAt,
+            'duration_seconds' => (int) round($startedAt->diffInSeconds($finishedAt)),
+        ]);
 
         AktivitasService::log(
             'tambah',
