@@ -95,7 +95,8 @@ class DapodikTenantIsolationTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'recent_logs')->assertJsonPath('recent_logs.0.nama_sekolah', 'Log A');
         $this->withHeader('X-API-Key', $keyB)->getJson('/api/dapodik/sync/status')
             ->assertOk()->assertJsonCount(1, 'recent_logs')->assertJsonPath('recent_logs.0.nama_sekolah', 'Log B');
-        $this->withHeader('X-API-Key', $keyA)->postJson('/api/dapodik/sync/ptk', [])->assertStatus(503);
+        // Bridge kini diizinkan per sekolah (data otomatis masuk ke tenant pemilik API Key).
+        $this->withHeader('X-API-Key', $keyA)->postJson('/api/dapodik/sync/ptk', [])->assertStatus(422);
         $this->actingAs($adminA)->getJson(route('admin.dapodik.api.config'))->assertStatus(503);
         $this->actingAs($adminA)->get(route('admin.dapodik.push.index'))->assertStatus(503);
         $this->withHeaders(['X-API-Key' => $keyA, 'X-Tenant-Subdomain' => $b->subdomain])
@@ -117,7 +118,7 @@ class DapodikTenantIsolationTest extends TestCase
             ->assertSee('Data Guru & PTK')
             ->assertDontSee('Backup & Restore Database')
             ->assertSee('Kelola Langsung')
-            ->assertSee('Dapodik Bridge dan sinkronisasi lama belum aman');
+            ->assertSee('data Dapodik sekolah Anda tersimpan terpisah dari sekolah lain');
 
         $this->actingAs($admin)->get(route('admin.presensi.mesin.index'))
             ->assertOk()

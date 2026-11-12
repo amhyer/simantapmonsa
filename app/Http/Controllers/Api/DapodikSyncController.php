@@ -24,11 +24,13 @@ class DapodikSyncController extends Controller
 {
     public function store(Request $request, string $modul)
     {
-        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        // Mode multi-sekolah: konteks sekolah WAJIB berasal dari pemilik API Key
+        // (middleware `tenant`), bukan dari payload Bridge.
+        if ($this->isMultiSchool() && ! TenantContext::check()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sinkronisasi Bridge lama dinonaktifkan untuk multi-sekolah sampai seluruh data terisolasi.',
-            ], 503);
+                'message' => 'API Key harus terhubung ke akun dan sekolah yang valid.',
+            ], 403);
         }
 
         $request->validate([
@@ -101,6 +103,11 @@ class DapodikSyncController extends Controller
         ]);
     }
 
+    private function isMultiSchool(): bool
+    {
+        return TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists();
+    }
+
     /**
      * Eksekusi batch sinkronisasi secara atomik per-kelompok (default 50 baris)
      * menggunakan transaksi luar untuk atomisitas batch dan savepoint per-baris
@@ -153,10 +160,19 @@ class DapodikSyncController extends Controller
     private function syncSekolah(array $data): array
     {
         $currentUserId = auth()->id() ?? 1;
+        $tenant = TenantContext::check() ? Tenant::find(TenantContext::id()) : null;
 
         return $this->processInBatches(
             $data,
-            function (array $s) use ($currentUserId): string {
+            function (array $s) use ($currentUserId, $tenant): string {
+                // Bridge hanya boleh mengirim profil sekolah miliknya sendiri.
+                if ($tenant && ! empty($tenant->npsn) && ! empty($s['npsn']) && (string) $s['npsn'] !== (string) $tenant->npsn) {
+                    throw new \RuntimeException('NPSN Dapodik (' . $s['npsn'] . ') tidak sesuai dengan NPSN sekolah pemilik API Key.');
+                }
+                if ($tenant && empty($s['npsn'])) {
+                    $s['npsn'] = $tenant->npsn;
+                }
+
                 $mapped = [
                     'guru_id' => $currentUserId,
                     'npsn' => $s['npsn'] ?? '',
@@ -176,9 +192,13 @@ class DapodikSyncController extends Controller
                     'status' => 'aktif',
                 ];
 
-                $existing = SekolahSettings::where('npsn', $s['npsn'] ?? null)
-                    ->orWhere('guru_id', $currentUserId)
-                    ->first();
+                // Query otomatis dibatasi tenant aktif (TenantScope).
+                $existing = SekolahSettings::where(function ($q) use ($s, $currentUserId, $tenant) {
+                    $q->where('npsn', $s['npsn'] ?? null);
+                    if (! $tenant) {
+                        $q->orWhere('guru_id', $currentUserId);
+                    }
+                })->first();
                 if ($existing) {
                     $existing->update($mapped);
 
@@ -327,10 +347,10 @@ class DapodikSyncController extends Controller
 
                 $existingUser = null;
                 if ($dapodikId) {
-                    $existingUser = User::withTrashed()->where('dapodik_id', $dapodikId)->first();
+                    $existingUser = User::forSchool()->withTrashed()->where('dapodik_id', $dapodikId)->first();
                 }
                 if (!$existingUser && $username) {
-                    $existingUser = User::withTrashed()->where('nama_pengguna', $username)->first();
+                    $existingUser = User::forSchool()->withTrashed()->where('nama_pengguna', $username)->first();
                 }
 
                 if ($existingUser) {
@@ -348,7 +368,7 @@ class DapodikSyncController extends Controller
                     $base = $username ?: ('gtk_' . $dapodikId);
                     $finalUsername = $base;
                     $counter = 1;
-                    while (User::withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
+                    while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
                         $finalUsername = $base . '.' . $counter;
                         $counter++;
                     }
@@ -399,13 +419,13 @@ class DapodikSyncController extends Controller
                 $guruId = null;
                 $waliKelasPtkId = $r['ptk_id'] ?? $r['guru_id'] ?? $r['wali_kelas_ptk_id'] ?? null;
                 if ($waliKelasPtkId) {
-                    $waliUser = User::where('dapodik_id', $waliKelasPtkId)->first();
+                    $waliUser = User::forSchool()->where('dapodik_id', $waliKelasPtkId)->first();
                     if ($waliUser) {
                         $guruId = $waliUser->id;
                     } else {
                         $ptk = Ptk::where('dapodik_id', $waliKelasPtkId)->first();
                         if ($ptk && $ptk->nip) {
-                            $waliUser = User::where('nama_pengguna', $ptk->nip)->first();
+                            $waliUser = User::forSchool()->where('nama_pengguna', $ptk->nip)->first();
                             if ($waliUser) {
                                 $guruId = $waliUser->id;
                             }
@@ -484,12 +504,12 @@ class DapodikSyncController extends Controller
 
     public function status(Request $request)
     {
-        $isTenant = TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists();
-        $semesters = $isTenant ? collect() : Semester::orderByDesc('semester_id')->get();
+        // Semua model di bawah ini sudah ter-scope per sekolah (tenant) otomatis.
+        $semesters = Semester::orderByDesc('semester_id')->get();
         $stats = [
             'semesters' => $semesters->count(),
             'siswa' => Siswa::count(),
-            'ptk' => $isTenant ? null : Ptk::count(),
+            'ptk' => Ptk::count(),
             'rombel' => Rombel::count(),
             'jadwal' => JadwalPelajaran::count(),
         ];

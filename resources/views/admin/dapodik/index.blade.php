@@ -36,7 +36,7 @@
     <div style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#1E3A8A">
         <i class="fas fa-info-circle"></i> Integrasi Dapodik Sekolah:
     </div>
-    Gunakan aplikasi desktop <b>SIMANTAP Bridge</b> di bawah ini untuk menghubungkan Dapodik lokal sekolah Anda ke server SIMANTAP MONSA menggunakan <b>API Key</b> sekolah, atau gunakan opsi <b>Kelola Langsung</b> untuk impor berkas siswa dan rombel. (Dapodik Bridge dan sinkronisasi lama belum aman untuk multi-sekolah langsung).
+    Gunakan aplikasi desktop <b>SIMANTAP Bridge</b> di bawah ini untuk menghubungkan Dapodik lokal sekolah Anda ke server SIMANTAP MONSA menggunakan <b>API Key</b> sekolah, atau gunakan opsi <b>Kelola Langsung</b> untuk impor berkas siswa dan rombel. (Dengan API Key sekolah Anda, data Dapodik sekolah Anda tersimpan terpisah dari sekolah lain.)
 </div>
 @endif
 <div id="globalAlert" style="display:none;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
