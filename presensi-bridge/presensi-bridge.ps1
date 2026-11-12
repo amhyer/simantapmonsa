@@ -62,8 +62,22 @@ function Simpan-State([datetime]$terakhir) {
 
 function Jalankan-Export([datetime]$dari, [datetime]$sampai) {
     $psExe = 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'
+
+    # Utamakan struktur instalasi resmi: <induk>\tools\attendance-mdb-export.ps1.
+    # Bila tidak ada, cari di folder bridge sendiri supaya instalasi yang hanya
+    # menyalin folder presensi-bridge tetap bisa berjalan.
     $exporter = Join-Path -Path (Split-Path -Parent $script:root) -ChildPath 'tools/attendance-mdb-export.ps1'
     $exporter = [System.IO.Path]::GetFullPath($exporter)
+    if (-not (Test-Path -LiteralPath $exporter)) {
+        $fallback = Join-Path -Path $script:root -ChildPath 'attendance-mdb-export.ps1'
+        if (Test-Path -LiteralPath $fallback) {
+            $exporter = [System.IO.Path]::GetFullPath($fallback)
+        }
+    }
+    if (-not (Test-Path -LiteralPath $exporter)) {
+        throw "Pembaca database mesin tidak ditemukan. Salin attendance-mdb-export.ps1 ke folder 'tools\' (satu tingkat di atas presensi-bridge) atau ke folder presensi-bridge itu sendiri."
+    }
+
     $out = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), ('simantap-mesin-bridge-{0}.json' -f $PID))
 
     $argList = @(

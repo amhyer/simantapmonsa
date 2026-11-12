@@ -26,6 +26,7 @@ ATT2000.MDB  --(32-bit Jet OLEDB)-->  presensi-bridge.ps1  --(HTTPS + X-API-Key)
 | Komponen | Lokasi | Peran |
 |---|---|---|
 | Bridge | `presensi-bridge/presensi-bridge.ps1` | Baca `att2000.mdb` (read-only), kirim ke API |
+| Pembaca MDB | `tools/attendance-mdb-export.ps1` | Ekspor `att2000.mdb` via Jet OLEDB 32-bit (**wajib disalin**) |
 | Task Scheduler | `presensi-bridge/pasang-task.ps1` | Berulang tiap 5 menit |
 | Konfigurasi | `presensi-bridge/config.json` | `server_url`, `api_key`, `db_path`, `interval_menit`, `maks_hari` |
 | API server | `app/Http/Controllers/Api/PresensiMesinSyncController.php` | Terima scan & pegawai, import |
@@ -33,21 +34,37 @@ ATT2000.MDB  --(32-bit Jet OLEDB)-->  presensi-bridge.ps1  --(HTTPS + X-API-Key)
 
 ## Langkah instalasi (PC sekolah)
 
+Struktur folder yang benar:
+
+```text
+C:\Program Files\SIMANTAP\
+├── presensi-bridge\
+│   ├── presensi-bridge.ps1
+│   ├── jalankan-bridge.cmd
+│   ├── pasang-task.ps1
+│   └── config.json
+└── tools\
+    └── attendance-mdb-export.ps1   <-- WAJIB ikut disalin
+```
+
 1. Salin folder `presensi-bridge/` ke `C:\Program Files\SIMANTAP\presensi-bridge\`.
-2. Salin `config.example.json` → `config.json` dan isi:
+2. **Salin folder `tools/`** ke `C:\Program Files\SIMANTAP\tools\`. Bridge mencari
+   pembaca database di `..\tools\attendance-mdb-export.ps1`; bila tidak ada,
+   bridge memakai salinan `attendance-mdb-export.ps1` di folder bridge sendiri.
+3. Salin `config.example.json` → `config.json` dan isi:
    - `server_url`: `https://<domain-simantap>/`
    - `api_key`: kunci API (ability `presensi:import`)
    - `db_path`: `C:\Program Files (x86)\Solution\ATT2000.MDB` (sesuaikan)
-3. Buat API Key di website: Admin → **Kunci API Bridge** → buat key dengan akses **Presensi Mesin (sync fingerprint)**.
-4. Uji manual:
+4. Buat API Key di website: Admin → **Kunci API Bridge** → buat key dengan akses **Presensi Mesin (sync fingerprint)**.
+5. Uji manual:
    ```bat
    C:\Program Files\SIMANTAP\presensi-bridge\jalankan-bridge.cmd
    ```
-5. Pasang Task Scheduler (setiap 5 menit):
+6. Pasang Task Scheduler (setiap 5 menit):
    ```powershell
    & 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -File 'C:\Program Files\SIMANTAP\presensi-bridge\pasang-task.ps1'
    ```
-6. Cek log: `C:\Program Files\SIMANTAP\presensi-bridge\presinsi-bridge.log`.
+7. Cek log: `C:\Program Files\SIMANTAP\presensi-bridge\presinsi-bridge.log`.
 
 ## Verifikasi
 
@@ -79,6 +96,7 @@ pada log, sehingga admin bisa membedakan kegagalan dari kapan.
 | `403` | Key tidak punya ability `presensi:import` | Buat key dengan akses **Presensi Mesin** |
 | `422` | Format waktu/nik tidak valid | Pastikan `waktu` ISO (`2026-11-09T07:05:00`) |
 | `Tidak ada pembaca database` | PowerShell 32-bit tidak ditemukan / MDB tidak ada | Pastikan `db_path`, install ZKTime/Attendance Management |
+| `Pembaca database mesin tidak ditemukan` | `attendance-mdb-export.ps1` belum disalin | Salin ke `C:\Program Files\SIMANTAP\tools\` atau ke folder `presensi-bridge\` |
 | Log kosong | Bridge gagal sebelum POST | Cek `presinsi-bridge.log` + status task scheduler |
 
 ## Catatan keamanan

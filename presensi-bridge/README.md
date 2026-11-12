@@ -21,12 +21,30 @@ keamanan (izin / sakit / cuti, koreksi admin, scan pulang tanpa jam masuk) tetap
 
 ## Instalasi
 
+Struktur folder yang disarankan:
+
+```text
+C:\Program Files\SIMANTAP\
+├── presensi-bridge\
+│   ├── presensi-bridge.ps1
+│   ├── jalankan-bridge.cmd
+│   ├── pasang-task.ps1
+│   └── config.json
+└── tools\
+    └── attendance-mdb-export.ps1
+```
+
 1. Salin folder `presensi-bridge/` ke `C:\Program Files\SIMANTAP\presensi-bridge\`.
-2. Salin `config.example.json` → `config.json`, lalu isi:
+2. **Salin juga folder `tools/`** ke `C:\Program Files\SIMANTAP\tools\` sehingga
+   `attendance-mdb-export.ps1` tersedia di `C:\Program Files\SIMANTAP\tools\`.
+   Bridge mencari pembaca database di `..\tools\attendance-mdb-export.ps1`; bila
+   tidak ditemukan, bridge memakai `attendance-mdb-export.ps1` yang berada di
+   folder bridge sendiri (fallback).
+3. Salin `config.example.json` → `config.json`, lalu isi:
    - `server_url`: URL website SIMANTAP (wajib HTTPS kecuali localhost).
    - `api_key`: kunci API yang dibuat admin (ability `presensi:import`).
    - `db_path`: lokasi `att2000.mdb` (mis. `C:\Program Files (x86)\Solution\ATT2000.MDB`).
-3. Uji manual sekali:
+4. Uji manual sekali:
    ```bat
    C:\Program Files\SIMANTAP\presensi-bridge\jalankan-bridge.cmd
    ```
