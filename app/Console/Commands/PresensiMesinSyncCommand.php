@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
 use App\Services\PresensiMesinService;
 use Illuminate\Console\Command;
@@ -28,11 +30,63 @@ class PresensiMesinSyncCommand extends Command
 
     protected $signature = 'presensi:mesin-sync
         {--dari= : Rentang awal tarik data (format Y-m-d). Default: sejak sinkron terakhir}
-        {--sampai= : Rentang akhir tarik data (format Y-m-d). Default: hari ini}';
+        {--sampai= : Rentang akhir tarik data (format Y-m-d). Default: hari ini}
+        {--tenant= : ID sekolah (tenant) yang datanya ditarik. Wajib bila lebih dari satu sekolah aktif}';
 
     protected $description = 'Sinkron otomatis presensi dari database mesin fingerprint Attendance Management';
 
     public function handle(AttendanceDatabaseReader $reader, PresensiMesinService $presensi): int
+    {
+        // Sudah berjalan di dalam konteks sekolah (mis. dari job/request tenant).
+        if (TenantContext::check()) {
+            return $this->sinkron($reader, $presensi);
+        }
+
+        $pilihanTenant = trim((string) $this->option('tenant'));
+
+        if ($pilihanTenant !== '') {
+            if (! ctype_digit($pilihanTenant)) {
+                $this->error('Opsi --tenant harus berupa ID sekolah (angka).');
+
+                return self::FAILURE;
+            }
+
+            $tenant = Tenant::query()->whereKey((int) $pilihanTenant)->first();
+            if (! $tenant) {
+                $this->error('Sekolah (tenant) dengan ID '.$pilihanTenant.' tidak ditemukan.');
+
+                return self::FAILURE;
+            }
+            if (! $tenant->aktif) {
+                $this->error('Sekolah '.$tenant->nama_sekolah.' sedang tidak aktif.');
+
+                return self::FAILURE;
+            }
+
+            return TenantContext::run((int) $tenant->id, fn () => $this->sinkron($reader, $presensi));
+        }
+
+        // Tanpa konteks: aman hanya bila tepat satu sekolah aktif. Bila lebih dari
+        // satu, data tidak boleh ditarik agar tidak tercampur antar sekolah.
+        $tenantAktif = Tenant::query()->where('aktif', true)->pluck('id');
+
+        if ($tenantAktif->count() === 1) {
+            return TenantContext::run((int) $tenantAktif->first(), fn () => $this->sinkron($reader, $presensi));
+        }
+
+        if ($tenantAktif->count() > 1) {
+            $this->error('Ada lebih dari satu sekolah aktif. Jalankan dengan --tenant=ID agar data tidak tercampur.');
+
+            return self::FAILURE;
+        }
+
+        return $this->sinkron($reader, $presensi);
+    }
+
+    /**
+     * Inti proses: baca rentang scan dari database mesin lalu impor ke presensi.
+     */
+    private function sinkron(AttendanceDatabaseReader $reader, PresensiMesinService $presensi): int
     {
         $sampai = $this->option('sampai')
             ? Carbon::parse((string) $this->option('sampai'), config('app.timezone'))->startOfDay()
