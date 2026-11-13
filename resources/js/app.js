@@ -92,11 +92,22 @@ Alpine.start();
         observeOnce(els, (el) => el.classList.add('in'));
     }
 
-    // --- Angka mencacah naik (paham "78,5", "1.250", "90%") ---
+    // --- Angka mencacah naik (hanya untuk angka biasa, abaikan tahun/kode/tanda baca) ---
     function parseNumber(raw) {
-        const m = String(raw).trim().match(/^([^0-9.,-]*)([0-9][0-9.,]*)(.*)$/s);
+        const text = String(raw).trim();
+        // Jangan format jika berupa format tahun/semester (cth "2026/2027"), rentang, atau UUID/hash
+        if (text.includes('/') || text.includes('-') || /[a-fA-F]/.test(text) || text.length > 12) {
+            return null;
+        }
+        const m = text.match(/^([^0-9.,-]*)([0-9][0-9.,]*)(.*)$/s);
         if (!m) return null;
         const [, prefix, digits, suffix] = m;
+        // Jika angka murni tanpa desimal dan berpotensi tahun (misal 2024..2099), jangan dianimasi atau dipecah koma
+        const cleanDigits = digits.replace(/[.,]/g, '');
+        if (/^(19|20)\d{2}$/.test(cleanDigits)) {
+            return null;
+        }
+
         const commaDecimal = digits.includes(',');
         const normalized = commaDecimal
             ? digits.replace(/\./g, '').replace(',', '.')
@@ -109,10 +120,8 @@ Alpine.start();
 
     function formatNumber(value, decimals, commaDecimal) {
         const [int, dec] = value.toFixed(decimals).split('.');
-        const grouped = commaDecimal
-            ? int.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-            : int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        return dec !== undefined ? grouped + (commaDecimal ? ',' : '.') + dec : grouped;
+        // Penulisan angka biasa tanpa tanda koma atau tanda titik ribuan
+        return dec !== undefined && decimals > 0 ? int + (commaDecimal ? ',' : '.') + dec : int;
     }
 
     function initCountUp() {
