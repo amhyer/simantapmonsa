@@ -1,95 +1,611 @@
-@extends('layouts.app')
-@section('title', 'Mengerjakan Ujian - ' . $session->title)
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Ujian CBT - {{ $session->title }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    @vite(['resources/css/app.css', 'resources/css/katex.css', 'resources/js/app.js'])
+    <style>
+        * { box-sizing: border-box; }
+        body.anbk-body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Poppins', 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #326698 0%, #4a7fb8 100%);
+            color: #1e293b;
+            position: relative;
+        }
+        body.anbk-body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 2px, transparent 2px);
+            background-size: 50px 50px;
+            z-index: 0;
+        }
+        .anbk-shell {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 16px 20px 36px;
+        }
+        /* Top Header Bar */
+        .anbk-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 6px 4px 18px;
+            color: #fff;
+            flex-wrap: wrap;
+        }
+        .anbk-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .anbk-logo-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.16);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .anbk-logo-badge img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+        .anbk-brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+        .anbk-brand-sub {
+            font-size: 12px;
+            color: #bcd2e8;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .anbk-student-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+        .anbk-student-text {
+            text-align: right;
+            line-height: 1.3;
+        }
+        .anbk-student-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .anbk-student-meta {
+            font-size: 12px;
+            color: #d6e4f2;
+        }
+        .anbk-avatar-tile {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+        }
 
-@push('styles')
-@vite(['resources/css/katex.css'])
-@endpush
+        /* Main Floating Exam Card */
+        .anbk-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+            padding: 26px 32px 28px;
+        }
+        .anbk-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding-bottom: 14px;
+        }
+        .anbk-soal-heading {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        .anbk-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .anbk-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            line-height: 1.3;
+        }
+        .anbk-pill-primary {
+            background: #0d6efd;
+            color: #fff;
+            border-color: #0d6efd;
+        }
+        .anbk-pill-primary:hover { background: #0b5ed7; }
+        .anbk-pill-outline {
+            background: #fff;
+            color: #495057;
+            border-color: #6c757d;
+            cursor: default;
+        }
+        .anbk-pill-outline.urgent {
+            background: #dc3545;
+            color: #fff;
+            border-color: #dc3545;
+            animation: anbkPulse 1.2s infinite;
+        }
+        @keyframes anbkPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .anbk-pill-ghost {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .anbk-pill-ghost:hover { background: #e2e8f0; }
 
-@section('sidebar')
-    @include('siswa.partials.sidebar')
-@endsection
+        /* Autosave pill */
+        .anbk-autosave {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 30px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .anbk-autosave.ok {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+        .anbk-autosave.pending {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
 
-@section('page_title', 'Ujian CBT: ' . $session->title)
-@section('page_subtitle', 'Pilihan Ganda • Sisa waktu dan autosave berjalan secara waktu nyata')
+        /* Secondary Toolbar */
+        .anbk-subbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 10px 0 14px;
+            margin-bottom: 20px;
+            border-top: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .anbk-font-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+        .anbk-font-btn {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: #495057;
+            cursor: pointer;
+            padding: 2px 7px;
+            line-height: 1.2;
+        }
+        .anbk-font-btn.active {
+            font-weight: 700;
+            color: #0d6efd;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .anbk-subject-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
 
-@section('content')
-@include('cbt.feedback')
+        /* Question & Stimulus */
+        .anbk-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        .anbk-stimulus {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 16px 18px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #1e293b;
+        }
+        .anbk-stimulus-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #326698;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .anbk-q-prompt {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #1e293b;
+            margin-bottom: 18px;
+            white-space: pre-line;
+        }
+        .anbk-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .anbk-option-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .anbk-option-row:hover {
+            border-color: #86b7fe;
+            background: #f8fbff;
+        }
+        .anbk-option-row.is-selected {
+            border-color: #0d6efd;
+            background: #eff6ff;
+            box-shadow: 0 0 0 1px #0d6efd inset;
+        }
+        .anbk-option-row input[type="radio"] {
+            margin-top: 4px;
+            width: 17px;
+            height: 17px;
+            accent-color: #0d6efd;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .anbk-option-key {
+            font-weight: 700;
+            color: #326698;
+            min-width: 24px;
+            font-size: 15px;
+        }
+        .anbk-option-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #1e293b;
+            flex: 1;
+        }
 
-{{-- CBT Sticky HUD --}}
-<div class="cbt-hud">
-    <div class="cbt-hud-title">
-        <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px">
-            <i class="fas fa-file-signature"></i>
+        /* Bottom Navigation Bar */
+        .anbk-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 26px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        .anbk-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 30px;
+            padding: 9px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .anbk-nav-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .anbk-btn-prev {
+            background: #dc3545;
+            color: #fff;
+        }
+        .anbk-btn-prev:hover:not(:disabled) { background: #bb2d3b; }
+        .anbk-btn-ragu {
+            background: #ffc107;
+            color: #212529;
+        }
+        .anbk-btn-ragu:hover { background: #ffca2c; }
+        .anbk-btn-ragu input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: #212529;
+            cursor: pointer;
+            margin: 0;
+        }
+        .anbk-btn-next {
+            background: #0d6efd;
+            color: #fff;
+        }
+        .anbk-btn-next:hover:not(:disabled) { background: #0b5ed7; }
+        .anbk-btn-finish {
+            background: #198754;
+            color: #fff;
+        }
+        .anbk-btn-finish:hover:not(:disabled) { background: #157347; }
+
+        /* Pusmendik "Daftar Soal" Modal */
+        .anbk-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .anbk-modal-backdrop.open {
+            display: flex;
+        }
+        .anbk-modal {
+            background: #fff;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        .anbk-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .anbk-modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+        .anbk-modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            line-height: 1;
+            color: #64748b;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+        .anbk-modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .anbk-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            justify-items: center;
+        }
+        .anbk-p-item {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            background: #fff;
+            color: #212529;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s ease;
+        }
+        .anbk-p-item.answered {
+            background: #212529;
+            border-color: #212529;
+            color: #fff;
+        }
+        .anbk-p-item.flagged {
+            background: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+        .anbk-p-item.current {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+        }
+        .anbk-p-check {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1.5px solid #212529;
+            color: #212529;
+            font-size: 9px;
+            align-items: center;
+            justify-content: center;
+        }
+        .anbk-p-item.answered .anbk-p-check {
+            display: inline-flex;
+        }
+        .anbk-modal-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #475569;
+        }
+        .anbk-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .anbk-legend-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .anbk-modal-footer {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .anbk-shell { padding: 12px 12px 28px; }
+            .anbk-card { padding: 18px 16px 20px; border-radius: 16px; }
+            .anbk-split { grid-template-columns: 1fr; }
+            .anbk-soal-heading { font-size: 18px; }
+            .anbk-nav-bar { justify-content: center; }
+        }
+    </style>
+</head>
+<body class="anbk-body">
+<div class="anbk-shell">
+    {{-- Top Header Bar (Pusmendik ANBK Style) --}}
+    <header class="anbk-header">
+        <div class="anbk-brand">
+            <div class="anbk-logo-badge">
+                <img src="{{ asset('favicon.png') }}" alt="Logo SIMANTAP">
+            </div>
+            <div>
+                <div class="anbk-brand-title">SIMANTAP CBT</div>
+                <div class="anbk-brand-sub">Aplikasi Ujian Berbasis Komputer &bull; {{ $session->bank->subject ?? 'CBT' }}</div>
+            </div>
         </div>
-        <div>
-            <div style="font-size:14px;font-weight:700">{{ $session->title }}</div>
-            <div style="font-size:11px;opacity:0.8">Soal <span id="hud-q-active">1</span> dari {{ count($questions) }} butir</div>
+
+        <div class="anbk-student-info">
+            <div class="anbk-student-text">
+                <div class="anbk-student-name">
+                    {{ $siswa->nis ?? auth()->user()->nama_pengguna }} - {{ $siswa->nama_peserta_didik ?? auth()->user()->nama_lengkap }}
+                </div>
+                <div class="anbk-student-meta">Kelas {{ $siswa->kelas ?? '-' }} &bull; {{ $session->title }}</div>
+            </div>
+            <div class="anbk-avatar-tile" aria-hidden="true">
+                <i class="fas fa-user-graduate"></i>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        {{-- Autosave Indicator --}}
-        <div id="save-status" class="cbt-autosave-badge ok" role="status" aria-live="polite">
-            <i class="fas fa-check-circle"></i> <span>Semua perubahan jawaban tersimpan di server.</span>
+    <noscript>
+        <div style="background:#fff3cd;color:#664d03;border:1px solid #ffecb5;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px">
+            <i class="fas fa-exclamation-triangle"></i>
+            JavaScript tidak aktif. Autosave/timer tidak tersedia. Klik tombol Kumpulkan sebelum deadline {{ $result->deadline_at->format('H:i:s') }}.
         </div>
+    </noscript>
 
-        {{-- Font Resizer --}}
-        <div style="display:flex;align-items:center;background:rgba(255,255,255,0.12);border-radius:6px;padding:2px">
-            <button type="button" onclick="adjustFontSize(-1)" title="Perkecil huruf" style="background:none;border:none;color:#fff;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:700">A-</button>
-            <button type="button" onclick="adjustFontSize(0)" title="Ukuran normal" style="background:none;border:none;color:#fff;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:700">A</button>
-            <button type="button" onclick="adjustFontSize(1)" title="Perbesar huruf" style="background:none;border:none;color:#fff;padding:4px 8px;cursor:pointer;font-size:14px;font-weight:700">A+</button>
-        </div>
+    {{-- Floating White Exam Card --}}
+    <main class="anbk-card">
+        {{-- Internal Sub-header Toolbar --}}
+        <div class="anbk-toolbar">
+            <h1 class="anbk-soal-heading">Soal nomor <span id="hud-q-active">1</span></h1>
 
-        {{-- Fullscreen HUD Button --}}
-        <button type="button" id="btn-fullscreen-hud" onclick="toggleExamFullscreen()" title="Buka/Tutup Layar Penuh" style="background:rgba(255,255,255,0.12);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px">
-            <i class="fas fa-expand" id="hud-fs-icon"></i>
-            <span id="hud-fs-text">Layar Penuh</span>
-        </button>
-
-        {{-- Countdown Timer --}}
-        <div id="timer-box" class="cbt-hud-timer">
-            <i class="far fa-clock"></i>
-            <span id="timer" role="timer">--:--</span>
-        </div>
-
-        {{-- Mobile Palette Toggle --}}
-        <button type="button" onclick="toggleMobilePalette()" class="btn btn-sm btn-gold" style="display:none" id="btn-toggle-palette">
-            <i class="fas fa-th"></i> Daftar Soal
-        </button>
-    </div>
-</div>
-
-<noscript>
-    <div class="note note-warn" style="margin-bottom:16px">
-        <i class="fas fa-exclamation-triangle"></i>
-        JavaScript tidak aktif. Autosave/timer tidak tersedia. Klik tombol Kumpulkan sebelum deadline {{ $result->deadline_at->format('H:i:s') }}.
-    </div>
-</noscript>
-
-<form id="exam-form" class="cbt-form" method="POST" action="{{ route('cbt.student.submit', $result) }}">
-@csrf
-
-<div class="cbt-main-grid">
-    {{-- Left: Question Area --}}
-    <div>
-        @foreach($questions as $index => $question)
-            @php
-                $qNum = $loop->iteration;
-                $savedAns = $result->answers[$question['id']] ?? null;
-            @endphp
-            <div class="cbt-question-card question-pane" id="pane-q-{{ $qNum }}" style="{{ $loop->first ? '' : 'display:none' }}">
-                <div class="cbt-question-header">
-                    <div class="cbt-q-number">
-                        <i class="fas fa-question-circle" style="margin-right:6px"></i> Soal No. {{ $qNum }}
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <button type="button" class="btn btn-sm btn-ghost btn-ragu" data-qindex="{{ $qNum }}" onclick="toggleRagu({{ $qNum }})">
-                            <i class="far fa-flag"></i> <span class="ragu-text">Ragu-ragu</span>
-                        </button>
-                    </div>
+            <div class="anbk-toolbar-actions">
+                <div id="save-status" class="anbk-autosave ok" role="status" aria-live="polite">
+                    <i class="fas fa-check-circle"></i> <span>Semua perubahan jawaban tersimpan di server.</span>
                 </div>
 
+                <button type="button" id="btn-fullscreen-hud" class="anbk-pill anbk-pill-ghost" onclick="toggleExamFullscreen()" title="Buka/Tutup Layar Penuh">
+                    <i class="fas fa-expand" id="hud-fs-icon"></i>
+                    <span id="hud-fs-text">Layar Penuh</span>
+                </button>
+
+                <div id="timer-box" class="anbk-pill anbk-pill-outline">
+                    <i class="far fa-clock"></i>
+                    <span>Sisa Waktu : <strong id="timer" role="timer">--:--</strong></span>
+                </div>
+
+                <button type="button" id="btn-open-daftar-soal" class="anbk-pill anbk-pill-primary" onclick="openDaftarSoal()">
+                    <i class="fas fa-th-large"></i> Daftar Soal (<span id="answered-count">0</span>/{{ count($questions) }})
+                </button>
+            </div>
+        </div>
+
+        {{-- Secondary Toolbar: Font Resizer & Subject --}}
+        <div class="anbk-subbar">
+            <div class="anbk-font-group">
+                <span>Ukuran font soal:</span>
+                <button type="button" class="anbk-font-btn" data-fstep="0" onclick="setFontStep(0)" style="font-size:12px" title="Huruf kecil">A</button>
+                <button type="button" class="anbk-font-btn active" data-fstep="1" onclick="setFontStep(1)" style="font-size:15px" title="Huruf normal">A</button>
+                <button type="button" class="anbk-font-btn" data-fstep="2" onclick="setFontStep(2)" style="font-size:18px" title="Huruf besar">A</button>
+            </div>
+            <div class="anbk-subject-label">
+                {{ $session->bank->subject ?? 'Ujian' }} &mdash; {{ $session->title }}
+            </div>
+        </div>
+
+        {{-- Exam Form --}}
+        <form id="exam-form" class="cbt-form" method="POST" action="{{ route('cbt.student.submit', $result) }}">
+            @csrf
+
+            @foreach($questions as $index => $question)
                 @php
+                    $qNum = $loop->iteration;
+                    $savedAns = $result->answers[$question['id']] ?? null;
                     $stimulus = $question['stimulus'] ?? null;
                     $promptText = $question['prompt'];
                     if (!$stimulus && preg_match('/\[(?:WACANA|STIMULUS)\](.*?)\[\/(?:WACANA|STIMULUS)\](.*)/si', $promptText, $matches)) {
@@ -98,142 +614,141 @@
                     }
                 @endphp
 
-                @if($stimulus)
-                    <div class="cbt-split-pane">
-                        <div class="cbt-stimulus-col">
-                            <div class="cbt-stimulus-header">
-                                <i class="fas fa-book-open"></i> Wacana & Informasi Pendukung
+                <div class="question-pane" id="pane-q-{{ $qNum }}" style="{{ $loop->first ? '' : 'display:none' }}">
+                    @if($stimulus)
+                        <div class="anbk-split">
+                            <div class="anbk-stimulus">
+                                <div class="anbk-stimulus-title">
+                                    <i class="fas fa-book-open"></i> Wacana &amp; Informasi Pendukung
+                                </div>
+                                <div>{!! nl2br(e($stimulus)) !!}</div>
                             </div>
-                            <div class="cbt-stimulus-content">{!! nl2br(e($stimulus)) !!}</div>
-                        </div>
-                        <div class="cbt-question-col">
-                            <div class="cbt-q-prompt" id="prompt-{{ $qNum }}">{{ $promptText }}</div>
-                            <div class="cbt-options-group">
-                                @foreach($question['options'] as $key => $option)
-                                    <label class="cbt-option-label {{ $savedAns === $key ? 'is-selected' : '' }}" for="q-{{ $question['id'] }}-{{ $key }}">
-                                        <input type="radio" 
-                                               id="q-{{ $question['id'] }}-{{ $key }}" 
-                                               name="answers[{{ $question['id'] }}]" 
-                                               value="{{ $key }}" 
-                                               data-question="{{ $question['id'] }}" 
-                                               data-qnum="{{ $qNum }}"
-                                               @checked($savedAns === $key)>
-                                        <span class="cbt-option-key">{{ $key }}</span>
-                                        <span class="cbt-option-text">{{ $option }}</span>
-                                    </label>
-                                @endforeach
+                            <div>
+                                <div class="anbk-q-prompt cbt-q-prompt" id="prompt-{{ $qNum }}">{{ $promptText }}</div>
+                                <div class="anbk-options">
+                                    @foreach($question['options'] as $key => $option)
+                                        <label class="anbk-option-row cbt-option-label {{ $savedAns === $key ? 'is-selected' : '' }}" for="q-{{ $question['id'] }}-{{ $key }}">
+                                            <input type="radio"
+                                                   id="q-{{ $question['id'] }}-{{ $key }}"
+                                                   name="answers[{{ $question['id'] }}]"
+                                                   value="{{ $key }}"
+                                                   data-question="{{ $question['id'] }}"
+                                                   data-qnum="{{ $qNum }}"
+                                                   @checked($savedAns === $key)>
+                                            <span class="anbk-option-key">({{ $key }})</span>
+                                            <span class="anbk-option-text cbt-option-text">{{ $option }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
-                    </div>
-                @else
-                    {{-- Prompt --}}
-                    <div class="cbt-q-prompt" id="prompt-{{ $qNum }}">{{ $promptText }}</div>
+                    @else
+                        <div class="anbk-q-prompt cbt-q-prompt" id="prompt-{{ $qNum }}">{{ $promptText }}</div>
+                        <div class="anbk-options">
+                            @foreach($question['options'] as $key => $option)
+                                <label class="anbk-option-row cbt-option-label {{ $savedAns === $key ? 'is-selected' : '' }}" for="q-{{ $question['id'] }}-{{ $key }}">
+                                    <input type="radio"
+                                           id="q-{{ $question['id'] }}-{{ $key }}"
+                                           name="answers[{{ $question['id'] }}]"
+                                           value="{{ $key }}"
+                                           data-question="{{ $question['id'] }}"
+                                           data-qnum="{{ $qNum }}"
+                                           @checked($savedAns === $key)>
+                                    <span class="anbk-option-key">({{ $key }})</span>
+                                    <span class="anbk-option-text cbt-option-text">{{ $option }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
 
-                    {{-- Options --}}
-                    <div class="cbt-options-group">
-                        @foreach($question['options'] as $key => $option)
-                            <label class="cbt-option-label {{ $savedAns === $key ? 'is-selected' : '' }}" for="q-{{ $question['id'] }}-{{ $key }}">
-                                <input type="radio" 
-                                       id="q-{{ $question['id'] }}-{{ $key }}" 
-                                       name="answers[{{ $question['id'] }}]" 
-                                       value="{{ $key }}" 
-                                       data-question="{{ $question['id'] }}" 
-                                       data-qnum="{{ $qNum }}"
-                                       @checked($savedAns === $key)>
-                                <span class="cbt-option-key">{{ $key }}</span>
-                                <span class="cbt-option-text">{{ $option }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                @endif
+                    {{-- Bottom Navigation Bar (Previous / Ragu-ragu / Next or Selesai) --}}
+                    <div class="anbk-nav-bar">
+                        <button type="button"
+                                class="anbk-nav-btn anbk-btn-prev"
+                                onclick="goToQuestion({{ $qNum - 1 }})"
+                                @disabled($qNum === 1)>
+                            <i class="fas fa-chevron-circle-left"></i> Soal sebelumnya
+                        </button>
 
-                {{-- Question Bottom Bar Navigation --}}
-                <div class="cbt-bottom-bar">
-                    <div>
-                        @if($qNum > 1)
-                            <button type="button" class="btn btn-secondary" onclick="goToQuestion({{ $qNum - 1 }})">
-                                <i class="fas fa-arrow-left"></i> Soal Sebelumnya
-                            </button>
-                        @endif
-                    </div>
-                    
-                    <div style="display:flex;align-items:center;gap:10px">
+                        <label class="anbk-nav-btn anbk-btn-ragu" for="ragu-check-{{ $qNum }}">
+                            <input type="checkbox"
+                                   id="ragu-check-{{ $qNum }}"
+                                   class="ragu-checkbox"
+                                   data-qindex="{{ $qNum }}"
+                                   onchange="toggleRagu({{ $qNum }}, this.checked)">
+                            <span>Ragu-ragu</span>
+                        </label>
+
                         @if($qNum < count($questions))
-                            <button type="button" class="btn btn-primary" onclick="goToQuestion({{ $qNum + 1 }})">
-                                Soal Selanjutnya <i class="fas fa-arrow-right"></i>
+                            <button type="button"
+                                    class="anbk-nav-btn anbk-btn-next"
+                                    onclick="goToQuestion({{ $qNum + 1 }})">
+                                Soal berikutnya <i class="fas fa-chevron-circle-right"></i>
                             </button>
                         @else
-                            <button type="button" class="btn btn-primary" onclick="confirmFinishExam()" style="background:var(--ok);border-color:var(--ok)">
-                                <i class="fas fa-check-double"></i> Kumpulkan Ujian
+                            <button type="button"
+                                    class="anbk-nav-btn anbk-btn-finish"
+                                    onclick="confirmFinishExam()">
+                                <i class="fas fa-check-circle"></i> Kumpulkan jawaban
                             </button>
                         @endif
                     </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- Right: Question Palette Drawer / Sidebar --}}
-    <div class="cbt-palette-card" id="palette-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)">
-            <h4 style="font-size:14px;font-weight:700;margin:0;color:var(--text);display:flex;align-items:center;gap:6px">
-                <i class="fas fa-th" style="color:var(--navy)"></i> Nomor Soal
-            </h4>
-            <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:11px;color:var(--muted)">
-                    <span id="answered-count">0</span>/{{ count($questions) }} Selesai
-                </span>
-                <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="btn btn-sm btn-secondary cbt-mobile-back-btn" title="Kembali ke Soal">
-                    <i class="fas fa-arrow-up"></i> Soal
-                </button>
-            </div>
-        </div>
-
-        {{-- Palette Grid --}}
-        <div class="cbt-palette-grid">
-            @foreach($questions as $index => $question)
-                @php
-                    $qNum = $loop->iteration;
-                    $isAnswered = isset($result->answers[$question['id']]);
-                @endphp
-                <button type="button" 
-                        id="palette-btn-{{ $qNum }}" 
-                        class="cbt-palette-item {{ $qNum === 1 ? 'current' : '' }} {{ $isAnswered ? 'answered' : '' }}"
-                        onclick="goToQuestion({{ $qNum }})">
-                    {{ $qNum }}
-                </button>
             @endforeach
-        </div>
 
-        {{-- Legend --}}
-        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted)">
-            <div style="display:flex;align-items:center;gap:8px">
-                <span style="width:14px;height:14px;border-radius:3px;background:var(--ok);display:inline-block"></span>
-                <span>Sudah dijawab</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-                <span style="width:14px;height:14px;border-radius:3px;background:var(--gold);display:inline-block"></span>
-                <span>Ragu-ragu</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-                <span style="width:14px;height:14px;border-radius:3px;background:#FAFBFD;border:1px solid var(--line);display:inline-block"></span>
-                <span>Belum dijawab</span>
-            </div>
-        </div>
+            <div id="submit-status" style="font-size:12px;color:#dc3545;text-align:center;margin-top:10px" role="alert"></div>
 
-        {{-- Finish Button in Sidebar --}}
-        <div style="margin-top:16px">
-            <button id="submit-exam" type="button" onclick="confirmFinishExam()" class="btn btn-block" style="background:var(--ok);border-color:var(--ok);color:#fff">
-                <i class="fas fa-cloud-upload-alt"></i> Kumpulkan jawaban
-            </button>
-            <div id="submit-status" style="font-size:12px;color:var(--bad);text-align:center;margin-top:6px" role="alert"></div>
-        </div>
-    </div>
+            {{-- Pusmendik "Daftar Soal" Modal --}}
+            <div class="anbk-modal-backdrop" id="daftar-soal-modal" onclick="if(event.target === this) closeDaftarSoal()">
+                <div class="anbk-modal" role="dialog" aria-modal="true" aria-labelledby="daftar-soal-title">
+                    <div class="anbk-modal-header">
+                        <h3 class="anbk-modal-title" id="daftar-soal-title">Daftar Soal</h3>
+                        <button type="button" class="anbk-modal-close" onclick="closeDaftarSoal()" aria-label="Tutup">&times;</button>
+                    </div>
+                    <div class="anbk-modal-body">
+                        <div class="anbk-palette-grid">
+                            @foreach($questions as $index => $question)
+                                @php
+                                    $qNum = $loop->iteration;
+                                    $isAnswered = isset($result->answers[$question['id']]);
+                                @endphp
+                                <button type="button"
+                                        id="palette-btn-{{ $qNum }}"
+                                        class="anbk-p-item {{ $qNum === 1 ? 'current' : '' }} {{ $isAnswered ? 'answered' : '' }}"
+                                        onclick="goToQuestion({{ $qNum }}); closeDaftarSoal();">
+                                    <span>{{ $qNum }}</span>
+                                    <span class="anbk-p-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <div class="anbk-modal-legend">
+                            <span class="anbk-legend-item">
+                                <span class="anbk-legend-box" style="background:#0d6efd"></span> Soal aktif
+                            </span>
+                            <span class="anbk-legend-item">
+                                <span class="anbk-legend-box" style="background:#212529"></span> Sudah dijawab
+                            </span>
+                            <span class="anbk-legend-item">
+                                <span class="anbk-legend-box" style="background:#ffc107"></span> Ragu-ragu
+                            </span>
+                            <span class="anbk-legend-item">
+                                <span class="anbk-legend-box" style="background:#fff;border:1px solid #ced4da"></span> Belum dijawab
+                            </span>
+                        </div>
+                    </div>
+                    <div class="anbk-modal-footer">
+                        <button type="button" class="anbk-pill anbk-pill-ghost" onclick="closeDaftarSoal()">Tutup</button>
+                        <button id="submit-exam" type="button" onclick="confirmFinishExam()" class="anbk-nav-btn anbk-btn-finish" style="padding:8px 16px">
+                            <i class="fas fa-check-circle"></i> Kumpulkan jawaban
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
 </div>
-</form>
-@endsection
 
-@push('scripts')
 @include('partials.exam-outbox')
 <script>
 (() => {
@@ -243,6 +758,7 @@
     const form = document.getElementById('exam-form');
     const status = document.getElementById('save-status');
     const submitStatus = document.getElementById('submit-status');
+    const modal = document.getElementById('daftar-soal-modal');
     const csrf = @json(csrf_token());
     const saveUrl = @json(route('cbt.student.answer', $result));
     const integrityUrl = @json(route('cbt.student.integrity', $result));
@@ -253,29 +769,26 @@
     let submitting = false;
     let expired = false;
 
-    // Responsive palette toggle on mobile
-    if (window.innerWidth <= 992) {
-        const toggleBtn = document.getElementById('btn-toggle-palette');
-        if (toggleBtn) toggleBtn.style.display = 'inline-flex';
-    }
-
-    window.toggleMobilePalette = function() {
-        const pal = document.getElementById('palette-card');
-        if (pal) pal.scrollIntoView({ behavior: 'smooth' });
+    window.openDaftarSoal = function() {
+        if (modal) modal.classList.add('open');
     };
+    window.closeDaftarSoal = function() {
+        if (modal) modal.classList.remove('open');
+    };
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeDaftarSoal();
+    });
 
     // Navigation function
     window.goToQuestion = function(qNum) {
         if (qNum < 1 || qNum > totalQuestions) return;
-        
-        // Hide previous
+
         const prevPane = document.getElementById('pane-q-' + currentQuestion);
         if (prevPane) prevPane.style.display = 'none';
-        
+
         const prevBtn = document.getElementById('palette-btn-' + currentQuestion);
         if (prevBtn) prevBtn.classList.remove('current');
 
-        // Show new
         currentQuestion = qNum;
         const nextPane = document.getElementById('pane-q-' + currentQuestion);
         if (nextPane) nextPane.style.display = 'block';
@@ -289,49 +802,35 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Ragu-ragu function
-    window.toggleRagu = function(qNum) {
-        const btn = document.querySelector(`.btn-ragu[data-qindex="${qNum}"]`);
+    // Ragu-ragu toggle
+    window.toggleRagu = function(qNum, forceState) {
+        const cb = document.getElementById('ragu-check-' + qNum);
         const pBtn = document.getElementById('palette-btn-' + qNum);
-        if (raguSet.has(qNum)) {
-            raguSet.delete(qNum);
-            if (btn) {
-                btn.classList.remove('btn-gold');
-                btn.classList.add('btn-ghost');
-            }
-            if (pBtn && pBtn.classList.contains('flagged')) {
-                pBtn.classList.remove('flagged');
-                // check if answered
-                const isAns = document.querySelector(`input[data-qnum="${qNum}"]:checked`);
-                if (isAns) pBtn.classList.add('answered');
-            }
-        } else {
+        const shouldFlag = typeof forceState === 'boolean' ? forceState : !raguSet.has(qNum);
+
+        if (shouldFlag) {
             raguSet.add(qNum);
-            if (btn) {
-                btn.classList.remove('btn-ghost');
-                btn.classList.add('btn-gold');
-            }
-            if (pBtn) {
-                pBtn.classList.remove('answered');
-                pBtn.classList.add('flagged');
-            }
+            if (cb) cb.checked = true;
+            if (pBtn) pBtn.classList.add('flagged');
+        } else {
+            raguSet.delete(qNum);
+            if (cb) cb.checked = false;
+            if (pBtn) pBtn.classList.remove('flagged');
         }
     };
 
-    // Font size adjuster
-    let fontStep = 1;
-    const fontSizes = ['13px', '15px', '18px'];
-    window.adjustFontSize = function(dir) {
-        if (dir === 0) fontStep = 1;
-        else {
-            fontStep = Math.max(0, Math.min(2, fontStep + dir));
-        }
+    // Font size adjuster (Pusmendik 3-step A / A / A)
+    const fontSizes = ['13px', '16px', '19px'];
+    window.setFontStep = function(step) {
+        const clamped = Math.max(0, Math.min(2, step));
         document.querySelectorAll('.cbt-q-prompt, .cbt-option-text').forEach(el => {
-            el.style.fontSize = fontSizes[fontStep];
+            el.style.fontSize = fontSizes[clamped];
+        });
+        document.querySelectorAll('.anbk-font-btn').forEach(btn => {
+            btn.classList.toggle('active', Number(btn.dataset.fstep) === clamped);
         });
     };
 
-    // Update answered count
     function refreshAnsweredCount() {
         const checked = document.querySelectorAll('input[data-question]:checked').length;
         const countEl = document.getElementById('answered-count');
@@ -339,12 +838,11 @@
     }
     refreshAnsweredCount();
 
-    // Option selection visual binding
+    // Option selection visual binding + autosave
     form.addEventListener('change', event => {
         if (!event.target.matches('input[data-question]')) return;
         const qNum = event.target.dataset.qnum;
-        
-        // Update label selected state
+
         const parentCard = document.getElementById('pane-q-' + qNum);
         if (parentCard) {
             parentCard.querySelectorAll('.cbt-option-label').forEach(lbl => lbl.classList.remove('is-selected'));
@@ -352,15 +850,13 @@
             if (checkedLbl) checkedLbl.classList.add('is-selected');
         }
 
-        // Update palette
         const pBtn = document.getElementById('palette-btn-' + qNum);
-        if (pBtn && !raguSet.has(Number(qNum))) {
+        if (pBtn) {
             pBtn.classList.add('answered');
         }
 
         refreshAnsweredCount();
 
-        // Exam outbox
         if (!submitting && !expired) {
             outbox.set(event.target.dataset.question, event.target.value);
             outbox.flush();
@@ -374,13 +870,13 @@
         onChange: (pending, tahap) => {
             if (expired || submitting) return;
             if (tahap === 'saving') {
-                status.className = 'cbt-autosave-badge pending';
+                status.className = 'anbk-autosave pending';
                 status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Menyimpan jawaban…</span>';
             } else if (tahap === 'pending') {
-                status.className = 'cbt-autosave-badge pending';
+                status.className = 'anbk-autosave pending';
                 status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span>Tersimpan di HP (antrean kirim)</span>';
             } else if (tahap === 'saved') {
-                status.className = 'cbt-autosave-badge ok';
+                status.className = 'anbk-autosave ok';
                 status.innerHTML = pending
                     ? '<i class="fas fa-clock"></i> <span>Menunggu simpan…</span>'
                     : '<i class="fas fa-check-circle"></i> <span>Semua perubahan jawaban tersimpan di server.</span>';
@@ -388,14 +884,13 @@
         },
         onExpired: () => {
             expired = true;
-            status.className = 'cbt-autosave-badge pending';
+            status.className = 'anbk-autosave pending';
             status.innerHTML = '<i class="fas fa-info-circle"></i> <span>Waktu selesai. Membuka hasil…</span>';
             location.assign(resultUrl);
         },
     });
     outbox.restoreToDom();
 
-    // Re-highlight restored answers
     document.querySelectorAll('input[data-question]:checked').forEach(inp => {
         const qNum = inp.dataset.qnum;
         const lbl = inp.closest('.cbt-option-label');
@@ -416,7 +911,7 @@
         if (submitting) return;
         const answered = document.querySelectorAll('input[data-question]:checked').length;
         const unanswered = totalQuestions - answered;
-        
+
         let msg = `Anda telah menjawab ${answered} dari ${totalQuestions} soal.\n`;
         if (unanswered > 0) {
             msg += `Masih ada ${unanswered} soal yang belum dijawab!\n`;
@@ -428,30 +923,34 @@
 
         if (confirm(msg)) {
             submitting = true;
-            document.querySelectorAll('#submit-exam, .btn-primary').forEach(b => b.disabled = true);
+            document.querySelectorAll('#submit-exam, .anbk-btn-finish').forEach(b => b.disabled = true);
             submitStatus.textContent = 'Mengirim jawaban ke server… Harap tunggu hingga halaman hasil terbuka.';
             form.submit();
         }
     };
 
-    // Countdown Timer Loop
+    // Countdown Timer Loop (HH:MM:SS or MM:SS)
     const timerEl = document.getElementById('timer');
     const timerBox = document.getElementById('timer-box');
     function tick() {
         const seconds = Math.max(0, Math.ceil((deadline - serverStart - (performance.now() - localStart)) / 1000));
-        const mins = Math.floor(seconds / 60);
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
         const secs = String(seconds % 60).padStart(2, '0');
-        
-        if (timerEl) timerEl.textContent = mins + ':' + secs;
-        
-        // Alert when remaining time < 5 minutes (300 seconds)
+
+        if (timerEl) {
+            timerEl.textContent = hrs > 0
+                ? String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + secs
+                : String(mins).padStart(2, '0') + ':' + secs;
+        }
+
         if (seconds <= 300 && timerBox && !timerBox.classList.contains('urgent')) {
             timerBox.classList.add('urgent');
         }
 
         if (seconds === 0 && !submitting) {
             expired = true;
-            status.className = 'cbt-autosave-badge pending';
+            status.className = 'anbk-autosave pending';
             status.innerHTML = '<i class="fas fa-hourglass-end"></i> <span>Waktu habis. Mengumpulkan…</span>';
             form.requestSubmit();
         }
@@ -459,20 +958,13 @@
     tick();
     setInterval(tick, 1000);
 
-    // Anti-Cheat: Visibility Change & Window Blur
-    let cheatCount = 0;
+    // Anti-Cheat: Visibility Change
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && !submitting && !expired) {
-            cheatCount++;
             fetch(integrityUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
-                },
-                body: JSON.stringify({
-                    type: 'tab_hidden',
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ type: 'tab_hidden' })
             }).catch(() => {});
         }
     });
@@ -495,39 +987,24 @@
         const icon = document.getElementById('hud-fs-icon');
         const txt = document.getElementById('hud-fs-text');
         if (icon && txt) {
-            if (isFs) {
-                icon.className = 'fas fa-compress';
-                txt.textContent = 'Keluar Penuh';
-            } else {
-                icon.className = 'fas fa-expand';
-                txt.textContent = 'Layar Penuh';
-            }
+            icon.className = isFs ? 'fas fa-compress' : 'fas fa-expand';
+            txt.textContent = isFs ? 'Keluar Penuh' : 'Layar Penuh';
         }
     }
 
     document.addEventListener('fullscreenchange', () => {
         syncExamFullscreenUI();
         if (!document.fullscreenElement && !submitting && !expired) {
-            // Rekam pelanggaran keluar layar penuh ke telemetri integritas CBT
             fetch(integrityUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
-                },
-                body: JSON.stringify({
-                    type: 'fullscreen_exit',
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ type: 'fullscreen_exit' })
             }).catch(() => {});
-
-            if (typeof showToast === 'function') {
-                showToast('Peringatan: Anda keluar dari layar penuh. Harap kembali ke mode layar penuh untuk menjaga fokus ujian.', 'warning');
-            }
         }
     });
     syncExamFullscreenUI();
 
-    // KaTeX Auto-Render Math Integration (Self-Hosted via Vite)
+    // KaTeX Auto-Render Math Integration
     function renderExamMath() {
         if (typeof renderMathInElement === 'function') {
             const katexOptions = {
@@ -554,4 +1031,5 @@
 })();
 </script>
 @vite(['resources/js/katex.js'])
-@endpush
+</body>
+</html>
