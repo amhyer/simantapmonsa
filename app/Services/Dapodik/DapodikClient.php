@@ -500,6 +500,25 @@ class DapodikClient
         return $this->allPages('getMataPelajaran', $extra);
     }
 
+    public function getPembelajaran(?string $semesterId = null): array
+    {
+        $extra = [];
+        if ($semesterId) {
+            $extra['semester_id'] = $semesterId;
+            $extra['tahun_ajaran_id'] = semester_to_tahun_ajaran($semesterId);
+        }
+
+        try {
+            return $this->allPages('getPembelajaran', $extra);
+        } catch (\Exception $e) {
+            try {
+                return $this->allPages('getJadwal', $extra);
+            } catch (\Exception) {
+                return [];
+            }
+        }
+    }
+
     public function getAllData(?string $semesterId = null): array
     {
         return [
@@ -508,6 +527,7 @@ class DapodikClient
             'gtk' => $this->getGtk($semesterId),
             'rombongan_belajar' => $this->getRombonganBelajar($semesterId),
             'mata_pelajaran' => $this->getMataPelajaran($semesterId),
+            'pembelajaran' => $this->getPembelajaran($semesterId),
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DapodikSyncLog;
 use App\Models\JadwalPelajaran;
 use App\Models\Kehadiran;
+use App\Models\MataPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\Ptk;
 use App\Models\Rombel;
@@ -56,7 +57,8 @@ class DapodikSyncController extends Controller
             'peserta-didik' => $this->syncPesertaDidik($data, $semester),
             'ptk' => $this->syncPtk($data, $semester),
             'rombongan-belajar' => $this->syncRombel($data, $semester),
-            'jadwal' => $this->syncJadwal($data, $semester),
+            'mata-pelajaran' => $this->syncMataPelajaran($data, $semester),
+            'jadwal', 'pembelajaran' => $this->syncJadwal($data, $semester),
             default => null,
         };
 
@@ -69,7 +71,8 @@ class DapodikSyncController extends Controller
             'peserta-didik' => 'siswa',
             'ptk' => 'gtk',
             'rombongan-belajar' => 'rombel',
-            'jadwal' => 'jadwal',
+            'mata-pelajaran' => 'mapel',
+            'jadwal', 'pembelajaran' => 'jadwal',
             default => $modul,
         };
 
@@ -157,6 +160,41 @@ class DapodikSyncController extends Controller
         return $stats;
     }
 
+    private function normalizeJenjang(?string $raw): ?string
+    {
+        if (!$raw) {
+            return null;
+        }
+
+        $rawUpper = strtoupper(trim($raw));
+        if (str_contains($rawUpper, 'SD') || str_contains($rawUpper, 'SEKOLAH DASAR')) {
+            return 'SD';
+        }
+        if (str_contains($rawUpper, 'MI') || str_contains($rawUpper, 'MADRASAH IBTIDAIYAH')) {
+            return 'MI';
+        }
+        if (str_contains($rawUpper, 'SMP') || str_contains($rawUpper, 'SEKOLAH MENENGAH PERTAMA')) {
+            return 'SMP';
+        }
+        if (str_contains($rawUpper, 'MTS') || str_contains($rawUpper, 'MADRASAH TSANAWIYAH')) {
+            return 'MTs';
+        }
+        if (str_contains($rawUpper, 'SMA') || str_contains($rawUpper, 'SEKOLAH MENENGAH ATAS')) {
+            return 'SMA';
+        }
+        if (str_contains($rawUpper, 'SMK') || str_contains($rawUpper, 'KEJURUAN')) {
+            return 'SMK';
+        }
+        if (str_contains($rawUpper, 'MA') && !str_contains($rawUpper, 'MAK')) {
+            return 'MA';
+        }
+        if (str_contains($rawUpper, 'SLB') || str_contains($rawUpper, 'LUAR BIASA')) {
+            return 'SLB';
+        }
+
+        return in_array($rawUpper, ['SD', 'MI', 'SMP', 'MTS', 'SMA', 'MA', 'SMK', 'SLB']) ? $rawUpper : null;
+    }
+
     private function syncSekolah(array $data): array
     {
         $currentUserId = auth()->id() ?? 1;
@@ -173,6 +211,9 @@ class DapodikSyncController extends Controller
                     $s['npsn'] = $tenant->npsn;
                 }
 
+                $rawJenjang = $s['jenjang'] ?? $s['bentuk_pendidikan_id_str'] ?? $s['tipe_sekolah'] ?? $s['bentuk_pendidikan'] ?? null;
+                $jenjang = $this->normalizeJenjang($rawJenjang);
+
                 $mapped = [
                     'guru_id' => $currentUserId,
                     'npsn' => $s['npsn'] ?? '',
@@ -186,7 +227,7 @@ class DapodikSyncController extends Controller
                     'provinsi' => $s['nama_propinsi'] ?? $s['provinsi'] ?? null,
                     'kode_pos' => $s['kode_pos'] ?? null,
                     'website' => $s['website'] ?? null,
-                    'jenjang' => $s['jenjang'] ?? $s['tipe_sekolah'] ?? null,
+                    'jenjang' => $jenjang,
                     'jenis_sekolah' => $s['status_sekolah'] ?? $s['jenis_sekolah'] ?? null,
                     'akreditasi' => $s['akreditasi'] ?? null,
                     'status' => 'aktif',
@@ -243,8 +284,17 @@ class DapodikSyncController extends Controller
 
                 $rombelId = null;
                 $guruId = null;
+                $rombelDapodikId = $pd['rombongan_belajar_id'] ?? null;
                 $rombelName = $pd['nama_rombel'] ?? $pd['rombel'] ?? $pd['kelas'] ?? null;
-                if ($rombelName) {
+
+                $rombel = null;
+                if ($rombelDapodikId) {
+                    $rombel = Rombel::where('dapodik_id', $rombelDapodikId)
+                        ->where('semester_id', $semester->id)
+                        ->first();
+                }
+
+                if (!$rombel && $rombelName) {
                     $rombel = Rombel::where('nama_rombel', $rombelName)
                         ->where('semester_id', $semester->id)
                         ->first();
@@ -253,10 +303,12 @@ class DapodikSyncController extends Controller
                             ->where('semester_id', $semester->id)
                             ->first();
                     }
-                    if ($rombel) {
-                        $rombelId = $rombel->id;
-                        $guruId = $rombel->guru_id;
-                    }
+                }
+
+                if ($rombel) {
+                    $rombelId = $rombel->id;
+                    $guruId = $rombel->guru_id;
+                    $rombelName = $rombel->nama_rombel;
                 }
 
                 $siswaData = [
@@ -303,11 +355,15 @@ class DapodikSyncController extends Controller
                 $nama = trim($p['nama'] ?? '');
                 $nip = trim($p['nip'] ?? '');
                 $nuptk = trim($p['nuptk'] ?? '');
+                $nik = trim($p['nik'] ?? '');
                 $jenisPtk = strtolower(trim($p['jenis_ptk'] ?? $p['jenis_ptk_id'] ?? ''));
+                $jabatan = trim($p['jabatan_ptk'] ?? $p['jabatan'] ?? $p['tugas_tambahan'] ?? $p['nama_tugas_tambahan'] ?? '');
+                $jabatanLower = strtolower($jabatan);
                 $jkRaw = strtoupper(substr(trim($p['jenis_kelamin'] ?? ''), 0, 1));
                 $jk = in_array($jkRaw, ['L', 'P'], true) ? $jkRaw : null;
 
-                if (empty($nama) || (empty($nip) && empty($nuptk))) {
+                // Tendik sering tidak punya NIP/NUPTK; jangan lewati jika memiliki NIK atau dapodikId
+                if (empty($nama) || (empty($nip) && empty($nuptk) && empty($nik) && empty($dapodikId))) {
                     return 'dilewati';
                 }
 
@@ -328,7 +384,7 @@ class DapodikSyncController extends Controller
                     'gelar_depan' => isset($p['gelar_depan']) ? substr(trim($p['gelar_depan']), 0, 50) ?: null : null,
                     'gelar_belakang' => isset($p['gelar_belakang']) ? substr(trim($p['gelar_belakang']), 0, 100) ?: null : null,
                     'jenis_ptk' => $p['jenis_ptk'] ?? 'Guru',
-                    'jabatan' => $p['jabatan_ptk'] ?? $p['jabatan'] ?? null,
+                    'jabatan' => $jabatan ?: null,
                 ];
 
                 $outcome = 'berhasil';
@@ -339,11 +395,55 @@ class DapodikSyncController extends Controller
                     Ptk::create($ptkData);
                 }
 
-                $username = $nip ?: $nuptk;
-                $isActive = strtolower($p['status_aktif'] ?? $p['status'] ?? 'aktif') === 'aktif';
+                // Deteksi apakah ditugaskan sebagai Kepala Sekolah atau PLT / Pjs Kepala Sekolah
+                $isKepsek = str_contains($jenisPtk, 'kepala sekolah')
+                    || str_contains($jabatanLower, 'kepala sekolah')
+                    || str_contains($jabatanLower, 'plt')
+                    || str_contains($jabatanLower, 'pjs')
+                    || str_contains($jabatanLower, 'pelaksana tugas');
+
+                // Deteksi Tendik (Tenaga Kependidikan)
                 $isTendik = in_array($jenisPtk, ['3', '4', 'tendik', 'tenaga kependidikan', 'tenaga'], true)
-                    || str_contains($jenisPtk, 'tendik') || str_contains($jenisPtk, 'tenaga');
-                $peran = $isTendik ? 'admin' : 'guru';
+                    || str_contains($jenisPtk, 'tendik')
+                    || str_contains($jenisPtk, 'tenaga')
+                    || str_contains($jabatanLower, 'tata usaha')
+                    || str_contains($jabatanLower, 'perpustakaan')
+                    || str_contains($jabatanLower, 'laboratorium')
+                    || str_contains($jabatanLower, 'operator')
+                    || str_contains($jabatanLower, 'kebersihan')
+                    || str_contains($jabatanLower, 'keamanan')
+                    || str_contains($jabatanLower, 'penjaga');
+
+                if ($isKepsek) {
+                    $peran = 'kepsek';
+                } elseif ($isTendik) {
+                    $peran = 'tendik';
+                } else {
+                    $peran = 'guru';
+                }
+
+                // Jika terdeteksi Kepala Sekolah / PLT, simpan namanya juga di data identitas sekolah (SekolahSettings)
+                if ($isKepsek) {
+                    $namaGelar = trim(($ptkData['gelar_depan'] ? $ptkData['gelar_depan'] . ' ' : '') . $nama);
+                    if (!empty($ptkData['gelar_belakang'])) {
+                        $namaGelar .= ', ' . $ptkData['gelar_belakang'];
+                    }
+
+                    $sekolah = SekolahSettings::first();
+                    if ($sekolah) {
+                        $pengaturan = $sekolah->pengaturan ?? [];
+                        if (!empty($nip)) {
+                            $pengaturan['nip_kepala_sekolah'] = $nip;
+                        }
+                        $sekolah->update([
+                            'kepala_sekolah' => $namaGelar,
+                            'pengaturan' => $pengaturan,
+                        ]);
+                    }
+                }
+
+                $username = $nip ?: ($nuptk ?: ($nik ?: ('gtk_' . ($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
+                $isActive = strtolower($p['status_aktif'] ?? $p['status'] ?? 'aktif') === 'aktif';
 
                 $existingUser = null;
                 if ($dapodikId) {
@@ -361,11 +461,12 @@ class DapodikSyncController extends Controller
                         'nama_lengkap' => $nama,
                         'nama_pengguna' => $username,
                         'peran' => $peran,
+                        'nip' => $nip ?: null,
                         'aktif' => $isActive,
                         'archived_at' => null,
                     ]);
                 } else {
-                    $base = $username ?: ('gtk_' . $dapodikId);
+                    $base = $username;
                     $finalUsername = $base;
                     $counter = 1;
                     while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
@@ -379,6 +480,7 @@ class DapodikSyncController extends Controller
                         'nama_pengguna' => $finalUsername,
                         'kata_sandi' => bcrypt('guru123'),
                         'peran' => $peran,
+                        'nip' => $nip ?: null,
                         'aktif' => $isActive,
                         'force_password_change' => true,
                         'dapodik_id' => $dapodikId,
@@ -445,12 +547,107 @@ class DapodikSyncController extends Controller
 
                 if ($existing) {
                     $existing->update($rombelData);
+                    $this->reconcileSiswaRombel($existing, $semester);
 
                     return 'diperbarui';
                 }
 
-                Rombel::create($rombelData);
+                $newRombel = Rombel::create($rombelData);
+                $this->reconcileSiswaRombel($newRombel, $semester);
 
+                return 'berhasil';
+            }
+        );
+    }
+
+    /**
+     * Otomatis mengaitkan siswa yang rombel_id masih kosong ke rombel yang sesuai.
+     */
+    private function reconcileSiswaRombel(Rombel $rombel, Semester $semester): void
+    {
+        $siswaQuery = Siswa::where('semester_id', $semester->id)
+            ->whereNull('rombel_id');
+
+        $siswaList = $siswaQuery->get();
+        foreach ($siswaList as $siswa) {
+            $matched = false;
+            $recRombelId = $siswa->rekaman['rombongan_belajar_id'] ?? null;
+            $recRombelName = $siswa->rekaman['nama_rombel'] ?? $siswa->rekaman['rombel'] ?? $siswa->rekaman['kelas'] ?? $siswa->kelas;
+
+            if ($rombel->dapodik_id && $recRombelId && $rombel->dapodik_id === $recRombelId) {
+                $matched = true;
+            } elseif ($recRombelName && (
+                strcasecmp($rombel->nama_rombel, $recRombelName) === 0
+                || str_contains(strtolower($rombel->nama_rombel), strtolower($recRombelName))
+                || str_contains(strtolower($recRombelName), strtolower($rombel->nama_rombel))
+            )) {
+                $matched = true;
+            }
+
+            if ($matched) {
+                $siswa->update([
+                    'rombel_id' => $rombel->id,
+                    'guru_id' => $rombel->guru_id ?? $siswa->guru_id,
+                    'kelas' => $rombel->nama_rombel,
+                ]);
+            }
+        }
+    }
+
+    private function isClassName(string $name): bool
+    {
+        $lower = strtolower(trim($name));
+        if (str_starts_with($lower, 'kelas')) {
+            return true;
+        }
+        if (preg_match('/^kelas\s+\d+/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/^(xii|xi|x|ix|viii|vii|vi|v|iv|iii|ii|i)[\s\.]/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/^\d+\s*[a-zA-Z]/', $name)) {
+            return true;
+        }
+        return false;
+    }
+
+    private function syncMataPelajaran(array $data, Semester $semester): array
+    {
+        $sekolah = SekolahSettings::first();
+        $jenjangSekolah = $sekolah?->jenjang ?? 'SD';
+
+        return $this->processInBatches(
+            $data,
+            function (array $m) use ($jenjangSekolah): string {
+                $nama = trim($m['nama'] ?? $m['nama_mata_pelajaran'] ?? $m['mata_pelajaran'] ?? '');
+                if ($nama === '' || $this->isClassName($nama)) {
+                    return 'dilewati';
+                }
+
+                $kode = trim($m['kode'] ?? $m['kode_mata_pelajaran'] ?? $m['mata_pelajaran_id'] ?? '');
+
+                $rawJenjang = $m['tingkat_pendidikan_id_str'] ?? $m['jenjang'] ?? null;
+                $itemJenjang = $this->normalizeJenjang($rawJenjang) ?? $jenjangSekolah;
+
+                $existing = MataPelajaran::where('nama', $nama)
+                    ->where('jenjang', $itemJenjang)
+                    ->first();
+
+                $payload = [
+                    'nama' => $nama,
+                    'kode' => $kode ?: ($existing?->kode ?? null),
+                    'jenjang' => $itemJenjang,
+                    'kelompok' => $m['kelompok'] ?? $existing?->kelompok ?? 'A',
+                    'aktif' => true,
+                ];
+
+                if ($existing) {
+                    $existing->update($payload);
+                    return 'diperbarui';
+                }
+
+                MataPelajaran::create($payload);
                 return 'berhasil';
             }
         );
@@ -458,10 +655,71 @@ class DapodikSyncController extends Controller
 
     private function syncJadwal(array $data, Semester $semester): array
     {
+        $sekolah = SekolahSettings::first();
+        $jenjangSekolah = $sekolah?->jenjang ?? 'SD';
+
         return $this->processInBatches(
             $data,
-            function (array $j) use ($semester): string {
-                $dapodikId = $j['jadwal_id'] ?? $j['dapodik_id'] ?? null;
+            function (array $j) use ($semester, $jenjangSekolah): string {
+                $dapodikId = $j['pembelajaran_id'] ?? $j['jadwal_id'] ?? $j['dapodik_id'] ?? null;
+                $namaMapel = trim($j['nama_mata_pelajaran'] ?? $j['mata_pelajaran_id_str'] ?? $j['nama_mapel'] ?? $j['mata_pelajaran'] ?? '');
+                $namaRombel = trim($j['nama_rombel'] ?? $j['rombongan_belajar_id_str'] ?? $j['kelas'] ?? '');
+
+                // Jika nama rombel kosong tapi ada rombongan_belajar_id, lookup dari database
+                if ($namaRombel === '' && !empty($j['rombongan_belajar_id'])) {
+                    $rombelObj = Rombel::where('dapodik_id', $j['rombongan_belajar_id'])
+                        ->where('semester_id', $semester->id)
+                        ->first();
+                    if ($rombelObj) {
+                        $namaRombel = $rombelObj->nama_rombel;
+                    }
+                }
+
+                // Otomatis registrasi mata pelajaran ke tabel mata_pelajaran
+                if ($namaMapel !== '' && !$this->isClassName($namaMapel)) {
+                    MataPelajaran::firstOrCreate(
+                        [
+                            'nama' => $namaMapel,
+                            'jenjang' => $jenjangSekolah,
+                        ],
+                        [
+                            'kode' => $j['kode_mata_pelajaran'] ?? null,
+                            'kelompok' => 'A',
+                            'aktif' => true,
+                        ]
+                    );
+                }
+
+                // Lookup guru jika ada PTK ID atau nama guru
+                $guruId = null;
+                if (!empty($j['ptk_id'])) {
+                    $ptk = Ptk::where('dapodik_id', $j['ptk_id'])->first();
+                    if ($ptk && $ptk->user_id) {
+                        $guruId = $ptk->user_id;
+                    }
+                }
+                $rawGuru = $j['ptk_id_str'] ?? $j['nama_guru'] ?? $j['nama_ptk'] ?? null;
+                if (!$guruId && !empty($rawGuru)) {
+                    $namaGuru = trim((string) $rawGuru);
+                    $guruUser = User::whereRaw('LOWER(nama_lengkap) = ?', [strtolower($namaGuru)])->first();
+                    if ($guruUser) {
+                        $guruId = $guruUser->id;
+                    }
+                }
+                if (!$guruId && !empty($j['guru_id'])) {
+                    $guruId = $j['guru_id'];
+                }
+                if (!$guruId) {
+                    $guruId = auth()->id() ?? User::where('peran', 'admin')->first()?->id ?? User::first()?->id;
+                }
+
+                $hari = trim($j['hari'] ?? '');
+                $validHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                if (!in_array($hari, $validHari)) {
+                    $hari = 'Senin';
+                }
+                $jamMulai = !empty($j['jam_mulai']) ? $j['jam_mulai'] : '07:00:00';
+                $jamSelesai = !empty($j['jam_selesai']) ? $j['jam_selesai'] : '08:00:00';
 
                 $existing = null;
                 if ($dapodikId) {
@@ -469,24 +727,28 @@ class DapodikSyncController extends Controller
                         ->where('semester_id', $semester->id)
                         ->first();
                 }
-                if (!$existing && !empty($j['nama_rombel'] ?? $j['kelas']) && !empty($j['hari']) && !empty($j['jam_mulai'])) {
-                    $existing = JadwalPelajaran::where('semester_id', $semester->id)
-                        ->where('kelas', $j['nama_rombel'] ?? $j['kelas'])
-                        ->where('hari', $j['hari'])
-                        ->where('jam_mulai', $j['jam_mulai'])
-                        ->first();
+                if (!$existing && !empty($namaRombel) && !empty($namaMapel)) {
+                    $existingQuery = JadwalPelajaran::where('semester_id', $semester->id)
+                        ->where('kelas', $namaRombel)
+                        ->where('mata_pelajaran', $namaMapel);
+
+                    if (!empty($hari)) {
+                        $existingQuery->where('hari', $hari);
+                    }
+                    $existing = $existingQuery->first();
                 }
 
                 $jadwalData = [
                     'dapodik_id' => $dapodikId,
                     'semester_id' => $semester->id,
-                    'kelas' => $j['nama_rombel'] ?? $j['kelas'] ?? '',
-                    'mata_pelajaran' => $j['nama_mapel'] ?? $j['mata_pelajaran'] ?? '',
-                    'hari' => $j['hari'] ?? '',
-                    'jam_mulai' => $j['jam_mulai'] ?? '',
-                    'jam_selesai' => $j['jam_selesai'] ?? '',
+                    'rombel_id' => $rombelObj?->id,
+                    'kelas' => $namaRombel,
+                    'mata_pelajaran' => $namaMapel,
+                    'hari' => $hari,
+                    'jam_mulai' => $jamMulai,
+                    'jam_selesai' => $jamSelesai,
                     'ruangan' => $j['ruangan'] ?? null,
-                    'guru_id' => null,
+                    'guru_id' => $guruId,
                 ];
 
                 if ($existing) {
@@ -498,6 +760,9 @@ class DapodikSyncController extends Controller
                 JadwalPelajaran::create($jadwalData);
 
                 return 'berhasil';
+            },
+            function ($j, \Throwable $e): void {
+                Log::error('Gagal sync jadwal/pembelajaran: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
             }
         );
     }

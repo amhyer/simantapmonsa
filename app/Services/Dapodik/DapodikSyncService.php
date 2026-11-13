@@ -408,15 +408,16 @@ class DapodikSyncService
                 $dapodikId = $row['ptk_id'] ?? null;
                 $nuptk = normalize_string($row['nuptk'] ?? null);
                 $nip = normalize_string($row['nip'] ?? null);
+                $nik = normalize_string($row['nik'] ?? null);
 
-                // Skip guru without NUPTK & NIP
-                if (empty($nuptk) && empty($nip)) {
+                // Tendik sering tidak punya NIP/NUPTK; jangan lewati jika punya NIK atau dapodikId
+                if (empty($nuptk) && empty($nip) && empty($nik) && empty($dapodikId)) {
                     $result['dilewati']++;
                     continue;
                 }
 
-                // Skip duplicate NIP
-                $effectiveNip = $nuptk ?? $nip;
+                // Skip duplicate NIP/identifier
+                $effectiveNip = $nuptk ?? ($nip ?? ($nik ?? $dapodikId));
                 if (isset($this->seenNip[$effectiveNip])) {
                     $result['dilewati']++;
                     continue;
@@ -443,8 +444,8 @@ class DapodikSyncService
                     $existing = User::where('nama_pengguna', $nuptk)->first();
                 }
 
-                // Determine username: prefer NIP, fallback NUPTK
-                $username = $nip ?? $nuptk;
+                // Determine username: prefer NIP, fallback NUPTK/NIK/dapodikId
+                $username = $nip ?? ($nuptk ?? ($nik ?? ('gtk_' . ($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
                 if ($existing && $existing->nama_pengguna !== $username) {
                     // Ensure unique username
                     $base = $username;
@@ -454,7 +455,7 @@ class DapodikSyncService
                         $counter++;
                     }
                 } elseif (!$existing) {
-                    $base = $username ?? ('gtk_' . $dapodikId);
+                    $base = $username;
                     $username = $base;
                     $counter = 1;
                     while (User::where('nama_pengguna', $username)->exists()) {
@@ -465,8 +466,11 @@ class DapodikSyncService
 
                 $isActive = strtolower($row['status_aktif'] ?? $row['status'] ?? 'aktif') === 'aktif';
 
-                // Determine role: guru vs tendik
+                // Determine role: guru vs tendik vs kepsek
                 $jenisPtk = strtolower(trim($row['jenis_ptk_id'] ?? $row['jenis_ptk'] ?? ''));
+                $jabatan = normalize_string($row['jabatan_ptk'] ?? $row['jabatan'] ?? $row['tugas_tambahan'] ?? $row['nama_tugas_tambahan'] ?? null);
+                $jabatanLower = strtolower($jabatan ?? '');
+
                 $isTendik = false;
 
                 // Check jenis_ptk_id for tendik indicators
@@ -483,16 +487,29 @@ class DapodikSyncService
 
                 // Secondary heuristic: if no bidang_studi/mata_pelajaran, likely tendik
                 if (!$isTendik && empty($row['bidang_studi'] ?? $row['mata_pelajaran'] ?? null)) {
-                    // Could be tendik if no subject area
                     $namaLower = strtolower($nama ?? '');
                     if (str_contains($namaLower, 'tata usaha') || str_contains($namaLower, 'perpustakaan')
                         || str_contains($namaLower, 'laboratorium') || str_contains($namaLower, 'operator')
-                        || str_contains($namaLower, 'keamanan') || str_contains($namaLower, 'kebersihan')) {
+                        || str_contains($namaLower, 'keamanan') || str_contains($namaLower, 'kebersihan')
+                        || str_contains($jabatanLower, 'tata usaha') || str_contains($jabatanLower, 'operator')) {
                         $isTendik = true;
                     }
                 }
 
-                $peran = $isTendik ? 'admin' : 'guru';
+                // Deteksi Kepala Sekolah / PLT / Pjs / Pelaksana Tugas
+                $isKepsek = str_contains($jenisPtk, 'kepala sekolah')
+                    || str_contains($jabatanLower, 'kepala sekolah')
+                    || str_contains($jabatanLower, 'plt')
+                    || str_contains($jabatanLower, 'pjs')
+                    || str_contains($jabatanLower, 'pelaksana tugas');
+
+                if ($isKepsek) {
+                    $peran = 'kepsek';
+                } elseif ($isTendik) {
+                    $peran = 'tendik';
+                } else {
+                    $peran = 'guru';
+                }
 
                 if ($isTendik) {
                     $result['tendik_count']++;
@@ -500,10 +517,49 @@ class DapodikSyncService
                     $result['guru_count']++;
                 }
 
+                // Jika terdeteksi sebagai Kepala Sekolah atau PLT, simpan juga namanya di data sekolah
+                if ($isKepsek) {
+                    $gelarDepan = normalize_string($row['gelar_depan'] ?? null);
+                    $gelarBelakang = normalize_string($row['gelar_belakang'] ?? null);
+                    $namaGelar = trim(($gelarDepan ? $gelarDepan . ' ' : '') . $nama);
+                    if ($gelarBelakang) {
+                        $namaGelar .= ', ' . $gelarBelakang;
+                    }
+                    $sekolah = SekolahSettings::first();
+                    if ($sekolah) {
+                        $pengaturan = $sekolah->pengaturan ?? [];
+                        if ($nip) {
+                            $pengaturan['nip_kepala_sekolah'] = $nip;
+                        }
+                        $sekolah->update([
+                            'kepala_sekolah' => $namaGelar,
+                            'pengaturan' => $pengaturan,
+                        ]);
+                    }
+                }
+
+                // Sinkronkan juga ke tabel PTK untuk referensi
+                if ($dapodikId) {
+                    \App\Models\Ptk::updateOrCreate(
+                        ['dapodik_id' => $dapodikId, 'semester_id' => $semester->id],
+                        [
+                            'nama' => $nama,
+                            'nip' => $nip ?: null,
+                            'nuptk' => $nuptk ?: null,
+                            'jk' => normalize_string($row['jenis_kelamin'] ?? null),
+                            'gelar_depan' => normalize_string($row['gelar_depan'] ?? null),
+                            'gelar_belakang' => normalize_string($row['gelar_belakang'] ?? null),
+                            'jenis_ptk' => normalize_string($row['jenis_ptk'] ?? null) ?? ($isTendik ? 'Tenaga Kependidikan' : ($isKepsek ? 'Kepala Sekolah' : 'Guru')),
+                            'jabatan' => $jabatan ?: null,
+                        ]
+                    );
+                }
+
                 $data = [
                     'nama_lengkap' => $nama,
                     'nama_pengguna' => $username,
                     'peran' => $peran,
+                    'nip' => $nip ?: null,
                     'aktif' => $isActive,
                     'archived_at' => null,
                     'terhubung_dengan' => $row['terhubung_dengan'] ?? $existing?->terhubung_dengan ?? [],
@@ -866,13 +922,14 @@ class DapodikSyncService
             $dapodikId = $row['ptk_id'] ?? null;
             $nuptk = normalize_string($row['nuptk'] ?? null);
             $nip = normalize_string($row['nip'] ?? null);
+            $nik = normalize_string($row['nik'] ?? null);
 
-            if (empty($nuptk) && empty($nip)) {
+            if (empty($nuptk) && empty($nip) && empty($nik) && empty($dapodikId)) {
                 $result['summary']['dilewati']++;
                 continue;
             }
 
-            $effectiveNip = $nuptk ?? $nip;
+            $effectiveNip = $nuptk ?? ($nip ?? ($nik ?? $dapodikId));
             if (isset($this->seenNip[$effectiveNip])) {
                 $result['summary']['dilewati']++;
                 continue;
@@ -911,6 +968,9 @@ class DapodikSyncService
             }
             if (!$existing && $nuptk) {
                 $existing = User::where('nama_pengguna', $nuptk)->first();
+            }
+            if (!$existing && $nik) {
+                $existing = User::where('nama_pengguna', $nik)->first();
             }
 
             if ($existing) {

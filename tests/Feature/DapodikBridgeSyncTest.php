@@ -146,6 +146,97 @@ class DapodikBridgeSyncTest extends TestCase
         ]);
     }
 
+    public function test_sync_ptk_pulls_tendik_without_nip_and_assigns_tendik_role(): void
+    {
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->postJson('/api/dapodik/sync/ptk', [
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+            'data' => [
+                [
+                    'ptk_id' => 'ptk-tendik-001',
+                    'nama' => 'Jumria',
+                    'nip' => '',
+                    'nuptk' => '',
+                    'nik' => '7371012345670001',
+                    'jenis_ptk' => 'Tenaga Kependidikan',
+                    'jabatan_ptk' => 'Tata Usaha',
+                    'jenis_kelamin' => 'P',
+                ],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'ptk',
+                'berhasil' => 1,
+            ]);
+
+        $this->assertDatabaseHas('ptk', [
+            'dapodik_id' => 'ptk-tendik-001',
+            'nama' => 'Jumria',
+            'jenis_ptk' => 'Tenaga Kependidikan',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'nama_lengkap' => 'Jumria',
+            'peran' => 'tendik',
+        ]);
+    }
+
+    public function test_sync_ptk_detects_kepala_sekolah_and_plt_and_saves_to_sekolah_settings(): void
+    {
+        SekolahSettings::create([
+            'npsn' => '40313912',
+            'nama_sekolah' => 'SD Negeri Unggulan Mongisidi 1',
+            'kepala_sekolah' => null,
+            'guru_id' => $this->admin->id,
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->postJson('/api/dapodik/sync/ptk', [
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+            'data' => [
+                [
+                    'ptk_id' => 'ptk-kepsek-001',
+                    'nama' => 'Andi Windayani',
+                    'nip' => '198112072007012013',
+                    'nuptk' => '1234567890123456',
+                    'gelar_depan' => '',
+                    'gelar_belakang' => 'S.Pd., M.Pd',
+                    'jenis_ptk' => 'Guru Kelas',
+                    'jabatan_ptk' => 'Plt. Kepala Sekolah',
+                    'jenis_kelamin' => 'P',
+                ],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'ptk',
+                'berhasil' => 1,
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'nama_lengkap' => 'Andi Windayani',
+            'peran' => 'kepsek',
+            'nip' => '198112072007012013',
+        ]);
+
+        $this->assertDatabaseHas('sekolah_settings', [
+            'npsn' => '40313912',
+            'kepala_sekolah' => 'Andi Windayani, S.Pd., M.Pd',
+        ]);
+    }
+
     public function test_sync_rombongan_belajar(): void
     {
         // First sync PTK so wali kelas can be resolved
@@ -241,6 +332,134 @@ class DapodikBridgeSyncTest extends TestCase
             'dapodik_id' => 'pd-uuid-001',
             'nama_peserta_didik' => 'Ahmad Rizki',
             'rombel_id' => $rombel->id,
+        ]);
+    }
+
+    public function test_sync_mata_pelajaran(): void
+    {
+        SekolahSettings::create([
+            'npsn' => '40313912',
+            'nama_sekolah' => 'SMP Negeri 1 Makassar',
+            'jenjang' => 'SMP',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->postJson('/api/dapodik/sync/mata-pelajaran', [
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+            'data' => [
+                [
+                    'mata_pelajaran_id' => 'mapel-uuid-001',
+                    'nama' => 'Informatika',
+                    'kode' => 'INF-SMP',
+                    'tingkat_pendidikan_id_str' => 'SMP',
+                ],
+                [
+                    'mata_pelajaran_id' => 'mapel-uuid-002',
+                    'nama' => 'Bahasa Inggris',
+                    'kode' => 'BIG-SMP',
+                    'tingkat_pendidikan_id_str' => 'SMP',
+                ],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'mata-pelajaran',
+                'berhasil' => 2,
+            ]);
+
+        $this->assertDatabaseHas('mata_pelajaran', [
+            'nama' => 'Informatika',
+            'jenjang' => 'SMP',
+            'kode' => 'INF-SMP',
+        ]);
+        $this->assertDatabaseHas('mata_pelajaran', [
+            'nama' => 'Bahasa Inggris',
+            'jenjang' => 'SMP',
+            'kode' => 'BIG-SMP',
+        ]);
+    }
+
+    public function test_sync_pembelajaran_auto_registers_mata_pelajaran(): void
+    {
+        $semester = Semester::create([
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+        ]);
+
+        $rombel = Rombel::create([
+            'dapodik_id' => 'rombel-7a-uuid',
+            'semester_id' => $semester->id,
+            'nama_rombel' => '7A',
+            'tingkat' => '7',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->postJson('/api/dapodik/sync/pembelajaran', [
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+            'data' => [
+                [
+                    'pembelajaran_id' => 'pemb-uuid-001',
+                    'rombongan_belajar_id' => 'rombel-7a-uuid',
+                    'nama_mata_pelajaran' => 'Ilmu Pengetahuan Alam',
+                    'kode_mata_pelajaran' => 'IPA',
+                    'hari' => 'Senin',
+                    'jam_mulai' => '07:30',
+                    'jam_selesai' => '09:00',
+                ],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'modul' => 'pembelajaran',
+                'berhasil' => 1,
+            ]);
+
+        $this->assertDatabaseHas('jadwal_pelajaran', [
+            'dapodik_id' => 'pemb-uuid-001',
+            'kelas' => '7A',
+            'mata_pelajaran' => 'Ilmu Pengetahuan Alam',
+        ]);
+
+        $this->assertDatabaseHas('mata_pelajaran', [
+            'nama' => 'Ilmu Pengetahuan Alam',
+        ]);
+    }
+
+    public function test_sync_sekolah_auto_detects_smp(): void
+    {
+        $response = $this->withHeaders([
+            'X-API-Key' => $this->apiKeyPlaintext,
+        ])->postJson('/api/dapodik/sync/sekolah', [
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+            'data' => [
+                [
+                    'npsn' => '40313999',
+                    'nama' => 'SMP Negeri Unggulan 1 Makassar',
+                    'bentuk_pendidikan_id_str' => 'SMP',
+                    'alamat_jalan' => 'Jl. Pendidikan No. 5',
+                ],
+            ],
+        ]);
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('sekolah_settings', [
+            'npsn' => '40313999',
+            'jenjang' => 'SMP',
         ]);
     }
 

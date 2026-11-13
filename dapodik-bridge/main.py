@@ -130,10 +130,18 @@ def dapodik_request(protocol, host, port, token, npsn, endpoint, params=None):
 
 
 def dapodik_fetch_all(protocol, host, port, token, npsn):
-    """Ambil semua data dari Dapodik (4 endpoint, sequential)."""
+    """Ambil semua data yang tersedia dari Dapodik (sekolah, rombel, ptk, peserta didik, mapel, pembelajaran)."""
     results = {}
+    endpoints = [
+        "getSekolah",
+        "getRombonganBelajar",
+        "getGtk",
+        "getPesertaDidik",
+        "getMataPelajaran",
+        "getPembelajaran",
+    ]
 
-    for endpoint in ["getSekolah", "getPesertaDidik", "getGtk", "getRombonganBelajar"]:
+    for endpoint in endpoints:
         ok, data = dapodik_request(protocol, host, port, token, npsn, endpoint)
         if ok:
             rows = data.get("rows", data.get("data", []))
@@ -141,6 +149,15 @@ def dapodik_fetch_all(protocol, host, port, token, npsn):
                 rows = [rows]
             results[endpoint] = rows
         else:
+            # Jika getPembelajaran gagal/tidak didukung, coba fallback ke getJadwal
+            if endpoint == "getPembelajaran":
+                ok2, data2 = dapodik_request(protocol, host, port, token, npsn, "getJadwal")
+                if ok2:
+                    rows2 = data2.get("rows", data2.get("data", []))
+                    if isinstance(rows2, dict):
+                        rows2 = [rows2]
+                    results["getPembelajaran"] = rows2
+                    continue
             results[endpoint] = {"error": data}
 
     return results
@@ -422,7 +439,16 @@ def create_gui():
                         c["dapodik_token"], c["npsn"]
                     )
 
-                    for ep in ["getSekolah", "getPesertaDidik", "getGtk", "getRombonganBelajar"]:
+                    endpoints_order = [
+                        "getSekolah",
+                        "getRombonganBelajar",
+                        "getGtk",
+                        "getPesertaDidik",
+                        "getMataPelajaran",
+                        "getPembelajaran",
+                    ]
+
+                    for ep in endpoints_order:
                         d = raw.get(ep, {})
                         if isinstance(d, dict) and "error" in d:
                             log_sync = f"GAGAL {ep}: {d['error']}"
@@ -433,9 +459,11 @@ def create_gui():
 
                     modules_map = {
                         "getSekolah": "sekolah",
-                        "getPesertaDidik": "peserta-didik",
-                        "getGtk": "ptk",
                         "getRombonganBelajar": "rombongan-belajar",
+                        "getGtk": "ptk",
+                        "getPesertaDidik": "peserta-didik",
+                        "getMataPelajaran": "mata-pelajaran",
+                        "getPembelajaran": "pembelajaran",
                     }
 
                     total_steps = len(modules_map)
