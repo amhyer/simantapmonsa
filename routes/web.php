@@ -299,6 +299,21 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/cetak/kelengkapan', [CetakController::class, 'kelengkapan'])->name('cetak.kelengkapan');
     Route::get('/cetak/pengaturan-rapor', [CetakController::class, 'pengaturanRapor'])->name('cetak.pengaturan-rapor');
     Route::post('/cetak/pengaturan-rapor', [CetakController::class, 'simpanPengaturanRapor'])->name('cetak.pengaturan-rapor.simpan');
+    Route::get('/cetak/pts/{siswa}', [CetakController::class, 'showPts'])->name('cetak.pts.show');
+    Route::get('/cetak/buku-induk/{siswa}', [CetakController::class, 'showBukuInduk'])->name('cetak.buku-induk.show');
+    Route::get('/cetak/p5bk/{siswa}', [CetakController::class, 'showP5bk'])->name('cetak.p5bk.show');
+
+    // Fitur Rapor Merdeka: Naik Kelas, Teknik Penilaian, Siswa Belajar, P5BK, Forum
+    Route::get('/rapor/naik-kelas', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'naikKelas'])->name('rapor.naik-kelas');
+    Route::post('/rapor/naik-kelas', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'simpanNaikKelas'])->name('rapor.naik-kelas.simpan');
+    Route::get('/rapor/teknik-penilaian', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'teknikPenilaian'])->name('rapor.teknik-penilaian');
+    Route::post('/rapor/teknik-penilaian', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'simpanTeknikPenilaian'])->name('rapor.teknik-penilaian.simpan');
+    Route::get('/rapor/siswa-belajar', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'siswaBelajar'])->name('rapor.siswa-belajar');
+    Route::post('/rapor/siswa-belajar', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'simpanSiswaBelajar'])->name('rapor.siswa-belajar.simpan');
+    Route::get('/rapor/p5', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'p5Index'])->name('rapor.p5.index');
+    Route::post('/rapor/p5', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'p5Simpan'])->name('rapor.p5.simpan');
+    Route::post('/forum', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'simpanForum'])->name('forum.simpan');
+    Route::delete('/forum/{postId}', [\App\Http\Controllers\Admin\RaporMerdekaController::class, 'hapusForum'])->name('forum.hapus');
     Route::get('/referensi/ekstrakurikuler', [DataReferensiController::class, 'ekstrakurikuler'])->name('referensi.ekstrakurikuler');
     Route::post('/referensi/ekstrakurikuler', [DataReferensiController::class, 'storeEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.store');
     Route::delete('/referensi/ekstrakurikuler/{ekstrakurikuler}', [DataReferensiController::class, 'destroyEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.destroy');

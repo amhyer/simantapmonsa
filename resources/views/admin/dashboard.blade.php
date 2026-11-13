@@ -482,5 +482,7 @@
         </div>
     </div>
 </div>
+
+@include('admin.partials.forum-pengumuman')
 @endsection
 

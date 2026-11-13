@@ -184,10 +184,20 @@ class CetakController extends Controller
             ? round($nilai->whereNotNull('nilai_akhir')->avg('nilai_akhir'), 2)
             : null;
         $raporConfig = self::ambilConfigRapor($sekolah);
+        $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
+        $waliGuruId = $siswa->guru_id
+            ?? ($siswa->kelas ? \App\Models\Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
+        $ttdWaliUri = $waliGuruId ? ($ttdWaliMap[(string) $waliGuruId] ?? null) : null;
+        $naikKelas = $semester === 'Genap'
+            ? \App\Models\KenaikanKelas::where('siswa_id', $siswa->id)
+                ->where('tahun_ajaran', $tahunAjaran)
+                ->where('semester', $semester)
+                ->first()
+            : null;
 
         return view('admin.cetak.nilai-show', compact(
             'siswa', 'nilai', 'sekolah', 'tanggalRapor', 'hadir', 'catatan',
-            'rata', 'semester', 'tahunAjaran', 'raporConfig'
+            'rata', 'semester', 'tahunAjaran', 'raporConfig', 'ttdWaliUri', 'naikKelas'
         ));
     }
 
@@ -279,8 +289,13 @@ class CetakController extends Controller
     {
         $sekolah = SekolahSettings::first();
         $raporConfig = self::ambilConfigRapor($sekolah);
+        $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
+        $waliKelasList = \App\Models\User::where('peran', 'guru')
+            ->where('aktif', true)
+            ->orderBy('nama_lengkap')
+            ->get(['id', 'nama_lengkap', 'nama_pengguna']);
 
-        return view('admin.cetak.pengaturan-rapor', compact('sekolah', 'raporConfig'));
+        return view('admin.cetak.pengaturan-rapor', compact('sekolah', 'raporConfig', 'ttdWaliMap', 'waliKelasList'));
     }
 
     public function simpanPengaturanRapor(Request $request)
@@ -294,6 +309,9 @@ class CetakController extends Controller
             'page_break_catatan' => 'nullable|boolean',
             'ttd_kepsek' => 'nullable|image|mimes:png,jpg,jpeg|max:512',
             'hapus_ttd_kepsek' => 'nullable|boolean',
+            'ttd_wali' => 'nullable|array',
+            'ttd_wali.*' => 'nullable|image|mimes:png,jpg,jpeg|max:512',
+            'hapus_ttd_wali' => 'nullable|array',
         ]);
 
         $sekolah = SekolahSettings::firstOrCreate(
@@ -313,6 +331,17 @@ class CetakController extends Controller
             $ttdDataUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
+        $ttdWaliMap = is_array($pengaturan['ttd_wali_kelas'] ?? null) ? $pengaturan['ttd_wali_kelas'] : [];
+        foreach (array_keys((array) $request->input('hapus_ttd_wali', [])) as $guruId) {
+            unset($ttdWaliMap[(string) $guruId]);
+        }
+        foreach ((array) $request->file('ttd_wali', []) as $guruId => $file) {
+            if ($file && $file->isValid()) {
+                $mime = $file->getMimeType() ?: 'image/png';
+                $ttdWaliMap[(string) $guruId] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            }
+        }
+
         $pengaturan['rapor'] = [
             'kementerian' => $validated['kementerian'],
             'ukuran_kertas' => $validated['ukuran_kertas'],
@@ -322,10 +351,73 @@ class CetakController extends Controller
             'page_break_catatan' => $request->boolean('page_break_catatan'),
             'ttd_kepsek_data_uri' => $ttdDataUri,
         ];
+        $pengaturan['ttd_wali_kelas'] = $ttdWaliMap;
 
         $sekolah->update(['pengaturan' => $pengaturan]);
 
         return redirect()->route('admin.cetak.pengaturan-rapor')
             ->with('success', 'Pengaturan & kustomisasi cetak rapor berhasil disimpan.');
+    }
+
+    public function showPts(Request $request, Siswa $siswa)
+    {
+        $validated = $request->validate([
+            'semester' => 'nullable|in:Ganjil,Genap',
+            'tahun_ajaran' => 'nullable|string|max:9',
+        ]);
+        $semester = $validated['semester'] ?? 'Ganjil';
+        $tahunAjaran = $validated['tahun_ajaran'] ?? $this->tahunDefault();
+
+        $nilai = NilaiErapot::where('siswa_id', $siswa->id)
+            ->where('semester', $semester)
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->orderBy('mata_pelajaran')
+            ->get();
+        $sekolah = SekolahSettings::first();
+        $raporConfig = self::ambilConfigRapor($sekolah);
+        $hadir = $this->rekapKehadiran($siswa->id);
+        $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
+        $waliGuruId = $siswa->guru_id
+            ?? ($siswa->kelas ? \App\Models\Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
+        $ttdWaliUri = $waliGuruId ? ($ttdWaliMap[(string) $waliGuruId] ?? null) : null;
+
+        return view('admin.cetak.pts-show', compact(
+            'siswa', 'nilai', 'sekolah', 'raporConfig', 'hadir', 'semester', 'tahunAjaran', 'ttdWaliUri'
+        ));
+    }
+
+    public function showBukuInduk(Siswa $siswa)
+    {
+        $sekolah = SekolahSettings::first();
+        $raporConfig = self::ambilConfigRapor($sekolah);
+        $riwayatNilai = NilaiErapot::where('siswa_id', $siswa->id)
+            ->orderBy('tahun_ajaran')
+            ->orderBy('semester')
+            ->orderBy('mata_pelajaran')
+            ->get()
+            ->groupBy(fn ($n) => $n->tahun_ajaran . ' — Semester ' . $n->semester);
+
+        return view('admin.cetak.buku-induk-show', compact('siswa', 'sekolah', 'raporConfig', 'riwayatNilai'));
+    }
+
+    public function showP5bk(Request $request, Siswa $siswa)
+    {
+        $validated = $request->validate([
+            'semester' => 'nullable|in:Ganjil,Genap',
+            'tahun_ajaran' => 'nullable|string|max:9',
+        ]);
+        $semester = $validated['semester'] ?? 'Ganjil';
+        $tahunAjaran = $validated['tahun_ajaran'] ?? $this->tahunDefault();
+
+        $sekolah = SekolahSettings::first();
+        $raporConfig = self::ambilConfigRapor($sekolah);
+        $penilaian = \App\Models\P5Penilaian::where('siswa_id', $siswa->id)
+            ->where('semester', $semester)
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->orderBy('tema')
+            ->orderBy('dimensi')
+            ->get();
+
+        return view('admin.cetak.p5bk-show', compact('siswa', 'sekolah', 'raporConfig', 'penilaian', 'semester', 'tahunAjaran'));
     }
 }

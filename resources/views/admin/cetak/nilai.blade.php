@@ -52,7 +52,7 @@
                                 <th>Nama</th>
                                 <th>NISN</th>
                                 <th style="text-align:center">Nilai Terisi</th>
-                                <th></th>
+                                <th>Cetak Dokumen Rapor</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -61,8 +61,14 @@
                                     <td>{{ $row->nama_peserta_didik }}</td>
                                     <td>{{ $row->nisn ?? '-' }}</td>
                                     <td style="text-align:center">{{ $row->nilai_erapot_count }} mapel</td>
-                                    <td>
-                                        <a href="{{ route('admin.cetak.nilai.show', ['siswa' => $row->id, 'semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-sm">Cetak</a>
+                                    <td style="white-space:nowrap">
+                                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                            <a href="{{ route('admin.cetak.pelengkap', ['kelas' => $kelas]) }}" target="_blank" class="btn btn-sm btn-secondary">Pelengkap</a>
+                                            <a href="{{ route('admin.cetak.pts.show', ['siswa' => $row->id, 'semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-sm" style="background:#0284C7;color:#fff">Tengah Semester</a>
+                                            <a href="{{ route('admin.cetak.nilai.show', ['siswa' => $row->id, 'semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-sm">Semester</a>
+                                            <a href="{{ route('admin.cetak.p5bk.show', ['siswa' => $row->id, 'semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-sm" style="background:#059669;color:#fff">P5BK</a>
+                                            <a href="{{ route('admin.cetak.buku-induk.show', ['siswa' => $row->id]) }}" target="_blank" class="btn btn-sm" style="background:#7C3AED;color:#fff">Buku Induk</a>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

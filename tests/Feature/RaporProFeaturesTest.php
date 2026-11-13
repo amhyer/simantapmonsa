@@ -209,4 +209,135 @@ class RaporProFeaturesTest extends TestCase
             ->post(route('admin.users.impersonate', $otherGuru))
             ->assertForbidden();
     }
+
+    public function test_pengaturan_naik_kelas_simpan_dan_tampil_di_rapor(): void
+    {
+        $tahun = date('Y') . '/' . (date('Y') + 1);
+        $this->actingAs($this->admin)
+            ->post(route('admin.rapor.naik-kelas.simpan'), [
+                'kelas' => '6A',
+                'semester' => 'Genap',
+                'tahun_ajaran' => $tahun,
+                'keputusan' => [
+                    $this->siswa->id => ['naik_kelas' => '1', 'catatan' => 'Lulus baik'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('kenaikan_kelas', [
+            'siswa_id' => $this->siswa->id,
+            'tahun_ajaran' => $tahun,
+            'semester' => 'Genap',
+            'naik_kelas' => true,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.nilai.show', ['siswa' => $this->siswa->id, 'semester' => 'Genap', 'tahun_ajaran' => $tahun]))
+            ->assertOk()
+            ->assertSee('Naik ke kelas berikutnya');
+    }
+
+    public function test_teknik_penilaian_dan_siswa_belajar(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.rapor.teknik-penilaian.simpan'), [
+                'teknik' => ['Tes Tertulis', 'Proyek STEM'],
+            ])
+            ->assertRedirect(route('admin.rapor.teknik-penilaian'));
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.rapor.teknik-penilaian'))
+            ->assertOk()
+            ->assertSee('Proyek STEM');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.rapor.siswa-belajar.simpan'), [
+                'kelas' => '6A',
+                'mapel_list' => ['Matematika', 'Bahasa Inggris'],
+                'belajar' => [
+                    $this->siswa->id => ['Matematika' => '1'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('siswa_belajar', [
+            'siswa_id' => $this->siswa->id,
+            'mata_pelajaran' => 'Matematika',
+            'aktif' => true,
+        ]);
+        $this->assertDatabaseHas('siswa_belajar', [
+            'siswa_id' => $this->siswa->id,
+            'mata_pelajaran' => 'Bahasa Inggris',
+            'aktif' => false,
+        ]);
+    }
+
+    public function test_penilaian_p5bk_dan_cetak_pts_buku_induk_p5bk(): void
+    {
+        $tahun = date('Y') . '/' . (date('Y') + 1);
+        NilaiErapot::create([
+            'tenant_id' => $this->tenant->id,
+            'siswa_id' => $this->siswa->id,
+            'guru_id' => $this->guru->id,
+            'mata_pelajaran' => 'Matematika',
+            'kelas' => '6A',
+            'semester' => 'Ganjil',
+            'tahun_ajaran' => $tahun,
+            'formatif' => 84,
+            'sumatif' => 88,
+            'nilai_akhir' => 86,
+            'predikat' => 'B',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.rapor.p5.simpan'), [
+                'kelas' => '6A',
+                'semester' => 'Ganjil',
+                'tahun_ajaran' => $tahun,
+                'tema' => 'Kearifan Lokal',
+                'dimensi' => 'Kreatif',
+                'nilai' => [
+                    $this->siswa->id => ['predikat' => 'SB', 'catatan' => 'Sangat aktif'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.pts.show', ['siswa' => $this->siswa->id, 'semester' => 'Ganjil', 'tahun_ajaran' => $tahun]))
+            ->assertOk()
+            ->assertSee('TENGAH SEMESTER (PTS)');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.buku-induk.show', $this->siswa))
+            ->assertOk()
+            ->assertSee('BUKU INDUK PESERTA DIDIK')
+            ->assertSee('Matematika');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.p5bk.show', ['siswa' => $this->siswa->id, 'semester' => 'Ganjil', 'tahun_ajaran' => $tahun]))
+            ->assertOk()
+            ->assertSee('Kearifan Lokal')
+            ->assertSee('SB');
+    }
+
+    public function test_forum_pengumuman_beranda_dan_grid_ttd_wali(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.forum.simpan'), [
+                'judul' => 'Jadwal Rapat Rapor',
+                'pesan' => 'Mohon lengkapi nilai sebelum Jumat.',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Jadwal Rapat Rapor');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.pengaturan-rapor'))
+            ->assertOk()
+            ->assertSee('Tanda Tangan Digital per Wali Kelas')
+            ->assertSee($this->guru->nama_lengkap);
+    }
 }

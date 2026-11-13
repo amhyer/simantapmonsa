@@ -36,4 +36,5 @@
         </div>
     </div>
     <p style="color:var(--muted)">Dasbor sekolah hanya menampilkan data yang sudah dipisahkan berdasarkan sekolah. Statistik sistem global tidak ditampilkan.</p>
+    @include('admin.partials.forum-pengumuman')
 @endsection

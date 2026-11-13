@@ -46,6 +46,8 @@
                 ['route' => 'admin.referensi.logo-ttd', 'icon' => 'lucide-image', 'label' => 'Logo dan TTD'],
                 ['route' => 'admin.referensi.alignment', 'icon' => 'lucide-link', 'label' => 'Cek Alignment'],
                 ['route' => 'admin.bobot.index', 'icon' => 'lucide-scale', 'label' => 'Bobot & Ketuntasan'],
+                ['route' => 'admin.rapor.naik-kelas', 'icon' => 'lucide-arrow-up-circle', 'label' => 'Pengaturan Naik Kelas'],
+                ['route' => 'admin.rapor.p5.index', 'icon' => 'lucide-sparkles', 'label' => 'Penilaian P5BK'],
             ]],
             ['label' => 'TRANSKRIP IJAZAH', 'icon' => 'lucide-file-text', 'children' => [
                 ['route' => 'admin.transkrip.setting', 'icon' => 'lucide-settings', 'label' => 'Setting Transkrip'],
@@ -108,6 +110,8 @@
                 ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
                 ['route' => 'admin.referensi.ekstrakurikuler', 'icon' => 'lucide-activity', 'label' => 'Data Ekstrakurikuler'],
                 ['route' => 'admin.referensi.kelompok-mapel', 'icon' => 'lucide-layers', 'label' => 'Data Kelompok Mapel'],
+                ['route' => 'admin.rapor.teknik-penilaian', 'icon' => 'lucide-check-circle', 'label' => 'Teknik Penilaian'],
+                ['route' => 'admin.rapor.siswa-belajar', 'icon' => 'lucide-user-check', 'label' => 'Siswa Belajar'],
             ]],
             ['label' => 'AKUN & KODE AKSES', 'icon' => 'lucide-key', 'children' => [
                 ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Manajemen Akun'],

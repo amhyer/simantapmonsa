@@ -122,6 +122,13 @@
         <tr><td>Izin</td><td>:</td><td>{{ $hadir['I'] }} hari</td></tr>
         <tr><td>Tanpa Keterangan</td><td>:</td><td>{{ $hadir['A'] }} hari</td></tr>
         <tr><td>Catatan Wali Kelas</td><td>:</td><td>{{ e($catatan->catatan ?? '-') }}</td></tr>
+        @if(!empty($naikKelas))
+            <tr>
+                <td>Keputusan Kenaikan Kelas</td>
+                <td>:</td>
+                <td><strong>{{ $naikKelas->naik_kelas ? 'Naik ke kelas berikutnya' : 'Tinggal di kelas saat ini' }}</strong>{{ $naikKelas->catatan ? ' (' . e($naikKelas->catatan) . ')' : '' }}</td>
+            </tr>
+        @endif
     </table>
 
     <div class="ttd">
@@ -139,7 +146,13 @@
         <div>
             <p>{{ $tanggalRapor->tempat ?? '................' }}, {{ $tanggalRapor && $tanggalRapor->tanggal ? $tanggalRapor->tanggal->format('d-m-Y') : now()->format('d-m-Y') }}</p>
             <p>Wali Kelas</p>
-            <br><br><br>
+            @if(!empty($ttdWaliUri))
+                <div style="height:64px;display:flex;align-items:center;justify-content:center;margin:4px 0">
+                    <img src="{{ $ttdWaliUri }}" alt="TTD Wali Kelas" style="max-height:60px;max-width:160px;object-fit:contain">
+                </div>
+            @else
+                <br><br><br>
+            @endif
             <p><strong><u>{{ $siswa->nama_guru ?? '........................' }}</u></strong></p>
         </div>
     </div>

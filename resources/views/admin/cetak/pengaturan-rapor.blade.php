@@ -81,6 +81,46 @@
                     <input id="ttd_kepsek" type="file" name="ttd_kepsek" accept="image/png,image/jpeg" class="form-control">
                 </div>
 
+                <div style="margin-bottom:18px;padding:14px;background:#F8FAFC;border:1px solid #E4E7EC;border-radius:10px">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:8px">
+                        <i class="fas fa-signature" style="margin-right:6px;color:var(--navy)"></i>Tanda Tangan Digital per Wali Kelas (Grid Massal)
+                    </div>
+                    <div class="table-wrapper" style="max-height:260px;overflow-y:auto">
+                        <table style="width:100%;font-size:12px">
+                            <thead>
+                                <tr>
+                                    <th>Wali Kelas / Guru</th>
+                                    <th>Pratinjau TTD</th>
+                                    <th>Unggah Baru (PNG/JPG)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse(($waliKelasList ?? collect()) as $wk)
+                                    @php $wkUri = ($ttdWaliMap ?? [])[(string) $wk->id] ?? null; @endphp
+                                    <tr>
+                                        <td><strong>{{ $wk->nama_lengkap }}</strong></td>
+                                        <td>
+                                            @if($wkUri)
+                                                <img src="{{ $wkUri }}" alt="TTD {{ $wk->nama_lengkap }}" style="max-height:36px;border:1px solid #CBD5E1;border-radius:4px;background:#fff;padding:2px">
+                                                <label style="display:block;font-size:11px;color:#B42318;cursor:pointer;margin-top:2px">
+                                                    <input type="checkbox" name="hapus_ttd_wali[{{ $wk->id }}]" value="1"> Hapus
+                                                </label>
+                                            @else
+                                                <span style="color:var(--muted)">Belum ada</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <input type="file" name="ttd_wali[{{ $wk->id }}]" accept="image/png,image/jpeg" class="form-control" style="font-size:11.5px;padding:4px">
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" style="text-align:center;color:var(--muted)">Belum ada data guru aktif.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div style="display:flex;gap:10px;flex-wrap:wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Simpan Pengaturan
