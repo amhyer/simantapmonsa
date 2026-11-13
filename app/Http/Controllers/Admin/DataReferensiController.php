@@ -8,15 +8,19 @@ use App\Models\JadwalPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\Ptk;
 use App\Models\SekolahSettings;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\NilaiErapot;
+use App\Models\PengaturanGuru;
 use App\Models\TanggalRapor;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Modules\Tenant\Contexts\TenantContext;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DataReferensiController extends Controller
 {
@@ -37,6 +41,123 @@ class DataReferensiController extends Controller
         $ptk = Ptk::with('semester')->orderBy('nama')->get();
 
         return view('admin.referensi.guru', compact('ptk'));
+    }
+
+    /**
+     * Tambah data guru/PTK manual yang belum masuk di Dapodik.
+     */
+    public function storeGuru(Request $request)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'nip' => 'nullable|string|max:50',
+            'nuptk' => 'nullable|string|max:50',
+            'jk' => 'nullable|in:L,P',
+            'jenis_ptk' => 'required|string|max:100',
+            'jabatan' => 'nullable|string|max:255',
+            'gelar_depan' => 'nullable|string|max:50',
+            'gelar_belakang' => 'nullable|string|max:100',
+            'buat_akun' => 'nullable|boolean',
+            'nama_pengguna' => 'nullable|string|max:100',
+            'kata_sandi' => 'nullable|string|min:6',
+        ]);
+
+        $semester = Semester::orderByDesc('semester_id')->first()
+            ?? Semester::orderByDesc('id')->first();
+
+        $ptk = Ptk::create([
+            'nama' => trim($validated['nama']),
+            'nip' => !empty($validated['nip']) ? trim($validated['nip']) : null,
+            'nuptk' => !empty($validated['nuptk']) ? trim($validated['nuptk']) : null,
+            'jk' => $validated['jk'] ?? null,
+            'jenis_ptk' => $validated['jenis_ptk'],
+            'jabatan' => !empty($validated['jabatan']) ? trim($validated['jabatan']) : null,
+            'gelar_depan' => !empty($validated['gelar_depan']) ? trim($validated['gelar_depan']) : null,
+            'gelar_belakang' => !empty($validated['gelar_belakang']) ? trim($validated['gelar_belakang']) : null,
+            'dapodik_id' => null,
+            'semester_id' => $semester?->id,
+        ]);
+
+        $buatAkun = $request->boolean('buat_akun', true);
+        if ($buatAkun) {
+            $username = !empty($validated['nama_pengguna'])
+                ? trim($validated['nama_pengguna'])
+                : (!empty($validated['nip']) ? trim($validated['nip']) : (!empty($validated['nuptk']) ? trim($validated['nuptk']) : null));
+
+            if (!$username) {
+                $base = Str::slug($validated['nama'], '');
+                $username = !empty($base) ? $base : 'guru' . rand(100, 999);
+            }
+
+            $finalUsername = $username;
+            $counter = 1;
+            while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
+                $finalUsername = $username . '.' . $counter;
+                $counter++;
+            }
+
+            $jenisLower = strtolower($validated['jenis_ptk']);
+            $peran = 'guru';
+            if (str_contains($jenisLower, 'kepala sekolah')) {
+                $peran = 'kepsek';
+            } elseif (
+                in_array($jenisLower, ['tendik', 'tenaga kependidikan', 'tenaga', 'kebersihan', 'tenaga kebersihan', 'security', 'satpam', 'keamanan'])
+                || str_contains($jenisLower, 'tendik')
+                || str_contains($jenisLower, 'kebersihan')
+                || str_contains($jenisLower, 'security')
+                || str_contains($jenisLower, 'satpam')
+                || str_contains($jenisLower, 'keamanan')
+            ) {
+                $peran = 'tendik';
+            }
+
+            $password = !empty($validated['kata_sandi']) ? $validated['kata_sandi'] : 'guru123';
+
+            $user = User::create([
+                'uuid' => (string) Str::uuid(),
+                'nama_lengkap' => $ptk->nama,
+                'nama_pengguna' => $finalUsername,
+                'kata_sandi' => Hash::make($password),
+                'peran' => $peran,
+                'nip' => $ptk->nip,
+                'aktif' => true,
+                'force_password_change' => true,
+                'dapodik_id' => null,
+            ]);
+
+            if ($peran === 'guru') {
+                PengaturanGuru::firstOrCreate(
+                    ['guru_id' => $user->id],
+                    [
+                        'nama_guru' => $user->nama_lengkap,
+                        'kelas' => $ptk->jabatan,
+                        'kkm' => function_exists('getKKM') ? getKKM() : 75,
+                        'semester' => $semester?->nama_semester ? ucfirst($semester->nama_semester) : 'Ganjil',
+                        'tahun_pelajaran' => $semester?->tahun_ajaran ?? (date('Y') . '/' . (date('Y') + 1)),
+                        'pembaruan' => now(),
+                    ]
+                );
+            }
+        }
+
+        return redirect()->route('admin.referensi.guru')
+            ->with('success', 'Guru non-Dapodik (' . $ptk->nama_gelar . ') berhasil ditambahkan.');
+    }
+
+    /**
+     * Hapus data guru non-Dapodik.
+     */
+    public function destroyGuru(Ptk $ptk)
+    {
+        if ($ptk->dapodik_id !== null) {
+            return back()->with('error', 'Guru dari Dapodik tidak dapat dihapus manual. Silakan sinkronkan kembali dari Dapodik.');
+        }
+
+        $nama = $ptk->nama_gelar;
+        $ptk->delete();
+
+        return redirect()->route('admin.referensi.guru')
+            ->with('success', "Data guru {$nama} berhasil dihapus.");
     }
 
     public function pembelajaran()
@@ -296,18 +417,29 @@ class DataReferensiController extends Controller
             'ptk' => 'required|array',
             'ptk.*.gelar_depan' => 'nullable|string|max:50',
             'ptk.*.gelar_belakang' => 'nullable|string|max:100',
+            'ptk.*.jenis_ptk' => 'nullable|string|max:100',
+            'ptk.*.jabatan' => 'nullable|string|max:255',
         ]);
 
         $ids = array_keys($validated['ptk']);
         abort_unless(count($ids) === Ptk::whereIn('id', $ids)->count(), 404);
         foreach ($validated['ptk'] as $id => $row) {
-            Ptk::where('id', $id)->update([
+            $dataToUpdate = [
                 'gelar_depan' => ($row['gelar_depan'] ?? null) ?: null,
                 'gelar_belakang' => ($row['gelar_belakang'] ?? null) ?: null,
-            ]);
+            ];
+
+            if (array_key_exists('jenis_ptk', $row) && !empty($row['jenis_ptk'])) {
+                $dataToUpdate['jenis_ptk'] = trim($row['jenis_ptk']);
+            }
+            if (array_key_exists('jabatan', $row)) {
+                $dataToUpdate['jabatan'] = trim($row['jabatan'] ?? '') ?: null;
+            }
+
+            Ptk::where('id', $id)->update($dataToUpdate);
         }
 
-        return back()->with('success', 'Gelar guru berhasil disimpan.');
+        return back()->with('success', 'Data PTK (gelar, jenis, dan jabatan) berhasil disimpan.');
     }
 
     public function destroyEkstrakurikuler($ekstrakurikuler)

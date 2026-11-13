@@ -228,6 +228,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
 
     // Data Referensi (guru & pembelajaran dari Dapodik, read-only)
     Route::get('/referensi/guru', [DataReferensiController::class, 'guru'])->name('referensi.guru');
+    Route::post('/referensi/guru', [DataReferensiController::class, 'storeGuru'])->middleware('throttle:30,1')->name('referensi.guru.store');
+    Route::delete('/referensi/guru/{ptk}', [DataReferensiController::class, 'destroyGuru'])->middleware('throttle:30,1')->name('referensi.guru.destroy');
     Route::put('/referensi/gelar-ptk', [DataReferensiController::class, 'updateGelarPtk'])->middleware('throttle:30,1')->name('referensi.gelar-ptk.update');
     Route::get('/referensi/pembelajaran', [DataReferensiController::class, 'pembelajaran'])->name('referensi.pembelajaran');
     Route::post('/referensi/pembelajaran', [DataReferensiController::class, 'storePembelajaran'])->middleware('throttle:30,1')->name('referensi.pembelajaran.store');

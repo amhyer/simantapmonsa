@@ -213,4 +213,182 @@ class AdminReferensiTest extends TestCase
             'kelas' => 'Kelas 1.A',
         ])->assertForbidden();
     }
+
+    public function test_admin_dapat_menambah_guru_non_dapodik_dan_akun_user_terbuat(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.referensi.guru.store'), [
+            'nama' => 'Budi Santoso',
+            'nip' => '198501012010011001',
+            'nuptk' => '1234567890123456',
+            'jk' => 'L',
+            'jenis_ptk' => 'Guru Kelas',
+            'jabatan' => 'Guru Kelas 4',
+            'gelar_depan' => 'Drs.',
+            'gelar_belakang' => 'M.Pd',
+            'buat_akun' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.referensi.guru'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('ptk', [
+            'nama' => 'Budi Santoso',
+            'nip' => '198501012010011001',
+            'nuptk' => '1234567890123456',
+            'jk' => 'L',
+            'jenis_ptk' => 'Guru Kelas',
+            'gelar_depan' => 'Drs.',
+            'gelar_belakang' => 'M.Pd',
+            'dapodik_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'nama_lengkap' => 'Budi Santoso',
+            'nama_pengguna' => '198501012010011001',
+            'peran' => 'guru',
+            'aktif' => true,
+        ]);
+    }
+
+    public function test_admin_dapat_menghapus_guru_non_dapodik(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $ptk = Ptk::create([
+            'nama' => 'Guru Manual',
+            'jenis_ptk' => 'Guru',
+            'dapodik_id' => null,
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.referensi.guru.destroy', $ptk));
+        $response->assertRedirect(route('admin.referensi.guru'));
+
+        $this->assertDatabaseMissing('ptk', ['id' => $ptk->id]);
+    }
+
+    public function test_admin_tidak_dapat_menghapus_guru_dari_dapodik(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $semester = Semester::create(['semester_id' => '20261', 'tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']);
+        $ptk = Ptk::create([
+            'nama' => 'Guru Dapodik Asli',
+            'jenis_ptk' => 'Guru',
+            'dapodik_id' => 'PTK-DAPODIK-999',
+            'semester_id' => $semester->id,
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.referensi.guru.destroy', $ptk));
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+
+        $this->assertDatabaseHas('ptk', ['id' => $ptk->id]);
+    }
+
+    public function test_halaman_referensi_guru_menampilkan_tombol_dan_badge_non_dapodik(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Ptk::create([
+            'nama' => 'Guru Non Dapodik Display',
+            'jenis_ptk' => 'Guru',
+            'dapodik_id' => null,
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.referensi.guru'))
+            ->assertOk()
+            ->assertSee('Tambah PTK / Guru (Non-Dapodik)')
+            ->assertSee('NON-DAPODIK')
+            ->assertSee('Guru Non Dapodik Display');
+    }
+
+    public function test_admin_dapat_menambah_ptk_non_dapodik_gpk_dan_kebersihan_dan_security(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        // 1. Tambah Guru GPK
+        $responseGpk = $this->actingAs($admin)->post(route('admin.referensi.guru.store'), [
+            'nama' => 'Sri Wahyuni GPK',
+            'jenis_ptk' => 'Guru GPK',
+            'jabatan' => 'Guru Pembimbing Khusus Inklusi',
+            'jk' => 'P',
+            'buat_akun' => 1,
+            'nama_pengguna' => 'sri.gpk',
+        ]);
+        $responseGpk->assertRedirect(route('admin.referensi.guru'));
+        $this->assertDatabaseHas('ptk', ['nama' => 'Sri Wahyuni GPK', 'jenis_ptk' => 'Guru GPK']);
+        $this->assertDatabaseHas('users', ['nama_pengguna' => 'sri.gpk', 'peran' => 'guru']);
+
+        // 2. Tambah Kebersihan
+        $responseKebersihan = $this->actingAs($admin)->post(route('admin.referensi.guru.store'), [
+            'nama' => 'Dg Bau Bersih',
+            'jenis_ptk' => 'Tenaga Kebersihan',
+            'jabatan' => 'Petugas Kebersihan Gedung',
+            'jk' => 'L',
+            'buat_akun' => 1,
+            'nama_pengguna' => 'dgbau.kebersihan',
+        ]);
+        $responseKebersihan->assertRedirect(route('admin.referensi.guru'));
+        $this->assertDatabaseHas('ptk', ['nama' => 'Dg Bau Bersih', 'jenis_ptk' => 'Tenaga Kebersihan']);
+        $this->assertDatabaseHas('users', ['nama_pengguna' => 'dgbau.kebersihan', 'peran' => 'tendik']);
+
+        // 3. Tambah Security
+        $responseSecurity = $this->actingAs($admin)->post(route('admin.referensi.guru.store'), [
+            'nama' => 'Pak Rustam Satpam',
+            'jenis_ptk' => 'Security',
+            'jabatan' => 'Koordinator Satpam',
+            'jk' => 'L',
+            'buat_akun' => 1,
+            'nama_pengguna' => 'rustam.security',
+        ]);
+        $responseSecurity->assertRedirect(route('admin.referensi.guru'));
+        $this->assertDatabaseHas('ptk', ['nama' => 'Pak Rustam Satpam', 'jenis_ptk' => 'Security']);
+        $this->assertDatabaseHas('users', ['nama_pengguna' => 'rustam.security', 'peran' => 'tendik']);
+    }
+
+    public function test_admin_dapat_update_jenis_ptk_dan_jabatan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $ptk = Ptk::create([
+            'nama' => 'Budi Staff',
+            'jenis_ptk' => 'Guru Kelas',
+            'jabatan' => null,
+            'dapodik_id' => null,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.referensi.gelar-ptk.update'), [
+            'ptk' => [
+                $ptk->id => [
+                    'gelar_depan' => '',
+                    'gelar_belakang' => 'S.Pd',
+                    'jenis_ptk' => 'Guru GPK',
+                    'jabatan' => 'Guru Pembimbing Khusus 1B',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('ptk', [
+            'id' => $ptk->id,
+            'gelar_belakang' => 'S.Pd',
+            'jenis_ptk' => 'Guru GPK',
+            'jabatan' => 'Guru Pembimbing Khusus 1B',
+        ]);
+    }
+
+    public function test_ptk_model_helpers_detect_gpk_kebersihan_security(): void
+    {
+        $gpk = new Ptk(['jenis_ptk' => 'Guru GPK', 'jabatan' => 'Guru Pembimbing Khusus']);
+        $kebersihan = new Ptk(['jenis_ptk' => 'Tenaga Kebersihan', 'jabatan' => 'Petugas Kebersihan']);
+        $security = new Ptk(['jenis_ptk' => 'Security', 'jabatan' => 'Satpam Sekolah']);
+
+        $this->assertTrue($gpk->isGpk());
+        $this->assertTrue($gpk->isGuru());
+        $this->assertFalse($gpk->isKepsek());
+
+        $this->assertTrue($kebersihan->isKebersihan());
+        $this->assertFalse($kebersihan->isGuru());
+
+        $this->assertTrue($security->isSecurity());
+        $this->assertFalse($security->isGuru());
+    }
 }
