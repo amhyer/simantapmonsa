@@ -44,7 +44,7 @@
     @if($kelas)
         <div class="card">
             <div class="card-header">
-                <h3>Leger Kelas {{ $kelas }} â€” {{ $semester }} {{ $tahunAjaran }}</h3>
+                <h3>Leger {{ str_starts_with($kelas, 'Kelas ') ? $kelas : 'Kelas ' . $kelas }} — {{ $semester }} {{ $tahunAjaran }}</h3>
                 <span class="tag tag-mut">{{ $siswa->count() }} siswa &times; {{ $mapel->count() }} mapel</span>
             </div>
             <div class="card-body tight">

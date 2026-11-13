@@ -34,7 +34,7 @@
     @if($kelas)
         <div class="card">
             <div class="card-header">
-                <h3>Pelengkap Kelas {{ $kelas }}</h3>
+                <h3>Pelengkap {{ str_starts_with($kelas, 'Kelas ') ? $kelas : 'Kelas ' . $kelas }}</h3>
                 <span class="tag tag-mut">{{ $siswa->count() }} siswa</span>
             </div>
             <div class="card-body tight">
