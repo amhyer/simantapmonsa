@@ -29,7 +29,6 @@
     $menuAdmin = [
         'erapor' => [
             ['label' => 'UTAMA', 'items' => [
-                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
                 ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profil'],
             ]],
             ['label' => 'STATUS PENILAIAN', 'icon' => 'lucide-graduation-cap', 'children' => [
@@ -91,6 +90,9 @@
             ],
         ],
         'setup' => [
+            ['label' => 'UTAMA', 'items' => [
+                ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
+            ]],
             ['label' => 'INTEGRASI & IMPOR DATA', 'icon' => 'lucide-database-zap', 'children' => [
                 ['route' => 'admin.dapodik.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Dapodik & Impor Data', 'badge' => $lastSyncAt ? \Carbon\Carbon::parse($lastSyncAt)->diffForHumans() : 'Belum sync', 'badge_type' => $lastSyncAt ? 'ok' : 'warn'],
                 ['route' => 'admin.dapodik.push.index', 'icon' => 'lucide-upload', 'label' => 'Kirim Nilai Ke Dapodik'],
@@ -155,8 +157,8 @@
         unset($groups);
     }
 
-    $tabSekarang = $tab ?? 'erapor';
-    $grupMenu = $menuAdmin[$tabSekarang] ?? $menuAdmin['erapor'];
+    $tabSekarang = $tab ?? 'setup';
+    $grupMenu = $menuAdmin[$tabSekarang] ?? $menuAdmin['setup'];
 @endphp
 
 <x-admin-menu :groups="$grupMenu" />

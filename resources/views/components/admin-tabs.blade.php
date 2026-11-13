@@ -1,9 +1,9 @@
 @php
     $tabs = [
-        'erapor' => ['label' => 'E-Rapor', 'route' => 'admin.dashboard', 'asesmen' => false, 'icon' => 'fas fa-graduation-cap'],
+        'setup' => ['label' => 'Pengaturan', 'route' => 'admin.dashboard', 'asesmen' => false, 'icon' => 'fas fa-sliders-h'],
+        'erapor' => ['label' => 'E-Rapor', 'route' => 'admin.penilaian.status', 'asesmen' => false, 'icon' => 'fas fa-graduation-cap'],
         'cbt' => ['label' => 'CBT/Ujian', 'route' => 'admin.cbt.sessions.index', 'asesmen' => true, 'icon' => 'fas fa-laptop-code'],
         'tka' => ['label' => 'TKA', 'route' => 'admin.tka.dashboard', 'asesmen' => true, 'icon' => 'fas fa-chart-pie'],
-        'setup' => ['label' => 'Pengaturan', 'route' => 'admin.users.index', 'asesmen' => false, 'icon' => 'fas fa-sliders-h'],
     ];
 
     // Tab modul asesmen disembunyikan selama `simantap.cbt_enabled` mati:

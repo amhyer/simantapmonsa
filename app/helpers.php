@@ -87,8 +87,9 @@ if (!function_exists('activeAdminTab')) {
             return 'tka';
         }
 
-        // Setup tab (Master Data Sekolah, Siswa, Guru, Rombel, Akun, Dapodik, Sistem)
+        // Setup tab (Dasbor, Master Data Sekolah, Siswa, Guru, Rombel, Akun, Dapodik, Sistem)
         if (request()->routeIs(
+            'admin.dashboard',
             'admin.sekolah.*',
             'admin.dapodik.*',
             'admin.users.*',
@@ -103,6 +104,8 @@ if (!function_exists('activeAdminTab')) {
             'admin.kode-akses.*',
             'admin.presensi.*',
             'admin.kokurikuler.*',
+            'admin.rapor.teknik-penilaian*',
+            'admin.rapor.siswa-belajar*',
             'admin.modul.*',
             'admin.bobot.*',
             'admin.backup.*',
@@ -115,18 +118,18 @@ if (!function_exists('activeAdminTab')) {
 
         // E-Rapor tab
         if (request()->routeIs(
-            'admin.dashboard',
             'admin.penilaian.*',
             'admin.perkembangan.*',
             'admin.transkrip.*',
             'admin.cetak.*',
             'admin.referensi.*',
+            'admin.rapor.*',
             'admin.profile'
         )) {
             return 'erapor';
         }
 
-        return 'erapor';
+        return 'setup';
     }
 }
 
