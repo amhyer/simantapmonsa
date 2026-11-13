@@ -51,12 +51,7 @@
         <a href="{{ route('admin.cetak.nilai') }}" style="margin-left:8px">Kembali</a>
     </div>
 
-    <div class="kop">
-        <div class="kementerian">{{ $labelKementerian }}</div>
-        <h2>{{ $sekolah->nama_sekolah ?? 'Sekolah Dasar' }}</h2>
-        <p>{{ $sekolah->alamat ?? '' }}{{ isset($sekolah->kecamatan) ? ', Kec. ' . $sekolah->kecamatan : '' }}</p>
-        <p>NPSN: {{ $sekolah->npsn ?? '-' }} &bull; Telp: {{ $sekolah->telepon ?? '-' }}</p>
-    </div>
+    @include('admin.cetak.partials.rapor-style-kop', ['jenis' => 'semester'])
 
     <div class="judul">
         <h3>LAPORAN HASIL BELAJAR PESERTA DIDIK</h3>

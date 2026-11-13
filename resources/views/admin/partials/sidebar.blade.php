@@ -61,6 +61,7 @@
                 ['route' => 'admin.cetak.pelengkap', 'icon' => 'lucide-scroll-text', 'label' => 'Pelengkap Rapor'],
                 ['route' => 'admin.cetak.nilai', 'icon' => 'lucide-file-signature', 'label' => 'Nilai Rapor'],
                 ['route' => 'admin.cetak.pengaturan-rapor', 'icon' => 'lucide-sliders', 'label' => 'Pengaturan Cetak Rapor'],
+                ['route' => 'admin.cetak.modifikasi-tampilan', 'icon' => 'lucide-palette', 'label' => 'Modifikasi Tampilan Rapor'],
             ]],
         ],
         'cbt' => [

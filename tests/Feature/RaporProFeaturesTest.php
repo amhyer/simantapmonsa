@@ -340,4 +340,61 @@ class RaporProFeaturesTest extends TestCase
             ->assertSee('Tanda Tangan Digital per Wali Kelas')
             ->assertSee($this->guru->nama_lengkap);
     }
+
+    public function test_modifikasi_tampilan_rapor_dan_penerapan_cetak(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.modifikasi-tampilan'))
+            ->assertOk()
+            ->assertSee('Pengaturan Tulisan Rapor')
+            ->assertSee('Pratinjau PDF');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.cetak.modifikasi-tampilan.simpan'), [
+                'terapkan_semester' => '1',
+                'terapkan_pts' => '1',
+                'font_family' => 'Verdana',
+                'size_judul_rapor' => 22,
+                'size_judul_tabel' => 15,
+                'size_isi_tabel' => 13,
+                'warna_template' => 'hijau',
+                'warna_bg_header' => '#27D332',
+                'warna_bg_cell' => '#FFFFFF',
+                'table_opacity' => 20,
+                'warna_text_header' => '#000000',
+                'warna_text_cell' => '#111111',
+                'warna_border' => '#222222',
+                'show_watermark' => '0',
+                'watermark_opacity' => 75,
+                'watermark_size' => 80,
+                'kop_preset' => 'set_4',
+                'kop_baris' => [
+                    1 => ['bold' => '1', 'size' => 14, 'color' => '#1F3864', 'text' => 'DINAS PENDIDIKAN MAKASSAR'],
+                    2 => ['bold' => '1', 'size' => 16, 'color' => '#000000', 'text' => 'SDN UNGGULAN MONGISIDI 1'],
+                ],
+                'pts_kolom_kelas' => ['1' => 6, '2' => 5, '3' => 5, '4' => 5, '5' => 5, '6' => 4],
+                'pts_formatif_masuk' => '1',
+                'pts_ttd_kepsek' => '0',
+                'pts_tabel_ekskul' => '0',
+            ])
+            ->assertRedirect(route('admin.cetak.modifikasi-tampilan'));
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.nilai.show', $this->siswa))
+            ->assertOk()
+            ->assertSee('DINAS PENDIDIKAN MAKASSAR')
+            ->assertSee('Verdana');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.pts.show', $this->siswa))
+            ->assertOk()
+            ->assertSee('DINAS PENDIDIKAN MAKASSAR')
+            ->assertSee('Formatif')
+            ->assertDontSee('Mengetahui,<br>Kepala Sekolah');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.cetak.modifikasi-tampilan.preview'))
+            ->assertOk()
+            ->assertSee('DINAS PENDIDIKAN MAKASSAR');
+    }
 }

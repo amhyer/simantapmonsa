@@ -33,11 +33,7 @@
         <a href="{{ route('admin.cetak.nilai') }}" style="margin-left:8px">Kembali</a>
     </div>
 
-    <div class="kop">
-        <div class="kementerian">{{ $labelKementerian }}</div>
-        <h2>{{ $sekolah->nama_sekolah ?? 'Sekolah Dasar' }}</h2>
-        <p>{{ $sekolah->alamat ?? '' }} &bull; NPSN: {{ $sekolah->npsn ?? '-' }}</p>
-    </div>
+    @include('admin.cetak.partials.rapor-style-kop', ['jenis' => 'pts'])
 
     <div class="judul">
         <h3>LAPORAN HASIL BELAJAR TENGAH SEMESTER (PTS)</h3>
@@ -50,49 +46,83 @@
         <tr><td>Kelas</td><td>:</td><td>{{ $siswa->kelas ?? '-' }}</td></tr>
     </table>
 
+    @php
+        $ptsCfg = $tampilanRapor ?? [];
+        $tingkatKelas = preg_match('/^([1-6])/', (string) ($siswa->kelas ?? ''), $m) ? $m[1] : '1';
+        $jmlKolomPts = (int) (($ptsCfg['pts_kolom_kelas'][$tingkatKelas] ?? 5));
+        $showFormatif = (bool) ($ptsCfg['pts_formatif_masuk'] ?? false);
+        $showEkskulPts = array_key_exists('pts_tabel_ekskul', $ptsCfg) ? (bool) $ptsCfg['pts_tabel_ekskul'] : true;
+        $showTtdKepsekPts = array_key_exists('pts_ttd_kepsek', $ptsCfg) ? (bool) $ptsCfg['pts_ttd_kepsek'] : true;
+    @endphp
+
     <table class="nilai">
         <thead>
             <tr>
                 <th style="width:36px">No</th>
                 <th>Muatan Pelajaran</th>
-                <th style="width:90px">Formatif</th>
-                <th style="width:90px">Sumatif</th>
-                <th style="width:90px">Rata-rata</th>
+                @if($showFormatif)
+                    <th style="width:85px">Formatif</th>
+                @endif
+                <th style="width:85px">Sumatif</th>
+                <th style="width:85px">Rata-rata</th>
             </tr>
         </thead>
         <tbody>
             @forelse($nilai as $i => $n)
                 @php
-                    $vals = array_filter([$n->formatif, $n->sumatif], fn ($v) => $v !== null);
+                    $vals = $showFormatif
+                        ? array_filter([$n->formatif, $n->sumatif], fn ($v) => $v !== null)
+                        : array_filter([$n->sumatif], fn ($v) => $v !== null);
                     $avg = count($vals) ? array_sum($vals) / count($vals) : $n->nilai_akhir;
                 @endphp
                 <tr>
                     <td style="text-align:center">{{ $i + 1 }}</td>
                     <td>{{ e($n->mata_pelajaran) }}</td>
-                    <td style="text-align:center">{{ $n->formatif !== null ? number_format((float) $n->formatif, 0) : '-' }}</td>
+                    @if($showFormatif)
+                        <td style="text-align:center">{{ $n->formatif !== null ? number_format((float) $n->formatif, 0) : '-' }}</td>
+                    @endif
                     <td style="text-align:center">{{ $n->sumatif !== null ? number_format((float) $n->sumatif, 0) : '-' }}</td>
                     <td style="text-align:center"><strong>{{ $avg !== null ? number_format((float) $avg, 0) : '-' }}</strong></td>
                 </tr>
             @empty
-                <tr><td colspan="5" style="text-align:center">Belum ada data nilai tengah semester.</td></tr>
+                <tr><td colspan="{{ $showFormatif ? 5 : 4 }}" style="text-align:center">Belum ada data nilai tengah semester.</td></tr>
             @endforelse
         </tbody>
     </table>
 
-    <p style="font-size:13px;margin-top:12px">
+    <p style="font-size:12px;color:#555;margin-top:6px">
+        Rincian kolom penilaian Kelas {{ $tingkatKelas }}: {{ $jmlKolomPts }} asesmen &bull;
         Kehadiran: Sakit {{ $hadir['S'] ?? 0 }} hari &bull; Izin {{ $hadir['I'] ?? 0 }} hari &bull; Tanpa Keterangan {{ $hadir['A'] ?? 0 }} hari
     </p>
 
-    <div class="ttd">
-        <div>
-            <p>Mengetahui,<br>Kepala Sekolah</p>
-            @if(!empty($cfg['ttd_kepsek_data_uri']))
-                <img src="{{ $cfg['ttd_kepsek_data_uri'] }}" alt="TTD Kepsek" style="max-height:55px;margin:4px auto;display:block">
-            @else
-                <br><br><br>
-            @endif
-            <p><strong><u>{{ $sekolah->kepala_sekolah ?? '........................' }}</u></strong></p>
-        </div>
+    @if($showEkskulPts)
+        <table class="nilai" style="margin-top:10px">
+            <thead>
+                <tr>
+                    <th style="width:36px">No</th>
+                    <th>Kegiatan Ekstrakurikuler</th>
+                    <th style="width:120px">Predikat</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="text-align:center">1</td><td>-</td><td style="text-align:center">-</td><td>-</td></tr>
+            </tbody>
+        </table>
+    @endif
+
+    <div class="ttd" style="{{ $showTtdKepsekPts ? '' : 'justify-content:flex-end;' }}">
+        @if($showTtdKepsekPts)
+            <div>
+                <p>Mengetahui,<br>Kepala Sekolah</p>
+                @if(!empty($cfg['ttd_kepsek_data_uri']))
+                    <img src="{{ $cfg['ttd_kepsek_data_uri'] }}" alt="TTD Kepsek" style="max-height:55px;margin:4px auto;display:block">
+                @else
+                    <br><br><br>
+                @endif
+                <p><strong><u>{{ $sekolah->kepala_sekolah ?? '........................' }}</u></strong></p>
+            </div>
+        @endif
         <div>
             <p>Wali Kelas</p>
             @if(!empty($ttdWaliUri))

@@ -299,6 +299,9 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/cetak/kelengkapan', [CetakController::class, 'kelengkapan'])->name('cetak.kelengkapan');
     Route::get('/cetak/pengaturan-rapor', [CetakController::class, 'pengaturanRapor'])->name('cetak.pengaturan-rapor');
     Route::post('/cetak/pengaturan-rapor', [CetakController::class, 'simpanPengaturanRapor'])->name('cetak.pengaturan-rapor.simpan');
+    Route::get('/cetak/modifikasi-tampilan', [CetakController::class, 'modifikasiTampilan'])->name('cetak.modifikasi-tampilan');
+    Route::post('/cetak/modifikasi-tampilan', [CetakController::class, 'simpanModifikasiTampilan'])->name('cetak.modifikasi-tampilan.simpan');
+    Route::get('/cetak/modifikasi-tampilan/preview', [CetakController::class, 'previewModifikasiTampilan'])->name('cetak.modifikasi-tampilan.preview');
     Route::get('/cetak/pts/{siswa}', [CetakController::class, 'showPts'])->name('cetak.pts.show');
     Route::get('/cetak/buku-induk/{siswa}', [CetakController::class, 'showBukuInduk'])->name('cetak.buku-induk.show');
     Route::get('/cetak/p5bk/{siswa}', [CetakController::class, 'showP5bk'])->name('cetak.p5bk.show');
