@@ -6,7 +6,7 @@
 @section('page_subtitle', 'Kelola semua akun pengguna sistem')
 
 @section('header_actions')
-    <a href="{{ route('admin.users.create') }}" class="btn btn-sm">+ Tambah akun</a>
+    <a href="{{ route('admin.users.create') }}" class="btn btn-sm">+ Tambah Akun</a>
     <a href="{{ route('admin.users.akun-massal') }}" class="btn btn-sm btn-ghost">Akun Massal</a>
 @endsection
 

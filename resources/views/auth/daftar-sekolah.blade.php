@@ -190,7 +190,7 @@
 <body>
     <div class="register-container">
         <div class="header">
-            <a href="{{ route('home') }}" class="brand" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none">
+            <a href="{{ route('landing') }}" class="brand" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none">
                 <img src="{{ asset('images/logo-128.png') }}" alt="Logo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1.5px solid var(--gold)">
                 <span>SIMANTAP_MONSA</span>
             </a>

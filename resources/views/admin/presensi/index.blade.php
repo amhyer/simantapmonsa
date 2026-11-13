@@ -6,7 +6,7 @@
 
 @section('header_actions')
     <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-primary btn-sm">
-        <i class="fas fa-file-import"></i> Import Presensi Mesin
+        <i class="fas fa-file-import"></i> Impor Presensi Mesin
     </a>
     <a href="{{ route('admin.presensi.laporan') }}" class="btn btn-secondary btn-sm">
         <i class="fas fa-file-alt"></i> Laporan
@@ -196,7 +196,7 @@
                     @csrf
                     <input type="hidden" name="tanggal" value="{{ $tanggal }}">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-sync-alt"></i> Tarik presensi mesin
+                        <i class="fas fa-sync-alt"></i> Tarik Presensi Mesin
                     </button>
                 </form>
                 <a href="{{ route('admin.presensi.mesin.index') }}" class="btn btn-secondary btn-sm">
@@ -293,7 +293,7 @@
                             <td colspan="5" style="text-align:center;padding:28px 16px;color:#64748B">
                                 <div style="font-size:24px;margin-bottom:6px;color:#94A3B8"><i class="fas fa-inbox"></i></div>
                                 <div>Belum ada data presensi mesin untuk hari ini.</div>
-                                <div style="font-size:12px;color:#94A3B8;margin-top:4px">Klik tombol "Tarik presensi mesin" atau import berkas fingerprint untuk memuat data.</div>
+                                <div style="font-size:12px;color:#94A3B8;margin-top:4px">Klik tombol "Tarik Presensi Mesin" atau impor berkas fingerprint untuk memuat data.</div>
                             </td>
                         </tr>
                     @endforelse

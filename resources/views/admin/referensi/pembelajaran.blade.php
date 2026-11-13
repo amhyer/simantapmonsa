@@ -6,7 +6,7 @@
 @section('page_subtitle', 'Jadwal pembelajaran (rombongan belajar × mapel × guru); baris DAPODIK berasal dari hasil sinkronisasi')
 
 @section('header_actions')
-    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Import Dapodik</a>
+    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Impor Dapodik</a>
     <a href="{{ route('admin.peta-kelas.index') }}" class="btn btn-sm">Peta Kelas</a>
 @endsection
 

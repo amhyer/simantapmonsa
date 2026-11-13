@@ -9,7 +9,7 @@
     <button type="button" class="btn btn-sm btn-primary" onclick="openTambahGuruModal()">
         <i class="fas fa-user-plus"></i> + Tambah PTK / Guru (Non-Dapodik)
     </button>
-    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Import Dapodik</a>
+    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Impor Dapodik</a>
     <a href="{{ route('admin.peta-kelas.index') }}" class="btn btn-sm">Peta Kelas</a>
 @endsection
 

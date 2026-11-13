@@ -35,7 +35,7 @@
             <h3 class="font-weight-bold mt-2" style="color:var(--navy)">Statistik TKA Nasional</h3>
             <p class="text-muted">Data Tes Kemampuan Akademik — Tahun 2026 dari tka.kemendikdasmen.go.id</p>
             @if($lastUpdate !== '-')
-                <small class="text-muted">Last Update: {{ $lastUpdate }}</small>
+                <small class="text-muted">Pembaruan Terakhir: {{ $lastUpdate }}</small>
             @endif
         </div>
 

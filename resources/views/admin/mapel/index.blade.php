@@ -22,7 +22,7 @@
                 <form action="{{ route('admin.mapel.import-dapodik') }}" method="POST" style="display:inline" onsubmit="return confirm('Import mata pelajaran {{ $jenjangSekolah }} dari Dapodik?')">
                     @csrf
                     <button type="submit" class="btn btn-sm" style="background:#0f766e;color:#fff">
-                        <i class="fas fa-cloud-download-alt"></i> Import Dapodik
+                        <i class="fas fa-cloud-download-alt"></i> Impor Dapodik
                     </button>
                 </form>
                 <form action="{{ route('admin.mapel.import-lokal') }}" method="POST" style="display:inline" onsubmit="return confirm('Import dari data lokal?')">
@@ -139,7 +139,7 @@
                 <div class="empty-state">
                     <div class="icon"><i class="fas fa-book"></i></div>
                     <h4>Belum ada mata pelajaran {{ $jenjangSekolah }}</h4>
-                    <p>Klik "Default {{ $jenjangSekolah }}" untuk menambahkan mata pelajaran bawaan, atau "Import Dapodik" untuk ambil dari Dapodik.</p>
+                    <p>Klik "Default {{ $jenjangSekolah }}" untuk menambahkan mata pelajaran bawaan, atau "Impor Dapodik" untuk ambil dari Dapodik.</p>
                 </div>
             @endif
         </div>

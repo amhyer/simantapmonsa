@@ -29,7 +29,7 @@
 
     @if(!$kkmDiatur)
         <div class="note note-warn" style="margin-bottom:16px">
-            <b><i class="fas fa-exclamation-triangle"></i> KKM belum diatur</b> — memakai default 70 untuk semua perhitungan.
+            <b><i class="fas fa-exclamation-triangle"></i> KKM belum diatur</b> — memakai nilai bawaan {{ getKKM(auth()->id()) }} untuk semua perhitungan.
             <a href="{{ route('guru.pengaturan.index') }}" style="font-weight:700">Atur KKM sekarang →</a>
         </div>
     @endif
@@ -51,7 +51,7 @@
             <i class="fas fa-check-circle stat-icon"></i>
             <div class="stat-label">Ketuntasan</div>
             <div class="stat-value">{{ $ringkasan['jumlah'] ? round($ringkasan['tuntas'] / $ringkasan['jumlah'] * 100) : 0 }}%</div>
-            <div class="stat-change">{{ $ringkasan['tuntas'] }} tuntas · {{ $ringkasan['belum'] }} belum@if($ringkasan['belum_dinilai']) · {{ $ringkasan['belum_dinilai'] }} belum dinilai@endif</div>
+            <div class="stat-change">{{ $ringkasan['tuntas'] }} tuntas · {{ $ringkasan['belum'] }} belum @if($ringkasan['belum_dinilai']) · {{ $ringkasan['belum_dinilai'] }} belum dinilai @endif</div>
         </div>
         <div class="stat-card ok">
             <i class="fas fa-calendar-check stat-icon"></i>

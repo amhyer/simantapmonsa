@@ -56,7 +56,7 @@
         <div class="card-header">
             <h3>📝 Tabel Input Nilai</h3>
             <div style="display:flex;gap:8px">
-                <button class="btn btn-sm btn-secondary" onclick="bukaPaste()">📋 Paste dari Excel</button>
+                <button class="btn btn-sm btn-secondary" onclick="bukaPaste()">📋 Tempel dari Excel</button>
                 <button class="btn btn-sm btn-secondary" onclick="isiSemua()">🔢 Isi Semua</button>
                 <button class="btn btn-sm" onclick="simpanSemua()" style="background:#059669;color:#fff">💾 Simpan Semua</button>
             </div>
@@ -85,7 +85,7 @@
 
     <div class="modal-overlay" id="modalPaste" style="display:none" onclick="if(event.target===this)this.style.display='none'">
         <div class="modal">
-            <div class="modal-header"><h3>📋 Paste dari Excel</h3><button class="modal-close" onclick="tutupPaste()">&times;</button></div>
+            <div class="modal-header"><h3>📋 Tempel dari Excel</h3><button class="modal-close" onclick="tutupPaste()">&times;</button></div>
             <div class="modal-body">
                 <p style="font-size:13px;color:#666;margin-bottom:10px">Copy kolom nama + nilai dari Excel, lalu paste di bawah ini:</p>
                 <textarea id="pasteData" rows="10" placeholder="Andi Nurul Fadhilah	85&#10;Muh. Rizky R.	92&#10;Siti Aisyah P.	65" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;font-family:monospace;font-size:13px"></textarea>

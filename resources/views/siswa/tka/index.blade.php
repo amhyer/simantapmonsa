@@ -62,7 +62,7 @@
                     </div>
                     <form method="POST" action="{{ route('siswa.tka-simulasi.adaptif.start', $kodeAdp) }}">
                         @csrf
-                        <button type="submit" class="btn btn-outline btn-sm" style="width:100%;font-weight:700;color:var(--violet);border-color:var(--violet)">
+                        <button type="submit" class="btn btn-outline btn-sm" style="width:100%;font-weight:700;background:#fff;color:var(--violet);border-color:var(--violet)">
                             <i class="fas fa-play"></i> Mulai Simulasi Adaptif
                         </button>
                     </form>

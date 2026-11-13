@@ -7,7 +7,7 @@
 
 @section('header_actions')
     <a href="{{ route('admin.users.akun-massal') }}" class="btn btn-sm">Akun Massal</a>
-    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Import Dapodik</a>
+    <a href="{{ route('admin.dapodik.index') }}" class="btn btn-sm btn-ghost">Impor Dapodik</a>
 @endsection
 
 @section('content')

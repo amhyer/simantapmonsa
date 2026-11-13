@@ -38,7 +38,7 @@
                 <label style="font-size:12px;font-weight:600;color:#166534;white-space:nowrap">Pilih Kelas:</label>
                 <select name="kelas" onchange="this.form.submit()" style="padding:5px 10px;border-radius:6px;border:1px solid #86EFAC;font-size:12px;background:#fff;font-weight:600;color:#166534">
                     @foreach($kelasList as $k)
-                        <option value="{{ $k }}" @selected(isset($selectedKelas) && $selectedKelas === $k)>Kelas {{ $k }}</option>
+                        <option value="{{ $k }}" @selected(isset($selectedKelas) && $selectedKelas === $k)>{{ str_starts_with($k, 'Kelas ') ? $k : 'Kelas ' . $k }}</option>
                     @endforeach
                 </select>
             </form>

@@ -846,7 +846,7 @@
             <h2 class="section-title">Statistik <span class="highlight">TKA</span> Nasional</h2>
             <p class="section-subtitle">Data Tes Kemampuan Akademik — Tahun 2026 dari tka.kemendikdasmen.go.id</p>
             @if($lastUpdate)
-                <div class="tka-source-badge"><i class="fas fa-clock"></i> Last Update: {{ $lastUpdate }}</div>
+                <div class="tka-source-badge"><i class="fas fa-clock"></i> Pembaruan Terakhir: {{ $lastUpdate }}</div>
             @endif
             <div style="margin-top:12px;padding:10px 20px;background:rgba(184,134,11,0.08);border-radius:10px;display:inline-block;font-size:13px;color:var(--text-muted)">
                 <i class="fas fa-info-circle" style="color:var(--gold)"></i> Data TKA mencakup: SMA/MA, SMK, SLB, PKBM/SKB, dan Ponpes. Data SD/MI dan SMP/MTs belum tersedia di portal TKA.
