@@ -11,8 +11,26 @@ class Rombel extends Model
 
     protected $table = 'rombel';
     protected $fillable = [
-        'tenant_id', 'dapodik_id', 'semester_id', 'nama_rombel', 'tingkat', 'kurikulum', 'jenis_rombel', 'guru_id',
+        'tenant_id', 'dapodik_id', 'semester_id', 'nama_rombel', 'tingkat', 'kurikulum', 'jenis_rombel', 'guru_id', 'kunci_input_rapor',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'kunci_input_rapor' => 'boolean',
+        ];
+    }
+
+    public static function apakahTerkunciUntukKelas(?string $kelas): bool
+    {
+        if ($kelas === null || trim($kelas) === '') {
+            return false;
+        }
+
+        return static::where('nama_rombel', $kelas)
+            ->where('kunci_input_rapor', true)
+            ->exists();
+    }
 
     public function semester()
     {

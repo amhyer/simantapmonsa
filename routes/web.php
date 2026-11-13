@@ -141,6 +141,10 @@ Route::post('/superadmin/impersonate/leave', [\App\Http\Controllers\SuperAdmin\T
     ->middleware('auth')
     ->name('superadmin.impersonate.leave');
 
+Route::post('/admin/impersonate/leave', [UserController::class, 'leaveGuruImpersonate'])
+    ->middleware('auth')
+    ->name('admin.impersonate.leave');
+
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
@@ -201,6 +205,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/users/siswa', [UserController::class, 'siswaIndex'])->name('users.siswa');
     Route::post('/users/proses-massal', [UserController::class, 'prosesAkunMassal'])->middleware('throttle:5,1')->name('users.proses-massal');
     Route::delete('/users/hapus-semua/{peran}', [UserController::class, 'destroyAll'])->middleware('throttle:5,1')->name('users.destroy-all');
+    Route::post('/users/{user}/impersonate', [UserController::class, 'impersonateGuru'])->name('users.impersonate');
     Route::resource('users', UserController::class)->except(['show']);
     
     // Peta Kelas
@@ -208,6 +213,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/peta-kelas/daftar', [PetaKelasController::class, 'daftar'])->name('peta-kelas.daftar');
     Route::get('/peta-kelas/kelas-options', [PetaKelasController::class, 'getKelasOptions'])->name('peta-kelas.kelas-options');
     Route::get('/peta-kelas/{rombel}', [PetaKelasController::class, 'detail'])->whereNumber('rombel')->name('peta-kelas.detail');
+    Route::post('/peta-kelas/{rombel}/toggle-kunci', [PetaKelasController::class, 'toggleKunciRapor'])->whereNumber('rombel')->name('peta-kelas.toggle-kunci');
     Route::post('/peta-kelas', [PetaKelasController::class, 'store'])->name('peta-kelas.store');
     Route::delete('/peta-kelas/{id}', [PetaKelasController::class, 'destroy'])->name('peta-kelas.destroy');
     Route::post('/peta-kelas/pindah', [PetaKelasController::class, 'pindahSiswa'])->name('peta-kelas.pindah');
@@ -290,6 +296,9 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/cetak/pelengkap', [CetakController::class, 'pelengkap'])->name('cetak.pelengkap');
     Route::get('/cetak/nilai', [CetakController::class, 'nilai'])->name('cetak.nilai');
     Route::get('/cetak/nilai/{siswa}', [CetakController::class, 'showNilai'])->name('cetak.nilai.show');
+    Route::get('/cetak/kelengkapan', [CetakController::class, 'kelengkapan'])->name('cetak.kelengkapan');
+    Route::get('/cetak/pengaturan-rapor', [CetakController::class, 'pengaturanRapor'])->name('cetak.pengaturan-rapor');
+    Route::post('/cetak/pengaturan-rapor', [CetakController::class, 'simpanPengaturanRapor'])->name('cetak.pengaturan-rapor.simpan');
     Route::get('/referensi/ekstrakurikuler', [DataReferensiController::class, 'ekstrakurikuler'])->name('referensi.ekstrakurikuler');
     Route::post('/referensi/ekstrakurikuler', [DataReferensiController::class, 'storeEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.store');
     Route::delete('/referensi/ekstrakurikuler/{ekstrakurikuler}', [DataReferensiController::class, 'destroyEkstrakurikuler'])->middleware('throttle:30,1')->name('referensi.ekstrakurikuler.destroy');

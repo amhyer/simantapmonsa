@@ -345,4 +345,45 @@ class UserController extends Controller
         $siswa = Siswa::with('guru')->orderBy('nama_peserta_didik')->get();
         return view('admin.users.siswa', compact('users', 'siswa'));
     }
+
+    public function impersonateGuru(User $user)
+    {
+        $admin = auth()->user();
+        abort_unless($admin && in_array($admin->peran, ['admin', 'super_admin'], true), 403);
+        abort_unless($user->peran === 'guru' && $user->aktif, 403, 'Hanya akun Guru aktif yang dapat diakses.');
+
+        if (TenantContext::check() && (int) $user->tenant_id !== (int) TenantContext::id()) {
+            abort(403, 'Lintas sekolah tidak diizinkan.');
+        }
+
+        session([
+            'admin_impersonator_id' => $admin->id,
+        ]);
+
+        auth()->login($user);
+
+        return redirect()->route('guru.dashboard')
+            ->with('success', "Berhasil masuk sebagai Guru '{$user->nama_lengkap}'.");
+    }
+
+    public function leaveGuruImpersonate()
+    {
+        $adminId = session('admin_impersonator_id');
+        if (! $adminId) {
+            return redirect()->route('home');
+        }
+
+        $admin = User::withoutGlobalScopes()->find($adminId);
+        session()->forget('admin_impersonator_id');
+
+        if (! $admin || ! in_array($admin->peran, ['admin', 'super_admin'], true)) {
+            auth()->logout();
+            return redirect()->route('login');
+        }
+
+        auth()->login($admin);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Kembali ke sesi Administrator.');
+    }
 }

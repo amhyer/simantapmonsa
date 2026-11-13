@@ -55,9 +55,11 @@
                 ['route' => 'admin.transkrip.cetak', 'icon' => 'lucide-printer', 'label' => 'Cetak Transkrip Nilai'],
             ]],
             ['label' => 'CETAK NILAI', 'icon' => 'lucide-printer', 'children' => [
+                ['route' => 'admin.cetak.kelengkapan', 'icon' => 'lucide-check-square', 'label' => 'Kelengkapan Nilai'],
                 ['route' => 'admin.cetak.leger', 'icon' => 'lucide-table', 'label' => 'Leger Rapor'],
                 ['route' => 'admin.cetak.pelengkap', 'icon' => 'lucide-scroll-text', 'label' => 'Pelengkap Rapor'],
                 ['route' => 'admin.cetak.nilai', 'icon' => 'lucide-file-signature', 'label' => 'Nilai Rapor'],
+                ['route' => 'admin.cetak.pengaturan-rapor', 'icon' => 'lucide-sliders', 'label' => 'Pengaturan Cetak Rapor'],
             ]],
         ],
         'cbt' => [

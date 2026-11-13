@@ -171,4 +171,12 @@ class PetaKelasController extends Controller
 
         return response()->json(['kelas' => $kelasList]);
     }
+
+    public function toggleKunciRapor(\App\Models\Rombel $rombel): \Illuminate\Http\RedirectResponse
+    {
+        $rombel->update(['kunci_input_rapor' => ! $rombel->kunci_input_rapor]);
+        $status = $rombel->kunci_input_rapor ? 'dikunci' : 'dibuka kembali';
+
+        return back()->with('success', "Input rapor untuk rombel {$rombel->nama_rombel} berhasil {$status}.");
+    }
 }

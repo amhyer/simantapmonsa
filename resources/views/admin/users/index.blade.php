@@ -96,6 +96,14 @@
                                     @if($u->aktif)<span class="tag tag-ok">Ya</span>@else<span class="tag tag-mut">Tidak</span>@endif
                                 </td>
                                 <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:right;white-space:nowrap">
+                                    @if($u->peran === 'guru' && $u->aktif)
+                                        <form method="POST" action="{{ route('admin.users.impersonate', $u) }}" style="display:inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#059669;font-weight:600" title="Masuk ke akun guru ini">
+                                                <i class="fas fa-sign-in-alt"></i> Login Akun
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="{{ route('admin.users.edit', $u) }}" class="btn btn-ghost btn-sm">Ubah</a>
                                     @if($u->nama_pengguna !== 'admin')
                                         <button onclick="hapusUser('{{ $u->id }}', '{{ $u->nama_lengkap }}')" class="btn btn-ghost btn-sm" style="color:#B42318">Hapus</button>

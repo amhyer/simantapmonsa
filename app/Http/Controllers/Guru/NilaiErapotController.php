@@ -56,6 +56,10 @@ class NilaiErapotController extends Controller
             'tahun_ajaran' => 'required|string',
         ]);
 
+        if (\App\Models\Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+            return back()->with('error', "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
+        }
+
         $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
         $kkm = $pengaturan->kkm ?? 70;
@@ -119,6 +123,13 @@ class NilaiErapotController extends Controller
             'semester' => 'required|string',
             'tahun_ajaran' => 'required|string',
         ]);
+
+        if (\App\Models\Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.",
+            ], 423);
+        }
 
         $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();

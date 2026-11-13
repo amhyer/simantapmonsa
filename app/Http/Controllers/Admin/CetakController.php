@@ -183,10 +183,149 @@ class CetakController extends Controller
         $rata = $nilai->whereNotNull('nilai_akhir')->count()
             ? round($nilai->whereNotNull('nilai_akhir')->avg('nilai_akhir'), 2)
             : null;
+        $raporConfig = self::ambilConfigRapor($sekolah);
 
         return view('admin.cetak.nilai-show', compact(
             'siswa', 'nilai', 'sekolah', 'tanggalRapor', 'hadir', 'catatan',
-            'rata', 'semester', 'tahunAjaran'
+            'rata', 'semester', 'tahunAjaran', 'raporConfig'
         ));
+    }
+
+    public static function ambilConfigRapor(?SekolahSettings $sekolah): array
+    {
+        $saved = ($sekolah?->pengaturan ?? [])['rapor'] ?? [];
+
+        return array_merge([
+            'kementerian' => 'Kemendikdasmen',
+            'ukuran_kertas' => 'A4',
+            'margin_atas_cm' => 1.5,
+            'kapitalisasi_nama' => 'asli',
+            'format_desimal' => '0',
+            'page_break_catatan' => false,
+            'ttd_kepsek_data_uri' => null,
+        ], is_array($saved) ? $saved : []);
+    }
+
+    public function kelengkapan(Request $request)
+    {
+        $kelasList = $this->daftarKelas();
+        $validated = $request->validate([
+            'kelas' => 'nullable|string|max:50',
+            'semester' => 'nullable|in:Ganjil,Genap',
+            'tahun_ajaran' => 'nullable|string|max:9',
+        ]);
+        $kelas = $validated['kelas'] ?? $kelasList->first();
+        $semester = $validated['semester'] ?? 'Ganjil';
+        $tahunAjaran = $validated['tahun_ajaran'] ?? $this->tahunDefault();
+
+        $siswaCounts = Siswa::where('aktif', true)
+            ->whereNotNull('kelas')
+            ->selectRaw('kelas, COUNT(*) as total')
+            ->groupBy('kelas')
+            ->pluck('total', 'kelas');
+
+        $nilaiSemua = NilaiErapot::where('semester', $semester)
+            ->where('tahun_ajaran', $tahunAjaran)
+            ->whereNotNull('nilai_akhir')
+            ->get(['kelas', 'siswa_id', 'mata_pelajaran']);
+
+        $rombelMap = \App\Models\Rombel::whereIn('nama_rombel', $kelasList->all())
+            ->get()
+            ->keyBy('nama_rombel');
+
+        $kelasStats = [];
+        foreach ($kelasList as $k) {
+            $jmlSiswa = (int) ($siswaCounts[$k] ?? 0);
+            $nilaiKelas = $nilaiSemua->where('kelas', $k);
+            $jmlMapel = $nilaiKelas->pluck('mata_pelajaran')->unique()->count();
+            $expected = $jmlSiswa * $jmlMapel;
+            $filled = $nilaiKelas->unique(fn ($n) => $n->siswa_id . '|' . $n->mata_pelajaran)->count();
+            $persen = $expected > 0 ? round(($filled / $expected) * 100, 1) : 0.0;
+            $kelasStats[$k] = [
+                'siswa' => $jmlSiswa,
+                'mapel' => $jmlMapel,
+                'filled' => $filled,
+                'expected' => $expected,
+                'persen' => $persen,
+                'terkunci' => (bool) ($rombelMap[$k]->kunci_input_rapor ?? false),
+                'rombel_id' => $rombelMap[$k]->id ?? null,
+            ];
+        }
+
+        $siswa = collect();
+        $mapel = collect();
+        $matriks = [];
+        $rombelAktif = $kelas ? ($rombelMap[$kelas] ?? null) : null;
+
+        if ($kelas) {
+            $siswa = Siswa::where('kelas', $kelas)
+                ->where('aktif', true)
+                ->orderBy('nama_peserta_didik')
+                ->get(['id', 'nama_peserta_didik', 'nis', 'nisn']);
+            $nilaiKelas = $nilaiSemua->where('kelas', $kelas);
+            $mapel = $nilaiKelas->pluck('mata_pelajaran')->unique()->sort()->values();
+            foreach ($nilaiKelas as $n) {
+                $matriks[$n->siswa_id][$n->mata_pelajaran] = true;
+            }
+        }
+
+        return view('admin.cetak.kelengkapan', compact(
+            'kelasList', 'kelasStats', 'kelas', 'semester', 'tahunAjaran',
+            'siswa', 'mapel', 'matriks', 'rombelAktif'
+        ));
+    }
+
+    public function pengaturanRapor()
+    {
+        $sekolah = SekolahSettings::first();
+        $raporConfig = self::ambilConfigRapor($sekolah);
+
+        return view('admin.cetak.pengaturan-rapor', compact('sekolah', 'raporConfig'));
+    }
+
+    public function simpanPengaturanRapor(Request $request)
+    {
+        $validated = $request->validate([
+            'kementerian' => 'required|in:Kemendikdasmen,Kemendikbudristek',
+            'ukuran_kertas' => 'required|in:A4,F4',
+            'margin_atas_cm' => 'required|numeric|min:0.5|max:5',
+            'kapitalisasi_nama' => 'required|in:asli,upper,title',
+            'format_desimal' => 'required|in:0,2,auto',
+            'page_break_catatan' => 'nullable|boolean',
+            'ttd_kepsek' => 'nullable|image|mimes:png,jpg,jpeg|max:512',
+            'hapus_ttd_kepsek' => 'nullable|boolean',
+        ]);
+
+        $sekolah = SekolahSettings::firstOrCreate(
+            [],
+            ['nama_sekolah' => config('app.name', 'SIMANTAP')]
+        );
+        $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
+        $current = self::ambilConfigRapor($sekolah);
+
+        $ttdDataUri = $current['ttd_kepsek_data_uri'] ?? null;
+        if ($request->boolean('hapus_ttd_kepsek')) {
+            $ttdDataUri = null;
+        }
+        if ($request->hasFile('ttd_kepsek')) {
+            $file = $request->file('ttd_kepsek');
+            $mime = $file->getMimeType() ?: 'image/png';
+            $ttdDataUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+        }
+
+        $pengaturan['rapor'] = [
+            'kementerian' => $validated['kementerian'],
+            'ukuran_kertas' => $validated['ukuran_kertas'],
+            'margin_atas_cm' => (float) $validated['margin_atas_cm'],
+            'kapitalisasi_nama' => $validated['kapitalisasi_nama'],
+            'format_desimal' => $validated['format_desimal'],
+            'page_break_catatan' => $request->boolean('page_break_catatan'),
+            'ttd_kepsek_data_uri' => $ttdDataUri,
+        ];
+
+        $sekolah->update(['pengaturan' => $pengaturan]);
+
+        return redirect()->route('admin.cetak.pengaturan-rapor')
+            ->with('success', 'Pengaturan & kustomisasi cetak rapor berhasil disimpan.');
     }
 }

@@ -42,13 +42,16 @@ class CatatanController extends Controller
             'siswa_id' => 'required|exists:siswa,id',
             'tanggal' => 'required|date',
             'jenis' => 'required|in:apresiasi,perhatian,umum',
-            'catatan' => 'required|string',
+            'catatan' => 'required|string|max:1000',
         ]);
 
         $guru = auth()->user();
         $siswa = Siswa::where('aktif', true)->whereNull('archived_at')->find($validated['siswa_id']);
         if (!$siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa aktif tidak ditemukan.'])->withInput();
+        }
+        if (\App\Models\Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
+            return back()->with('error', "Input rapor & catatan untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== $guru->id) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();

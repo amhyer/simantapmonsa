@@ -47,8 +47,11 @@
                 </div>
             </div>
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Catatan</label>
-                <textarea name="catatan" rows="3" required placeholder="Tuliskan catatan tentang siswa..." style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;resize:vertical"></textarea>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <label style="font-weight:600;font-size:12px;margin:0">Catatan</label>
+                    <small id="catatanCounter" style="font-size:11.5px;color:#667085;font-weight:600">0 / 1000 karakter</small>
+                </div>
+                <textarea id="catatanTextarea" name="catatan" rows="3" maxlength="1000" required placeholder="Tuliskan catatan tentang siswa..." style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;resize:vertical"></textarea>
             </div>
             <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">💾 Simpan Catatan</button>
         </form>
@@ -89,6 +92,18 @@
 </div>
 
 <script>
+const catatanTextarea = document.getElementById('catatanTextarea');
+const catatanCounter = document.getElementById('catatanCounter');
+if (catatanTextarea && catatanCounter) {
+    const syncCounter = () => {
+        const len = catatanTextarea.value.length;
+        catatanCounter.textContent = `${len} / 1000 karakter`;
+        catatanCounter.style.color = len >= 980 ? '#B42318' : (len >= 850 ? '#B54708' : '#667085');
+    };
+    catatanTextarea.addEventListener('input', syncCounter);
+    syncCounter();
+}
+
 document.getElementById('formCatatan').addEventListener('submit', async function(e) {
     e.preventDefault();
     const fd = new FormData(this);
