@@ -354,7 +354,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     });
 
     // Dapodik WebService API (moved from api.php to get session auth)
-    Route::prefix('dapodik/api')->name('dapodik.api.')->middleware('dapodik.single-school')->group(function () {
+    Route::prefix('dapodik/api')->name('dapodik.api.')->group(function () {
         Route::get('/config', [\App\Http\Controllers\Api\DapodikController::class, 'config'])->name('config');
         Route::post('/config', [\App\Http\Controllers\Api\DapodikController::class, 'saveConfig'])->name('config.save');
         Route::post('/test-connection', [\App\Http\Controllers\Api\DapodikController::class, 'testConnection'])->name('test-connection');
@@ -365,7 +365,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     });
 
     // Dapodik Push (Sync ke Dapodik Server)
-    Route::prefix('dapodik/push')->name('dapodik.push.')->middleware(['dapodik.single-school', 'throttle:10,1'])->group(function () {
+    Route::prefix('dapodik/push')->name('dapodik.push.')->middleware(['throttle:10,1'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DapodikPushController::class, 'index'])->name('index');
         Route::get('/sekolah', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
         Route::post('/peserta-didik', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');

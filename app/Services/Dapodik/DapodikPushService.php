@@ -12,26 +12,30 @@ use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DapodikPushService
 {
-    private DapodikClient $client;
-    private DapodikConfig $config;
+    private ?DapodikClient $clientInstance = null;
 
-    public function __construct()
+    private function client(): DapodikClient
     {
-        $this->config = DapodikConfig::getInstance();
-        $this->client = new DapodikClient(
-            npsn: $this->config->npsn ?? '',
-            token: $this->config->token ?? '',
-            host: $this->config->host ?? 'localhost',
-            port: (int) ($this->config->port ?? 5774),
-            protocol: $this->config->protocol ?? 'http',
-            cfAccess: $this->config->cf_access ?? [],
-        );
+        if ($this->clientInstance === null) {
+            $config = DapodikConfig::getInstance();
+            $this->clientInstance = new DapodikClient(
+                npsn: $config->npsn ?? '',
+                token: $config->token ?? '',
+                host: $config->host ?? 'localhost',
+                port: (int) ($config->port ?? 5774),
+                protocol: $config->protocol ?? 'http',
+                cfAccess: $config->cf_access ?? [],
+            );
+        }
+
+        return $this->clientInstance;
     }
 
     // ─── PUSH SEKOLAH ───────────────────────────────────────────────
@@ -90,7 +94,7 @@ class DapodikPushService
                 'email' => $sekolah->email,
             ];
 
-            $result = $this->client->pushSekolah($data);
+            $result = $this->client()->pushSekolah($data);
 
             if (isset($result['success']) && $result['success']) {
                 return ['berhasil' => 1, 'gagal' => 0, 'errors' => []];
@@ -127,7 +131,7 @@ class DapodikPushService
         foreach ($siswaList as $siswa) {
             try {
                 $data = $this->mapSiswaToDapodik($siswa);
-                $response = $this->client->pushPesertaDidik($data);
+                $response = $this->client()->pushPesertaDidik($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;
@@ -238,6 +242,7 @@ class DapodikPushService
         $gtkList = User::where('peran', 'guru')
             ->where('aktif', true)
             ->whereNotNull('dapodik_id')
+            ->when(TenantContext::check(), fn ($q) => $q->where('tenant_id', TenantContext::id()))
             ->get();
 
         if ($gtkList->isEmpty()) {
@@ -299,7 +304,7 @@ class DapodikPushService
                     'status_hidup' => 'hidup',
                 ];
 
-                $response = $this->client->pushGtk($data);
+                $response = $this->client()->pushGtk($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;
@@ -348,7 +353,7 @@ class DapodikPushService
                     'wali_kelas' => $rombel->guru?->dapodik_id ?? '',
                 ];
 
-                $response = $this->client->pushRombonganBelajar($data);
+                $response = $this->client()->pushRombonganBelajar($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;
@@ -400,7 +405,7 @@ class DapodikPushService
                     'ruangan' => $jadwal->ruangan,
                 ];
 
-                $response = $this->client->pushJadwal($data);
+                $response = $this->client()->pushJadwal($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;
@@ -451,7 +456,7 @@ class DapodikPushService
                     'deskripsi' => $nilai->deskripsi_capaian,
                 ];
 
-                $response = $this->client->pushNilaiRapor($data);
+                $response = $this->client()->pushNilaiRapor($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;
@@ -500,7 +505,7 @@ class DapodikPushService
                     'keterangan' => $hadir->keterangan,
                 ];
 
-                $response = $this->client->pushKehadiran($data);
+                $response = $this->client()->pushKehadiran($data);
 
                 if (isset($response['success']) && $response['success']) {
                     $berhasil++;

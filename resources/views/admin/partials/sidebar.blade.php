@@ -140,7 +140,7 @@
             foreach ($groups as &$group) {
                 if (isset($group['children'])) {
                     $group['children'] = array_values(array_filter($group['children'], fn ($item) =>
-                        ! in_array($item['route'] ?? '', ['admin.dapodik.push.index', 'admin.backup.index', 'admin.log.index'], true)
+                        ! in_array($item['route'] ?? '', ['admin.backup.index', 'admin.log.index'], true)
                     ));
                 }
             }

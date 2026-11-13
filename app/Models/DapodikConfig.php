@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Traits\HasSchoolOwnership;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 
 class DapodikConfig extends Model
 {
+    use HasSchoolOwnership;
+
     protected $table = 'dapodik_configs';
 
     protected $primaryKey = 'id';
@@ -17,6 +21,8 @@ class DapodikConfig extends Model
 
     protected $fillable = [
         'id',
+        'tenant_id',
+        'tenant_owned',
         'npsn',
         'token',
         'host',
@@ -46,14 +52,17 @@ class DapodikConfig extends Model
         'auto_sync_enabled' => 'boolean',
         'allow_insecure_in_production' => 'boolean',
         'archive_unlisted' => 'boolean',
+        'tenant_owned' => 'boolean',
         'auto_sync_last_run_at' => 'datetime',
         'last_sync_at' => 'datetime',
     ];
 
     public static function getInstance(): static
     {
+        $id = TenantContext::check() ? 'tenant-' . TenantContext::id() : 'singleton';
+
         return static::firstOrCreate(
-            ['id' => 'singleton'],
+            ['id' => $id],
             [
                 'npsn' => null,
                 'host' => 'localhost',

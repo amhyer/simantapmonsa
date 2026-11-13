@@ -97,8 +97,19 @@ class DapodikTenantIsolationTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'recent_logs')->assertJsonPath('recent_logs.0.nama_sekolah', 'Log B');
         // Bridge kini diizinkan per sekolah (data otomatis masuk ke tenant pemilik API Key).
         $this->withHeader('X-API-Key', $keyA)->postJson('/api/dapodik/sync/ptk', [])->assertStatus(422);
-        $this->actingAs($adminA)->getJson(route('admin.dapodik.api.config'))->assertStatus(503);
-        $this->actingAs($adminA)->get(route('admin.dapodik.push.index'))->assertStatus(503);
+        $this->actingAs($adminA)->getJson(route('admin.dapodik.api.config'))->assertOk();
+        $this->actingAs($adminA)->get(route('admin.dapodik.push.index'))->assertOk();
+
+        // Konfigurasi Dapodik terisolasi per sekolah.
+        $this->actingAs($adminA)->postJson(route('admin.dapodik.api.config.save'), [
+            'npsn' => '10000001',
+            'host' => '10.0.0.1',
+            'port' => 5774,
+            'protocol' => 'http',
+        ])->assertOk();
+        $this->actingAs($adminB)->getJson(route('admin.dapodik.api.config'))
+            ->assertOk()
+            ->assertJsonPath('config.npsn', null);
         $this->withHeaders(['X-API-Key' => $keyA, 'X-Tenant-Subdomain' => $b->subdomain])
             ->getJson('/api/dapodik/sync/status')->assertForbidden();
     }
