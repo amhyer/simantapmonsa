@@ -7,7 +7,7 @@
 
 @section('content')
     {{-- Top Stats --}}
-    <div class="grid grid-4" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px">
         <div class="stat-card primary">
             <i class="fas fa-user-graduate stat-icon"></i>
             <div class="stat-label">Total Siswa</div>

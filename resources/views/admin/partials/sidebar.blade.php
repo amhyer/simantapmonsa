@@ -30,7 +30,7 @@
         'erapor' => [
             ['label' => 'UTAMA', 'items' => [
                 ['route' => 'admin.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
-                ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profile'],
+                ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profil'],
             ]],
             ['label' => 'STATUS PENILAIAN', 'icon' => 'lucide-graduation-cap', 'children' => [
                 ['route' => 'admin.penilaian.status', 'icon' => 'lucide-check-circle', 'label' => 'Status per Guru'],

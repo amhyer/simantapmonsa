@@ -429,12 +429,12 @@
         .stat-card .stat-icon { position: absolute; right: 16px; top: 16px; font-size: 28px; opacity: 0.15; }
         .stat-card .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
         .stat-card .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; }
-        .stat-card .stat-change { font-size: 12px; margin-top: 4px; }
+        .stat-card .stat-change { font-size: 12px; margin-top: 4px; color: #475569; font-weight: 500; }
         .stat-card .stat-change.up { color: var(--ok); }
         .stat-card .stat-change.down { color: var(--bad); }
         .stat-card.primary .stat-value { color: var(--navy); }
         .stat-card.primary::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--navy); }
-        .stat-card.gold .stat-value { color: var(--gold); }
+        .stat-card.gold .stat-value { color: #9A6F04; }
         .stat-card.gold::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--gold); }
         .stat-card.ok .stat-value { color: var(--ok); }
         .stat-card.ok::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ok); }

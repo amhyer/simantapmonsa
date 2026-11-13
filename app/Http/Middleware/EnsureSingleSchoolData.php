@@ -16,7 +16,11 @@ class EnsureSingleSchoolData
 
             return $request->expectsJson()
                 ? response()->json(['success' => false, 'message' => $message], 503)
-                : response($message, 503);
+                : response()->view('errors.503', [
+                    'judul' => 'Fitur Khusus Mode Sekolah Tunggal',
+                    'pesan' => $message,
+                    'tombol' => ['url' => route('home'), 'label' => 'Kembali ke Dasbor'],
+                ], 503);
         }
 
         return $next($request);

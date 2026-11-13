@@ -354,11 +354,11 @@ table.filtering tbody tr:not(.table-empty) { animation: rowIn .18s ease; }
 
 /* --- Mobile Bottom Navigation --- */
 .mobile-bottom-nav {
-    display: none;
+    display: none !important;
 }
 @media (max-width: 768px) {
     .mobile-bottom-nav {
-        display: flex;
+        display: flex !important;
         position: fixed;
         bottom: 0;
         left: 0;

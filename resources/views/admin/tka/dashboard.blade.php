@@ -37,7 +37,7 @@
 
     <div class="stat-card warn">
         <i class="fas fa-exclamation-triangle stat-icon"></i>
-        <div class="stat-label">Early Warnings</div>
+        <div class="stat-label">Deteksi Dini</div>
         <div class="stat-value">{{ $stats['early_warnings']['total'] }}</div>
         <div class="stat-change">{{ $stats['early_warnings']['pending'] }} butuh tindak lanjut</div>
     </div>
