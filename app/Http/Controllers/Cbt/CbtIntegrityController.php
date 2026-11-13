@@ -19,8 +19,9 @@ class CbtIntegrityController extends Controller
         $student = Siswa::find($result->siswa_id);
         abort_unless($student && $this->exam->eligible($result->session, $student), 403);
         $data = $request->validated();
-        $this->exam->recordViolation($result, $student, $data['type']);
-        return response()->json(['recorded' => true]);
+        $resetAnswers = (bool) ($data['reset_answers'] ?? false);
+        $this->exam->recordViolation($result, $student, $data['type'], $resetAnswers);
+        return response()->json(['recorded' => true, 'reset' => $resetAnswers]);
     }
 
     public function getViolations(CbtResult $result)

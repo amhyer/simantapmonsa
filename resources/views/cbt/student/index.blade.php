@@ -11,6 +11,16 @@
 @section('content')
 @include('cbt.feedback')
 
+@if(request()->boolean('kicked'))
+    <div class="note note-bad" style="margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">
+        <i class="fas fa-ban" style="color:var(--bad);font-size:18px;margin-top:2px"></i>
+        <div>
+            <strong>Ujian Dihentikan Karena Pelanggaran Layar Penuh / Tombol Terlarang</strong><br>
+            <span>Anda terdeteksi keluar dari mode layar penuh atau menekan kombinasi tombol yang tidak diizinkan. Seluruh jawaban Anda telah direset ke awal, sementara waktu ujian tetap berjalan.</span>
+        </div>
+    </div>
+@endif
+
 {{-- Info Banner --}}
 <div class="card" style="margin-bottom:20px;border-left:4px solid var(--violet);background:linear-gradient(to right, #FFFFFF, #FAF5FF)">
     <div class="card-body" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">

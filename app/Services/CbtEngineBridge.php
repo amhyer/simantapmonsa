@@ -117,6 +117,19 @@ class CbtEngineBridge
     }
 
     /**
+     * Kosongkan jawaban pada engine terpadu saat jawaban direset karena pelanggaran keluar/tombol terlarang.
+     */
+    public function hapusJawaban(CbtResult $cbtResult): void
+    {
+        $attempt = $this->attempt($cbtResult);
+        if (! $attempt) {
+            return;
+        }
+
+        $attempt->answers()->delete();
+    }
+
+    /**
      * Tulis hasil akhir ke `exam_attempts` + `exam_results`.
      */
     public function catatPenilaian(CbtResult $cbtResult): void

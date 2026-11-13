@@ -514,6 +514,31 @@
             justify-content: space-between;
             gap: 10px;
         }
+        /* Mandatory Fullscreen Gate Overlay */
+        .anbk-fs-gate {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: linear-gradient(135deg, #1e3a5f 0%, #326698 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+        }
+        .anbk-fs-gate.hidden {
+            display: none;
+        }
+        .anbk-fs-gate-card {
+            max-width: 480px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            color: #1e293b;
+            border-radius: 20px;
+            padding: 32px 28px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+        }
 
         @media (max-width: 768px) {
             .anbk-shell { padding: 12px 12px 28px; }
@@ -525,6 +550,22 @@
     </style>
 </head>
 <body class="anbk-body">
+{{-- Mandatory Fullscreen Gate (auto-hides once fullscreen is active) --}}
+<div id="anbk-fs-gate" class="anbk-fs-gate">
+    <div class="anbk-fs-gate-card">
+        <div style="width:60px;height:60px;border-radius:50%;background:#eff6ff;color:#0d6efd;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px">
+            <i class="fas fa-expand-arrows-alt"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;margin:0 0 10px;color:#0f172a">Mode Layar Penuh Wajib Aktif</h2>
+        <p style="font-size:13.5px;line-height:1.6;color:#475569;margin:0 0 22px">
+            Ujian CBT harus dikerjakan dalam mode layar penuh. Selama ujian berlangsung, dilarang keluar dari layar penuh, berpindah tab, atau menekan kombinasi tombol pintasan — pelanggaran akan mengeluarkan Anda dan mengulang jawaban dari awal sementara waktu tetap berjalan.
+        </p>
+        <button type="button" id="btn-enter-mandatory-fs" class="anbk-nav-btn anbk-btn-next" style="width:100%;justify-content:center;padding:12px 20px;font-size:14px">
+            <i class="fas fa-expand"></i> Masuk Layar Penuh &amp; Kerjakan Ujian
+        </button>
+    </div>
+</div>
+
 <div class="anbk-shell">
     {{-- Top Header Bar (Pusmendik ANBK Style) --}}
     <header class="anbk-header">
@@ -568,11 +609,6 @@
                 <div id="save-status" class="anbk-autosave ok" role="status" aria-live="polite">
                     <i class="fas fa-check-circle"></i> <span>Semua perubahan jawaban tersimpan di server.</span>
                 </div>
-
-                <button type="button" id="btn-fullscreen-hud" class="anbk-pill anbk-pill-ghost" onclick="toggleExamFullscreen()" title="Buka/Tutup Layar Penuh">
-                    <i class="fas fa-expand" id="hud-fs-icon"></i>
-                    <span id="hud-fs-text">Layar Penuh</span>
-                </button>
 
                 <div id="timer-box" class="anbk-pill anbk-pill-outline">
                     <i class="far fa-clock"></i>
@@ -958,51 +994,117 @@
     tick();
     setInterval(tick, 1000);
 
-    // Anti-Cheat: Visibility Change
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && !submitting && !expired) {
-            fetch(integrityUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                body: JSON.stringify({ type: 'tab_hidden' })
-            }).catch(() => {});
-        }
-    });
+    // Mandatory Fullscreen, Secret Admin Exit (Ctrl+K), & Anti-Cheat Reset-and-Kick
+    const fsGate = document.getElementById('anbk-fs-gate');
+    const btnEnterFs = document.getElementById('btn-enter-mandatory-fs');
+    const exitUrl = @json(route('cbt.student.index', ['kicked' => 1]));
+    const outboxStorageKey = 'simantap:exam-outbox:' + @json('cbt:'.$result->id);
+    let examEnteredFullscreen = !!document.fullscreenElement;
+    let adminUnlocked = false;
+    let violationTriggered = false;
 
-    // Fullscreen HUD Control & Anti-Cheat Exit Telemetry
-    window.toggleExamFullscreen = function() {
-        if (!document.fullscreenElement) {
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
+    function syncFsGate() {
+        if (!fsGate) return;
+        if (document.fullscreenElement || adminUnlocked) {
+            fsGate.classList.add('hidden');
+            if (document.fullscreenElement) {
+                examEnteredFullscreen = true;
             }
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(() => {});
-            }
-        }
-    };
-
-    function syncExamFullscreenUI() {
-        const isFs = !!document.fullscreenElement;
-        const icon = document.getElementById('hud-fs-icon');
-        const txt = document.getElementById('hud-fs-text');
-        if (icon && txt) {
-            icon.className = isFs ? 'fas fa-compress' : 'fas fa-expand';
-            txt.textContent = isFs ? 'Keluar Penuh' : 'Layar Penuh';
+            fsGate.classList.remove('hidden');
         }
     }
 
-    document.addEventListener('fullscreenchange', () => {
-        syncExamFullscreenUI();
-        if (!document.fullscreenElement && !submitting && !expired) {
-            fetch(integrityUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                body: JSON.stringify({ type: 'fullscreen_exit' })
-            }).catch(() => {});
+    function requestMandatoryFullscreen() {
+        if (document.fullscreenElement) {
+            syncFsGate();
+            return;
+        }
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+            el.requestFullscreen().then(() => {
+                examEnteredFullscreen = true;
+                syncFsGate();
+            }).catch(() => {
+                syncFsGate();
+            });
+        }
+    }
+
+    if (btnEnterFs) {
+        btnEnterFs.addEventListener('click', requestMandatoryFullscreen);
+    }
+    requestMandatoryFullscreen();
+    syncFsGate();
+
+    function triggerViolationResetAndExit(type) {
+        if (violationTriggered || submitting || expired || adminUnlocked) return;
+        violationTriggered = true;
+        submitting = true;
+
+        try {
+            window.localStorage.removeItem(outboxStorageKey);
+        } catch (e) {}
+
+        fetch(integrityUrl, {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify({ type: type, reset_answers: true })
+        }).catch(() => {}).finally(() => {
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+            window.location.replace(exitUrl);
+        });
+
+        setTimeout(() => {
+            window.location.replace(exitUrl);
+        }, 350);
+    }
+
+    // Secret Admin Sekolah / Proktor unlock: Ctrl+K (no UI hint shown to student)
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            e.stopPropagation();
+            adminUnlocked = true;
+            syncFsGate();
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+            return;
+        }
+
+        if (!examEnteredFullscreen || adminUnlocked || submitting || expired) {
+            return;
+        }
+
+        const key = e.key || '';
+        const isFunctionKey = /^F([1-9]|1[0-2])$/i.test(key);
+        const isForbiddenCombo = (e.ctrlKey || e.altKey || e.metaKey)
+            && !['Control', 'Alt', 'Meta', 'Shift'].includes(key);
+
+        if (key === 'Escape' || key === 'Meta' || key === 'ContextMenu' || isFunctionKey || isForbiddenCombo) {
+            e.preventDefault();
+            e.stopPropagation();
+            triggerViolationResetAndExit('fullscreen_exit');
+        }
+    }, true);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && examEnteredFullscreen && !adminUnlocked && !submitting && !expired) {
+            triggerViolationResetAndExit('tab_hidden');
         }
     });
-    syncExamFullscreenUI();
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && examEnteredFullscreen && !adminUnlocked && !submitting && !expired) {
+            triggerViolationResetAndExit('fullscreen_exit');
+        } else {
+            syncFsGate();
+        }
+    });
 
     // KaTeX Auto-Render Math Integration
     function renderExamMath() {

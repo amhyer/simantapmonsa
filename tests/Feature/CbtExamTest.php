@@ -436,4 +436,32 @@ class CbtExamTest extends TestCase
         \Illuminate\Support\Facades\Storage::disk('local')->deleteDirectory('backups');
     }
 
+    public function test_pelanggaran_layar_penuh_mereset_jawaban_tanpa_mereset_waktu(): void
+    {
+        $session = $this->createSession();
+        $result = $this->attempt($session);
+        $questionId = $session->question_snapshot[0]['id'];
+        $originalStartedAt = $result->started_at->toIso8601String();
+        $originalDeadlineAt = $result->deadline_at->toIso8601String();
+
+        $this->actingAs($this->account)
+            ->postJson(route('cbt.student.answer', $result), ['question_id' => $questionId, 'answer' => 'A'])
+            ->assertOk();
+        $this->assertSame(['A'], array_values($result->fresh()->answers));
+
+        $this->actingAs($this->account)
+            ->postJson(route('cbt.student.integrity', $result), [
+                'type' => 'fullscreen_exit',
+                'reset_answers' => true,
+            ])
+            ->assertOk()
+            ->assertJson(['recorded' => true, 'reset' => true]);
+
+        $fresh = $result->fresh();
+        $this->assertSame([], $fresh->answers);
+        $this->assertSame($originalStartedAt, $fresh->started_at->toIso8601String());
+        $this->assertSame($originalDeadlineAt, $fresh->deadline_at->toIso8601String());
+        $this->assertDatabaseHas('cbt_violations', ['result_id' => $result->id, 'type' => 'fullscreen_exit']);
+    }
+
 }

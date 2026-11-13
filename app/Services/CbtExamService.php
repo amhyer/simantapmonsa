@@ -182,9 +182,9 @@ class CbtExamService
         return $this->lockedResult($result, fn ($session, $locked) => $this->expired($session, $locked) ? $this->finish($session, $locked) : $locked);
     }
 
-    public function recordViolation(CbtResult $result, Siswa $siswa, string $type): void
+    public function recordViolation(CbtResult $result, Siswa $siswa, string $type, bool $resetAnswers = false): void
     {
-        $this->lockedResult($result, function ($session, $locked) use ($siswa, $type) {
+        $this->lockedResult($result, function ($session, $locked) use ($siswa, $type, $resetAnswers) {
             abort_unless($this->eligible($session, $siswa), 403);
             abort_if($locked->submitted_at || $this->expired($session, $locked), 409);
             if ($locked->violations()->count() < 100) {
@@ -192,6 +192,15 @@ class CbtExamService
 
                 if ($this->pakaiEngineBaru()) {
                     $this->bridge->catatPelanggaran($violation);
+                }
+            }
+
+            if ($resetAnswers) {
+                $this->buffer->forget($locked->id);
+                $locked->update(['answers' => []]);
+
+                if ($this->pakaiEngineBaru()) {
+                    $this->bridge->hapusJawaban($locked);
                 }
             }
         });

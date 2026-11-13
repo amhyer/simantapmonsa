@@ -17,6 +17,7 @@ class StoreCbtIntegrityViolationRequest extends FormRequest
     {
         return [
             'type' => ['required', 'in:tab_hidden,fullscreen_exit'],
+            'reset_answers' => ['sometimes', 'boolean'],
         ];
     }
 }
