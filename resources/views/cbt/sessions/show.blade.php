@@ -20,8 +20,6 @@
 @endsection
 
 @section('content')
-@include('cbt.feedback')
-
 {{-- Workflow Stepper Banner --}}
 @php
     $steps = [

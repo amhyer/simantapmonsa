@@ -9,8 +9,6 @@
 @section('page_subtitle', $session->title)
 
 @section('content')
-@include('cbt.feedback')
-
 <div style="max-width:760px;margin:0 auto">
     {{-- Score Hero Banner --}}
     <div class="score-hero-card">

@@ -9,8 +9,6 @@
 @section('page_subtitle', 'Tentukan bank soal, rombel kelas, jadwal, serta durasi pengerjaan siswa')
 
 @section('content')
-@include('cbt.feedback')
-
 <div style="max-width:800px;margin:0 auto">
     <div class="card">
         <div class="card-header">
@@ -67,7 +65,7 @@
                             <option value="">— Pilih Kelas Peserta —</option>
                             @foreach($classes as $kelas)
                                 <option value="{{ $kelas }}" @selected(old('kelas') === $kelas)>
-                                    Kelas {{ $kelas }}
+                                    {{ str_starts_with(strtolower($kelas), 'kelas ') ? $kelas : 'Kelas ' . $kelas }}
                                 </option>
                             @endforeach
                         </select>
