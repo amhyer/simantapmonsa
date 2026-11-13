@@ -237,6 +237,8 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        $this->call(CbtDummySeeder::class);
+
         echo "Seed berhasil! Login: admin/admin123, guru/guru123, kepsek/kepsek123\n";
 
         if ($paksaGantiSandi) {
