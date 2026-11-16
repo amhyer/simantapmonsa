@@ -27,6 +27,7 @@ class User extends Authenticatable
         'peran',
         'terhubung_dengan',
         'kelas_mata_pelajaran',
+        'is_wali_kelas',
         'aktif',
         'terakhir_masuk',
         'force_password_change',
@@ -56,6 +57,7 @@ class User extends Authenticatable
         return [
             'kata_sandi' => 'hashed',
             'terhubung_dengan' => 'array',
+            'is_wali_kelas' => 'boolean',
             'aktif' => 'boolean',
             'terakhir_masuk' => 'datetime',
             'force_password_change' => 'boolean',
@@ -143,5 +145,49 @@ class User extends Authenticatable
     public function ringkasanGuru()
     {
         return $this->hasOne(RingkasanGuru::class, 'guru_id');
+    }
+
+    public function rombelDiampu()
+    {
+        return $this->hasMany(Rombel::class, 'guru_id');
+    }
+
+    /**
+     * Tentukan apakah akun guru berstatus Wali Kelas.
+     *
+     * Prioritas sumber kebenaran:
+     *  1. Override eksplisit kolom `users.is_wali_kelas` (true/false).
+     *  2. Relasi otoritatif `rombel.guru_id` pada sekolah/tenant yang sama.
+     *  3. Fallback aman untuk data siswa aktif yang belum tertaut ke `rombel_id`
+     *     (konsisten dengan `IzinPresensiController::siswaWali()`).
+     */
+    public function isWaliKelas(): bool
+    {
+        if ($this->peran !== 'guru') {
+            return false;
+        }
+
+        if (array_key_exists('is_wali_kelas', $this->attributes) && $this->attributes['is_wali_kelas'] !== null) {
+            return (bool) $this->is_wali_kelas;
+        }
+
+        $tenantId = $this->tenant_id;
+
+        $punyaRombel = Rombel::query()
+            ->where('guru_id', $this->id)
+            ->when($tenantId !== null, fn (Builder $q) => $q->where('tenant_id', $tenantId))
+            ->exists();
+
+        if ($punyaRombel) {
+            return true;
+        }
+
+        return Siswa::query()
+            ->where('aktif', true)
+            ->whereNull('archived_at')
+            ->whereNull('rombel_id')
+            ->where('guru_id', $this->id)
+            ->when($tenantId !== null, fn (Builder $q) => $q->where('tenant_id', $tenantId))
+            ->exists();
     }
 }

@@ -74,7 +74,7 @@ class MenuAuditTest extends TestCase
                 'admin.tka-kesiapan.pengaturan',
             ]],
             'guru' => [$guru, [
-                'guru.dashboard', 'guru.tp.index', 'guru.materi.index', 'guru.dimensi.index',
+                'guru.dashboard', 'guru.kelas-digital.index', 'guru.tp.index', 'guru.materi.index', 'guru.dimensi.index',
                 'guru.tka.index', 'guru.tka-kesiapan.index', 'guru.input-nilai.index', 'guru.nilai-erapor.index',
                 'guru.p5.index', 'guru.cek-penilaian.index',
                 'guru.walas.ekskul', 'guru.walas.naik-kelas', 'guru.walas.status-penilaian',
@@ -86,7 +86,7 @@ class MenuAuditTest extends TestCase
                 'presensi.pegawai.index', 'presensi.pegawai.kartu',
             ]],
             'siswa' => [$siswaUser, [
-                'siswa.dashboard', 'siswa.materi.index', 'siswa.kuis.index',
+                'siswa.dashboard', 'siswa.kelas-digital.index', 'siswa.materi.index', 'siswa.kuis.index',
                 'siswa.nilai.index', 'siswa.rapor.capaian', 'siswa.rapor.unduh',
                 'siswa.rapor.cetak.akademik', 'siswa.rapor.cetak.p5', 'siswa.rapor.cetak.pelengkap',
                 'siswa.profil.show', 'siswa.kartu.cetak', 'siswa.tka-kesiapan.index',

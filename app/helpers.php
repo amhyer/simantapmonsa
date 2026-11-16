@@ -66,7 +66,12 @@ if (!function_exists('sidebarRouteActive')) {
             $prefix = substr($route, 0, strrpos($route, '.'));
 
             return request()->routeIs(
-                $prefix.'.show', $prefix.'.detail', $prefix.'.edit', $prefix.'.create'
+                $prefix.'.show',
+                $prefix.'.detail',
+                $prefix.'.edit',
+                $prefix.'.create',
+                $prefix.'.pertemuan',
+                $prefix.'.tugas.*'
             );
         }
 
@@ -155,6 +160,23 @@ if (!function_exists('kesiapanTkaAktif')) {
     function kesiapanTkaAktif(): bool
     {
         return (bool) config('tka_kesiapan.aktif', true);
+    }
+}
+
+if (!function_exists('guruAdalahWaliKelas')) {
+    /**
+     * Apakah pengguna aktif (atau pengguna yang diberikan) adalah guru Wali Kelas.
+     * Aman dipanggil ketika belum ada pengguna terautentikasi (mengembalikan false).
+     */
+    function guruAdalahWaliKelas(?\App\Models\User $user = null): bool
+    {
+        $target = $user ?? auth()->user();
+
+        if (! $target instanceof \App\Models\User) {
+            return false;
+        }
+
+        return $target->isWaliKelas();
     }
 }
 

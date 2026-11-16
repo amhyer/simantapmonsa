@@ -1,9 +1,11 @@
 @php
+    $adalahWaliKelas = guruAdalahWaliKelas();
     $menuGuru = [
         ['label' => 'MENU UTAMA', 'items' => [
             ['route' => 'guru.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
         ]],
         ['label' => 'PEMBELAJARAN', 'items' => [
+            ['route' => 'guru.kelas-digital.index', 'icon' => 'lucide-school', 'label' => 'Kelas Digital'],
             ['route' => 'guru.tp.index', 'icon' => 'lucide-target', 'label' => 'Tujuan Pembelajaran'],
             ['route' => 'guru.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi Ajar'],
             ['route' => 'guru.dimensi.index', 'icon' => 'lucide-sprout', 'label' => 'Profil Lulusan'],
@@ -19,18 +21,14 @@
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
             ]],
         ]],
-        ['label' => 'MENU WALI KELAS', 'items' => [
+        ['label' => 'MENU WALI KELAS', 'walas' => true, 'items' => [
             ['label' => 'Input Kelengkapan Walas', 'icon' => 'lucide-user-check', 'open' => request()->routeIs('guru.walas.ekskul', 'guru.walas.naik-kelas'), 'children' => [
-                ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Update Data Siswa'],
-                ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Input Kehadiran'],
                 ['route' => 'guru.walas.ekskul', 'icon' => 'lucide-activity', 'label' => 'Input Nilai Ekskul'],
-                ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Input Catatan Walas'],
                 ['route' => 'guru.walas.naik-kelas', 'icon' => 'lucide-arrow-up-circle', 'label' => 'Input Kenaikan Kelas'],
             ]],
             ['label' => 'Cek & Cetak Rapor Kelas', 'icon' => 'lucide-printer', 'open' => request()->routeIs('guru.walas.status-penilaian', 'guru.walas.leger', 'guru.walas.transkrip'), 'children' => [
                 ['route' => 'guru.walas.status-penilaian', 'icon' => 'lucide-pie-chart', 'label' => 'Status & Statistik Kelas'],
                 ['route' => 'guru.walas.leger', 'icon' => 'lucide-table', 'label' => 'Leger & Rapor P5'],
-                ['route' => 'guru.erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Cetak Nilai Rapor'],
                 ['route' => 'guru.walas.transkrip', 'icon' => 'lucide-graduation-cap', 'label' => 'Transkrip Ijazah'],
             ]],
         ]],
@@ -59,11 +57,11 @@
             ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
             ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
             ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
+            ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Data Siswa'],
         ]],
         ['label' => 'PELAPORAN', 'items' => [
             ['route' => 'guru.laporan.index', 'icon' => 'lucide-printer', 'label' => 'Laporan & Rapor'],
             ['route' => 'guru.erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Generate e-Rapor'],
-            ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Data Siswa'],
         ]],
         ['label' => 'PENGATURAN', 'items' => [
             ['route' => 'guru.integrasi.index', 'icon' => 'lucide-cloud', 'label' => 'Google Sheet'],
@@ -76,6 +74,7 @@
 @endphp
 
 @foreach($menuGuru as $group)
+    @continue(($group['walas'] ?? false) && !$adalahWaliKelas)
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())

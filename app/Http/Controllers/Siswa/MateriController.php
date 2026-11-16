@@ -3,22 +3,29 @@
 namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
-use App\Models\Materi;
-use App\Models\Siswa;
+use App\Services\Elearning\SiswaMateriVisibilityService;
 
 class MateriController extends Controller
 {
     use HasSiswaLookup;
+
+    public function __construct(
+        private readonly SiswaMateriVisibilityService $visibility,
+    ) {}
+
     public function index()
     {
         $siswa = $this->getSiswa();
 
-        if (!$siswa) {
+        if (! $siswa) {
             return view('siswa.materi.index', ['materi' => collect(), 'siswa' => null]);
         }
 
-        $materi = Materi::where('guru_id', $siswa->guru_id)
-            ->orderBy('tanggal', 'desc')
+        $materi = $this->visibility
+            ->queryForSiswa($siswa)
+            ->orderByDesc('sematkan')
+            ->orderByDesc('tanggal')
+            ->orderByDesc('id')
             ->get();
 
         return view('siswa.materi.index', compact('materi', 'siswa'));
@@ -28,12 +35,13 @@ class MateriController extends Controller
     {
         $siswa = $this->getSiswa();
 
-        if (!$siswa) {
+        if (! $siswa || ! ctype_digit((string) $id)) {
             abort(404);
         }
 
-        $materi = Materi::where('id', $id)
-            ->where('guru_id', $siswa->guru_id)
+        $materi = $this->visibility
+            ->queryForSiswa($siswa)
+            ->where('materi.id', (int) $id)
             ->firstOrFail();
 
         return view('siswa.materi.show', compact('materi', 'siswa'));

@@ -81,23 +81,37 @@ class AdminMenuTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
-        $html = $this->actingAs($admin)->get('/admin/dashboard')
+        // Tab e-Rapor (diakses melalui admin.profile — item top-level UTAMA).
+        $htmlErapor = $this->actingAs($admin)->get('/admin/profile')
             ->assertOk()
             ->getContent();
 
-        preg_match('/<nav class="sidebar-nav">(.*?)<\/nav>/s', $html, $m);
-        $this->assertNotEmpty($m, 'Blok sidebar-nav tidak ditemukan.');
-        $sidebar = $m[1];
+        preg_match('/<nav class="sidebar-nav">(.*?)<\/nav>/s', $htmlErapor, $mErapor);
+        $this->assertNotEmpty($mErapor, 'Blok sidebar-nav tab e-Rapor tidak ditemukan.');
+        $sidebarErapor = $mErapor[1];
 
-        // Grup lipat di sidebar e-Rapor (tab aktif untuk admin.dashboard):
+        // Grup lipat di sidebar e-Rapor:
         // PERKEMBANGAN NILAI dicek terpisah di bawah (muncul 2x: induk + anak).
         foreach (['Pengaturan Cetak &amp; Rapor', 'Status Penilaian', 'Transkrip Ijazah', 'Cetak Nilai'] as $label) {
-            $this->assertSame(1, substr_count($sidebar, $label), "Label '{$label}' muncul lebih dari sekali di sidebar.");
+            $this->assertSame(1, substr_count($sidebarErapor, $label), "Label '{$label}' muncul tidak tepat 1x di sidebar e-Rapor.");
         }
 
         // Cermin e-Rapor live: induk "Perkembangan Nilai" + anak "Perkembangan Nilai".
-        $this->assertSame(2, substr_count($sidebar, 'Perkembangan Nilai'), "Label 'Perkembangan Nilai' harus muncul 2x (induk + anak).");
+        $this->assertSame(2, substr_count($sidebarErapor, 'Perkembangan Nilai'), "Label 'Perkembangan Nilai' harus muncul 2x (induk + anak).");
+        $this->assertSame(0, substr_count($sidebarErapor, '<details class="nav-submenu" open'), 'Ada submenu tab e-Rapor yang terbuka by default.');
 
-        $this->assertSame(0, substr_count($sidebar, '<details class="nav-submenu" open'), 'Ada submenu yang terbuka by default.');
+        // Tab Setup (diakses melalui admin.dashboard sejak pemindahan Dasbor ke tab Pengaturan/Setup).
+        $htmlSetup = $this->actingAs($admin)->get('/admin/dashboard')
+            ->assertOk()
+            ->getContent();
+
+        preg_match('/<nav class="sidebar-nav">(.*?)<\/nav>/s', $htmlSetup, $mSetup);
+        $this->assertNotEmpty($mSetup, 'Blok sidebar-nav tab Setup tidak ditemukan.');
+        $sidebarSetup = $mSetup[1];
+
+        foreach (['Integrasi &amp; Impor Data', 'Data Sekolah &amp; Periode', 'Pendidik &amp; Peserta Didik', 'Kelas &amp; Pembelajaran'] as $label) {
+            $this->assertSame(1, substr_count($sidebarSetup, $label), "Label '{$label}' muncul tidak tepat 1x di sidebar Setup.");
+        }
+        $this->assertSame(0, substr_count($sidebarSetup, '<details class="nav-submenu" open'), 'Ada submenu tab Setup yang terbuka by default.');
     }
 }

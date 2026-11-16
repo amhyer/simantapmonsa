@@ -519,7 +519,7 @@ class DapodikBridgeSyncTest extends TestCase
             'siswa_id' => $siswa->id,
             'mata_pelajaran' => 'Matematika',
             'kelas' => '6A',
-            'semester' => 'ganjil',
+            'semester' => 'Ganjil',
             'tahun_ajaran' => '2026/2027',
             'nilai_akhir' => 88.5,
             'predikat' => 'A',

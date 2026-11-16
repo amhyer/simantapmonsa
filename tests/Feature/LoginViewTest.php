@@ -15,7 +15,7 @@ class LoginViewTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Kembali ke Beranda');
-        $response->assertSee(route('home'));
+        $response->assertSee(route('landing'));
         $response->assertSee('btnTogglePassword');
         $response->assertSee('eyeIcon');
         $response->assertSee('eyeSlashIcon');

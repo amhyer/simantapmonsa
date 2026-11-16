@@ -92,6 +92,7 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
 | Peta tugas & orkestrasi AI Gemini | [`docs/PETA-TUGAS-AI-GEMINI.md`](docs/PETA-TUGAS-AI-GEMINI.md) |
 | Prompt E-Learning, perangkat guru & penataan menu | [`docs/PROMPT-ELEARNING-PERANGKAT-MENU.md`](docs/PROMPT-ELEARNING-PERANGKAT-MENU.md) |
+| Desain E-Learning / Kelas Digital & flag wali kelas | [`docs/DESAIN-ELEARNING-DAN-WALI-KELAS.md`](docs/DESAIN-ELEARNING-DAN-WALI-KELAS.md) |
 | Uji route/halaman dengan Playwright | [`docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md`](docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md) |
 | Arsip dokumentasi lama | [`docs/arsip/`](docs/arsip/README.md) |
 

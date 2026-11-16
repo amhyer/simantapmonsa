@@ -153,8 +153,21 @@ class DapodikResetTest extends TestCase
         $resIndex->assertSee('Aplikasi Desktop SIMANTAP Bridge');
         $resIndex->assertSee(route('admin.dapodik.download-bridge'));
 
-        $resDownload = $this->actingAs($admin)->get(route('admin.dapodik.download-bridge'));
-        $resDownload->assertOk();
-        $this->assertStringContainsString('SIMANTAP-Bridge.exe', $resDownload->headers->get('content-disposition', ''));
+        $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
+        $created = ! is_file($bridgePath);
+        if ($created) {
+            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($bridgePath));
+            file_put_contents($bridgePath, 'bridge-test-fixture');
+        }
+
+        try {
+            $resDownload = $this->actingAs($admin)->get(route('admin.dapodik.download-bridge'));
+            $resDownload->assertOk();
+            $this->assertStringContainsString('SIMANTAP-Bridge.exe', $resDownload->headers->get('content-disposition', ''));
+        } finally {
+            if ($created && is_file($bridgePath)) {
+                unlink($bridgePath);
+            }
+        }
     }
 }

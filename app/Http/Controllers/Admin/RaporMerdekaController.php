@@ -240,7 +240,7 @@ class RaporMerdekaController extends Controller
             'dimensi' => 'nullable|string|max:150',
         ]);
 
-        $temaList = TemaKokurikuler::orderBy('nama_tema')->pluck('nama_tema')->unique()->values();
+        $temaList = TemaKokurikuler::orderBy('nama')->pluck('nama')->unique()->values();
         if ($temaList->isEmpty()) {
             $temaList = collect(['Gaya Hidup Berkelanjutan', 'Kearifan Lokal', 'Bhinneka Tunggal Ika', 'Bangunlah Jiwa dan Raganya']);
         }
