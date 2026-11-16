@@ -87,7 +87,7 @@
             <div style="font-weight:700;font-size:14px;color:#4338CA;margin-bottom:12px;padding-top:10px;border-top:1px solid #E4E7EC">
                 <i class="fas fa-user-shield"></i> 3. Akun Administrator Utama Sekolah
             </div>
-            <div class="grid grid-3" style="gap:16px;margin-bottom:16px">
+            <div class="grid grid-4" style="gap:16px;margin-bottom:16px">
                 <div class="form-group">
                     <label class="form-label">Nama Lengkap Admin <span style="color:var(--bad)">*</span></label>
                     <input type="text" name="admin_nama" class="form-control @error('admin_nama') is-invalid @enderror" value="{{ old('admin_nama') }}" required placeholder="Contoh: Operator Sekolah">
@@ -97,6 +97,11 @@
                     <label class="form-label">Nama Pengguna (Username) <span style="color:var(--bad)">*</span></label>
                     <input type="text" name="admin_user" class="form-control @error('admin_user') is-invalid @enderror" value="{{ old('admin_user') }}" required placeholder="admin_smpn1">
                     @error('admin_user') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Admin</label>
+                    <input type="email" name="admin_email" class="form-control @error('admin_email') is-invalid @enderror" value="{{ old('admin_email') }}" placeholder="Otomatis: username@simantap.sch.id">
+                    @error('admin_email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
                     <label class="form-label">Kata Sandi Awal <span style="color:var(--bad)">*</span></label>
@@ -122,7 +127,7 @@
                 <input type="text" name="q" value="{{ $search }}" class="form-control" placeholder="Cari nama sekolah, NPSN, subdomain, atau domain kustom...">
             </div>
             <div style="flex:1;min-width:140px">
-                <select name="paket" class="form-control">
+                <select name="paket" class="form-control" onchange="this.form.submit()">
                     <option value="">Semua Paket</option>
                     <option value="standar" {{ $paket === 'standar' ? 'selected' : '' }}>Standar (Shared)</option>
                     <option value="pro" {{ $paket === 'pro' ? 'selected' : '' }}>Pro (Custom Domain)</option>
@@ -130,7 +135,7 @@
                 </select>
             </div>
             <div style="flex:1;min-width:140px">
-                <select name="langganan" class="form-control">
+                <select name="langganan" class="form-control" onchange="this.form.submit()">
                     <option value="">Semua Langganan</option>
                     <option value="aktif" {{ $langganan === 'aktif' ? 'selected' : '' }}>Masih Aktif</option>
                     <option value="warning" {{ $langganan === 'warning' ? 'selected' : '' }}>Segera Habis (&le; 30 hari)</option>
@@ -138,10 +143,19 @@
                 </select>
             </div>
             <div style="flex:1;min-width:130px">
-                <select name="status" class="form-control">
+                <select name="status" class="form-control" onchange="this.form.submit()">
                     <option value="">Semua Akses</option>
                     <option value="1" {{ $status === '1' ? 'selected' : '' }}>Akses Aktif</option>
                     <option value="0" {{ $status === '0' ? 'selected' : '' }}>Akses Nonaktif</option>
+                </select>
+            </div>
+            <div style="min-width:120px">
+                <select name="per_page" class="form-control" onchange="this.form.submit()" title="Jumlah baris yang ditampilkan">
+                    <option value="10" {{ ($perPageParam ?? '10') === '10' ? 'selected' : '' }}>Tampil: 10</option>
+                    <option value="20" {{ ($perPageParam ?? '10') === '20' ? 'selected' : '' }}>Tampil: 20</option>
+                    <option value="50" {{ ($perPageParam ?? '10') === '50' ? 'selected' : '' }}>Tampil: 50</option>
+                    <option value="100" {{ ($perPageParam ?? '10') === '100' ? 'selected' : '' }}>Tampil: 100</option>
+                    <option value="all" {{ ($perPageParam ?? '10') === 'all' ? 'selected' : '' }}>Tampil: Semua</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-sm" style="background:#4338CA;color:#fff">
@@ -176,9 +190,10 @@
                         <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
                             <th style="padding:11px 14px;text-align:center;width:40px;color:#667085">No</th>
                             <th style="padding:11px 14px;text-align:left;color:#667085">Sekolah / NPSN</th>
-                            <th style="padding:11px 14px;text-align:left;color:#667085">Akses Domain &amp; Subdomain</th>
+                            <th style="padding:11px 14px;text-align:left;color:#667085">Akses Domain &amp; Admin</th>
                             <th style="padding:11px 14px;text-align:center;color:#667085">Paket Layanan</th>
                             <th style="padding:11px 14px;text-align:center;color:#667085">Kuota Siswa</th>
+                            <th style="padding:11px 14px;text-align:center;color:#667085">PTK</th>
                             <th style="padding:11px 14px;text-align:center;color:#667085">Masa Langganan</th>
                             <th style="padding:11px 14px;text-align:center;color:#667085">Status</th>
                             <th style="padding:11px 14px;text-align:center;color:#667085">Aksi</th>
@@ -188,6 +203,9 @@
                         @foreach($tenants as $i => $tenant)
                             @php
                                 $siswaCount = $siswaCounts->get($tenant->id, 0);
+                                $guruCount = $guruCounts->get($tenant->id, 0);
+                                $tendikCount = isset($tendikCounts) ? $tendikCounts->get($tenant->id, 0) : 0;
+                                $adminUser = $adminUsers->get($tenant->id);
                                 $kuotaSiswa = $tenant->kuota_siswa ?: 500;
                                 $persenKuota = $kuotaSiswa > 0 ? round(($siswaCount / $kuotaSiswa) * 100) : 0;
                                 $sisaHari = $tenant->sisaHariLangganan();
@@ -202,14 +220,15 @@
                                             {{ $tenant->nama_sekolah }}
                                         </a>
                                     </div>
-                                    <div style="font-size:11.5px;color:var(--muted);font-family:monospace">
-                                        NPSN: {{ $tenant->npsn }}
+                                    <div style="font-size:11.5px;color:var(--muted)">
+                                        <span style="font-family:monospace">NPSN: {{ $tenant->npsn }}</span>
+                                        @if($tenant->wilayah) &bull; {{ $tenant->wilayah }} @endif
                                     </div>
                                 </td>
                                 <td style="padding:11px 14px">
                                     <div>
                                         <span style="background:#EEF2FF;color:#4338CA;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600">
-                                            {{ $tenant->subdomain }}.simantap.id
+                                            {{ $tenant->subdomain }}.simantap.sch.id
                                         </span>
                                     </div>
                                     @if($tenant->domain_kustom)
@@ -217,6 +236,11 @@
                                             <span style="background:#ECFDF5;color:#047857;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:700">
                                                 <i class="fas fa-globe" style="margin-right:3px"></i>{{ $tenant->domain_kustom }}
                                             </span>
+                                        </div>
+                                    @endif
+                                    @if($adminUser)
+                                        <div style="margin-top:4px;font-size:11px;color:#64748B">
+                                            Admin: <b>{{ $adminUser->nama_pengguna }}</b> ({{ $adminUser->email ?? '—' }})
                                         </div>
                                     @endif
                                 </td>
@@ -236,6 +260,10 @@
                                     <div style="width:70px;background:#E4E7EC;border-radius:4px;height:5px;margin:4px auto 0;overflow:hidden">
                                         <div style="background:{{ $persenKuota > 90 ? '#EF4444' : ($persenKuota > 75 ? '#F59E0B' : '#4338CA') }};width:{{ min(100, $persenKuota) }}%;height:100%"></div>
                                     </div>
+                                </td>
+                                <td style="padding:11px 14px;text-align:center">
+                                    <div style="font-weight:700;font-size:12.5px;color:#1E293B">{{ $guruCount }} Guru</div>
+                                    <div style="font-size:11px;color:#64748B">{{ $tendikCount }} Tendik</div>
                                 </td>
                                 <td style="padding:11px 14px;text-align:center">
                                     @if($sisaHari === null)

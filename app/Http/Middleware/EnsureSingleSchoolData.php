@@ -9,9 +9,14 @@ use Illuminate\Http\Request;
 /** Fitur yang membaca/mengubah data global tidak aman untuk admin tenant. */
 class EnsureSingleSchoolData
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, ?string $fitur = null)
     {
-        if (TenantMode::isMultiSchool()) {
+        // Beberapa fitur punya izin khusus untuk instalasi satu sekolah,
+        // misalnya tarik presensi dari database mesin yang ada di server ini.
+        $dikecualikan = $fitur === 'presensi-mesin'
+            && (bool) config('presensi.mesin_izinkan_tenant', false);
+
+        if (TenantMode::isMultiSchool() && ! $dikecualikan) {
             $message = 'Fitur data global ini dinonaktifkan untuk admin sekolah sampai tersedia isolasi per tenant.';
 
             return $request->expectsJson()

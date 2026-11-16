@@ -212,6 +212,7 @@ class DashboardController extends Controller
 
         // Alias lama agar view tak berubah makna: $kelas = jumlah rombel.
         $data['kelas'] = $data['rombel'];
+        $data['kunciRaporGlobal'] = Rombel::apakahTerkunciGlobal();
 
         return view('admin.dashboard', $data);
     }

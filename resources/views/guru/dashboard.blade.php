@@ -61,6 +61,72 @@
         </div>
     </div>
 
+    @if(isset($statusKerjaGuru))
+        <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+                <div>
+                    <h3 style="margin:0"><i class="fas fa-list-check" style="margin-right:8px;color:var(--navy)"></i>Status Kerja Guru dan Wali Kelas</h3>
+                    @if(isset($bebanMengajar))
+                        <small style="color:var(--muted)">
+                            Rombel: <b>{{ $bebanMengajar['rombel'] }}</b> &bull;
+                            Siswa: <b>{{ $bebanMengajar['siswa'] }}</b> &bull;
+                            Mapel: <b>{{ $bebanMengajar['mapel'] }}</b> &bull;
+                            Pembelajaran: <b>{{ $bebanMengajar['pembelajaran'] }}</b> &bull;
+                            Ekskul: <b>{{ $bebanMengajar['ekskul'] }}</b>
+                        </small>
+                    @endif
+                </div>
+                <span class="tag {{ ($progresKerjaGuru ?? 0) >= 80 ? 'tag-ok' : (($progresKerjaGuru ?? 0) >= 50 ? 'tag-gold' : 'tag-mut') }}">{{ number_format($progresKerjaGuru ?? 0, 2) }}%</span>
+            </div>
+            <div class="card-body tight">
+                <div class="table-wrapper">
+                    <table style="width:100%;border-collapse:collapse">
+                        <thead>
+                            <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                                <th style="padding:10px 14px;text-align:center;font-size:11.5px;color:#667085;width:50px">No</th>
+                                <th style="padding:10px 14px;text-align:left;font-size:11.5px;color:#667085">Rincian Kegiatan Guru & Wali Kelas</th>
+                                <th style="padding:10px 14px;text-align:center;font-size:11.5px;color:#667085;width:150px">Status</th>
+                                <th style="padding:10px 14px;text-align:left;font-size:11.5px;color:#667085;width:200px">Capaian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($statusKerjaGuru as $idx => $item)
+                                @php $pct = (float) ($item['persen'] ?? 0); @endphp
+                                <tr>
+                                    <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $idx + 1 }}</td>
+                                    <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC">
+                                        @if(!empty($item['route']) && \Illuminate\Support\Facades\Route::has($item['route']))
+                                            <a href="{{ route($item['route']) }}" style="color:var(--text);font-weight:600;text-decoration:none">{{ $item['label'] }}</a>
+                                        @else
+                                            <span style="font-weight:600">{{ $item['label'] }}</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
+                                        @if($pct >= 100)
+                                            <span class="tag tag-ok">Tuntas</span>
+                                        @elseif($pct > 0)
+                                            <span class="tag tag-gold">Berjalan</span>
+                                        @else
+                                            <span class="tag tag-mut">Belum diisi</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding:10px 14px;border-bottom:1px solid #E4E7EC">
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <div style="flex:1;background:#EEF2F6;border-radius:6px;height:14px;overflow:hidden">
+                                                <div style="width:{{ min(100, $pct) }}%;background:{{ $pct >= 80 ? 'var(--ok)' : ($pct > 0 ? 'var(--gold)' : 'transparent') }};height:14px;border-radius:6px"></div>
+                                            </div>
+                                            <span style="font-size:11.5px;font-weight:700;min-width:48px;text-align:right">{{ number_format($pct, 0) }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-3" style="margin-bottom:20px">
         {{-- Jadwal Hari Ini --}}
         <div class="card">

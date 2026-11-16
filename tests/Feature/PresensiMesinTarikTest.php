@@ -242,6 +242,7 @@ class PresensiMesinTarikTest extends TestCase
                 'min' => Carbon::parse('2026-06-01'),
                 'maks' => Carbon::parse('2026-07-31'),
             ]);
+            $mock->shouldReceive('engine')->andReturn('powershell');
             $mock->shouldReceive('baca')->twice()->andReturn([
                 ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 06:55:00'), 'jenis' => 'masuk'],
                 ['nik' => '0000000002', 'waktu' => Carbon::parse('2026-06-01 14:10:00'), 'jenis' => 'pulang'],
@@ -255,6 +256,16 @@ class PresensiMesinTarikTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseCount('presensi_pegawai', 1);
+    }
+
+    public function test_halaman_tarik_semua_lewat_get_diarahkan_ke_import(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.presensi.mesin.tarik.semua.form'))
+            ->assertRedirect(route('admin.presensi.mesin.index'))
+            ->assertSessionHas('warning');
     }
 
     public function test_tarik_semua_mendapatkan_error_jika_tidak_bisa_membaca(): void

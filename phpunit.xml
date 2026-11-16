@@ -22,6 +22,9 @@
         <ini name="max_execution_time" value="0"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="PRESENSI_MESIN_ALLOW_TENANT" value="false"/>
+        <env name="PRESENSI_MESIN_DB_ENGINE" value="powershell"/>
+        <env name="PRESENSI_MESIN_COMM_KEY" value="0"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

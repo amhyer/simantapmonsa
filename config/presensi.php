@@ -65,6 +65,14 @@ return [
     'mesin_db_path' => env('PRESENSI_MESIN_DB_PATH'),
     'mesin_db_engine' => env('PRESENSI_MESIN_DB_ENGINE', 'auto'),
     'mesin_db_timeout' => (int) env('PRESENSI_MESIN_DB_TIMEOUT', 120),
+
+    /*
+    | Izinkan tarik langsung dari database mesin pada mode multi-sekolah.
+    | Hanya untuk instalasi satu sekolah yang database mesinnya berada di
+    | server ini. Default nonaktif agar isolasi tenant tetap aman.
+    */
+    'mesin_izinkan_tenant' => (bool) env('PRESENSI_MESIN_ALLOW_TENANT', false),
+
     'mesin_db_script' => env('PRESENSI_MESIN_DB_SCRIPT', base_path('tools/attendance-mdb-export.ps1')),
     'mesin_db_powershell' => env('PRESENSI_MESIN_DB_POWERSHELL'),
     'mesin_db_kandidat' => [
@@ -82,4 +90,18 @@ return [
     */
     'mesin_db_tcp_host' => env('PRESENSI_MESIN_DB_TCP_HOST', '192.168.1.7'),
     'mesin_db_tcp_port' => env('PRESENSI_MESIN_DB_TCP_PORT', 4370),
+
+    /*
+    | Communication key mesin (menu Komunikasi / Comm Key di perangkat).
+    | Kosong berarti 0, nilai bawaan sebagian besar mesin ZKTeco. Isi bila
+    | mesin menolak sesi dengan kode 2005 (CMD_ACK_UNAUTH).
+    */
+    'mesin_comm_key' => env('PRESENSI_MESIN_COMM_KEY', ''),
+
+    /*
+    | ZKTime menyimpan No. PIN sebagai 10 digit berawalan nol. Mesin
+    | mengirim user id tanpa nol di depan, jadi hasil TCP dipad agar
+    | cocok dengan users.nik. Isi 0 untuk memakai user id apa adanya.
+    */
+    'mesin_user_id_pad' => (int) env('PRESENSI_MESIN_USER_ID_PAD', 10),
 ];

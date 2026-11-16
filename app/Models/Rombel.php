@@ -21,8 +21,22 @@ class Rombel extends Model
         ];
     }
 
+    public static function apakahTerkunciGlobal(): bool
+    {
+        $sekolah = SekolahSettings::first();
+        if ($sekolah && is_array($sekolah->pengaturan) && array_key_exists('kunci_input_rapor_global', $sekolah->pengaturan)) {
+            return (bool) $sekolah->pengaturan['kunci_input_rapor_global'];
+        }
+
+        return static::query()->exists() && ! static::where('kunci_input_rapor', false)->exists();
+    }
+
     public static function apakahTerkunciUntukKelas(?string $kelas): bool
     {
+        if (static::apakahTerkunciGlobal()) {
+            return true;
+        }
+
         if ($kelas === null || trim($kelas) === '') {
             return false;
         }

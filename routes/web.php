@@ -169,14 +169,15 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::get('/mesin/sinkron', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'sinkron'])->middleware(['throttle:30,1'])->name('mesin.sinkron');
         Route::get('/mesin/template-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateKaryawan'])->name('mesin.template.karyawan');
         Route::post('/mesin/import-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importKaryawan'])->middleware('throttle:10,1')->name('mesin.karyawan.import');
-        Route::post('/mesin/tarik-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikKaryawan'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.karyawan.tarik');
+        Route::post('/mesin/tarik-karyawan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikKaryawan'])->middleware(['throttle:10,1', 'data.single-school:presensi-mesin'])->name('mesin.karyawan.tarik');
         Route::get('/mesin/template-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'templateLog'])->name('mesin.template.log');
         Route::post('/mesin/import-log', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'importLog'])->middleware('throttle:10,1')->name('mesin.log.import');
-        Route::post('/mesin/tarik', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarik'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.tarik');
-        Route::post('/mesin/tarik-semua', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikSemua'])->middleware(['throttle:5,1', 'data.single-school'])->name('mesin.tarik.semua');
-        Route::post('/mesin/tes-koneksi', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tesKoneksi'])->middleware(['throttle:30,1', 'data.single-school'])->name('mesin.tes');
-        Route::get('/mesin/live', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'live'])->middleware(['throttle:30,1', 'data.single-school'])->name('mesin.live');
-        Route::post('/mesin/pengaturan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'updatePengaturan'])->middleware(['throttle:10,1', 'data.single-school'])->name('mesin.pengaturan');
+        Route::post('/mesin/tarik', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarik'])->middleware(['throttle:10,1', 'data.single-school:presensi-mesin'])->name('mesin.tarik');
+        Route::post('/mesin/tarik-semua', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tarikSemua'])->middleware(['throttle:5,1', 'data.single-school:presensi-mesin'])->name('mesin.tarik.semua');
+        Route::get('/mesin/tarik-semua', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'formTarikSemua'])->name('mesin.tarik.semua.form');
+        Route::post('/mesin/tes-koneksi', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'tesKoneksi'])->middleware(['throttle:30,1', 'data.single-school:presensi-mesin'])->name('mesin.tes');
+        Route::get('/mesin/live', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'live'])->middleware(['throttle:30,1', 'data.single-school:presensi-mesin'])->name('mesin.live');
+        Route::post('/mesin/pengaturan', [\App\Http\Controllers\Admin\PresensiMesinImportController::class, 'updatePengaturan'])->middleware(['throttle:10,1', 'data.single-school:presensi-mesin'])->name('mesin.pengaturan');
 
         Route::get('/kartu-siswa', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'index'])->name('kartu.index');
         Route::post('/kartu-siswa/terbitkan-massal', [\App\Http\Controllers\Admin\PresensiKartuController::class, 'issueSiswaMassal'])->middleware('throttle:10,1')->name('kartu.siswa.issue-massal');
@@ -200,12 +201,18 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'show'])->name('profile');
     Route::put('/profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
     
-    // Kelola Pengguna
+    // Kelola Pengguna (Data Pengguna e-Rapor)
+    Route::get('/data_pengguna', [UserController::class, 'index'])->name('data-pengguna.index');
+    Route::get('/data_siswa', [UserController::class, 'siswaIndex'])->name('data-siswa.index');
     Route::get('/users/akun-massal', [UserController::class, 'akunMassal'])->name('users.akun-massal');
     Route::get('/users/siswa', [UserController::class, 'siswaIndex'])->name('users.siswa');
+    Route::put('/users/siswa/{siswa}', [UserController::class, 'updateDataSiswa'])->middleware('throttle:30,1')->name('users.siswa.update');
     Route::post('/users/proses-massal', [UserController::class, 'prosesAkunMassal'])->middleware('throttle:5,1')->name('users.proses-massal');
+    Route::post('/users/generate-semua', [UserController::class, 'generateSemuaPengguna'])->middleware('throttle:10,1')->name('users.generate-semua');
     Route::delete('/users/hapus-semua/{peran}', [UserController::class, 'destroyAll'])->middleware('throttle:5,1')->name('users.destroy-all');
     Route::post('/users/{user}/impersonate', [UserController::class, 'impersonateGuru'])->name('users.impersonate');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPasswordInstan'])->middleware('throttle:30,1')->name('users.reset-password');
+    Route::post('/users/{user}/toggle-aktif', [UserController::class, 'toggleAktif'])->middleware('throttle:30,1')->name('users.toggle-aktif');
     Route::resource('users', UserController::class)->except(['show']);
     
     // Peta Kelas
@@ -214,6 +221,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::get('/peta-kelas/kelas-options', [PetaKelasController::class, 'getKelasOptions'])->name('peta-kelas.kelas-options');
     Route::get('/peta-kelas/{rombel}', [PetaKelasController::class, 'detail'])->whereNumber('rombel')->name('peta-kelas.detail');
     Route::post('/peta-kelas/{rombel}/toggle-kunci', [PetaKelasController::class, 'toggleKunciRapor'])->whereNumber('rombel')->name('peta-kelas.toggle-kunci');
+    Route::post('/peta-kelas/toggle-kunci-semua', [PetaKelasController::class, 'toggleKunciSemua'])->name('peta-kelas.toggle-kunci-semua');
     Route::post('/peta-kelas', [PetaKelasController::class, 'store'])->name('peta-kelas.store');
     Route::delete('/peta-kelas/{id}', [PetaKelasController::class, 'destroy'])->name('peta-kelas.destroy');
     Route::post('/peta-kelas/pindah', [PetaKelasController::class, 'pindahSiswa'])->name('peta-kelas.pindah');
@@ -233,6 +241,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::delete('/mapel/{mapel}', [MapelController::class, 'destroy'])->name('mapel.destroy');
 
     // Data Referensi (guru & pembelajaran dari Dapodik, read-only)
+    Route::get('/data_guru', [DataReferensiController::class, 'guru'])->name('data-guru.index');
+    Route::get('/edit_guru', [DataReferensiController::class, 'guru'])->name('edit-guru.index');
     Route::get('/referensi/guru', [DataReferensiController::class, 'guru'])->name('referensi.guru');
     Route::post('/referensi/guru', [DataReferensiController::class, 'storeGuru'])->middleware('throttle:30,1')->name('referensi.guru.store');
     Route::delete('/referensi/guru/{ptk}', [DataReferensiController::class, 'destroyGuru'])->middleware('throttle:30,1')->name('referensi.guru.destroy');
@@ -251,9 +261,12 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::put('/referensi/mapel-meta', [DataReferensiController::class, 'updateMapelMeta'])->middleware('throttle:30,1')->name('referensi.mapel-meta.update');
     Route::get('/referensi/logo-ttd', [DataReferensiController::class, 'logoTtd'])->name('referensi.logo-ttd');
     Route::post('/referensi/logo-ttd', [DataReferensiController::class, 'storeLogoTtd'])->middleware('throttle:30,1')->name('referensi.logo-ttd.store');
+    Route::get('/foto_siswa', [DataReferensiController::class, 'fotoSiswa'])->name('foto-siswa.index');
     Route::get('/referensi/foto-siswa', [DataReferensiController::class, 'fotoSiswa'])->name('referensi.foto-siswa');
     Route::post('/referensi/foto-siswa', [DataReferensiController::class, 'storeFotoSiswa'])->middleware('throttle:10,1')->name('referensi.foto-siswa.store');
+    Route::delete('/referensi/foto-siswa/reset-semua', [DataReferensiController::class, 'resetSemuaFotoSiswa'])->middleware('throttle:10,1')->name('referensi.foto-siswa.reset-semua');
     Route::post('/referensi/foto-siswa/{siswa}', [DataReferensiController::class, 'storeFotoSiswaSatuan'])->middleware('throttle:30,1')->name('referensi.foto-siswa.satuan');
+    Route::delete('/referensi/foto-siswa/{siswa}', [DataReferensiController::class, 'destroyFotoSiswa'])->middleware('throttle:30,1')->name('referensi.foto-siswa.destroy');
 
     // Kokurikuler
     Route::get('/kokurikuler/tema', [KokurikulerController::class, 'tema'])->name('kokurikuler.tema');
@@ -505,6 +518,29 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
     Route::post('/integrasi/disconnect', [IntegrasiController::class, 'disconnect'])->name('integrasi.disconnect');
     Route::post('/integrasi/update-settings', [IntegrasiController::class, 'updateSettings'])->name('integrasi.update-settings');
     Route::post('/integrasi/full-sync', [IntegrasiController::class, 'fullSync'])->middleware('throttle:5,1')->name('integrasi.full-sync');
+
+    // Tujuan Pembelajaran (TP), Projek P5, Cek Penilaian & Menu Wali Kelas (e-Rapor SD 2025.1)
+    Route::get('/tujuan-pembelajaran', [\App\Http\Controllers\Guru\WaliKelasController::class, 'tujuanPembelajaran'])->name('tp.index');
+    Route::post('/tujuan-pembelajaran', [\App\Http\Controllers\Guru\WaliKelasController::class, 'simpanTujuanPembelajaran'])->middleware('throttle:30,1')->name('tp.store');
+    Route::delete('/tujuan-pembelajaran/{id}', [\App\Http\Controllers\Guru\WaliKelasController::class, 'hapusTujuanPembelajaran'])->middleware('throttle:30,1')->name('tp.destroy');
+
+    Route::get('/p5', [\App\Http\Controllers\Guru\WaliKelasController::class, 'p5Index'])->name('p5.index');
+    Route::post('/p5', [\App\Http\Controllers\Guru\WaliKelasController::class, 'p5Simpan'])->middleware('throttle:30,1')->name('p5.simpan');
+
+    Route::get('/cek-penilaian', [\App\Http\Controllers\Guru\WaliKelasController::class, 'cekPenilaian'])->name('cek-penilaian.index');
+
+    Route::prefix('walas')->name('walas.')->group(function () {
+        Route::get('/ekskul', [\App\Http\Controllers\Guru\WaliKelasController::class, 'ekskul'])->name('ekskul');
+        Route::post('/ekskul', [\App\Http\Controllers\Guru\WaliKelasController::class, 'simpanEkskul'])->middleware('throttle:30,1')->name('ekskul.simpan');
+        Route::get('/naik-kelas', [\App\Http\Controllers\Guru\WaliKelasController::class, 'naikKelas'])->name('naik-kelas');
+        Route::post('/naik-kelas', [\App\Http\Controllers\Guru\WaliKelasController::class, 'simpanNaikKelas'])->middleware('throttle:30,1')->name('naik-kelas.simpan');
+        Route::get('/status-penilaian', [\App\Http\Controllers\Guru\WaliKelasController::class, 'statusPenilaianKelas'])->name('status-penilaian');
+        Route::get('/leger', [\App\Http\Controllers\Guru\WaliKelasController::class, 'legerKelas'])->name('leger');
+        Route::get('/rapor-p5/{siswa}', [\App\Http\Controllers\Guru\WaliKelasController::class, 'raporP5'])->name('rapor-p5');
+        Route::get('/transkrip', [\App\Http\Controllers\Guru\WaliKelasController::class, 'transkripIndex'])->name('transkrip');
+        Route::post('/transkrip/{siswa}', [\App\Http\Controllers\Guru\WaliKelasController::class, 'transkripSimpan'])->middleware('throttle:30,1')->name('transkrip.simpan');
+        Route::get('/transkrip/{siswa}/cetak', [\App\Http\Controllers\Guru\WaliKelasController::class, 'transkripCetak'])->name('transkrip.cetak');
+    });
 });
 
 // ==================== SISWA ROUTES ====================
@@ -517,6 +553,11 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
     Route::post('/kuis/{kuis}/submit', [SiswaKuisController::class, 'submit'])->middleware('throttle:10,1')->name('kuis.submit');
     Route::get('/nilai', [SiswaNilaiController::class, 'index'])->name('nilai.index');
     Route::get('/nilai/{jenis}', [SiswaNilaiController::class, 'detail'])->name('nilai.detail');
+    Route::get('/rapor/capaian', [\App\Http\Controllers\Siswa\RaporController::class, 'capaian'])->name('rapor.capaian');
+    Route::get('/rapor/unduh', [\App\Http\Controllers\Siswa\RaporController::class, 'unduh'])->name('rapor.unduh');
+    Route::get('/rapor/cetak/akademik', [\App\Http\Controllers\Siswa\RaporController::class, 'cetakAkademik'])->name('rapor.cetak.akademik');
+    Route::get('/rapor/cetak/p5', [\App\Http\Controllers\Siswa\RaporController::class, 'cetakP5'])->name('rapor.cetak.p5');
+    Route::get('/rapor/cetak/pelengkap', [\App\Http\Controllers\Siswa\RaporController::class, 'cetakPelengkap'])->name('rapor.cetak.pelengkap');
     Route::get('/profil', [\App\Http\Controllers\Siswa\ProfilController::class, 'show'])->name('profil.show');
     Route::get('/kartu-identitas', [\App\Http\Controllers\Siswa\ProfilController::class, 'kartu'])->name('kartu.cetak');
     Route::get('/profil/edit', [\App\Http\Controllers\Siswa\ProfilController::class, 'edit'])->name('profil.edit');

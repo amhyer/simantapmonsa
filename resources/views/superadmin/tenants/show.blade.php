@@ -215,11 +215,14 @@
                         </tr>
                         <tr>
                             <td style="color:var(--muted)">Total Akun Guru &amp; Pegawai</td>
-                            <td><b>{{ number_format($totalGuru + $totalKepsek + $totalTendik) }}</b> pengguna</td>
+                            <td>
+                                <b>{{ number_format($totalGuru + $totalKepsek + $totalTendik) }}</b> pengguna
+                                <span style="font-size:11.5px;color:var(--muted)">({{ $totalGuru }} Guru, {{ $totalKepsek }} Kepsek, {{ $totalTendik }} Tendik)</span>
+                            </td>
                         </tr>
                         <tr>
                             <td style="color:var(--muted)">Alamat Subdomain Bawaan</td>
-                            <td><code>{{ $tenant->subdomain }}.simantap.id</code></td>
+                            <td><code>{{ $tenant->subdomain }}.simantap.sch.id</code></td>
                         </tr>
                     </table>
                 </div>

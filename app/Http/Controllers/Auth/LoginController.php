@@ -44,13 +44,18 @@ class LoginController extends Controller
                 'tenant_id' => \App\Modules\Tenant\Contexts\TenantContext::id(),
             ]);
 
-            // Izinkan Super Admin login dari portal mana saja
+            // Izinkan Super Admin login dari portal mana saja (tanpa terhalang TenantScope karena super_admin memiliki tenant_id = null)
             if (! $attemptSuccess) {
-                $attemptSuccess = Auth::attempt([
-                    'nama_pengguna' => $credentials['nama_pengguna'],
-                    'password' => $credentials['kata_sandi'],
-                    'peran' => 'super_admin',
-                ]);
+                $superAdminUser = \App\Models\User::withoutGlobalScopes()
+                    ->whereNull('deleted_at')
+                    ->where('nama_pengguna', $credentials['nama_pengguna'])
+                    ->where('peran', 'super_admin')
+                    ->first();
+
+                if ($superAdminUser && \Illuminate\Support\Facades\Hash::check($credentials['kata_sandi'], $superAdminUser->kata_sandi)) {
+                    Auth::login($superAdminUser);
+                    $attemptSuccess = true;
+                }
             }
         } else {
             $attemptSuccess = Auth::attempt([

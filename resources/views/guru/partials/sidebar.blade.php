@@ -4,6 +4,7 @@
             ['route' => 'guru.dashboard', 'icon' => 'lucide-layout-dashboard', 'label' => 'Dasbor'],
         ]],
         ['label' => 'PEMBELAJARAN', 'items' => [
+            ['route' => 'guru.tp.index', 'icon' => 'lucide-target', 'label' => 'Tujuan Pembelajaran'],
             ['route' => 'guru.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi Ajar'],
             ['route' => 'guru.dimensi.index', 'icon' => 'lucide-sprout', 'label' => 'Profil Lulusan'],
         ]],
@@ -11,9 +12,26 @@
             ['label' => 'Asesmen & Nilai', 'icon' => 'lucide-clipboard-check', 'open' => true, 'children' => [
                 ['route' => 'guru.input-nilai.index', 'icon' => 'lucide-keyboard', 'label' => 'Input Nilai Cepat'],
                 ['route' => 'guru.nilai-erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Input Nilai e-Rapor'],
+                ['route' => 'guru.p5.index', 'icon' => 'lucide-sparkles', 'label' => 'Input Projek P5'],
+                ['route' => 'guru.cek-penilaian.index', 'icon' => 'lucide-check-circle-2', 'label' => 'Cek Penilaian & Deskripsi'],
                 ['route' => 'guru.kuis.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Kuis & Soal'],
                 ['route' => 'guru.nilai.index', 'icon' => 'lucide-calculator', 'label' => 'Daftar Nilai'],
                 ['route' => 'guru.analisis.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Analisis Belajar'],
+            ]],
+        ]],
+        ['label' => 'MENU WALI KELAS', 'items' => [
+            ['label' => 'Input Kelengkapan Walas', 'icon' => 'lucide-user-check', 'open' => request()->routeIs('guru.walas.ekskul', 'guru.walas.naik-kelas'), 'children' => [
+                ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Update Data Siswa'],
+                ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Input Kehadiran'],
+                ['route' => 'guru.walas.ekskul', 'icon' => 'lucide-activity', 'label' => 'Input Nilai Ekskul'],
+                ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Input Catatan Walas'],
+                ['route' => 'guru.walas.naik-kelas', 'icon' => 'lucide-arrow-up-circle', 'label' => 'Input Kenaikan Kelas'],
+            ]],
+            ['label' => 'Cek & Cetak Rapor Kelas', 'icon' => 'lucide-printer', 'open' => request()->routeIs('guru.walas.status-penilaian', 'guru.walas.leger', 'guru.walas.transkrip'), 'children' => [
+                ['route' => 'guru.walas.status-penilaian', 'icon' => 'lucide-pie-chart', 'label' => 'Status & Statistik Kelas'],
+                ['route' => 'guru.walas.leger', 'icon' => 'lucide-table', 'label' => 'Leger & Rapor P5'],
+                ['route' => 'guru.erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Cetak Nilai Rapor'],
+                ['route' => 'guru.walas.transkrip', 'icon' => 'lucide-graduation-cap', 'label' => 'Transkrip Ijazah'],
             ]],
         ]],
         ['label' => 'CBT, TRYOUT & TKA', 'items' => [

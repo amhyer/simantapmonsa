@@ -415,6 +415,7 @@ class DataReferensiController extends Controller
     {
         $validated = $request->validate([
             'ptk' => 'required|array',
+            'ptk.*.nip' => 'nullable|string|max:50',
             'ptk.*.gelar_depan' => 'nullable|string|max:50',
             'ptk.*.gelar_belakang' => 'nullable|string|max:100',
             'ptk.*.jenis_ptk' => 'nullable|string|max:100',
@@ -424,11 +425,19 @@ class DataReferensiController extends Controller
         $ids = array_keys($validated['ptk']);
         abort_unless(count($ids) === Ptk::whereIn('id', $ids)->count(), 404);
         foreach ($validated['ptk'] as $id => $row) {
+            $ptkModel = Ptk::find($id);
+            if (!$ptkModel) {
+                continue;
+            }
+            $oldNip = $ptkModel->nip;
             $dataToUpdate = [
                 'gelar_depan' => ($row['gelar_depan'] ?? null) ?: null,
                 'gelar_belakang' => ($row['gelar_belakang'] ?? null) ?: null,
             ];
 
+            if (array_key_exists('nip', $row)) {
+                $dataToUpdate['nip'] = trim((string) ($row['nip'] ?? '')) ?: null;
+            }
             if (array_key_exists('jenis_ptk', $row) && !empty($row['jenis_ptk'])) {
                 $dataToUpdate['jenis_ptk'] = trim($row['jenis_ptk']);
             }
@@ -436,10 +445,41 @@ class DataReferensiController extends Controller
                 $dataToUpdate['jabatan'] = trim($row['jabatan'] ?? '') ?: null;
             }
 
-            Ptk::where('id', $id)->update($dataToUpdate);
+            $ptkModel->update($dataToUpdate);
+
+            // Sinkronkan NIP, nama bergelar, peran, & jabatan ke akun User terkait jika ada
+            $linkedUser = null;
+            if (!empty($ptkModel->dapodik_id)) {
+                $linkedUser = User::forSchool()->where('dapodik_id', $ptkModel->dapodik_id)->first();
+            }
+            if (!$linkedUser && !empty($oldNip)) {
+                $linkedUser = User::forSchool()->where(function ($q) use ($oldNip) {
+                    $q->where('nip', $oldNip)->orWhere('nama_pengguna', $oldNip);
+                })->first();
+            }
+            if (!$linkedUser) {
+                $slug = Str::slug($ptkModel->nama, '');
+                if ($slug !== '') {
+                    $linkedUser = User::forSchool()->where('nama_pengguna', $slug)->first();
+                }
+            }
+            if ($linkedUser) {
+                $peranSync = 'guru';
+                if ($ptkModel->isKepsek()) {
+                    $peranSync = 'kepsek';
+                } elseif (!$ptkModel->isGuru() && !empty($ptkModel->jenis_ptk)) {
+                    $peranSync = 'tendik';
+                }
+                $linkedUser->update([
+                    'nip' => $ptkModel->nip,
+                    'nama_lengkap' => $ptkModel->nama_gelar ?: $ptkModel->nama,
+                    'peran' => $peranSync,
+                    'jabatan' => $ptkModel->jabatan,
+                ]);
+            }
         }
 
-        return back()->with('success', 'Data PTK (gelar, jenis, dan jabatan) berhasil disimpan.');
+        return back()->with('success', 'Data PTK (NIP rapor, gelar, jenis, dan jabatan) berhasil disimpan.');
     }
 
     public function destroyEkstrakurikuler($ekstrakurikuler)
@@ -525,36 +565,120 @@ class DataReferensiController extends Controller
     public function storeFotoSiswa(Request $request)
     {
         $request->validate([
-            'foto' => 'required|array|max:50',
+            'foto' => 'nullable|array|max:100',
             'foto.*' => 'image|mimes:jpeg,jpg,png|max:2048',
+            'file_zip' => 'nullable|file|mimes:zip|max:51200',
+            'reset_semua' => 'nullable|boolean',
         ], [
             'foto.*.image' => 'Semua file harus berupa gambar.',
             'foto.*.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
             'foto.*.max' => 'Ukuran tiap gambar maksimal 2MB.',
+            'file_zip.mimes' => 'File arsip harus berformat .zip.',
+            'file_zip.max' => 'Ukuran file .zip maksimal 50MB.',
         ]);
+
+        if (!$request->hasFile('foto') && !$request->hasFile('file_zip')) {
+            return back()->with('error', 'Pilih file foto (.jpg/.png) atau arsip .zip terlebih dahulu.');
+        }
+
+        // Opsi Reset Semua Foto Siswa sebelum upload massal (sesuai e-Rapor SD)
+        if ($request->boolean('reset_semua')) {
+            $berfoto = Siswa::whereNotNull('foto')->get();
+            foreach ($berfoto as $s) {
+                if ($s->foto && Storage::disk('public')->exists($s->foto)) {
+                    Storage::disk('public')->delete($s->foto);
+                }
+                $s->update(['foto' => null]);
+            }
+        }
 
         $cocok = 0;
         $tidakCocok = [];
 
-        foreach ($request->file('foto') as $file) {
-            $kunci = trim(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-            $siswa = Siswa::where('nis', $kunci)->orWhere('nisn', $kunci)->first();
-
-            if (!$siswa) {
-                $tidakCocok[] = $file->getClientOriginalName();
-                continue;
+        // 1. Proses ekstraksi file .zip jika diunggah (ala `#modal_masal` e-Rapor SD)
+        if ($request->hasFile('file_zip') && class_exists(\ZipArchive::class)) {
+            $zipFile = $request->file('file_zip');
+            $zip = new \ZipArchive();
+            if ($zip->open($zipFile->getRealPath()) === true) {
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $entryName = $zip->getNameIndex($i);
+                    if (!$entryName || str_ends_with($entryName, '/') || str_starts_with(basename($entryName), '.')) {
+                        continue;
+                    }
+                    $ext = strtolower(pathinfo($entryName, PATHINFO_EXTENSION));
+                    if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+                        continue;
+                    }
+                    $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
+                    $siswa = Siswa::where('nisn', $kunci)->orWhere('nis', $kunci)->first();
+                    if (!$siswa) {
+                        $tidakCocok[] = basename($entryName);
+                        continue;
+                    }
+                    $contents = $zip->getFromIndex($i);
+                    if ($contents === false || strlen($contents) > 2 * 1024 * 1024) {
+                        $tidakCocok[] = basename($entryName);
+                        continue;
+                    }
+                    if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+                        Storage::disk('public')->delete($siswa->foto);
+                    }
+                    $targetPath = 'foto-siswa/' . Str::random(32) . '.' . $ext;
+                    Storage::disk('public')->put($targetPath, $contents);
+                    $siswa->update(['foto' => $targetPath]);
+                    $cocok++;
+                }
+                $zip->close();
             }
+        }
 
-            if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-                Storage::disk('public')->delete($siswa->foto);
+        // 2. Proses multiple file gambar langsung (`foto[]`)
+        if ($request->hasFile('foto')) {
+            foreach ($request->file('foto') as $file) {
+                $kunci = trim(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+                $siswa = Siswa::where('nis', $kunci)->orWhere('nisn', $kunci)->first();
+
+                if (!$siswa) {
+                    $tidakCocok[] = $file->getClientOriginalName();
+                    continue;
+                }
+
+                if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+                    Storage::disk('public')->delete($siswa->foto);
+                }
+                $siswa->update(['foto' => $file->store('foto-siswa', 'public')]);
+                $cocok++;
             }
-            $siswa->update(['foto' => $file->store('foto-siswa', 'public')]);
-            $cocok++;
         }
 
         return redirect()->route('admin.referensi.foto-siswa')->with([
             'success' => "{$cocok} foto berhasil dipasangkan, " . count($tidakCocok) . ' tidak cocok.',
             'foto_tidak_cocok' => array_slice($tidakCocok, 0, 20),
         ]);
+    }
+
+    public function destroyFotoSiswa(Siswa $siswa)
+    {
+        if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+            Storage::disk('public')->delete($siswa->foto);
+        }
+        $siswa->update(['foto' => null]);
+
+        return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil dihapus.");
+    }
+
+    public function resetSemuaFotoSiswa()
+    {
+        $berfoto = Siswa::whereNotNull('foto')->get();
+        $jumlah = 0;
+        foreach ($berfoto as $siswa) {
+            if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
+                Storage::disk('public')->delete($siswa->foto);
+            }
+            $siswa->update(['foto' => null]);
+            $jumlah++;
+        }
+
+        return back()->with('success', "Berhasil mereset {$jumlah} foto siswa.");
     }
 }

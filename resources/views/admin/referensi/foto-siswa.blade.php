@@ -3,7 +3,22 @@
 @section('title', 'Foto Siswa - SIMANTAP')
 
 @section('page_title', 'Foto Siswa')
-@section('page_subtitle', 'Unggah foto massal — nama file harus sama dengan NIS atau NISN (mis. 2401001.jpg)')
+@section('page_subtitle', 'Unggah foto siswa satuan maupun massal (.zip / multi-file) berdasarkan NISN atau NIS')
+
+@section('header_actions')
+    <button type="button" onclick="bukaModalMasalFoto()" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
+        <i class="fas fa-upload"></i> Reset dan Upload Masal Foto Siswa
+    </button>
+    @if($denganFoto > 0)
+        <form action="{{ route('admin.referensi.foto-siswa.reset-semua') }}" method="POST" style="display:inline" onsubmit="return confirm('Reset / hapus seluruh foto siswa ({{ $denganFoto }} foto)?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #FECDCA">
+                <i class="fas fa-trash"></i> Reset Semua Foto
+            </button>
+        </form>
+    @endif
+@endsection
 
 @section('content')
     <div class="grid grid-4" style="margin-bottom:16px">
@@ -22,26 +37,36 @@
     @endif
 
     <div class="card">
-        <div class="card-header">
-            <h3>Unggah Foto Massal</h3>
-        </div>
-        <div class="card-body">
-            <form action="{{ route('admin.referensi.foto-siswa.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div style="margin-bottom:12px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pilih foto (maks 50 file, tiap file maks 2MB, format jpg/png)</label>
-                    <input type="file" name="foto[]" accept=".jpeg,.jpg,.png" multiple required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
-                </div>
-                <button type="submit" class="btn btn-sm">Unggah & Pasangkan</button>
-                <span style="font-size:12px;color:#667085;margin-left:8px">Foto lama siswa otomatis terhapus saat diganti.</span>
-            </form>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h3>Foto per Siswa</h3>
-            <input type="text" id="searchFoto" placeholder="Cari nama atau NIS..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:200px" oninput="filterFoto(this.value)">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <h3 style="margin:0;margin-right:8px">FOTO SISWA</h3>
+                <button type="button" onclick="copyFotoTable()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button type="button" onclick="exportFotoCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button type="button" onclick="exportFotoPdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-file-pdf"></i> Pdf
+                </button>
+                <button type="button" onclick="window.print()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px">
+                    Show
+                    <select id="fotoPageSize" onchange="applyFotoFilter()" style="padding:4px 8px;border:1px solid #E4E7EC;border-radius:6px;font-size:12px">
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="999999" selected>Semua</option>
+                    </select>
+                    rows
+                </label>
+                <input type="text" id="searchFoto" placeholder="Cari nama, NISN, atau NIS..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:220px" oninput="applyFotoFilter()">
+            </div>
         </div>
         <div class="card-body tight">
             @if($daftar->count())
@@ -49,28 +74,55 @@
                     <table style="width:100%;border-collapse:collapse" id="tabelFoto">
                         <thead>
                             <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
+                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:48px">No</th>
                                 <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nama Siswa</th>
-                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Foto</th>
-                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Ganti Foto</th>
+                                <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:130px">Foto Siswa</th>
+                                <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Ubah Foto</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($daftar as $s)
+                            @foreach($daftar as $idx => $s)
                                 <tr>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC"><b>{{ $s->nama_peserta_didik }}</b><div style="font-size:12px;color:#667085">{{ $s->nis }}{{ $s->nisn ? ' · ' . $s->nisn : '' }} · {{ $s->kelas }}</div></td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center;font-size:12.5px" class="col-no-foto">{{ $idx + 1 }}</td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
+                                        <b>{{ $s->nama_peserta_didik }}</b>
+                                        <div style="font-size:12px;color:#667085;margin-top:2px">
+                                            Username : <code>{{ $s->nisn ?: $s->nis }}</code>
+                                            @if($s->nis && $s->nisn)
+                                                &bull; NIS: {{ $s->nis }}
+                                            @endif
+                                            @if($s->kelas)
+                                                &bull; {{ str_starts_with($s->kelas, 'Kelas') ? $s->kelas : 'Kelas ' . $s->kelas }}
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
                                         @if($s->foto)
-                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
+                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto {{ $s->nama_peserta_didik }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
                                         @else
-                                            <span class="tag tag-mut">Belum ada</span>
+                                            <span class="avatar" style="width:48px;height:48px;margin:0 auto;font-size:14px">{{ substr($s->nama_peserta_didik, 0, 2) }}</span>
+                                            <div style="font-size:10.5px;color:#98A2B3;margin-top:2px">Belum ada</div>
                                         @endif
                                     </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
-                                        <form action="{{ route('admin.referensi.foto-siswa.satuan', $s) }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center">
-                                            @csrf
-                                            <input type="file" name="foto" accept=".jpeg,.jpg,.png" required style="font-size:12px;max-width:190px">
-                                            <button type="submit" class="btn btn-sm btn-ghost">Upload</button>
-                                        </form>
+                                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                                            <form action="{{ route('admin.referensi.foto-siswa.satuan', $s) }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center">
+                                                @csrf
+                                                <input type="file" name="foto" accept=".jpeg,.jpg,.png" required style="font-size:12px;max-width:210px;padding:4px;border:1px solid #E4E7EC;border-radius:6px">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-upload"></i> Upload
+                                                </button>
+                                            </form>
+                                            @if($s->foto)
+                                                <form action="{{ route('admin.referensi.foto-siswa.destroy', $s) }}" method="POST" onsubmit="return confirm('Hapus foto {{ $s->nama_peserta_didik }}?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #FECDCA" title="Hapus Foto">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -86,13 +138,121 @@
         </div>
     </div>
 
+    {{-- Modal #modal_masal: Reset Foto dan Upload Masal Foto Siswa (setara e-Rapor SD /foto_siswa) --}}
+    <div id="modal_masal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:1000;align-items:center;justify-content:center;padding:16px">
+        <div style="background:#fff;border-radius:12px;max-width:540px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.25);overflow:hidden">
+            <div style="padding:14px 20px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between">
+                <h3 style="margin:0;font-size:16px;color:#fff"><i class="fas fa-file-archive" style="margin-right:8px"></i>Reset Foto dan Upload Masal Foto Siswa</h3>
+                <button type="button" onclick="tutupModalMasalFoto()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">&times;</button>
+            </div>
+            <form action="{{ route('admin.referensi.foto-siswa.store') }}" method="POST" enctype="multipart/form-data" style="padding:20px">
+                @csrf
+                <div style="background:#EFF8FF;border:1px solid #B2DDFF;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12.5px;color:#175CD3;line-height:1.5">
+                    <b>Petunjuk Upload Massal:</b><br>
+                    1. Anda dapat mengunggah file arsip <b><code>.zip</code></b> yang berisi foto siswa, atau memilih banyak file foto sekaligus (<code>.jpg</code> / <code>.png</code>).<br>
+                    2. Nama setiap file foto wajib sesuai <b>NISN</b> atau <b>NIS</b> siswa (contoh: <code>0012345678.jpg</code>).
+                </div>
+
+                <div style="margin-bottom:14px">
+                    <label class="form-label">Opsi 1: Pilih File Arsip (.zip)</label>
+                    <input type="file" name="file_zip" accept=".zip" class="form-control">
+                </div>
+
+                <div style="margin-bottom:14px">
+                    <label class="form-label">Opsi 2: Atau Pilih Banyak File Foto Sekaligus (.jpg / .png)</label>
+                    <input type="file" name="foto[]" accept=".jpeg,.jpg,.png" multiple class="form-control">
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                        <input type="checkbox" name="reset_semua" value="1">
+                        <span>Reset (hapus) seluruh foto lama sebelum memasangkan foto baru</span>
+                    </label>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #E4E7EC;padding-top:14px">
+                    <button type="button" onclick="tutupModalMasalFoto()" class="btn btn-sm btn-ghost">Close</button>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-upload"></i> Upload & Ekstrak
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        function filterFoto(keyword) {
-            keyword = keyword.toLowerCase();
+        function bukaModalMasalFoto() {
+            document.getElementById('modal_masal').style.display = 'flex';
+        }
+        function tutupModalMasalFoto() {
+            document.getElementById('modal_masal').style.display = 'none';
+        }
+
+        function applyFotoFilter() {
+            const keyword = (document.getElementById('searchFoto')?.value || '').toLowerCase();
+            const limit = parseInt(document.getElementById('fotoPageSize')?.value || '999999', 10);
+            let visible = 0;
             document.querySelectorAll('#tabelFoto tbody tr').forEach(function (row) {
-                row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+                const match = row.textContent.toLowerCase().includes(keyword);
+                if (match && visible < limit) {
+                    row.style.display = '';
+                    visible++;
+                    const noCell = row.querySelector('.col-no-foto');
+                    if (noCell) noCell.textContent = visible;
+                } else {
+                    row.style.display = 'none';
+                }
             });
+        }
+
+        function getFotoMatrix() {
+            const rows = [['No', 'Nama Siswa', 'Identitas / Kelas', 'Status Foto']];
+            document.querySelectorAll('#tabelFoto tbody tr').forEach(tr => {
+                if (tr.style.display === 'none') return;
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 3) {
+                    rows.push([
+                        tds[0].innerText.trim(),
+                        tds[1].querySelector('b')?.innerText.trim() || '',
+                        tds[1].querySelector('div')?.innerText.replace(/\s+/g, ' ').trim() || '',
+                        tds[2].querySelector('img') ? 'Sudah Berfoto' : 'Belum Ada'
+                    ]);
+                }
+            });
+            return rows;
+        }
+
+        function copyFotoTable() {
+            const text = getFotoMatrix().map(r => r.join('\t')).join('\n');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+                if (typeof showToast === 'function') showToast('Data foto siswa disalin ke clipboard', 'success');
+            }
+        }
+
+        function exportFotoCsv() {
+            const csv = getFotoMatrix().map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Foto_Siswa_SIMANTAP.csv';
+            link.click();
+        }
+
+        function exportFotoPdf() {
+            const rows = getFotoMatrix();
+            const win = window.open('', '_blank');
+            if (!win) { window.print(); return; }
+            let html = '<!DOCTYPE html><html><head><title>Daftar Foto Siswa</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}th{background:#f1f5f9}</style></head><body><h2>Daftar Foto Siswa</h2><table><thead><tr>';
+            rows[0].forEach(h => { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            rows.slice(1).forEach(r => {
+                html += '<tr>';
+                r.forEach(c => { html += '<td>' + c + '</td>'; });
+                html += '</tr>';
+            });
+            html += '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>';
+            win.document.open(); win.document.write(html); win.document.close();
         }
     </script>
 @endsection
-

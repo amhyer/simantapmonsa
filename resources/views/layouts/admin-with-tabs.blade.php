@@ -160,6 +160,11 @@
         @include('components.admin-tabs')
         
         <main class="page-content">
+            @if(session('warning'))
+                <div class="note note-warn" style="margin-bottom:16px">
+                    <i class="fas fa-exclamation-circle"></i> {{ session('warning') }}
+                </div>
+            @endif
             @if(session('success'))
                 <div class="note note-ok" style="margin-bottom:16px">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}

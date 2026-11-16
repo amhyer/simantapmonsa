@@ -41,6 +41,9 @@ trait HasSiswaLookup
             return null;
         }
 
-        return Siswa::whereIn('nis', $kandidatNis)->orderBy('id')->first();
+        return Siswa::where(function ($q) use ($kandidatNis) {
+            $q->whereIn('nis', $kandidatNis)
+              ->orWhereIn('nisn', $kandidatNis);
+        })->orderBy('id')->first();
     }
 }

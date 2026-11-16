@@ -6,6 +6,9 @@
 @section('page_subtitle', 'Data pendidik dan tenaga kependidikan dari Dapodik dan penambahan manual')
 
 @section('header_actions')
+    <button type="button" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B" onclick="fokusEditGelar()">
+        <i class="fas fa-edit"></i> Edit Gelar Guru
+    </button>
     <button type="button" class="btn btn-sm btn-primary" onclick="openTambahGuruModal()">
         <i class="fas fa-user-plus"></i> + Tambah PTK / Guru (Non-Dapodik)
     </button>
@@ -47,9 +50,36 @@
     </div>
 
     <div class="card">
-        <div class="card-header">
-            <h3>Daftar PTK & Tenaga Kependidikan</h3>
-            <input type="text" id="searchPtk" placeholder="Cari nama, NIP, atau jenis..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:240px" oninput="filterPtk(this.value)">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <h3 style="margin:0;margin-right:8px">Daftar PTK & Tenaga Kependidikan</h3>
+                <button type="button" onclick="copyPtkData()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button type="button" onclick="exportPtkCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button type="button" onclick="exportPtkPdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-file-pdf"></i> Pdf
+                </button>
+                <button type="button" onclick="window.print()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px">
+                    Show
+                    <select id="ptkPageSize" onchange="applyPtkFilter()" style="padding:4px 8px;border:1px solid #E4E7EC;border-radius:6px;font-size:12px">
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="999999" selected>Semua</option>
+                    </select>
+                    rows
+                </label>
+                <input type="text" id="searchPtk" placeholder="Cari nama, NIP, atau jenis..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:220px" oninput="filterPtk(this.value)">
+            </div>
         </div>
         <div class="card-body tight">
             @if($ptk->count())
@@ -62,19 +92,19 @@
                                 <tr style="background:#FAFBFD;border-bottom:1px solid #E4E7EC">
                                     <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:40px">No</th>
                                     <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">Nama PTK & Kategori</th>
-                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085">NIP / NUPTK</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:170px">NIP/NIY Rapor & NUPTK</th>
                                     <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:50px">JK</th>
                                     <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:150px">Jenis PTK</th>
                                     <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:150px">Penugasan / Jabatan</th>
-                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:80px">Gelar Depan</th>
-                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:100px">Gelar Belakang</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:85px">Gelar Depan</th>
+                                    <th style="padding:11px 14px;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:105px">Gelar Belakang</th>
                                     <th style="padding:11px 14px;text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#667085;width:80px">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($ptk as $i => $p)
                                     <tr>
-                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">{{ $i + 1 }}</td>
+                                        <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center" class="col-no-ptk">{{ $i + 1 }}</td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
                                             <div style="display:flex;align-items:center;gap:11px">
                                                 <span class="avatar">{{ substr($p->nama, 0, 2) }}</span>
@@ -108,9 +138,9 @@
                                             </div>
                                         </td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
-                                            <div style="font-size:12.5px">{{ $p->nip ?? '-' }}</div>
+                                            <input type="text" name="ptk[{{ $p->id }}][nip]" value="{{ $p->nip }}" placeholder="NIP/NIY Rapor" maxlength="50" class="input-edit-gelar" style="width:100%;padding:5px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
                                             @if($p->nuptk)
-                                                <div style="font-size:11px;color:#667085">NUPTK: {{ $p->nuptk }}</div>
+                                                <div style="font-size:10.5px;color:#667085;margin-top:3px">NUPTK: {{ $p->nuptk }}</div>
                                             @endif
                                         </td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
@@ -118,16 +148,16 @@
                                         </td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
                                             <select name="ptk[{{ $p->id }}][jenis_ptk]" style="padding:5px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px;width:100%;background:#fff">
-                                                <option value="Guru GPK" {{ ($p->jenis_ptk === 'Guru GPK' || $p->isGpk()) ? 'selected' : '' }}>Guru GPK</option>
-                                                <option value="Guru Kelas" {{ ($p->jenis_ptk === 'Guru Kelas') ? 'selected' : '' }}>Guru Kelas</option>
+                                                <option value="Guru Kelas" {{ in_array($p->jenis_ptk, ['Guru Kelas', 'Guru'], true) ? 'selected' : '' }}>Guru Kelas</option>
                                                 <option value="Guru Mapel" {{ ($p->jenis_ptk === 'Guru Mapel') ? 'selected' : '' }}>Guru Mapel</option>
+                                                <option value="Guru GPK" {{ ($p->jenis_ptk === 'Guru GPK') ? 'selected' : '' }}>Guru GPK</option>
                                                 <option value="Guru BK" {{ ($p->jenis_ptk === 'Guru BK') ? 'selected' : '' }}>Guru BK</option>
                                                 <option value="Guru Pendamping" {{ ($p->jenis_ptk === 'Guru Pendamping') ? 'selected' : '' }}>Guru Pendamping</option>
                                                 <option value="Kepala Sekolah" {{ ($p->jenis_ptk === 'Kepala Sekolah') ? 'selected' : '' }}>Kepala Sekolah</option>
                                                 <option value="Tenaga Kependidikan" {{ ($p->jenis_ptk === 'Tenaga Kependidikan') ? 'selected' : '' }}>Tendik</option>
-                                                <option value="Tenaga Kebersihan" {{ ($p->jenis_ptk === 'Tenaga Kebersihan' || $p->isKebersihan()) ? 'selected' : '' }}>Kebersihan</option>
-                                                <option value="Security" {{ ($p->jenis_ptk === 'Security' || $p->isSecurity()) ? 'selected' : '' }}>Security</option>
-                                                @if(!empty($p->jenis_ptk) && !in_array($p->jenis_ptk, ['Guru Kelas','Guru Mapel','Guru GPK','Guru BK','Guru Pendamping','Kepala Sekolah','Tenaga Kependidikan','Tenaga Kebersihan','Security']))
+                                                <option value="Tenaga Kebersihan" {{ ($p->jenis_ptk === 'Tenaga Kebersihan') ? 'selected' : '' }}>Kebersihan</option>
+                                                <option value="Security" {{ ($p->jenis_ptk === 'Security') ? 'selected' : '' }}>Security</option>
+                                                @if(!empty($p->jenis_ptk) && !in_array($p->jenis_ptk, ['Guru','Guru Kelas','Guru Mapel','Guru GPK','Guru BK','Guru Pendamping','Kepala Sekolah','Tenaga Kependidikan','Tenaga Kebersihan','Security']))
                                                     <option value="{{ $p->jenis_ptk }}" selected>{{ $p->jenis_ptk }}</option>
                                                 @endif
                                             </select>
@@ -350,11 +380,87 @@
     </style>
 
     <script>
-        function filterPtk(keyword) {
-            keyword = keyword.toLowerCase();
+        function filterPtk() {
+            applyPtkFilter();
+        }
+
+        function applyPtkFilter() {
+            const keyword = (document.getElementById('searchPtk')?.value || '').toLowerCase();
+            const limit = parseInt(document.getElementById('ptkPageSize')?.value || '999999', 10);
+            let visible = 0;
             document.querySelectorAll('#tabelPtk tbody tr').forEach(function (row) {
-                row.style.display = row.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+                const match = row.textContent.toLowerCase().includes(keyword);
+                if (match && visible < limit) {
+                    row.style.display = '';
+                    visible++;
+                    const noCell = row.querySelector('.col-no-ptk');
+                    if (noCell) noCell.textContent = visible;
+                } else {
+                    row.style.display = 'none';
+                }
             });
+        }
+
+        function fokusEditGelar() {
+            const firstInput = document.querySelector('#tabelPtk input[name*="[gelar_depan]"]') || document.querySelector('#tabelPtk input');
+            if (firstInput) {
+                firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInput.focus();
+            }
+        }
+
+        function getPtkMatrix() {
+            const rows = [['No', 'Nama PTK', 'NIP', 'JK', 'Jenis PTK', 'Jabatan', 'Gelar Depan', 'Gelar Belakang']];
+            document.querySelectorAll('#tabelPtk tbody tr').forEach(tr => {
+                if (tr.style.display === 'none') return;
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 8) {
+                    rows.push([
+                        tds[0].innerText.trim(),
+                        tds[1].querySelector('b')?.innerText.trim() || tds[1].innerText.trim(),
+                        tds[2].querySelector('input')?.value || '',
+                        tds[3].innerText.trim(),
+                        tds[4].querySelector('select')?.value || '',
+                        tds[5].querySelector('input')?.value || '',
+                        tds[6].querySelector('input')?.value || '',
+                        tds[7].querySelector('input')?.value || ''
+                    ]);
+                }
+            });
+            return rows;
+        }
+
+        function copyPtkData() {
+            const text = getPtkMatrix().map(r => r.join('\t')).join('\n');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+                if (typeof showToast === 'function') showToast('Data PTK disalin ke clipboard', 'success');
+            }
+        }
+
+        function exportPtkCsv() {
+            const csv = getPtkMatrix().map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Data_Guru_PTK_SIMANTAP.csv';
+            link.click();
+        }
+
+        function exportPtkPdf() {
+            const rows = getPtkMatrix();
+            const win = window.open('', '_blank');
+            if (!win) { window.print(); return; }
+            let html = '<!DOCTYPE html><html><head><title>Data Guru & PTK</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}th{background:#f1f5f9}</style></head><body><h2>Data Guru & PTK</h2><table><thead><tr>';
+            rows[0].forEach(h => { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            rows.slice(1).forEach(r => {
+                html += '<tr>';
+                r.forEach(c => { html += '<td>' + c + '</td>'; });
+                html += '</tr>';
+            });
+            html += '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>';
+            win.document.open(); win.document.write(html); win.document.close();
         }
 
         function openTambahGuruModal() {

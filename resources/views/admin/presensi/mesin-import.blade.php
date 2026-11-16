@@ -29,7 +29,7 @@
             </div>
 
     @if($directDisabled)
-        <div class="note note-warn" style="margin-bottom:16px">Tarik langsung dari database mesin dinonaktifkan untuk sekolah bertenant. Gunakan impor file sekolah sendiri.</div>
+        <div class="note note-warn" style="margin-bottom:16px">Tarik langsung dari database mesin dinonaktifkan untuk sekolah bertenant. Gunakan impor file sekolah sendiri atau <a href="{{ route('admin.presensi.mesin.sinkron') }}">Presensi Bridge</a> di PC sekolah.</div>
     @else
     <div class="card" style="margin-bottom:16px;border-left:4px solid {{ ($koneksi['ok'] ?? false) ? '#12805C' : '#B54708' }}">
         <div class="card-header">
@@ -97,7 +97,7 @@
                 </div>
             </form>
 
-            <form action="{{ route('admin.presensi.mesin.tarik.semua') }}" method="POST" style="margin-top:12px">
+            <form action="{{ route('admin.presensi.mesin.tarik.semua') }}" method="POST" id="form-tarik-semua" style="margin-top:12px">
                 @csrf
                 <button type="submit" id="btn-tarik-semua" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang? Proses ini akan menelusuri seluruh rentang scan tersedia.')">Tarik Semua Data (1 Klik)</button>
             </form>

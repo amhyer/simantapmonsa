@@ -256,6 +256,17 @@
                     </select>
                 </div>
 
+                {{-- Pilihan Jumlah Baris --}}
+                <div style="min-width:120px">
+                    <select name="per_page" class="form-control" onchange="this.form.submit()" title="Jumlah baris yang ditampilkan">
+                        <option value="10" {{ ($perPageParam ?? '10') === '10' ? 'selected' : '' }}>Tampil: 10</option>
+                        <option value="20" {{ ($perPageParam ?? '10') === '20' ? 'selected' : '' }}>Tampil: 20</option>
+                        <option value="50" {{ ($perPageParam ?? '10') === '50' ? 'selected' : '' }}>Tampil: 50</option>
+                        <option value="100" {{ ($perPageParam ?? '10') === '100' ? 'selected' : '' }}>Tampil: 100</option>
+                        <option value="all" {{ ($perPageParam ?? '10') === 'all' ? 'selected' : '' }}>Tampil: Semua</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn btn-sm" style="background:#4338CA;color:#fff">
                     <i class="fas fa-filter"></i> Filter
                 </button>
@@ -372,7 +383,18 @@
                                             @endif
                                         </td>
                                         <td style="padding:11px 14px;text-align:center">
-                                            <span class="tag" style="background:#F2F4F7;text-transform:uppercase;font-size:10.5px">
+                                            @php
+                                                $roleStyle = match($u->peran) {
+                                                    'super_admin' => 'background:#EEF2FF;color:#4338CA;font-weight:700',
+                                                    'admin' => 'background:#ECFDF5;color:#047857;font-weight:700',
+                                                    'kepsek' => 'background:#F3E8FF;color:#6B21A8;font-weight:700',
+                                                    'guru' => 'background:#EFF8FF;color:#175CD3;font-weight:700',
+                                                    'tendik' => 'background:#ECFEFF;color:#0E7490;font-weight:700',
+                                                    'siswa' => 'background:#FFFAEB;color:#B54708;font-weight:700',
+                                                    default => 'background:#F2F4F7;color:#344054;font-weight:600',
+                                                };
+                                            @endphp
+                                            <span class="tag" style="{{ $roleStyle }};text-transform:uppercase;font-size:10.5px">
                                                 {{ $u->peran }}
                                             </span>
                                         </td>

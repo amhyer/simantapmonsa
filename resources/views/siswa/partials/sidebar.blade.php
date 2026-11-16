@@ -6,6 +6,8 @@
             ['route' => 'siswa.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi'],
             ['route' => 'siswa.kuis.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Kuis'],
             ['route' => 'siswa.nilai.index', 'icon' => 'lucide-trending-up', 'label' => 'Nilaiku'],
+            ['route' => 'siswa.rapor.capaian', 'icon' => 'lucide-award', 'label' => 'Rekap Capaian Rapor'],
+            ['route' => 'siswa.rapor.unduh', 'icon' => 'lucide-file-down', 'label' => 'Download Rapor'],
             ['route' => 'siswa.profil.show', 'icon' => 'lucide-user', 'label' => 'Profil Saya'],
         ]],
         // CBT dan Tryout bergantung pada modul; simulasi mandiri & adaptif tidak.

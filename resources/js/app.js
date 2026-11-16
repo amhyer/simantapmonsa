@@ -69,7 +69,7 @@ Alpine.start();
                     callback(entry.target);
                 }
             });
-        }, options || { threshold: 0.08, rootMargin: '0px 0px -20px 0px' });
+        }, options || { threshold: 0, rootMargin: '0px 0px -10px 0px' });
         elements.forEach((el) => io.observe(el));
     }
 
@@ -142,7 +142,7 @@ Alpine.start();
                 if (t < 1) requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
-        }, { threshold: 0.4 });
+        }, { threshold: 0 });
     }
 
     // --- Bilah .bar mengisi animasi saat terlihat ---
@@ -201,7 +201,9 @@ Alpine.start();
     // --- Animasikan perubahan DOM real-time (filter JS, toast) ---
     function initLiveAnimate() {
         try {
-            document.querySelectorAll('tbody').forEach((el) => autoAnimate(el, { duration: 220 }));
+            document.querySelectorAll('tbody').forEach((el) => {
+                if (el.children.length <= 80) autoAnimate(el, { duration: 220 });
+            });
             const toasts = document.getElementById('toastContainer');
             if (toasts) autoAnimate(toasts, { duration: 250 });
         } catch { /* abaikan: browser lama tanpa dukungan WAAPI */ }

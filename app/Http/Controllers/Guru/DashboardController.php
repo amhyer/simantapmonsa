@@ -187,11 +187,57 @@ class DashboardController extends Controller
             'perlu_bimbingan' => $tkaPerlu,
         ];
 
+        // Beban Mengajar & Status Kerja Guru/Wali Kelas (ala e-Rapor SD 2025.1)
+        $rombelDiampu = \App\Models\Rombel::where('guru_id', $guruId)->count();
+        if ($rombelDiampu === 0) {
+            $rombelDiampu = $siswa->pluck('kelas')->filter()->unique()->count();
+        }
+        $jadwalSemua = JadwalPelajaran::where('guru_id', $guruId)->get(['mata_pelajaran', 'kelas']);
+        $mapelDiampu = $jadwalSemua->pluck('mata_pelajaran')->filter()->unique()->count();
+        if ($mapelDiampu === 0 && !empty($pengaturan?->mata_pelajaran)) {
+            $mapelDiampu = 1;
+        }
+        $ekskulDiampu = \App\Models\Ekstrakurikuler::where('pembina_id', $guruId)->count();
+        $bebanMengajar = [
+            'rombel' => $rombelDiampu,
+            'siswa' => $jumlah,
+            'mapel' => $mapelDiampu,
+            'pembelajaran' => $jadwalSemua->count(),
+            'ekskul' => $ekskulDiampu,
+        ];
+
+        $tpItems = is_array(($pengaturan?->pengaturan ?? [])['tujuan_pembelajaran'] ?? null)
+            ? ($pengaturan->pengaturan['tujuan_pembelajaran'])
+            : [];
+        $persenTp = (count($tpItems) > 0 || $materiTerbaru->isNotEmpty()) ? 100.0 : 0.0;
+        $persenNilaiMapel = $jumlah > 0 ? round(min(100, max($siswaErapot, $countNilai) / $jumlah * 100), 2) : 0.0;
+        $siswaLengkap = $siswa->filter(fn ($s) => !empty($s->nisn) && !empty($s->jenis_kelamin))->count();
+        $persenKelengkapan = $jumlah > 0 ? round($siswaLengkap / $jumlah * 100, 2) : 0.0;
+        $siswaEkskul = $siswa->filter(fn ($s) => !empty(($s->rekaman ?? [])['ekskul']))->count();
+        $persenEkskul = $jumlah > 0 ? round($siswaEkskul / $jumlah * 100, 2) : 0.0;
+        $persenKehadiranInput = $jumlah > 0 ? round($countHadir / $jumlah * 100, 2) : 0.0;
+        $siswaCatatan = $siswaIds->isEmpty() ? 0 : \App\Models\Catatan::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
+        $persenCatatan = $jumlah > 0 ? round($siswaCatatan / $jumlah * 100, 2) : 0.0;
+        $siswaNaikKelas = $siswaIds->isEmpty() ? 0 : \App\Models\KenaikanKelas::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
+        $persenNaikKelas = $jumlah > 0 ? round($siswaNaikKelas / $jumlah * 100, 2) : 0.0;
+
+        $statusKerjaGuru = [
+            ['label' => 'Input Tujuan Pembelajaran', 'persen' => $persenTp, 'route' => 'guru.tp.index'],
+            ['label' => 'Input Nilai Mata Pelajaran', 'persen' => $persenNilaiMapel, 'route' => 'guru.nilai-erapor.index'],
+            ['label' => 'Update Data Kelengkapan Siswa [Admin / Wali Kelas]', 'persen' => $persenKelengkapan, 'route' => 'guru.siswa.index'],
+            ['label' => 'Input Data Nilai Ekstrakurikuler [Wali Kelas]', 'persen' => $persenEkskul, 'route' => 'guru.walas.ekskul'],
+            ['label' => 'Input Data Rekap Kehadiran Siswa', 'persen' => $persenKehadiranInput, 'route' => 'guru.kehadiran.index'],
+            ['label' => 'Input Data Catatan Wali Kelas', 'persen' => $persenCatatan, 'route' => 'guru.catatan.index'],
+            ['label' => 'Input Data Kenaikan Kelas', 'persen' => $persenNaikKelas, 'route' => 'guru.walas.naik-kelas'],
+        ];
+        $progresKerjaGuru = round(collect($statusKerjaGuru)->avg('persen'), 2);
+
         return view('guru.dashboard', compact(
             'ringkasan', 'perluPendampingan', 'menonjol', 'materiTerbaru', 'kuisAktif',
             'predikat', 'trendLabels', 'trendData', 'totalGuruSiswa', 'syncedSiswa',
             'kkmDiatur', 'namaHari', 'jadwalHariIni', 'deadlineRapor', 'siswaErapot',
-            'eseiMenunggu', 'sheetStatus', 'cbtRingkasan', 'tkaRingkasan'
+            'eseiMenunggu', 'sheetStatus', 'cbtRingkasan', 'tkaRingkasan',
+            'bebanMengajar', 'statusKerjaGuru', 'progresKerjaGuru'
         ));
     }
 }

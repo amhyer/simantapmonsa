@@ -107,11 +107,56 @@ class DashboardController extends Controller
         $cbtUjian = $cbtAktif ? $this->cbt->ujianTersedia($siswa) : [];
         $cbtHasil = $cbtAktif ? $this->cbt->hasilTerbaru($siswa->id) : [];
 
+        // Data Akademik Siswa & Rekap Rapor Semester Ini (ala e-Rapor SD 2025.1)
+        $rombelRow = $siswa->rombel_id
+            ? \App\Models\Rombel::with('guru')->find($siswa->rombel_id)
+            : ($siswa->kelas ? \App\Models\Rombel::with('guru')->where('nama_rombel', $siswa->kelas)->first() : null);
+
+        $waliUser = $rombelRow?->guru ?? ($siswa->guru_id ? \App\Models\User::find($siswa->guru_id) : null);
+        $namaWali = $waliUser?->nama_lengkap ?? $siswa->nama_guru ?? '-';
+        $ptkWali = $waliUser
+            ? \App\Models\Ptk::where('nama', $waliUser->nama_lengkap)->orWhere('nip', $waliUser->nama_pengguna)->first()
+            : null;
+        $nipWali = $ptkWali?->nip ?? ($waliUser && preg_match('/^\d{8,}$/', (string) $waliUser->nama_pengguna) ? $waliUser->nama_pengguna : '-');
+
+        $tingkatAngka = (int) preg_replace('/[^0-9]/', '', (string) ($rombelRow?->tingkat ?? $siswa->kelas ?? '1'));
+        if ($tingkatAngka < 1 || $tingkatAngka > 6) {
+            $tingkatAngka = 1;
+        }
+        $faseLabel = match (true) {
+            $tingkatAngka <= 2 => "Tingkat {$tingkatAngka} (Fase A)",
+            $tingkatAngka <= 4 => "Tingkat {$tingkatAngka} (Fase B)",
+            default => "Tingkat {$tingkatAngka} (Fase C)",
+        };
+
+        $infoAkademik = [
+            'status_rombel' => $rombelRow?->jenis_rombel ?? 'Reguler',
+            'tingkat_fase' => $faseLabel,
+            'wali_kelas' => $namaWali,
+            'nip_wali' => $nipWali,
+        ];
+
+        $eraporRows = \App\Models\NilaiErapot::where('siswa_id', $siswa->id)
+            ->whereNotNull('nilai_akhir')
+            ->get();
+        $sumberRapor = $eraporRows->isNotEmpty()
+            ? $eraporRows->pluck('nilai_akhir')->map(fn ($v) => (float) $v)
+            : $nilaiPerMapel->pluck('rata_rata')->map(fn ($v) => (float) $v);
+
+        $rekapRaporSemester = [
+            'total_mapel' => $eraporRows->isNotEmpty()
+                ? $eraporRows->pluck('mata_pelajaran')->unique()->count()
+                : $nilaiPerMapel->count(),
+            'rata_rata' => $sumberRapor->isNotEmpty() ? round($sumberRapor->avg(), 2) : 0,
+            'tertinggi' => $sumberRapor->isNotEmpty() ? round($sumberRapor->max(), 2) : 0,
+            'terendah' => $sumberRapor->isNotEmpty() ? round($sumberRapor->min(), 2) : 0,
+        ];
+
         return view('siswa.dashboard', compact(
             'siswa', 'kehadiran', 'totalHadir', 'rataRata',
             'jumlahNilai', 'materiTerbaru', 'kuisAktif', 'hasilKuis',
             'nilaiPerMapel', 'kehadiranBulanan', 'saran', 'kkm',
-            'cbtUjian', 'cbtHasil'
+            'cbtUjian', 'cbtHasil', 'infoAkademik', 'rekapRaporSemester'
         ));
     }
 

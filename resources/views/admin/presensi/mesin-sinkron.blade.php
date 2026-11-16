@@ -52,10 +52,12 @@
                 <span class="badge {{ $terakhir->status === 'berhasil' ? 'badge-success' : 'badge-danger' }}">
                     {{ $terakhir->status === 'berhasil' ? 'Berhasil' : 'Gagal' }}
                 </span>
-                <form action="{{ route('admin.presensi.mesin.tarik.semua') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang?')">Tarik Semua Data (1 Klik)</button>
-                </form>
+                @unless($directDisabled)
+                    <form action="{{ route('admin.presensi.mesin.tarik.semua') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-sm" style="background:#12805C;color:#fff" onclick="return confirm('Tarik SEMUA data presensi dari database mesin sekarang?')">Tarik Semua Data (1 Klik)</button>
+                    </form>
+                @endunless
             </div>
             <div class="card-body">
                 @if($terakhir->status === 'gagal' && filled($terakhir->pesan_error))

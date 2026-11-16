@@ -179,4 +179,25 @@ class PetaKelasController extends Controller
 
         return back()->with('success', "Input rapor untuk rombel {$rombel->nama_rombel} berhasil {$status}.");
     }
+
+    public function toggleKunciSemua(): \Illuminate\Http\RedirectResponse
+    {
+        $terkunciSekarang = \App\Models\Rombel::apakahTerkunciGlobal();
+        $targetKunci = ! $terkunciSekarang;
+
+        $sekolah = \App\Models\SekolahSettings::firstOrCreate(
+            [],
+            ['nama_sekolah' => config('app.name', 'SIMANTAP')]
+        );
+        $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
+        $pengaturan['kunci_input_rapor_global'] = $targetKunci;
+        $sekolah->update(['pengaturan' => $pengaturan]);
+
+        \App\Models\Rombel::query()->update(['kunci_input_rapor' => $targetKunci]);
+        \Illuminate\Support\Facades\Cache::forget('admin-dashboard:single:v3');
+
+        $status = $targetKunci ? 'dikunci (ditutup)' : 'dibuka kembali';
+
+        return back()->with('success', "Akses input nilai rapor seluruh kelas berhasil {$status}.");
+    }
 }

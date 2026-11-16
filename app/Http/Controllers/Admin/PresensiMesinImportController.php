@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PresensiMesinSyncLog;
+use App\Models\SekolahSettings;
 use App\Models\User;
+use App\Modules\Tenant\Support\TenantMode;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
 use App\Services\PresensiMesinService;
-use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -47,12 +48,22 @@ class PresensiMesinImportController extends Controller
             ->where('nik', '<>', '')
             ->count();
 
-        $directDisabled = \App\Modules\Tenant\Support\TenantMode::isMultiSchool();
+        $directDisabled = $this->tarikLangsungDinonaktifkan();
         $koneksi = $directDisabled ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null] : $reader->status();
         $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
         $mesinEngineTerpilih = $directDisabled ? (string) config('presensi.mesin_db_engine', 'auto') : $reader->engineTerpilih();
 
         return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled', 'mesinEngineTerpilih'));
+    }
+
+    /**
+     * Tarik langsung hanya dibuka untuk instalasi satu sekolah yang memang
+     * menyimpan database mesin di server ini (PRESENSI_MESIN_ALLOW_TENANT).
+     */
+    private function tarikLangsungDinonaktifkan(): bool
+    {
+        return TenantMode::isMultiSchool()
+            && ! (bool) config('presensi.mesin_izinkan_tenant', false);
     }
 
     /**
@@ -67,11 +78,10 @@ class PresensiMesinImportController extends Controller
             ->limit(25)
             ->get();
         $terakhir = PresensiMesinSyncLog::orderByDesc('created_at')->orderByDesc('id')->first();
-        $terakhirTarik = \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
-            ? null
-            : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+        $directDisabled = $this->tarikLangsungDinonaktifkan();
+        $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
 
-        $koneksi = \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
+        $koneksi = $directDisabled
             ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null]
             : $reader->status();
 
@@ -79,7 +89,7 @@ class PresensiMesinImportController extends Controller
             'logs' => $logs,
             'terakhir' => $terakhir,
             'terakhirTarik' => $terakhirTarik,
-            'directDisabled' => \App\Modules\Tenant\Support\TenantMode::isMultiSchool(),
+            'directDisabled' => $directDisabled,
             'koneksi' => $koneksi,
         ]);
     }
@@ -166,6 +176,10 @@ class PresensiMesinImportController extends Controller
      */
     public function tarikKaryawan(AttendanceDatabaseReader $reader): RedirectResponse
     {
+        // Membaca USERINFO lewat PowerShell bisa lambat pada peluncuran pertama.
+        @set_time_limit(300);
+        @ignore_user_abort(true);
+
         try {
             $pegawai = $reader->pegawai();
         } catch (\Throwable $e) {
@@ -333,6 +347,10 @@ class PresensiMesinImportController extends Controller
      */
     public function tarik(Request $request, AttendanceDatabaseReader $reader, PresensiMesinService $presensi): RedirectResponse
     {
+        // Membaca database Access (PowerShell) bisa melewati batas 30 detik.
+        @set_time_limit(300);
+        @ignore_user_abort(true);
+
         $data = $request->validate([
             'dari' => ['required', 'date'],
             'sampai' => ['required', 'date', 'after_or_equal:dari'],
@@ -389,8 +407,25 @@ class PresensiMesinImportController extends Controller
         ));
     }
 
+    /**
+     * Alamat tarik-semua adalah aksi POST yang dipicu tombol. Bila dibuka
+     * langsung dari address bar (GET), arahkan ke halaman import agar tidak
+     * menampilkan halaman 405 Method Not Allowed.
+     */
+    public function formTarikSemua(): RedirectResponse
+    {
+        return redirect()
+            ->route('admin.presensi.mesin.index')
+            ->with('warning', 'Tombol "Tarik Semua Data (1 Klik)" ada di halaman Import Presensi Mesin. Klik tombol tersebut untuk memulai penarikan.');
+    }
+
     public function tarikSemua(AttendanceDatabaseReader $reader, PresensiMesinService $presensi): RedirectResponse
     {
+        // Tarik seluruh riwayat bisa memakan waktu lebih dari batas eksekusi
+        // bawaan PHP (30 detik), terutama saat membaca database Access.
+        @set_time_limit(600);
+        @ignore_user_abort(true);
+
         try {
             $rentang = $reader->rentang();
         } catch (\Throwable $e) {
@@ -419,15 +454,31 @@ class PresensiMesinImportController extends Controller
             'baris_diabaikan' => 0,
         ];
 
-        $mulai = $dari->copy()->startOfDay();
-        $batasAkhir = $sampai->copy()->startOfDay();
+        // Mesin TCP selalu mengirim seluruh log sekaligus, jadi cukup dibaca
+        // satu kali. Database Access dibaca per 31 hari agar hemat memori.
+        $rentangBaca = [];
+        if ($reader->engine() === 'tcp') {
+            $rentangBaca[] = [$dari->copy()->startOfDay(), $sampai->copy()->startOfDay()];
+        } else {
+            $mulai = $dari->copy()->startOfDay();
+            $batasAkhir = $sampai->copy()->startOfDay();
 
-        while ($mulai->lte($batasAkhir)) {
-            $batasChunk = $mulai->copy()->addDays(self::MAKS_HARI_TARIK - 1);
-            $sampaiChunk = $batasChunk->lt($batasAkhir) ? $batasChunk : $batasAkhir;
+            while ($mulai->lte($batasAkhir)) {
+                $batasChunk = $mulai->copy()->addDays(self::MAKS_HARI_TARIK - 1);
+                $sampaiChunk = $batasChunk->lt($batasAkhir) ? $batasChunk : $batasAkhir;
+                $rentangBaca[] = [$mulai->copy(), $sampaiChunk->copy()];
 
+                if ($sampaiChunk->eq($batasAkhir)) {
+                    break;
+                }
+
+                $mulai = $sampaiChunk->copy()->addDay();
+            }
+        }
+
+        foreach ($rentangBaca as [$mulaiChunk, $sampaiChunk]) {
             try {
-                $scans = $reader->baca($mulai, $sampaiChunk);
+                $scans = $reader->baca($mulaiChunk, $sampaiChunk);
             } catch (\Throwable $e) {
                 report($e);
 
@@ -449,12 +500,6 @@ class PresensiMesinImportController extends Controller
                     (array) $r['contoh_nik_tidak_dikenal'],
                 )));
             }
-
-            if ($sampaiChunk->eq($batasAkhir)) {
-                break;
-            }
-
-            $mulai = $sampaiChunk->copy()->addDay();
         }
 
         Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
@@ -528,14 +573,14 @@ class PresensiMesinImportController extends Controller
         }
 
         try {
-            $sekolah = \App\Models\SekolahSettings::query()->first();
+            $sekolah = SekolahSettings::query()->first();
             $pengaturan = is_array($sekolah?->pengaturan ?? null) ? $sekolah->pengaturan : [];
             $pengaturan['presensi_mesin_engine'] = $engine;
 
             if ($sekolah) {
                 $sekolah->update(['pengaturan' => $pengaturan]);
             } else {
-                \App\Models\SekolahSettings::create(['pengaturan' => $pengaturan]);
+                SekolahSettings::create(['pengaturan' => $pengaturan]);
             }
         } catch (\Throwable $e) {
             report($e);

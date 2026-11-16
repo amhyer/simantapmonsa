@@ -53,22 +53,42 @@ class TenantController extends Controller
             });
         }
 
-        $tenants = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $perPageParam = $request->get('per_page', '10');
+        $perPage = $perPageParam === 'all' ? max(1, (clone $query)->count()) : (int) $perPageParam;
+        if (! in_array($perPage, [10, 20, 50, 100], true) && $perPageParam !== 'all') {
+            $perPage = 10;
+            $perPageParam = '10';
+        }
 
-        // Tambahkan metadata jumlah siswa dan guru
+        $tenants = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
+
+        // Tambahkan metadata jumlah siswa, guru, dan tendik
         $tenantIds = $tenants->pluck('id')->all();
-        $adminUsers = User::whereIn('tenant_id', $tenantIds)
+        $adminUsers = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereIn('tenant_id', $tenantIds)
             ->where('peran', 'admin')
             ->get()
             ->keyBy('tenant_id');
 
-        $siswaCounts = Siswa::whereIn('tenant_id', $tenantIds)
+        $siswaCounts = Siswa::withoutGlobalScopes()
+            ->whereIn('tenant_id', $tenantIds)
             ->select('tenant_id', DB::raw('count(*) as aggregate'))
             ->groupBy('tenant_id')
             ->pluck('aggregate', 'tenant_id');
 
-        $guruCounts = User::whereIn('tenant_id', $tenantIds)
+        $guruCounts = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereIn('tenant_id', $tenantIds)
             ->whereIn('peran', ['guru', 'kepsek'])
+            ->select('tenant_id', DB::raw('count(*) as aggregate'))
+            ->groupBy('tenant_id')
+            ->pluck('aggregate', 'tenant_id');
+
+        $tendikCounts = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->whereIn('tenant_id', $tenantIds)
+            ->where('peran', 'tendik')
             ->select('tenant_id', DB::raw('count(*) as aggregate'))
             ->groupBy('tenant_id')
             ->pluck('aggregate', 'tenant_id');
@@ -78,26 +98,41 @@ class TenantController extends Controller
             'adminUsers',
             'siswaCounts',
             'guruCounts',
+            'tendikCounts',
             'search',
             'status',
             'paket',
-            'langganan'
+            'langganan',
+            'perPageParam'
         ));
     }
 
     public function show(Tenant $tenant)
     {
-        $admin = User::where('tenant_id', $tenant->id)->where('peran', 'admin')->first();
-        $totalSiswa = Siswa::where('tenant_id', $tenant->id)->count();
-        $totalGuru = User::where('tenant_id', $tenant->id)->where('peran', 'guru')->count();
-        $totalKepsek = User::where('tenant_id', $tenant->id)->where('peran', 'kepsek')->count();
-        $totalTendik = User::where('tenant_id', $tenant->id)->where('peran', 'tendik')->count();
+        $admin = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+        $totalSiswa = Siswa::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        if ($totalSiswa === 0) {
+            $totalSiswa = User::withoutGlobalScopes()
+                ->whereNull('deleted_at')
+                ->where('tenant_id', $tenant->id)
+                ->where('peran', 'siswa')
+                ->count();
+        }
+        $totalGuru = User::withoutGlobalScopes()->whereNull('deleted_at')->where('tenant_id', $tenant->id)->where('peran', 'guru')->count();
+        $totalKepsek = User::withoutGlobalScopes()->whereNull('deleted_at')->where('tenant_id', $tenant->id)->where('peran', 'kepsek')->count();
+        $totalTendik = User::withoutGlobalScopes()->whereNull('deleted_at')->where('tenant_id', $tenant->id)->where('peran', 'tendik')->count();
 
-        $cbtBankCount = \App\Models\CbtQuestionBank::where('tenant_id', $tenant->id)->count();
-        $cbtSessionCount = \App\Models\CbtTestSession::where('tenant_id', $tenant->id)->count();
-        $cbtResultCount = \App\Models\CbtResult::where('tenant_id', $tenant->id)->count();
+        $cbtBankCount = \App\Models\CbtQuestionBank::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $cbtSessionCount = \App\Models\CbtTestSession::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $cbtResultCount = \App\Models\CbtResult::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
 
-        $recentUsers = User::where('tenant_id', $tenant->id)
+        $recentUsers = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('tenant_id', $tenant->id)
             ->orderByDesc('created_at')
             ->take(10)
             ->get();
@@ -295,21 +330,41 @@ class TenantController extends Controller
                 'aktif' => true,
             ]);
 
+            $adminEmail = ! empty($validated['admin_email'])
+                ? strtolower(trim($validated['admin_email']))
+                : strtolower(trim($validated['admin_user'])).'@simantap.sch.id';
+
             User::create([
                 'uuid' => (string) Str::uuid(),
                 'nama_lengkap' => $validated['admin_nama'],
                 'nama_pengguna' => $validated['admin_user'],
-                'email' => $validated['admin_email'] ?? null,
+                'email' => $adminEmail,
                 'kata_sandi' => Hash::make($validated['admin_password']),
                 'peran' => 'admin',
                 'tenant_id' => $tenant->id,
                 'aktif' => true,
                 'force_password_change' => false,
             ]);
+
+            // Auto-provision pengaturan dasar sekolah agar siap pakai saat login pertama
+            if (Schema::hasTable('pengaturan')) {
+                $defaultSettings = [
+                    'nama_sekolah' => $validated['nama_sekolah'],
+                    'npsn' => $validated['npsn'],
+                    'tahun_ajaran' => '2025/2026',
+                    'semester' => '2',
+                ];
+                foreach ($defaultSettings as $kunci => $nilai) {
+                    DB::table('pengaturan')->updateOrInsert(
+                        ['tenant_id' => $tenant->id, 'kunci' => $kunci],
+                        ['nilai' => $nilai, 'created_at' => now(), 'updated_at' => now()]
+                    );
+                }
+            }
         });
 
         return redirect()->route('superadmin.tenants.index')
-            ->with('success', "Sekolah '{$validated['nama_sekolah']}' dan akun administrator berhasil didaftarkan.");
+            ->with('success', "Sekolah '{$validated['nama_sekolah']}', pengaturan awal, dan akun administrator berhasil didaftarkan.");
     }
 
     public function users(Request $request)
@@ -319,8 +374,9 @@ class TenantController extends Controller
         $wilayah = $request->get('wilayah');
         $tenantId = $request->get('tenant_id');
         $tab = $request->get('tab', 'semua'); // 'semua', 'per_sekolah', 'per_wilayah'
+        $perPageParam = $request->get('per_page', '10');
 
-        $query = User::with('tenant');
+        $query = User::withoutGlobalScopes()->whereNull('deleted_at')->with('tenant');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -344,7 +400,13 @@ class TenantController extends Controller
             $query->whereHas('tenant', fn($q) => $q->where('wilayah', $wilayah));
         }
 
-        $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+        $perPage = $perPageParam === 'all' ? max(1, (clone $query)->count()) : (int) $perPageParam;
+        if (! in_array($perPage, [10, 20, 50, 100], true) && $perPageParam !== 'all') {
+            $perPage = 10;
+            $perPageParam = '10';
+        }
+
+        $users = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         // Daftar wilayah unik untuk filter & rekap
         $wilayahList = Tenant::whereNotNull('wilayah')
@@ -381,15 +443,15 @@ class TenantController extends Controller
             ->get()
             ->map(function ($rw) {
                 $tenantIds = Tenant::where('wilayah', $rw->wilayah)->pluck('id');
-                $rw->total_akun = User::whereIn('tenant_id', $tenantIds)->count();
-                $rw->total_siswa = User::whereIn('tenant_id', $tenantIds)->where('peran', 'siswa')->count();
-                $rw->total_guru = User::whereIn('tenant_id', $tenantIds)->where('peran', 'guru')->count();
-                $rw->total_admin = User::whereIn('tenant_id', $tenantIds)->where('peran', 'admin')->count();
+                $rw->total_akun = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->count();
+                $rw->total_siswa = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'siswa')->count();
+                $rw->total_guru = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'guru')->count();
+                $rw->total_admin = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'admin')->count();
                 return $rw;
             });
 
-        $totalUsersPlatform = User::count();
-        $totalUnassigned = User::whereNull('tenant_id')->where('peran', '!=', 'super_admin')->count();
+        $totalUsersPlatform = User::withoutGlobalScopes()->whereNull('deleted_at')->count();
+        $totalUnassigned = User::withoutGlobalScopes()->whereNull('deleted_at')->whereNull('tenant_id')->where('peran', '!=', 'super_admin')->count();
 
         return view('superadmin.users.index', compact(
             'users',
@@ -398,6 +460,7 @@ class TenantController extends Controller
             'wilayah',
             'tenantId',
             'tab',
+            'perPageParam',
             'wilayahList',
             'tenantsList',
             'rekapSekolah',

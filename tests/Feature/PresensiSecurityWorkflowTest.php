@@ -12,6 +12,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\MesinPresensi\AttendanceDatabaseReader;
 use App\Services\Presensi\IdentityCardService;
 use App\Services\PresensiMesinService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,10 +46,12 @@ class PresensiSecurityWorkflowTest extends TestCase
     private function classAndStudent(Tenant $school, User $wali): array
     {
         $semester = Semester::firstOrCreate(['semester_id' => '20261'], ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']);
+
         return TenantContext::run($school->id, function () use ($school, $wali, $semester) {
             $rombel = Rombel::create(['dapodik_id' => 'R-'.$school->id, 'semester_id' => $semester->id, 'nama_rombel' => '6.A', 'guru_id' => $wali->id]);
             $student = Siswa::create(['guru_id' => $wali->id, 'rombel_id' => $rombel->id, 'nama_peserta_didik' => 'Anak '.$school->id, 'nis' => 'NIS-'.$school->id, 'kelas' => '6.A', 'jenis_kelamin' => 'L', 'aktif' => true]);
             $jadwal = JadwalPelajaran::create(['guru_id' => $wali->id, 'semester_id' => $semester->id, 'rombel_id' => $rombel->id, 'kelas' => '6.A', 'mata_pelajaran' => 'Bahasa Inggris', 'hari' => now()->locale('id')->translatedFormat('l'), 'jam_mulai' => '08:00', 'jam_selesai' => '09:00']);
+
             return [$student, $jadwal];
         });
     }
@@ -85,6 +88,44 @@ class PresensiSecurityWorkflowTest extends TestCase
         $this->assertSame(1, $results['nik_tidak_dikenal']);
         $this->assertDatabaseHas('presensi_pegawai', ['user_id' => $local->id, 'tenant_id' => $a->id]);
         $this->assertDatabaseMissing('presensi_pegawai', ['user_id' => $other->id]);
+    }
+
+    public function test_tarik_langsung_mesin_dapat_diizinkan_untuk_satu_sekolah(): void
+    {
+        config(['presensi.mesin_izinkan_tenant' => true]);
+
+        $school = $this->school('10000009');
+        $admin = User::factory()->admin()->create(['tenant_id' => $school->id]);
+
+        $this->mock(AttendanceDatabaseReader::class, function ($mock) {
+            $mock->shouldReceive('status')->once()->andReturn([
+                'ok' => true,
+                'pesan' => 'Database berhasil dibaca.',
+                'path' => 'C:\\ATT2000.MDB',
+                'engine' => 'powershell',
+                'jumlah_pegawai' => 5,
+                'jumlah_scan' => 10,
+                'terakhir_scan' => '2026-10-18 14:00:00',
+            ]);
+            $mock->shouldReceive('engineTerpilih')->once()->andReturn('powershell');
+            $mock->shouldReceive('rentang')->once()->andReturn([
+                'min' => Carbon::parse('2026-10-01'),
+                'maks' => Carbon::parse('2026-10-02'),
+            ]);
+            $mock->shouldReceive('engine')->andReturn('powershell');
+            $mock->shouldReceive('baca')->once()->andReturn([]);
+        });
+
+        $this->actingAs($admin)
+            ->get(route('admin.presensi.mesin.index'))
+            ->assertOk()
+            ->assertSee('id="btn-tarik-semua"', false)
+            ->assertDontSee('dinonaktifkan untuk sekolah bertenant');
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik.semua'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
     }
 
     public function test_akun_tanpa_sekolah_ditolak_pada_menu_guru_ortu_dan_pegawai(): void
@@ -167,6 +208,7 @@ class PresensiSecurityWorkflowTest extends TestCase
         $this->assertDatabaseHas('pengajuan_izin_presensi', ['id' => $izin->id, 'status' => 'disetujui', 'diperiksa_oleh' => $wali->id]);
         $this->actingAs($wali)->post(route('guru.kehadiran.izin.review', $izin->id), ['keputusan' => 'tolak', 'catatan' => 'Uji'])->assertStatus(409);
     }
+
     public function test_scan_pulang_saja_tidak_membuat_status_hadir(): void
     {
         $school = $this->school('10000001');
@@ -304,5 +346,4 @@ class PresensiSecurityWorkflowTest extends TestCase
         $this->assertNull((new Siswa)->resolveRouteBinding('1', 'uuid'));
         $this->assertNull((new Tenant)->resolveRouteBinding('bukan-uuid', 'uuid'));
     }
-
 }

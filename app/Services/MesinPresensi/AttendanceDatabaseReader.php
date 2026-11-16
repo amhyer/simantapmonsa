@@ -5,14 +5,16 @@ namespace App\Services\MesinPresensi;
 use App\Models\SekolahSettings;
 use App\Services\PresensiMesinService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 use Throwable;
 
 /**
- * Membaca log fingerprint langsung dari database Attendance Management
- * (att2000.mdb / .accdb) memakai dua mesin pembaca:
+ * Membaca log fingerprint langsung dari mesin ZKTeco via TCP, atau dari
+ * database Attendance Management (att2000.mdb / .accdb) bila TCP tidak
+ * tersedia. Database dibaca memakai dua mesin pembaca:
  *
  * 1. ekstensi PDO ODBC bila aktif di PHP;
  * 2. jembatan PowerShell 32-bit (ADODB/Jet) bila ekstensi tidak tersedia.
@@ -31,11 +33,9 @@ class AttendanceDatabaseReader
 
     private const COMMAND_DISABLE_DEVICE = 1003;
 
-    private const COMMAND_ACK_OK = 2000;
+    private const COMMAND_AUTH = 1102;
 
-    private const COMMAND_ACK_ERROR = 2001;
-
-    private const COMMAND_ACK_DATA = 2002;
+    private const COMMAND_ATTLOG_RRQ = 13;
 
     private const COMMAND_PREPARE_DATA = 1500;
 
@@ -43,9 +43,23 @@ class AttendanceDatabaseReader
 
     private const COMMAND_FREE_DATA = 1502;
 
-    private const COMMAND_ATTLOG_RRQ = 13;
+    private const COMMAND_DATA_WRRQ = 1503;
 
-    private const MESIN_EPOCH = '2000-01-01 00:00:00';
+    private const COMMAND_DATA_RDY = 1504;
+
+    private const COMMAND_ACK_OK = 2000;
+
+    private const COMMAND_ACK_ERROR = 2001;
+
+    private const COMMAND_ACK_DATA = 2002;
+
+    private const COMMAND_ACK_UNAUTH = 2005;
+
+    private const COMMAND_ACK_ERROR_DATA = 65531;
+
+    private const COMMAND_ACK_ERROR_CMD = 65533;
+
+    private const COMMAND_ACK_UNKNOWN = 65535;
 
     private PresensiMesinService $presensi;
 
@@ -156,23 +170,49 @@ class AttendanceDatabaseReader
                 ];
             }
 
-            $timeoutTcp = (float) config('presensi.mesin_db_timeout', 120);
+            // Jangan tunggu 120 detik hanya untuk tes koneksi; mesin yang mati
+            // harus cepat dilaporkan di halaman admin.
+            $timeoutTcp = min(5.0, (float) config('presensi.mesin_db_timeout', 120));
             $errnoTcp = 0;
             $errstrTcp = '';
             $socketTcp = @fsockopen($tcpHost, $tcpPort, $errnoTcp, $errstrTcp, $timeoutTcp);
             if ($socketTcp === false) {
                 return [
                     'ok' => false,
-                    'pesan' => 'Tidak dapat terhubung ke mesin via TCP ('.$tcpHost.':'.$tcpPort.') : '.$errstrTcp,
+                    'pesan' => 'Tidak dapat terhubung ke mesin via TCP ('.$tcpHost.':'.$tcpPort.') : '
+                        .($errstrTcp !== '' ? $errstrTcp : 'timeout / tidak ada route ke mesin'),
                     'path' => $tcpHost.':'.$tcpPort,
                     'engine' => $engine,
                 ];
             }
+
+            // Port terbuka belum tentu sesi diterima. Lakukan handshake
+            // singkat agar communication key yang salah ikut terdeteksi di
+            // tombol "Tes Koneksi", bukan baru muncul saat tarik data.
+            try {
+                stream_set_timeout($socketTcp, (int) max(1, ceil($timeoutTcp)));
+                $sesi = $this->bukaSesiTcp($socketTcp);
+
+                // Tutup sesi dengan sopan; balasannya tidak penting.
+                stream_set_timeout($socketTcp, 2);
+                $this->kirimPaketTcp($socketTcp, self::COMMAND_EXIT, $sesi['sessionId'], $sesi['replyId'], '');
+                $this->abaikanBalasanTcp($socketTcp);
+            } catch (Throwable $e) {
+                fclose($socketTcp);
+
+                return [
+                    'ok' => false,
+                    'pesan' => 'Port TCP terbuka, tetapi sesi mesin gagal: '.$e->getMessage(),
+                    'path' => $tcpHost.':'.$tcpPort,
+                    'engine' => $engine,
+                ];
+            }
+
             fclose($socketTcp);
 
             return [
                 'ok' => true,
-                'pesan' => 'Terhubung ke mesin via TCP.',
+                'pesan' => 'Terhubung ke mesin via TCP dan communication key diterima.',
                 'path' => $tcpHost.':'.$tcpPort,
                 'engine' => $engine,
                 'jumlah_pegawai' => 0,
@@ -219,15 +259,10 @@ class AttendanceDatabaseReader
         }
 
         try {
-            $data = $this->bacaMentah($path, $engine);
-
-            $terakhirScan = null;
-            foreach ((array) ($data['scans'] ?? []) as $row) {
-                $waktu = $this->parseWaktu($row['waktu'] ?? null);
-                if ($waktu !== null && ($terakhirScan === null || $waktu->gt($terakhirScan))) {
-                    $terakhirScan = $waktu;
-                }
-            }
+            // Mode statistik hanya menjalankan COUNT/MIN/MAX di Access, sehingga
+            // halaman admin tidak perlu mengekspor seluruh tabel CHECKINOUT.
+            $data = $this->bacaMentahMode($path, $engine, 'statistik');
+            $terakhirScan = $this->parseWaktu($data['maks'] ?? null);
 
             return [
                 'ok' => true,
@@ -266,10 +301,15 @@ class AttendanceDatabaseReader
             try {
                 $hasilTcp = $this->bacaLewatTcp($host, $port);
                 $scans = [];
+                $batasAkhir = $sampai->copy()->addDay()->startOfDay();
+
                 foreach ((array) ($hasilTcp['scans'] ?? []) as $row) {
                     $nik = $this->presensi->normalizeNik($row['nik'] ?? null);
                     $waktu = $this->parseWaktu($row['waktu'] ?? null);
                     if ($nik === null || $waktu === null) {
+                        continue;
+                    }
+                    if ($waktu->lt($dari) || $waktu->gte($batasAkhir)) {
                         continue;
                     }
 
@@ -283,6 +323,8 @@ class AttendanceDatabaseReader
                 return $scans;
             } catch (Throwable $e) {
                 // TCP gagal (misal mesin sedang tidak aktif/reachable) -> fallback ke database.
+                Log::warning('Tarik presensi via TCP gagal, memakai database Attendance Management: '.$e->getMessage());
+
                 if ($path === null || ! is_file($path)) {
                     throw new RuntimeException(
                         'Gagal koneksi ke mesin via TCP ('.$e->getMessage().') dan database cadangan Attendance Management tidak ditemukan.',
@@ -370,7 +412,7 @@ class AttendanceDatabaseReader
             throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
         }
 
-        $data = $this->bacaMentah($path, $engine);
+        $data = $this->bacaMentahMode($path, $engine, 'pegawai');
 
         $hasil = [];
         foreach ((array) ($data['pegawai'] ?? []) as $row) {
@@ -394,6 +436,38 @@ class AttendanceDatabaseReader
      */
     public function rentang(): array
     {
+        $engine = $this->engine();
+        if ($engine === 'tidak-tersedia') {
+            throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
+        }
+
+        // Mesin ZKTeco via TCP tidak punya tabel SQL, jadi rentang dihitung
+        // dari log yang dibaca langsung dari perangkat.
+        if ($engine === 'tcp') {
+            $hasilTcp = $this->bacaLewatTcp(
+                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
+                (int) config('presensi.mesin_db_tcp_port', 4370),
+            );
+
+            $min = null;
+            $maks = null;
+            foreach ((array) ($hasilTcp['scans'] ?? []) as $row) {
+                $waktu = $this->parseWaktu($row['waktu'] ?? null);
+                if ($waktu === null) {
+                    continue;
+                }
+
+                if ($min === null || $waktu->lt($min)) {
+                    $min = $waktu;
+                }
+                if ($maks === null || $waktu->gt($maks)) {
+                    $maks = $waktu;
+                }
+            }
+
+            return ['min' => $min, 'maks' => $maks];
+        }
+
         $path = $this->path();
         if ($path === null) {
             throw new RuntimeException('Lokasi database Attendance Management belum diatur. Isi PRESENSI_MESIN_DB_PATH di .env.');
@@ -405,30 +479,13 @@ class AttendanceDatabaseReader
             throw new RuntimeException('File database mesin harus berekstensi .mdb atau .accdb.');
         }
 
-        $engine = $this->engine();
-        if ($engine === 'tidak-tersedia') {
-            throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
-        }
+        // Statistik MIN/MAX jauh lebih cepat daripada mengekspor seluruh log scan.
+        $data = $this->bacaMentahMode($path, $engine, 'statistik');
 
-        $data = $this->bacaMentah($path, $engine);
-
-        $min = null;
-        $maks = null;
-        foreach ((array) ($data['scans'] ?? []) as $row) {
-            $waktu = $this->parseWaktu($row['waktu'] ?? null);
-            if ($waktu === null) {
-                continue;
-            }
-
-            if ($min === null || $waktu->lt($min)) {
-                $min = $waktu;
-            }
-            if ($maks === null || $waktu->gt($maks)) {
-                $maks = $waktu;
-            }
-        }
-
-        return ['min' => $min, 'maks' => $maks];
+        return [
+            'min' => $this->parseWaktu($data['min'] ?? null),
+            'maks' => $this->parseWaktu($data['maks'] ?? null),
+        ];
     }
 
     /**
@@ -494,9 +551,22 @@ class AttendanceDatabaseReader
     }
 
     /**
+     * Pembacaan ringkas tanpa mengekspor seluruh tabel CHECKINOUT:
+     * mode "statistik" (COUNT/MIN/MAX) atau "pegawai" (daftar USERINFO).
+     *
+     * @return array<string, mixed>
+     */
+    protected function bacaMentahMode(string $path, string $engine, string $mode): array
+    {
+        return $engine === 'odbc'
+            ? $this->bacaLewatOdbc($path, null, null, $mode)
+            : $this->bacaLewatPowerShell($path, null, null, $mode);
+    }
+
+    /**
      * @return array{jumlah_pegawai?: int, jumlah_scan?: int, pegawai?: list<array<string, mixed>>, scans?: list<array<string, mixed>>}
      */
-    private function bacaLewatOdbc(string $path, ?Carbon $dari, ?Carbon $sampai): array
+    private function bacaLewatOdbc(string $path, ?Carbon $dari, ?Carbon $sampai, string $mode = 'lengkap'): array
     {
         $dsn = 'odbc:Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq='.$path.';';
         $pdo = new \PDO($dsn, '', '', [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
@@ -512,11 +582,23 @@ class AttendanceDatabaseReader
             'scans' => [],
         ];
 
+        if ($mode === 'statistik') {
+            $ringkasan = $pdo->query('SELECT MIN(CHECKTIME) AS MINWAKTU, MAX(CHECKTIME) AS MAKSWAKTU FROM CHECKINOUT')->fetch();
+            $hasil['min'] = $ringkasan['MINWAKTU'] ?? null;
+            $hasil['maks'] = $ringkasan['MAKSWAKTU'] ?? null;
+
+            return $hasil;
+        }
+
         foreach ($pdo->query('SELECT BADGENUMBER AS NIK, NAME AS NAMA FROM USERINFO ORDER BY NAME') as $row) {
             $hasil['pegawai'][] = [
                 'nik' => $row['NIK'] ?? null,
                 'nama' => $row['NAMA'] ?? null,
             ];
+        }
+
+        if ($mode === 'pegawai') {
+            return $hasil;
         }
 
         $awal = ($dari ?? Carbon::parse('1900-01-01'))->copy()->startOfDay();
@@ -546,7 +628,7 @@ class AttendanceDatabaseReader
     /**
      * @return array{jumlah_pegawai?: int, jumlah_scan?: int, scans?: list<array<string, mixed>>}
      */
-    private function bacaLewatPowerShell(string $path, ?Carbon $dari, ?Carbon $sampai): array
+    private function bacaLewatPowerShell(string $path, ?Carbon $dari, ?Carbon $sampai, string $mode = 'lengkap'): array
     {
         $powershell = $this->powershell();
         if ($powershell === null) {
@@ -573,6 +655,11 @@ class AttendanceDatabaseReader
                 '-DbPath', $path,
                 '-OutFile', $out,
             ];
+
+            if ($mode !== 'lengkap') {
+                $perintah[] = '-Mode';
+                $perintah[] = $mode;
+            }
 
             if ($dari !== null && $sampai !== null) {
                 $perintah[] = '-From';
@@ -624,113 +711,118 @@ class AttendanceDatabaseReader
      */
     private function bacaLewatTcp(string $host, int $port): array
     {
-        $timeout = (float) config('presensi.mesin_db_timeout', 120);
+        $batas = max(5, (int) config('presensi.mesin_db_timeout', 120));
         $errno = 0;
         $errstr = '';
-        $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+        $socket = @fsockopen($host, $port, $errno, $errstr, min(10, $batas));
         if ($socket === false) {
-            throw new RuntimeException('Gagal koneksi ke mesin via TCP ('.$host.':'.$port.') : '.$errstr);
+            throw new RuntimeException(
+                'Gagal koneksi ke mesin via TCP ('.$host.':'.$port.') : '
+                .($errstr !== '' ? $errstr : 'timeout / tidak ada route ke mesin')
+            );
         }
 
-        try {
-            // Sesi: kirim CMD_CONNECT lalu tunggu ACK.
-            $replyId = 0;
-            $this->kirimPaketTcp($socket, self::COMMAND_CONNECT, 0, $replyId, '');
-            $replyId++;
-            $resp = $this->terimaPaketTcp($socket);
-            if ((int) $resp['command'] !== self::COMMAND_ACK_OK) {
-                throw new RuntimeException('Mesin menolak sesi koneksi (kode: '.$resp['command'].').');
-            }
-            $sessionId = (int) $resp['sessionId'];
-            $replyId = 1;
+        stream_set_timeout($socket, max(5, min(60, $batas)));
 
-            // Matikan sementara mode capture (best effort).
+        try {
+            // 1. Buka sesi (CMD_CONNECT) dan autentikasi bila diminta mesin.
+            $sesi = $this->bukaSesiTcp($socket);
+            $replyId = $sesi['replyId'];
+            $sessionId = $sesi['sessionId'];
+
+            // 2. Hentikan sementara pembacaan sidik jari (best effort).
             $this->kirimPaketTcp($socket, self::COMMAND_DISABLE_DEVICE, $sessionId, $replyId, '');
             $replyId++;
-            try {
-                $this->terimaPaketTcp($socket);
-            } catch (Throwable) {
-                // Tidak ada respons yang diharapkan.
-            }
+            $this->abaikanBalasanTcp($socket);
 
-            // Minta log presensi (CMD_ATTLOG_RRQ).
-            $rawData = '';
-            $this->kirimPaketTcp($socket, self::COMMAND_ATTLOG_RRQ, $sessionId, $replyId, '');
-            $replyId++;
-            $resp = $this->terimaPaketTcp($socket);
+            // 3. Minta seluruh log presensi.
+            $mentah = $this->mintaLogPresensiTcp($socket, $sessionId, $replyId);
 
-            if ((int) $resp['command'] === self::COMMAND_ACK_DATA) {
-                if (strlen((string) $resp['data']) >= 4) {
-                    $dataSize = unpack('V', (string) substr((string) $resp['data'], 0, 4))[1];
-                    if ((int) $dataSize > 0 && strlen((string) $resp['data']) - 4 >= $dataSize) {
-                        $rawData = substr((string) $resp['data'], 4, (int) $dataSize);
-                    }
-                } elseif (strlen((string) $resp['data']) > 0) {
-                    $rawData = (string) $resp['data'];
-                }
-            } elseif ((int) $resp['command'] === self::COMMAND_PREPARE_DATA) {
-                if (strlen((string) $resp['data']) >= 4) {
-                    $dataSize = unpack('V', (string) substr((string) $resp['data'], 0, 4))[1];
-                    $buffer = '';
-                    $maksBaca = max((int) $dataSize, 1);
-                    while (strlen($buffer) < $maksBaca) {
-                        $this->kirimPaketTcp($socket, self::COMMAND_DATA, $sessionId, $replyId, '');
-                        $replyId++;
-                        $chunk = $this->terimaPaketTcp($socket);
-                        if ((int) $chunk['command'] !== self::COMMAND_DATA) {
-                            break;
-                        }
-                        $buffer .= (string) $chunk['data'];
-                    }
-                    $rawData = $buffer;
-                }
-            }
-
-            // Bebas buffer (best effort).
+            // 4. Bersihkan buffer, aktifkan kembali mesin, lalu tutup sesi.
+            //    Balasan tiga perintah terakhir bersifat opsional.
+            stream_set_timeout($socket, 3);
             $this->kirimPaketTcp($socket, self::COMMAND_FREE_DATA, $sessionId, $replyId, '');
             $replyId++;
-            try {
-                $this->terimaPaketTcp($socket);
-            } catch (Throwable) {
-                // Tidak ada respons yang diharapkan.
-            }
+            $this->abaikanBalasanTcp($socket);
 
-            // Aktifkan kembali mesin (best effort).
             $this->kirimPaketTcp($socket, self::COMMAND_ENABLE_DEVICE, $sessionId, $replyId, '');
             $replyId++;
-            try {
-                $this->terimaPaketTcp($socket);
-            } catch (Throwable) {
-                // Tidak ada respons yang diharapkan.
-            }
+            $this->abaikanBalasanTcp($socket);
 
-            // Tutup sesi (best effort).
             $this->kirimPaketTcp($socket, self::COMMAND_EXIT, $sessionId, $replyId, '');
+            $this->abaikanBalasanTcp($socket);
 
-            $scans = [];
-            $dataTeks = $rawData;
-            $recordSize = $this->deteksiUkuranRecord($dataTeks);
-            if ($recordSize > 0) {
-                for ($i = 0; $i + $recordSize <= strlen($dataTeks); $i += $recordSize) {
-                    $record = substr($dataTeks, $i, $recordSize);
-                    $log = $this->parseRecordTcp($record, $recordSize);
-                    if ($log === null) {
-                        continue;
-                    }
-
-                    $scans[] = [
-                        'nik' => (string) $log['userId'],
-                        'nama' => 'Pegawai Mesin #'.$log['userId'],
-                        'waktu' => $log['waktu'],
-                        'tipe' => (string) $log['state'],
-                    ];
-                }
-            }
-
-            return ['ok' => true, 'pesan' => 'OK', 'scans' => $scans];
+            return ['ok' => true, 'pesan' => 'OK', 'scans' => $this->uraiLogPresensiTcp($mentah)];
         } finally {
             @fclose($socket);
         }
+    }
+
+    /**
+     * Buka sesi TCP: CMD_CONNECT, lalu CMD_AUTH memakai communication key
+     * bila mesin membalas CMD_ACK_UNAUTH. Dipakai bersama oleh pembacaan log
+     * penuh dan tombol "Tes Koneksi".
+     *
+     * @return array{replyId: int, sessionId: int}
+     */
+    private function bukaSesiTcp($socket): array
+    {
+        $replyId = 0;
+        $this->kirimPaketTcp($socket, self::COMMAND_CONNECT, 0, $replyId, '');
+        $replyId++;
+        $resp = $this->terimaPaketTcp($socket);
+        $kode = (int) $resp['command'];
+        $sessionId = (int) $resp['sessionId'];
+
+        if ($kode === self::COMMAND_ACK_UNAUTH) {
+            $this->kirimPaketTcp(
+                $socket,
+                self::COMMAND_AUTH,
+                $sessionId,
+                $replyId,
+                ZkTcpProtocol::commKey($this->commKeyMesin(), $sessionId),
+            );
+            $replyId++;
+            $resp = $this->terimaPaketTcp($socket);
+            $kode = (int) $resp['command'];
+
+            $sessionBaru = (int) $resp['sessionId'];
+            if ($sessionBaru !== 0) {
+                $sessionId = $sessionBaru;
+            }
+
+            if ($kode === self::COMMAND_ACK_UNAUTH) {
+                throw new RuntimeException(
+                    'Communication key mesin salah. Periksa menu Komunikasi pada mesin '
+                    .'atau isi PRESENSI_MESIN_COMM_KEY sesuai kunci perangkat.'
+                );
+            }
+        }
+
+        if ($kode !== self::COMMAND_ACK_OK) {
+            throw new RuntimeException('Mesin menolak sesi koneksi (kode: '.$kode.').');
+        }
+
+        return ['replyId' => $replyId, 'sessionId' => $sessionId];
+    }
+
+    /**
+     * Communication key dari konfigurasi. Kunci kosong dianggap 0 karena
+     * mesin dengan kunci bawaan tetap meminta autentikasi (CMD_AUTH).
+     */
+    private function commKeyMesin(): int
+    {
+        $kunci = trim((string) config('presensi.mesin_comm_key', ''));
+
+        if ($kunci === '') {
+            return 0;
+        }
+
+        if (! preg_match('/^\d{1,10}$/', $kunci)) {
+            throw new RuntimeException('PRESENSI_MESIN_COMM_KEY harus berupa angka.');
+        }
+
+        return (int) $kunci;
     }
 
     /**
@@ -738,151 +830,297 @@ class AttendanceDatabaseReader
      */
     private function terimaPaketTcp($socket): array
     {
-        $header = (string) fread($socket, 8);
-        if (strlen($header) < 8) {
-            throw new RuntimeException('Respons dari mesin via TCP terlalu pendek.');
+        $header = $this->bacaTepatTcp($socket, ZkTcpProtocol::UKURAN_HEADER);
+        if (strlen($header) < ZkTcpProtocol::UKURAN_HEADER) {
+            throw new RuntimeException('Respons dari mesin via TCP terlalu pendek (koneksi ditutup mesin).');
         }
 
-        $dataLen = unpack('v', substr($header, 2, 2))[1];
-        if ($dataLen < 6) {
-            $dataLen = 6;
+        if (substr($header, 0, 4) !== ZkTcpProtocol::MAGIC) {
+            throw new RuntimeException(
+                'Header balasan mesin tidak dikenali ('.bin2hex(substr($header, 0, 4)).'). '
+                .'Pastikan port 4370 memakai protokol ZKTeco standar.'
+            );
         }
 
-        $rest = (string) fread($socket, (int) $dataLen);
-        $buf = $header.$rest;
+        $panjang = (int) unpack('V', substr($header, 4, 4))[1];
+        if ($panjang < 8 || $panjang > 64 * 1024 * 1024) {
+            throw new RuntimeException('Ukuran payload balasan mesin tidak wajar ('.$panjang.' byte).');
+        }
 
-        $command = unpack('v', substr($buf, 6, 2))[1];
-        $sessionId = unpack('v', substr($buf, 10, 2))[1];
-        $replyId = unpack('v', substr($buf, 12, 2))[1];
-        $data = strlen($buf) > 14 ? substr($buf, 14) : '';
+        $payload = $this->bacaTepatTcp($socket, $panjang);
+        if (strlen($payload) < $panjang) {
+            throw new RuntimeException('Balasan mesin terpotong ('.$panjang.' byte diminta, '.strlen($payload).' byte diterima).');
+        }
 
-        return [
-            'command' => (int) $command,
-            'sessionId' => (int) $sessionId,
-            'replyId' => (int) $replyId,
-            'data' => $data,
-        ];
+        return ZkTcpProtocol::urai($payload);
     }
 
     private function kirimPaketTcp($socket, int $command, int $sessionId, int $replyId, string $data): void
     {
-        $packet = $this->buatPaketTcp($command, $sessionId, $replyId, $data);
-        fwrite($socket, $packet);
+        if (@fwrite($socket, ZkTcpProtocol::paket($command, $sessionId, $replyId, $data)) === false) {
+            throw new RuntimeException('Gagal mengirim paket ke mesin via TCP.');
+        }
     }
 
-    private function kirimPaketTcpDenganTunggu($socket, int $command, int $sessionId, int $replyId, string $data): array
+    /**
+     * fread() pada socket bisa mengembalikan sebagian data; baca sampai utuh
+     * atau timeout agar header/payload tidak terpotong.
+     */
+    private function bacaTepatTcp($socket, int $jumlah): string
+    {
+        $buffer = '';
+        $batas = microtime(true) + max(5, (float) config('presensi.mesin_db_timeout', 120));
+
+        while (strlen($buffer) < $jumlah) {
+            if (microtime(true) > $batas) {
+                break;
+            }
+
+            $potongan = fread($socket, $jumlah - strlen($buffer));
+            if ($potongan === false || $potongan === '') {
+                $meta = stream_get_meta_data($socket);
+                if (! empty($meta['timed_out']) || feof($socket)) {
+                    break;
+                }
+                usleep(5000);
+
+                continue;
+            }
+
+            $buffer .= $potongan;
+        }
+
+        return $buffer;
+    }
+
+    private function abaikanBalasanTcp($socket): void
+    {
+        try {
+            $this->terimaPaketTcp($socket);
+        } catch (Throwable) {
+            // Balasan untuk perintah best effort tidak wajib ada.
+        }
+    }
+
+    /**
+     * Minta log presensi. Firmware baru memakai CMD_DATA_WRRQ dengan payload
+     * tetap 11 byte; firmware lama hanya mengenal CMD_ATTLOG_RRQ sehingga
+     * dipakai sebagai cadangan bila permintaan pertama ditolak.
+     */
+    private function mintaLogPresensiTcp($socket, int $sessionId, int &$replyId): string
+    {
+        $payload = hex2bin('010d000000000000000000') ?: '';
+
+        $resp = $this->kirimDanTerimaTcp($socket, self::COMMAND_DATA_WRRQ, $sessionId, $replyId, $payload);
+
+        if ($this->balasanGagalTcp((int) $resp['command'])) {
+            $resp = $this->kirimDanTerimaTcp($socket, self::COMMAND_ATTLOG_RRQ, $sessionId, $replyId, '');
+        }
+
+        return $this->bacaBalasanLogTcp($socket, $sessionId, $replyId, $resp);
+    }
+
+    /**
+     * @return array{command: int, sessionId: int, replyId: int, data: string}
+     */
+    private function kirimDanTerimaTcp($socket, int $command, int $sessionId, int &$replyId, string $data): array
     {
         $this->kirimPaketTcp($socket, $command, $sessionId, $replyId, $data);
+        $replyId++;
 
-        $header = (string) fread($socket, 8);
-        if (strlen($header) < 8) {
-            throw new RuntimeException('Respons dari mesin via TCP terlalu pendek.');
-        }
-
-        $dataLen = unpack('v', substr($header, 2, 2))[1];
-        if ($dataLen < 6) {
-            $dataLen = 6;
-        }
-
-        $rest = (string) fread($socket, (int) $dataLen);
-        $buf = $header.$rest;
-
-        $commandTerkendali = unpack('v', substr($buf, 6, 2))[1];
-        $sessionIdTerkendali = unpack('v', substr($buf, 10, 2))[1];
-        $replyIdTerkendali = unpack('v', substr($buf, 12, 2))[1];
-        $dataTerkendali = strlen($buf) > 14 ? substr($buf, 14) : '';
-
-        return [
-            'command' => (int) $commandTerkendali,
-            'sessionId' => (int) $sessionIdTerkendali,
-            'replyId' => (int) $replyIdTerkendali,
-            'data' => $dataTerkendali,
-        ];
+        return $this->terimaPaketTcp($socket);
     }
 
-    private function buatPaketTcp(int $command, int $sessionId, int $replyId, string $data): string
+    private function balasanGagalTcp(int $command): bool
     {
-        $packetLength = 8 + 6 + strlen($data);
-        $packet = chr(0x50).chr(0x50).pack('v', strlen($data) + 8).pack('v', 0).pack('v', $command);
-
-        $checksumInput = pack('v', $command).pack('v', 0).pack('v', $sessionId).pack('v', $replyId).$data;
-        $checksumSum = 0;
-        $panjang = strlen($checksumInput);
-        for ($i = 0; $i + 1 < $panjang; $i += 2) {
-            $checksumSum += ord($checksumInput[$i]).(ord($checksumInput[$i + 1]) * 256);
-        }
-        if ($panjang % 2 === 1) {
-            $checksumSum += ord($checksumInput[$panjang - 1]);
-        }
-        while ($checksumSum > 65535) {
-            $checksumSum = ($checksumSum & 0xFFFF) + intdiv($checksumSum, 65536);
-        }
-        $checksum = (~$checksumSum) & 0xFFFF;
-
-        return $packet.pack('v', $checksum).pack('v', $sessionId).pack('v', $replyId).$data;
+        return in_array($command, [
+            self::COMMAND_ACK_ERROR,
+            self::COMMAND_ACK_ERROR_DATA,
+            self::COMMAND_ACK_ERROR_CMD,
+            self::COMMAND_ACK_UNKNOWN,
+        ], true);
     }
 
     /**
-     * @return array{userId: int, waktu: Carbon, state: int}|null
+     * @param  array{command: int, sessionId: int, replyId: int, data: string}  $resp
      */
-    private function parseRecordTcp(string $record, int $recordSize): ?array
+    private function bacaBalasanLogTcp($socket, int $sessionId, int &$replyId, array $resp): string
     {
-        if ($recordSize === 8) {
-            $userId = unpack('v', substr($record, 0, 2))[1];
-            $timeSeconds = unpack('V', substr($record, 2, 4))[1];
-            $state = ord($record[6]);
-            $verifyType = ord($record[7]);
-        } elseif ($recordSize === 16) {
-            $userId = unpack('V', substr($record, 0, 4))[1];
-            $timeSeconds = unpack('V', substr($record, 4, 4))[1];
-            $state = ord($record[8]);
-            $verifyType = ord($record[9]);
-        } elseif ($recordSize === 40) {
-            $userIdTeks = substr($record, 0, 9);
-            $userIdTeks = rtrim($userIdTeks, "\x00");
-            $userId = (int) $userIdTeks;
-            $timeSeconds = unpack('V', substr($record, 24, 4))[1];
-            $state = ord($record[28]);
-            $verifyType = ord($record[29]);
-        } else {
-            return null;
+        $perintah = (int) $resp['command'];
+        $data = (string) $resp['data'];
+
+        if ($perintah === self::COMMAND_ACK_UNAUTH) {
+            throw new RuntimeException('Mesin meminta communication key.');
         }
 
-        if ($userId <= 0) {
-            return null;
+        if ($perintah === self::COMMAND_DATA || $perintah === self::COMMAND_ACK_DATA) {
+            return $data;
         }
 
-        $waktu = Carbon::parse(self::MESIN_EPOCH)->addSeconds((int) $timeSeconds);
+        if ($perintah === self::COMMAND_PREPARE_DATA) {
+            $ukuran = strlen($data) >= 4 ? (int) unpack('V', substr($data, 0, 4))[1] : 0;
+            if ($ukuran <= 0) {
+                throw new RuntimeException('Mesin menyiapkan data tetapi ukurannya tidak valid.');
+            }
 
-        return [
-            'userId' => (int) $userId,
-            'waktu' => $waktu,
-            'state' => (int) $state,
-            'verifyType' => (int) $verifyType,
-        ];
+            return $this->kumpulkanDataTcp($socket, $ukuran);
+        }
+
+        if ($perintah === self::COMMAND_ACK_OK) {
+            // Sebagian firmware membalas ACK_OK tanpa data saat tidak ada log.
+            if ($data === '') {
+                return '';
+            }
+
+            $ukuran = $this->ukuranDariBalasanTcp($data);
+            if ($ukuran <= 0) {
+                throw new RuntimeException('Mesin tidak menyertakan ukuran log presensi.');
+            }
+
+            // CMD_DATA_RDY: 4 byte nol + ukuran dataset (little endian).
+            $this->kirimPaketTcp($socket, self::COMMAND_DATA_RDY, $sessionId, $replyId, pack('V', 0).pack('V', $ukuran));
+            $replyId++;
+
+            return $this->kumpulkanDataTcp($socket, $ukuran);
+        }
+
+        throw new RuntimeException('Mesin menolak permintaan log presensi (kode: '.$perintah.').');
     }
 
-    /**
-     * Deteksi ukuran record presensi dari payload yang dibaca.
-     */
-    private function deteksiUkuranRecord(string $data): int
+    private function ukuranDariBalasanTcp(string $data): int
     {
-        foreach ([40, 16, 8] as $ukuran) {
-            if (strlen($data) < $ukuran) {
-                continue;
-            }
-            if (strlen($data) % $ukuran !== 0) {
-                continue;
-            }
+        $kandidat = [];
 
-            $sample = substr($data, 0, $ukuran);
-            $parsed = $this->parseRecordTcp($sample, $ukuran);
-            if ($parsed !== null && $parsed['userId'] > 0) {
+        // Struktur "data stat" CMD_DATA_WRRQ: 1 byte nol + ukuran 4 byte.
+        if (strlen($data) >= 5) {
+            $kandidat[] = (int) unpack('V', substr($data, 1, 4))[1];
+        }
+
+        // Sebagian firmware mengirim ukuran langsung di awal data.
+        if (strlen($data) >= 4) {
+            $kandidat[] = (int) unpack('V', substr($data, 0, 4))[1];
+        }
+
+        foreach ($kandidat as $ukuran) {
+            if ($ukuran > 0 && $ukuran <= 64 * 1024 * 1024) {
                 return $ukuran;
             }
         }
 
         return 0;
+    }
+
+    private function kumpulkanDataTcp($socket, int $ukuran): string
+    {
+        $ukuran = max(1, $ukuran);
+        $buffer = '';
+        $batas = microtime(true) + max(10, (float) config('presensi.mesin_db_timeout', 120));
+
+        while (strlen($buffer) < $ukuran) {
+            if (microtime(true) > $batas) {
+                throw new RuntimeException(
+                    'Timeout menunggu data log presensi dari mesin ('.strlen($buffer).' dari '.$ukuran.' byte).'
+                );
+            }
+
+            $paket = $this->terimaPaketTcp($socket);
+            $perintah = (int) $paket['command'];
+
+            if ($perintah === self::COMMAND_DATA) {
+                $buffer .= (string) $paket['data'];
+
+                continue;
+            }
+
+            if ($perintah === self::COMMAND_PREPARE_DATA) {
+                continue;
+            }
+
+            if ($perintah === self::COMMAND_ACK_OK) {
+                break;
+            }
+
+            if ($this->balasanGagalTcp($perintah)) {
+                throw new RuntimeException('Mesin menolak pengiriman data log (kode: '.$perintah.').');
+            }
+
+            // Paket lain (mis. event realtime) diabaikan.
+        }
+
+        if ($buffer === '') {
+            throw new RuntimeException('Mesin tidak mengirim data log presensi.');
+        }
+
+        return $buffer;
+    }
+
+    /**
+     * Dataset log diawali 4 byte ukuran total. Coba dengan dan tanpa prefix
+     * tersebut agar tetap kompatibel dengan beberapa versi firmware.
+     *
+     * @return list<array{nik: string, nama: string, waktu: Carbon, tipe: string}>
+     */
+    private function uraiLogPresensiTcp(string $mentah): array
+    {
+        $kandidat = strlen($mentah) > 4 ? [substr($mentah, 4), $mentah] : [$mentah];
+
+        $data = null;
+        $ukuranRecord = 0;
+
+        foreach ($kandidat as $isi) {
+            if ($isi === '') {
+                continue;
+            }
+
+            $ukuran = ZkTcpProtocol::ukuranRecord($isi);
+            if ($ukuran > 0) {
+                $data = $isi;
+                $ukuranRecord = $ukuran;
+
+                break;
+            }
+        }
+
+        if ($data === null) {
+            return [];
+        }
+
+        $scans = [];
+        $panjang = strlen($data);
+        for ($i = 0; $i + $ukuranRecord <= $panjang; $i += $ukuranRecord) {
+            $log = ZkTcpProtocol::record(substr($data, $i, $ukuranRecord), $ukuranRecord);
+            if ($log === null) {
+                continue;
+            }
+
+            $nik = $this->formatUserIdMesin((string) $log['userId']);
+
+            $scans[] = [
+                'nik' => $nik,
+                'nama' => 'Pegawai Mesin #'.$nik,
+                'waktu' => $log['waktu'],
+                'tipe' => (string) $log['state'],
+            ];
+        }
+
+        return $scans;
+    }
+
+    /**
+     * ZKTime menyimpan No. PIN sebagai 10 digit berawalan nol, sedangkan
+     * mesin mengirim user id tanpa nol di depan ("2"). Samakan formatnya
+     * agar hasil tarik TCP cocok dengan users.nik hasil "Tarik NIK".
+     */
+    private function formatUserIdMesin(string $userId): string
+    {
+        $userId = trim($userId);
+        $pad = (int) config('presensi.mesin_user_id_pad', 10);
+
+        if ($pad > 0 && $userId !== '' && ctype_digit($userId) && strlen($userId) < $pad) {
+            return str_pad($userId, $pad, '0', STR_PAD_LEFT);
+        }
+
+        return $userId;
     }
 
     private function powershell(): ?string

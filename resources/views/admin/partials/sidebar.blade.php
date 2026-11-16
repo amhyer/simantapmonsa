@@ -30,6 +30,7 @@
         'erapor' => [
             ['label' => 'UTAMA', 'items' => [
                 ['route' => 'admin.profile', 'icon' => 'lucide-id-card', 'label' => 'Profil'],
+                ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna'],
             ]],
             ['label' => 'STATUS PENILAIAN', 'icon' => 'lucide-graduation-cap', 'children' => [
                 ['route' => 'admin.penilaian.status', 'icon' => 'lucide-check-circle', 'label' => 'Status per Guru'],
@@ -117,7 +118,7 @@
                 ['route' => 'admin.rapor.siswa-belajar', 'icon' => 'lucide-user-check', 'label' => 'Siswa Belajar'],
             ]],
             ['label' => 'AKUN & KODE AKSES', 'icon' => 'lucide-key', 'children' => [
-                ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Manajemen Akun'],
+                ['route' => 'admin.users.index', 'icon' => 'lucide-users', 'label' => 'Data Pengguna (Manajemen Akun)'],
                 ['route' => 'admin.kode-akses.index', 'icon' => 'lucide-key', 'label' => 'Cetak Kode Akses Login'],
             ]],
             ['label' => 'PRESENSI', 'icon' => 'lucide-calendar-check', 'children' => [

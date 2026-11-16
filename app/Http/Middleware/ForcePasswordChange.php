@@ -12,8 +12,8 @@ class ForcePasswordChange
     {
         $user = Auth::user();
 
-        // Only check authenticated users
-        if (!$user) {
+        // Only check authenticated users (and skip when Admin is impersonating a Guru)
+        if (!$user || $request->session()->has('admin_impersonator_id')) {
             return $next($request);
         }
 

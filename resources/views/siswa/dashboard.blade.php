@@ -85,6 +85,76 @@
         </div>
     </div>
 
+    {{-- Kartu Data Akademik Siswa & Rekap Nilai Rapor Semester Ini (ala e-Rapor SD 2025.1) --}}
+    @if(isset($infoAkademik) && isset($rekapRaporSemester))
+        <div class="grid grid-2" style="margin-bottom:20px">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-id-badge" style="margin-right:8px;color:var(--violet)"></i>Data Akademik Siswa</h3>
+                    <span class="tag tag-violet">{{ $siswa->kelas ?? '-' }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-2" style="gap:12px">
+                        <div style="padding:10px 12px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
+                            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">Status Rombel</div>
+                            <div style="font-size:14px;font-weight:700;margin-top:2px">{{ $infoAkademik['status_rombel'] }}</div>
+                        </div>
+                        <div style="padding:10px 12px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
+                            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">Tingkat & Fase</div>
+                            <div style="font-size:14px;font-weight:700;margin-top:2px">{{ $infoAkademik['tingkat_fase'] }}</div>
+                        </div>
+                        <div style="padding:10px 12px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
+                            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">Wali Kelas</div>
+                            <div style="font-size:14px;font-weight:700;margin-top:2px">{{ $infoAkademik['wali_kelas'] }}</div>
+                        </div>
+                        <div style="padding:10px 12px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
+                            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">NIP Wali Kelas</div>
+                            <div style="font-size:14px;font-weight:700;margin-top:2px">{{ $infoAkademik['nip_wali'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-book-reader" style="margin-right:8px;color:var(--gold)"></i>Rekap Nilai Rapor Semester Ini</h3>
+                    @if(\Illuminate\Support\Facades\Route::has('siswa.rapor.unduh'))
+                        <a href="{{ route('siswa.rapor.unduh') }}" class="btn btn-sm btn-primary" style="background:var(--violet,#6D28D9);border-color:var(--violet,#6D28D9)">
+                            <i class="fas fa-file-download"></i> Download Rapor Semester Ini
+                        </a>
+                    @endif
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-4" style="gap:10px">
+                        <div style="padding:10px;border:1px solid #E4E7EC;border-radius:8px;text-align:center">
+                            <div style="font-size:11px;color:var(--muted);font-weight:700">Total Mapel</div>
+                            <div style="font-size:20px;font-weight:800;color:var(--violet);margin-top:4px">{{ $rekapRaporSemester['total_mapel'] }}</div>
+                        </div>
+                        <div style="padding:10px;border:1px solid #E4E7EC;border-radius:8px;text-align:center">
+                            <div style="font-size:11px;color:var(--muted);font-weight:700">Rata-rata</div>
+                            <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px">{{ number_format($rekapRaporSemester['rata_rata'], 2) }}</div>
+                        </div>
+                        <div style="padding:10px;border:1px solid #E4E7EC;border-radius:8px;text-align:center">
+                            <div style="font-size:11px;color:var(--muted);font-weight:700">Tertinggi</div>
+                            <div style="font-size:20px;font-weight:800;color:var(--ok);margin-top:4px">{{ number_format($rekapRaporSemester['tertinggi'], 2) }}</div>
+                        </div>
+                        <div style="padding:10px;border:1px solid #E4E7EC;border-radius:8px;text-align:center">
+                            <div style="font-size:11px;color:var(--muted);font-weight:700">Terendah</div>
+                            <div style="font-size:20px;font-weight:800;color:var(--bad);margin-top:4px">{{ number_format($rekapRaporSemester['terendah'], 2) }}</div>
+                        </div>
+                    </div>
+                    @if(\Illuminate\Support\Facades\Route::has('siswa.rapor.capaian'))
+                        <div style="margin-top:12px;display:flex;justify-content:flex-end">
+                            <a href="{{ route('siswa.rapor.capaian') }}" style="font-size:12.5px;font-weight:700;color:var(--violet,#6D28D9);text-decoration:none">
+                                Lihat Rekap Capaian & Deskripsi Rapor Selengkapnya &rarr;
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-2" style="margin-bottom:20px">
         <div class="card">
             <div class="card-header">

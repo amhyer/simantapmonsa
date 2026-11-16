@@ -6,6 +6,32 @@
 @section('page_subtitle', $sekolahSettings ? $sekolahSettings->nama_sekolah : 'Kelola seluruh sistem')
 
 @section('content')
+    {{-- Banner Kontrol Akses Input Nilai Semester (ala e-Rapor SD 2025.1) --}}
+    @php $kunciGlobal = $kunciRaporGlobal ?? false; @endphp
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-radius:12px;margin-bottom:20px;flex-wrap:wrap;background:{{ $kunciGlobal ? 'linear-gradient(135deg,#991B1B,#DC2626)' : 'linear-gradient(135deg,#065F46,#059669)' }};color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+        <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+                <i class="fas {{ $kunciGlobal ? 'fa-lock' : 'fa-lock-open' }}"></i>
+            </div>
+            <div>
+                <div style="font-size:15px;font-weight:800">
+                    Status Input Nilai Rapor: {{ $kunciGlobal ? 'DITUTUP (TERKUNCI)' : 'DIBUKA (AKTIF)' }}
+                </div>
+                <div style="font-size:12.5px;opacity:.9">
+                    Semester Aktif: <b>{{ $semesterAktif ? $semesterAktif->tahun_ajaran . ' ' . ucfirst($semesterAktif->nama_semester) : (semesterAktifLabel() ?? 'Berjalan') }}</b>
+                    &bull; {{ $kunciGlobal ? 'Guru dan Wali Kelas sedang tidak dapat mengubah nilai rapor.' : 'Guru dan Wali Kelas dapat mengisi serta memperbarui nilai rapor.' }}
+                </div>
+            </div>
+        </div>
+        <form method="POST" action="{{ route('admin.peta-kelas.toggle-kunci-semua') }}" style="margin:0">
+            @csrf
+            <button type="submit" class="btn btn-sm" style="background:#fff;color:{{ $kunciGlobal ? '#991B1B' : '#065F46' }};font-weight:700;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
+                <i class="fas {{ $kunciGlobal ? 'fa-unlock' : 'fa-lock' }}" style="margin-right:6px"></i>
+                {{ $kunciGlobal ? 'Buka Input Nilai' : 'Tutup Input Nilai' }}
+            </button>
+        </form>
+    </div>
+
     {{-- Top Stats --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px">
         <div class="stat-card primary">
