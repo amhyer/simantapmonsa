@@ -5,24 +5,37 @@ namespace Tests\Feature;
 use App\Models\JadwalPelajaran;
 use App\Models\Materi;
 use App\Models\Rombel;
+use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\Tenant;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class SiswaMateriFilterTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function makeSemester(): Semester
+    {
+        return Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+    }
+
     public function test_siswa_melihat_materi_dari_guru_mapel_sesuai_jadwal_dan_wali_kelas_tanpa_bocor_kelas_lain(): void
     {
+        $semester = $this->makeSemester();
         $guruWali = User::factory()->guru()->create();
         $guruMapelA = User::factory()->guru()->create();
         $guruMapelLain = User::factory()->guru()->create();
 
         $rombel6A = Rombel::create([
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $semester->id,
             'nama_rombel' => 'Kelas 6A',
             'tingkat' => 6,
             'guru_id' => $guruWali->id,
@@ -114,13 +127,31 @@ class SiswaMateriFilterTest extends TestCase
 
     public function test_materi_terisolasi_antar_tenant(): void
     {
-        $tenantA = Tenant::create(['nama_sekolah' => 'SDN Alpha', 'slug' => 'sdn-alpha', 'aktif' => true]);
-        $tenantB = Tenant::create(['nama_sekolah' => 'SDN Beta', 'slug' => 'sdn-beta', 'aktif' => true]);
+        $semester = $this->makeSemester();
+        $tenantA = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SDN Alpha',
+            'subdomain' => 'sdn-alpha',
+            'aktif' => true,
+        ]);
+        $tenantB = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SDN Beta',
+            'subdomain' => 'sdn-beta',
+            'aktif' => true,
+        ]);
 
         $guruA = User::factory()->guru()->create(['tenant_id' => $tenantA->id]);
         $guruB = User::factory()->guru()->create(['tenant_id' => $tenantB->id]);
 
-        $rombelA = Rombel::create(['tenant_id' => $tenantA->id, 'nama_rombel' => 'Kelas 6A', 'tingkat' => 6, 'guru_id' => $guruA->id]);
+        $rombelA = Rombel::create([
+            'tenant_id' => $tenantA->id,
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $semester->id,
+            'nama_rombel' => 'Kelas 6A',
+            'tingkat' => 6,
+            'guru_id' => $guruA->id,
+        ]);
         $userSiswaA = User::factory()->siswa()->create(['tenant_id' => $tenantA->id, 'nisn' => '5555566666']);
         Siswa::create([
             'tenant_id' => $tenantA->id,

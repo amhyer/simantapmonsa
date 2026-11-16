@@ -20,6 +20,14 @@ async function saveTraceAndClose(context) {
     await context.close();
 }
 
+async function enterMandatoryFullscreen(page) {
+    const fsGate = page.locator('#anbk-fs-gate');
+    if (await fsGate.isVisible()) {
+        await page.locator('#btn-enter-mandatory-fs').click();
+        await expect(fsGate).toBeHidden();
+    }
+}
+
 test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership, dan CSV', async ({ browser, page }) => {
     test.setTimeout(120_000);
 
@@ -36,6 +44,7 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
         page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: 'Mulai ujian sekarang' }).click();
         await expect(page.locator('#exam-form')).toBeVisible();
+        await enterMandatoryFullscreen(page);
 
         const submitAction = await page.locator('#exam-form').getAttribute('action');
         const resultId = Number(submitAction?.match(/\/cbt\/student\/(\d+)\/submit$/)?.[1]);
@@ -54,9 +63,10 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
 
         // E2E-CBT-03: refresh harus mempertahankan pilihan yang tampak tercentang.
         await page.reload({ waitUntil: 'domcontentloaded' });
+        await enterMandatoryFullscreen(page);
         await expect(page.locator('input[data-question="9302"][value="A"]')).toBeChecked();
 
-        // E2E-CBT-04: simulasi tab tersembunyi mengirim telemetri integritas.
+        // E2E-CBT-04: simulasi tab tersembunyi mengirim telemetri integritas & memicu reset-and-kick.
         const integrityRequest = page.waitForResponse(response =>
             response.url().includes(`/cbt/student/${resultId}/integrity`)
             && response.request().method() === 'POST'
@@ -66,31 +76,36 @@ test('E2E-CBT-01..09: mulai, autosave/reload, anti-cheat, submit-lock, ownership
             document.dispatchEvent(new Event('visibilitychange'));
         });
         expect((await integrityRequest).status()).toBe(200);
-        await page.evaluate(() => {
-            Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
-        });
+        await page.waitForURL(/\/cbt\/student\?kicked=1/, { timeout: 10_000 });
 
-        // Isi empat jawaban tersisa melalui kontrol browser dan tunggu tiap autosave.
+        // Masuk kembali ke sesi ujian yang sama setelah reset-and-kick dan selesaikan semua 5 soal.
+        await page.goto('/cbt/student/9311/start', { waitUntil: 'domcontentloaded' });
+        await expect(page.locator('#exam-form')).toBeVisible();
+        await enterMandatoryFullscreen(page);
+
         const answerChoices = page.locator('input[data-question][value="A"]');
         const choiceCount = await answerChoices.count();
         expect(choiceCount).toBe(5);
         for (let index = 0; index < choiceCount; index++) {
             const choice = answerChoices.nth(index);
-            if (await choice.isChecked()) continue;
-            await page.locator(`#palette-btn-${index + 1}`).click();
-            const saved = page.waitForResponse(response =>
-                response.url().includes(`/cbt/student/${resultId}/answer`)
-                && response.request().method() === 'POST'
-            );
-            await choice.locator("xpath=..").click();
-            await expect(choice).toBeChecked();
-            expect((await saved).status()).toBe(200);
+            if (!(await choice.isChecked())) {
+                const saved = page.waitForResponse(response =>
+                    response.url().includes(`/cbt/student/${resultId}/answer`)
+                    && response.request().method() === 'POST'
+                );
+                await choice.locator("xpath=..").click();
+                await expect(choice).toBeChecked();
+                expect((await saved).status()).toBe(200);
+            }
+            if (index < choiceCount - 1) {
+                await page.locator('#exam-form .anbk-btn-next:visible').click();
+            }
         }
         await expect(page.getByRole('status')).toContainText('Semua perubahan jawaban tersimpan di server.');
 
         // E2E-CBT-05/06: submit mengunci percobaan dan menampilkan nilai hasil server.
         page.once('dialog', dialog => dialog.accept());
-        await page.getByRole('button', { name: 'Kumpulkan jawaban' }).click();
+        await page.locator('#exam-form .anbk-btn-finish:visible').click();
         await expect(page).toHaveURL(new RegExp(`/cbt/student/${resultId}/result$`));
         await expect(page.getByText('Nilai 100.00')).toBeVisible();
         await expect(page.getByText('Benar 5 dari 5 soal.')).toBeVisible();

@@ -3,14 +3,35 @@
 namespace Tests\Feature;
 
 use App\Models\Rombel;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class WaliKelasFlagTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function makeSemester(): Semester
+    {
+        return Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+    }
+
+    private function makeRombel(string $nama, int $tingkat, int $guruId): Rombel
+    {
+        return Rombel::create([
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $this->makeSemester()->id,
+            'nama_rombel' => $nama,
+            'tingkat' => $tingkat,
+            'guru_id' => $guruId,
+        ]);
+    }
 
     public function test_helper_guru_adalah_wali_kelas_aman_saat_guest(): void
     {
@@ -32,11 +53,7 @@ class WaliKelasFlagTest extends TestCase
         $guruEksplisitFalse = User::factory()->guru()->create(['is_wali_kelas' => false]);
 
         // Meski guruEksplisitFalse tercantum sebagai guru_id rombel, override false tetap berlaku.
-        Rombel::create([
-            'nama_rombel' => 'Kelas 5A',
-            'tingkat' => 5,
-            'guru_id' => $guruEksplisitFalse->id,
-        ]);
+        $this->makeRombel('Kelas 5A', 5, $guruEksplisitFalse->id);
 
         $this->assertTrue($guruEksplisitTrue->isWaliKelas());
         $this->assertFalse($guruEksplisitFalse->isWaliKelas());
@@ -48,11 +65,7 @@ class WaliKelasFlagTest extends TestCase
         $guruFallback = User::factory()->guru()->create(['is_wali_kelas' => null]);
         $guruMapelBiasa = User::factory()->guru()->create(['is_wali_kelas' => null]);
 
-        Rombel::create([
-            'nama_rombel' => 'Kelas 6A',
-            'tingkat' => 6,
-            'guru_id' => $guruRombel->id,
-        ]);
+        $this->makeRombel('Kelas 6A', 6, $guruRombel->id);
 
         Siswa::create([
             'guru_id' => $guruFallback->id,
@@ -73,11 +86,7 @@ class WaliKelasFlagTest extends TestCase
         $guruMapel = User::factory()->guru()->create(['is_wali_kelas' => null]);
         $guruWalas = User::factory()->guru()->create(['is_wali_kelas' => null]);
 
-        Rombel::create([
-            'nama_rombel' => 'Kelas 6B',
-            'tingkat' => 6,
-            'guru_id' => $guruWalas->id,
-        ]);
+        $this->makeRombel('Kelas 6B', 6, $guruWalas->id);
 
         $htmlMapel = $this->actingAs($guruMapel)->get(route('guru.dashboard'))
             ->assertOk()

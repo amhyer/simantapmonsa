@@ -13,16 +13,37 @@ use App\Models\Kuis;
 use App\Models\Materi;
 use App\Models\Nilai;
 use App\Models\Rombel;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class KelasDigitalTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function makeSemester(): Semester
+    {
+        return Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+    }
+
+    private function makeRombel(string $nama, int $tingkat, int $guruId): Rombel
+    {
+        return Rombel::create([
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $this->makeSemester()->id,
+            'nama_rombel' => $nama,
+            'tingkat' => $tingkat,
+            'guru_id' => $guruId,
+        ]);
+    }
 
     private function createPdfUpload(string $name = 'materi.pdf'): UploadedFile
     {
@@ -38,7 +59,7 @@ class KelasDigitalTest extends TestCase
 
         $guruWali = User::factory()->guru()->create();
         $guruMapel = User::factory()->guru()->create(['nama_lengkap' => 'Bu Rina Matematika']);
-        $rombel6A = Rombel::create(['nama_rombel' => 'Kelas 6A', 'tingkat' => 6, 'guru_id' => $guruWali->id]);
+        $rombel6A = $this->makeRombel('Kelas 6A', 6, $guruWali->id);
 
         $userSiswa = User::factory()->siswa()->create(['nisn' => '9988776655']);
         $siswa = Siswa::create([
@@ -233,8 +254,8 @@ class KelasDigitalTest extends TestCase
 
         $guruA = User::factory()->guru()->create();
         $guruB = User::factory()->guru()->create();
-        $rombel6A = Rombel::create(['nama_rombel' => 'Kelas 6A', 'tingkat' => 6, 'guru_id' => $guruA->id]);
-        $rombel6B = Rombel::create(['nama_rombel' => 'Kelas 6B', 'tingkat' => 6, 'guru_id' => $guruB->id]);
+        $rombel6A = $this->makeRombel('Kelas 6A', 6, $guruA->id);
+        $rombel6B = $this->makeRombel('Kelas 6B', 6, $guruB->id);
 
         $userSiswaA1 = User::factory()->siswa()->create(['nisn' => '1111000011']);
         $siswaA1 = Siswa::create([
