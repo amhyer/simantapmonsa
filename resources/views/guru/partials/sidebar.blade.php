@@ -43,7 +43,8 @@
                 ['route' => 'tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
             ]],
-            ['label' => 'Asesmen & Simulasi TKA', 'icon' => 'lucide-award', 'open' => request()->routeIs('tka.*', 'guru.tka.*'), 'children' => [
+            ['label' => 'Asesmen & Simulasi TKA', 'icon' => 'lucide-award', 'open' => request()->routeIs('tka.*', 'guru.tka.*', 'guru.tka-kesiapan.*'), 'children' => [
+                ['route' => 'guru.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Pemantauan Kesiapan TKA'],
                 ['route' => 'guru.tka.index', 'icon' => 'lucide-gauge', 'label' => 'Monitoring Kesiapan TKA'],
                 ['route' => 'guru.tka.kognitif.index', 'icon' => 'lucide-brain', 'label' => 'Rekap Kognitif & Rekomendasi'],
                 ['route' => 'guru.tka.integrasi-erapor.index', 'icon' => 'lucide-refresh-cw', 'label' => 'Integrasi TKA ke e-Rapor'],
@@ -78,12 +79,14 @@
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())
+        @continue(($item['kesiapan_tka'] ?? false) && !kesiapanTkaAktif())
         @continue(!isset($item['children']) && !\Illuminate\Support\Facades\Route::has($item['route']))
         @if(isset($item['children']))
-            @php $childActive = collect($item['children'])->contains(fn($c) => (!(($c['asesmen'] ?? false)) || modulAsesmenAktif()) && $isActive($c['route'])); @endphp
+            @php $childActive = collect($item['children'])->contains(fn($c) => (!(($c['asesmen'] ?? false)) || modulAsesmenAktif()) && (!(($c['kesiapan_tka'] ?? false)) || kesiapanTkaAktif()) && $isActive($c['route'])); @endphp
             <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">
                 @foreach($item['children'] as $child)
                     @continue(($child['asesmen'] ?? false) && !modulAsesmenAktif())
+                    @continue(($child['kesiapan_tka'] ?? false) && !kesiapanTkaAktif())
                     @continue(!\Illuminate\Support\Facades\Route::has($child['route']))
                     <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endforeach

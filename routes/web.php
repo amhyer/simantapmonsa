@@ -416,6 +416,16 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::post('/kehadiran', [\App\Http\Controllers\Api\DapodikPushController::class, 'pushKehadiran'])->name('kehadiran');
         Route::get('/status', [\App\Http\Controllers\Api\DapodikPushController::class, 'status'])->name('status');
     });
+
+    // Pemantauan Kesiapan TKA (agregat sekolah + konfigurasi aturan & pemetaan)
+    Route::prefix('tka-kesiapan')->name('tka-kesiapan.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tka\KesiapanController::class, 'index'])->name('index');
+        Route::get('/ekspor', [\App\Http\Controllers\Tka\KesiapanController::class, 'ekspor'])->name('ekspor');
+        Route::get('/pengaturan', [\App\Http\Controllers\Tka\KesiapanController::class, 'pengaturan'])->name('pengaturan');
+        Route::post('/aturan', [\App\Http\Controllers\Tka\KesiapanController::class, 'simpanAturan'])->middleware('throttle:30,1')->name('aturan.simpan');
+        Route::post('/pemetaan', [\App\Http\Controllers\Tka\KesiapanController::class, 'simpanPemetaan'])->middleware('throttle:30,1')->name('pemetaan.simpan');
+        Route::delete('/pemetaan/{id}', [\App\Http\Controllers\Tka\KesiapanController::class, 'hapusPemetaan'])->whereNumber('id')->middleware('throttle:30,1')->name('pemetaan.hapus');
+    });
 });
 
 // ==================== GURU ROUTES ====================
@@ -503,6 +513,15 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
     Route::get('/tka/laporan-kelas', [\App\Http\Controllers\Guru\TkaInovasiController::class, 'laporanKelas'])->name('tka.laporan-kelas.index');
     Route::get('/tka/{id}', [TKAController::class, 'show'])->name('tka.show');
     Route::post('/tka', [TKAController::class, 'store'])->name('tka.store');
+
+    // Pemantauan Kesiapan Siswa Menghadapi TKA Kementerian (kelas 4 → 5 → 6)
+    Route::prefix('tka-kesiapan')->name('tka-kesiapan.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Tka\KesiapanController::class, 'index'])->name('index');
+        Route::get('/ekspor', [\App\Http\Controllers\Tka\KesiapanController::class, 'ekspor'])->name('ekspor');
+        Route::get('/siswa/{uuid}', [\App\Http\Controllers\Tka\KesiapanController::class, 'siswa'])->name('siswa');
+        Route::post('/siswa/{uuid}/susun', [\App\Http\Controllers\Tka\KesiapanController::class, 'susun'])->middleware('throttle:30,1')->name('susun');
+        Route::patch('/tindak-lanjut/{tindakLanjut}', [\App\Http\Controllers\Tka\KesiapanController::class, 'perbarui'])->middleware('throttle:60,1')->name('perbarui');
+    });
     
     // Analisis Belajar
     Route::get('/analisis', [AnalisisController::class, 'index'])->name('analisis.index');
@@ -578,6 +597,7 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
         Route::post('/{id}/submit', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'submit'])->name('submit');
         Route::get('/{id}/result', [\App\Http\Controllers\Siswa\TkaSimulasiController::class, 'result'])->name('result');
     });
+    Route::get('/tka-kesiapan', [\App\Http\Controllers\Tka\KesiapanController::class, 'mandiri'])->name('tka-kesiapan.index');
 });
 
 // ==================== ORANG TUA ROUTES ====================
@@ -594,6 +614,7 @@ Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context
     Route::get('/tka-riwayat', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'index'])->name('tka-riwayat.index');
     Route::get('/tka-riwayat/{simulation}', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'show'])->name('tka-riwayat.show');
     Route::post('/tka-riwayat/{simulation}/konfirmasi', [\App\Http\Controllers\Ortu\TkaRiwayatController::class, 'konfirmasiBaca'])->middleware('throttle:30,1')->name('tka-riwayat.konfirmasi');
+    Route::get('/tka-kesiapan', [\App\Http\Controllers\Tka\KesiapanController::class, 'mandiri'])->name('tka-kesiapan.index');
 });
 
 // ==================== KEPSEK ROUTES ====================
@@ -610,6 +631,8 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
     Route::get('/tka-laporan', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'index'])->name('tka-laporan.index');
     Route::get('/tka-laporan/export-csv', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'exportCsv'])->name('tka-laporan.export');
+    Route::get('/tka-kesiapan', [\App\Http\Controllers\Tka\KesiapanController::class, 'index'])->name('tka-kesiapan.index');
+    Route::get('/tka-kesiapan/ekspor', [\App\Http\Controllers\Tka\KesiapanController::class, 'ekspor'])->name('tka-kesiapan.ekspor');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

@@ -9,6 +9,7 @@ use App\Models\CbtTestSession;
 use App\Models\NilaiErapot;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
+use App\Models\Tka\Kesiapan\TindakLanjut;
 use App\Models\Tka\StudentAssessment;
 use App\Models\Tryout\Result;
 use App\Models\Tryout\Session;
@@ -20,6 +21,7 @@ use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
 use App\Policies\TkaAssessmentPolicy;
+use App\Policies\TkaKesiapanPolicy;
 use App\Policies\TryoutResultPolicy;
 use App\Policies\TryoutSessionPolicy;
 use App\Services\Dapodik\SidebarSyncStatus;
@@ -61,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Session::class, TryoutSessionPolicy::class);
         Gate::policy(Result::class, TryoutResultPolicy::class);
         Gate::policy(StudentAssessment::class, TkaAssessmentPolicy::class);
+        Gate::policy(TindakLanjut::class, TkaKesiapanPolicy::class);
 
         // Jejak audit nilai e-Rapor: observer memastikan input guru, import,
         // dan sinkronisasi memakai rantai hash yang sama.

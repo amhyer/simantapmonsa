@@ -13,6 +13,7 @@
                 ['route' => 'ortu.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Anak'],
                 ['route' => 'ortu.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Guru'],
                 ['route' => 'ortu.laporan.index', 'icon' => 'lucide-file-text', 'label' => 'Laporan / Rapor'],
+                ['route' => 'ortu.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Kesiapan Belajar TKA'],
                 ['route' => 'ortu.tka-riwayat.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi & Kognitif TKA'],
                 ['route' => 'tka.parent.index', 'icon' => 'lucide-gauge', 'label' => 'Laporan TKA', 'asesmen' => true],
             ]],
@@ -33,6 +34,7 @@
                     {{-- Menu modul asesmen disembunyikan saat modul dimatikan
                          (route-nya dijawab 404 oleh middleware module.asesmen). --}}
                     @continue(($child['asesmen'] ?? false) && !modulAsesmenAktif())
+                    @continue(($child['kesiapan_tka'] ?? false) && !kesiapanTkaAktif())
                     <x-sidebar-link :href="route($child['route'])" :icon="$child['icon']" :label="$child['label']" :active="$isActive($child['route'])" :sub="true" />
                 @endforeach
             </x-sidebar-submenu>

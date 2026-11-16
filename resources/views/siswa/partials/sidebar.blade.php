@@ -12,6 +12,7 @@
         ]],
         // CBT dan Tryout bergantung pada modul; simulasi mandiri & adaptif tidak.
         ['label' => 'UJIAN & ASESMEN TKA', 'items' => [
+            ['route' => 'siswa.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Kesiapan Belajarku (TKA)'],
             ['route' => 'cbt.student.index', 'asesmen' => true, 'icon' => 'lucide-monitor', 'label' => 'Ujian CBT'],
             ['route' => 'tryout.student.index', 'asesmen' => true, 'icon' => 'lucide-package', 'label' => 'Tryout Sekolah'],
             ['route' => 'siswa.tka-simulasi.index', 'icon' => 'lucide-brain', 'label' => 'Simulasi TKA Pusmendik'],
@@ -27,6 +28,7 @@
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
         @continue(($item['asesmen'] ?? false) && !modulAsesmenAktif())
+        @continue(($item['kesiapan_tka'] ?? false) && !kesiapanTkaAktif())
         @continue(!\Illuminate\Support\Facades\Route::has($item['route']))
         <x-sidebar-link :href="route($item['route'])" :icon="$item['icon']" :label="$item['label']" :active="$isActive($item['route'])" />
     @endforeach

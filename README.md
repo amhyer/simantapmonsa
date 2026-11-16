@@ -85,6 +85,7 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Drill restore backup | [`docs/DRILL-RESTORE-BACKUP.md`](docs/DRILL-RESTORE-BACKUP.md) |
 | Rekonsiliasi CBT/Tryout | [`docs/REKONSILIASI-FASE-3.md`](docs/REKONSILIASI-FASE-3.md) |
 | Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |
+| Pemantauan Kesiapan TKA | [`docs/TKA-KESIAPAN.md`](docs/TKA-KESIAPAN.md) |
 | Modul CBT | [`docs/CBT.md`](docs/CBT.md) |
 | Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
 | Model & relasi database | [`docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md`](docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md) |

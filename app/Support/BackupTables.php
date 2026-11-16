@@ -124,6 +124,11 @@ class BackupTables
             'tka_parent_reports' => ['class' => \App\Models\Tka\ParentReport::class, 'except' => []],
             'tka_historical_tracking' => ['class' => \App\Models\Tka\HistoricalTracking::class, 'except' => []],
             'tka_early_warnings' => ['class' => \App\Models\Tka\EarlyWarning::class, 'except' => []],
+            'tka_kesiapan_pengaturan' => ['class' => \App\Models\Tka\Kesiapan\Pengaturan::class, 'except' => []],
+            'tka_kesiapan_pemetaan' => ['class' => \App\Models\Tka\Kesiapan\Pemetaan::class, 'except' => []],
+            'tka_kesiapan_tindak_lanjut' => ['class' => \App\Models\Tka\Kesiapan\TindakLanjut::class, 'except' => []],
+            'tka_kesiapan_tindak_lanjut_revisi' => ['class' => \App\Models\Tka\Kesiapan\TindakLanjutRevisi::class, 'except' => []],
+            'tka_kesiapan_audit' => ['class' => \App\Models\Tka\Kesiapan\Audit::class, 'except' => []],
 
             // Engine ujian terpadu (Fase 3): urutan induk -> anak. Tanpa entri
             // ini, hasil ujian baru hilang permanen setelah wipe + restore,

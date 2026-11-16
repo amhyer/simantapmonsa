@@ -10,6 +10,7 @@
             ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Hasil Belajar'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
+            ['route' => 'kepsek.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Pemantauan Kesiapan TKA'],
             ['route' => 'kepsek.tka-laporan.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Heatmap & Laporan TKA'],
             ['route' => 'kepsek.pantau.index', 'icon' => 'lucide-activity', 'label' => 'Pantau Aktivitas'],
             ['route' => 'kepsek.kebiasaan.index', 'icon' => 'lucide-star', 'label' => 'Rekap Kebiasaan'],
@@ -27,6 +28,7 @@
 @foreach($menuKepsek as $group)
     <x-sidebar-label>{{ $group['label'] }}</x-sidebar-label>
     @foreach($group['items'] as $item)
+        @continue(($item['kesiapan_tka'] ?? false) && !kesiapanTkaAktif())
         @if(isset($item['children']))
             @php $childActive = collect($item['children'])->contains(fn($c) => $isActive($c['route'])); @endphp
             <x-sidebar-submenu :icon="$item['icon']" :label="$item['label']" :open="$childActive || ($item['open'] ?? false)" :active="$childActive">

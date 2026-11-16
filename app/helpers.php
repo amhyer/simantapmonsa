@@ -83,7 +83,7 @@ if (!function_exists('activeAdminTab')) {
         }
 
         // TKA tab
-        if (request()->routeIs('admin.tka.*')) {
+        if (request()->routeIs('admin.tka.*', 'admin.tka-kesiapan.*')) {
             return 'tka';
         }
 
@@ -145,6 +145,16 @@ if (!function_exists('modulAsesmenAktif')) {
     function modulAsesmenAktif(): bool
     {
         return (bool) config('simantap.cbt_enabled', false);
+    }
+}
+
+if (!function_exists('kesiapanTkaAktif')) {
+    /**
+     * Apakah modul Pemantauan Kesiapan TKA aktif.
+     */
+    function kesiapanTkaAktif(): bool
+    {
+        return (bool) config('tka_kesiapan.aktif', true);
     }
 }
 

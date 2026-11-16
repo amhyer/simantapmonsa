@@ -82,6 +82,8 @@
         'tka' => [
             [
                 'label' => 'TES KEMAMPUAN AKADEMIK (TKA)', 'icon' => 'lucide-award', 'children' => [
+                    ['route' => 'admin.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Pemantauan Kesiapan TKA'],
+                    ['route' => 'admin.tka-kesiapan.pengaturan', 'kesiapan_tka' => true, 'icon' => 'lucide-sliders-horizontal', 'label' => 'Pengaturan & Pemetaan TKA'],
                     ['route' => 'admin.tka.dashboard', 'icon' => 'lucide-gauge', 'label' => 'Dashboard Kesiapan TKA'],
                     ['route' => 'admin.tka.kognitif.index', 'icon' => 'lucide-brain', 'label' => 'Analisis Kognitif Siswa'],
                     ['route' => 'admin.tka.laporan-kelas.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Laporan Kelas & Heatmap'],
@@ -145,13 +147,20 @@
     ];
 
     // Sembunyikan fitur data global yang belum aman untuk tenant.
-    if ($multiSchoolMode) {
+    if ($multiSchoolMode || !kesiapanTkaAktif()) {
         foreach ($menuAdmin as &$groups) {
             foreach ($groups as &$group) {
                 if (isset($group['children'])) {
-                    $group['children'] = array_values(array_filter($group['children'], fn ($item) =>
-                        ! in_array($item['route'] ?? '', ['admin.backup.index', 'admin.log.index'], true)
-                    ));
+                    $group['children'] = array_values(array_filter($group['children'], function ($item) use ($multiSchoolMode) {
+                        if ($multiSchoolMode && in_array($item['route'] ?? '', ['admin.backup.index', 'admin.log.index'], true)) {
+                            return false;
+                        }
+                        if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
+                            return false;
+                        }
+
+                        return true;
+                    }));
                 }
             }
             unset($group);
