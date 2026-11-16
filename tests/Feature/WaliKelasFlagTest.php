@@ -69,10 +69,13 @@ class WaliKelasFlagTest extends TestCase
 
         Siswa::create([
             'guru_id' => $guruFallback->id,
+            'nama_guru' => $guruFallback->nama_lengkap,
             'rombel_id' => null,
+            'nis' => 'NIS-FALLBACK-01',
             'nama_peserta_didik' => 'Siswa Fallback',
             'nisn' => '0011223344',
             'kelas' => 'Kelas 4A',
+            'jenis_kelamin' => 'L',
             'aktif' => true,
         ]);
 

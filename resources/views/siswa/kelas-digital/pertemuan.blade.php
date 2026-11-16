@@ -39,14 +39,14 @@
             <span class="card-title">Materi Ajar Terhubung: {{ $pertemuan->materi->judul }}</span>
         </div>
         <div class="card-body">
-            @if($pertemuan->materi->ringkasan)
-                <p style="font-size:.9rem;color:#334155;margin-bottom:.75rem">{{ $pertemuan->materi->ringkasan }}</p>
-            @endif
             @if($pertemuan->materi->tujuan_pembelajaran)
                 <div style="font-size:.84rem;color:#475569;margin-bottom:.75rem"><strong>Tujuan Pembelajaran:</strong> {{ $pertemuan->materi->tujuan_pembelajaran }}</div>
             @endif
-            @if($pertemuan->materi->konten)
-                <div style="white-space:pre-line;font-size:.9rem;line-height:1.65;color:#1e293b">{{ $pertemuan->materi->konten }}</div>
+            @if($pertemuan->materi->materi_pokok)
+                <div style="white-space:pre-line;font-size:.9rem;line-height:1.65;color:#1e293b;margin-bottom:.65rem">{{ $pertemuan->materi->materi_pokok }}</div>
+            @endif
+            @if($pertemuan->materi->kegiatan)
+                <div style="white-space:pre-line;font-size:.86rem;line-height:1.55;color:#475569"><strong>Kegiatan Belajar:</strong> {{ $pertemuan->materi->kegiatan }}</div>
             @endif
         </div>
     </div>

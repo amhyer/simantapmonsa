@@ -26,6 +26,17 @@ class SiswaMateriFilterTest extends TestCase
         );
     }
 
+    private function makeMateri(User $guru, array $attrs): Materi
+    {
+        return Materi::create(array_merge([
+            'guru_id' => $guru->id,
+            'nama_guru' => $guru->nama_lengkap,
+            'tanggal' => now()->toDateString(),
+            'tujuan_pembelajaran' => 'Memahami konsep inti pelajaran.',
+            'materi_pokok' => 'Ringkasan materi pembelajaran.',
+        ], $attrs));
+    }
+
     public function test_siswa_melihat_materi_dari_guru_mapel_sesuai_jadwal_dan_wali_kelas_tanpa_bocor_kelas_lain(): void
     {
         $semester = $this->makeSemester();
@@ -41,15 +52,20 @@ class SiswaMateriFilterTest extends TestCase
             'guru_id' => $guruWali->id,
         ]);
 
-        $userSiswa = User::factory()->siswa()->create(['nisn' => '1234567890']);
-        Siswa::create([
-            'user_id' => $userSiswa->id,
+        $siswa = Siswa::create([
             'guru_id' => $guruWali->id,
+            'nama_guru' => $guruWali->nama_lengkap,
             'rombel_id' => $rombel6A->id,
-            'nama_peserta_didik' => 'Budi Santoso',
+            'nis' => 'NIS-6A-001',
             'nisn' => '1234567890',
+            'nama_peserta_didik' => 'Budi Santoso',
             'kelas' => 'Kelas 6A',
+            'jenis_kelamin' => 'L',
             'aktif' => true,
+        ]);
+
+        $userSiswa = User::factory()->siswa()->create([
+            'terhubung_dengan' => [$siswa->id],
         ]);
 
         // Jadwal: Guru Mapel A mengajar Matematika di Kelas 6A.
@@ -64,48 +80,38 @@ class SiswaMateriFilterTest extends TestCase
         ]);
 
         // 1. HARUS TAMPIL: Materi Matematika kelas 6A oleh Guru Mapel A (case-insensitive).
-        $materiMapelValid = Materi::create([
-            'guru_id' => $guruMapelA->id,
+        $materiMapelValid = $this->makeMateri($guruMapelA, [
             'judul' => 'Pecahan Senilai 6A',
             'mata_pelajaran' => 'matematika',
             'kelas' => 'kelas 6a',
-            'tanggal' => now()->toDateString(),
         ]);
 
         // 2. HARUS TAMPIL: Materi oleh Wali Kelas pada Kelas 6A.
-        $materiWaliValid = Materi::create([
-            'guru_id' => $guruWali->id,
+        $materiWaliValid = $this->makeMateri($guruWali, [
             'judul' => 'Bahasa Indonesia 6A',
             'mata_pelajaran' => 'Bahasa Indonesia',
             'kelas' => 'Kelas 6A',
-            'tanggal' => now()->toDateString(),
         ]);
 
         // 3. TIDAK TAMPIL: Mapel berbeda oleh Guru Mapel A (tidak dijadwalkan di 6A).
-        $materiMapelBeda = Materi::create([
-            'guru_id' => $guruMapelA->id,
+        $materiMapelBeda = $this->makeMateri($guruMapelA, [
             'judul' => 'IPS Rahasia 6A',
             'mata_pelajaran' => 'IPS',
             'kelas' => 'Kelas 6A',
-            'tanggal' => now()->toDateString(),
         ]);
 
         // 4. TIDAK TAMPIL: Kelas berbeda (6B) oleh Guru Mapel A.
-        $materiKelasBeda = Materi::create([
-            'guru_id' => $guruMapelA->id,
+        $materiKelasBeda = $this->makeMateri($guruMapelA, [
             'judul' => 'Pecahan Kelas 6B',
             'mata_pelajaran' => 'Matematika',
             'kelas' => 'Kelas 6B',
-            'tanggal' => now()->toDateString(),
         ]);
 
         // 5. TIDAK TAMPIL: Guru lain yang tidak dijadwalkan di 6A dan bukan wali kelas.
-        $materiGuruLain = Materi::create([
-            'guru_id' => $guruMapelLain->id,
+        $materiGuruLain = $this->makeMateri($guruMapelLain, [
             'judul' => 'Materi Guru Tidak Terjadwal',
             'mata_pelajaran' => 'Matematika',
             'kelas' => 'Kelas 6A',
-            'tanggal' => now()->toDateString(),
         ]);
 
         $response = $this->actingAs($userSiswa)->get(route('siswa.materi.index'));
@@ -152,34 +158,37 @@ class SiswaMateriFilterTest extends TestCase
             'tingkat' => 6,
             'guru_id' => $guruA->id,
         ]);
-        $userSiswaA = User::factory()->siswa()->create(['tenant_id' => $tenantA->id, 'nisn' => '5555566666']);
-        Siswa::create([
+
+        $siswaA = Siswa::create([
             'tenant_id' => $tenantA->id,
-            'user_id' => $userSiswaA->id,
             'guru_id' => $guruA->id,
+            'nama_guru' => $guruA->nama_lengkap,
             'rombel_id' => $rombelA->id,
-            'nama_peserta_didik' => 'Siswa Alpha',
+            'nis' => 'NIS-ALPHA-01',
             'nisn' => '5555566666',
+            'nama_peserta_didik' => 'Siswa Alpha',
             'kelas' => 'Kelas 6A',
+            'jenis_kelamin' => 'L',
             'aktif' => true,
         ]);
 
-        $materiTenantA = Materi::create([
+        $userSiswaA = User::factory()->siswa()->create([
             'tenant_id' => $tenantA->id,
-            'guru_id' => $guruA->id,
+            'terhubung_dengan' => [$siswaA->id],
+        ]);
+
+        $materiTenantA = $this->makeMateri($guruA, [
+            'tenant_id' => $tenantA->id,
             'judul' => 'Materi Sekolah Alpha',
             'mata_pelajaran' => 'IPAS',
             'kelas' => 'Kelas 6A',
-            'tanggal' => now()->toDateString(),
         ]);
 
-        $materiTenantB = Materi::create([
+        $materiTenantB = $this->makeMateri($guruB, [
             'tenant_id' => $tenantB->id,
-            'guru_id' => $guruB->id,
             'judul' => 'Materi Sekolah Beta Rahasia',
             'mata_pelajaran' => 'IPAS',
             'kelas' => 'Kelas 6A',
-            'tanggal' => now()->toDateString(),
         ]);
 
         TenantContext::clear();

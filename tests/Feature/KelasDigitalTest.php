@@ -45,6 +45,30 @@ class KelasDigitalTest extends TestCase
         ]);
     }
 
+    /**
+     * @return array{0: User, 1: Siswa}
+     */
+    private function makeSiswaAccount(User $guruWali, Rombel $rombel, string $nis, string $nama, string $kelas): array
+    {
+        $siswa = Siswa::create([
+            'guru_id' => $guruWali->id,
+            'nama_guru' => $guruWali->nama_lengkap,
+            'rombel_id' => $rombel->id,
+            'nis' => $nis,
+            'nisn' => '00'.preg_replace('/\D/', '', $nis),
+            'nama_peserta_didik' => $nama,
+            'kelas' => $kelas,
+            'jenis_kelamin' => 'P',
+            'aktif' => true,
+        ]);
+
+        $user = User::factory()->siswa()->create([
+            'terhubung_dengan' => [$siswa->id],
+        ]);
+
+        return [$user, $siswa];
+    }
+
     private function createPdfUpload(string $name = 'materi.pdf'): UploadedFile
     {
         return UploadedFile::fake()->createWithContent(
@@ -61,16 +85,7 @@ class KelasDigitalTest extends TestCase
         $guruMapel = User::factory()->guru()->create(['nama_lengkap' => 'Bu Rina Matematika']);
         $rombel6A = $this->makeRombel('Kelas 6A', 6, $guruWali->id);
 
-        $userSiswa = User::factory()->siswa()->create(['nisn' => '9988776655']);
-        $siswa = Siswa::create([
-            'user_id' => $userSiswa->id,
-            'guru_id' => $guruWali->id,
-            'rombel_id' => $rombel6A->id,
-            'nama_peserta_didik' => 'Siti Aisyah',
-            'nisn' => '9988776655',
-            'kelas' => 'Kelas 6A',
-            'aktif' => true,
-        ]);
+        [$userSiswa, $siswa] = $this->makeSiswaAccount($guruWali, $rombel6A, '99887766', 'Siti Aisyah', 'Kelas 6A');
 
         JadwalPelajaran::create([
             'rombel_id' => $rombel6A->id,
@@ -84,14 +99,18 @@ class KelasDigitalTest extends TestCase
 
         $materiEksisting = Materi::create([
             'guru_id' => $guruMapel->id,
+            'nama_guru' => $guruMapel->nama_lengkap,
             'judul' => 'Konsep Pecahan',
             'mata_pelajaran' => 'Matematika',
             'kelas' => 'Kelas 6A',
             'tanggal' => now()->toDateString(),
+            'tujuan_pembelajaran' => 'Memahami konsep pecahan senilai.',
+            'materi_pokok' => 'Pecahan senilai diperoleh dengan mengalikan pembilang dan penyebut.',
         ]);
 
         $kuisEksisting = Kuis::create([
             'guru_id' => $guruMapel->id,
+            'nama_guru' => $guruMapel->nama_lengkap,
             'judul' => 'Kuis Cepat Pecahan',
             'mata_pelajaran' => 'Matematika',
             'kelas' => 'Kelas 6A',
@@ -257,38 +276,9 @@ class KelasDigitalTest extends TestCase
         $rombel6A = $this->makeRombel('Kelas 6A', 6, $guruA->id);
         $rombel6B = $this->makeRombel('Kelas 6B', 6, $guruB->id);
 
-        $userSiswaA1 = User::factory()->siswa()->create(['nisn' => '1111000011']);
-        $siswaA1 = Siswa::create([
-            'user_id' => $userSiswaA1->id,
-            'guru_id' => $guruA->id,
-            'rombel_id' => $rombel6A->id,
-            'nama_peserta_didik' => 'Siswa A1',
-            'nisn' => '1111000011',
-            'kelas' => 'Kelas 6A',
-            'aktif' => true,
-        ]);
-
-        $userSiswaA2 = User::factory()->siswa()->create(['nisn' => '1111000022']);
-        Siswa::create([
-            'user_id' => $userSiswaA2->id,
-            'guru_id' => $guruA->id,
-            'rombel_id' => $rombel6A->id,
-            'nama_peserta_didik' => 'Siswa A2',
-            'nisn' => '1111000022',
-            'kelas' => 'Kelas 6A',
-            'aktif' => true,
-        ]);
-
-        $userSiswaB1 = User::factory()->siswa()->create(['nisn' => '2222000011']);
-        Siswa::create([
-            'user_id' => $userSiswaB1->id,
-            'guru_id' => $guruB->id,
-            'rombel_id' => $rombel6B->id,
-            'nama_peserta_didik' => 'Siswa B1',
-            'nisn' => '2222000011',
-            'kelas' => 'Kelas 6B',
-            'aktif' => true,
-        ]);
+        [$userSiswaA1, $siswaA1] = $this->makeSiswaAccount($guruA, $rombel6A, '11110001', 'Siswa A1', 'Kelas 6A');
+        [$userSiswaA2] = $this->makeSiswaAccount($guruA, $rombel6A, '11110002', 'Siswa A2', 'Kelas 6A');
+        [$userSiswaB1] = $this->makeSiswaAccount($guruB, $rombel6B, '22220001', 'Siswa B1', 'Kelas 6B');
 
         $kelasA = KelasDigital::create([
             'guru_id' => $guruA->id,
