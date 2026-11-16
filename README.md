@@ -90,6 +90,8 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
 | Model & relasi database | [`docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md`](docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md) |
 | Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
+| Peta tugas & orkestrasi AI Gemini | [`docs/PETA-TUGAS-AI-GEMINI.md`](docs/PETA-TUGAS-AI-GEMINI.md) |
+| Prompt E-Learning, perangkat guru & penataan menu | [`docs/PROMPT-ELEARNING-PERANGKAT-MENU.md`](docs/PROMPT-ELEARNING-PERANGKAT-MENU.md) |
 | Uji route/halaman dengan Playwright | [`docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md`](docs/PANDUAN_UJI_ROUTE_PLAYWRIGHT.md) |
 | Arsip dokumentasi lama | [`docs/arsip/`](docs/arsip/README.md) |
 
