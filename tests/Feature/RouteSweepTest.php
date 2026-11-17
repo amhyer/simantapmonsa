@@ -15,9 +15,11 @@ use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Feature\Support\RouteExpectationRegistry;
 use Tests\TestCase;
 
+#[Group('slow')]
 class RouteSweepTest extends TestCase
 {
     use RefreshDatabase;

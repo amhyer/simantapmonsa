@@ -6,7 +6,7 @@ description: Checklist kesiapan rilis produksi SIMANTAP MONSA. Gunakan sebelum d
 # Release Check
 
 Periksa dan laporkan LULUS / GAGAL / PERLU KONFIRMASI untuk tiap butir:
-1. composer test lulus (DB testing saja).
+1. `composer test` dan `composer test:full` (termasuk grup `slow` / `RouteSweepTest`) wajib lulus sebelum rilis (DB testing saja).
 2. npm run build berhasil tanpa error.
 3. Pint lulus untuk file yang diubah.
 4. composer audit dan npm audit: tidak ada kerentanan high/critical.
