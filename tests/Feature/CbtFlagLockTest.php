@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\CbtQuestionBank;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Database\Seeders\E2eFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Env;
@@ -172,5 +174,61 @@ class CbtFlagLockTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
         $this->actingAs($admin)->get(route('admin.cbt.sessions.index'))->assertOk();
+    }
+
+    public function test_cbt_bank_rejects_non_guru_or_other_tenant_guru_id(): void
+    {
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $siswa = User::findOrFail(E2eFixtureSeeder::USER_IDS['siswa_a1']);
+
+        // Non-guru (siswa) harus ditolak 422 (validasi redirect/session errors atau JSON 422)
+        $this->actingAs($admin)
+            ->postJson(route('admin.cbt.banks.store'), [
+                'title' => 'Bank Tidak Valid',
+                'subject' => 'IPA',
+                'guru_id' => $siswa->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('guru_id');
+
+        // Guru dari tenant lain harus ditolak 422 saat TenantContext aktif
+        $tenantA = Tenant::create([
+            'npsn' => '10101010',
+            'nama_sekolah' => 'Sekolah A',
+            'subdomain' => 'sekolah-a-cbt',
+            'aktif' => true,
+        ]);
+        $tenantB = Tenant::create([
+            'npsn' => '20202020',
+            'nama_sekolah' => 'Sekolah B',
+            'subdomain' => 'sekolah-b-cbt',
+            'aktif' => true,
+        ]);
+
+        $adminTenantA = User::factory()->create([
+            'peran' => 'admin',
+            'tenant_id' => $tenantA->id,
+            'tenant_owned' => true,
+            'aktif' => true,
+            'force_password_change' => false,
+        ]);
+        $guruTenantB = User::factory()->create([
+            'peran' => 'guru',
+            'tenant_id' => $tenantB->id,
+            'tenant_owned' => true,
+            'aktif' => true,
+            'force_password_change' => false,
+        ]);
+
+        TenantContext::run($tenantA->id, function () use ($adminTenantA, $guruTenantB) {
+            $this->actingAs($adminTenantA)
+                ->postJson(route('admin.cbt.banks.store'), [
+                    'title' => 'Bank Lintas Tenant',
+                    'subject' => 'IPS',
+                    'guru_id' => $guruTenantB->id,
+                ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('guru_id');
+        });
     }
 }

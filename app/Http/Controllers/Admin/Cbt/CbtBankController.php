@@ -31,14 +31,14 @@ class CbtBankController extends Controller
         }
 
         $banks = $query->orderByDesc('id')->paginate(15)->withQueryString();
-        $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
+        $gurus = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
 
         return view('admin.cbt.banks.index', compact('banks', 'gurus'));
     }
 
     public function create()
     {
-        $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
+        $gurus = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap', 'nip']);
 
         return view('admin.cbt.banks.create', compact('gurus'));
     }
@@ -64,7 +64,7 @@ class CbtBankController extends Controller
 
     public function edit(CbtQuestionBank $bank)
     {
-        $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
+        $gurus = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap', 'nip']);
 
         return view('admin.cbt.banks.edit', compact('bank', 'gurus'));
     }
