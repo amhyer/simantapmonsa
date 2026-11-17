@@ -108,20 +108,33 @@
                     <kbd>Ctrl K</kbd>
                 </button>
                 <div class="notif-wrap">
-                    <button class="topbar-btn" title="Notifikasi" onclick="document.getElementById('notifPanel').classList.toggle('show')">
+                    @php $notifs = $layoutNotifs ?? []; @endphp
+                    <button class="topbar-btn" title="Notifikasi & Tugas" onclick="document.getElementById('notifPanel').classList.toggle('show')" style="position:relative">
                         <i class="fas fa-bell"></i>
+                        @if(count($notifs) > 0)
+                            <span style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:#DC2626;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">{{ count($notifs) }}</span>
+                        @endif
                     </button>
                     <div class="notif-panel" id="notifPanel">
-                        <div class="notif-head">Notifikasi</div>
-                        @php $notifs = $layoutNotifs ?? []; @endphp
+                        <div class="notif-head">Notifikasi &amp; Tugas</div>
                         @forelse($notifs as $notif)
-                            <div class="notif-item">
-                                <i class="{{ $notif['icon'] }}"></i>
-                                <div>
-                                    <div>{{ $notif['teks'] }}</div>
-                                    <small>{{ $notif['waktu'] }}</small>
+                            @if(!empty($notif['url']))
+                                <a href="{{ $notif['url'] }}" class="notif-item" style="text-decoration:none;color:inherit">
+                                    <i class="{{ $notif['icon'] }}"></i>
+                                    <div>
+                                        <div>{{ $notif['teks'] }}</div>
+                                        <small>{{ $notif['waktu'] }}</small>
+                                    </div>
+                                </a>
+                            @else
+                                <div class="notif-item">
+                                    <i class="{{ $notif['icon'] }}"></i>
+                                    <div>
+                                        <div>{{ $notif['teks'] }}</div>
+                                        <small>{{ $notif['waktu'] }}</small>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @empty
                             <div class="notif-empty">
                                 <span class="icon"><i class="fas fa-bell-slash"></i></span>

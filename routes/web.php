@@ -348,6 +348,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     
     // Identitas Sekolah
     Route::get('/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
+    Route::get('/validasi-data', [\App\Http\Controllers\Admin\ValidasiDataController::class, 'index'])->name('validasi-data.index');
     Route::post('/sekolah/search', [SekolahController::class, 'search'])->name('sekolah.search');
     Route::post('/sekolah/reset', [SekolahController::class, 'reset'])->name('sekolah.reset');
     Route::post('/sekolah', [SekolahController::class, 'update'])->name('sekolah.update');
@@ -443,6 +444,52 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
     
     // Materi Ajar
     Route::resource('materi', MateriController::class);
+
+    // E-Learning / Kelas Digital
+    Route::prefix('kelas-digital')->name('kelas-digital.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'store'])->middleware('throttle:30,1')->name('store');
+        Route::get('/{kelasDigital}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'show'])->name('show');
+        Route::get('/{kelasDigital}/edit', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'edit'])->name('edit');
+        Route::put('/{kelasDigital}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'update'])->middleware('throttle:30,1')->name('update');
+        Route::delete('/{kelasDigital}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'destroy'])->middleware('throttle:30,1')->name('destroy');
+
+        Route::post('/{kelasDigital}/modul', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'storeModul'])->middleware('throttle:30,1')->name('modul.store');
+        Route::delete('/{kelasDigital}/modul/{modul}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'destroyModul'])->middleware('throttle:30,1')->name('modul.destroy');
+
+        Route::post('/{kelasDigital}/modul/{modul}/pertemuan', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'storePertemuan'])->middleware('throttle:30,1')->name('pertemuan.store');
+        Route::delete('/{kelasDigital}/pertemuan/{pertemuan}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'destroyPertemuan'])->middleware('throttle:30,1')->name('pertemuan.destroy');
+
+        Route::post('/{kelasDigital}/pertemuan/{pertemuan}/item', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'storeItem'])->middleware('throttle:30,1')->name('item.store');
+        Route::delete('/{kelasDigital}/item/{item}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'destroyItem'])->middleware('throttle:30,1')->name('item.destroy');
+        Route::get('/{kelasDigital}/item/{item}/unduh', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'downloadItem'])->name('item.download');
+
+        Route::post('/{kelasDigital}/pertemuan/{pertemuan}/tugas', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'storeTugas'])->middleware('throttle:30,1')->name('tugas.store');
+        Route::delete('/{kelasDigital}/tugas/{tugas}', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'destroyTugas'])->middleware('throttle:30,1')->name('tugas.destroy');
+        Route::get('/{kelasDigital}/tugas/{tugas}/lampiran', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'downloadLampiranTugas'])->name('tugas.download');
+        Route::get('/{kelasDigital}/tugas/{tugas}/pengumpulan', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'daftarPengumpulan'])->name('tugas.pengumpulan');
+        Route::post('/{kelasDigital}/tugas/{tugas}/pengumpulan/{pengumpulan}/nilai', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'nilaiPengumpulan'])->middleware('throttle:60,1')->name('tugas.nilai');
+        Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
+    });
+
+    // Perangkat Ajar (CP, TP, ATP, Prota, Promes, Modul Ajar/RPP, KKM/KKTP) & Jurnal Mengajar — Gelombang 6
+    Route::prefix('perangkat')->name('perangkat.')->group(function () {
+        Route::get('/jurnal', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalIndex'])->name('jurnal.index');
+        Route::post('/jurnal', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalStore'])->middleware('throttle:30,1')->name('jurnal.store');
+        Route::delete('/jurnal/{jurnal}', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalDestroy'])->middleware('throttle:30,1')->name('jurnal.destroy');
+        Route::get('/jurnal/cetak-pdf', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalCetakPdf'])->name('jurnal.pdf');
+
+        Route::get('/', [\App\Http\Controllers\Guru\PerangkatController::class, 'index'])->name('index');
+        Route::get('/buat', [\App\Http\Controllers\Guru\PerangkatController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Guru\PerangkatController::class, 'store'])->middleware('throttle:30,1')->name('store');
+        Route::get('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'show'])->name('show');
+        Route::get('/{perangkat}/ubah', [\App\Http\Controllers\Guru\PerangkatController::class, 'edit'])->name('edit');
+        Route::put('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'update'])->middleware('throttle:30,1')->name('update');
+        Route::delete('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'destroy'])->middleware('throttle:30,1')->name('destroy');
+        Route::get('/{perangkat}/cetak-pdf', [\App\Http\Controllers\Guru\PerangkatController::class, 'cetakPdf'])->name('pdf');
+        Route::get('/{perangkat}/lampiran', [\App\Http\Controllers\Guru\PerangkatController::class, 'downloadLampiran'])->name('lampiran');
+    });
     
     // Kuis & Soal
     Route::resource('kuis', KuisController::class)->except(['show']);
@@ -567,6 +614,18 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
     Route::get('/dashboard', [SiswaDashboard::class, 'index'])->name('dashboard');
     Route::get('/materi', [SiswaMateriController::class, 'index'])->name('materi.index');
     Route::get('/materi/{id}', [SiswaMateriController::class, 'show'])->name('materi.show');
+
+    // E-Learning / Kelas Digital Siswa
+    Route::prefix('kelas-digital')->name('kelas-digital.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'index'])->name('index');
+        Route::get('/{kelasDigital}', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'show'])->name('show');
+        Route::get('/{kelasDigital}/pertemuan/{pertemuan}', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'pertemuan'])->name('pertemuan');
+        Route::post('/{kelasDigital}/pertemuan/{pertemuan}/selesai', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'tandaiSelesai'])->middleware('throttle:60,1')->name('pertemuan.selesai');
+        Route::post('/{kelasDigital}/tugas/{tugas}/kumpul', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'kumpulTugas'])->middleware('throttle:30,1')->name('tugas.kumpul');
+        Route::get('/{kelasDigital}/item/{item}/unduh', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadItem'])->name('item.download');
+        Route::get('/{kelasDigital}/tugas/{tugas}/lampiran', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadLampiranTugas'])->name('tugas.download');
+        Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [\App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
+    });
     Route::get('/kuis', [SiswaKuisController::class, 'index'])->name('kuis.index');
     Route::get('/kuis/{kuis}', [SiswaKuisController::class, 'show'])->name('kuis.show');
     Route::post('/kuis/{kuis}/submit', [SiswaKuisController::class, 'submit'])->middleware('throttle:10,1')->name('kuis.submit');
@@ -633,6 +692,8 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/tka-laporan/export-csv', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'exportCsv'])->name('tka-laporan.export');
     Route::get('/tka-kesiapan', [\App\Http\Controllers\Tka\KesiapanController::class, 'index'])->name('tka-kesiapan.index');
     Route::get('/tka-kesiapan/ekspor', [\App\Http\Controllers\Tka\KesiapanController::class, 'ekspor'])->name('tka-kesiapan.ekspor');
+    Route::get('/perangkat', [\App\Http\Controllers\Kepsek\PerangkatSupervisiController::class, 'index'])->name('perangkat.index');
+    Route::get('/perangkat/{perangkat}/cetak-pdf', [\App\Http\Controllers\Kepsek\PerangkatSupervisiController::class, 'cetakPdf'])->name('perangkat.pdf');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

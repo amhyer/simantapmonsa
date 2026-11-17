@@ -3,6 +3,7 @@
         ['label' => 'MENU SISWA', 'items' => [
             ['route' => 'siswa.dashboard', 'icon' => 'lucide-home', 'label' => 'Beranda'],
             ['route' => 'siswa.kartu.cetak', 'icon' => 'lucide-id-card', 'label' => 'Kartu Pelajarku'],
+            ['route' => 'siswa.kelas-digital.index', 'icon' => 'lucide-school', 'label' => 'Kelas Digital'],
             ['route' => 'siswa.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi'],
             ['route' => 'siswa.kuis.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Kuis'],
             ['route' => 'siswa.nilai.index', 'icon' => 'lucide-trending-up', 'label' => 'Nilaiku'],

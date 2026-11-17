@@ -49,9 +49,23 @@
                         @error('peran') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
-                <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
-                    <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran', $user->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                <div class="grid grid-2" style="margin-bottom:16px">
+                    <div>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
+                        <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran', $user->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    </div>
+                    <div>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status Wali Kelas (khusus Guru)</label>
+                        @php
+                            $walasOld = old('is_wali_kelas', $user->is_wali_kelas === null ? '' : ($user->is_wali_kelas ? '1' : '0'));
+                        @endphp
+                        <select name="is_wali_kelas" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                            <option value="" {{ $walasOld === '' ? 'selected' : '' }}>Otomatis (mengikuti penetapan Rombel)</option>
+                            <option value="1" {{ $walasOld === '1' ? 'selected' : '' }}>Ya — Wali Kelas (tampilkan menu Wali Kelas)</option>
+                            <option value="0" {{ $walasOld === '0' ? 'selected' : '' }}>Bukan Wali Kelas (Guru Mapel / Ekskul)</option>
+                        </select>
+                        <small style="display:block;color:#667085;font-size:12px;margin-top:4px">Menentukan visibilitas grup "MENU WALI KELAS" pada sidebar & pencarian menu.</small>
+                    </div>
                 </div>
                 <div style="display:flex;gap:10px">
                     <button type="submit" class="btn">💾 Simpan</button>

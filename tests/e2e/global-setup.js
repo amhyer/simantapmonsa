@@ -38,7 +38,7 @@ export default async function globalSetup(config) {
             await page.locator('input[name="nama_pengguna"]').fill(username);
             await page.locator('input[name="kata_sandi"]').fill(password);
             const navigation = page.waitForURL(url => url.pathname !== '/login', { timeout: 15_000 });
-            await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+            await page.locator('form button[type="submit"]').click();
 
             try {
                 await navigation;

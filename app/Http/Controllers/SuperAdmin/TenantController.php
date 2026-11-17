@@ -264,8 +264,8 @@ class TenantController extends Controller
                     if (Schema::hasTable('presensi_pegawai')) {
                         DB::table('presensi_pegawai')->whereIn('user_id', $userIds)->delete();
                     }
-                    if (Schema::hasTable('aktivitas')) {
-                        DB::table('aktivitas')->whereIn('user_id', $userIds)->delete();
+                    if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
+                        DB::table('aktivitas')->whereIn('guru_id', $userIds)->delete();
                     }
                 }
             }
@@ -576,8 +576,8 @@ class TenantController extends Controller
             if (Schema::hasTable('presensi_pegawai')) {
                 DB::table('presensi_pegawai')->where('user_id', $user->id)->delete();
             }
-            if (Schema::hasTable('aktivitas')) {
-                DB::table('aktivitas')->where('user_id', $user->id)->delete();
+            if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
+                DB::table('aktivitas')->where('guru_id', $user->id)->delete();
             }
             $user->forceDelete();
         } finally {
@@ -608,8 +608,8 @@ class TenantController extends Controller
             if (Schema::hasTable('presensi_pegawai')) {
                 DB::table('presensi_pegawai')->whereIn('user_id', $targetIds)->delete();
             }
-            if (Schema::hasTable('aktivitas')) {
-                DB::table('aktivitas')->whereIn('user_id', $targetIds)->delete();
+            if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
+                DB::table('aktivitas')->whereIn('guru_id', $targetIds)->delete();
             }
             $count = User::whereIn('id', $targetIds)
                 ->where('peran', '!=', 'super_admin')

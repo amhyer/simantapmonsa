@@ -94,10 +94,16 @@ class UserController extends Controller
             'terhubung_dengan' => 'nullable|array',
             'terhubung_dengan.*' => 'integer|distinct',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
+            'is_wali_kelas' => 'nullable|in:0,1',
             'aktif' => 'boolean',
         ]);
 
         $this->validateStudentLinks($validated['terhubung_dengan'] ?? []);
+
+        $isWaliKelas = null;
+        if ($validated['peran'] === 'guru' && $request->filled('is_wali_kelas')) {
+            $isWaliKelas = $request->input('is_wali_kelas') === '1';
+        }
 
         $user = User::create([
             'uuid' => Str::uuid(),
@@ -108,6 +114,7 @@ class UserController extends Controller
             'peran' => $validated['peran'],
             'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,
+            'is_wali_kelas' => $isWaliKelas,
             'aktif' => $validated['aktif'] ?? true,
             // PERBAIKAN KEAMANAN (kesiapan launching): sandi diketik oleh admin,
             // bukan oleh pemilik akun. Tanpa penanda ini sandi sementara berlaku
@@ -159,6 +166,7 @@ class UserController extends Controller
             'terhubung_dengan' => 'nullable|array',
             'terhubung_dengan.*' => 'integer|distinct',
             'kelas_mata_pelajaran' => 'nullable|string|max:255',
+            'is_wali_kelas' => 'nullable|in:0,1',
             'aktif' => 'boolean',
         ]);
 
@@ -173,6 +181,15 @@ class UserController extends Controller
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,
             'aktif' => $validated['aktif'] ?? true,
         ];
+
+        if ($validated['peran'] === 'guru') {
+            if ($request->has('is_wali_kelas')) {
+                $val = $request->input('is_wali_kelas');
+                $data['is_wali_kelas'] = ($val === '' || $val === null) ? null : ($val === '1');
+            }
+        } else {
+            $data['is_wali_kelas'] = null;
+        }
 
         if (!empty($validated['kata_sandi'])) {
             $data['kata_sandi'] = Hash::make($validated['kata_sandi']);

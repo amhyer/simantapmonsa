@@ -474,7 +474,7 @@
             const rows = getSiswaMatrix();
             const win = window.open('', '_blank');
             if (!win) { window.print(); return; }
-            let html = '<!DOCTYPE html><html><head><title>Data Siswa</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}th{background:#f1f5f9}</style></head><body><h2>Data Siswa</h2><table><thead><tr>';
+            let html = '<!DOCTYPE html><html><head><title>Data Siswa</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left}th{background:#f1f5f9}</style></head><body><h2>Data Siswa</h2><div class="table-wrapper"><table><thead><tr>';
             rows[0].forEach(h => { html += '<th>' + h + '</th>'; });
             html += '</tr></thead><tbody>';
             rows.slice(1).forEach(r => {
@@ -482,7 +482,7 @@
                 r.forEach(c => { html += '<td>' + c + '</td>'; });
                 html += '</tr>';
             });
-            html += '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>';
+            html += '</tbody></table></div><script>window.onload=function(){window.print();}<\/script></body></html>';
             win.document.open(); win.document.write(html); win.document.close();
         }
     </script>
