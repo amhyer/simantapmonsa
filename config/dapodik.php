@@ -18,4 +18,12 @@ return [
 
     'archive_chunk' => 500,
 
+    'bridge_download_url' => env('DAPODIK_BRIDGE_DOWNLOAD_URL'),
+
+    'bridge_version' => env('DAPODIK_BRIDGE_VERSION'),
+
+    'bridge_sha256' => env('DAPODIK_BRIDGE_SHA256'),
+
+    'bridge_storage_path' => storage_path('app/private/bridge/SIMANTAP-Bridge.exe'),
+
 ];

@@ -66,16 +66,37 @@
                 </p>
 
                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-                    <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary" style="padding:8px 18px;font-weight:600;display:inline-flex;align-items:center;gap:8px">
-                        <i class="fas fa-download"></i> Unduh SIMANTAP-Bridge (.exe)
-                    </a>
+                    @if($bridgeAvailable ?? false)
+                        <a href="{{ route('admin.dapodik.download-bridge') }}" class="btn btn-primary" style="padding:8px 18px;font-weight:600;display:inline-flex;align-items:center;gap:8px">
+                            <i class="fas fa-download"></i> Unduh SIMANTAP-Bridge (.exe)
+                        </a>
+                    @endif
                     <a href="{{ route('admin.api-keys.index') }}" class="btn btn-secondary" style="padding:8px 16px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
                         <i class="fas fa-key"></i> Buat / Salin API Key Sekolah
                     </a>
-                    <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;font-size:12px">
-                        <i class="fas fa-file-code"></i> Versi Windows ({{ $bridgeSize ? round($bridgeSize / (1024*1024), 1) . ' MB' : '~41 MB' }})
-                    </span>
+                    @if(!empty($bridgeVersion))
+                        <span class="tag tag-primary" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;font-size:12px">
+                            <i class="fas fa-tag"></i> Versi {{ $bridgeVersion }}
+                        </span>
+                    @endif
+                    @if($bridgeSize)
+                        <span class="tag tag-secondary" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;font-size:12px">
+                            <i class="fas fa-file-code"></i> Versi Windows ({{ round($bridgeSize / (1024*1024), 1) }} MB)
+                        </span>
+                    @endif
                 </div>
+
+                @if(!($bridgeAvailable ?? false))
+                    <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;font-size:12.5px">
+                        <i class="fas fa-info-circle" style="margin-right:6px"></i>
+                        Berkas <b>SIMANTAP-Bridge.exe</b> belum tersedia di server. Silakan hubungi administrator untuk mengonfigurasi tautan unduhan atau menempatkan berkas di penyimpanan privat.
+                    </div>
+                @else
+                    <div style="margin-bottom:8px;font-size:12px;color:#64748B">
+                        <i class="fas fa-shield-alt" style="margin-right:4px;color:#D97706"></i>
+                        Windows SmartScreen mungkin menampilkan peringatan karena file belum ditandatangani.
+                    </div>
+                @endif
 
                 @if($bridgeChecksum)
                     <div style="margin-top:8px;font-size:12px;color:#64748B;display:flex;align-items:center;gap:8px;flex-wrap:wrap">

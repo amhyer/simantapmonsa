@@ -52,6 +52,7 @@ Desktop.ini
 # Bridge binary - deploy terpisah via SCP/artifact
 /public/bridge/*.exe
 /public/bridge/*.zip
+/storage/app/private/bridge/
 
 # Video rekaman layar (besar, jangan masuk repo)
 docs/gambar/*.mp4

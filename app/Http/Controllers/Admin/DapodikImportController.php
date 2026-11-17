@@ -50,14 +50,17 @@ class DapodikImportController extends Controller
         $ptkList = $isTenant ? collect() : Ptk::with('semester')->orderBy('nama')->limit(50)->get();
         $rombelList = Rombel::with('semester')->orderBy('nama_rombel')->limit(50)->get();
 
-        $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
-        if (!file_exists($bridgePath)) {
-            $bridgePath = base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe');
-        }
-        $bridgeChecksum = file_exists($bridgePath) ? hash_file('sha256', $bridgePath) : null;
-        $bridgeSize = file_exists($bridgePath) ? filesize($bridgePath) : null;
+        $bridgeDownloadUrl = config('dapodik.bridge_download_url');
+        $bridgePath = $this->resolveBridgePath();
+        $bridgeAvailable = ! empty($bridgeDownloadUrl) || $bridgePath !== null;
+        $bridgeVersion = config('dapodik.bridge_version');
+        $bridgeChecksum = config('dapodik.bridge_sha256') ?: ($bridgePath ? hash_file('sha256', $bridgePath) : null);
+        $bridgeSize = $bridgePath ? filesize($bridgePath) : null;
 
-        return view('admin.dapodik.index', compact('logs', 'stats', 'semesters', 'ptkList', 'rombelList', 'bridgeChecksum', 'bridgeSize', 'isTenant'));
+        return view('admin.dapodik.index', compact(
+            'logs', 'stats', 'semesters', 'ptkList', 'rombelList',
+            'bridgeDownloadUrl', 'bridgeAvailable', 'bridgeVersion', 'bridgeChecksum', 'bridgeSize', 'isTenant'
+        ));
     }
 
     public function import(Request $request)
@@ -365,14 +368,16 @@ class DapodikImportController extends Controller
 
     public function downloadBridge()
     {
-        $filePath = public_path('bridge/SIMANTAP-Bridge.exe');
-        if (!file_exists($filePath)) {
-            $filePath = base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe');
+        $downloadUrl = config('dapodik.bridge_download_url');
+        if (! empty($downloadUrl)) {
+            return redirect()->away($downloadUrl);
         }
+
+        $filePath = $this->resolveBridgePath();
         $fileName = 'SIMANTAP-Bridge.exe';
 
-        if (!file_exists($filePath)) {
-            return redirect()->route('admin.dapodik.index')->with('error', 'File Bridge tidak ditemukan.');
+        if (! $filePath) {
+            return redirect()->route('admin.dapodik.index')->with('error', 'File SIMANTAP-Bridge belum tersedia. Hubungi administrator atau konfigurasikan DAPODIK_BRIDGE_DOWNLOAD_URL.');
         }
 
         return response()->streamDownload(function () use ($filePath) {
@@ -382,5 +387,26 @@ class DapodikImportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
             'Content-Length' => filesize($filePath),
         ]);
+    }
+
+    private function resolveBridgePath(): ?string
+    {
+        $privatePath = (string) config('dapodik.bridge_storage_path', storage_path('app/private/bridge/SIMANTAP-Bridge.exe'));
+        if ($privatePath !== '' && file_exists($privatePath)) {
+            return $privatePath;
+        }
+
+        if (app()->environment('local')) {
+            foreach ([
+                public_path('bridge/SIMANTAP-Bridge.exe'),
+                base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe'),
+            ] as $legacyPath) {
+                if (file_exists($legacyPath)) {
+                    return $legacyPath;
+                }
+            }
+        }
+
+        return null;
     }
 }
