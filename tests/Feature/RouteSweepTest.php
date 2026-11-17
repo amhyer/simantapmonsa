@@ -172,6 +172,10 @@ class RouteSweepTest extends TestCase
                     $status = 500;
                 }
 
+                // Sebagian endpoint sah (mis. DapodikController::semesters, PresensiKartuController)
+                // memanggil set_time_limit(120/180); reset ke 0 agar sapuan tidak terpotong.
+                @set_time_limit(0);
+
                 if ($isPostgres) {
                     try {
                         \DB::connection()->getPdo()->query('select 1');
