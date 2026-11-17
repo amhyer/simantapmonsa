@@ -177,32 +177,10 @@ class AppServiceProvider extends ServiceProvider
             $view->with('layoutNamaSekolah', $namaSekolah);
         });
 
-        // Notifikasi topbar untuk admin: hanya skalar (jangan cache model).
+        // Notifikasi & ringkasan tugas lintas peran: hanya skalar/array (jangan cache model Eloquent).
         View::composer(['layouts.app', 'layouts.admin-with-tabs'], function ($view) {
-            $notifs = [];
             $user = Auth::user();
-
-            if ($user && $user->peran === 'admin') {
-                $last = SidebarSyncStatus::latest();
-                if ($last) {
-                    $notifs[] = [
-                        'icon' => 'fas fa-sync',
-                        'teks' => "Sinkron Dapodik: {$last['berhasil']} berhasil, {$last['gagal']} gagal",
-                        'waktu' => $last['created_at'] ? Carbon::parse($last['created_at'])->diffForHumans() : '-',
-                    ];
-                }
-                if (! TenantContext::check() && ! config('simantap.multi_tenant_enabled', false)
-                    && ! Tenant::query()->exists() && Schema::hasTable('failed_jobs')) {
-                    $gagal = DB::table('failed_jobs')->count();
-                    if ($gagal > 0) {
-                        $notifs[] = [
-                            'icon' => 'fas fa-exclamation-triangle',
-                            'teks' => "{$gagal} job antrean gagal perlu perhatian",
-                            'waktu' => 'sekarang',
-                        ];
-                    }
-                }
-            }
+            $notifs = app(\App\Services\Navigation\RoleTaskSummaryService::class)->notificationsFor($user);
 
             $view->with('layoutNotifs', $notifs);
         });

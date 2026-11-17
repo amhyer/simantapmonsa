@@ -348,6 +348,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     
     // Identitas Sekolah
     Route::get('/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
+    Route::get('/validasi-data', [\App\Http\Controllers\Admin\ValidasiDataController::class, 'index'])->name('validasi-data.index');
     Route::post('/sekolah/search', [SekolahController::class, 'search'])->name('sekolah.search');
     Route::post('/sekolah/reset', [SekolahController::class, 'reset'])->name('sekolah.reset');
     Route::post('/sekolah', [SekolahController::class, 'update'])->name('sekolah.update');
@@ -470,6 +471,24 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
         Route::get('/{kelasDigital}/tugas/{tugas}/pengumpulan', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'daftarPengumpulan'])->name('tugas.pengumpulan');
         Route::post('/{kelasDigital}/tugas/{tugas}/pengumpulan/{pengumpulan}/nilai', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'nilaiPengumpulan'])->middleware('throttle:60,1')->name('tugas.nilai');
         Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [\App\Http\Controllers\Guru\KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
+    });
+
+    // Perangkat Ajar (CP, TP, ATP, Prota, Promes, Modul Ajar/RPP, KKM/KKTP) & Jurnal Mengajar — Gelombang 6
+    Route::prefix('perangkat')->name('perangkat.')->group(function () {
+        Route::get('/jurnal', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalIndex'])->name('jurnal.index');
+        Route::post('/jurnal', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalStore'])->middleware('throttle:30,1')->name('jurnal.store');
+        Route::delete('/jurnal/{jurnal}', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalDestroy'])->middleware('throttle:30,1')->name('jurnal.destroy');
+        Route::get('/jurnal/cetak-pdf', [\App\Http\Controllers\Guru\PerangkatController::class, 'jurnalCetakPdf'])->name('jurnal.pdf');
+
+        Route::get('/', [\App\Http\Controllers\Guru\PerangkatController::class, 'index'])->name('index');
+        Route::get('/buat', [\App\Http\Controllers\Guru\PerangkatController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Guru\PerangkatController::class, 'store'])->middleware('throttle:30,1')->name('store');
+        Route::get('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'show'])->name('show');
+        Route::get('/{perangkat}/ubah', [\App\Http\Controllers\Guru\PerangkatController::class, 'edit'])->name('edit');
+        Route::put('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'update'])->middleware('throttle:30,1')->name('update');
+        Route::delete('/{perangkat}', [\App\Http\Controllers\Guru\PerangkatController::class, 'destroy'])->middleware('throttle:30,1')->name('destroy');
+        Route::get('/{perangkat}/cetak-pdf', [\App\Http\Controllers\Guru\PerangkatController::class, 'cetakPdf'])->name('pdf');
+        Route::get('/{perangkat}/lampiran', [\App\Http\Controllers\Guru\PerangkatController::class, 'downloadLampiran'])->name('lampiran');
     });
     
     // Kuis & Soal
@@ -673,6 +692,8 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/tka-laporan/export-csv', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'exportCsv'])->name('tka-laporan.export');
     Route::get('/tka-kesiapan', [\App\Http\Controllers\Tka\KesiapanController::class, 'index'])->name('tka-kesiapan.index');
     Route::get('/tka-kesiapan/ekspor', [\App\Http\Controllers\Tka\KesiapanController::class, 'ekspor'])->name('tka-kesiapan.ekspor');
+    Route::get('/perangkat', [\App\Http\Controllers\Kepsek\PerangkatSupervisiController::class, 'index'])->name('perangkat.index');
+    Route::get('/perangkat/{perangkat}/cetak-pdf', [\App\Http\Controllers\Kepsek\PerangkatSupervisiController::class, 'cetakPdf'])->name('perangkat.pdf');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

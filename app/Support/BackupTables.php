@@ -81,6 +81,8 @@ class BackupTables
             'kelas_digital_tugas' => ['class' => \App\Models\Elearning\KelasDigitalTugas::class, 'except' => []],
             'kelas_digital_pengumpulan' => ['class' => \App\Models\Elearning\KelasDigitalPengumpulan::class, 'except' => []],
             'kelas_digital_progress' => ['class' => \App\Models\Elearning\KelasDigitalProgress::class, 'except' => []],
+            'perangkat_pembelajaran' => ['class' => \App\Models\Perangkat\PerangkatPembelajaran::class, 'except' => []],
+            'jurnal_mengajar' => ['class' => \App\Models\Perangkat\JurnalMengajar::class, 'except' => []],
             'nilai_erapor' => ['class' => NilaiErapot::class, 'except' => []],
             'nilai_erapor_audit_logs' => ['class' => NilaiErapotAudit::class, 'except' => []],
             'transkrip_nilai' => ['class' => TranskripNilai::class, 'except' => []],

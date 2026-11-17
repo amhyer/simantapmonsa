@@ -6,6 +6,8 @@
         ]],
         ['label' => 'PEMBELAJARAN', 'items' => [
             ['route' => 'guru.kelas-digital.index', 'icon' => 'lucide-school', 'label' => 'Kelas Digital'],
+            ['route' => 'guru.perangkat.index', 'icon' => 'lucide-folder-open', 'label' => 'Perangkat Ajar'],
+            ['route' => 'guru.perangkat.jurnal.index', 'icon' => 'lucide-book-marked', 'label' => 'Jurnal Mengajar'],
             ['route' => 'guru.tp.index', 'icon' => 'lucide-target', 'label' => 'Tujuan Pembelajaran'],
             ['route' => 'guru.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi Ajar'],
             ['route' => 'guru.dimensi.index', 'icon' => 'lucide-sprout', 'label' => 'Profil Lulusan'],

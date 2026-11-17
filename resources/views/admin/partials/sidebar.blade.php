@@ -103,6 +103,7 @@
             ['label' => 'DATA SEKOLAH & PERIODE', 'icon' => 'lucide-building-2', 'children' => [
                 ['route' => 'admin.sekolah.index', 'icon' => 'lucide-building-2', 'label' => 'Profil Sekolah'],
                 ['route' => 'admin.semester.index', 'icon' => 'lucide-calendar', 'label' => 'Data Semester & Tahun Ajaran'],
+                ['route' => 'admin.validasi-data.index', 'icon' => 'lucide-clipboard-check', 'label' => 'Validasi Kelengkapan Data'],
             ]],
             ['label' => 'PENDIDIK & PESERTA DIDIK', 'icon' => 'lucide-users', 'children' => [
                 ['route' => 'admin.referensi.guru', 'icon' => 'lucide-presentation', 'label' => 'Data Guru & PTK'],
