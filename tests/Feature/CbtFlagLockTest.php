@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CbtQuestionBank;
 use App\Models\User;
 use Database\Seeders\E2eFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -77,19 +78,74 @@ class CbtFlagLockTest extends TestCase
         }
     }
 
-    public function test_admin_cbt_routes_return_404_for_admin_and_super_admin_when_flag_false(): void
+    public function test_admin_can_manage_cbt_banks_but_sessions_return_404_when_flag_false(): void
     {
         $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
-        $superAdmin = User::factory()->create([
-            'peran' => 'super_admin',
-            'tenant_id' => null,
-            'aktif' => true,
-            'force_password_change' => false,
-        ]);
+        $guru = User::findOrFail(E2eFixtureSeeder::USER_IDS['guru_a']);
+        $bank = CbtQuestionBank::findOrFail(E2eFixtureSeeder::CBT_BANK_ID);
 
-        foreach (['/admin/cbt/sessions', '/admin/cbt/banks'] as $url) {
+        // Bank Soal (persiapan): admin dapat mengakses index, create, store, show, edit, update
+        $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.cbt.banks.create'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.cbt.banks.show', $bank))->assertOk();
+        $this->actingAs($admin)->get(route('admin.cbt.banks.edit', $bank))->assertOk();
+
+        $this->actingAs($admin)->post(route('admin.cbt.banks.store'), [
+            'title' => 'Bank Persiapan Matematika',
+            'subject' => 'Matematika',
+            'guru_id' => $guru->id,
+        ])->assertRedirect(route('admin.cbt.banks.index'));
+
+        $this->actingAs($admin)->put(route('admin.cbt.banks.update', $bank), [
+            'title' => 'Bank Diperbarui',
+            'subject' => 'Matematika',
+            'guru_id' => $guru->id,
+        ])->assertRedirect(route('admin.cbt.banks.index'));
+
+        // Sesi, Hasil, Analisis, Ekspor: terkunci 404 termasuk untuk admin
+        $sessionId = E2eFixtureSeeder::CBT_SESSION_ID;
+        $sessionUrls = [
+            route('admin.cbt.sessions.index'),
+            route('admin.cbt.sessions.create'),
+            route('admin.cbt.sessions.show', $sessionId),
+            route('admin.cbt.sessions.analisis-butir', $sessionId),
+            route('admin.cbt.sessions.export', ['session' => $sessionId, 'format' => 'csv']),
+            route('admin.cbt.sessions.export-engine', ['session' => $sessionId, 'format' => 'csv']),
+        ];
+
+        foreach ($sessionUrls as $url) {
             $this->actingAs($admin)->get($url)->assertNotFound();
-            $this->actingAs($superAdmin)->get($url)->assertNotFound();
+        }
+    }
+
+    public function test_non_admin_roles_and_direct_super_admin_cannot_access_admin_cbt_when_flag_false(): void
+    {
+        $sessionId = E2eFixtureSeeder::CBT_SESSION_ID;
+        $adminCbtUrls = [
+            route('admin.cbt.banks.index'),
+            route('admin.cbt.sessions.index'),
+            route('admin.cbt.sessions.analisis-butir', $sessionId),
+            route('admin.cbt.sessions.export', ['session' => $sessionId, 'format' => 'csv']),
+        ];
+
+        foreach ($adminCbtUrls as $url) {
+            $status = $this->get($url)->getStatusCode();
+            $this->assertContains($status, [302, 404]);
+        }
+
+        $extraUsers = [
+            User::findOrFail(E2eFixtureSeeder::USER_IDS['guru_a']),
+            User::findOrFail(E2eFixtureSeeder::USER_IDS['siswa_a1']),
+            User::findOrFail(E2eFixtureSeeder::USER_IDS['ortu_a1']),
+            User::factory()->create(['peran' => 'kepsek', 'aktif' => true, 'force_password_change' => false]),
+            User::factory()->create(['peran' => 'tendik', 'aktif' => true, 'force_password_change' => false]),
+            User::factory()->create(['peran' => 'super_admin', 'tenant_id' => null, 'aktif' => true, 'force_password_change' => false]),
+        ];
+
+        foreach ($extraUsers as $user) {
+            foreach ($adminCbtUrls as $url) {
+                $this->actingAs($user)->get($url)->assertNotFound();
+            }
         }
     }
 
@@ -104,12 +160,12 @@ class CbtFlagLockTest extends TestCase
         $this->assertNotEquals(404, $tkaResponse->getStatusCode(), 'admin.tka.dashboard should not be 404');
     }
 
-    public function test_admin_cbt_routes_are_accessible_for_admin_when_flag_true(): void
+    public function test_admin_can_access_both_banks_and_sessions_when_flag_true(): void
     {
         config(['simantap.cbt_enabled' => true]);
         $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
 
-        $this->actingAs($admin)->get('/admin/cbt/sessions')->assertOk();
-        $this->actingAs($admin)->get('/admin/cbt/banks')->assertOk();
+        $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
+        $this->actingAs($admin)->get(route('admin.cbt.sessions.index'))->assertOk();
     }
 }
