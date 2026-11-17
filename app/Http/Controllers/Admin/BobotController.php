@@ -10,7 +10,7 @@ class BobotController extends Controller
 {
     public function index()
     {
-        $pengaturanGuru = PengaturanGuru::with('guru')->get();
+        $pengaturanGuru = PengaturanGuru::forSchool()->with('guru')->get();
 
         return view('admin.bobot.index', compact('pengaturanGuru'));
     }
@@ -28,7 +28,7 @@ class BobotController extends Controller
             'bobot_sumatif_akhir' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $pengaturan = PengaturanGuru::findOrFail($id);
+        $pengaturan = PengaturanGuru::forSchool()->findOrFail($id);
 
         // Validate weight sums equal 100
         $bobotSum = ($validated['bobot_tugas'] ?? 30) + ($validated['bobot_uh'] ?? 20) + ($validated['bobot_uts'] ?? 20) + ($validated['bobot_uas'] ?? 30);

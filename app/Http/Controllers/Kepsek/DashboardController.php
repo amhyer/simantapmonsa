@@ -219,7 +219,7 @@ class DashboardController extends Controller
     protected function getPredikat($nilai, $kkm = null)
     {
         $predikat = app(\App\Services\NilaiService::class)
-            ->getPredikat((float) $nilai, $kkm ?? (\App\Modules\Tenant\Contexts\TenantContext::check() ? 70 : getKKM()));
+            ->getPredikat((float) $nilai, $kkm ?? getKKM());
 
         $kelas = match ($predikat['huruf']) {
             'A' => 'ok',

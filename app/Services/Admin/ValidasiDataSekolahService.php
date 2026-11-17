@@ -79,6 +79,22 @@ class ValidasiDataSekolahService
         $akunSiswaCount = $akunSiswaQuery->count();
         $perkiraanSiswaTanpaAkun = max(0, $totalSiswaAktif - $akunSiswaCount);
 
+        $pegawaiNikQuery = User::query()
+            ->whereIn('peran', ['guru', 'kepsek', 'tendik'])
+            ->where('aktif', true)
+            ->whereNotNull('nik')
+            ->where('nik', '<>', '');
+        if ($tenantId !== null) {
+            $pegawaiNikQuery->where('tenant_id', $tenantId);
+        }
+        $jumlahNikAmbigu = $pegawaiNikQuery
+            ->pluck('nik')
+            ->map(fn ($v) => trim((string) $v))
+            ->filter(fn ($v) => $v !== '')
+            ->countBy()
+            ->filter(fn (int $c) => $c > 1)
+            ->count();
+
         $sekolah = $sekolahQuery->first(['nama_sekolah', 'npsn', 'alamat', 'kepala_sekolah']);
         $profilSekolahKurang = [];
         if (! $sekolah || trim((string) $sekolah->nama_sekolah) === '') {
@@ -149,6 +165,17 @@ class ValidasiDataSekolahService
                     : "Terdapat {$totalSiswaAktif} siswa aktif dan {$akunSiswaCount} akun login siswa.",
                 'route' => 'admin.users.index',
                 'aksi_label' => 'Kelola Akun Siswa',
+            ],
+            [
+                'kode' => 'nik_pegawai_ambigu',
+                'judul' => 'PIN / NIK Pegawai Duplikat (Mesin Presensi)',
+                'jumlah' => $jumlahNikAmbigu,
+                'status' => $jumlahNikAmbigu === 0 ? 'ok' : 'warn',
+                'keterangan' => $jumlahNikAmbigu === 0
+                    ? 'Tidak ada PIN/NIK pegawai aktif yang dipakai ganda di sekolah ini.'
+                    : "{$jumlahNikAmbigu} kode PIN/NIK dipakai oleh lebih dari satu pegawai aktif — impor mesin presensi akan melewati entri ambigu tersebut.",
+                'route' => 'admin.users.index',
+                'aksi_label' => 'Perbaiki di Manajemen Akun',
             ],
             [
                 'kode' => 'profil_sekolah',

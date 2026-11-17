@@ -143,8 +143,9 @@
     @vite('resources/js/charts.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const kelasLabels = {!! json_encode($chartKelasLabels ?? ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
-            const kelasRataRata = {!! json_encode($chartKelasRataRata ?? [75, 78, 72, 80, 76, 82], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+            const kkmSekolah = {{ (int) ($kkm ?? 70) }};
+            const kelasLabels = {!! json_encode($chartKelasLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+            const kelasRataRata = {!! json_encode($chartKelasRataRata ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
 
             const ctx1 = document.getElementById('chartPerbandingan').getContext('2d');
             new Chart(ctx1, {
@@ -155,13 +156,13 @@
                         label: 'Rata-rata Nilai',
                         data: kelasRataRata,
                         backgroundColor: kelasLabels.map(function(_, i) {
-                            return kelasRataRata[i] >= 70 ? 'rgba(18,128,92,0.75)' : 'rgba(180,35,24,0.75)';
+                            return kelasRataRata[i] >= kkmSekolah ? 'rgba(18,128,92,0.75)' : 'rgba(180,35,24,0.75)';
                         }),
                         borderWidth: 0,
                         borderRadius: 6
                     }, {
-                        label: 'KKM',
-                        data: Array(kelasLabels.length).fill(70),
+                        label: 'KKM (' + kkmSekolah + ')',
+                        data: Array(kelasLabels.length).fill(kkmSekolah),
                         type: 'line',
                         borderColor: '#B8860B',
                         borderDash: [6, 4],
@@ -182,11 +183,7 @@
             });
 
             const ctx2 = document.getElementById('chartTren').getContext('2d');
-            const trenDatasets = {!! json_encode($chartTrenDatasets ?? [
-                ['Kelas 1', [72, 75, 78, 76, 80, 82]],
-                ['Kelas 2', [70, 73, 76, 74, 78, 80]],
-                ['Kelas 3', [68, 71, 74, 72, 76, 78]]
-            ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
+            const trenDatasets = {!! json_encode($chartTrenDatasets ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
             const warna = ['#1F3864', '#B8860B', '#12805C', '#B42318', '#667085', '#2B4A80'];
             const datasets = trenDatasets.map(function(item, i) {
                 return {
@@ -202,7 +199,7 @@
             new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartTrenLabels ?? ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                    labels: {!! json_encode($chartTrenLabels ?? ['Tugas', 'UH', 'Praktik', 'PTS', 'PAS'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     datasets: datasets
                 },
                 options: {
@@ -222,10 +219,10 @@
                 data: {
                     labels: kelasLabels,
                     datasets: [
-                        { label: 'A', data: {!! json_encode($chartPredikatA ?? [3, 4, 2, 5, 3, 4], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#12805C', borderRadius: 4 },
-                        { label: 'B', data: {!! json_encode($chartPredikatB ?? [5, 4, 6, 3, 5, 4], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#1F3864', borderRadius: 4 },
-                        { label: 'C', data: {!! json_encode($chartPredikatC ?? [2, 2, 3, 1, 2, 3], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B8860B', borderRadius: 4 },
-                        { label: 'D', data: {!! json_encode($chartPredikatD ?? [1, 0, 2, 0, 1, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B42318', borderRadius: 4 }
+                        { label: 'A', data: {!! json_encode($chartPredikatA ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#12805C', borderRadius: 4 },
+                        { label: 'B', data: {!! json_encode($chartPredikatB ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#1F3864', borderRadius: 4 },
+                        { label: 'C', data: {!! json_encode($chartPredikatC ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B8860B', borderRadius: 4 },
+                        { label: 'D', data: {!! json_encode($chartPredikatD ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B42318', borderRadius: 4 }
                     ]
                 },
                 options: {
@@ -240,14 +237,15 @@
             });
 
             const ctx4 = document.getElementById('chartKetuntasan').getContext('2d');
+            const ketuntasanData = {!! json_encode($chartKetuntasanData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
             new Chart(ctx4, {
                 type: 'bar',
                 data: {
                     labels: kelasLabels,
                     datasets: [{
                         label: 'Ketuntasan %',
-                        data: {!! json_encode($chartKetuntasanData ?? [85, 90, 70, 95, 80, 88], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                        backgroundColor: {!! json_encode($chartKetuntasanData ?? [85, 90, 70, 95, 80, 88], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}.map(function(v) {
+                        data: ketuntasanData,
+                        backgroundColor: ketuntasanData.map(function(v) {
                             return v >= 80 ? 'rgba(18,128,92,0.75)' : (v >= 60 ? 'rgba(181,71,8,0.75)' : 'rgba(180,35,24,0.75)');
                         }),
                         borderWidth: 0,
