@@ -8,10 +8,11 @@ use App\Models\Elearning\KelasDigitalPengumpulan;
 use App\Models\Elearning\KelasDigitalPertemuan;
 use App\Models\Elearning\KelasDigitalTugas;
 use App\Models\Rombel;
+use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\Tenant;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantContext;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Services\Navigation\CommandPaletteService;
 use App\Services\Navigation\RoleTaskSummaryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +27,14 @@ class Gelombang7MenuAndValidationTest extends TestCase
     {
         TenantContext::clear();
         parent::tearDown();
+    }
+
+    private function makeSemester(): Semester
+    {
+        return Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
     }
 
     public function test_command_palette_terfilter_hak_akses_wali_kelas_dan_seluruh_rute_valid(): void
@@ -78,7 +87,7 @@ class Gelombang7MenuAndValidationTest extends TestCase
             $this->assertSame(count($routes), count(array_unique($routes)));
         }
 
-        // Saat modul asesmen dimatikan, rute CBT/Tryout tidak muncul di Ctrl+K admin maupun guru
+        // Saat modul asesmen dimatikan, rute CBT/Tryout tidak muncul di Ctrl+K admin
         config(['simantap.cbt_enabled' => false]);
         $adminTanpaCbt = collect($service->itemsFor($admin))->pluck('route')->all();
         $this->assertNotContains('admin.cbt.sessions.index', $adminTanpaCbt);
@@ -86,18 +95,18 @@ class Gelombang7MenuAndValidationTest extends TestCase
 
     public function test_admin_validasi_kelengkapan_data_mendeteksi_temuan_dan_terisolasi_tenant(): void
     {
+        $semester = $this->makeSemester();
+
         $tenantA = Tenant::create([
-            'slug' => 'sdn-validasi-a',
-            'npsn' => '40391001',
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SDN Validasi A',
-            'kode_unik' => 'VALA01',
+            'subdomain' => 'sdn-validasi-a',
             'aktif' => true,
         ]);
         $tenantB = Tenant::create([
-            'slug' => 'sdn-validasi-b',
-            'npsn' => '40391002',
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SDN Validasi B',
-            'kode_unik' => 'VALB02',
+            'subdomain' => 'sdn-validasi-b',
             'aktif' => true,
         ]);
 
@@ -105,20 +114,25 @@ class Gelombang7MenuAndValidationTest extends TestCase
         $adminB = User::factory()->admin()->create(['tenant_id' => $tenantB->id]);
         $guruA = User::factory()->guru()->create(['tenant_id' => $tenantA->id]);
 
-        TenantContext::set($tenantA);
+        TenantContext::set($tenantA->id);
         Siswa::create([
             'uuid' => (string) Str::uuid(),
             'tenant_id' => $tenantA->id,
+            'guru_id' => $guruA->id,
+            'nama_guru' => $guruA->nama_lengkap,
             'nis' => 'V001',
             'nama_peserta_didik' => 'Siswa Tanpa Rombel Tenant A',
             'kelas' => '6A',
+            'jenis_kelamin' => 'L',
             'rombel_id' => null,
             'aktif' => true,
         ]);
         Rombel::create([
             'tenant_id' => $tenantA->id,
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $semester->id,
             'nama_rombel' => '6A Tanpa Wali',
-            'tingkat' => '6',
+            'tingkat' => 6,
             'guru_id' => null,
         ]);
 
@@ -132,7 +146,7 @@ class Gelombang7MenuAndValidationTest extends TestCase
         $this->actingAs($guruA)->get(route('admin.validasi-data.index'))->assertForbidden();
 
         // Admin B (tenant B) tidak melihat temuan milik tenant A
-        TenantContext::set($tenantB);
+        TenantContext::set($tenantB->id);
         $this->actingAs($adminB)->get(route('admin.validasi-data.index'))
             ->assertOk()
             ->assertDontSee('Siswa Tanpa Rombel Tenant A')
@@ -180,9 +194,12 @@ class Gelombang7MenuAndValidationTest extends TestCase
         $guru = User::factory()->guru()->create();
         $siswa = Siswa::create([
             'uuid' => (string) Str::uuid(),
+            'guru_id' => $guru->id,
+            'nama_guru' => $guru->nama_lengkap,
             'nis' => 'NS901',
             'nama_peserta_didik' => 'Budi Uji',
             'kelas' => '6A',
+            'jenis_kelamin' => 'L',
             'aktif' => true,
         ]);
 
@@ -193,14 +210,26 @@ class Gelombang7MenuAndValidationTest extends TestCase
             'kelas' => '6A',
             'aktif' => true,
         ]);
-        $modul = KelasDigitalModul::create(['kelas_digital_id' => $kelas->id, 'judul' => 'Bab 1', 'urutan' => 1]);
-        $pertemuan = KelasDigitalPertemuan::create(['modul_id' => $modul->id, 'judul' => 'Pertemuan 1', 'urutan' => 1]);
+        $modul = KelasDigitalModul::create([
+            'kelas_digital_id' => $kelas->id,
+            'judul' => 'Bab 1',
+            'urutan' => 1,
+            'dipublikasikan' => true,
+        ]);
+        $pertemuan = KelasDigitalPertemuan::create([
+            'modul_id' => $modul->id,
+            'judul' => 'Pertemuan 1',
+            'urutan' => 1,
+            'dipublikasikan' => true,
+        ]);
         $tugas = KelasDigitalTugas::create([
             'kelas_digital_id' => $kelas->id,
             'pertemuan_id' => $pertemuan->id,
+            'guru_id' => $guru->id,
             'judul' => 'Tugas Pecahan',
-            'status' => 'diterbitkan',
-            'skor_maksimal' => 100,
+            'instruksi' => 'Kerjakan soal pecahan.',
+            'tipe_pengumpulan' => 'teks',
+            'nilai_maksimal' => 100,
         ]);
         KelasDigitalPengumpulan::create([
             'tugas_id' => $tugas->id,

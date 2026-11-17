@@ -7,7 +7,7 @@ use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantContext;
+use App\Modules\Tenant\Contexts\TenantContext;
 
 /**
  * Gelombang 3A + 7B: Pusat Validasi & Kelengkapan Data Sekolah (read-only,

@@ -8,10 +8,11 @@ use App\Models\Perangkat\JurnalMengajar;
 use App\Models\Perangkat\PerangkatPembelajaran;
 use App\Models\Rombel;
 use App\Models\Siswa;
-use App\Models\Tenant;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantContext;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Services\Dapodik\SidebarSyncStatus;
+use App\Services\Elearning\SiswaMateriVisibilityService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\Schema;
  */
 class RoleTaskSummaryService
 {
+    public function __construct(
+        private readonly SiswaMateriVisibilityService $siswaVisibility,
+    ) {}
+
     /**
      * @return array<int, array{icon: string, teks: string, waktu: string, url: ?string}>
      */
@@ -168,25 +173,17 @@ class RoleTaskSummaryService
         $notifs = [];
 
         try {
-            if (! Schema::hasTable('siswa') || ! Schema::hasTable('kelas_digital_tugas')) {
+            if (! Schema::hasTable('siswa') || ! Schema::hasTable('kelas_digital_tugas') || ! Schema::hasTable('kelas_digital')) {
                 return [];
             }
 
-            $siswaQ = Siswa::query()->where(function ($q) use ($user): void {
-                $q->where('nis', $user->terhubung_dengan)
-                    ->orWhere('nis', $user->nama_pengguna)
-                    ->orWhere('nisn', $user->nama_pengguna);
-            });
-            if ($tenantId !== null) {
-                $siswaQ->where('tenant_id', $tenantId);
-            }
-            $siswa = $siswaQ->first(['id', 'rombel_id', 'kelas']);
+            $siswa = $this->siswaVisibility->resolveSiswaForUser($user);
             if (! $siswa) {
                 return [];
             }
 
             $tugasAktif = KelasDigitalTugas::query()
-                ->where('status', 'diterbitkan')
+                ->whereHas('pertemuan', fn ($p) => $p->where('dipublikasikan', true))
                 ->whereHas('kelasDigital', function ($q) use ($siswa, $tenantId): void {
                     $q->where('aktif', true);
                     if ($tenantId !== null) {
@@ -199,7 +196,6 @@ class RoleTaskSummaryService
                         if ($siswa->kelas) {
                             $k->orWhere('kelas', $siswa->kelas);
                         }
-                        $k->orWhereHas('anggota', fn ($a) => $a->where('siswa_id', $siswa->id));
                     });
                 })
                 ->whereDoesntHave('pengumpulan', fn ($p) => $p->where('siswa_id', $siswa->id))

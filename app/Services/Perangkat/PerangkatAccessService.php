@@ -7,7 +7,7 @@ use App\Models\Perangkat\PerangkatPembelajaran;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantContext;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 

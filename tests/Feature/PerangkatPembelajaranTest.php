@@ -2,16 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Perangkat\JurnalMengajar;
 use App\Models\Perangkat\PerangkatPembelajaran;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
-use App\Models\Tenant;
+use App\Models\Semester;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantContext;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PerangkatPembelajaranTest extends TestCase
@@ -22,6 +23,26 @@ class PerangkatPembelajaranTest extends TestCase
     {
         TenantContext::clear();
         parent::tearDown();
+    }
+
+    private function makeSemester(): Semester
+    {
+        return Semester::firstOrCreate(
+            ['semester_id' => '20261'],
+            ['tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil']
+        );
+    }
+
+    private function makeRombel(string $nama, int $tingkat, ?int $guruId = null, ?int $tenantId = null): Rombel
+    {
+        return Rombel::create([
+            'tenant_id' => $tenantId,
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $this->makeSemester()->id,
+            'nama_rombel' => $nama,
+            'tingkat' => $tingkat,
+            'guru_id' => $guruId,
+        ]);
     }
 
     public function test_guru_dapat_membuat_cp_tp_atp_prota_promes_modul_ajar_dan_kkm_serta_cetak_pdf(): void
@@ -134,8 +155,8 @@ class PerangkatPembelajaranTest extends TestCase
         $walas6A = User::factory()->guru()->create(['is_wali_kelas' => true]);
         $walas6B = User::factory()->guru()->create(['is_wali_kelas' => true]);
 
-        $rombel6A = Rombel::create(['nama_rombel' => '6A', 'tingkat' => '6', 'guru_id' => $walas6A->id]);
-        Rombel::create(['nama_rombel' => '6B', 'tingkat' => '6', 'guru_id' => $walas6B->id]);
+        $rombel6A = $this->makeRombel('6A', 6, $walas6A->id);
+        $this->makeRombel('6B', 6, $walas6B->id);
 
         $perangkatDibagikan = PerangkatPembelajaran::create([
             'guru_id' => $guruMapel->id,
@@ -180,17 +201,15 @@ class PerangkatPembelajaranTest extends TestCase
     public function test_jurnal_mengajar_crud_cetak_pdf_dan_isolasi_multi_tenant_serta_supervisi_kepsek(): void
     {
         $tenantA = Tenant::create([
-            'slug' => 'sdn-perangkat-a',
-            'npsn' => '40390011',
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SDN Perangkat A',
-            'kode_unik' => 'PRKA01',
+            'subdomain' => 'sdn-perangkat-a',
             'aktif' => true,
         ]);
         $tenantB = Tenant::create([
-            'slug' => 'sdn-perangkat-b',
-            'npsn' => '40390012',
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SDN Perangkat B',
-            'kode_unik' => 'PRKB02',
+            'subdomain' => 'sdn-perangkat-b',
             'aktif' => true,
         ]);
 
@@ -199,7 +218,7 @@ class PerangkatPembelajaranTest extends TestCase
         $kepsekB = User::factory()->kepsek()->create(['tenant_id' => $tenantB->id]);
         $guruB = User::factory()->guru()->create(['tenant_id' => $tenantB->id]);
 
-        TenantContext::set($tenantA);
+        TenantContext::set($tenantA->id);
         $perangkatA = PerangkatPembelajaran::create([
             'tenant_id' => $tenantA->id,
             'guru_id' => $guruA->id,
@@ -239,7 +258,7 @@ class PerangkatPembelajaranTest extends TestCase
         $this->actingAs($kepsekA)->get(route('kepsek.perangkat.pdf', $perangkatA))->assertOk();
 
         // Isolasi lintas tenant: Kepsek B & Guru B tidak boleh melihat perangkat A
-        TenantContext::set($tenantB);
+        TenantContext::set($tenantB->id);
         $this->actingAs($kepsekB)->get(route('kepsek.perangkat.index'))
             ->assertOk()
             ->assertDontSee('CP IPA Tenant A');
@@ -254,7 +273,7 @@ class PerangkatPembelajaranTest extends TestCase
 
         // Tolak file berbahaya (.php)
         $badFile = UploadedFile::fake()->create('exploit.php', 10, 'application/x-php');
-        $this->actingAs($guru)->post(route('guru.perangkat.store'), [
+        $this->actingAs($guru)->postJson(route('guru.perangkat.store'), [
             'jenis' => 'modul_ajar',
             'judul' => 'Modul Uji Lampiran',
             'mata_pelajaran' => 'Matematika',
@@ -263,7 +282,10 @@ class PerangkatPembelajaranTest extends TestCase
         ])->assertStatus(422);
 
         // Terima file PDF valid dan unduh dengan nosniff
-        $goodPdf = UploadedFile::fake()->createWithContent('modul.pdf', '%PDF-1.4 konten dummy');
+        $goodPdf = UploadedFile::fake()->createWithContent(
+            'modul.pdf',
+            "%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n"
+        );
         $this->actingAs($guru)->post(route('guru.perangkat.store'), [
             'jenis' => 'modul_ajar',
             'judul' => 'Modul Lampiran PDF Valid',
