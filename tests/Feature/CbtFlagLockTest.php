@@ -85,9 +85,14 @@ class CbtFlagLockTest extends TestCase
         $bank = CbtQuestionBank::findOrFail(E2eFixtureSeeder::CBT_BANK_ID);
 
         // Bank Soal (persiapan): admin dapat mengakses index, create, store, show, edit, update
-        $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
+        $indexResponse = $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
+        $indexResponse->assertSee('Mode persiapan: CBT belum dibuka untuk siswa.');
+        $indexResponse->assertSee('Bank Soal CBT (Persiapan)');
+        $indexResponse->assertDontSee('/admin/cbt/sessions');
         $this->actingAs($admin)->get(route('admin.cbt.banks.create'))->assertOk();
-        $this->actingAs($admin)->get(route('admin.cbt.banks.show', $bank))->assertOk();
+        $showResponse = $this->actingAs($admin)->get(route('admin.cbt.banks.show', $bank))->assertOk();
+        $showResponse->assertSee('Mode persiapan: CBT belum dibuka untuk siswa.');
+        $showResponse->assertDontSee('/admin/cbt/sessions');
         $this->actingAs($admin)->get(route('admin.cbt.banks.edit', $bank))->assertOk();
 
         $this->actingAs($admin)->post(route('admin.cbt.banks.store'), [

@@ -49,7 +49,7 @@
             ['title' => 'Dasbor', 'route' => route('admin.dashboard'), 'active' => $isActive('admin.dashboard'), 'icon' => 'fas fa-tachometer-alt'],
             ['title' => 'Presensi', 'route' => route('admin.presensi.index'), 'active' => $isActive('admin.presensi.*'), 'icon' => 'fas fa-map-marker-alt'],
             ['title' => 'Siswa', 'route' => route('admin.users.siswa'), 'active' => $isActive('admin.users.siswa'), 'icon' => 'fas fa-user-graduate'],
-            ['title' => 'CBT', 'route' => route('admin.cbt.sessions.index'), 'active' => $isActive('admin.cbt.*'), 'icon' => 'fas fa-laptop-code'],
+            ['title' => 'CBT', 'route' => route(modulAsesmenAktif() ? 'admin.cbt.sessions.index' : 'admin.cbt.banks.index'), 'active' => $isActive('admin.cbt.*'), 'icon' => 'fas fa-laptop-code'],
             ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
         ];
     }

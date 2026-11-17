@@ -2,7 +2,12 @@
     $tabs = [
         'setup' => ['label' => 'Pengaturan', 'route' => 'admin.dashboard', 'asesmen' => false, 'icon' => 'fas fa-sliders-h'],
         'erapor' => ['label' => 'E-Rapor', 'route' => 'admin.penilaian.status', 'asesmen' => false, 'icon' => 'fas fa-graduation-cap'],
-        'cbt' => ['label' => 'CBT/Ujian', 'route' => 'admin.cbt.sessions.index', 'asesmen' => true, 'icon' => 'fas fa-laptop-code'],
+        'cbt' => [
+            'label' => modulAsesmenAktif() ? 'CBT/Ujian' : 'Bank Soal CBT (Persiapan)',
+            'route' => modulAsesmenAktif() ? 'admin.cbt.sessions.index' : 'admin.cbt.banks.index',
+            'asesmen' => false,
+            'icon' => 'fas fa-laptop-code',
+        ],
         'tka' => [
             'label' => 'TKA',
             'route' => modulAsesmenAktif() ? 'admin.tka.dashboard' : 'admin.tka-kesiapan.index',

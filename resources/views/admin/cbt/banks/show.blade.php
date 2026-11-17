@@ -17,6 +17,13 @@
 @endsection
 
 @section('content')
+@if(!config('simantap.cbt_enabled', false))
+    <div style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-info-circle"></i>
+        <span>Mode persiapan: CBT belum dibuka untuk siswa.</span>
+    </div>
+@endif
+
 {{-- Bank Metadata Card --}}
 <div class="card" style="margin-bottom:24px;border-left:4px solid var(--navy)">
     <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
