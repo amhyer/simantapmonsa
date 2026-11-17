@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'apikey' => \App\Http\Middleware\ApiKeyMiddleware::class,
             'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
             'module.asesmen' => \App\Http\Middleware\EnsureModuleEnabled::class,
+            'cbt.enabled' => \App\Http\Middleware\EnsureCbtEnabled::class,
             'tenant' => \App\Http\Middleware\IdentifyTenant::class,
             'dapodik.single-school' => \App\Http\Middleware\EnsureSingleSchoolDapodik::class,
             'school.context' => \App\Http\Middleware\EnsureSchoolContext::class,
