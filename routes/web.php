@@ -755,8 +755,8 @@ if (config('simantap.cbt_enabled', false)) {
 }
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['cbt.enabled', 'module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
-    // Question Banks
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+    // Question Banks (Bank Soal — dapat disiapkan admin di mode persiapan)
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'create'])->name('create');
@@ -767,9 +767,9 @@ Route::middleware(['cbt.enabled', 'module.asesmen', 'auth', 'role:admin', 'force
         Route::delete('/{bank}', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'destroy'])->name('destroy');
         Route::get('/api/statistics', [\App\Http\Controllers\Admin\Cbt\CbtBankController::class, 'statistics'])->name('statistics');
     });
-    
-    // Test Sessions
-    Route::prefix('sessions')->name('sessions.')->group(function () {
+
+    // Test Sessions, Hasil, Analisis, Ekspor (terkunci 404 saat cbt_enabled=false)
+    Route::middleware('cbt.enabled')->prefix('sessions')->name('sessions.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\Cbt\CbtSessionController::class, 'store'])->name('store');
