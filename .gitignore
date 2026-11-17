@@ -71,3 +71,7 @@ node_modules/
 *-tmp.*
 *.tmp.*
 
+# Laporan audit/verifikasi lokal & inventaris menu
+/reports/
+/storage/logs/menu-inventory.md
+
