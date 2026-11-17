@@ -19,6 +19,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PerangkatController extends Controller
@@ -125,7 +126,7 @@ class PerangkatController extends Controller
 
         $lampiran = null;
         if ($request->hasFile('lampiran')) {
-            $lampiran = $this->files->store($request->file('lampiran'), $tenantId, 'perangkat');
+            $lampiran = $this->files->store($request->file('lampiran'), 'perangkat', $tenantId, 'lampiran');
         }
 
         $konten = $this->extractKonten($request, $validated['jenis']);
@@ -140,16 +141,16 @@ class PerangkatController extends Controller
             'judul' => $validated['judul'],
             'mata_pelajaran' => $validated['mata_pelajaran'],
             'fase' => $validated['fase'] ?? null,
-            'kelas' => $validated['kelas'] ?: ($rombel?->nama_rombel ?? 'Umum'),
-            'tahun_ajaran' => $validated['tahun_ajaran'] ?: ($semester?->tahun_ajaran ?? date('Y').'/'.(date('Y') + 1)),
-            'semester' => $validated['semester'] ?: ($semester?->nama_semester ? ucfirst((string) $semester->nama_semester) : 'Ganjil'),
+            'kelas' => ($validated['kelas'] ?? null) ?: ($rombel?->nama_rombel ?? 'Umum'),
+            'tahun_ajaran' => ($validated['tahun_ajaran'] ?? null) ?: ($semester?->tahun_ajaran ?? date('Y').'/'.(date('Y') + 1)),
+            'semester' => ($validated['semester'] ?? null) ?: ($semester?->nama_semester ? ucfirst((string) $semester->nama_semester) : 'Ganjil'),
             'alokasi_waktu' => $validated['alokasi_waktu'] ?? null,
             'ringkasan' => $validated['ringkasan'] ?? null,
             'konten' => $konten,
             'lampiran_path' => $lampiran['path'] ?? null,
-            'lampiran_nama' => $lampiran['nama'] ?? null,
+            'lampiran_nama' => $lampiran['original_name'] ?? null,
             'lampiran_mime' => $lampiran['mime'] ?? null,
-            'lampiran_ukuran' => $lampiran['ukuran'] ?? null,
+            'lampiran_ukuran' => $lampiran['size'] ?? null,
             'status' => $validated['status'] ?? 'final',
             'dibagikan_ke_walas' => $request->boolean('dibagikan_ke_walas', true),
         ]);
@@ -215,9 +216,9 @@ class PerangkatController extends Controller
             'judul' => $validated['judul'],
             'mata_pelajaran' => $validated['mata_pelajaran'],
             'fase' => $validated['fase'] ?? null,
-            'kelas' => $validated['kelas'] ?: ($rombel?->nama_rombel ?? $perangkat->kelas),
-            'tahun_ajaran' => $validated['tahun_ajaran'] ?: $perangkat->tahun_ajaran,
-            'semester' => $validated['semester'] ?: $perangkat->semester,
+            'kelas' => ($validated['kelas'] ?? null) ?: ($rombel?->nama_rombel ?? $perangkat->kelas),
+            'tahun_ajaran' => ($validated['tahun_ajaran'] ?? null) ?: $perangkat->tahun_ajaran,
+            'semester' => ($validated['semester'] ?? null) ?: $perangkat->semester,
             'alokasi_waktu' => $validated['alokasi_waktu'] ?? null,
             'ringkasan' => $validated['ringkasan'] ?? null,
             'konten' => $this->extractKonten($request, $validated['jenis']),
@@ -227,12 +228,12 @@ class PerangkatController extends Controller
 
         if ($request->hasFile('lampiran')) {
             $oldPath = $perangkat->lampiran_path;
-            $lampiran = $this->files->store($request->file('lampiran'), $tenantId, 'perangkat');
+            $lampiran = $this->files->store($request->file('lampiran'), 'perangkat', $tenantId, 'lampiran');
             $updates['lampiran_path'] = $lampiran['path'];
-            $updates['lampiran_nama'] = $lampiran['nama'];
+            $updates['lampiran_nama'] = $lampiran['original_name'];
             $updates['lampiran_mime'] = $lampiran['mime'];
-            $updates['lampiran_ukuran'] = $lampiran['ukuran'];
-            $this->files->delete($oldPath);
+            $updates['lampiran_ukuran'] = $lampiran['size'];
+            $this->files->deleteQuietly($oldPath);
         }
 
         $perangkat->update($updates);
@@ -291,7 +292,7 @@ class PerangkatController extends Controller
         return $pdf->stream($slug.'.pdf');
     }
 
-    public function downloadLampiran(PerangkatPembelajaran $perangkat): StreamedResponse
+    public function downloadLampiran(PerangkatPembelajaran $perangkat): StreamedResponse|BinaryFileResponse
     {
         /** @var User $user */
         $user = Auth::user();
@@ -299,8 +300,7 @@ class PerangkatController extends Controller
 
         return $this->files->download(
             $perangkat->lampiran_path,
-            $perangkat->lampiran_nama,
-            $perangkat->lampiran_mime
+            $perangkat->lampiran_nama
         );
     }
 
@@ -398,7 +398,7 @@ class PerangkatController extends Controller
             'kelas_digital_id' => $kelasDigital?->id,
             'tanggal' => $validated['tanggal'],
             'jam_ke' => $validated['jam_ke'] ?? null,
-            'kelas' => $validated['kelas'] ?: ($rombel?->nama_rombel ?? 'Umum'),
+            'kelas' => ($validated['kelas'] ?? null) ?: ($rombel?->nama_rombel ?? 'Umum'),
             'mata_pelajaran' => $validated['mata_pelajaran'],
             'pertemuan_ke' => $validated['pertemuan_ke'] ?? null,
             'topik' => $validated['topik'],
