@@ -683,9 +683,9 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/rekap', [RekapController::class, 'index'])->name('rekap.index');
     Route::get('/rekap/{guruId}', [RekapController::class, 'detail'])->name('rekap.detail');
     Route::get('/rekap/unduh/csv', [RekapController::class, 'unduh'])->name('rekap.unduh');
-    Route::get('/peta-kelas', [KepsekPetaKelas::class, 'index'])->middleware('data.single-school')->name('peta-kelas.index');
-    Route::get('/peta-kelas/{guruId}', [KepsekPetaKelas::class, 'detail'])->middleware('data.single-school')->whereNumber('guruId')->name('peta-kelas.detail');
-    Route::get('/hasil-belajar', [HasilBelajarController::class, 'index'])->middleware('data.single-school')->name('hasil-belajar.index');
+    Route::get('/peta-kelas', [KepsekPetaKelas::class, 'index'])->name('peta-kelas.index');
+    Route::get('/peta-kelas/{guruId}', [KepsekPetaKelas::class, 'detail'])->whereNumber('guruId')->name('peta-kelas.detail');
+    Route::get('/hasil-belajar', [HasilBelajarController::class, 'index'])->name('hasil-belajar.index');
     Route::get('/kebiasaan', [KepsekKebiasaanController::class, 'index'])->name('kebiasaan.index');
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('aktivitas.index');
     Route::get('/tka-laporan', [\App\Http\Controllers\Kepsek\TkaLaporanController::class, 'index'])->name('tka-laporan.index');

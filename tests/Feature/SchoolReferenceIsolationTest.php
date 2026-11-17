@@ -50,7 +50,10 @@ class SchoolReferenceIsolationTest extends TestCase
         $this->actingAs($kepsek)->get(route('kepsek.rekap.index'))->assertOk()->assertSee('Guru Unik A')->assertDontSee('Guru Rahasia B');
         $this->actingAs($kepsek)->get(route('kepsek.rekap.detail', $guruB->id))->assertNotFound();
         $this->actingAs($kepsek)->get(route('kepsek.rekap.detail', $guruA->id))->assertOk();
-        $this->actingAs($kepsek)->get(route('kepsek.peta-kelas.detail', $guruB->id))->assertStatus(503);
+        $this->actingAs($kepsek)->get(route('kepsek.peta-kelas.index'))->assertOk()->assertSee('Guru Unik A')->assertDontSee('Guru Rahasia B');
+        $this->actingAs($kepsek)->get(route('kepsek.peta-kelas.detail', $guruB->id))->assertNotFound();
+        $this->actingAs($kepsek)->get(route('kepsek.peta-kelas.detail', $guruA->id))->assertOk();
+        $this->actingAs($kepsek)->get(route('kepsek.hasil-belajar.index'))->assertOk()->assertSee('Guru Unik A')->assertDontSee('Guru Rahasia B');
     }
 
     public function test_ptk_gelar_dan_pilihan_guru_tidak_dapat_menyilang_sekolah(): void

@@ -84,11 +84,12 @@ dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
 | Uji beban (k6) | [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md) |
 | Drill restore backup | [`docs/DRILL-RESTORE-BACKUP.md`](docs/DRILL-RESTORE-BACKUP.md) |
 | Rekonsiliasi CBT/Tryout | [`docs/REKONSILIASI-FASE-3.md`](docs/REKONSILIASI-FASE-3.md) |
-| Arsitektur | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) |
+| Indeks dokumentasi aktif | [`docs/README.md`](docs/README.md) |
+| Arsitektur & peta proyek | [`docs/05-ARCHITECTURE.md`](docs/05-ARCHITECTURE.md) · [`docs/13-PETA-PROYEK.md`](docs/13-PETA-PROYEK.md) |
+| Referensi kolom database | [`docs/06-DATABASE-COLUMNS.md`](docs/06-DATABASE-COLUMNS.md) |
 | Pemantauan Kesiapan TKA | [`docs/TKA-KESIAPAN.md`](docs/TKA-KESIAPAN.md) |
 | Modul CBT | [`docs/CBT.md`](docs/CBT.md) |
-| Menu & peran | [`docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md`](docs/arsip/MENU_AND_ROLES_DOCUMENTATION.md) |
-| Model & relasi database | [`docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md`](docs/arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md) |
+| Matriks menu & peran | [`docs/AUDIT-MENU-MATRIKS-2026-11-08.md`](docs/AUDIT-MENU-MATRIKS-2026-11-08.md) |
 | Rencana perbaikan | [`docs/RENCANA_PERBAIKAN_VERIFIED.md`](docs/RENCANA_PERBAIKAN_VERIFIED.md) |
 | Peta tugas & orkestrasi AI Gemini | [`docs/PETA-TUGAS-AI-GEMINI.md`](docs/PETA-TUGAS-AI-GEMINI.md) |
 | Prompt E-Learning, perangkat guru & penataan menu | [`docs/PROMPT-ELEARNING-PERANGKAT-MENU.md`](docs/PROMPT-ELEARNING-PERANGKAT-MENU.md) |

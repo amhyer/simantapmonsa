@@ -1,79 +1,65 @@
-# 📋 SIMANTAP Documentation
+# Dokumentasi Aktif SIMANTAP
 
-**Terakhir diperbarui:** 13 September 2026
-**Status:** ✅ SEMUA PERBAIKAN SELESAI
-
----
-
-## File Dokumentasi
-
-| File | Deskripsi |
-|------|-----------|
-| `01-AUDIT-REPORT.md` | Laporan audit lengkap: 33 issues ditemukan |
-| `02-FIXES-LOG.md` | Detail 22 perbaikan yang sudah diterapkan |
-| `03-REMAINING-ISSUES.md` | 11 isu tersisa — ✅ SEMUA SELESAI |
-| `04-SECURITY-GUIDE.md` | Panduan keamanan dan production checklist |
-| `05-ARCHITECTURE.md` | Arsitektur sistem, routes, middleware |
-| `06-DATABASE-COLUMNS.md` | Referensi kolom database (yang sering salah akses) |
-| `13-INVENTARIS-UI.md` | Inventaris antarmuka: 199 halaman, menu per peran, tombol & aksi, pola interaksi, temuan UI |
+Indeks resmi seluruh dokumen aktif pada repositori [SIMANTAP (`amhyer/simantapmonsa`)](https://github.com/amhyer/simantapmonsa/blob/main/README.md).
+Dokumen historis, scratchpad investigasi agen, dan laporan audit Sept–Okt 2026 yang sudah kedaluwarsa telah dibersihkan dari tree kerja dan tetap tersedia melalui riwayat Git ([`arsip/README.md`](arsip/README.md)).
 
 ---
 
-## Ringkasan Status
+## 1. Dokumen Root & Operasional Utama
 
-### ✅ Selesai Diperbaiki (33 issues)
-| Kategori | Jumlah |
-|----------|--------|
-| CRITICAL | 9 |
-| HIGH | 11 (termasuk H1, H2) |
-| MEDIUM | 8 |
-| LOW | 5 |
-| **Total** | **33** |
-
-### ⏳ Deferred (by design)
-| Kategori | Jumlah |
-|----------|--------|
-| L3: 9 DB Tables tanpa model | 1 |
+| Topik | Berkas |
+|---|---|
+| Gambaran proyek & instalasi | [`../README.md`](../README.md) ([GitHub](https://github.com/amhyer/simantapmonsa/blob/main/README.md)) |
+| Panduan deployment produksi | [`../DEPLOYMENT.md`](../DEPLOYMENT.md) ([GitHub](https://github.com/amhyer/simantapmonsa/blob/main/DEPLOYMENT.md)) |
+| Kesiapan launching & riwayat hardening | [`../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
+| Koordinasi multi-agen & batas kepemilikan | [`../AGENTS.md`](../AGENTS.md) · [`../CLAUDE.md`](../CLAUDE.md) |
+| Runbook go-live & rollback | [`RUNBOOK-GO-LIVE.md`](RUNBOOK-GO-LIVE.md) |
+| Checklist staging & integrasi | [`CHECKLIST-STAGING-INTEGRASI.md`](CHECKLIST-STAGING-INTEGRASI.md) |
+| Drill restore backup | [`DRILL-RESTORE-BACKUP.md`](DRILL-RESTORE-BACKUP.md) |
+| Uji beban (k6) | [`LOAD-TEST.md`](LOAD-TEST.md) |
 
 ---
 
-## Statistik Project
+## 2. Arsitektur, Basis Data & Keamanan
 
-| Komponen | Jumlah |
-|----------|--------|
-| Routes | 159 |
-| Controllers | 53 |
-| Models | 26 |
-| Services | 5 |
-| Database Tables | 35 |
-| Blade Views | 107 |
-| Tests | 19 passing |
-| Migrations | 42 |
+| Topik | Berkas |
+|---|---|
+| Arsitektur sistem, route & middleware | [`05-ARCHITECTURE.md`](05-ARCHITECTURE.md) |
+| Peta proyek menyeluruh | [`13-PETA-PROYEK.md`](13-PETA-PROYEK.md) |
+| Inventaris antarmuka (UI) lintas peran | [`13-INVENTARIS-UI.md`](13-INVENTARIS-UI.md) |
+| Referensi kolom database kritis | [`06-DATABASE-COLUMNS.md`](06-DATABASE-COLUMNS.md) |
+| Panduan keamanan & production checklist | [`04-SECURITY-GUIDE.md`](04-SECURITY-GUIDE.md) |
+| Rotasi kredensial & API key | [`ROTASI-KREDENSIAL.md`](ROTASI-KREDENSIAL.md) |
+| Reset sandi mandiri | [`RESET-SANDI-MANDIRI.md`](RESET-SANDI-MANDIRI.md) |
+| Audit nilai e-Rapor (hash chain) | [`AUDIT-NILAI.md`](AUDIT-NILAI.md) |
+| Telemetri pemakaian menu | [`MENU-TELEMETRY.md`](MENU-TELEMETRY.md) |
 
 ---
 
-## Perbaikan Terakhir (13 September 2026)
+## 3. Rencana Kerja, E-Learning, Perangkat Ajar & Navigasi
 
-### HIGH Priority
-1. **H1: Force Password Change** — Users yang di-sync dari Dapodik harus ganti password saat pertama login
-   - Migration: `add_force_password_change_to_users_table`
-   - Middleware: `App\Http\Middleware\ForcePasswordChange`
-   - View: `resources/views/auth/force-change-password.blade.php`
-   - Routes: `GET /force-password-change`, `PUT /force-password-change`
+| Topik | Berkas |
+|---|---|
+| Rencana induk perbaikan & pengembangan | [`RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md`](RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md) |
+| Peta tugas & gelombang kerja multi-agen | [`PETA-TUGAS-AI-GEMINI.md`](PETA-TUGAS-AI-GEMINI.md) |
+| Rencana perbaikan terverifikasi | [`RENCANA_PERBAIKAN_VERIFIED.md`](RENCANA_PERBAIKAN_VERIFIED.md) |
+| Desain E-Learning / Kelas Digital & wali kelas | [`DESAIN-ELEARNING-DAN-WALI-KELAS.md`](DESAIN-ELEARNING-DAN-WALI-KELAS.md) |
+| Desain Perangkat Ajar & penataan menu | [`DESAIN-PERANGKAT-AJAR-DAN-MENU.md`](DESAIN-PERANGKAT-AJAR-DAN-MENU.md) |
+| Prompt acuan E-Learning, perangkat & menu | [`PROMPT-ELEARNING-PERANGKAT-MENU.md`](PROMPT-ELEARNING-PERANGKAT-MENU.md) |
+| Matriks & audit menu lintas 7 peran | [`AUDIT-MENU-MATRIKS-2026-11-08.md`](AUDIT-MENU-MATRIKS-2026-11-08.md) · [`AUDIT-MENU-PER-ROLE-2026-11-08.md`](AUDIT-MENU-PER-ROLE-2026-11-08.md) |
 
-2. **H2: Hash API Key** — API key di-hash sebelum disimpan di database
-   - Migration: `add_key_hash_to_api_keys_table`
-   - Model: `ApiKey::verifyKey()` method
-   - Middleware: lookup by hash, fallback to plaintext
+---
 
-### MEDIUM Priority
-3. **M3: APP_DEBUG** — Added production comment in `.env`
-4. **M4: SESSION_SECURE_COOKIE** — Added production comment in `.env`
-5. **M10: isset() check** — Fixed `$laporan['predikat']` dan `$laporan['predikat_kebiasaan']`
+## 4. Modul Ujian (CBT, Tryout, TKA), e-Rapor, Dapodik & Presensi
 
-### LOW Priority
-6. **L1: HasUuids import** — Removed unused import from User model
-7. **L2: ApiKeyMiddleware docs** — Added comprehensive docblock
-
-### FALSE ALARM
-8. **M9: Route param naming** — Routes already use `{kuis}` correctly
+| Topik | Berkas |
+|---|---|
+| Mesin ujian terpadu | [`14-MESIN-UJIAN.md`](14-MESIN-UJIAN.md) |
+| Desain & panduan CBT / Tryout / TKA | [`CBT.md`](CBT.md) · [`CBT_TRYOUT_TKA_DESIGN.md`](CBT_TRYOUT_TKA_DESIGN.md) · [`CBT-VERIFIKASI-2026-10-18.md`](CBT-VERIFIKASI-2026-10-18.md) |
+| Analisis butir & antrean offline ujian | [`ANALISIS-BUTIR.md`](ANALISIS-BUTIR.md) · [`ANTREAN-OFFLINE-UJIAN.md`](ANTREAN-OFFLINE-UJIAN.md) |
+| Rekonsiliasi CBT/Tryout & checklist E2E | [`REKONSILIASI-FASE-3.md`](REKONSILIASI-FASE-3.md) · [`CHECKLIST_E2E_CBT_TRYOUT_TKA.md`](CHECKLIST_E2E_CBT_TRYOUT_TKA.md) |
+| Pemantauan Kesiapan TKA | [`TKA-KESIAPAN.md`](TKA-KESIAPAN.md) |
+| Penyelarasan e-Rapor Kemdikbud (area Kiro) | [`09-ERAPOR-ALIGNMENT-PLAN.md`](09-ERAPOR-ALIGNMENT-PLAN.md) · [`10-ALIGNMENT-DESIGN.md`](10-ALIGNMENT-DESIGN.md) · [`11-ALIGNMENT-GUIDE.md`](11-ALIGNMENT-GUIDE.md) · [`12-ALIGNMENT-DEPLOYMENT-CHECKLIST.md`](12-ALIGNMENT-DEPLOYMENT-CHECKLIST.md) |
+| Isolasi Dapodik & bridge desktop | [`PERBAIKAN-ISOLASI-DAPODIK-2026-11-08.md`](PERBAIKAN-ISOLASI-DAPODIK-2026-11-08.md) · [`../dapodik-bridge/README.md`](../dapodik-bridge/README.md) · [`../dapodik-bridge/QUICK_START.md`](../dapodik-bridge/QUICK_START.md) · [`../dapodik-bridge/OPSI_B_AUTO_PULL.md`](../dapodik-bridge/OPSI_B_AUTO_PULL.md) |
+| Presensi, izin orang tua & bridge mesin | [`PRESENSI-PENGERASAN-DAN-IZIN-2026-11-08.md`](PRESENSI-PENGERASAN-DAN-IZIN-2026-11-08.md) · [`PRESENSI-BRIDGE-HOSTING.md`](PRESENSI-BRIDGE-HOSTING.md) · [`../presensi-bridge/README.md`](../presensi-bridge/README.md) |
+| Panduan uji route & E2E Playwright | [`PANDUAN_UJI_ROUTE_PLAYWRIGHT.md`](PANDUAN_UJI_ROUTE_PLAYWRIGHT.md) |

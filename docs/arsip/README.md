@@ -1,43 +1,30 @@
 # Arsip Dokumentasi SIMANTAP
 
-Kumpulan dokumen audit, perencanaan, dan ringkasan yang **disusun pada tahap
-pengembangan sebelumnya**. Dipindahkan dari root repositori pada 25 Oktober 2026 agar
-root hanya berisi dokumen yang masih dipakai sehari-hari.
+Folder ini sebelumnya menampung dokumen audit, ringkasan, dan perencanaan tahap awal
+pengembangan (September–Oktober 2026) yang dipindahkan dari root repositori pada
+25 Oktober 2026.
 
-> ⚠️ **Isi folder ini adalah rekaman historis, bukan acuan.** Beberapa klaim di dalamnya
-> sudah tidak berlaku — misalnya `03-REMAINING-ISSUES.md` di `docs/` sendiri sudah
-> ditandai kedaluwarsa. Untuk kondisi terkini, lihat dokumen di bawah.
+Pada **17 November 2026**, dokumen historis yang sudah kedaluwarsa (`AUDIT_*.md`,
+`LAPORAN_*_2026-10-14.md`, `COMPLETE_APPLICATION_OVERVIEW.md`, `MENU_AND_ROLES_*`,
+`DATABASE_MODELS_AND_RELATIONSHIPS.md`, `00_START_HERE.txt`, `QUICK_REFERENCE_CARD.txt`,
+`IMPROVEMENT-PLAN-2026.md`, dan turunannya) telah dibersihkan dari working tree aktif
+agar tidak menimbulkan angka atau klaim yang bertentangan dengan kode terkini. Seluruh
+rekaman lama tersebut tetap utuh di riwayat Git (`git log -- docs/arsip/`).
 
-## Acuan yang masih berlaku
+## Acuan dokumentasi aktif
 
 | Keperluan | Berkas |
 |---|---|
+| Indeks dokumentasi aktif | [`../README.md`](../README.md) |
 | Deploy ke produksi | [`../../DEPLOYMENT.md`](../../DEPLOYMENT.md) |
-| Kesiapan launching & temuan terkini | [`../../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](../../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
+| Kesiapan launching & hardening | [`../../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md`](../../LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md) |
 | Keamanan | [`../04-SECURITY-GUIDE.md`](../04-SECURITY-GUIDE.md) |
-| Arsitektur | [`../05-ARCHITECTURE.md`](../05-ARCHITECTURE.md) |
+| Arsitektur & peta proyek | [`../05-ARCHITECTURE.md`](../05-ARCHITECTURE.md) · [`../13-PETA-PROYEK.md`](../13-PETA-PROYEK.md) |
+| Rencana induk & peta tugas | [`../RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md`](../RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md) · [`../PETA-TUGAS-AI-GEMINI.md`](../PETA-TUGAS-AI-GEMINI.md) |
 | Rencana perbaikan terverifikasi | [`../RENCANA_PERBAIKAN_VERIFIED.md`](../RENCANA_PERBAIKAN_VERIFIED.md) |
 | Modul CBT | [`../CBT.md`](../CBT.md) |
 
-## Isi arsip
+## Aturan dokumentasi
 
-| Berkas | Isi |
-|---|---|
-| `00_START_HERE.txt` | Ringkasan paket dokumentasi (masih menyebut path `D:\Project\simantap\`) |
-| `DOCUMENTATION_INDEX.md` | Indeks navigasi paket dokumentasi |
-| `DOCUMENTATION_GENERATION_REPORT.md` | Laporan pembuatan paket dokumentasi |
-| `COMPLETE_APPLICATION_OVERVIEW.md` | Gambaran aplikasi & 5 peran |
-| `MENU_AND_ROLES_DOCUMENTATION.md` | Struktur menu per peran |
-| `MENU_AND_ROLES_SUMMARY.txt` | Versi ASCII dari dokumen di atas |
-| `QUICK_REFERENCE_CARD.txt` | Kartu referensi cepat |
-| `DATABASE_MODELS_AND_RELATIONSHIPS.md` | Model Eloquent & relasinya |
-| `AUDIT_SIMANTAP.md` · `AUDIT_MENDALAM_SIMANTAP.md` | Audit tahap awal |
-| `LAPORAN_AUDIT_BUG_2026-10-14.md` · `LAPORAN_PERBAIKAN_2026-10-14.md` | Audit & perbaikan 14 Okt 2026 |
-| `DAPODIK_FIX_SUMMARY.md` | Perbaikan sinkronisasi Dapodik |
-| `IMPLEMENTASI_TRYOUT_TKA.md` | Catatan implementasi Tryout/TKA |
-| `IMPROVEMENT-PLAN-2026.md` | Rencana peningkatan (sebagian sudah dikerjakan) |
-
-## Menambah dokumen baru
-
-- Dokumen operasional & keputusan terkini → **root** atau `docs/`.
-- Catatan audit/rapat yang bersifat rekaman → folder ini, lalu daftarkan di tabel di atas.
+- Dokumen operasional & arsitektur aktif → **root** (sesuai whitelist verifier) atau `docs/`.
+- Jangan menyimpan berkas audit duplikat atau scratchpad investigasi sementara di working tree; perbarui dokumen acuan yang relevan di `docs/`.

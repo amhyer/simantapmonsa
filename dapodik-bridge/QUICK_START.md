@@ -68,10 +68,10 @@ D:\Project\simantap\dapodik-bridge\
 │   ├── PesertaDidik_TEMPLATE.csv  (template reference)
 │   └── Sekolah_TEMPLATE.csv
 ├── config.json                  (auto-created)
-└── Documents/
-    ├── ERROR_ANALYSIS_REPORT.md (technical)
-    ├── README_REFACTOR.md       (detailed guide)
-    └── REFACTOR_NOTES.md        (architecture)
+└── Panduan:
+    ├── README.md                (ikhtisar bridge)
+    ├── QUICK_START.md           (panduan cepat ini)
+    └── OPSI_B_AUTO_PULL.md      (mode auto-pull Dapodik)
 ```
 
 ---
@@ -146,9 +146,8 @@ v3.1 (WORKING):
 ## Still Having Issues?
 
 Check detailed guides:
-- **ERROR_ANALYSIS_REPORT.md** - Why v3.0 failed
-- **README_REFACTOR.md** - Complete setup guide
-- **REFACTOR_NOTES.md** - Technical deep dive
+- **README.md** - Ringkasan instalasi & konfigurasi bridge
+- **OPSI_B_AUTO_PULL.md** - Panduan sinkronisasi otomatis Dapodik ke SIMANTAP
 
 ---
 

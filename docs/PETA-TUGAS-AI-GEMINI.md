@@ -2,8 +2,8 @@
 
 **Dokumen koordinasi kerja** untuk memetakan kondisi proyek, pembagian tugas antar-model AI Gemini (Swarm & Multi-Agen), gelombang eksekusi, serta batas kepemilikan berkas agar kolaborasi paralel berjalan aman tanpa konflik.
 
-- **Basis Commit Awal:** `a85b10b` (`feat(tka): add evidence-based TKA readiness monitoring module`, 16 November 2026) · **Pembaruan Terakhir:** `83dac21` (`docs(readme): index AI task map and e-learning prompt guide`)
-- **Branch Aktif:** `main` (kerja E-Learning & Fondasi pada branch kerja masing-masing sebelum PR)
+- **Basis Commit Awal:** `a85b10b` (`feat(tka): add evidence-based TKA readiness monitoring module`, 16 November 2026) · **Pembaruan Terakhir:** 17 November 2026 (pasca-merge PR `#27` `cf2a8fa` + Gelombang 2A, sinkronisasi 3A–3C, 4A, & refaktor dokumentasi `.md`)
+- **Branch Aktif:** `main` (perubahan terbaru dikerjakan melalui PR dari branch kerja)
 - **Acuan Arsitektur & Koordinasi:** `AGENTS.md`, `CLAUDE.md`, [`RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md`](RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md), [`PROMPT-ELEARNING-PERANGKAT-MENU.md`](PROMPT-ELEARNING-PERANGKAT-MENU.md), dan [`DESAIN-ELEARNING-DAN-WALI-KELAS.md`](DESAIN-ELEARNING-DAN-WALI-KELAS.md)
 
 ---
@@ -71,31 +71,31 @@ Untuk mencegah konflik lintas agen saat sesi paralel lain aktif:
 | **1B** | **Selesai (CI Hijau)** | `worker-ui-nav` + `coordinator` | Hilangkan duplikasi 4 rute grup Wali Kelas (`guru.siswa.index`, `guru.kehadiran.index`, `guru.catatan.index`, `guru.erapor.index`) pada `resources/views/guru/partials/sidebar.blade.php`, hilangkan duplikasi lintas-tab `admin.users.index` pada `resources/views/admin/partials/sidebar.blade.php`, dan gerakkan visibilitas grup Wali Kelas memakai flag wali kelas (`guruAdalahWaliKelas()`). | `MenuInventoryTest::test_inventaris_menu_konsisten_dan_laporannya_dibuat` **PASS**. |
 | **1C** | **Selesai (CI Hijau)** | `worker-qa-verifier` | Selaraskan `tests/Feature/AdminMenuTest.php`, `tests/Feature/LoginViewTest.php`, `tests/Feature/DapodikBridgeSyncTest.php`, `tests/Feature/DapodikResetTest.php`, `tests/e2e/global-setup.js`, `tests/e2e/cbt.spec.js`, serta perbaiki bug kolom PostgreSQL di `WaliKelasController::p5Index`, `Admin/RaporMerdekaController::p5Index` (`tema_kokurikuler.nama`), dan `SuperAdmin/TenantController` (`aktivitas.guru_id`). | Seluruh 4 job CI (`PHPUnit SQLite`, `PHPUnit PostgreSQL 16`, `Browser smoke`, `Authenticated E2E`) **PASS** pada run `#43981289068` (PR #27). |
 
-### Gelombang 2 — Hardening Multi-Tenant & Rekonsiliasi Sekolah *(Status: Belum selesai — sebagian Dapodik `b68536a` & mesin presensi sudah berjalan)*
+### Gelombang 2 — Hardening Multi-Tenant & Rekonsiliasi Sekolah *(Status: 2A Selesai; 2B Sebagian; 2C Belum)*
 *Tujuan:* Membuka secara aman fitur yang sebelumnya dibatasi pada instalasi ber-tenant ([`RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md`](RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md)).
 
 | Paket | Status | Pemilik (`Roster`) | Cakupan Teknis | Kriteria Selesai |
 | :--- | :--- | :--- | :--- | :--- |
-| **2A** | Belum | `worker-academic-engine` | Pengaturan KKM dan sumber Peta Kelas / Hasil Belajar Kepala Sekolah tersimpan dan di-scope per `tenant_id`. | Kepsek dua sekolah melihat KKM dan peta kelas masing-masing tanpa bocor lintas tenant. |
-| **2B** | Sebagian (`b68536a` selesai untuk `DapodikConfig`) | `worker-backend-security` | Audit lanjutan isolasi PTK & koneksi mesin presensi per `tenant_id` (beserta audit IDOR, API key, dan antrean job). | Uji dua tenant di `DapodikTenantIsolationTest` & `SchoolReferenceIsolationTest` lolos penuh. |
-| **2C** | Belum | `worker-backend-security` | Rancangan & implementasi ekspor serta Backup/Restore terisolasi per sekolah (`tenant_id`), tanpa merusak fungsi sekolah tunggal. | `BackupCoverageTest`, `BackupRestoreDrillTest`, dan uji isolasi restore per tenant **PASS**. |
+| **2A** | **Selesai** | `worker-academic-engine` | `getKKM()` & cache KKM terscope per `tenant_id` (`forgetKKMCache`), `PengaturanGuru::scopeForSchool()`, penutupan IDOR lintas sekolah pada `Admin\BobotController`, `Admin\KodeAksesController`, & `Admin\PetaKelasController`, serta pembukaan `Kepsek\PetaKelasController` & `Kepsek\HasilBelajarController` (dengan data tabel/grafik nyata dan bebas N+1) di multi-tenant. | `TenantKkmAndPetaKelasIsolationTest` & `SchoolReferenceIsolationTest` (2 sekolah + sekolah tunggal) **PASS**. |
+| **2B** | Sebagian (`b68536a` selesai untuk `DapodikConfig` & `Ptk::HasSchoolOwnership`) | `worker-backend-security` | Audit & perancangan koneksi **tarik langsung database mesin presensi** per `tenant_id` (saat ini masih diblokir aman via `data.single-school:presensi-mesin` kecuali opt-in single-tenant), beserta uji worker/antrean & API key jembatan presensi lintas 2 sekolah. | Koneksi mesin per sekolah terisolasi penuh & lolos uji 2 tenant. |
+| **2C** | Belum | `worker-backend-security` | Rancangan & implementasi ekspor serta Backup/Restore terisolasi per sekolah (`tenant_id`), tanpa merusak fungsi sekolah tunggal (saat ini dibatasi aman via `data.single-school`). | `BackupCoverageTest`, `BackupRestoreDrillTest`, dan uji isolasi restore per tenant **PASS**. |
 
-### Gelombang 3 — Kemudahan Operasional Harian Sekolah *(Status: Belum dimulai)*
+### Gelombang 3 — Kemudahan Operasional Harian Sekolah *(Status: Selesai — 3A, 3B, 3C Terimplementasi & Diperkuat)*
 *Tujuan:* Mempercepat alur kerja harian admin, guru, kepala sekolah, siswa, dan orang tua tanpa menumpuk item sidebar.
 
 | Paket | Status | Pemilik (`Roster`) | Cakupan Teknis | Kriteria Selesai |
 | :--- | :--- | :--- | :--- | :--- |
-| **3A** | Belum | `worker-academic-engine` | Menu **Validasi & Kelengkapan Data** Admin (siswa tanpa rombel, rombel tanpa wali, jadwal tanpa guru/kelas, akun tanpa sekolah, PIN/NIK ambigu). | Laporan kelengkapan data menampilkan tautan perbaikan read-only per tenant. |
-| **3B** | Belum | `worker-academic-engine` + `worker-ui-nav` | **Pusat Notifikasi & Tugas** pada dasbor tiap peran (izin orang tua menunggu verifikasi, presensi belum dicatat, nilai belum lengkap), dengan privasi ketat. | Ringkasan tugas tampil per peran tanpa membocorkan alasan sensitif pada pratinjau. |
-| **3C** | Belum | `worker-ui-nav` | Pencarian menu lintas peran (`Ctrl+K` / modal cepat) terfilter hak akses + bantuan singkat kontekstual per halaman. | Hanya menu berotorisasi yang muncul di hasil pencarian; bebas route 403/500 pada `MenuAuditTest`. |
+| **3A** | **Selesai** | `worker-academic-engine` | Menu **Validasi & Kelengkapan Data** Admin (`admin.validasi-data.index`, `ValidasiDataSekolahService`): siswa tanpa rombel, rombel tanpa wali, jadwal tanpa guru/rombel, guru tanpa mapel, selisih akun siswa, **PIN/NIK pegawai ambigu/duplikat**, dan kelengkapan profil kop sekolah per `tenant_id`. | Laporan kelengkapan data menampilkan tautan perbaikan read-only per tenant (`Gelombang7MenuAndValidationTest` & `TenantKkmAndPetaKelasIsolationTest`). |
+| **3B** | **Selesai** | `worker-academic-engine` + `worker-ui-nav` | **Pusat Notifikasi & Tugas** pada topbar tiap peran (`RoleTaskSummaryService`): sinkron Dapodik, temuan validasi data, tugas Kelas Digital menunggu dinilai/dikumpulkan, **pengajuan izin orang tua menunggu verifikasi** (hanya jumlah tanpa alasan sensitif), jurnal mengajar harian, dan perangkat ajar siap supervisi Kepsek. | Ringkasan tugas tampil per peran & tenant tanpa membocorkan alasan sensitif pada pratinjau. |
+| **3C** | **Selesai** | `worker-ui-nav` | Pencarian menu lintas peran (`Ctrl+K` / `CommandPaletteService`) terfilter hak akses, status wali kelas, feature flag CBT/TKA, & mode multi-sekolah + bantuan singkat kontekstual per halaman. | Hanya menu berotorisasi yang muncul di hasil pencarian; bebas route 403/500 pada `MenuAuditTest`. |
 
-### Gelombang 4 — Verifikasi End-to-End Browser & Kesiapan Go-Live *(Status: Belum selesai)*
+### Gelombang 4 — Verifikasi End-to-End Browser & Kesiapan Go-Live *(Status: 4A Selesai; 4B Menunggu Eksekusi Staging)*
 *Tujuan:* Membuktikan alur penuh dari login hingga aksi UI lintas peran di browser nyata.
 
 | Paket | Status | Pemilik (`Roster`) | Cakupan Teknis | Kriteria Selesai |
 | :--- | :--- | :--- | :--- | :--- |
-| **4A** | Belum | `worker-qa-verifier` | Konfigurasi `playwright.config.js` / skrip E2E agar memakai Herd PHP pada Windows serta dokumentasi/env fixture untuk `tests/e2e/global-setup.js`. | `npm run test:e2e` (`tka.spec.js`, `aplikasi.spec.js`, `cbt.spec.js`, `tryout.spec.js`) berjalan lokal & CI hijau. |
-| **4B** | Belum | `worker-qa-verifier` + `worker-backend-security` | Audit manual & otomatis skenario 2 sekolah + skenario sekolah tunggal pada 7 peran + drill restore pada lingkungan staging PostgreSQL. | Checklist [`CHECKLIST-STAGING-INTEGRASI.md`](CHECKLIST-STAGING-INTEGRASI.md) & [`RUNBOOK-GO-LIVE.md`](RUNBOOK-GO-LIVE.md) tercentang bukti eksekusi. |
+| **4A** | **Selesai** | `worker-qa-verifier` | Konfigurasi `playwright.config.js` lintas platform (deteksi otomatis Herd PHP pada Windows + override `E2E_PHP_BIN`/`E2E_HOST`/`E2E_PORT` + default `php` pada Linux CI) serta fixture & `global-setup.js` (`E2E_*_PASSWORD`). | `npm run test:e2e` (`tka.spec.js`, `aplikasi.spec.js`, `cbt.spec.js`, `tryout.spec.js`) hijau di CI & siap dijalankan lokal Windows Herd. |
+| **4B** | Belum (Staging / Operasional) | `worker-qa-verifier` + `worker-backend-security` | Audit manual & otomatis skenario 2 sekolah + skenario sekolah tunggal pada 7 peran + drill restore pada lingkungan staging PostgreSQL produksi. | Checklist [`CHECKLIST-STAGING-INTEGRASI.md`](CHECKLIST-STAGING-INTEGRASI.md) & [`RUNBOOK-GO-LIVE.md`](RUNBOOK-GO-LIVE.md) tercentang bukti eksekusi. |
 
 ### Gelombang 5 — E-Learning / Kelas Digital *(Evolusi Materi Ajar, Tanpa LMS Terpisah)*
 *Tujuan:* Mengubah Materi Ajar menjadi ekosistem **Kelas Digital** terstruktur (`Kelas → Modul/Bab → Pertemuan → Isi teks/video/file/link → Tugas → Kuis terhubung → Progress siswa`) yang memakai ulang `Materi`, `Kuis`, dan `Nilai` eksisting, dengan isolasi tenant & anti-IDOR ketat. Desain lengkap tercatat di [`DESAIN-ELEARNING-DAN-WALI-KELAS.md`](DESAIN-ELEARNING-DAN-WALI-KELAS.md).

@@ -37,7 +37,7 @@ class PetaKelasController extends Controller
     {
         $guru = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get();
         $siswa = Siswa::with('guru')->orderBy('nama_peserta_didik')->get();
-        $pengaturanGuru = PengaturanGuru::all();
+        $pengaturanGuru = PengaturanGuru::forSchool()->get();
 
         $siswaPerGuru = $siswa->groupBy('guru_id');
         $tidakDitugaskan = $siswa->filter(fn ($s) => empty($s->guru_id));
@@ -89,7 +89,7 @@ class PetaKelasController extends Controller
 
     public function destroy($id)
     {
-        $pengaturan = PengaturanGuru::findOrFail($id);
+        $pengaturan = PengaturanGuru::forSchool()->findOrFail($id);
 
         // PengaturanGuru tidak punya relasi `siswa`; hitung langsung dari guru_id.
         if (Siswa::where('guru_id', $pengaturan->guru_id)->exists()) {
@@ -164,7 +164,8 @@ class PetaKelasController extends Controller
             'guru_id' => 'required|exists:users,id',
         ]);
 
-        $kelasList = PengaturanGuru::where('guru_id', $validated['guru_id'])
+        $kelasList = PengaturanGuru::forSchool()
+            ->where('guru_id', $validated['guru_id'])
             ->pluck('kelas')
             ->unique()
             ->values();

@@ -4,6 +4,7 @@ namespace App\Services\Navigation;
 
 use App\Models\Elearning\KelasDigitalPengumpulan;
 use App\Models\Elearning\KelasDigitalTugas;
+use App\Models\PengajuanIzinPresensi;
 use App\Models\Perangkat\JurnalMengajar;
 use App\Models\Perangkat\PerangkatPembelajaran;
 use App\Models\Rombel;
@@ -138,6 +139,32 @@ class RoleTaskSummaryService
                         'teks' => "{$belumDinilai} pengumpulan tugas Kelas Digital menunggu dinilai",
                         'waktu' => 'hari ini',
                         'url' => Route::has('guru.kelas-digital.index') ? route('guru.kelas-digital.index') : null,
+                    ];
+                }
+            }
+
+            if (Schema::hasTable('pengajuan_izin_presensi') && Schema::hasTable('siswa')) {
+                $siswaWaliIds = Siswa::query()
+                    ->where('aktif', true)
+                    ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+                    ->where(function ($q) use ($guru): void {
+                        $q->whereHas('rombel', fn ($rombel) => $rombel->where('guru_id', $guru->id))
+                            ->orWhere(fn ($fallback) => $fallback->whereNull('rombel_id')->where('guru_id', $guru->id));
+                    })
+                    ->select('id');
+
+                $izinMenunggu = PengajuanIzinPresensi::query()
+                    ->where('status', 'menunggu')
+                    ->whereIn('siswa_id', $siswaWaliIds)
+                    ->count();
+
+                if ($izinMenunggu > 0) {
+                    // Privasi: hanya tampilkan jumlah, jangan pernah paparkan alasan izin di pratinjau notifikasi.
+                    $notifs[] = [
+                        'icon' => 'fas fa-envelope-open-text',
+                        'teks' => "{$izinMenunggu} pengajuan izin siswa menunggu verifikasi",
+                        'waktu' => 'perlu ditinjau',
+                        'url' => Route::has('guru.kehadiran.izin.index') ? route('guru.kehadiran.izin.index') : null,
                     ];
                 }
             }

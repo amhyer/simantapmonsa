@@ -20,15 +20,15 @@ class PetaKelasController extends Controller
             ->orderBy('nama_lengkap')
             ->get();
 
-        $peta = $guruList->map(function ($guru) {
+        $allSiswaIds = $guruList->flatMap(fn ($g) => $g->siswa->where('aktif', true)->pluck('id'))->unique()->values();
+        $siswaBerortu = $allSiswaIds->isNotEmpty()
+            ? OrangTuaSiswa::whereIn('siswa_id', $allSiswaIds)->distinct()->pluck('siswa_id')->flip()
+            : collect();
+
+        $peta = $guruList->map(function ($guru) use ($siswaBerortu) {
             $siswaAktif = $guru->siswa->where('aktif', true);
             $kelasList = $siswaAktif->pluck('kelas')->unique()->values();
-
-            $akunOrtu = 0;
-            $akunSiswa = 0;
-            foreach ($siswaAktif as $s) {
-                if (OrangTuaSiswa::where('siswa_id', $s->id)->exists()) $akunOrtu++;
-            }
+            $akunOrtu = $siswaAktif->filter(fn ($s) => $siswaBerortu->has($s->id))->count();
 
             return [
                 'guru' => $guru,
@@ -36,7 +36,7 @@ class PetaKelasController extends Controller
                 'jumlah_siswa' => $siswaAktif->count(),
                 'akun_ortu' => $akunOrtu,
                 'mapel' => $guru->pengaturanGuru->mata_pelajaran ?? '-',
-                'kkm' => $guru->pengaturanGuru->kkm ?? getKKM(),
+                'kkm' => $guru->pengaturanGuru->kkm ?? getKKM($guru->id),
                 'terakhir_masuk' => $guru->terakhir_masuk,
             ];
         });
@@ -55,14 +55,14 @@ class PetaKelasController extends Controller
     public function detail($guruId)
     {
         $guru = User::forSchool()->where('peran', 'guru')->where('id', $guruId)->firstOrFail();
-        $pengaturan = PengaturanGuru::where('guru_id', $guruId)->first();
-        $siswaList = Siswa::where('guru_id', $guruId)
+        $pengaturan = PengaturanGuru::forSchool()->where('guru_id', $guru->id)->first();
+        $siswaList = Siswa::where('guru_id', $guru->id)
             ->where('aktif', true)
             ->with('kebiasaan')
             ->orderBy('nama_peserta_didik')
             ->get();
 
-        $kkm = $pengaturan->kkm ?? 70;
+        $kkm = (int) ($pengaturan->kkm ?? getKKM($guru->id));
 
         $kelasStats = $siswaList->groupBy('kelas')->map(function ($siswa, $kelas) use ($kkm) {
             $rataRata = $siswa->avg(fn ($s) => $s->rata_rata ?? 0);
@@ -106,7 +106,6 @@ class PetaKelasController extends Controller
                 'predikat' => ($s->rata_rata ?? 0) >= 95 ? 'A+' : 'A',
             ])->values();
 
-        $kkm = $pengaturan->kkm ?? 70;
         $chartLabels = ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS'];
         $chartData = array_fill(0, 6, $kelas->rata_rata);
         $chartKKM = array_fill(0, 6, $kkm);

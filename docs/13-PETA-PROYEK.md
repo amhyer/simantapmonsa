@@ -995,16 +995,16 @@ Checklist ada di `docs/RUNBOOK-GO-LIVE.md`, `docs/CHECKLIST-STAGING-INTEGRASI.md
 
 | Dokumen | Status |
 |---|---|
-| `13-PETA-PROYEK.md` (ini) | **Baru — acuan struktur & alur** |
-| `05-ARCHITECTURE.md` | Relevan (sedang diubah di working tree) |
-| `AUDIT-FUNGSI-HALAMAN-2026-10-25.md` | Relevan — audit halaman/tombol terbaru |
+| `README.md` | **Indeks resmi dokumen aktif** |
+| `13-PETA-PROYEK.md` (ini) | **Acuan struktur & alur** |
+| `05-ARCHITECTURE.md` | Relevan |
 | `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md` | Relevan — kesiapan rilis |
-| `CBT_TRYOUT_TKA_DESIGN.md` | Relevan — desain mesin ujian (besar) |
-| `CBT.md`, `CBT_IMPLEMENTATION_PROGRESS.md` | Relevan untuk modul CBT |
+| `CBT_TRYOUT_TKA_DESIGN.md`, `CBT.md`, `14-MESIN-UJIAN.md` | Relevan — desain & modul ujian |
 | `04-SECURITY-GUIDE.md`, `ROTASI-KREDENSIAL.md` | Relevan |
 | `09`–`12` (alignment e-Rapor) | Relevan, area Kiro |
-| `01-AUDIT-REPORT.md`, `03-REMAINING-ISSUES.md`, `07-MENU-ROADMAP.md` | **Basi** — angka model/tabel/menu tidak lagi cocok |
-| `arsip/DATABASE_MODELS_AND_RELATIONSHIPS.md` | **Basi** (menyebut 31 model; aktual 40) |
+| `DESAIN-ELEARNING-DAN-WALI-KELAS.md`, `DESAIN-PERANGKAT-AJAR-DAN-MENU.md` | Relevan — E-Learning, perangkat ajar, menu |
+| `RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md`, `PETA-TUGAS-AI-GEMINI.md` | Relevan — peta kerja aktif |
+| Dokumen basi & arsip Sept–Okt 2026 (`01`–`03`, `07`–`08`, `CBT_IMPLEMENTATION_PROGRESS.md`, `IMPROVEMENT_BACKLOG.md`, `arsip/*.md`) | **Telah dibersihkan** dari working tree aktif (riwayat tetap di Git) |
 
 ### 15.4 Pembagian kerja tim (dari `AGENTS.md`)
 

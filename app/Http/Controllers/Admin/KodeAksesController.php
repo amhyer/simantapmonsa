@@ -10,7 +10,7 @@ class KodeAksesController extends Controller
 {
     public function index()
     {
-        $pengaturanGuru = PengaturanGuru::with('guru')->get();
+        $pengaturanGuru = PengaturanGuru::forSchool()->with('guru')->get();
 
         return view('admin.kode-akses.index', compact('pengaturanGuru'));
     }
@@ -21,7 +21,7 @@ class KodeAksesController extends Controller
             'kode_akses' => 'nullable|string|max:100',
         ]);
 
-        $pengaturan = PengaturanGuru::findOrFail($id);
+        $pengaturan = PengaturanGuru::forSchool()->findOrFail($id);
 
         $currentSettings = $pengaturan->pengaturan ?? [];
         $currentSettings['kode_akses'] = $validated['kode_akses'] ?? null;
