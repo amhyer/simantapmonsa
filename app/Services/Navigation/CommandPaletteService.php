@@ -125,7 +125,7 @@ class CommandPaletteService
             ['title' => 'Cetak Transkrip Nilai', 'category' => 'Transkrip', 'route' => 'admin.transkrip.cetak', 'icon' => 'fas fa-graduation-cap', 'keywords' => 'ijazah kelulusan'],
             ['title' => 'Sesi Ujian CBT', 'category' => 'CBT & Tryout', 'route' => 'admin.cbt.sessions.index', 'icon' => 'fas fa-laptop-code', 'asesmen' => true, 'keywords' => 'ujian token pengawas'],
             ['title' => modulAsesmenAktif() ? 'Bank Soal CBT' : 'Bank Soal CBT (Persiapan)', 'category' => 'CBT & Tryout', 'route' => 'admin.cbt.banks.index', 'icon' => 'fas fa-database', 'keywords' => 'soal pilihan ganda persiapan'],
-            ['title' => 'Paket Tryout Sekolah', 'category' => 'CBT & Tryout', 'route' => 'admin.tryout.packages.index', 'icon' => 'fas fa-box-open', 'asesmen' => true, 'keywords' => 'latihan ujian'],
+            ['title' => 'Paket Tryout Sekolah', 'category' => 'CBT & Tryout', 'route' => 'admin.tryout.packages.index', 'icon' => 'fas fa-box-open', 'keywords' => 'latihan ujian'],
             ['title' => 'Dashboard Kesiapan TKA', 'category' => 'TKA', 'route' => 'admin.tka.dashboard', 'icon' => 'fas fa-award', 'keywords' => 'tes kemampuan akademik'],
             ['title' => 'Pemantauan Kesiapan TKA', 'category' => 'TKA', 'route' => 'admin.tka-kesiapan.index', 'icon' => 'fas fa-compass', 'kesiapan_tka' => true, 'keywords' => 'siap tka'],
             ['title' => 'Presensi Pegawai & Lokasi', 'category' => 'Presensi', 'route' => 'admin.presensi.index', 'icon' => 'fas fa-map-marker-alt', 'keywords' => 'absensi gps'],

@@ -64,20 +64,20 @@
                 ['route' => 'admin.cetak.modifikasi-tampilan', 'icon' => 'lucide-palette', 'label' => 'Modifikasi Tampilan Rapor'],
             ]],
         ],
-        'cbt' => array_values(array_filter([
-            modulAsesmenAktif() ? ['label' => 'UTAMA', 'items' => [
+        'cbt' => [
+            ['label' => 'UTAMA', 'items' => [
                 ['route' => 'admin.tryout.statistics', 'icon' => 'lucide-bar-chart-3', 'label' => 'Statistik Ujian'],
-            ]] : null,
+            ]],
             ['label' => 'MANAJEMEN UJIAN CBT', 'icon' => 'lucide-monitor', 'children' => array_values(array_filter([
                 modulAsesmenAktif() ? ['route' => 'admin.cbt.sessions.index', 'icon' => 'lucide-clipboard-list', 'label' => 'Sesi Ujian CBT'] : null,
                 ['route' => 'admin.cbt.banks.index', 'icon' => 'lucide-database', 'label' => 'Bank Soal CBT'],
             ]))],
-            modulAsesmenAktif() ? ['label' => 'TRYOUT SEKOLAH', 'icon' => 'lucide-package', 'children' => [
+            ['label' => 'TRYOUT SEKOLAH', 'icon' => 'lucide-package', 'children' => [
                 ['route' => 'admin.tryout.packages.index', 'icon' => 'lucide-package', 'label' => 'Paket Tryout'],
                 ['route' => 'admin.tryout.sessions.index', 'icon' => 'lucide-calendar-clock', 'label' => 'Sesi Tryout'],
                 ['route' => 'admin.tryout.results.index', 'icon' => 'lucide-chart-line', 'label' => 'Hasil Tryout'],
-            ]] : null,
-        ])),
+            ]],
+        ],
         'tka' => [
             [
                 'label' => 'TES KEMAMPUAN AKADEMIK (TKA)', 'icon' => 'lucide-award', 'children' => [

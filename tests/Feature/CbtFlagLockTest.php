@@ -91,6 +91,12 @@ class CbtFlagLockTest extends TestCase
         $indexResponse = $this->actingAs($admin)->get(route('admin.cbt.banks.index'))->assertOk();
         $indexResponse->assertSee('Mode persiapan: CBT belum dibuka untuk siswa.');
         $indexResponse->assertSee('Bank Soal CBT (Persiapan)');
+        $indexResponse->assertSee('Statistik Ujian');
+        $indexResponse->assertSee('Paket Tryout');
+        $indexResponse->assertSee('Sesi Tryout');
+        $indexResponse->assertSee('Hasil Tryout');
+        $indexResponse->assertSee('TKA');
+        $indexResponse->assertDontSee('Sesi Ujian CBT');
         $indexResponse->assertDontSee('/admin/cbt/sessions');
         $this->actingAs($admin)->get(route('admin.cbt.banks.create'))->assertOk();
         $showResponse = $this->actingAs($admin)->get(route('admin.cbt.banks.show', $bank))->assertOk();
