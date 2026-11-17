@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin\Cbt;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Cbt\CbtBankRequest;
+use App\Models\CbtQuestion;
 use App\Models\CbtQuestionBank;
 use App\Models\User;
+use App\Services\AktivitasService;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +52,14 @@ class CbtBankController extends Controller
         $bank = CbtQuestionBank::create($validated);
         $this->sinkronEngine($bank);
 
+        AktivitasService::tambah(
+            'Buat Bank Soal CBT',
+            "Bank soal \"{$bank->title}\" dibuat untuk guru #{$bank->guru_id}.",
+            'cbt_question_banks',
+            $bank->id,
+            ['id' => $bank->id, 'title' => $bank->title, 'subject' => $bank->subject, 'guru_id' => $bank->guru_id]
+        );
+
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal dibuat.');
     }
 
@@ -72,15 +82,37 @@ class CbtBankController extends Controller
     public function update(CbtBankRequest $request, CbtQuestionBank $bank)
     {
         $validated = $request->validated();
+        $dataLama = [
+            'id' => $bank->id,
+            'title' => $bank->title,
+            'subject' => $bank->subject,
+            'guru_id' => $bank->guru_id,
+        ];
 
         $bank->update($validated);
         $this->sinkronEngine($bank->fresh());
+
+        AktivitasService::ubah(
+            'Ubah Bank Soal CBT',
+            "Bank soal \"{$bank->title}\" diperbarui.",
+            'cbt_question_banks',
+            $bank->id,
+            $dataLama,
+            ['id' => $bank->id, 'title' => $bank->title, 'subject' => $bank->subject, 'guru_id' => $bank->guru_id]
+        );
 
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal diperbarui.');
     }
 
     public function destroy(CbtQuestionBank $bank)
     {
+        $dataLama = [
+            'id' => $bank->id,
+            'title' => $bank->title,
+            'subject' => $bank->subject,
+            'guru_id' => $bank->guru_id,
+        ];
+
         DB::transaction(function () use ($bank) {
             $locked = CbtQuestionBank::whereKey($bank->id)->lockForUpdate()->firstOrFail();
             // FK bank->sesi restrictOnDelete; blokir agar tidak 500.
@@ -91,6 +123,14 @@ class CbtBankController extends Controller
         if (config('simantap.exam_engine_cbt', true)) {
             app(LegacyExamMapper::class)->lupakanBankCbt($bank->id);
         }
+
+        AktivitasService::hapus(
+            'Hapus Bank Soal CBT',
+            "Bank soal \"{$dataLama['title']}\" dihapus.",
+            'cbt_question_banks',
+            $dataLama['id'],
+            $dataLama
+        );
 
         return redirect()->route('admin.cbt.banks.index')->with('success', 'Bank soal dihapus.');
     }
@@ -106,7 +146,7 @@ class CbtBankController extends Controller
     {
         return response()->json([
             'total_banks' => CbtQuestionBank::count(),
-            'total_questions' => \App\Models\CbtQuestion::count(),
+            'total_questions' => CbtQuestion::count(),
             'banks_with_sessions' => CbtQuestionBank::whereHas('sessions')->count(),
         ]);
     }

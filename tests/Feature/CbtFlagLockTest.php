@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Aktivitas;
 use App\Models\CbtQuestionBank;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
@@ -230,5 +231,50 @@ class CbtFlagLockTest extends TestCase
                 ->assertStatus(422)
                 ->assertJsonValidationErrors('guru_id');
         });
+    }
+
+    public function test_admin_cbt_bank_mutations_create_activity_audit_logs(): void
+    {
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $guruA = User::findOrFail(E2eFixtureSeeder::USER_IDS['guru_a']);
+        $guruB = User::findOrFail(E2eFixtureSeeder::USER_IDS['guru_b']);
+
+        $this->actingAs($admin)->post(route('admin.cbt.banks.store'), [
+            'title' => 'Bank Audit Baru',
+            'subject' => 'IPA',
+            'guru_id' => $guruA->id,
+        ])->assertRedirect(route('admin.cbt.banks.index'));
+
+        $createdBank = CbtQuestionBank::where('title', 'Bank Audit Baru')->firstOrFail();
+        $this->assertDatabaseHas('aktivitas', [
+            'jenis' => 'tambah',
+            'tabel_terkait' => 'cbt_question_banks',
+            'record_id' => $createdBank->id,
+            'guru_id' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.cbt.banks.update', $createdBank), [
+            'title' => 'Bank Audit Diubah',
+            'subject' => 'IPA Terpadu',
+            'guru_id' => $guruB->id,
+        ])->assertRedirect(route('admin.cbt.banks.index'));
+
+        $updateLog = Aktivitas::where('jenis', 'ubah')
+            ->where('tabel_terkait', 'cbt_question_banks')
+            ->where('record_id', $createdBank->id)
+            ->latest('id')
+            ->firstOrFail();
+        $this->assertSame($guruA->id, $updateLog->data_lama['guru_id'] ?? null);
+        $this->assertSame($guruB->id, $updateLog->data_baru['guru_id'] ?? null);
+
+        $this->actingAs($admin)->delete(route('admin.cbt.banks.destroy', $createdBank))
+            ->assertRedirect(route('admin.cbt.banks.index'));
+
+        $this->assertDatabaseHas('aktivitas', [
+            'jenis' => 'hapus',
+            'tabel_terkait' => 'cbt_question_banks',
+            'record_id' => $createdBank->id,
+            'guru_id' => $admin->id,
+        ]);
     }
 }
