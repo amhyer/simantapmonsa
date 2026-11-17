@@ -45,6 +45,10 @@ if (! function_exists('forgetKKMCache')) {
         $scopes = array_values(array_unique($scopes));
 
         foreach ($scopes as $scope) {
+            // Naikkan versi scope agar seluruh cache guru (termasuk fallback) langsung usang.
+            $verKey = "kkm-ver-{$scope}";
+            $nextVer = ((int) Cache::get($verKey, 1)) + 1;
+            Cache::forever($verKey, $nextVer);
             Cache::forget("kkm-{$scope}-default");
             if ($guruId !== null) {
                 Cache::forget("kkm-{$scope}-guru-{$guruId}");
@@ -82,10 +86,11 @@ if (! function_exists('getKKM')) {
         }
 
         $scope = $tenantId !== null ? 't' . $tenantId : 'single';
+        $ver = (int) Cache::get("kkm-ver-{$scope}", 1);
 
-        // Cache 5 menit per scope sekolah: dipanggil per-baris nilai, tanpa cache jadi N+1 query.
+        // Cache 5 menit per scope sekolah + versi: dipanggil per-baris nilai, tanpa cache jadi N+1 query.
         if ($guruId) {
-            return Cache::remember("kkm-{$scope}-guru-{$guruId}", 300, function () use ($guruId, $tenantId) {
+            return Cache::remember("kkm-{$scope}-v{$ver}-guru-{$guruId}", 300, function () use ($guruId, $tenantId) {
                 $guruQuery = PengaturanGuru::query()->where('guru_id', $guruId);
                 if ($tenantId !== null) {
                     $guruQuery->whereHas('guru', fn ($q) => $q->where('users.tenant_id', $tenantId));
@@ -111,7 +116,7 @@ if (! function_exists('getKKM')) {
             });
         }
 
-        return Cache::remember("kkm-{$scope}-default", 300, function () use ($tenantId) {
+        return Cache::remember("kkm-{$scope}-v{$ver}-default", 300, function () use ($tenantId) {
             $fallbackQuery = PengaturanGuru::query();
             if ($tenantId !== null) {
                 $fallbackQuery->whereHas('guru', fn ($q) => $q->where('users.tenant_id', $tenantId));

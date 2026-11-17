@@ -76,12 +76,17 @@ class TenantKkmAndPetaKelasIsolationTest extends TestCase
         // Dari konteks Sekolah A, meminta guruId milik Sekolah B tidak boleh membocorkan KKM 68.
         $this->assertSame(82, TenantContext::run($a->id, fn () => getKKM($guruB->id)));
 
+        // Guru lain di Sekolah A tanpa pengaturan pribadi men-cache fallback tenant (82), lalu harus ikut terbarui.
+        $guruATanpaPengaturan = User::factory()->guru()->create(['tenant_id' => $a->id, 'nama_lengkap' => 'Guru Alpha 2']);
+        $this->assertSame(82, TenantContext::run($a->id, fn () => getKKM($guruATanpaPengaturan->id)));
+
         // Tanpa konteks sekolah di mode multi-tenant, kembalikan default aman 70.
         $this->assertSame(70, getKKM());
 
-        // Perubahan KKM pada Sekolah A langsung me-bust cache Sekolah A tanpa memengaruhi Sekolah B.
+        // Perubahan KKM pada Sekolah A langsung me-bust cache Sekolah A (termasuk fallback guru lain) tanpa memengaruhi Sekolah B.
         TenantContext::run($a->id, fn () => $pengaturanA->update(['kkm' => 85]));
         $this->assertSame(85, TenantContext::run($a->id, fn () => getKKM()));
+        $this->assertSame(85, TenantContext::run($a->id, fn () => getKKM($guruATanpaPengaturan->id)));
         $this->assertSame(68, TenantContext::run($b->id, fn () => getKKM()));
     }
 
@@ -256,7 +261,8 @@ class TenantKkmAndPetaKelasIsolationTest extends TestCase
         $b = $this->school('20000008');
 
         $guruA1 = User::factory()->guru()->create(['tenant_id' => $a->id, 'nik' => '320100001']);
-        User::factory()->guru()->create(['tenant_id' => $a->id, 'nik' => '320100001']);
+        // Format tanda baca berbeda tapi alfanumerik sama juga harus terdeteksi ambigu.
+        User::factory()->guru()->create(['tenant_id' => $a->id, 'nik' => '3201-00001']);
         // Pegawai di Sekolah B dengan NIK sama tidak boleh tercampur.
         User::factory()->guru()->create(['tenant_id' => $b->id, 'nik' => '320100002']);
         User::factory()->guru()->create(['tenant_id' => $b->id, 'nik' => '320100002']);

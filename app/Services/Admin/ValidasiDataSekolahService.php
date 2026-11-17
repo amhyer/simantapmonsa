@@ -79,17 +79,16 @@ class ValidasiDataSekolahService
         $akunSiswaCount = $akunSiswaQuery->count();
         $perkiraanSiswaTanpaAkun = max(0, $totalSiswaAktif - $akunSiswaCount);
 
-        $pegawaiNikQuery = User::query()
+        $pegawaiNikQuery = $tenantId !== null
+            ? User::query()->where('tenant_id', $tenantId)
+            : User::forSchool();
+        $jumlahNikAmbigu = $pegawaiNikQuery
             ->whereIn('peran', ['guru', 'kepsek', 'tendik'])
             ->where('aktif', true)
             ->whereNotNull('nik')
-            ->where('nik', '<>', '');
-        if ($tenantId !== null) {
-            $pegawaiNikQuery->where('tenant_id', $tenantId);
-        }
-        $jumlahNikAmbigu = $pegawaiNikQuery
+            ->where('nik', '<>', '')
             ->pluck('nik')
-            ->map(fn ($v) => trim((string) $v))
+            ->map(fn ($v) => preg_replace('/[^0-9A-Za-z]/', '', trim((string) $v)) ?? '')
             ->filter(fn ($v) => $v !== '')
             ->countBy()
             ->filter(fn (int $c) => $c > 1)

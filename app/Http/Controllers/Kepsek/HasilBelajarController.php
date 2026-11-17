@@ -51,14 +51,20 @@ class HasilBelajarController extends Controller
             ->limit(10)
             ->get();
 
-        // Data tabel & grafik nyata per kelas (tidak memakai fallback angka statis).
+        // Data tabel & grafik nyata per kelas/mapel (tidak memakai fallback angka statis).
+        $nilaiPerGuruMapel = Nilai::selectRaw('guru_id, mata_pelajaran, MAX(nilai) as tertinggi, MIN(CASE WHEN nilai > 0 THEN nilai END) as terendah')
+            ->groupBy('guru_id', 'mata_pelajaran')
+            ->get()
+            ->keyBy(fn ($row) => $row->guru_id.'|'.strtolower(trim((string) ($row->mata_pelajaran ?? ''))));
+
         $nilaiPerGuru = Nilai::selectRaw('guru_id, MAX(nilai) as tertinggi, MIN(CASE WHEN nilai > 0 THEN nilai END) as terendah')
             ->groupBy('guru_id')
             ->get()
             ->keyBy('guru_id');
 
-        $tabelPerbandingan = $ringkasan->map(function ($r) use ($nilaiPerGuru) {
-            $stat = $nilaiPerGuru->get($r->guru_id);
+        $tabelPerbandingan = $ringkasan->map(function ($r) use ($nilaiPerGuruMapel, $nilaiPerGuru) {
+            $mapelKey = $r->guru_id.'|'.strtolower(trim((string) ($r->mata_pelajaran ?? '')));
+            $stat = $nilaiPerGuruMapel->get($mapelKey) ?? $nilaiPerGuru->get($r->guru_id);
 
             return (object) [
                 'nama_kelas' => $r->kelas ?: ($r->mata_pelajaran ?: '—'),

@@ -47,7 +47,7 @@ WAJIB BACA DULU (berurutan, jangan skip):
 2. docs/PETA-TUGAS-AI-GEMINI.md — roster, gelombang 1–4, kepemilikan berkas, quality gates.
 3. AGENTS.md + CLAUDE.md — aturan keras (PHP Herd, SQLite-test, larangan cache model, .table-wrapper, area Kiro/Opencode).
 4. docs/RENCANA-INDUK-PERBAIKAN-DAN-PENGEMBANGAN.md — fitur dibatasi vs sudah ada, prioritas Tahap 0–3.
-5. docs/07-MENU-ROADMAP.md + docs/AUDIT-MENU-PER-ROLE-2026-11-08.md — peta menu & gap per role.
+5. docs/AUDIT-MENU-MATRIKS-2026-11-08.md + docs/AUDIT-MENU-PER-ROLE-2026-11-08.md — peta menu & gap per role.
 
 KONTEKS RENCANA BARU (di luar Gelombang 1–4 PETA):
 A. E-Learning / Kelas Digital — evolusi Materi Ajar menjadi Kelas Digital berjenjang
@@ -128,7 +128,7 @@ Kamu adalah worker-academic-engine (gemini-4-hydrogen-high) — Academic Engine,
 WAJIB BACA DULU: README.md → docs/PETA-TUGAS-AI-GEMINI.md (§2–§3, terutama Gelombang 3:
 Validasi Data & Pusat Notifikasi) → AGENTS.md → app/Models/Materi.php, app/Models/Kuis.php,
 app/Http/Controllers/Guru/MateriController.php, app/Http/Controllers/Guru/WaliKelasController.php,
-docs/07-MENU-ROADMAP.md (§2.2 gap Guru/Wali Kelas).
+docs/AUDIT-MENU-PER-ROLE-2026-11-08.md (gap Guru/Wali Kelas).
 
 TUGAS A — E-LEARNING MVP (setelah Fase 0 backend-security selesai):
 1. CRUD Kelas Digital per guru (rombel + mapel), Modul/Bab, Pertemuan, dan Isi
@@ -166,7 +166,7 @@ KRITERIA SELESAI:
 Kamu adalah worker-ui-nav (gemini-4-hydrogen-medium) — Frontend Blade/Alpine, Sidebar & Mobile UX Engineer SIMANTAP.
 
 WAJIB BACA DULU: README.md → docs/PETA-TUGAS-AI-GEMINI.md (§2, Gelombang 1A/1B, Gelombang 3C) →
-AGENTS.md → docs/07-MENU-ROADMAP.md + docs/AUDIT-MENU-PER-ROLE-2026-11-08.md →
+AGENTS.md → docs/AUDIT-MENU-MATRIKS-2026-11-08.md + docs/AUDIT-MENU-PER-ROLE-2026-11-08.md →
 resources/views/guru/partials/sidebar.blade.php, resources/views/siswa/partials/sidebar.blade.php,
 resources/views/layouts/app.blade.php, resources/css/layout.css.
 
