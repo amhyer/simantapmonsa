@@ -341,10 +341,14 @@ class MenuAuditTest extends TestCase
         $this->assertDatabaseHas('users', ['nama_pengguna' => 'ahmadfauzi', 'peran' => 'guru']);
         $this->assertDatabaseHas('users', ['nama_pengguna' => 'ahmadfauzi.1', 'peran' => 'tendik']);
 
-        // Akun siswa baru harus terhubung ke ID siswa & menggunakan NISN sebagai username
+        // Akun siswa baru harus terhubung ke ID siswa, wajib ganti sandi saat login pertama, & menggunakan NISN sebagai username
         $userSiswaBaru = User::where('nama_pengguna', '0099887766')->first();
         $this->assertNotNull($userSiswaBaru);
+        $this->assertTrue((bool) $userSiswaBaru->force_password_change);
         $this->assertSame([$siswaBaru->id], $userSiswaBaru->terhubung_dengan);
+        $this->actingAs($userSiswaBaru)->get(route('siswa.dashboard'))
+            ->assertRedirect(route('force-password-change.show'));
+        $userSiswaBaru->update(['force_password_change' => false]);
         $this->actingAs($userSiswaBaru)->get(route('siswa.dashboard'))
             ->assertOk()
             ->assertSee('Citra Lestari');
