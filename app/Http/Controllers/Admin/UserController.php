@@ -790,7 +790,6 @@ class UserController extends Controller
                     'username' => $username,
                     'password' => $plainPassword,
                 ];
-                $guruDibuat++;
 
                 if ($peran === 'guru') {
                     \App\Models\PengaturanGuru::firstOrCreate(
