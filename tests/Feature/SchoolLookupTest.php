@@ -2,9 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\SekolahSettings;
-use App\Models\User;
-use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -30,8 +27,8 @@ class SchoolLookupTest extends TestCase
                         'provinsi' => 'Prov. Sulawesi Selatan',
                         'akreditasi' => 'A',
                         'nama_kepsek' => 'ANDI WINDAYANI',
-                    ]
-                ]
+                    ],
+                ],
             ], 200),
             'https://referensi.data.kemendikdasmen.go.id/pendidikan/npsn/*' => Http::response(
                 '<tr><td>Operator</td><td>:</td><td>AMIRULLAH</td></tr><tr><td>Email</td><td>:</td><td>sdnungmongisidi1@gmail.com</td></tr><tr><td>Telepon</td><td>:</td><td>04118918116</td></tr>',
