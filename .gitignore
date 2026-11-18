@@ -75,4 +75,5 @@ node_modules/
 # Laporan audit/verifikasi lokal & inventaris menu
 /reports/
 /storage/logs/menu-inventory.md
+/docs/IDENTIFIKASI.md
 
