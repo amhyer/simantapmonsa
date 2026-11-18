@@ -17,6 +17,17 @@
 @endsection
 
 @section('content')
+    @if(session('ekspor_sandi_url'))
+        <div style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:600">
+                <i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>
+                Simpan dan bagikan dengan aman; password tidak dapat dilihat lagi.
+            </div>
+            <a href="{{ session('ekspor_sandi_url') }}" class="btn btn-sm" style="background:#92400E;color:#fff;font-weight:700">
+                <i class="fas fa-download"></i> Unduh Daftar Password Awal (Sekali Unduh)
+            </a>
+        </div>
+    @endif
     @php
         $adminUsers = $users->where('peran', 'admin');
         $guruUsers = $users->where('peran', 'guru');

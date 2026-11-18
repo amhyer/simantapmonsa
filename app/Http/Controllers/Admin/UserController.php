@@ -592,11 +592,8 @@ class UserController extends Controller
         $siswaDibuat = 0;
         $dipulihkan = 0;
         $ditautkan = 0;
+        $generatedCredentials = [];
 
-        // Pre-hash sekali di luar loop agar pembuatan ratusan akun selesai < 100ms tanpa timeout
-        // Selaras dengan DapodikSyncService & DataReferensiController (guru123 / siswa123)
-        $defaultGuruHash = Hash::make('guru123');
-        $defaultSiswaHash = Hash::make('siswa123');
         $semesterAktif = \App\Models\Semester::orderByDesc('semester_id')->first()
             ?? \App\Models\Semester::orderByDesc('id')->first();
         $namaSemesterDefault = $semesterAktif?->nama_semester ? ucfirst($semesterAktif->nama_semester) : 'Ganjil';
@@ -605,15 +602,14 @@ class UserController extends Controller
 
         DB::transaction(function () use (
             $tenantId,
-            $defaultGuruHash,
-            $defaultSiswaHash,
             $namaSemesterDefault,
             $tahunAjaranDefault,
             $kkmDefault,
             &$guruDibuat,
             &$siswaDibuat,
             &$dipulihkan,
-            &$ditautkan
+            &$ditautkan,
+            &$generatedCredentials
         ) {
             $allUsers = User::withoutGlobalScopes()->withTrashed()->get();
 
@@ -772,6 +768,7 @@ class UserController extends Controller
 
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
+                $plainPassword = \App\Support\InitialPassword::generate();
 
                 $user = User::create([
                     'uuid' => (string) Str::uuid(),
@@ -779,13 +776,21 @@ class UserController extends Controller
                     'nama_lengkap' => $namaLengkap,
                     'nama_pengguna' => $username,
                     'email' => $email,
-                    'kata_sandi' => $defaultGuruHash,
+                    'kata_sandi' => Hash::make($plainPassword),
                     'peran' => $peran,
                     'aktif' => true,
-                    'force_password_change' => false,
+                    'force_password_change' => true,
                     'dapodik_id' => $ptk->dapodik_id,
                     'nip' => $ptk->nip,
                 ]);
+
+                $generatedCredentials[] = [
+                    'nama' => $namaLengkap,
+                    'kelas' => $ptk->jabatan ?? '-',
+                    'username' => $username,
+                    'password' => $plainPassword,
+                ];
+                $guruDibuat++;
 
                 if ($peran === 'guru') {
                     \App\Models\PengaturanGuru::firstOrCreate(
@@ -871,6 +876,7 @@ class UserController extends Controller
 
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
+                $plainPassword = \App\Support\InitialPassword::generate();
 
                 $newSiswaUser = User::create([
                     'uuid' => (string) Str::uuid(),
@@ -878,14 +884,21 @@ class UserController extends Controller
                     'nama_lengkap' => $s->nama_peserta_didik,
                     'nama_pengguna' => $username,
                     'email' => $email,
-                    'kata_sandi' => $defaultSiswaHash,
+                    'kata_sandi' => Hash::make($plainPassword),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [(int) $s->id],
                     'kelas_mata_pelajaran' => $s->kelas,
                     'aktif' => true,
-                    'force_password_change' => false,
+                    'force_password_change' => true,
                     'dapodik_id' => $s->dapodik_id,
                 ]);
+
+                $generatedCredentials[] = [
+                    'nama' => $s->nama_peserta_didik,
+                    'kelas' => $s->kelas ?? '-',
+                    'username' => $username,
+                    'password' => $plainPassword,
+                ];
 
                 $allUsernames[strtolower($username)] = $newSiswaUser;
                 $allEmails[strtolower($email)] = $newSiswaUser;
@@ -919,6 +932,18 @@ class UserController extends Controller
             $pesan = "Generate Semua Pengguna berhasil: {$guruDibuat} akun Guru/PTK dan {$siswaDibuat} akun Siswa baru dibuat{$infoExtra}.";
         }
 
+        $eksporUrl = null;
+        if ($generatedCredentials !== []) {
+            $exportToken = (string) Str::uuid();
+            $payload = \Illuminate\Support\Facades\Crypt::encryptString(json_encode([
+                'admin_id' => (int) $request->user()?->id,
+                'tenant_id' => $tenantId,
+                'rows' => $generatedCredentials,
+            ], JSON_UNESCAPED_UNICODE));
+            \Illuminate\Support\Facades\Cache::put("initial_pw:{$exportToken}", $payload, now()->addMinutes(10));
+            $eksporUrl = route('admin.users.ekspor-sandi-awal', ['token' => $exportToken]);
+        }
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -926,10 +951,60 @@ class UserController extends Controller
                 'siswa_dibuat' => $siswaDibuat,
                 'dipulihkan' => $dipulihkan,
                 'ditautkan' => $ditautkan,
+                'ekspor_url' => $eksporUrl,
+                'peringatan_sandi' => $eksporUrl ? 'Simpan dan bagikan dengan aman; password tidak dapat dilihat lagi.' : null,
                 'message' => $pesan,
             ]);
         }
 
-        return redirect()->route('admin.users.index')->with('success', $pesan);
+        $redirect = redirect()->route('admin.users.index')->with('success', $pesan);
+        if ($eksporUrl) {
+            $redirect->with('ekspor_sandi_url', $eksporUrl);
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Ekspor sekali-unduh CSV berisi password awal acak hasil generate massal.
+     */
+    public function eksporSandiAwal(Request $request, string $token)
+    {
+        if (! Str::isUuid($token)) {
+            abort(404);
+        }
+
+        $encrypted = \Illuminate\Support\Facades\Cache::pull("initial_pw:{$token}");
+        if (! is_string($encrypted) || $encrypted === '') {
+            abort(404, 'Tautan unduhan sudah kedaluwarsa atau sudah pernah diunduh.');
+        }
+
+        $data = json_decode(\Illuminate\Support\Facades\Crypt::decryptString($encrypted), true);
+        $currentTenant = TenantContext::id();
+        if (! is_array($data)
+            || (int) ($data['admin_id'] ?? 0) !== (int) $request->user()?->id
+            || ($data['tenant_id'] ?? null) !== $currentTenant) {
+            abort(403, 'Anda tidak berwenang mengunduh daftar kata sandi ini.');
+        }
+
+        $rows = $data['rows'] ?? [];
+        $filename = 'kata-sandi-awal-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Nama', 'Kelas', 'Username', 'Password Awal']);
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    $row['nama'] ?? '',
+                    $row['kelas'] ?? '-',
+                    $row['username'] ?? '',
+                    $row['password'] ?? '',
+                ]);
+            }
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 }

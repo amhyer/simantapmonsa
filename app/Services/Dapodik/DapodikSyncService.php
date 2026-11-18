@@ -579,7 +579,7 @@ class DapodikSyncService
                 } else {
                     $newUser = User::create(array_merge($data, [
                         'uuid' => Str::uuid(),
-                        'kata_sandi' => bcrypt('guru123'),
+                        'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
                         'force_password_change' => true,
                     ]));
                     $newUser->forceFill([
@@ -1189,12 +1189,12 @@ class DapodikSyncService
                     'uuid' => (string) Str::uuid(),
                     'nama_lengkap' => $siswa->nama_peserta_didik,
                     'nama_pengguna' => $username,
-                    'kata_sandi' => bcrypt('siswa123'),
+                    'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [$siswa->id],
                     'kelas_mata_pelajaran' => $siswa->kelas,
                     'aktif' => $isActive,
-                    'force_password_change' => false,
+                    'force_password_change' => true,
                 ]);
             }
         } catch (\Exception $e) {

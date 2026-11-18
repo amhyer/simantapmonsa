@@ -478,7 +478,7 @@ class DapodikSyncController extends Controller
                         'uuid' => Str::uuid(),
                         'nama_lengkap' => $nama,
                         'nama_pengguna' => $finalUsername,
-                        'kata_sandi' => bcrypt('guru123'),
+                        'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
                         'peran' => $peran,
                         'nip' => $nip ?: null,
                         'aktif' => $isActive,

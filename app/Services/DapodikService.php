@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\OrangTuaSiswa;
+use App\Support\InitialPassword;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DapodikService
 {
@@ -30,11 +32,9 @@ class DapodikService
                         'uuid' => \Illuminate\Support\Str::uuid(),
                         'nama_lengkap' => $gtk['nama'],
                         'nama_pengguna' => $gtk['nip'] ?? $gtk['nuptk'] ?? 'gtk' . rand(1000, 9999),
-                        'kata_sandi' => \Illuminate\Support\Facades\Hash::make('guru123'),
+                        'kata_sandi' => Hash::make(InitialPassword::generate()),
                         'peran' => 'guru',
                         'aktif' => true,
-                        // Sandi awal 'guru123' wajib diganti saat login pertama,
-                        // selaras dengan DapodikSyncService & Api\DapodikSyncController.
                         'force_password_change' => true,
                         'terhubung_dengan' => [],
                         'kelas_mata_pelajaran' => $gtk['mata_pelajaran'] ?? null,
