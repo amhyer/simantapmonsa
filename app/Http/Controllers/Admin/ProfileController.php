@@ -51,7 +51,10 @@ class ProfileController extends Controller
             return back()->withErrors(['password' => 'Password baru harus berbeda dari password lama.']);
         }
 
-        $user->update(['kata_sandi' => bcrypt($request->password)]);
+        $user->update([
+            'kata_sandi' => bcrypt($request->password),
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
 
         return back()->with('success', 'Password berhasil diubah.');
     }

@@ -597,6 +597,8 @@ class UserController extends Controller
         $siswaDibuat = 0;
         $dipulihkan = 0;
         $ditautkan = 0;
+        $terbatasBatas = false;
+        $batasMassal = max(1, (int) config('simantap.reset_massal_max', 100));
         $generatedCredentials = [];
 
         $semesterAktif = \App\Models\Semester::orderByDesc('semester_id')->first()
@@ -607,6 +609,7 @@ class UserController extends Controller
 
         DB::transaction(function () use (
             $tenantId,
+            $batasMassal,
             $namaSemesterDefault,
             $tahunAjaranDefault,
             $kkmDefault,
@@ -614,6 +617,7 @@ class UserController extends Controller
             &$siswaDibuat,
             &$dipulihkan,
             &$ditautkan,
+            &$terbatasBatas,
             &$generatedCredentials
         ) {
             $allUsers = User::withoutGlobalScopes()->withTrashed()->get();
@@ -771,6 +775,11 @@ class UserController extends Controller
                     continue;
                 }
 
+                if (count($generatedCredentials) >= $batasMassal) {
+                    $terbatasBatas = true;
+                    break;
+                }
+
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
                 $plainPassword = \App\Support\InitialPassword::generate();
@@ -785,6 +794,7 @@ class UserController extends Controller
                     'peran' => $peran,
                     'aktif' => true,
                     'force_password_change' => true,
+                    'sandi_awal_diterbitkan_at' => now(),
                     'dapodik_id' => $ptk->dapodik_id,
                     'nip' => $ptk->nip,
                 ]);
@@ -878,6 +888,11 @@ class UserController extends Controller
                     continue;
                 }
 
+                if (count($generatedCredentials) >= $batasMassal) {
+                    $terbatasBatas = true;
+                    break;
+                }
+
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
                 $plainPassword = \App\Support\InitialPassword::generate();
@@ -894,6 +909,7 @@ class UserController extends Controller
                     'kelas_mata_pelajaran' => $s->kelas,
                     'aktif' => true,
                     'force_password_change' => \App\Support\InitialPassword::shouldForceChangeSiswa(),
+                    'sandi_awal_diterbitkan_at' => now(),
                     'dapodik_id' => $s->dapodik_id,
                 ]);
 
@@ -934,19 +950,14 @@ class UserController extends Controller
             $pesan = 'Semua Guru (PTK) dan Siswa aktif di database sudah memiliki akun pengguna.';
         } else {
             $pesan = "Generate Semua Pengguna berhasil: {$guruDibuat} akun Guru/PTK dan {$siswaDibuat} akun Siswa baru dibuat{$infoExtra}.";
+            if ($terbatasBatas) {
+                $pesan .= " Dibatasi {$batasMassal} akun per permintaan agar tidak timeout — klik lagi untuk melanjutkan sisa akun.";
+            }
         }
 
-        $eksporUrl = null;
-        if ($generatedCredentials !== []) {
-            $exportToken = (string) Str::uuid();
-            $payload = \Illuminate\Support\Facades\Crypt::encryptString(json_encode([
-                'admin_id' => (int) $request->user()?->id,
-                'tenant_id' => $tenantId,
-                'rows' => $generatedCredentials,
-            ], JSON_UNESCAPED_UNICODE));
-            \Illuminate\Support\Facades\Cache::put("initial_pw:{$exportToken}", $payload, now()->addMinutes(10));
-            $eksporUrl = route('admin.users.ekspor-sandi-awal', ['token' => $exportToken]);
-        }
+        $eksporUrl = $generatedCredentials !== []
+            ? app(\App\Services\Admin\InitialPasswordExportService::class)->store((int) $request->user()?->id, $tenantId, $generatedCredentials)
+            : null;
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -970,45 +981,47 @@ class UserController extends Controller
     }
 
     /**
-     * Ekspor sekali-unduh CSV berisi password awal acak hasil generate massal.
+     * Ekspor sekali-unduh CSV berisi password awal acak (dipakai bersama oleh generate & reset massal).
      */
     public function eksporSandiAwal(Request $request, string $token)
     {
-        if (! Str::isUuid($token)) {
-            abort(404);
-        }
+        return app(\App\Services\Admin\InitialPasswordExportService::class)->streamOnce($request, $token);
+    }
 
-        $encrypted = \Illuminate\Support\Facades\Cache::pull("initial_pw:{$token}");
-        if (! is_string($encrypted) || $encrypted === '') {
-            abort(404, 'Tautan unduhan sudah kedaluwarsa atau sudah pernah diunduh.');
-        }
+    public function pratinjauResetMassal(\App\Http\Requests\Admin\ResetMassalPasswordRequest $request)
+    {
+        $preview = app(\App\Services\Admin\MassPasswordResetService::class)
+            ->preview($request->validated(), (int) $request->user()?->id);
 
-        $data = json_decode(\Illuminate\Support\Facades\Crypt::decryptString($encrypted), true);
-        $currentTenant = TenantContext::id();
-        if (! is_array($data)
-            || (int) ($data['admin_id'] ?? 0) !== (int) $request->user()?->id
-            || ($data['tenant_id'] ?? null) !== $currentTenant) {
-            abort(403, 'Anda tidak berwenang mengunduh daftar kata sandi ini.');
-        }
+        return response()->json(['success' => true] + $preview);
+    }
 
-        $rows = $data['rows'] ?? [];
-        $filename = 'kata-sandi-awal-' . now()->format('Ymd-His') . '.csv';
+    public function resetMassalPassword(\App\Http\Requests\Admin\ResetMassalPasswordRequest $request)
+    {
+        $result = app(\App\Services\Admin\MassPasswordResetService::class)
+            ->execute($request->validated(), $request->user());
 
-        return response()->streamDownload(function () use ($rows) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Nama', 'Kelas', 'Username', 'Password Awal']);
-            foreach ($rows as $row) {
-                fputcsv($handle, [
-                    \App\Support\InitialPassword::sanitizeCsvCell($row['nama'] ?? ''),
-                    \App\Support\InitialPassword::sanitizeCsvCell($row['kelas'] ?? '-'),
-                    \App\Support\InitialPassword::sanitizeCsvCell($row['username'] ?? ''),
-                    $row['password'] ?? '',
-                ]);
+        if ($result['locked']) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false] + $result, 423);
             }
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
-        ]);
+
+            return redirect()->route('admin.users.index')->with('error', $result['message']);
+        }
+
+        $warning = $result['ekspor_url']
+            ? 'Password tidak dapat dilihat lagi; unduh dan bagikan dengan aman. Jika unduhan gagal, jalankan reset ulang untuk akun yang sama dengan opsi sertakan.'
+            : null;
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'peringatan_sandi' => $warning] + $result);
+        }
+
+        $redirect = redirect()->route('admin.users.index')->with('success', $result['message']);
+        if ($result['ekspor_url']) {
+            $redirect->with('ekspor_sandi_url', $result['ekspor_url']);
+        }
+
+        return $redirect;
     }
 }

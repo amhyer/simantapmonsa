@@ -88,6 +88,7 @@ class AuditDefaultPasswordsCommand extends Command
             $user->forceFill([
                 'kata_sandi' => Hash::make($newPlain),
                 'force_password_change' => true,
+                'sandi_awal_diterbitkan_at' => now(),
             ])->save();
 
             fputcsv($handle, [

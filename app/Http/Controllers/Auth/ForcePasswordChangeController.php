@@ -34,6 +34,7 @@ class ForcePasswordChangeController extends Controller
         $user->update([
             'kata_sandi' => bcrypt($request->password),
             'force_password_change' => false,
+            'sandi_awal_diterbitkan_at' => null,
         ]);
 
         return redirect()->intended('/dashboard')

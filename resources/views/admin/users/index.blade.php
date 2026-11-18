@@ -13,6 +13,9 @@
     <button type="button" onclick="generateSemuaPengguna()" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
         <i class="fas fa-user-plus"></i> Generate Semua Pengguna
     </button>
+    <button type="button" onclick="document.getElementById('modalResetMassal').style.display='flex'" class="btn btn-sm btn-secondary">
+        <i class="fas fa-key"></i> Reset &amp; Ekspor Sandi Massal
+    </button>
     <a href="{{ route('admin.users.akun-massal') }}" class="btn btn-sm btn-ghost">Akun Massal</a>
 @endsection
 
@@ -21,7 +24,7 @@
         <div style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
             <div style="font-size:13px;font-weight:600">
                 <i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>
-                Simpan dan bagikan dengan aman; password tidak dapat dilihat lagi.
+                Password tidak dapat dilihat lagi; unduh dan bagikan dengan aman. Jika unduhan gagal, jalankan reset ulang untuk akun yang sama dengan opsi sertakan.
             </div>
             <a href="{{ session('ekspor_sandi_url') }}" class="btn btn-sm" style="background:#92400E;color:#fff;font-weight:700">
                 <i class="fas fa-download"></i> Unduh Daftar Password Awal (Sekali Unduh)
@@ -416,6 +419,52 @@
                     OK, Muat Ulang
                 </button>
             </div>
+        </div>
+    </div>
+
+    <div id="modalResetMassal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:1000;align-items:center;justify-content:center;padding:16px">
+        <div style="background:#fff;border-radius:14px;max-width:540px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.25)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <h3 style="margin:0;font-size:17px;font-weight:800;color:#1F3864">Reset &amp; Ekspor Sandi Massal</h3>
+                <button type="button" onclick="document.getElementById('modalResetMassal').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer">&times;</button>
+            </div>
+            <form method="POST" action="{{ route('admin.users.reset-massal') }}" id="formResetMassal">
+                @csrf
+                <div style="margin-bottom:12px">
+                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px">Peran Target</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                        <label><input type="checkbox" name="peran[]" value="siswa" checked> Siswa</label>
+                        <label><input type="checkbox" name="peran[]" value="ortu"> Orang Tua</label>
+                        <label><input type="checkbox" name="peran[]" value="guru"> Guru</label>
+                        <label><input type="checkbox" name="peran[]" value="tendik"> Tendik</label>
+                        <label><input type="checkbox" name="peran[]" value="kepsek"> Kepsek</label>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px">
+                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Filter Kelas (opsional, khusus siswa)</label>
+                    <input type="text" name="kelas" id="rm_kelas" class="form-control" placeholder="Contoh: 1A atau biarkan kosong untuk semua">
+                </div>
+                <div style="margin-bottom:10px;font-size:13px">
+                    <label style="display:block;margin-bottom:6px">
+                        <input type="checkbox" name="hanya_belum_login" value="1" checked> Hanya yang belum pernah login
+                    </label>
+                    <label style="display:block;color:#B45309">
+                        <input type="checkbox" name="sertakan_sudah_diterbitkan" value="1"> Sertakan akun yang password awalnya sudah diterbitkan (akan membatalkan CSV lama)
+                    </label>
+                </div>
+                <div id="rm_preview_box" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;font-size:12.5px;color:#1E3A8A"></div>
+                <div style="margin-bottom:12px">
+                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Konfirmasi Kata Sandi Administrator <span style="color:#DC2626">*</span></label>
+                    <input type="password" name="password_admin" class="form-control" required placeholder="Masukkan kata sandi Anda">
+                </div>
+                <div style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#FEF3C7;border:1px solid #F59E0B;font-size:12px;color:#92400E">
+                    Password tidak dapat dilihat lagi; unduh dan bagikan dengan aman. Jika unduhan gagal, jalankan reset ulang untuk akun yang sama dengan opsi sertakan.
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:10px">
+                    <button type="button" onclick="pratinjauResetMassal()" class="btn btn-secondary btn-sm">Pratinjau Jumlah</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Reset &amp; Siapkan Ekspor</button>
+                </div>
+            </form>
         </div>
     </div>
 @endsection
@@ -844,6 +893,27 @@
             }
         }).catch(function(err) {
             alert('Terjadi kesalahan: ' + err.message);
+        });
+    }
+
+    function pratinjauResetMassal() {
+        const form = document.getElementById('formResetMassal');
+        const fd = new FormData(form);
+        fd.delete('password_admin');
+        const box = document.getElementById('rm_preview_box');
+        fetch("{{ route('admin.users.reset-massal.pratinjau') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: fd
+        }).then(function(r) { return r.json(); }).then(function(d) {
+            box.style.display = 'block';
+            box.textContent = 'Cocok: ' + d.total_cocok + ' akun | Akan diproses batch ini: ' + d.akan_diproses + ' (sisa: ' + d.sisa + ', estimasi ~' + d.estimasi_detik + ' detik).';
+        }).catch(function() {
+            box.style.display = 'block';
+            box.textContent = 'Gagal memuat pratinjau.';
         });
     }
 </script>

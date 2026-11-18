@@ -36,4 +36,8 @@ return [
     // Wajib ganti kata sandi pada login pertama untuk akun siswa baru
     // (hasil sinkronisasi Dapodik / generate massal). Guru/PTK selalu wajib.
     'force_change_siswa' => env('SIMANTAP_FORCE_CHANGE_SISWA', true),
+
+    // Batas maksimal akun yang diproses per permintaan pada reset/generate massal
+    // (menghindari timeout Nginx/PHP-FPM akibat bcrypt 12 rounds).
+    'reset_massal_max' => (int) env('SIMANTAP_RESET_MASSAL_MAX', 100),
 ];
