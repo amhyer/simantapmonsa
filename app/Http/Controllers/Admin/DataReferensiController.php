@@ -79,6 +79,8 @@ class DataReferensiController extends Controller
         ]);
 
         $buatAkun = $request->boolean('buat_akun', true);
+        $generatedPassword = null;
+        $finalUsername = null;
         if ($buatAkun) {
             $username = !empty($validated['nama_pengguna'])
                 ? trim($validated['nama_pengguna'])
@@ -111,7 +113,7 @@ class DataReferensiController extends Controller
                 $peran = 'tendik';
             }
 
-            $password = !empty($validated['kata_sandi']) ? $validated['kata_sandi'] : 'guru123';
+            $password = !empty($validated['kata_sandi']) ? $validated['kata_sandi'] : ($generatedPassword = Str::random(12));
 
             $user = User::create([
                 'uuid' => (string) Str::uuid(),
@@ -140,8 +142,13 @@ class DataReferensiController extends Controller
             }
         }
 
+        $pesan = 'Guru non-Dapodik (' . $ptk->nama_gelar . ') berhasil ditambahkan.';
+        if ($generatedPassword !== null) {
+            $pesan .= " Akun: {$finalUsername} | Kata sandi awal (tampil sekali): {$generatedPassword}";
+        }
+
         return redirect()->route('admin.referensi.guru')
-            ->with('success', 'Guru non-Dapodik (' . $ptk->nama_gelar . ') berhasil ditambahkan.');
+            ->with('success', $pesan);
     }
 
     /**
