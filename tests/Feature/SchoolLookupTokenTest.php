@@ -26,6 +26,7 @@ class SchoolLookupTokenTest extends TestCase
     {
         Cache::forget('sekolah_npsn_v3_40313912');
         config(['dapodik.token' => 'test-configured-token']);
+        Http::preventStrayRequests();
 
         Http::fake([
             'dapo.kemendikdasmen.go.id/*' => Http::response([

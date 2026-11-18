@@ -15,6 +15,8 @@ class SchoolLookupTest extends TestCase
 
     public function test_lookup_sekolah_kemendikdasmen_mengembalikan_kepala_sekolah_dan_operator(): void
     {
+        config(['dapodik.token' => 'test-token']);
+        Http::preventStrayRequests();
         Http::fake([
             'https://dapo.kemendikdasmen.go.id/api/detail-sekolah*' => Http::response([
                 'data' => [
