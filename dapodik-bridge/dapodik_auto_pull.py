@@ -5,6 +5,7 @@ Menggunakan Selenium untuk auto-login & download CSV dari Dapodik
 """
 
 import os
+import sys
 import time
 import csv
 import json
@@ -19,10 +20,16 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
-# Konfigurasi
-DAPODIK_URL = "http://localhost:5774"
-USERNAME = "sdnungmongisidi1@gmail.com"
-PASSWORD = "Monsajaya12*#"
+# Konfigurasi (dibaca dari environment atau argumen CLI; tanpa kredensial hardcode)
+DAPODIK_URL = (sys.argv[1] if len(sys.argv) > 1 else os.environ.get("DAPODIK_URL", "http://localhost:5774")).strip()
+USERNAME = (sys.argv[2] if len(sys.argv) > 2 else os.environ.get("DAPODIK_USERNAME", "")).strip()
+PASSWORD = (sys.argv[3] if len(sys.argv) > 3 else os.environ.get("DAPODIK_PASSWORD", "")).strip()
+
+if not USERNAME or not PASSWORD:
+    raise SystemExit(
+        "ERROR: DAPODIK_USERNAME dan DAPODIK_PASSWORD wajib diisi melalui environment variable "
+        "atau argumen CLI: python dapodik_auto_pull.py <url> <username> <password>"
+    )
 CSV_FOLDER = Path("csv_files")
 DOWNLOAD_FOLDER = Path.home() / "Downloads"
 

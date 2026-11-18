@@ -1,0 +1,9 @@
+.env
+config.local.json
+config.json
+dist/
+build/
+*.exe
+*.dll
+__pycache__/
+*.pyc
