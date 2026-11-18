@@ -72,7 +72,12 @@ class UserController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('admin.users.index', compact('users', 'siswa', 'ptkList'));
+        $response = response()->view('admin.users.index', compact('users', 'siswa', 'ptkList'));
+        if (session()->has('ekspor_sandi_url')) {
+            $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        }
+
+        return $response;
     }
 
     public function create()
@@ -888,7 +893,7 @@ class UserController extends Controller
                     'terhubung_dengan' => [(int) $s->id],
                     'kelas_mata_pelajaran' => $s->kelas,
                     'aktif' => true,
-                    'force_password_change' => true,
+                    'force_password_change' => \App\Support\InitialPassword::shouldForceChangeSiswa(),
                     'dapodik_id' => $s->dapodik_id,
                 ]);
 
@@ -994,16 +999,16 @@ class UserController extends Controller
             fputcsv($handle, ['Nama', 'Kelas', 'Username', 'Password Awal']);
             foreach ($rows as $row) {
                 fputcsv($handle, [
-                    $row['nama'] ?? '',
-                    $row['kelas'] ?? '-',
-                    $row['username'] ?? '',
+                    \App\Support\InitialPassword::sanitizeCsvCell($row['nama'] ?? ''),
+                    \App\Support\InitialPassword::sanitizeCsvCell($row['kelas'] ?? '-'),
+                    \App\Support\InitialPassword::sanitizeCsvCell($row['username'] ?? ''),
                     $row['password'] ?? '',
                 ]);
             }
             fclose($handle);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
         ]);
     }
 }

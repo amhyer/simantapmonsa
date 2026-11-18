@@ -123,4 +123,66 @@ class InitialPasswordSecurityTest extends TestCase
 
         $this->assertSame([], $offenses, 'Ditemukan password literal pada Hash::make/bcrypt di app/: '.implode('; ', $offenses));
     }
+
+    public function test_csv_export_neutralizes_formula_injection_and_sets_no_store_headers(): void
+    {
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+
+        Siswa::create([
+            'nama_peserta_didik' => "=cmd|'/C calc'!A0",
+            'nisn' => '0055667788',
+            'nis' => '556677',
+            'jenis_kelamin' => 'L',
+            'kelas' => '+6A',
+            'aktif' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->postJson(route('admin.users.generate-semua'));
+        $response->assertOk();
+        $eksporUrl = $response->json('ekspor_url');
+        $this->assertNotEmpty($eksporUrl);
+
+        // Halaman index dengan sesi ekspor_sandi_url harus mengirim Cache-Control: no-store
+        $indexResponse = $this->actingAs($admin)
+            ->withSession(['ekspor_sandi_url' => $eksporUrl])
+            ->get(route('admin.users.index'));
+        $indexResponse->assertOk();
+        $this->assertStringContainsString('no-store', (string) $indexResponse->headers->get('Cache-Control'));
+
+        // Ekspor CSV harus menetralkan sel awalan =, +, -, @ dan mengirim no-store
+        $download = $this->actingAs($admin)->get($eksporUrl);
+        $download->assertOk();
+        $this->assertStringContainsString('no-store', (string) $download->headers->get('Cache-Control'));
+
+        $csv = $download->streamedContent();
+        $this->assertStringContainsString("'=cmd|'/C calc'!A0", $csv);
+        $this->assertStringContainsString("'+6A", $csv);
+    }
+
+    public function test_force_change_siswa_config_controls_siswa_only_while_guru_always_forced(): void
+    {
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+
+        config(['simantap.force_change_siswa' => false]);
+        Ptk::create(['nama' => 'PTK Config Test', 'nip' => '198801012015011009', 'jenis_ptk' => 'Guru Kelas', 'aktif' => true]);
+        Siswa::create(['nama_peserta_didik' => 'Siswa Config False', 'nisn' => '0077889900', 'nis' => '778899', 'jenis_kelamin' => 'P', 'kelas' => '1A', 'aktif' => true]);
+
+        $this->actingAs($admin)->postJson(route('admin.users.generate-semua'))->assertOk();
+
+        $guru = User::where('nama_pengguna', '198801012015011009')->firstOrFail();
+        $siswaFalse = User::where('nama_pengguna', '0077889900')->firstOrFail();
+
+        $this->assertTrue((bool) $guru->force_password_change, 'Guru harus tetap wajib ganti sandi.');
+        $this->assertFalse((bool) $siswaFalse->force_password_change, 'Siswa mengikuti config false.');
+
+        config(['simantap.force_change_siswa' => true]);
+        $syncService = app(DapodikSyncService::class);
+        $siswaTrueRecord = Siswa::create(['nama_peserta_didik' => 'Siswa Config True', 'nisn' => '0077889901', 'nis' => '7788991', 'jenis_kelamin' => 'L', 'kelas' => '1B', 'aktif' => true]);
+        $method = new \ReflectionMethod($syncService, 'ensureStudentUser');
+        $method->setAccessible(true);
+        $method->invoke($syncService, $siswaTrueRecord, $siswaTrueRecord->nisn, true);
+
+        $siswaTrue = User::where('nama_pengguna', '0077889901')->firstOrFail();
+        $this->assertTrue((bool) $siswaTrue->force_password_change, 'Siswa mengikuti config true.');
+    }
 }

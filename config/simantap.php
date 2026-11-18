@@ -32,4 +32,8 @@ return [
     // Mode SaaS Multi-Tenant (satu database banyak sekolah dengan isolasi ketat
     // kolom `tenant_id`). Default false untuk instalasi sekolah tunggal.
     'multi_tenant_enabled' => env('SIMANTAP_MULTI_TENANT', false),
+
+    // Wajib ganti kata sandi pada login pertama untuk akun siswa baru
+    // (hasil sinkronisasi Dapodik / generate massal). Guru/PTK selalu wajib.
+    'force_change_siswa' => env('SIMANTAP_FORCE_CHANGE_SISWA', true),
 ];

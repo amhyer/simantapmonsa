@@ -22,4 +22,22 @@ final class InitialPassword
 
         return $password;
     }
+
+    public static function shouldForceChangeSiswa(): bool
+    {
+        return (bool) config('simantap.force_change_siswa', true);
+    }
+
+    /**
+     * Netralkan formula injection Excel/CSV pada sel yang diawali =, +, -, @.
+     */
+    public static function sanitizeCsvCell(?string $value): string
+    {
+        $str = (string) ($value ?? '');
+        if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'".$str;
+        }
+
+        return $str;
+    }
 }

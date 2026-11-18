@@ -1194,7 +1194,7 @@ class DapodikSyncService
                     'terhubung_dengan' => [$siswa->id],
                     'kelas_mata_pelajaran' => $siswa->kelas,
                     'aktif' => $isActive,
-                    'force_password_change' => true,
+                    'force_password_change' => \App\Support\InitialPassword::shouldForceChangeSiswa(),
                 ]);
             }
         } catch (\Exception $e) {
