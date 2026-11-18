@@ -16,6 +16,7 @@ Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal aga
 - **Pemindai rahasia di CI**: usulkan integrasi `gitleaks` pada `.github/workflows/` setelah rotasi selesai (belum diubah di workflow saat ini).
 - **Pembersihan riwayat Git**: pertimbangkan `git filter-repo` **hanya** jika repositori bersifat publik dan **setelah** seluruh kredensial selesai dirotasi.
 - **Validasi URL unduhan Bridge**: validasi `dapodik.bridge_download_url` wajib diawali `https://` pada konfigurasi produksi.
+- **Opsi (b) Queue Job untuk Reset & Generate Massal**: bila sekolah memiliki >500 akun sekaligus dan batas batch `SIMANTAP_RESET_MASSAL_MAX=100` terasa menyulitkan, pindahkan eksekusi hash ke queue job dengan hasil terenkripsi ber-TTL pendek di cache.
 - Evaluasi `set_time_limit(120)` pada `GET /admin/dapodik/api/semesters` (`DapodikController.php:224`) dan pastikan HTTP timeout eksplisit bila memanggil API Dapodik.
 - Ubah cetak kartu QR massal (`PresensiKartuController`, 180s) menjadi queue job + unduhan asinkron.
 - Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
