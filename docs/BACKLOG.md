@@ -21,14 +21,15 @@ Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal aga
 - Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
 
 ## Usulan Pemeriksaan Akun Password Default (Read-Only)
-> **JANGAN dijalankan otomatis oleh agen** — jalankan secara manual oleh administrator/pemilik dengan backup database terlebih dahulu.
+> **PERINGATAN**: Backup database terlebih dahulu sebelum menjalankan opsi `--apply`. Jangan simpan file ekspor CSV di dalam folder repositori.
 
-Query SQL read-only (PostgreSQL) untuk mendata akun yang ditandai wajib ganti sandi (`force_password_change = true`) atau belum pernah memperbarui sandi sejak dibuat:
-```sql
-SELECT id, nama_pengguna, nama_lengkap, peran, tenant_id, force_password_change, created_at, updated_at
-FROM users
-WHERE deleted_at IS NULL
-  AND force_password_change = true
-ORDER BY peran, created_at DESC;
-```
-Alternatif: cek dari panel Admin → *Manajemen Akun*, lalu lakukan reset sandi massal/individual bagi akun yang belum pernah melakukan login atau ganti sandi.
+1. **Dry-run (audit read-only, tidak mengubah data)**:
+   ```bash
+   php artisan akun:audit-password-bawaan
+   ```
+   (Masukkan kata sandi bawaan yang ingin diperiksa saat diminta prompt tersembunyi; gunakan `--tenant=<id>` untuk membatasi satu sekolah.)
+
+2. **Terapkan reset acak + ekspor sekali-pakai** (setelah backup database):
+   ```bash
+   php artisan akun:audit-password-bawaan --apply --export=/tmp/reset-sandi-awal.csv
+   ```
