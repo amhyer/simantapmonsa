@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\MataPelajaran;
 use App\Models\Kehadiran;
+use App\Models\MataPelajaran;
+use App\Models\Ptk;
+use App\Models\Rombel;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
@@ -128,17 +130,17 @@ class MenuAuditTest extends TestCase
                     }
                 } catch (\Throwable $e) {
                     $rows[] = [$role, $name, 'EXC', 0, 0, '-'];
-                    $errors[] = "{$role} {$name} => " . get_class($e) . ': ' . substr($e->getMessage(), 0, 200);
+                    $errors[] = "{$role} {$name} => ".get_class($e).': '.substr($e->getMessage(), 0, 200);
                 }
             }
         }
 
         $out = "role | route | http | bytes | baris_tbody | tanda_kosong\n";
         foreach ($rows as $r) {
-            $out .= implode(' | ', $r) . "\n";
+            $out .= implode(' | ', $r)."\n";
         }
         if ($errors) {
-            $out .= "\nERRORS:\n" . implode("\n", $errors) . "\n";
+            $out .= "\nERRORS:\n".implode("\n", $errors)."\n";
         }
         // Laporan audit ditulis ke storage aplikasi, bukan path Windows absolut:
         // path tetap membuat seluruh suite gagal di Linux/CI.
@@ -148,7 +150,7 @@ class MenuAuditTest extends TestCase
         }
         file_put_contents($tujuan, $out);
 
-        $this->assertSame([], $errors, 'Ada halaman error: ' . implode('; ', $errors));
+        $this->assertSame([], $errors, 'Ada halaman error: '.implode('; ', $errors));
     }
 
     /**
@@ -199,14 +201,14 @@ class MenuAuditTest extends TestCase
         $siswaUser = User::factory()->siswa()->create(['nama_pengguna' => 'S002']);
 
         // 1. Admin toggle saklar global buka/tutup input nilai
-        $this->assertFalse(\App\Models\Rombel::apakahTerkunciGlobal());
+        $this->assertFalse(Rombel::apakahTerkunciGlobal());
         $this->actingAs($admin)->post(route('admin.peta-kelas.toggle-kunci-semua'))->assertRedirect();
-        $this->assertTrue(\App\Models\Rombel::apakahTerkunciGlobal());
-        $this->assertTrue(\App\Models\Rombel::apakahTerkunciUntukKelas('6.A'));
+        $this->assertTrue(Rombel::apakahTerkunciGlobal());
+        $this->assertTrue(Rombel::apakahTerkunciUntukKelas('6.A'));
 
         // Buka kembali agar Guru/Walas bisa input
         $this->actingAs($admin)->post(route('admin.peta-kelas.toggle-kunci-semua'))->assertRedirect();
-        $this->assertFalse(\App\Models\Rombel::apakahTerkunciGlobal());
+        $this->assertFalse(Rombel::apakahTerkunciGlobal());
 
         // 2. Guru simpan Tujuan Pembelajaran (TP)
         $this->actingAs($guru)->post(route('guru.tp.store'), [
@@ -292,19 +294,19 @@ class MenuAuditTest extends TestCase
         $this->assertTrue((bool) $guru->fresh()->aktif);
 
         // Siapkan data PTK & Siswa tanpa akun untuk menguji Generate Semua Pengguna secara menyeluruh
-        \App\Models\Ptk::create([
+        Ptk::create([
             'nama' => 'Siti Aminah',
             'nip' => '198501012010012001',
             'gelar_belakang' => 'S.Pd',
             'jenis_ptk' => 'Guru Kelas',
         ]);
-        \App\Models\Ptk::create([
+        Ptk::create([
             'nama' => 'Ahmad Fauzi',
             'nip' => null,
             'nuptk' => null,
             'jenis_ptk' => 'Guru Mapel',
         ]);
-        \App\Models\Ptk::create([
+        Ptk::create([
             'nama' => 'Ahmad Fauzi',
             'nip' => null,
             'nuptk' => null,
@@ -374,7 +376,7 @@ class MenuAuditTest extends TestCase
         $this->assertNotNull(User::find($userSiswaBaru->id));
 
         // 7. Admin: Pendidik & Peserta Didik (Edit Gelar/NIP Guru, Edit Data Pelengkap Siswa, Foto Siswa)
-        $ptkSiti = \App\Models\Ptk::where('nama', 'Siti Aminah')->first();
+        $ptkSiti = Ptk::where('nama', 'Siti Aminah')->first();
         $this->actingAs($admin)->put(route('admin.referensi.gelar-ptk.update'), [
             'ptk' => [
                 $ptkSiti->id => [
