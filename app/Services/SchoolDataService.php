@@ -2,14 +2,13 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
+use App\Exceptions\DapodikTokenMissingException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SchoolDataService
 {
-    private const FALLBACK_DAPO_TOKEN = '6d04941d7990b3b5270fe4a2d48dbe2a2eea962ebc7dce8d5b18d9a5017fec43d1c1be738f7479a6e14f8a64d81751fe906c95c416565db6747715be9aaf218846357cc5524d9bfae710652f165b248cc968a62f49d6ac738bf7ea3ac3c74cc9e4dfa7d14bc9bdea26b5f217971af447b4c1346a5611bce1a06a76a099e59b3f';
-
     public function getByNpsn(string $npsn): ?array
     {
         if (!preg_match('/^[0-9]{8}$/', $npsn)) {
@@ -66,6 +65,8 @@ class SchoolDataService
                         $foundOfficial = true;
                     }
                 }
+            } catch (DapodikTokenMissingException $e) {
+                throw $e;
             } catch (\Exception $e) {
                 Log::info("Dapodik Kemendikdasmen API timeout atau gagal: " . $e->getMessage());
             }
@@ -173,18 +174,12 @@ class SchoolDataService
 
     private function getDapodikToken(): string
     {
-        return Cache::remember('dapo_public_token', 86400, function () {
-            try {
-                $resp = Http::timeout(4)->get('https://dapo.kemendikdasmen.go.id/env.js');
-                if ($resp->successful() && preg_match('/VITE_API_TOKEN:\s*["\']([^"\']+)["\']/', $resp->body(), $m)) {
-                    return $m[1];
-                }
-            } catch (\Exception $e) {
-                // fallback
-            }
+        $token = trim((string) config('dapodik.token', ''));
+        if ($token === '') {
+            throw new DapodikTokenMissingException('Token Dapodik belum dikonfigurasi.');
+        }
 
-            return self::FALLBACK_DAPO_TOKEN;
-        });
+        return $token;
     }
 
     private function normalizeStatus(?string $status): string

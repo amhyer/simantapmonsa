@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\DapodikTokenMissingException;
 use App\Http\Controllers\Controller;
 use App\Services\SchoolDataService;
 use Illuminate\Http\Request;
@@ -16,16 +17,23 @@ class SchoolLookupController extends Controller
     {
         $npsn = trim((string) ($request->input('npsn') ?? $request->json('npsn') ?? ''));
 
-        if (!preg_match('/^[0-9]{8}$/', $npsn)) {
+        if (! preg_match('/^[0-9]{8}$/', $npsn)) {
             return response()->json([
                 'success' => false,
                 'message' => 'NPSN harus terdiri dari 8 digit angka.',
             ], 422);
         }
 
-        $sekolah = $this->schoolService->getByNpsn($npsn);
+        try {
+            $sekolah = $this->schoolService->getByNpsn($npsn);
+        } catch (DapodikTokenMissingException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 503);
+        }
 
-        if (!$sekolah) {
+        if (! $sekolah) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data sekolah tidak ditemukan. Periksa kembali NPSN Anda.',

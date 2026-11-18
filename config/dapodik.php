@@ -10,6 +10,8 @@ return [
 
     'timeout' => env('DAPODIK_TIMEOUT', 30),
 
+    'token' => env('DAPODIK_TOKEN'),
+
     'max_retries' => 3,
 
     'retry_delay_ms' => [400, 1200],
