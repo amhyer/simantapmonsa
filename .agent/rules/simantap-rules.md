@@ -31,3 +31,4 @@
 - Setelah perubahan PHP: ./vendor/bin/pint --test (hanya file yang diubah) dan composer test.
 - Setelah perubahan frontend: npm run build.
 - Laporkan hasil perintah apa adanya; jangan klaim "berhasil" tanpa menjalankannya.
+- Saat melaporkan hasil tes, tempel baris ringkasan asli dari output (contoh: "Tests: 636, Assertions: 3632" atau "FAILURES!") beserta durasi dari perintah yang BARU dijalankan. Jangan merangkum dari ingatan atau dari proses sebelumnya. Jika output tidak jelas, jalankan ulang.
