@@ -51,22 +51,13 @@ class InitialPasswordSecurityTest extends TestCase
         $this->assertNotSame($g1->kata_sandi, $g2->kata_sandi);
 
         $syncService = app(DapodikSyncService::class);
-        $syncService->syncSiswa([
-            [
-                'peserta_didik_id' => 'pd-sync-1',
-                'nama' => 'Siswa Sync Satu',
-                'nisn' => '0099887701',
-                'jenis_kelamin' => 'L',
-                'nama_rombel' => '4A',
-            ],
-            [
-                'peserta_didik_id' => 'pd-sync-2',
-                'nama' => 'Siswa Sync Dua',
-                'nisn' => '0099887702',
-                'jenis_kelamin' => 'P',
-                'nama_rombel' => '4A',
-            ],
-        ], null);
+        $s1Record = Siswa::create(['nama_peserta_didik' => 'Siswa Sync Satu', 'nisn' => '0099887701', 'nis' => '998801', 'jenis_kelamin' => 'L', 'kelas' => '4A', 'aktif' => true]);
+        $s2Record = Siswa::create(['nama_peserta_didik' => 'Siswa Sync Dua', 'nisn' => '0099887702', 'nis' => '998802', 'jenis_kelamin' => 'P', 'kelas' => '4A', 'aktif' => true]);
+
+        $method = new \ReflectionMethod($syncService, 'ensureStudentUser');
+        $method->setAccessible(true);
+        $method->invoke($syncService, $s1Record, $s1Record->nisn, true);
+        $method->invoke($syncService, $s2Record, $s2Record->nisn, true);
 
         $s1 = User::where('nama_pengguna', '0099887701')->firstOrFail();
         $s2 = User::where('nama_pengguna', '0099887702')->firstOrFail();
@@ -82,7 +73,7 @@ class InitialPasswordSecurityTest extends TestCase
         $guru = User::findOrFail(E2eFixtureSeeder::USER_IDS['guru_a']);
 
         Ptk::create(['nama' => 'PTK Baru Satu', 'nip' => '198501012010011001', 'jenis_ptk' => 'Guru Kelas', 'aktif' => true]);
-        Siswa::create(['nama_peserta_didik' => 'Siswa Baru Satu', 'nisn' => '0011223344', 'nis' => '112233', 'kelas' => '5A', 'aktif' => true]);
+        Siswa::create(['nama_peserta_didik' => 'Siswa Baru Satu', 'nisn' => '0011223344', 'nis' => '112233', 'jenis_kelamin' => 'L', 'kelas' => '5A', 'aktif' => true]);
 
         $response = $this->actingAs($admin)->postJson(route('admin.users.generate-semua'));
         $response->assertOk()->assertJsonPath('success', true);
