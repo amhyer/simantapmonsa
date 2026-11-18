@@ -56,6 +56,18 @@ class SchoolLookupTest extends TestCase
         ]);
     }
 
+    public function test_lookup_sekolah_mengembalikan_429_pada_permintaan_ke_11_dalam_satu_menit(): void
+    {
+        config(['dapodik.token' => null]);
+
+        for ($i = 1; $i <= 10; $i++) {
+            $res = $this->postJson('/api/sekolah/lookup', ['npsn' => '40313912']);
+            $this->assertNotSame(429, $res->getStatusCode(), "Permintaan ke-{$i} tidak boleh 429.");
+        }
+
+        $this->postJson('/api/sekolah/lookup', ['npsn' => '40313912'])->assertStatus(429);
+    }
+
     public function test_lookup_dengan_npsn_tidak_valid_ditolak(): void
     {
         $response = $this->postJson('/api/sekolah/lookup', [
