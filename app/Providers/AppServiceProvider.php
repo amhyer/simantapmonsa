@@ -20,6 +20,7 @@ use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
+use App\Policies\SiswaFotoPolicy;
 use App\Policies\TkaAssessmentPolicy;
 use App\Policies\TkaKesiapanPolicy;
 use App\Policies\TryoutResultPolicy;
@@ -72,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(CbtQuestionBank::class, CbtQuestionBankPolicy::class);
         Gate::policy(CbtQuestion::class, CbtQuestionPolicy::class);
         Gate::policy(CbtTestSession::class, CbtTestSessionPolicy::class);
+        Gate::policy(Siswa::class, SiswaFotoPolicy::class);
         Gate::policy(CbtResult::class, CbtResultPolicy::class);
         Gate::policy(Session::class, TryoutSessionPolicy::class);
         Gate::policy(Result::class, TryoutResultPolicy::class);

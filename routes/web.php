@@ -74,6 +74,7 @@ use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\TkaLaporanController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Media\SiswaFotoController;
 use App\Http\Controllers\Ortu\CatatanController as OrtuCatatanController;
 use App\Http\Controllers\Ortu\DashboardController as OrtuDashboard;
 use App\Http\Controllers\Ortu\KebiasaanController as OrtuKebiasaanController;
@@ -133,6 +134,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/daftar-sekolah', [RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
 });
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('throttle:30,1')->name('logout');
+
+Route::get('/media/siswa/{siswa:uuid}/foto', [SiswaFotoController::class, 'show'])
+    ->middleware(['auth', 'school.context'])
+    ->name('media.siswa.foto');
 
 // Force Password Change
 Route::middleware(['auth'])->group(function () {

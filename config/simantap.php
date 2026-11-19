@@ -44,6 +44,14 @@ return [
     // Jumlah baris per halaman pada halaman referensi Foto Siswa.
     'foto_siswa_per_page' => max(1, (int) env('SIMANTAP_FOTO_SISWA_PER_PAGE', 50)),
 
+    // Fallback baca foto siswa lama dari disk `public` (hanya lewat route terautentikasi)
+    // selama jendela migrasi ke disk `local` (private). Set false setelah migrasi selesai.
+    'foto_fallback_public' => (bool) env('SIMANTAP_FOTO_FALLBACK_PUBLIC', true),
+
+    // Batas keamanan arsip ZIP pada unggah massal foto siswa.
+    'foto_zip_max_entries' => max(1, (int) env('SIMANTAP_FOTO_ZIP_MAX_ENTRIES', 200)),
+    'foto_zip_max_uncompressed_bytes' => max(1048576, (int) env('SIMANTAP_FOTO_ZIP_MAX_UNCOMPRESSED_BYTES', 100 * 1024 * 1024)),
+
     // Pengaturan visibilitas bagian opsional di halaman landing publik.
     'landing' => [
         'show_demo_video' => (bool) env('SIMANTAP_LANDING_DEMO_VIDEO', false),
