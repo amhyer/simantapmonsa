@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DapodikController;
 use App\Http\Controllers\Api\DapodikSyncController;
 use App\Http\Controllers\Api\PresensiMesinSyncController;
 use App\Http\Controllers\Api\SchoolLookupController;
+use Illuminate\Support\Facades\Route;
 
 // Legacy Dapodik sync (multi-module, for Bridge)
 Route::middleware(['apikey:dapodik:import', 'tenant', 'throttle:120,1'])->prefix('dapodik/sync')->group(function () {

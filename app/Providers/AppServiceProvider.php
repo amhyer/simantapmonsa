@@ -24,17 +24,14 @@ use App\Policies\TkaAssessmentPolicy;
 use App\Policies\TkaKesiapanPolicy;
 use App\Policies\TryoutResultPolicy;
 use App\Policies\TryoutSessionPolicy;
-use App\Services\Dapodik\SidebarSyncStatus;
-use Carbon\Carbon;
+use App\Services\Navigation\RoleTaskSummaryService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -196,7 +193,7 @@ class AppServiceProvider extends ServiceProvider
         // Notifikasi & ringkasan tugas lintas peran: hanya skalar/array (jangan cache model Eloquent).
         View::composer(['layouts.app', 'layouts.admin-with-tabs'], function ($view) {
             $user = Auth::user();
-            $notifs = app(\App\Services\Navigation\RoleTaskSummaryService::class)->notificationsFor($user);
+            $notifs = app(RoleTaskSummaryService::class)->notificationsFor($user);
 
             $view->with('layoutNotifs', $notifs);
         });
