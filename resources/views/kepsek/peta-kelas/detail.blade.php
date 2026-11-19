@@ -7,7 +7,7 @@
 @endsection
 
 @section('page_title', 'Kelas ' . ($guru->nama_lengkap ?? 'Guru'))
-@section('page_subtitle', 'Peta kelas wali ' . ($guru->nama_lengkap ?? ''))
+@section('page_subtitle', 'Peta kelas wali ' . ($guru->nama_lengkap ?? '') . ' · ' . (($kelasDipilih ?? '') !== '' ? 'Kelas ' . $kelasDipilih : 'Semua kelas'))
 
 @section('header_actions')
     @if(isset($daftarKelas) && $daftarKelas->count() > 1)

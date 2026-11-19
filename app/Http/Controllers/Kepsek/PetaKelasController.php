@@ -74,6 +74,10 @@ class PetaKelasController extends Controller
             ->sort()
             ->values();
 
+        if ($kelasDipilih !== '' && ! $daftarKelas->contains($kelasDipilih)) {
+            abort(404, 'Kelas tidak ditemukan untuk guru ini.');
+        }
+
         $siswaList = $kelasDipilih !== ''
             ? $semuaSiswaAktif->where('kelas', $kelasDipilih)->values()
             : $semuaSiswaAktif;

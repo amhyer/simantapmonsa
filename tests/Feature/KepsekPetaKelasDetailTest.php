@@ -163,10 +163,20 @@ class KepsekPetaKelasDetailTest extends TestCase
             'nilai' => 45,
         ]);
 
+        // Tanpa ?kelas=: menampilkan gabungan kelas aktif milik guru dengan label "Semua kelas"
+        $this->actingAs($kepsek)
+            ->get(route('kepsek.peta-kelas.detail', $guru->id))
+            ->assertOk()
+            ->assertSee('Semua kelas')
+            ->assertSee('UH Kelas 4A')
+            ->assertSee('UH Kelas 4B')
+            ->assertDontSee('UH Siswa NonAktif');
+
         // Filter 4A: hanya memuat nilai 4A, tidak memuat 4B atau siswa non-aktif
         $this->actingAs($kepsek)
             ->get(route('kepsek.peta-kelas.detail', ['guruId' => $guru->id, 'kelas' => '4A']))
             ->assertOk()
+            ->assertSee('Kelas 4A')
             ->assertSee('UH Kelas 4A')
             ->assertDontSee('UH Kelas 4B')
             ->assertDontSee('UH Siswa NonAktif');
@@ -175,9 +185,15 @@ class KepsekPetaKelasDetailTest extends TestCase
         $this->actingAs($kepsek)
             ->get(route('kepsek.peta-kelas.detail', ['guruId' => $guru->id, 'kelas' => '4B']))
             ->assertOk()
+            ->assertSee('Kelas 4B')
             ->assertSee('UH Kelas 4B')
             ->assertDontSee('UH Kelas 4A')
             ->assertDontSee('UH Siswa NonAktif');
+
+        // ?kelas=XYZ (bukan kelas guru ini) -> 404
+        $this->actingAs($kepsek)
+            ->get(route('kepsek.peta-kelas.detail', ['guruId' => $guru->id, 'kelas' => 'XYZ']))
+            ->assertNotFound();
     }
 
     public function test_detail_peta_kelas_mengisolasi_nilai_lintas_tenant(): void
