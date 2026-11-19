@@ -6,6 +6,8 @@ use App\Models\Aktivitas;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\Admin\InitialPasswordExportService;
+use App\Services\Admin\MassPasswordResetService;
 use Database\Seeders\E2eFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -224,5 +226,174 @@ class MassPasswordResetTest extends TestCase
             'kelas' => '5B',
             'password_admin' => 'AdminSecret!99',
         ])->assertStatus(429);
+    }
+
+    public function test_single_school_mode_preview_execute_export_and_lock_work_without_tenants(): void
+    {
+        Cache::flush();
+        config(['simantap.multi_tenant_enabled' => false]);
+        $this->assertSame(0, Tenant::query()->count());
+
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+        $this->assertNull($admin->tenant_id);
+
+        $siswaBelumLogin = User::factory()->create([
+            'peran' => 'siswa',
+            'tenant_id' => null,
+            'kelas_mata_pelajaran' => '6A',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+        $siswaSudahLogin = User::factory()->create([
+            'peran' => 'siswa',
+            'tenant_id' => null,
+            'kelas_mata_pelajaran' => '6A',
+            'terakhir_masuk' => now()->subDay(),
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+        $hashSudahLoginBefore = $siswaSudahLogin->kata_sandi;
+
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal.pratinjau'), [
+            'peran' => ['siswa'],
+            'kelas' => '6A',
+            'hanya_belum_login' => true,
+            'sertakan_sudah_diterbitkan' => false,
+        ])->assertOk()
+            ->assertJsonPath('total_cocok', 1)
+            ->assertJsonPath('akan_diproses', 1);
+
+        $res1 = $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '6A',
+            'hanya_belum_login' => true,
+            'sertakan_sudah_diterbitkan' => false,
+            'password_admin' => 'AdminSecret!99',
+        ]);
+        $res1->assertOk()->assertJsonPath('diproses', 1);
+
+        $eksporUrl = $res1->json('ekspor_url');
+        $this->assertNotEmpty($eksporUrl);
+
+        $download = $this->actingAs($admin)->get($eksporUrl)->assertOk();
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $download->streamedContent()))));
+        $cols = str_getcsv($lines[1]);
+        $this->assertSame($siswaBelumLogin->nama_pengguna, $cols[2]);
+        $this->assertTrue(Hash::check($cols[3], $siswaBelumLogin->fresh()->kata_sandi));
+        $this->assertNotNull($siswaBelumLogin->fresh()->sandi_awal_diterbitkan_at);
+        $this->assertSame($hashSudahLoginBefore, $siswaSudahLogin->fresh()->kata_sandi);
+
+        $this->actingAs($admin)->get($eksporUrl)->assertNotFound();
+
+        // Batch kedua tidak menimpa batch pertama
+        $hashAfterBatch1 = $siswaBelumLogin->fresh()->kata_sandi;
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '6A',
+            'hanya_belum_login' => true,
+            'sertakan_sudah_diterbitkan' => false,
+            'password_admin' => 'AdminSecret!99',
+        ])->assertOk()->assertJsonPath('diproses', 0);
+        $this->assertSame($hashAfterBatch1, $siswaBelumLogin->fresh()->kata_sandi);
+
+        // Reset rate limiter sebelum menguji lock agar tidak terhitung akumulasi pratinjau/ekspor sebelumnya
+        Cache::flush();
+
+        // Lock single-school bekerja (423 saat terkunci, 200 setelah dilepas)
+        $lock = Cache::lock('reset_massal:tenant:single', 30);
+        $this->assertTrue($lock->get());
+        try {
+            $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+                'peran' => ['siswa'],
+                'kelas' => '6A',
+                'password_admin' => 'AdminSecret!99',
+            ])->assertStatus(423);
+        } finally {
+            $lock->release();
+        }
+
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '6A',
+            'password_admin' => 'AdminSecret!99',
+        ])->assertOk()->assertJsonPath('diproses', 0);
+    }
+
+    public function test_cache_lock_is_released_in_finally_when_exception_occurs(): void
+    {
+        Cache::flush();
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+
+        User::factory()->create([
+            'peran' => 'siswa',
+            'kelas_mata_pelajaran' => '4C',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+
+        $failingExporter = new class extends InitialPasswordExportService
+        {
+            public function store(int $adminId, ?int $tenantId, array $rows): string
+            {
+                throw new \RuntimeException('Simulasi kegagalan ekspor');
+            }
+        };
+        $this->app->instance(InitialPasswordExportService::class, $failingExporter);
+
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '4C',
+            'hanya_belum_login' => true,
+            'password_admin' => 'AdminSecret!99',
+        ])->assertStatus(500);
+
+        // Pulihkan service normal; permintaan berikutnya TIDAK boleh terkena 423
+        $this->app->forgetInstance(InitialPasswordExportService::class);
+        $this->app->forgetInstance(MassPasswordResetService::class);
+
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '4C',
+            'hanya_belum_login' => true,
+            'sertakan_sudah_diterbitkan' => true,
+            'password_admin' => 'AdminSecret!99',
+        ])->assertOk()->assertJsonPath('diproses', 1);
+    }
+
+    public function test_reset_password_instan_sets_sandi_awal_diterbitkan_at_and_prevents_mass_reset_overwrite(): void
+    {
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+
+        $siswa = User::factory()->create([
+            'peran' => 'siswa',
+            'kelas_mata_pelajaran' => '3C',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+
+        $res = $this->actingAs($admin)->postJson(route('admin.users.reset-password', $siswa));
+        $res->assertOk()->assertJsonPath('success', true);
+
+        $passwordBaru = (string) $res->json('password_baru');
+        $this->assertGreaterThanOrEqual(10, strlen($passwordBaru));
+
+        $fresh = $siswa->fresh();
+        $this->assertNotNull($fresh->sandi_awal_diterbitkan_at);
+        $this->assertTrue((bool) $fresh->force_password_change);
+        $this->assertTrue(Hash::check($passwordBaru, $fresh->kata_sandi));
+
+        // Batch reset massal tanpa sertakan_sudah_diterbitkan tidak boleh menimpa akun ini
+        $hashAfterInstan = $fresh->kata_sandi;
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '3C',
+            'hanya_belum_login' => true,
+            'sertakan_sudah_diterbitkan' => false,
+            'password_admin' => 'AdminSecret!99',
+        ])->assertOk()->assertJsonPath('diproses', 0);
+
+        $this->assertSame($hashAfterInstan, $siswa->fresh()->kata_sandi);
     }
 }

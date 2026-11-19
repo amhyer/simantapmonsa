@@ -514,13 +514,16 @@ class UserController extends Controller
     {
         $this->ensureAccountAccessible($user);
 
-        // Gunakan 8 karakter alfanumerik agar tetap memenuhi kebijakan keamanan SIMANTAP
-        $passwordBaru = Str::random(8);
+        $passwordBaru = \App\Support\InitialPassword::generate();
+        $forceChange = $user->id !== $request->user()?->id
+            ? ($user->peran === 'siswa' ? \App\Support\InitialPassword::shouldForceChangeSiswa() : true)
+            : false;
 
-        $user->update([
+        $user->forceFill([
             'kata_sandi' => Hash::make($passwordBaru),
-            'force_password_change' => $user->id !== $request->user()?->id,
-        ]);
+            'force_password_change' => $forceChange,
+            'sandi_awal_diterbitkan_at' => now(),
+        ])->save();
 
         AktivitasService::ubah(
             'Reset Sandi Instan: ' . $user->nama_lengkap,
