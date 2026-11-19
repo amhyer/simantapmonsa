@@ -190,10 +190,15 @@ class CspReportOnlyTest extends TestCase
         $this->assertFalse($res->headers->has('Set-Cookie'));
         $this->assertSame($sessionsBefore, DB::table('sessions')->count(), 'POST /csp-report tidak boleh menulis baris ke tabel sessions.');
 
-        // Pastikan pengecualian CSRF HANYA untuk csp-report: POST route lain tanpa token tetap 419 saat bukan unit-test bypass
+        // Pastikan pengecualian CSRF HANYA untuk csp-report saat CSRF aktif (bukan bypass unit-test):
+        // POST /csp-report tanpa token tetap 204, sedangkan POST /login tanpa token wajib 419.
         $prevEnv = $this->app['env'];
         $this->app['env'] = 'production';
         try {
+            $this->call('POST', '/csp-report', [], [], [], [
+                'CONTENT_TYPE' => 'application/csp-report; charset=utf-8',
+            ], $payload)->assertStatus(204);
+
             $this->post('/login', [
                 'login' => 'admin',
                 'kata_sandi' => 'salah',
