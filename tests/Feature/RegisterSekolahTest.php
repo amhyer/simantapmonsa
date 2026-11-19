@@ -6,6 +6,7 @@ use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class RegisterSekolahTest extends TestCase
@@ -113,7 +114,7 @@ class RegisterSekolahTest extends TestCase
     public function test_validasi_npsn_duplikat_ditolak(): void
     {
         Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'npsn' => '40319999',
             'nama_sekolah' => 'Sekolah Sudah Ada',
             'subdomain' => 'sekolah-lama',
