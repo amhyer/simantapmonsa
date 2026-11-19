@@ -48,21 +48,32 @@ class MassPasswordResetTest extends TestCase
 
     public function test_mass_reset_excludes_admin_super_admin_self_logged_in_and_other_tenants_and_prevents_double_reset(): void
     {
-        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
-        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+        $tenantA = Tenant::create(['npsn' => '77776666', 'nama_sekolah' => 'Sekolah A', 'subdomain' => 'mass-reset-a', 'aktif' => true]);
+        $admin = User::factory()->create([
+            'peran' => 'admin',
+            'tenant_id' => $tenantA->id,
+            'tenant_owned' => true,
+            'kata_sandi' => Hash::make('AdminSecret!99'),
+            'aktif' => true,
+            'force_password_change' => false,
+        ]);
 
         $superAdmin = User::factory()->create(['peran' => 'super_admin', 'tenant_id' => null, 'terakhir_masuk' => null, 'sandi_awal_diterbitkan_at' => null]);
-        $otherAdmin = User::factory()->create(['peran' => 'admin', 'terakhir_masuk' => null, 'sandi_awal_diterbitkan_at' => null]);
-        $kepsek = User::factory()->create(['peran' => 'kepsek', 'terakhir_masuk' => null, 'sandi_awal_diterbitkan_at' => null]);
+        $otherAdmin = User::factory()->create(['peran' => 'admin', 'tenant_id' => $tenantA->id, 'tenant_owned' => true, 'terakhir_masuk' => null, 'sandi_awal_diterbitkan_at' => null]);
+        $kepsek = User::factory()->create(['peran' => 'kepsek', 'tenant_id' => $tenantA->id, 'tenant_owned' => true, 'terakhir_masuk' => null, 'sandi_awal_diterbitkan_at' => null]);
 
         $siswaBelumLogin = User::factory()->create([
             'peran' => 'siswa',
+            'tenant_id' => $tenantA->id,
+            'tenant_owned' => true,
             'kelas_mata_pelajaran' => '4A',
             'terakhir_masuk' => null,
             'sandi_awal_diterbitkan_at' => null,
         ]);
         $siswaSudahLogin = User::factory()->create([
             'peran' => 'siswa',
+            'tenant_id' => $tenantA->id,
+            'tenant_owned' => true,
             'kelas_mata_pelajaran' => '4A',
             'terakhir_masuk' => now()->subDay(),
             'sandi_awal_diterbitkan_at' => null,
