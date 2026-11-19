@@ -42,7 +42,7 @@ class TkaStatistikServiceTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Data TKA belum tersedia.');
+            ->assertSee('Statistik TKA nasional dapat dipantau melalui halaman statistik lengkap.');
 
         Http::assertNothingSent();
     }
