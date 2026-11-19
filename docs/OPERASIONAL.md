@@ -23,3 +23,7 @@
 ## 4. Peringatan Mode Satu Sekolah (`SIMANTAP_MULTI_TENANT=false`)
 - **JANGAN** menjalankan perintah `php artisan tenant:create`, `php artisan tenant:backfill`, atau membuat sekolah baru lewat `/superadmin/tenants` saat aplikasi berjalan dalam mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`).
 - Middleware `EnsureSchoolContext` menolak (`403`) seluruh akun dengan `tenant_id = NULL` apabila tabel `tenants` memiliki minimal satu baris. Pastikan `SELECT count(*) FROM tenants` = `0` dan `SELECT count(*) FROM users WHERE tenant_id IS NOT NULL` = `0` pada database mode satu sekolah.
+
+## 5. Backup Foto Siswa (Penyimpanan Private)
+- Kolom `siswa.foto` dikecualikan dari ekspor `BackupTables`, dan berkas foto siswa kini disimpan di `storage/app/private/foto-siswa/`.
+- Jadwal backup produksi **WAJIB** menyertakan direktori `storage/app/private/foto-siswa/` secara berkala bersamaan dengan backup database. Lihat panduan migrasi & cutover di [CUTOVER-FOTO.md](CUTOVER-FOTO.md).

@@ -17,5 +17,6 @@ Periksa dan laporkan LULUS / GAGAL / PERLU KONFIRMASI untuk tiap butir:
 9. Header keamanan aktif (CSP minimal mode report-only).
 10. Fitur terkunci flag (CBT, multi-tenant) benar-benar tertutup saat flag false.
 11. Prasyarat mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`): verifikasi pada database target bahwa `SELECT count(*) FROM tenants` = 0 dan `SELECT count(*) FROM users WHERE tenant_id IS NOT NULL` = 0 (jika tidak, akun `tenant_id = null` terkena 403 global), serta pastikan `GET/POST /daftar-sekolah` mengembalikan 404 dan tautan pendaftaran tersembunyi di halaman login/landing.
-12. Storage link, queue worker, scheduler (cron), dan backup terdokumentasi.
+12. Privasi foto siswa: jalankan `php artisan siswa:migrasi-foto-private` (dry-run) dan pastikan `hanya_public = 0`, `SIMANTAP_FOTO_FALLBACK_PUBLIC=false`, serta jalur `/storage/foto-siswa/` diblokir (`404`) di web server/CDN (lihat `docs/CUTOVER-FOTO.md`).
+13. Storage link, queue worker, scheduler (cron), dan backup (termasuk `storage/app/private/foto-siswa`) terdokumentasi.
 Hasil ke reports/RELEASE-CHECK.md.
