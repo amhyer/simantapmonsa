@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Kepsek;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\PengaturanGuru;
+use App\Models\Nilai;
 use App\Models\OrangTuaSiswa;
+use App\Models\PengaturanGuru;
+use App\Models\Siswa;
+use App\Models\User;
 
 class PetaKelasController extends Controller
 {
@@ -106,9 +107,25 @@ class PetaKelasController extends Controller
                 'predikat' => ($s->rata_rata ?? 0) >= 95 ? 'A+' : 'A',
             ])->values();
 
-        $chartLabels = ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS'];
-        $chartData = array_fill(0, 6, $kelas->rata_rata);
-        $chartKKM = array_fill(0, 6, $kkm);
+        $nilaiRows = Nilai::query()
+            ->where('guru_id', $guru->id)
+            ->whereNotNull('nilai')
+            ->orderBy('tanggal')
+            ->orderBy('id')
+            ->get(['judul_penilaian', 'jenis', 'tanggal', 'nilai']);
+
+        $perkembangan = $nilaiRows
+            ->groupBy(function (Nilai $row): string {
+                $label = trim((string) ($row->judul_penilaian ?: $row->jenis ?: ''));
+
+                return $label !== '' ? $label : ($row->tanggal ? $row->tanggal->format('d M') : 'Penilaian');
+            })
+            ->map(fn ($group) => round((float) $group->avg('nilai'), 1))
+            ->slice(-6);
+
+        $chartLabels = $perkembangan->keys()->values()->all();
+        $chartData = $perkembangan->values()->all();
+        $chartKKM = $chartLabels !== [] ? array_fill(0, count($chartLabels), $kkm) : [];
         $predikatA = $siswaList->filter(fn ($s) => ($s->rata_rata ?? 0) >= 90)->count();
         $predikatB = $siswaList->filter(fn ($s) => ($s->rata_rata ?? 0) >= 80 && ($s->rata_rata ?? 0) < 90)->count();
         $predikatC = $siswaList->filter(fn ($s) => ($s->rata_rata ?? 0) >= $kkm && ($s->rata_rata ?? 0) < 80)->count();

@@ -46,9 +46,17 @@
                 <h3><i class="fas fa-chart-line" style="margin-right:8px;color:var(--navy)"></i>Perkembangan Nilai</h3>
             </div>
             <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="chartPerkembangan"></canvas>
-                </div>
+                @if(!empty($chartLabels) && !empty($chartData))
+                    <div class="chart-container">
+                        <canvas id="chartPerkembangan"></canvas>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <div class="icon">📈</div>
+                        <h4>Data belum tersedia</h4>
+                        <p>Belum ada data penilaian untuk menampilkan grafik perkembangan nilai.</p>
+                    </div>
+                @endif
             </div>
         </div>
         <div class="card">
@@ -56,9 +64,17 @@
                 <h3><i class="fas fa-chart-pie" style="margin-right:8px;color:var(--gold)"></i>Sebaran Predikat</h3>
             </div>
             <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="chartPredikat"></canvas>
-                </div>
+                @if(array_sum($chartPredikatData ?? []) > 0)
+                    <div class="chart-container">
+                        <canvas id="chartPredikat"></canvas>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <div class="icon">📊</div>
+                        <h4>Data belum tersedia</h4>
+                        <p>Belum ada sebaran predikat nilai siswa pada kelas ini.</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -213,61 +229,67 @@
     @vite('resources/js/charts.js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx1 = document.getElementById('chartPerkembangan').getContext('2d');
-            new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: {!! json_encode($chartLabels ?? ['PTS 1', 'UH 1', 'Tugas 1', 'PTS 2', 'UH 2', 'PAS'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                    datasets: [{
-                        label: 'Rata-rata Kelas',
-                        data: {!! json_encode($chartData ?? [72, 75, 78, 76, 80, 82], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                        borderColor: '#1F3864',
-                        backgroundColor: 'rgba(31,56,100,.09)',
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2.5,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#1F3864'
-                    }, {
-                        label: 'KKM',
-                        data: {!! json_encode($chartKKM ?? [70, 70, 70, 70, 70, 70], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                        borderColor: '#B8860B',
-                        borderDash: [6, 4],
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { boxWidth: 12, padding: 14, font: { size: 12 } } } },
-                    scales: {
-                        y: { min: 0, max: 100, grid: { color: '#EDF0F5' }, ticks: { stepSize: 20 } },
-                        x: { grid: { display: false } }
+            const el1 = document.getElementById('chartPerkembangan');
+            if (el1) {
+                const ctx1 = el1.getContext('2d');
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($chartLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                        datasets: [{
+                            label: 'Rata-rata Kelas',
+                            data: {!! json_encode($chartData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                            borderColor: '#1F3864',
+                            backgroundColor: 'rgba(31,56,100,.09)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#1F3864'
+                        }, {
+                            label: 'KKM',
+                            data: {!! json_encode($chartKKM ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                            borderColor: '#B8860B',
+                            borderDash: [6, 4],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { boxWidth: 12, padding: 14, font: { size: 12 } } } },
+                        scales: {
+                            y: { min: 0, max: 100, grid: { color: '#EDF0F5' }, ticks: { stepSize: 20 } },
+                            x: { grid: { display: false } }
+                        }
                     }
-                }
-            });
+                });
+            }
 
-            const ctx2 = document.getElementById('chartPredikat').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
-                    datasets: [{
-                        data: {!! json_encode($chartPredikatData ?? [3, 5, 2, 1], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                        backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '58%',
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 11, padding: 12, font: { size: 11.5 } } } }
-                }
-            });
+            const el2 = document.getElementById('chartPredikat');
+            if (el2) {
+                const ctx2 = el2.getContext('2d');
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
+                        datasets: [{
+                            data: {!! json_encode($chartPredikatData ?? [0, 0, 0, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                            backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '58%',
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 11, padding: 12, font: { size: 11.5 } } } }
+                    }
+                });
+            }
         });
     </script>
     @endpush
