@@ -40,4 +40,10 @@ return [
     // Batas maksimal akun yang diproses per permintaan pada reset/generate massal
     // (menghindari timeout Nginx/PHP-FPM akibat bcrypt 12 rounds).
     'reset_massal_max' => (int) env('SIMANTAP_RESET_MASSAL_MAX', 100),
+
+    // Pengaturan visibilitas bagian opsional di halaman landing publik.
+    'landing' => [
+        'show_demo_video' => (bool) env('SIMANTAP_LANDING_DEMO_VIDEO', false),
+        'show_newsletter' => (bool) env('SIMANTAP_LANDING_NEWSLETTER', false),
+    ],
 ];

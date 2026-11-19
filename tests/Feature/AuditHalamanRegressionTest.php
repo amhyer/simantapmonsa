@@ -238,10 +238,8 @@ class AuditHalamanRegressionTest extends TestCase
     {
         $response = $this->get(route('landing'))
             ->assertOk()
-            ->assertSee('Newsletter email belum tersedia')
-            ->assertSee('Video demo belum tersedia')
-            ->assertSee('Akses Aplikasi SIMANTAP')
-            ->assertSee('Lihat repositori dan rilis')
+            ->assertDontSee('Newsletter email belum tersedia')
+            ->assertDontSee('Video demo belum tersedia')
             ->assertDontSee('Coba Demo')
             ->assertDontSee('videoTrigger')
             ->assertDontSee('videoModal')
@@ -250,6 +248,18 @@ class AuditHalamanRegressionTest extends TestCase
             ->assertDontSee('newsletterForm');
 
         $this->assertStringNotContainsString('href="#"', $response->getContent());
+
+        config([
+            'simantap.landing.show_demo_video' => true,
+            'simantap.landing.show_newsletter' => true,
+        ]);
+
+        $this->get(route('landing'))
+            ->assertOk()
+            ->assertSee('Newsletter email belum tersedia')
+            ->assertSee('Video demo belum tersedia')
+            ->assertSee('Akses Aplikasi SIMANTAP')
+            ->assertSee('Lihat repositori dan rilis');
     }
 
     public function test_landing_page_anchor_memiliki_target_dan_tidak_ada_link_placeholder(): void

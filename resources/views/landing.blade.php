@@ -385,7 +385,9 @@
         </a>
         <ul class="nav-links" id="navLinks">
             <li><a href="#features">Fitur</a></li>
-            <li><a href="#demo">Akses</a></li>
+            @if(config('simantap.landing.show_demo_video'))
+                <li><a href="#demo">Akses</a></li>
+            @endif
             <li><a href="#modules">Modul</a></li>
             <li><a href="#dedikasi">Dedikasi & Harapan</a></li>
             <li><a href="#testimonials">Testimoni</a></li>
@@ -427,7 +429,9 @@
                     <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
                 @endauth
                 <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
-                <a href="#demo" class="btn-hero btn-hero-secondary">Akses Aplikasi</a>
+                @if(config('simantap.landing.show_demo_video'))
+                    <a href="#demo" class="btn-hero btn-hero-secondary">Akses Aplikasi</a>
+                @endif
             </div>
             <div class="trust">
                 <span class="item"><i class="fas fa-check-circle"></i> Modul untuk kebutuhan sekolah</span>
@@ -461,6 +465,7 @@
 </section>
 
 <!-- AKSES APLIKASI -->
+@if(config('simantap.landing.show_demo_video'))
 <section class="demo-section" id="demo">
     <div class="container">
         <div class="demo-card" data-aos="fade-up">
@@ -472,6 +477,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- FEATURES -->
 <section class="features" id="features">
@@ -848,15 +854,17 @@
             @if($lastUpdate)
                 <div class="tka-source-badge"><i class="fas fa-clock"></i> Pembaruan Terakhir: {{ $lastUpdate }}</div>
             @endif
-            <div style="margin-top:12px;padding:10px 20px;background:rgba(184,134,11,0.08);border-radius:10px;display:inline-block;font-size:13px;color:var(--text-muted)">
-                <i class="fas fa-info-circle" style="color:var(--gold)"></i> Data TKA mencakup: SMA/MA, SMK, SLB, PKBM/SKB, dan Ponpes. Data SD/MI dan SMP/MTs belum tersedia di portal TKA.
-            </div>
+            @if(!isset($tkaData['error']))
+                <div style="margin-top:12px;padding:10px 20px;background:rgba(184,134,11,0.08);border-radius:10px;display:inline-block;font-size:13px;color:var(--text-muted)">
+                    <i class="fas fa-info-circle" style="color:var(--gold)"></i> Data TKA mencakup: SMA/MA, SMK, SLB, PKBM/SKB, dan Ponpes.
+                </div>
+            @endif
         </div>
 
         @if(isset($tkaData['error']))
             <div class="text-center py-4">
-                <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
-                <p class="text-muted">Data TKA belum tersedia. <a href="{{ route('tka.statistik') }}" class="font-weight-bold">Lihat halaman lengkap →</a></p>
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Statistik TKA nasional dapat dipantau melalui halaman statistik lengkap. <a href="{{ route('tka.statistik') }}" class="font-weight-bold">Lihat halaman lengkap →</a></p>
             </div>
         @else
             {{-- Filter Bar --}}
@@ -1169,6 +1177,7 @@
 </section>
 
 <!-- PEMBARUAN PROYEK -->
+@if(config('simantap.landing.show_newsletter'))
 <section class="project-updates" id="updates">
     <div class="container">
         <div class="project-updates-content" data-aos="fade-up">
@@ -1180,6 +1189,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- FAQ -->
 <section class="faq" id="faq">
