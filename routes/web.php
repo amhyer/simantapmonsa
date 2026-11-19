@@ -101,7 +101,15 @@ use App\Http\Controllers\Tryout\TryoutPackageController;
 use App\Http\Controllers\Tryout\TryoutSessionController;
 use App\Http\Controllers\Tryout\TryoutStudentController;
 use App\Http\Middleware\CbtAccessMiddleware;
+use App\Http\Middleware\CspReportOnlyHeaders;
+use App\Http\Middleware\IdentifyTenant;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // Landing Page
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -135,6 +143,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/daftar-sekolah', [RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
 });
 Route::post('/csp-report', [CspReportController::class, 'store'])
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        ValidateCsrfToken::class,
+        PreventRequestForgery::class,
+        IdentifyTenant::class,
+        CspReportOnlyHeaders::class,
+    ])
     ->middleware('throttle:csp-report')
     ->name('csp.report');
 

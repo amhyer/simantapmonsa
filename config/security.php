@@ -109,6 +109,7 @@ return [
             'font-src' => ["'self'", 'data:'],
             'img-src' => ["'self'", 'data:', 'blob:'],
             'connect-src' => ["'self'"],
+            'frame-src' => ["'self'", 'https://www.youtube-nocookie.com'],
             'frame-ancestors' => ["'self'"],
             'base-uri' => ["'self'"],
             'form-action' => ["'self'"],

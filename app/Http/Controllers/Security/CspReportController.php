@@ -50,7 +50,7 @@ class CspReportController extends Controller
         $items = [];
 
         if ($contentType === 'application/reports+json' && array_is_list($decoded)) {
-            foreach (array_slice($decoded, 0, 20) as $report) {
+            foreach (array_slice($decoded, 0, 10) as $report) {
                 if (! is_array($report)) {
                     continue;
                 }
@@ -86,12 +86,25 @@ class CspReportController extends Controller
     private function sanitizeEntry(array $entry): array
     {
         return [
-            'violated-directive' => mb_substr(trim((string) ($entry['violated-directive'] ?? '')), 0, 120),
-            'effective-directive' => mb_substr(trim((string) ($entry['effective-directive'] ?? '')), 0, 120),
-            'blocked-uri' => $this->stripQueryAndFragment((string) ($entry['blocked-uri'] ?? '')),
-            'document-uri' => $this->stripQueryAndFragment((string) ($entry['document-uri'] ?? '')),
-            'disposition' => mb_substr(trim((string) ($entry['disposition'] ?? 'report')), 0, 32),
+            'violated-directive' => $this->cleanScalar($entry['violated-directive'] ?? '', 120),
+            'effective-directive' => $this->cleanScalar($entry['effective-directive'] ?? '', 120),
+            'blocked-uri' => $this->stripQueryAndFragment($this->cleanScalar($entry['blocked-uri'] ?? '', 500)),
+            'document-uri' => $this->stripQueryAndFragment($this->cleanScalar($entry['document-uri'] ?? '', 500)),
+            'disposition' => $this->cleanScalar($entry['disposition'] ?? 'report', 32),
         ];
+    }
+
+    private function cleanScalar(mixed $value, int $maxLength = 500): string
+    {
+        if (! is_scalar($value)) {
+            return '';
+        }
+
+        $str = (string) $value;
+        // Hapus karakter kontrol ASCII & newline untuk mencegah log injection
+        $str = (string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $str);
+
+        return mb_substr(trim($str), 0, min(500, $maxLength));
     }
 
     private function stripQueryAndFragment(string $uri): string
@@ -109,6 +122,6 @@ class CspReportController extends Controller
         $withoutFragment = explode('#', $clean, 2)[0];
         $withoutQuery = explode('?', $withoutFragment, 2)[0];
 
-        return mb_substr($withoutQuery, 0, 512);
+        return mb_substr($withoutQuery, 0, 500);
     }
 }

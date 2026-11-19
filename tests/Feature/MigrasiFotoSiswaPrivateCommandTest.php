@@ -19,8 +19,13 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->tempReportDir !== null && is_dir($this->tempReportDir)) {
-            foreach (glob($this->tempReportDir.DIRECTORY_SEPARATOR.'*') ?: [] as $file) {
-                @unlink($file);
+            foreach (glob($this->tempReportDir.DIRECTORY_SEPARATOR.'*') ?: [] as $entry) {
+                if (is_link($entry)) {
+                    @unlink($entry);
+                    @rmdir($entry);
+                } elseif (is_file($entry)) {
+                    @unlink($entry);
+                }
             }
             @rmdir($this->tempReportDir);
         }
@@ -32,7 +37,29 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
     private function createTempReportFile(string $name = 'report.json'): string
     {
         if ($this->tempReportDir === null) {
-            $this->tempReportDir = dirname(base_path()).DIRECTORY_SEPARATOR.'simantap-test-report-'.uniqid();
+            $baseReal = str_replace('\\', '/', rtrim((string) realpath(base_path()), '/\\'));
+            $candidates = [sys_get_temp_dir(), dirname(base_path())];
+            $chosenParent = null;
+
+            foreach ($candidates as $cand) {
+                $real = realpath($cand);
+                if ($real === false || ! is_dir($real) || ! is_writable($real)) {
+                    continue;
+                }
+                $norm = str_replace('\\', '/', rtrim($real, '/\\'));
+                if (stripos($norm, $baseReal.'/') === 0 || strcasecmp($norm, $baseReal) === 0) {
+                    continue;
+                }
+                $chosenParent = $real;
+
+                break;
+            }
+
+            if ($chosenParent === null) {
+                $this->markTestSkipped('Tidak ada direktori sementara yang dapat ditulis di luar repositori.');
+            }
+
+            $this->tempReportDir = $chosenParent.DIRECTORY_SEPARATOR.'simantap-test-report-'.uniqid();
             mkdir($this->tempReportDir, 0750, true);
         }
 
@@ -208,5 +235,22 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
             ->expectsOutputToContain('dihapus_public: 0');
 
         Storage::disk('public')->assertExists($s->foto);
+    }
+
+    public function test_report_guard_rejects_symlink_pointing_inside_repo(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+
+        $this->createTempReportFile('init.json');
+        $linkPath = $this->tempReportDir.DIRECTORY_SEPARATOR.'link-to-repo';
+
+        if (! @symlink(storage_path(), $linkPath)) {
+            $this->markTestSkipped('Symlink tidak dapat dibuat di lingkungan ini (Windows memerlukan Developer Mode atau hak administrator).');
+        }
+
+        $this->artisan('siswa:migrasi-foto-private', [
+            '--report' => $linkPath.DIRECTORY_SEPARATOR.'report-via-symlink.json',
+        ])->assertExitCode(1);
     }
 }

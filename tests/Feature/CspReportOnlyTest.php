@@ -6,6 +6,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -45,6 +46,7 @@ class CspReportOnlyTest extends TestCase
         $this->assertStringContainsString("script-src 'self' 'unsafe-inline' 'unsafe-eval'", $header);
         $this->assertStringContainsString("style-src 'self' 'unsafe-inline'", $header);
         $this->assertStringContainsString("img-src 'self' data: blob:", $header);
+        $this->assertStringContainsString("frame-src 'self' https://www.youtube-nocookie.com", $header);
         $this->assertStringContainsString("frame-ancestors 'self'", $header);
         $this->assertStringContainsString("base-uri 'self'", $header);
         $this->assertStringContainsString("form-action 'self'", $header);
@@ -163,5 +165,110 @@ class CspReportOnlyTest extends TestCase
         $this->call('POST', '/csp-report', [], [], [], [
             'CONTENT_TYPE' => 'text/plain',
         ], 'x')->assertStatus(429);
+    }
+
+    public function test_csp_report_does_not_set_cookie_or_write_database_session_and_other_post_routes_keep_csrf(): void
+    {
+        Cache::flush();
+        config(['session.driver' => 'database']);
+
+        $sessionsBefore = DB::table('sessions')->count();
+
+        $payload = json_encode([
+            'csp-report' => [
+                'document-uri' => 'https://simantap.example.test/login',
+                'blocked-uri' => 'inline',
+                'violated-directive' => 'script-src',
+            ],
+        ]);
+
+        $res = $this->call('POST', '/csp-report', [], [], [], [
+            'CONTENT_TYPE' => 'application/csp-report; charset=utf-8',
+        ], $payload)->assertStatus(204);
+
+        $this->assertSame([], $res->headers->getCookies(), 'POST /csp-report tidak boleh mengirim Set-Cookie.');
+        $this->assertFalse($res->headers->has('Set-Cookie'));
+        $this->assertSame($sessionsBefore, DB::table('sessions')->count(), 'POST /csp-report tidak boleh menulis baris ke tabel sessions.');
+
+        // Pastikan pengecualian CSRF HANYA untuk csp-report: POST route lain tanpa token tetap 419 saat bukan unit-test bypass
+        $prevEnv = $this->app['env'];
+        $this->app['env'] = 'production';
+        try {
+            $this->post('/login', [
+                'login' => 'admin',
+                'kata_sandi' => 'salah',
+            ])->assertStatus(419);
+        } finally {
+            $this->app['env'] = $prevEnv;
+        }
+    }
+
+    public function test_csp_report_enforces_actual_body_bytes_sanitizes_control_chars_and_caps_reports_array_at_10(): void
+    {
+        Cache::flush();
+
+        // Header Content-Length dipalsukan kecil (50), tetapi body nyata > 10 kB -> tetap 413
+        $oversized = json_encode(['csp-report' => ['blocked-uri' => str_repeat('z', 11000)]]);
+        $this->call('POST', '/csp-report', [], [], [], [
+            'CONTENT_TYPE' => 'application/csp-report',
+            'CONTENT_LENGTH' => '50',
+        ], $oversized)->assertStatus(413);
+
+        $captured = [];
+        Log::shouldReceive('channel')
+            ->with('csp')
+            ->times(11)
+            ->andReturn(new class($captured)
+            {
+                public function __construct(private array &$captured) {}
+
+                public function warning(string $message, array $context = []): void
+                {
+                    $this->captured[] = $context;
+                }
+            });
+
+        // 1) Payload beracun: newline, control chars, nested array, dan string 1000 karakter
+        $poisonPayload = json_encode([
+            'csp-report' => [
+                'violated-directive' => ['nested' => 'evil'],
+                'effective-directive' => "script-src\r\nFAKE LOG ENTRY\x00",
+                'document-uri' => 'https://simantap.example.test/'.str_repeat('a', 1000).'?secret=1',
+                'blocked-uri' => "https://evil.test/x.js\nInjected?k=v",
+                'disposition' => "report\r\n",
+            ],
+        ]);
+
+        $this->call('POST', '/csp-report', [], [], [], [
+            'CONTENT_TYPE' => 'application/csp-report; charset=utf-8',
+        ], $poisonPayload)->assertStatus(204);
+
+        $first = $captured[0];
+        $this->assertSame('', $first['violated-directive']);
+        $this->assertDoesNotMatchRegularExpression('/[\x00-\x1F\x7F]/', $first['effective-directive']);
+        $this->assertDoesNotMatchRegularExpression('/[\x00-\x1F\x7F]/', $first['blocked-uri']);
+        $this->assertLessThanOrEqual(500, mb_strlen($first['document-uri']));
+        $this->assertStringNotContainsString('secret=1', $first['document-uri']);
+
+        // 2) Reporting API array berisi 15 item -> dibatasi maksimal 10 entri
+        $batch = [];
+        for ($i = 0; $i < 15; $i++) {
+            $batch[] = [
+                'type' => 'csp-violation',
+                'url' => 'https://simantap.example.test/page-'.$i,
+                'body' => [
+                    'documentURL' => 'https://simantap.example.test/page-'.$i,
+                    'blockedURL' => 'inline',
+                    'effectiveDirective' => 'script-src',
+                    'disposition' => 'report',
+                ],
+            ];
+        }
+
+        $this->call('POST', '/csp-report', [], [], [], [
+            'CONTENT_TYPE' => 'application/reports+json; charset=utf-8',
+        ], json_encode($batch))->assertStatus(204);
+
+        $this->assertCount(11, $captured);
     }
 }
