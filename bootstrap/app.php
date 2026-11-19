@@ -1,9 +1,22 @@
 <?php
 
+use App\Http\Middleware\ApiKeyMiddleware;
+use App\Http\Middleware\CspReportOnlyHeaders;
+use App\Http\Middleware\EnsureCbtEnabled;
+use App\Http\Middleware\EnsureModuleEnabled;
+use App\Http\Middleware\EnsureSchoolContext;
+use App\Http\Middleware\EnsureSingleSchoolDapodik;
+use App\Http\Middleware\EnsureSingleSchoolData;
+use App\Http\Middleware\ForcePasswordChange;
+use App\Http\Middleware\IdentifyTenant;
+use App\Http\Middleware\RecordMenuUsage;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,13 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Header keamanan pada setiap respons (nilai di config/security.php).
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(SecurityHeaders::class);
 
         // Isolasi data multi-tenant (aktif saat user memiliki tenant_id atau mode SaaS diaktifkan).
-        $middleware->web(remove: [\Illuminate\Routing\Middleware\SubstituteBindings::class], append: [
-            \App\Http\Middleware\IdentifyTenant::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            \App\Http\Middleware\CspReportOnlyHeaders::class,
+        $middleware->web(remove: [SubstituteBindings::class], append: [
+            IdentifyTenant::class,
+            SubstituteBindings::class,
+            CspReportOnlyHeaders::class,
         ]);
 
         // Pengecualian CSRF HANYA untuk endpoint pelaporan CSP browser.
@@ -29,16 +42,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'apikey' => \App\Http\Middleware\ApiKeyMiddleware::class,
-            'force.password.change' => \App\Http\Middleware\ForcePasswordChange::class,
-            'module.asesmen' => \App\Http\Middleware\EnsureModuleEnabled::class,
-            'cbt.enabled' => \App\Http\Middleware\EnsureCbtEnabled::class,
-            'tenant' => \App\Http\Middleware\IdentifyTenant::class,
-            'dapodik.single-school' => \App\Http\Middleware\EnsureSingleSchoolDapodik::class,
-            'school.context' => \App\Http\Middleware\EnsureSchoolContext::class,
-            'data.single-school' => \App\Http\Middleware\EnsureSingleSchoolData::class,
-            'menu.telemetry' => \App\Http\Middleware\RecordMenuUsage::class,
+            'role' => RoleMiddleware::class,
+            'apikey' => ApiKeyMiddleware::class,
+            'force.password.change' => ForcePasswordChange::class,
+            'module.asesmen' => EnsureModuleEnabled::class,
+            'cbt.enabled' => EnsureCbtEnabled::class,
+            'tenant' => IdentifyTenant::class,
+            'dapodik.single-school' => EnsureSingleSchoolDapodik::class,
+            'school.context' => EnsureSchoolContext::class,
+            'data.single-school' => EnsureSingleSchoolData::class,
+            'menu.telemetry' => RecordMenuUsage::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
