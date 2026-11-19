@@ -70,12 +70,13 @@ class PetaKelasController extends Controller
             $tuntas = $siswa->filter(fn ($s) => ($s->rata_rata ?? 0) >= $kkm)->count();
             $belum = $siswa->count() - $tuntas;
             $ketuntasan = $siswa->count() > 0 ? round(($tuntas / $siswa->count()) * 100, 1) : 0;
+
             return [
                 'kelas' => $kelas,
                 'jumlah' => $siswa->count(),
                 'laki' => $siswa->where('jenis_kelamin', 'L')->count(),
                 'perempuan' => $siswa->where('jenis_kelamin', 'P')->count(),
-                'ada_ortu' => $siswa->filter(fn ($s) => $s->nama_orang_tua && $s->nama_orang_tua !== 'ORT' . substr($s->nis, -4))->count(),
+                'ada_ortu' => $siswa->filter(fn ($s) => $s->nama_orang_tua && $s->nama_orang_tua !== 'ORT'.substr($s->nis, -4))->count(),
                 'rata_rata' => $rataRata,
                 'ketuntasan_persen' => $ketuntasan,
                 'tuntas' => $tuntas,
