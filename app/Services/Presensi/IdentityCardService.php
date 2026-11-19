@@ -6,6 +6,7 @@ use App\Models\Ptk;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -316,9 +317,12 @@ class IdentityCardService
 
     public function svgQr(string $payload, int $size = 156): string
     {
-        $cacheKey = 'simantap_qr_svg_'.md5($payload.':'.$size);
+        $scope = TenantContext::check()
+            ? 't'.TenantContext::id()
+            : 'single';
+        $cacheKey = 'simantap_qr_svg:'.$scope.':'.md5($payload.':'.$size);
 
-        return Cache::rememberForever($cacheKey, function () use ($payload, $size) {
+        return Cache::remember($cacheKey, 86400, function () use ($payload, $size) {
             $renderer = new ImageRenderer(
                 new RendererStyle($size, 2),
                 new SvgImageBackEnd

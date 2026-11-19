@@ -1,17 +1,31 @@
 <?php
 
-use Illuminate\Support\Facades\Cache;
 use App\Models\PengaturanGuru;
+use App\Models\Semester;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
-if (!function_exists('setting')) {
+if (! function_exists('tenantCacheScope')) {
+    function tenantCacheScope(?int $tenantId = null): string
+    {
+        if ($tenantId !== null) {
+            return 't'.$tenantId;
+        }
+
+        return TenantContext::check() ? 't'.TenantContext::id() : 'single';
+    }
+}
+
+if (! function_exists('setting')) {
     function setting(string|array|null $key = null, mixed $default = null): mixed
     {
         $path = storage_path('app/settings.json');
+        $cacheKey = 'app_settings:'.tenantCacheScope();
 
-        $settings = Cache::remember('app_settings', 300, function () use ($path) {
+        $settings = Cache::remember($cacheKey, 300, function () use ($path) {
             return file_exists($path) ? json_decode(file_get_contents($path), true) ?? [] : [];
         });
 
@@ -19,8 +33,9 @@ if (!function_exists('setting')) {
             $settings = array_merge($settings, $key);
             if (auth()->check() && in_array(auth()->user()->peran, ['admin', 'guru'])) {
                 file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                Cache::forget('app_settings');
+                Cache::forget($cacheKey);
             }
+
             return true;
         }
 
@@ -37,10 +52,10 @@ if (! function_exists('forgetKKMCache')) {
     {
         $scopes = ['single'];
         if ($tenantId !== null) {
-            $scopes[] = 't' . $tenantId;
+            $scopes[] = 't'.$tenantId;
         }
         if (TenantContext::check()) {
-            $scopes[] = 't' . TenantContext::id();
+            $scopes[] = 't'.TenantContext::id();
         }
         $scopes = array_values(array_unique($scopes));
 
@@ -56,7 +71,7 @@ if (! function_exists('forgetKKMCache')) {
         }
 
         if ($guruId !== null) {
-            Cache::forget('kkm-guru-' . $guruId);
+            Cache::forget('kkm-guru-'.$guruId);
         }
         Cache::forget('kkm-global');
     }
@@ -85,7 +100,7 @@ if (! function_exists('getKKM')) {
             $tenantId = (int) $guruTenantId;
         }
 
-        $scope = $tenantId !== null ? 't' . $tenantId : 'single';
+        $scope = $tenantId !== null ? 't'.$tenantId : 'single';
         $ver = (int) Cache::get("kkm-ver-{$scope}", 1);
 
         // Cache 5 menit per scope sekolah + versi: dipanggil per-baris nilai, tanpa cache jadi N+1 query.
@@ -131,7 +146,7 @@ if (! function_exists('getKKM')) {
     }
 }
 
-if (!function_exists('sidebarRouteActive')) {
+if (! function_exists('sidebarRouteActive')) {
     /** Cocokkan halaman daftar/profil dengan halaman detail atau editnya,
      * tanpa mengaktifkan menu saudara seperti statistik atau daftar lain.
      */
@@ -158,7 +173,7 @@ if (!function_exists('sidebarRouteActive')) {
     }
 }
 
-if (!function_exists('activeAdminTab')) {
+if (! function_exists('activeAdminTab')) {
     function activeAdminTab(): string
     {
         // CBT tab
@@ -217,7 +232,7 @@ if (!function_exists('activeAdminTab')) {
     }
 }
 
-if (!function_exists('modulAsesmenAktif')) {
+if (! function_exists('modulAsesmenAktif')) {
     /**
      * Apakah modul asesmen (CBT / Tryout / TKA) dapat diakses.
      *
@@ -232,7 +247,7 @@ if (!function_exists('modulAsesmenAktif')) {
     }
 }
 
-if (!function_exists('kesiapanTkaAktif')) {
+if (! function_exists('kesiapanTkaAktif')) {
     /**
      * Apakah modul Pemantauan Kesiapan TKA aktif.
      */
@@ -242,16 +257,16 @@ if (!function_exists('kesiapanTkaAktif')) {
     }
 }
 
-if (!function_exists('guruAdalahWaliKelas')) {
+if (! function_exists('guruAdalahWaliKelas')) {
     /**
      * Apakah pengguna aktif (atau pengguna yang diberikan) adalah guru Wali Kelas.
      * Aman dipanggil ketika belum ada pengguna terautentikasi (mengembalikan false).
      */
-    function guruAdalahWaliKelas(?\App\Models\User $user = null): bool
+    function guruAdalahWaliKelas(?User $user = null): bool
     {
         $target = $user ?? auth()->user();
 
-        if (! $target instanceof \App\Models\User) {
+        if (! $target instanceof User) {
             return false;
         }
 
@@ -259,35 +274,46 @@ if (!function_exists('guruAdalahWaliKelas')) {
     }
 }
 
-if (!function_exists('semesterAktifLabel')) {
+if (! function_exists('forgetSemesterAktifLabelCache')) {
+    function forgetSemesterAktifLabelCache(?int $tenantId = null): void
+    {
+        Cache::forget('app_semester_aktif_label:v2:'.tenantCacheScope($tenantId));
+        Cache::forget('app_semester_aktif_label:v1');
+    }
+}
+
+if (! function_exists('semesterAktifLabel')) {
     /**
      * Label semester dan tahun ajaran aktif untuk konteks header.
      * Hanya menyimpan string skalar di cache (bukan model Eloquent).
      */
     function semesterAktifLabel(): ?string
     {
-        return Cache::remember('app_semester_aktif_label:v1', 300, function () {
+        $cacheKey = 'app_semester_aktif_label:v2:'.tenantCacheScope();
+
+        return Cache::remember($cacheKey, 300, function () {
             try {
-                if (!\Illuminate\Support\Facades\Schema::hasTable('semesters')) {
+                if (! Schema::hasTable('semesters')) {
                     return null;
                 }
                 // Skema Dapodik standar tidak memiliki kolom is_aktif.
                 // Jangan mencoba query yang gagal: PostgreSQL membatalkan
                 // transaksi meskipun exception kemudian ditangkap.
-                $semester = \Illuminate\Support\Facades\Schema::hasColumn('semesters', 'is_aktif')
-                    ? \App\Models\Semester::where('is_aktif', true)->first()
+                $semester = Schema::hasColumn('semesters', 'is_aktif')
+                    ? Semester::where('is_aktif', true)->first()
                     : null;
-                if (!$semester) {
-                    $semester = \App\Models\Semester::orderByDesc('semester_id')->first();
+                if (! $semester) {
+                    $semester = Semester::orderByDesc('semester_id')->first();
                 }
-                if (!$semester) {
+                if (! $semester) {
                     return null;
                 }
                 $ta = $semester->tahun_ajaran ?? '';
                 $smt = $semester->nama_semester ?? $semester->semester ?? '';
-                $label = trim($ta . ($smt ? " ({$smt})" : ''));
+                $label = trim($ta.($smt ? " ({$smt})" : ''));
+
                 return $label !== '' ? $label : null;
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 return null;
             }
         });

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Ekstrakurikuler;
 use App\Models\JadwalPelajaran;
 use App\Models\MataPelajaran;
@@ -11,8 +10,10 @@ use App\Models\Ptk;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TanggalRapor;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AdminReferensiTest extends TestCase
@@ -45,7 +46,7 @@ class AdminReferensiTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('halamanProvider')]
+    #[DataProvider('halamanProvider')]
     public function test_halaman_merespons_200_untuk_admin(string $route): void
     {
         $admin = User::factory()->admin()->create();
@@ -113,7 +114,7 @@ class AdminReferensiTest extends TestCase
 
         // Skema standar tanpa is_aktif tetap memilih semester terbaru dan
         // tidak meninggalkan transaksi PostgreSQL dalam keadaan aborted.
-        \Illuminate\Support\Facades\Cache::forget('app_semester_aktif_label:v1');
+        forgetSemesterAktifLabelCache();
         $this->assertSame('2025/2026 (ganjil)', semesterAktifLabel());
         $this->assertTrue(Semester::query()->exists());
 
