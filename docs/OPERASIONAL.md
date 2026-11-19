@@ -36,3 +36,9 @@
   2. Evaluasi penggunaan Alpine.js (`x-data`): saat ini memerlukan `'unsafe-eval'` kecuali beralih ke build `@alpinejs/csp`.
   3. Kurangi/ekstrak blok `<script>` inline dan tambahkan mekanisme *nonce* sebelum menghapus `'unsafe-inline'`.
 - **Peringatan privasi data operasional**: laporan CSP tetap mengandung `document-uri` (path halaman yang diakses pengguna), sehingga file `storage/logs/csp-*.log` harus diperlakukan sebagai data operasional internal dan tidak dibagikan ke pihak luar.
+
+## 7. Trusted Proxies (`SIMANTAP_TRUSTED_PROXIES`)
+- Default kosong (`""`): Laravel tidak mempercayai header `X-Forwarded-*` dari sumber mana pun.
+- **Di belakang Nginx lokal**: setel `SIMANTAP_TRUSTED_PROXIES=127.0.0.1` (atau IP privat reverse proxy) dan pastikan Nginx meneruskan `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`.
+- **Di belakang Cloudflare**: masukkan daftar CIDR IP resmi Cloudflare (dipisah koma) ke `SIMANTAP_TRUSTED_PROXIES` (atau konfigurasi `set_real_ip_from` + `real_ip_header CF-Connecting-IP` di Nginx lalu percayai IP Nginx di Laravel).
+- **PERINGATAN**: jangan menyetel `SIMANTAP_TRUSTED_PROXIES=*` apabila server asal dapat diakses langsung dari internet tanpa firewall, karena klien dapat memalsukan `X-Forwarded-For` untuk melewati rate limiter.

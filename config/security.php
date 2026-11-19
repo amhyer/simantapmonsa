@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Request;
+
 return [
 
     /*
@@ -67,6 +69,23 @@ return [
     */
 
     'hsts_max_age' => (int) env('SECURITY_HSTS_MAX_AGE', 31536000),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trusted Proxies (Nginx / Cloudflare / Load Balancer)
+    |--------------------------------------------------------------------------
+    |
+    | Daftar IP/CIDR proxy tepercaya dipisah koma (env SIMANTAP_TRUSTED_PROXIES).
+    | Default KOSONG = tidak mempercayai proxy mana pun. Isi '*' HANYA jika
+    | aplikasi diisolasi di belakang proxy dan tidak bisa diakses langsung.
+    |
+    */
+
+    'trusted_proxies' => env('SIMANTAP_TRUSTED_PROXIES', ''),
+    'trusted_proxy_headers' => Request::HEADER_X_FORWARDED_FOR
+        | Request::HEADER_X_FORWARDED_HOST
+        | Request::HEADER_X_FORWARDED_PORT
+        | Request::HEADER_X_FORWARDED_PROTO,
 
     /*
     |--------------------------------------------------------------------------

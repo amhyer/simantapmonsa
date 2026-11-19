@@ -15,6 +15,7 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 
@@ -26,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Ganti TrustProxies bawaan agar membaca daftar IP/CIDR dari config('security.trusted_proxies')
+        $middleware->replace(
+            TrustProxies::class,
+            App\Http\Middleware\TrustProxies::class,
+        );
+
         // Header keamanan pada setiap respons (nilai di config/security.php).
         $middleware->append(SecurityHeaders::class);
 
