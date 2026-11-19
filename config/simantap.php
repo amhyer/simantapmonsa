@@ -41,6 +41,9 @@ return [
     // (menghindari timeout Nginx/PHP-FPM akibat bcrypt 12 rounds).
     'reset_massal_max' => (int) env('SIMANTAP_RESET_MASSAL_MAX', 100),
 
+    // Jumlah baris per halaman pada halaman referensi Foto Siswa.
+    'foto_siswa_per_page' => max(1, (int) env('SIMANTAP_FOTO_SISWA_PER_PAGE', 50)),
+
     // Pengaturan visibilitas bagian opsional di halaman landing publik.
     'landing' => [
         'show_demo_video' => (bool) env('SIMANTAP_LANDING_DEMO_VIDEO', false),

@@ -542,13 +542,50 @@ class DataReferensiController extends Controller
             ->with('success', 'Logo dan TTD berhasil disimpan.');
     }
 
-    public function fotoSiswa()
+    public function fotoSiswa(Request $request)
     {
+        $validated = $request->validate([
+            'kelas' => ['nullable', 'string', 'max:50'],
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $kelasDipilih = trim((string) ($validated['kelas'] ?? ''));
+        $cari = trim((string) ($validated['q'] ?? ''));
+        $perPage = max(1, (int) config('simantap.foto_siswa_per_page', 50));
+
         $total = Siswa::count();
         $denganFoto = Siswa::whereNotNull('foto')->count();
-        $daftar = Siswa::orderBy('nama_peserta_didik')->get(['id', 'nama_peserta_didik', 'nis', 'nisn', 'kelas', 'foto']);
+        $daftarKelas = Siswa::query()
+            ->whereNotNull('kelas')
+            ->where('kelas', '!=', '')
+            ->distinct()
+            ->orderBy('kelas')
+            ->pluck('kelas');
 
-        return view('admin.referensi.foto-siswa', compact('total', 'denganFoto', 'daftar'));
+        $daftar = Siswa::query()
+            ->select(['id', 'uuid', 'nama_peserta_didik', 'nis', 'nisn', 'kelas', 'foto'])
+            ->when($kelasDipilih !== '', fn ($q) => $q->where('kelas', $kelasDipilih))
+            ->when($cari !== '', function ($q) use ($cari): void {
+                $like = '%'.mb_strtolower($cari).'%';
+                $q->where(function ($sub) use ($like): void {
+                    $sub->whereRaw('LOWER(nama_peserta_didik) LIKE ?', [$like])
+                        ->orWhereRaw("LOWER(COALESCE(nis, '')) LIKE ?", [$like])
+                        ->orWhereRaw("LOWER(COALESCE(nisn, '')) LIKE ?", [$like]);
+                });
+            })
+            ->orderBy('nama_peserta_didik')
+            ->orderBy('id')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.referensi.foto-siswa', compact(
+            'total',
+            'denganFoto',
+            'daftar',
+            'daftarKelas',
+            'kelasDipilih',
+            'cari'
+        ));
     }
 
     public function storeFotoSiswaSatuan(Request $request, Siswa $siswa)

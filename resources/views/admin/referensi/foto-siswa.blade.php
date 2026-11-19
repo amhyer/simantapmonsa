@@ -54,18 +54,16 @@
                 </button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px">
-                    Show
-                    <select id="fotoPageSize" onchange="applyFotoFilter()" style="padding:4px 8px;border:1px solid #E4E7EC;border-radius:6px;font-size:12px">
-                        <option value="15">15</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="999999" selected>Semua</option>
+                <form method="GET" action="{{ route('admin.referensi.foto-siswa') }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0">
+                    <select name="kelas" onchange="this.form.submit()" aria-label="Filter kelas" style="padding:6px 10px;border:1px solid #E4E7EC;border-radius:8px;font-size:12.5px">
+                        <option value="">Semua Kelas</option>
+                        @foreach($daftarKelas ?? [] as $namaKelas)
+                            <option value="{{ $namaKelas }}" @selected(($kelasDipilih ?? '') === $namaKelas)>{{ str_starts_with($namaKelas, 'Kelas') ? $namaKelas : 'Kelas ' . $namaKelas }}</option>
+                        @endforeach
                     </select>
-                    rows
-                </label>
-                <input type="text" id="searchFoto" placeholder="Cari nama, NISN, atau NIS..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:220px" oninput="applyFotoFilter()">
+                    <input type="text" name="q" id="searchFoto" value="{{ $cari ?? '' }}" placeholder="Cari nama, NISN, atau NIS..." style="padding:6px 12px;border:1px solid #E4E7EC;border-radius:8px;width:220px">
+                    <button type="submit" class="btn btn-sm btn-ghost" style="border:1px solid #E4E7EC">Cari</button>
+                </form>
             </div>
         </div>
         <div class="card-body tight">
@@ -83,7 +81,7 @@
                         <tbody>
                             @foreach($daftar as $idx => $s)
                                 <tr>
-                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center;font-size:12.5px" class="col-no-foto">{{ $idx + 1 }}</td>
+                                    <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center;font-size:12.5px" class="col-no-foto">{{ ($daftar->firstItem() ?? 1) + $idx }}</td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC">
                                         <b>{{ $s->nama_peserta_didik }}</b>
                                         <div style="font-size:12px;color:#667085;margin-top:2px">
@@ -98,7 +96,7 @@
                                     </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
                                         @if($s->foto)
-                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto {{ $s->nama_peserta_didik }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
+                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto {{ $s->nama_peserta_didik }}" loading="lazy" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
                                         @else
                                             <span class="avatar" style="width:48px;height:48px;margin:0 auto;font-size:14px">{{ substr($s->nama_peserta_didik, 0, 2) }}</span>
                                             <div style="font-size:10.5px;color:#98A2B3;margin-top:2px">Belum ada</div>
@@ -129,6 +127,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($daftar->hasPages())
+                    <div style="padding:14px 16px;border-top:1px solid #E4E7EC">
+                        {{ $daftar->links() }}
+                    </div>
+                @endif
             @else
                 <div class="empty-state">
                     <div class="icon">📸</div>
