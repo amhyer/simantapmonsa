@@ -213,7 +213,7 @@ class AuditHalamanRegressionTest extends TestCase
 
     public function test_relasi_guru_bank_soal_cbt_tersedia(): void
     {
-        $this->assertInstanceOf(BelongsTo::class, (new CbtQuestionBank())->guru());
+        $this->assertInstanceOf(BelongsTo::class, (new CbtQuestionBank)->guru());
     }
 
     public function test_tidak_ada_route_di_dalam_komentar_html(): void
