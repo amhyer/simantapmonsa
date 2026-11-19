@@ -29,7 +29,7 @@ class UserController extends Controller
     private function accounts(): Builder
     {
         $tenantId = TenantContext::id();
-        abort_if($tenantId === null && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if($tenantId === null && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
 
         return User::query()->where('tenant_id', $tenantId)->where('peran', '!=', 'super_admin');
     }

@@ -12,6 +12,6 @@ class TenantMode
     {
         return TenantContext::check()
             || (bool) config('simantap.multi_tenant_enabled', false)
-            || Tenant::query()->exists();
+            || Tenant::hasAnyTenant();
     }
 }

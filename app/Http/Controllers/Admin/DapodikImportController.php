@@ -27,7 +27,7 @@ class DapodikImportController extends Controller
 {
     public function index()
     {
-        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
         $tenantId = TenantContext::id();
         $isTenant = TenantMode::isMultiSchool();
         $logs = DapodikSyncLog::with('user')
@@ -65,7 +65,7 @@ class DapodikImportController extends Controller
 
     public function import(Request $request)
     {
-        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
         $validator = Validator::make($request->all(), [
             'sekolah' => 'required|array',
             'sekolah.npsn' => 'required|string',
@@ -124,7 +124,7 @@ class DapodikImportController extends Controller
 
     public function preview(Request $request)
     {
-        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
         $validator = Validator::make($request->all(), ['siswa' => 'required|array']);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()]);
@@ -172,7 +172,7 @@ class DapodikImportController extends Controller
 
     public function resetData(Request $request)
     {
-        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
 
         $request->validate([
             'konfirmasi' => 'required|in:KOSONGKAN DATA DAPODIK',

@@ -21,7 +21,7 @@ class ExportBackupJob implements ShouldQueue
      */
     public function handle(BackupStreamWriter $writer): void
     {
-        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             throw new RuntimeException('Job backup global tidak boleh dijalankan oleh admin sekolah dalam instalasi multi-tenant.');
         }
 

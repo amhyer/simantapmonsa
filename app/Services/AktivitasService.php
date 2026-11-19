@@ -22,7 +22,7 @@ class AktivitasService
         }
 
         if ($user->tenant_id === null
-            && ($user->tenant_owned || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::query()->exists())) {
+            && ($user->tenant_owned || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::hasAnyTenant())) {
             // Jangan membuat log tanpa pemilik ketika akun belum terhubung ke sekolah.
             return null;
         }

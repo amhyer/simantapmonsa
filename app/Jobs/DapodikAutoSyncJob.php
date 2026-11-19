@@ -19,7 +19,7 @@ class DapodikAutoSyncJob implements ShouldQueue
     public function handle(): void
     {
         // Konfigurasi auto-sync lama masih global; jangan jalankan pada SaaS.
-        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             throw new \RuntimeException('Auto-sync Dapodik lama tidak aman untuk multi-sekolah.');
         }
 

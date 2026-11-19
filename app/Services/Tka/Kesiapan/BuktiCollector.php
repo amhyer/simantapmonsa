@@ -38,7 +38,7 @@ class BuktiCollector
     public function __construct(private readonly ?int $tenantId = null, ?PemetaanResolver $resolver = null)
     {
         $this->resolver = $resolver ?? new PemetaanResolver($tenantId);
-        $this->hasTenants = Schema::hasTable('tenants') && Tenant::query()->exists();
+        $this->hasTenants = Schema::hasTable('tenants') && Tenant::hasAnyTenant();
     }
 
     /**

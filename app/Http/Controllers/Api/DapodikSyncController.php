@@ -108,7 +108,7 @@ class DapodikSyncController extends Controller
 
     private function isMultiSchool(): bool
     {
-        return TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists();
+        return TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant();
     }
 
     /**

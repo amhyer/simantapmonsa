@@ -47,7 +47,7 @@ class ImportDapodikJob implements ShouldQueue
         // Job lama yang tidak menyimpan konteks sekolah tidak boleh menulis
         // tanpa scope pada instalasi multi-tenant atau milik akun ber-tenant.
         if ($this->tenantId === null && (config('simantap.multi_tenant_enabled', false)
-            || Tenant::query()->exists()
+            || Tenant::hasAnyTenant()
             || ($this->userId && User::whereKey($this->userId)->whereNotNull('tenant_id')->exists()))) {
             throw new \RuntimeException('Impor Dapodik tidak memiliki konteks sekolah. Jalankan ulang impor dari akun sekolah.');
         }

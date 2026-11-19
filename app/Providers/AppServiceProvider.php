@@ -15,6 +15,7 @@ use App\Models\Tryout\Result;
 use App\Models\Tryout\Session;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Support\TenantExistenceCache;
 use App\Observers\NilaiErapotObserver;
 use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
@@ -45,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(TenantExistenceCache::class);
+
         // Telescope berada di require-dev; daftar kondisional agar `composer install --no-dev` aman.
         if (class_exists(TelescopeApplicationServiceProvider::class)) {
             $this->app->register(TelescopeServiceProvider::class);

@@ -16,7 +16,7 @@ trait HasSchoolOwnership
             $table = $query->getModel()->getTable();
             if (TenantContext::check()) {
                 $query->where($table.'.tenant_id', TenantContext::id());
-            } elseif (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            } elseif (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
                 $query->whereRaw('1 = 0');
             } else {
                 $query->whereNull($table.'.tenant_id')->where($table.'.tenant_owned', false);
@@ -28,7 +28,7 @@ trait HasSchoolOwnership
                 $model->setAttribute('tenant_id', TenantContext::id());
             }
             if ($model->getAttribute('tenant_id') === null
-                && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists())) {
+                && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant())) {
                 throw new \RuntimeException('Kepemilikan sekolah diperlukan untuk menyimpan data ini.');
             }
             if ($model->getAttribute('tenant_id') !== null) {

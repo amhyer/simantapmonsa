@@ -13,7 +13,7 @@ class SidebarSyncStatus
     public static function latest(): ?array
     {
         $tenantId = TenantContext::id();
-        if ($tenantId === null && (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists())) {
+        if ($tenantId === null && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant())) {
             return null;
         }
 

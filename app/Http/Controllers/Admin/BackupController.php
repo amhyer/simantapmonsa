@@ -272,7 +272,7 @@ class BackupController extends Controller
         $gagal = [];
         $driver = DB::getDriverName();
         $tenantId = auth()->user()?->tenant_id ?? TenantContext::id();
-        $hasTenants = Schema::hasTable('tenants') && Tenant::query()->exists();
+        $hasTenants = Schema::hasTable('tenants') && Tenant::hasAnyTenant();
         $isMultiTenant = config('simantap.multi_tenant_enabled', false) || $tenantId !== null || $hasTenants;
 
         if ($isMultiTenant && $tenantId === null) {

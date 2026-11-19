@@ -2,7 +2,11 @@
 
 namespace App\Modules\Tenant\Models;
 
+use App\Models\User;
+use App\Modules\Tenant\Support\TenantExistenceCache;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Tenant extends Model
@@ -68,17 +72,32 @@ class Tenant extends Model
         });
 
         static::saved(function (Tenant $tenant): void {
-            \Illuminate\Support\Facades\Cache::forget("tenant:subdomain:{$tenant->subdomain}");
+            static::forgetExistsCache();
+            Cache::forget("tenant:subdomain:{$tenant->subdomain}");
             if (! empty($tenant->domain_kustom)) {
-                \Illuminate\Support\Facades\Cache::forget("tenant:domain:{$tenant->domain_kustom}");
+                Cache::forget("tenant:domain:{$tenant->domain_kustom}");
             }
-            \Illuminate\Support\Facades\Cache::forget("tenant:id:{$tenant->id}");
+            Cache::forget("tenant:id:{$tenant->id}");
+        });
+
+        static::deleted(function (): void {
+            static::forgetExistsCache();
         });
     }
 
-    public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public static function hasAnyTenant(): bool
     {
-        return $this->hasMany(\App\Models\User::class, 'tenant_id');
+        return app(TenantExistenceCache::class)->hasAny();
+    }
+
+    public static function forgetExistsCache(): void
+    {
+        app(TenantExistenceCache::class)->forget();
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'tenant_id');
     }
 
     public function resolveRouteBinding($value, $field = null)

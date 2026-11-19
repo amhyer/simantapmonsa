@@ -19,7 +19,7 @@ class EnsureSchoolContext
         abort_unless($user->aktif && $user->archived_at === null, 403, 'Akun tidak aktif.');
         if ($user->tenant_id !== null) {
             abort_unless(TenantContext::id() === (int) $user->tenant_id, 403);
-        } elseif ($user->tenant_owned || TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        } elseif ($user->tenant_owned || TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             abort(403, 'Akun belum terhubung ke sekolah aktif.');
         }
 

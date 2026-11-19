@@ -27,7 +27,7 @@ class ProsesAkunMassalJob implements ShouldQueue
     {
         // Job lama tidak menyimpan konteks tenant dan memakai insert mentah.
         // Jangan mengeksekusi job yang sudah antre pada instalasi ber-tenant.
-        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        if (TenantContext::check() || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             throw new \RuntimeException('Proses akun massal belum aman untuk multi-sekolah.');
         }
 

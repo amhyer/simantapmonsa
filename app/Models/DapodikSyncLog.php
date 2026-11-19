@@ -35,7 +35,7 @@ class DapodikSyncLog extends Model
             $tenantId = TenantContext::id();
             if ($tenantId !== null) {
                 $query->where('dapodik_sync_logs.tenant_id', $tenantId);
-            } elseif (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+            } elseif (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
                 // Tanpa identitas sekolah yang tepercaya, jangan tampilkan log mana pun.
                 $query->whereRaw('1 = 0');
             } else {

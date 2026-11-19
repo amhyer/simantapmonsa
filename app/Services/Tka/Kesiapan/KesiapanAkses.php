@@ -43,7 +43,7 @@ class KesiapanAkses
 
         if ($user->tenant_id !== null) {
             $q->where('siswa.tenant_id', $user->tenant_id);
-        } elseif (Schema::hasTable('tenants') && Tenant::query()->exists()) {
+        } elseif (Schema::hasTable('tenants') && Tenant::hasAnyTenant()) {
             $q->whereNull('siswa.tenant_id');
         }
 
@@ -77,7 +77,7 @@ class KesiapanAkses
         $q = Rombel::query()->whereKey($rombelId);
         if ($user->tenant_id !== null) {
             $q->where('tenant_id', $user->tenant_id);
-        } elseif (Schema::hasTable('tenants') && Tenant::query()->exists()) {
+        } elseif (Schema::hasTable('tenants') && Tenant::hasAnyTenant()) {
             $q->whereNull('tenant_id');
         }
 

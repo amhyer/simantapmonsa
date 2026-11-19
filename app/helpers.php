@@ -69,7 +69,7 @@ if (! function_exists('getKKM')) {
         $tenantId = $hasTenantContext ? (int) TenantContext::id() : null;
         $isMultiSchool = $hasTenantContext
             || (bool) config('simantap.multi_tenant_enabled', false)
-            || Tenant::query()->exists();
+            || Tenant::hasAnyTenant();
 
         // Di instalasi multi-tenant tanpa konteks sekolah aktif, jangan pernah
         // menarik KKM acak dari sekolah lain; bila guruId disuplai, batasi ke

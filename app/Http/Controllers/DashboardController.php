@@ -56,7 +56,7 @@ class DashboardController extends Controller
             return view('admin.dashboard-tenant', $data);
         }
 
-        abort_if(config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists(), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_if(config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant(), 403, 'Akun admin belum terhubung ke sekolah.');
 
         // Seluruh angka dashboard di-cache 120 detik: ~30 query + scan
         // filesystem diringkas menjadi 0 query saat cache hit.

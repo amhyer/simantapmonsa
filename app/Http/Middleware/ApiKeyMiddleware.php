@@ -62,7 +62,7 @@ class ApiKeyMiddleware
         if (! $user || ! $user->aktif || $user->archived_at) {
             return response()->json(['success' => false, 'message' => 'Pemilik API Key tidak aktif atau tidak tersedia.'], 401);
         }
-        if ((config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) && $user->tenant_id === null) {
+        if ((config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) && $user->tenant_id === null) {
             return response()->json([
                 'success' => false,
                 'message' => 'API Key harus terhubung ke akun dan sekolah yang valid.',

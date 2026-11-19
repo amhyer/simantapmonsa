@@ -99,7 +99,7 @@ class RoleTaskSummaryService
         }
 
         if (! TenantContext::check() && ! config('simantap.multi_tenant_enabled', false)
-            && ! Tenant::query()->exists() && Schema::hasTable('failed_jobs')) {
+            && ! Tenant::hasAnyTenant() && Schema::hasTable('failed_jobs')) {
             $gagal = DB::table('failed_jobs')->count();
             if ($gagal > 0) {
                 $notifs[] = [

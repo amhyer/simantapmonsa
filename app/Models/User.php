@@ -89,7 +89,7 @@ class User extends Authenticatable
         if (TenantContext::check()) {
             return $query->where('users.tenant_id', TenantContext::id());
         }
-        if (config('simantap.multi_tenant_enabled', false) || Tenant::query()->exists()) {
+        if (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             return $query->whereRaw('1 = 0');
         }
         return $query->whereNull('users.tenant_id')->where('users.tenant_owned', false);
