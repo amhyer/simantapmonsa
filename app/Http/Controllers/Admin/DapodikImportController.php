@@ -3,25 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\DapodikSyncLog;
-use App\Models\OrangTuaSiswa;
+use App\Jobs\ImportDapodikJob;
 use App\Models\Aktivitas;
-use App\Models\Semester;
+use App\Models\DapodikConfig;
+use App\Models\DapodikSyncLog;
+use App\Models\JadwalPelajaran;
 use App\Models\Ptk;
 use App\Models\Rombel;
-use App\Models\JadwalPelajaran;
+use App\Models\SekolahSettings;
+use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\User;
-use App\Jobs\ImportDapodikJob;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Str;
 
 class DapodikImportController extends Controller
 {
@@ -135,7 +136,7 @@ class DapodikImportController extends Controller
 
         foreach ($data['siswa'] as $s) {
             $existing = null;
-            if (!empty($s['nisn'])) {
+            if (! empty($s['nisn'])) {
                 $existing = Siswa::where('nisn', $s['nisn'])->first();
             }
             $preview[] = [
@@ -161,12 +162,14 @@ class DapodikImportController extends Controller
     public function logDetail($id)
     {
         $log = DapodikSyncLog::findOrFail($id);
+
         return view('admin.dapodik.log-detail', compact('log'));
     }
 
     public function logDestroy($id)
     {
         DapodikSyncLog::findOrFail($id)->delete();
+
         return redirect()->route('admin.dapodik.index')->with('success', 'Log dihapus.');
     }
 
@@ -206,7 +209,9 @@ class DapodikImportController extends Controller
             if ($siswaIds->isNotEmpty()) {
                 $allTables = Schema::getTableListing();
                 foreach ($allTables as $tbl) {
-                    if ($tbl === 'siswa') continue;
+                    if ($tbl === 'siswa') {
+                        continue;
+                    }
                     if (Schema::hasColumn($tbl, 'siswa_id')) {
                         DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
                     }
@@ -271,7 +276,7 @@ class DapodikImportController extends Controller
             }
             $userQuery->where(function ($q) {
                 $q->where('peran', 'siswa')
-                  ->orWhereNotNull('dapodik_id');
+                    ->orWhereNotNull('dapodik_id');
             });
             if ($currentUserId) {
                 $userQuery->where('id', '!=', $currentUserId);
@@ -297,7 +302,7 @@ class DapodikImportController extends Controller
 
             // 7. Hapus identitas sekolah (sekolah_settings) milik sekolah ini
             if (Schema::hasTable('sekolah_settings')) {
-                $settingsQuery = \App\Models\SekolahSettings::query();
+                $settingsQuery = SekolahSettings::query();
                 if ($tenantId !== null && Schema::hasColumn('sekolah_settings', 'tenant_id')) {
                     $settingsQuery->where('tenant_id', $tenantId);
                 }
@@ -305,11 +310,11 @@ class DapodikImportController extends Controller
             }
 
             // Flush cache aplikasi
-            \Illuminate\Support\Facades\Cache::flush();
+            Cache::flush();
 
             // 7. Reset timestamp sinkronisasi Dapodik config
             try {
-                \App\Models\DapodikConfig::getInstance()->update([
+                DapodikConfig::getInstance()->update([
                     'last_sync_at' => null,
                     'last_sync_by' => null,
                     'auto_sync_last_run_at' => null,
@@ -324,10 +329,10 @@ class DapodikImportController extends Controller
             if (DB::getDriverName() === 'pgsql') {
                 foreach (['siswa', 'rombel', 'ptk', 'jadwal_pelajaran', 'dapodik_sync_logs'] as $table) {
                     if (Schema::hasTable($table) && Schema::hasColumn($table, 'id')) {
-                        $seq = DB::selectOne("SELECT pg_get_serial_sequence(?, ?) AS seq", [$table, 'id'])?->seq;
+                        $seq = DB::selectOne('SELECT pg_get_serial_sequence(?, ?) AS seq', [$table, 'id'])?->seq;
                         if ($seq) {
                             $maxId = (int) DB::table($table)->max('id');
-                            DB::statement("SELECT setval(?, ?, ?)", [$seq, max($maxId, 1), $maxId > 0]);
+                            DB::statement('SELECT setval(?, ?, ?)', [$seq, max($maxId, 1), $maxId > 0]);
                         }
                     }
                 }
@@ -357,9 +362,10 @@ class DapodikImportController extends Controller
             );
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return redirect()->route('admin.dapodik.index')->with(
                 'error',
-                'Gagal mengosongkan data Dapodik: ' . $e->getMessage()
+                'Gagal mengosongkan data Dapodik: '.$e->getMessage()
             );
         } finally {
             Schema::enableForeignKeyConstraints();
@@ -384,7 +390,7 @@ class DapodikImportController extends Controller
             readfile($filePath);
         }, $fileName, [
             'Content-Type' => 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
             'Content-Length' => filesize($filePath),
         ]);
     }

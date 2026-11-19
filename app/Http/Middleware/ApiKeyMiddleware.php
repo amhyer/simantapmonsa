@@ -29,7 +29,7 @@ class ApiKeyMiddleware
     {
         $apiKey = $request->header('X-API-Key');
 
-        if (!$apiKey) {
+        if (! $apiKey) {
             return response()->json([
                 'success' => false,
                 'message' => 'API Key diperlukan.',
@@ -44,14 +44,14 @@ class ApiKeyMiddleware
         $keyHash = hash('sha256', $apiKey);
         $key = ApiKey::where('key_hash', $keyHash)->first();
 
-        if (!$key || !$key->isValid()) {
+        if (! $key || ! $key->isValid()) {
             return response()->json([
                 'success' => false,
                 'message' => 'API Key tidak valid atau sudah expired.',
             ], 401);
         }
 
-        if ($ability && !$key->hasAbility($ability)) {
+        if ($ability && ! $key->hasAbility($ability)) {
             return response()->json([
                 'success' => false,
                 'message' => "API Key tidak memiliki akses: {$ability}",

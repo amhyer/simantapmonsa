@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
-use App\Models\User;
 use App\Models\Siswa;
+use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
-use Illuminate\Support\Str;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProsesAkunMassalJob implements ShouldQueue
 {
@@ -37,11 +37,11 @@ class ProsesAkunMassalJob implements ShouldQueue
 
         foreach ($siswa as $s) {
             if ($this->requestData['buat_ortu'] ?? false) {
-                $username = 'ortu' . $s->nis;
-                if (!User::where('nama_pengguna', $username)->exists()) {
+                $username = 'ortu'.$s->nis;
+                if (! User::where('nama_pengguna', $username)->exists()) {
                     $usersToInsert[] = [
                         'uuid' => (string) Str::uuid(),
-                        'nama_lengkap' => 'Orang Tua ' . $s->nama_peserta_didik,
+                        'nama_lengkap' => 'Orang Tua '.$s->nama_peserta_didik,
                         'nama_pengguna' => $username,
                         'kata_sandi' => Hash::make(Str::random(8)),
                         'peran' => 'ortu',
@@ -57,8 +57,8 @@ class ProsesAkunMassalJob implements ShouldQueue
             }
 
             if ($this->requestData['buat_siswa'] ?? true) {
-                $username = 'siswa' . $s->nis;
-                if (!User::where('nama_pengguna', $username)->exists()) {
+                $username = 'siswa'.$s->nis;
+                if (! User::where('nama_pengguna', $username)->exists()) {
                     $usersToInsert[] = [
                         'uuid' => (string) Str::uuid(),
                         'nama_lengkap' => $s->nama_peserta_didik,

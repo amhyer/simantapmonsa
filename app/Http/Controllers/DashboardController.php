@@ -3,25 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Ortu\HasAnakLookup;
-use App\Models\JadwalPelajaran;
-use App\Models\Siswa;
-use App\Models\Materi;
-use App\Models\Kuis;
-use App\Models\Kehadiran;
-use App\Models\User;
-use App\Models\Ptk;
-use App\Models\Rombel;
-use App\Models\PengaturanGuru;
-use App\Models\SekolahSettings;
+use App\Models\Aktivitas;
 use App\Models\DapodikConfig;
 use App\Models\DapodikSyncLog;
+use App\Models\JadwalPelajaran;
+use App\Models\Kehadiran;
+use App\Models\Kuis;
 use App\Models\MataPelajaran;
+use App\Models\Materi;
 use App\Models\Nilai;
 use App\Models\NilaiErapot;
-use App\Models\Aktivitas;
+use App\Models\Ptk;
+use App\Models\Rombel;
+use App\Models\SekolahSettings;
 use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\TanggalRapor;
 use App\Models\TemaKokurikuler;
+use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
@@ -89,17 +88,17 @@ class DashboardController extends Controller
             $dapodikConfig = DapodikConfig::first();
             $pengaturanSekolah = $sekolahSettings?->pengaturan ?? [];
             $statusKerja = [
-                ['label' => 'Menyimpan data koneksi webservice', 'done' => !empty($dapodikConfig?->npsn) && !empty($dapodikConfig?->token)],
+                ['label' => 'Menyimpan data koneksi webservice', 'done' => ! empty($dapodikConfig?->npsn) && ! empty($dapodikConfig?->token)],
                 ['label' => 'Ambil Data Dapodik', 'done' => $lastSync !== null],
                 ['label' => 'Menambah Data Administrator', 'done' => User::where('peran', 'admin')->exists()],
                 ['label' => 'Generate User Guru dan Siswa', 'done' => User::where('peran', 'guru')->exists() && User::where('peran', 'siswa')->exists()],
-                ['label' => 'Edit Data Kepala Sekolah', 'done' => !empty($sekolahSettings?->kepala_sekolah)],
+                ['label' => 'Edit Data Kepala Sekolah', 'done' => ! empty($sekolahSettings?->kepala_sekolah)],
                 ['label' => 'Update Gelar Guru', 'done' => Ptk::whereNotNull('gelar_belakang')->orWhereNotNull('gelar_depan')->exists()],
                 ['label' => 'Update Data Siswa', 'done' => $syncedSiswa > 0],
                 ['label' => 'Mapping Mapel Rapor', 'done' => MataPelajaran::where('urutan', '>', 0)->orWhereNotNull('kelompok')->exists()],
-                ['label' => 'Update data logo pemda', 'done' => !empty($pengaturanSekolah['logo_pemda'])],
-                ['label' => 'Update data logo sekolah', 'done' => !empty($pengaturanSekolah['logo_sekolah'])],
-                ['label' => 'Update data Kop Sekolah', 'done' => !empty($pengaturanSekolah['kop_sekolah'])],
+                ['label' => 'Update data logo pemda', 'done' => ! empty($pengaturanSekolah['logo_pemda'])],
+                ['label' => 'Update data logo sekolah', 'done' => ! empty($pengaturanSekolah['logo_sekolah'])],
+                ['label' => 'Update data Kop Sekolah', 'done' => ! empty($pengaturanSekolah['kop_sekolah'])],
                 ['label' => 'Update tanggal rapor', 'done' => TanggalRapor::exists()],
                 ['label' => 'Update tema kokurikuler', 'done' => TemaKokurikuler::exists()],
                 ['label' => 'Backup Data', 'done' => count(Storage::disk('local')->files('backups')) > 0],
@@ -112,7 +111,7 @@ class DashboardController extends Controller
             $aktivitasTerbaru = Aktivitas::orderByDesc('created_at')->take(6)->get();
 
             // Rincian akun per peran (1 query agregat, portable lintas driver).
-            $peranRows = User::selectRaw("peran, count(*) as total, sum(case when aktif then 1 else 0 end) as aktif")
+            $peranRows = User::selectRaw('peran, count(*) as total, sum(case when aktif then 1 else 0 end) as aktif')
                 ->groupBy('peran')
                 ->get()
                 ->keyBy('peran');
@@ -170,13 +169,13 @@ class DashboardController extends Controller
             // Kesehatan sistem.
             $health = [
                 ['label' => 'Environment', 'nilai' => config('app.env'), 'ok' => config('app.env') === 'production' ? true : null],
-                ['label' => 'Debug mode', 'nilai' => config('app.debug') ? 'ON' : 'OFF', 'ok' => !config('app.debug')],
-                ['label' => 'Antrean', 'nilai' => config('queue.default') . " ({$backupAntre} menunggu)", 'ok' => $backupAntre === 0 ? true : null],
+                ['label' => 'Debug mode', 'nilai' => config('app.debug') ? 'ON' : 'OFF', 'ok' => ! config('app.debug')],
+                ['label' => 'Antrean', 'nilai' => config('queue.default')." ({$backupAntre} menunggu)", 'ok' => $backupAntre === 0 ? true : null],
                 ['label' => 'Job gagal', 'nilai' => (string) $jobGagal, 'ok' => $jobGagal === 0],
                 ['label' => 'Cache', 'nilai' => config('cache.default'), 'ok' => true],
-                ['label' => 'Database', 'nilai' => DB::getDriverName() . ' (' . $this->formatBytes($this->ukuranDatabase()) . ')', 'ok' => true],
+                ['label' => 'Database', 'nilai' => DB::getDriverName().' ('.$this->formatBytes($this->ukuranDatabase()).')', 'ok' => true],
                 ['label' => 'Folder backup', 'nilai' => $this->formatBytes($backupUkuran), 'ok' => true],
-                ['label' => 'Kartu QR Siswa', 'nilai' => Siswa::whereNotNull('qr_token_hash')->count() . ' / ' . $siswaAktif . ' aktif', 'ok' => Siswa::whereNotNull('qr_token_hash')->count() > 0],
+                ['label' => 'Kartu QR Siswa', 'nilai' => Siswa::whereNotNull('qr_token_hash')->count().' / '.$siswaAktif.' aktif', 'ok' => Siswa::whereNotNull('qr_token_hash')->count() > 0],
             ];
 
             // Rekap kelengkapan guru aktif (distinct guru_id per tabel konten).
@@ -268,18 +267,18 @@ class DashboardController extends Controller
             return '-';
         }
         if ($bytes < 1024) {
-            return $bytes . ' B';
+            return $bytes.' B';
         }
         $satuan = ['KB', 'MB', 'GB'];
         $nilai = (float) $bytes / 1024;
         foreach ($satuan as $s) {
             if ($nilai < 1024 || $s === 'GB') {
-                return number_format($nilai, 1) . ' ' . $s;
+                return number_format($nilai, 1).' '.$s;
             }
             $nilai /= 1024;
         }
 
-        return number_format($bytes) . ' B';
+        return number_format($bytes).' B';
     }
 
     /**
@@ -289,7 +288,7 @@ class DashboardController extends Controller
      */
     public function ortu()
     {
-        return app(\App\Http\Controllers\Ortu\DashboardController::class)->index();
+        return app(Ortu\DashboardController::class)->index();
     }
 
     public function ortuNilai()

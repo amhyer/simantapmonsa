@@ -91,13 +91,13 @@ class ImportDapodikJob implements ShouldQueue
                             }
                         } catch (\Throwable $e) {
                             $gagal++;
-                            $errors[] = 'Baris ' . $baris . ': ' . $e->getMessage();
-                            Log::warning('Gagal import baris ' . $baris . ': ' . $e->getMessage());
+                            $errors[] = 'Baris '.$baris.': '.$e->getMessage();
+                            Log::warning('Gagal import baris '.$baris.': '.$e->getMessage());
                         }
                     }
                 });
             } catch (\Throwable $e) {
-                Log::error('Gagal commit chunk import dapodik: ' . $e->getMessage());
+                Log::error('Gagal commit chunk import dapodik: '.$e->getMessage());
             }
         }
 
@@ -125,7 +125,7 @@ class ImportDapodikJob implements ShouldQueue
                     ]);
                 });
             } catch (\Throwable $e) {
-                Log::warning('Gagal update log import dapodik: ' . $e->getMessage());
+                Log::warning('Gagal update log import dapodik: '.$e->getMessage());
             }
         }
 
@@ -146,7 +146,7 @@ class ImportDapodikJob implements ShouldQueue
                 'tabel_terkait' => 'siswa',
             ]));
         } catch (\Throwable $e) {
-            Log::warning('Gagal catat aktivitas import: ' . $e->getMessage());
+            Log::warning('Gagal catat aktivitas import: '.$e->getMessage());
         }
     }
 
@@ -159,16 +159,16 @@ class ImportDapodikJob implements ShouldQueue
     private function importSiswaRow(array $s): string
     {
         $existing = null;
-        if (!empty($s['dapodik_id'])) {
+        if (! empty($s['dapodik_id'])) {
             $existing = Siswa::where('dapodik_id', $s['dapodik_id'])->first();
         }
-        if (!$existing && !empty($s['nisn'])) {
+        if (! $existing && ! empty($s['nisn'])) {
             $existing = Siswa::where('nisn', $s['nisn'])->first();
         }
-        if (!$existing && !empty($s['nik'])) {
+        if (! $existing && ! empty($s['nik'])) {
             $existing = Siswa::where('nik', $s['nik'])->first();
         }
-        if (!$existing && !empty($s['nis'])) {
+        if (! $existing && ! empty($s['nis'])) {
             $existing = Siswa::where('nis', $s['nis'])->first();
         }
 
@@ -177,7 +177,7 @@ class ImportDapodikJob implements ShouldQueue
         }
 
         $siswaData = [
-            'nis' => $s['nisn'] ?? $s['nis'] ?? 'DAPODIK-' . Str::random(8),
+            'nis' => $s['nisn'] ?? $s['nis'] ?? 'DAPODIK-'.Str::random(8),
             'nisn' => $s['nisn'] ?? null,
             'nik' => $s['nik'] ?? null,
             'no_kk' => $s['no_kk'] ?? null,
@@ -187,13 +187,13 @@ class ImportDapodikJob implements ShouldQueue
             'agama' => $s['agama'] ?? null,
             'tempat_lahir' => $s['tempat_lahir'] ?? null,
             'tanggal_lahir' => $s['tanggal_lahir'] ?? null,
-            'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? 'ORT' . rand(1000, 9999),
+            'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? 'ORT'.rand(1000, 9999),
             'anak_ke' => $s['anak_ke'] ?? null,
             'jumlah_saudara' => $s['jumlah_saudara'] ?? null,
             'tinggi_badan' => $s['tinggi_badan'] ?? null,
             'berat_badan' => $s['berat_badan'] ?? null,
             'golongan_darah' => $s['golongan_darah'] ?? null,
-            'penerima_kip' => !empty($s['no_kip']),
+            'penerima_kip' => ! empty($s['no_kip']),
             'no_kip' => $s['no_kip'] ?? null,
             'aktif' => true,
             'rekaman' => array_merge($s, [
@@ -236,11 +236,11 @@ class ImportDapodikJob implements ShouldQueue
 
     protected function saveOrangTua(?Siswa $siswa, array $s): void
     {
-        if (!$siswa) {
+        if (! $siswa) {
             return;
         }
 
-        if (!empty($s['nama_ayah'])) {
+        if (! empty($s['nama_ayah'])) {
             OrangTuaSiswa::updateOrCreate(
                 ['siswa_id' => $siswa->id, 'tipe' => 'ayah'],
                 [
@@ -255,7 +255,7 @@ class ImportDapodikJob implements ShouldQueue
             );
         }
 
-        if (!empty($s['nama_ibu'])) {
+        if (! empty($s['nama_ibu'])) {
             OrangTuaSiswa::updateOrCreate(
                 ['siswa_id' => $siswa->id, 'tipe' => 'ibu'],
                 [
@@ -270,7 +270,7 @@ class ImportDapodikJob implements ShouldQueue
             );
         }
 
-        if (!empty($s['nama_wali'])) {
+        if (! empty($s['nama_wali'])) {
             OrangTuaSiswa::updateOrCreate(
                 ['siswa_id' => $siswa->id, 'tipe' => 'wali'],
                 [
@@ -289,25 +289,25 @@ class ImportDapodikJob implements ShouldQueue
             // tetap sehat dan baris siswa lain tidak ikut dibatalkan.
             DB::transaction(fn () => $this->createOrUpdateStudentUser($siswa));
         } catch (\Throwable $e) {
-            Log::warning("Gagal auto-create akun user siswa {$siswa->id}: " . $e->getMessage());
+            Log::warning("Gagal auto-create akun user siswa {$siswa->id}: ".$e->getMessage());
         }
     }
 
     private function createOrUpdateStudentUser(Siswa $siswa): void
     {
-        $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id);
+        $username = $siswa->nis ?: ($siswa->nisn ?: 'siswa'.$siswa->id);
         $user = User::where('peran', 'siswa')
             ->where('tenant_id', TenantContext::id())
             ->where(function ($q) use ($siswa, $username) {
                 $q->whereJsonContains('terhubung_dengan', $siswa->id)
-                  ->orWhere('nama_pengguna', $username)
-                  ->orWhere('nama_pengguna', 'siswa' . $username);
+                    ->orWhere('nama_pengguna', $username)
+                    ->orWhere('nama_pengguna', 'siswa'.$username);
             })
             ->first();
 
         if ($user) {
             $terhubung = (array) ($user->terhubung_dengan ?? []);
-            if (!in_array($siswa->id, $terhubung, true)) {
+            if (! in_array($siswa->id, $terhubung, true)) {
                 $terhubung[] = $siswa->id;
             }
             $user->update([
@@ -320,6 +320,7 @@ class ImportDapodikJob implements ShouldQueue
             // Username unik secara global. Jangan mengubah akun sekolah lain.
             if (User::withTrashed()->where('nama_pengguna', $username)->exists()) {
                 Log::warning("Akun siswa tidak dibuat: username sudah digunakan ({$username}).");
+
                 return;
             }
             User::create([

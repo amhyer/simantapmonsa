@@ -25,11 +25,11 @@ class DapodikAutoSyncJob implements ShouldQueue
 
         $config = DapodikConfig::getInstance();
 
-        if (!$config->auto_sync_enabled) {
+        if (! $config->auto_sync_enabled) {
             return;
         }
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         try {
             $result = $service->commit();

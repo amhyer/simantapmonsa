@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 class DapodikSyncLog extends Model
 {
     protected $table = 'dapodik_sync_logs';
+
     protected $hidden = ['errors', 'summary', 'user_agent'];
 
     protected $fillable = [
@@ -44,7 +45,9 @@ class DapodikSyncLog extends Model
             }
         });
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
             if (TenantContext::check()) {
                 $model->tenant_id = TenantContext::id();
             }

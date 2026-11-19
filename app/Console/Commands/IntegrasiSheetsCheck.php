@@ -88,14 +88,14 @@ class IntegrasiSheetsCheck extends Command
                 $data['tab_hilang'] = $hilang;
 
                 if ($hilang !== []) {
-                    $masalah[] = 'Tab wajib belum ada di spreadsheet: ' . implode(', ', $hilang) . '. Jalankan `php artisan sheets:full-sync` untuk membuatnya.';
+                    $masalah[] = 'Tab wajib belum ada di spreadsheet: '.implode(', ', $hilang).'. Jalankan `php artisan sheets:full-sync` untuk membuatnya.';
                 }
 
                 if ($judul === []) {
                     $peringatan[] = 'Spreadsheet tidak memiliki tab apa pun.';
                 }
             } catch (\Throwable $e) {
-                $masalah[] = 'Koneksi live ke Google Sheets gagal: ' . $e->getMessage();
+                $masalah[] = 'Koneksi live ke Google Sheets gagal: '.$e->getMessage();
             }
         }
 
@@ -121,15 +121,15 @@ class IntegrasiSheetsCheck extends Command
         ]);
 
         foreach ($peringatan as $pesan) {
-            $this->warn('⚠ ' . $pesan);
+            $this->warn('⚠ '.$pesan);
         }
 
         foreach ($masalah as $pesan) {
-            $this->error('✗ ' . $pesan);
+            $this->error('✗ '.$pesan);
         }
 
         if ($data['ok']) {
-            $this->info('✅ Konfigurasi Google Sheets siap.' . ($data['live'] ? ' Metadata spreadsheet berhasil dibaca.' : ' Jalankan --live untuk menguji akses spreadsheet.'));
+            $this->info('✅ Konfigurasi Google Sheets siap.'.($data['live'] ? ' Metadata spreadsheet berhasil dibaca.' : ' Jalankan --live untuk menguji akses spreadsheet.'));
 
             return self::SUCCESS;
         }
@@ -163,17 +163,17 @@ class IntegrasiSheetsCheck extends Command
         $path = (string) $path;
 
         if (! str_starts_with($path, '/') && ! preg_match('/^[A-Za-z]:[\\\\\\/]/', $path)) {
-            $path = base_path('storage/app/' . $path);
+            $path = base_path('storage/app/'.$path);
         }
 
         if (! is_file($path)) {
-            return ['ok' => false, 'sumber' => $path, 'email' => null, 'pesan' => 'Berkas service account tidak ditemukan: ' . $path];
+            return ['ok' => false, 'sumber' => $path, 'email' => null, 'pesan' => 'Berkas service account tidak ditemukan: '.$path];
         }
 
         $decoded = json_decode((string) file_get_contents($path), true);
 
         if (! is_array($decoded)) {
-            return ['ok' => false, 'sumber' => $path, 'email' => null, 'pesan' => 'Berkas service account bukan JSON valid: ' . $path];
+            return ['ok' => false, 'sumber' => $path, 'email' => null, 'pesan' => 'Berkas service account bukan JSON valid: '.$path];
         }
 
         return $this->validasiIsiKredensial($decoded, $path);

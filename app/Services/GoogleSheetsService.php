@@ -4,13 +4,15 @@ namespace App\Services;
 
 use Google\Client;
 use Google\Service\Sheets;
-use Google\Service\Sheets\ValueRange;
+use Google\Service\Sheets\BatchUpdateSpreadsheetRequest;
 use Google\Service\Sheets\BatchUpdateValuesRequest;
+use Google\Service\Sheets\ValueRange;
 use Illuminate\Support\Facades\Log;
 
 class GoogleSheetsService
 {
     protected $client;
+
     protected $service;
 
     public function __construct()
@@ -21,7 +23,7 @@ class GoogleSheetsService
 
     protected function getClient(): Client
     {
-        $client = new Client();
+        $client = new Client;
         $client->setApplicationName('SIMANTAP');
         $client->setScopes([Sheets::SPREADSHEETS]);
         $client->setAccessType('offline');
@@ -30,14 +32,14 @@ class GoogleSheetsService
         $inline = config('google.credentials_json');
         if ($inline) {
             $decoded = json_decode($inline, true);
-            if (!is_array($decoded)) {
+            if (! is_array($decoded)) {
                 throw new \RuntimeException('GOOGLE_CREDENTIALS_JSON tidak valid.');
             }
             $client->setAuthConfig($decoded);
         } else {
             $authConfig = config('google.service_account_path');
-            if (!str_starts_with($authConfig, '/') && !str_starts_with($authConfig, 'C:') && !str_starts_with($authConfig, 'D:')) {
-                $authConfig = base_path('storage/app/' . $authConfig);
+            if (! str_starts_with($authConfig, '/') && ! str_starts_with($authConfig, 'C:') && ! str_starts_with($authConfig, 'D:')) {
+                $authConfig = base_path('storage/app/'.$authConfig);
             }
             $client->setAuthConfig($authConfig);
         }
@@ -72,7 +74,7 @@ class GoogleSheetsService
         }
 
         try {
-            $request = new \Google\Service\Sheets\BatchUpdateSpreadsheetRequest([
+            $request = new BatchUpdateSpreadsheetRequest([
                 'requests' => [
                     [
                         'addSheet' => [
@@ -87,7 +89,7 @@ class GoogleSheetsService
             $this->service->spreadsheets->batchUpdate($spreadsheetId, $request);
         } catch (\Exception $e) {
             // Sheet might already exist, ignore
-            Log::warning("Failed to create tab {$tabName}: " . $e->getMessage());
+            Log::warning("Failed to create tab {$tabName}: ".$e->getMessage());
         }
     }
 
@@ -138,7 +140,9 @@ class GoogleSheetsService
      */
     public function syncBatch(string $spreadsheetId, string $tabName, array $rows): void
     {
-        if (empty($rows)) return;
+        if (empty($rows)) {
+            return;
+        }
 
         $body = new BatchUpdateValuesRequest([
             'valueInputOption' => 'RAW',
@@ -165,9 +169,11 @@ class GoogleSheetsService
         foreach ($spreadsheet->getSheets() as $sheet) {
             if ($sheet->getProperties()->getTitle() === $tabName) {
                 $sheetId = $sheet->getProperties()->getSheetId();
-                if ($sheetId === null) continue;
+                if ($sheetId === null) {
+                    continue;
+                }
 
-                $request = new \Google\Service\Sheets\BatchUpdateSpreadsheetRequest([
+                $request = new BatchUpdateSpreadsheetRequest([
                     'requests' => [
                         [
                             'deleteDimension' => [
@@ -187,6 +193,7 @@ class GoogleSheetsService
                 } catch (\Exception $e) {
                     // Sheet might be empty, ignore
                 }
+
                 return;
             }
         }
@@ -489,8 +496,11 @@ class GoogleSheetsService
      */
     protected function jsonAman($data): string
     {
-        if (empty($data)) return '';
+        if (empty($data)) {
+            return '';
+        }
         $json = json_encode($data);
+
         return strlen($json) > 45000 ? '' : $json;
     }
 }

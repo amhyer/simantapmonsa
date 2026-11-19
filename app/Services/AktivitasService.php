@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Aktivitas;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Str;
 
 class AktivitasService
@@ -17,17 +19,17 @@ class AktivitasService
         $dataBaru = null,
     ): ?Aktivitas {
         $user = auth()->user();
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
         if ($user->tenant_id === null
-            && ($user->tenant_owned || config('simantap.multi_tenant_enabled', false) || \App\Modules\Tenant\Models\Tenant::hasAnyTenant())) {
+            && ($user->tenant_owned || config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant())) {
             // Jangan membuat log tanpa pemilik ketika akun belum terhubung ke sekolah.
             return null;
         }
 
-        return \App\Modules\Tenant\Contexts\TenantContext::run($user->tenant_id === null ? null : (int) $user->tenant_id, fn () => Aktivitas::create([
+        return TenantContext::run($user->tenant_id === null ? null : (int) $user->tenant_id, fn () => Aktivitas::create([
             // Login terjadi sebelum middleware bisa mengenali akun; sumbernya akun terautentikasi.
             'tenant_id' => $user->tenant_id,
             'uuid' => Str::uuid(),

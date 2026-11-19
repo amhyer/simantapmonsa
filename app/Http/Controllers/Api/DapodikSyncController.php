@@ -16,8 +16,10 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Support\InitialPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -63,7 +65,7 @@ class DapodikSyncController extends Controller
         };
 
         if ($result === null) {
-            return response()->json(['success' => false, 'message' => 'Modul tidak dikenal: ' . $modul], 404);
+            return response()->json(['success' => false, 'message' => 'Modul tidak dikenal: '.$modul], 404);
         }
 
         $tipe = match ($modul) {
@@ -162,7 +164,7 @@ class DapodikSyncController extends Controller
 
     private function normalizeJenjang(?string $raw): ?string
     {
-        if (!$raw) {
+        if (! $raw) {
             return null;
         }
 
@@ -185,7 +187,7 @@ class DapodikSyncController extends Controller
         if (str_contains($rawUpper, 'SMK') || str_contains($rawUpper, 'KEJURUAN')) {
             return 'SMK';
         }
-        if (str_contains($rawUpper, 'MA') && !str_contains($rawUpper, 'MAK')) {
+        if (str_contains($rawUpper, 'MA') && ! str_contains($rawUpper, 'MAK')) {
             return 'MA';
         }
         if (str_contains($rawUpper, 'SLB') || str_contains($rawUpper, 'LUAR BIASA')) {
@@ -205,7 +207,7 @@ class DapodikSyncController extends Controller
             function (array $s) use ($currentUserId, $tenant): string {
                 // Bridge hanya boleh mengirim profil sekolah miliknya sendiri.
                 if ($tenant && ! empty($tenant->npsn) && ! empty($s['npsn']) && (string) $s['npsn'] !== (string) $tenant->npsn) {
-                    throw new \RuntimeException('NPSN Dapodik (' . $s['npsn'] . ') tidak sesuai dengan NPSN sekolah pemilik API Key.');
+                    throw new \RuntimeException('NPSN Dapodik ('.$s['npsn'].') tidak sesuai dengan NPSN sekolah pemilik API Key.');
                 }
                 if ($tenant && empty($s['npsn'])) {
                     $s['npsn'] = $tenant->npsn;
@@ -251,7 +253,7 @@ class DapodikSyncController extends Controller
                 return 'berhasil';
             },
             function ($s, \Throwable $e): void {
-                Log::warning('Gagal sync sekolah settings: ' . $e->getMessage());
+                Log::warning('Gagal sync sekolah settings: '.$e->getMessage());
             }
         );
     }
@@ -268,15 +270,15 @@ class DapodikSyncController extends Controller
                 $existing = Siswa::where('semester_id', $semester->id)
                     ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
                         $hasCondition = false;
-                        if (!empty($dapodikId)) {
+                        if (! empty($dapodikId)) {
                             $query->where('dapodik_id', $dapodikId);
                             $hasCondition = true;
                         }
-                        if (!empty($nisn)) {
+                        if (! empty($nisn)) {
                             $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
                             $hasCondition = true;
                         }
-                        if (!empty($nipd)) {
+                        if (! empty($nipd)) {
                             $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
                         }
                     })
@@ -294,12 +296,12 @@ class DapodikSyncController extends Controller
                         ->first();
                 }
 
-                if (!$rombel && $rombelName) {
+                if (! $rombel && $rombelName) {
                     $rombel = Rombel::where('nama_rombel', $rombelName)
                         ->where('semester_id', $semester->id)
                         ->first();
-                    if (!$rombel) {
-                        $rombel = Rombel::where('nama_rombel', 'like', '%' . $rombelName . '%')
+                    if (! $rombel) {
+                        $rombel = Rombel::where('nama_rombel', 'like', '%'.$rombelName.'%')
                             ->where('semester_id', $semester->id)
                             ->first();
                     }
@@ -314,7 +316,7 @@ class DapodikSyncController extends Controller
                 $siswaData = [
                     'dapodik_id' => $dapodikId,
                     'semester_id' => $semester->id,
-                    'nis' => $pd['nis'] ?? $nisn ?? 'DAPODIK-' . Str::random(8),
+                    'nis' => $pd['nis'] ?? $nisn ?? 'DAPODIK-'.Str::random(8),
                     'nisn' => $nisn,
                     'nama_peserta_didik' => $pd['nama'] ?? $pd['nama_peserta_didik'] ?? '',
                     'kelas' => $rombelName ?? '',
@@ -341,7 +343,7 @@ class DapodikSyncController extends Controller
             },
             function ($pd, \Throwable $e): void {
                 $id = is_array($pd) ? ($pd['peserta_didik_id'] ?? $pd['dapodik_id'] ?? 'unknown') : 'unknown';
-                Log::warning("Gagal sync peserta didik dapodik_id: {$id}: " . $e->getMessage());
+                Log::warning("Gagal sync peserta didik dapodik_id: {$id}: ".$e->getMessage());
             }
         );
     }
@@ -424,15 +426,15 @@ class DapodikSyncController extends Controller
 
                 // Jika terdeteksi Kepala Sekolah / PLT, simpan namanya juga di data identitas sekolah (SekolahSettings)
                 if ($isKepsek) {
-                    $namaGelar = trim(($ptkData['gelar_depan'] ? $ptkData['gelar_depan'] . ' ' : '') . $nama);
-                    if (!empty($ptkData['gelar_belakang'])) {
-                        $namaGelar .= ', ' . $ptkData['gelar_belakang'];
+                    $namaGelar = trim(($ptkData['gelar_depan'] ? $ptkData['gelar_depan'].' ' : '').$nama);
+                    if (! empty($ptkData['gelar_belakang'])) {
+                        $namaGelar .= ', '.$ptkData['gelar_belakang'];
                     }
 
                     $sekolah = SekolahSettings::first();
                     if ($sekolah) {
                         $pengaturan = $sekolah->pengaturan ?? [];
-                        if (!empty($nip)) {
+                        if (! empty($nip)) {
                             $pengaturan['nip_kepala_sekolah'] = $nip;
                         }
                         $sekolah->update([
@@ -442,14 +444,14 @@ class DapodikSyncController extends Controller
                     }
                 }
 
-                $username = $nip ?: ($nuptk ?: ($nik ?: ('gtk_' . ($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
+                $username = $nip ?: ($nuptk ?: ($nik ?: ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
                 $isActive = strtolower($p['status_aktif'] ?? $p['status'] ?? 'aktif') === 'aktif';
 
                 $existingUser = null;
                 if ($dapodikId) {
                     $existingUser = User::forSchool()->withTrashed()->where('dapodik_id', $dapodikId)->first();
                 }
-                if (!$existingUser && $username) {
+                if (! $existingUser && $username) {
                     $existingUser = User::forSchool()->withTrashed()->where('nama_pengguna', $username)->first();
                 }
 
@@ -470,7 +472,7 @@ class DapodikSyncController extends Controller
                     $finalUsername = $base;
                     $counter = 1;
                     while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
-                        $finalUsername = $base . '.' . $counter;
+                        $finalUsername = $base.'.'.$counter;
                         $counter++;
                     }
 
@@ -478,7 +480,7 @@ class DapodikSyncController extends Controller
                         'uuid' => Str::uuid(),
                         'nama_lengkap' => $nama,
                         'nama_pengguna' => $finalUsername,
-                        'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
+                        'kata_sandi' => Hash::make(InitialPassword::generate()),
                         'peran' => $peran,
                         'nip' => $nip ?: null,
                         'aktif' => $isActive,
@@ -492,7 +494,7 @@ class DapodikSyncController extends Controller
             },
             function ($p, \Throwable $e): void {
                 $id = is_array($p) ? ($p['ptk_id'] ?? $p['dapodik_id'] ?? 'unknown') : 'unknown';
-                Log::warning("Gagal sync PTK dapodik_id {$id}: " . $e->getMessage());
+                Log::warning("Gagal sync PTK dapodik_id {$id}: ".$e->getMessage());
             }
         );
     }
@@ -508,11 +510,11 @@ class DapodikSyncController extends Controller
                 $existing = Rombel::where('semester_id', $semester->id)
                     ->where(function ($query) use ($dapodikId, $namaRombel) {
                         $hasCondition = false;
-                        if (!empty($dapodikId)) {
+                        if (! empty($dapodikId)) {
                             $query->where('dapodik_id', $dapodikId);
                             $hasCondition = true;
                         }
-                        if (!empty($namaRombel)) {
+                        if (! empty($namaRombel)) {
                             $hasCondition ? $query->orWhere('nama_rombel', $namaRombel) : $query->where('nama_rombel', $namaRombel);
                         }
                     })
@@ -609,6 +611,7 @@ class DapodikSyncController extends Controller
         if (preg_match('/^\d+\s*[a-zA-Z]/', $name)) {
             return true;
         }
+
         return false;
     }
 
@@ -644,10 +647,12 @@ class DapodikSyncController extends Controller
 
                 if ($existing) {
                     $existing->update($payload);
+
                     return 'diperbarui';
                 }
 
                 MataPelajaran::create($payload);
+
                 return 'berhasil';
             }
         );
@@ -666,7 +671,7 @@ class DapodikSyncController extends Controller
                 $namaRombel = trim($j['nama_rombel'] ?? $j['rombongan_belajar_id_str'] ?? $j['kelas'] ?? '');
 
                 // Jika nama rombel kosong tapi ada rombongan_belajar_id, lookup dari database
-                if ($namaRombel === '' && !empty($j['rombongan_belajar_id'])) {
+                if ($namaRombel === '' && ! empty($j['rombongan_belajar_id'])) {
                     $rombelObj = Rombel::where('dapodik_id', $j['rombongan_belajar_id'])
                         ->where('semester_id', $semester->id)
                         ->first();
@@ -676,7 +681,7 @@ class DapodikSyncController extends Controller
                 }
 
                 // Otomatis registrasi mata pelajaran ke tabel mata_pelajaran
-                if ($namaMapel !== '' && !$this->isClassName($namaMapel)) {
+                if ($namaMapel !== '' && ! $this->isClassName($namaMapel)) {
                     MataPelajaran::firstOrCreate(
                         [
                             'nama' => $namaMapel,
@@ -692,34 +697,34 @@ class DapodikSyncController extends Controller
 
                 // Lookup guru jika ada PTK ID atau nama guru
                 $guruId = null;
-                if (!empty($j['ptk_id'])) {
+                if (! empty($j['ptk_id'])) {
                     $ptk = Ptk::where('dapodik_id', $j['ptk_id'])->first();
                     if ($ptk && $ptk->user_id) {
                         $guruId = $ptk->user_id;
                     }
                 }
                 $rawGuru = $j['ptk_id_str'] ?? $j['nama_guru'] ?? $j['nama_ptk'] ?? null;
-                if (!$guruId && !empty($rawGuru)) {
+                if (! $guruId && ! empty($rawGuru)) {
                     $namaGuru = trim((string) $rawGuru);
                     $guruUser = User::whereRaw('LOWER(nama_lengkap) = ?', [strtolower($namaGuru)])->first();
                     if ($guruUser) {
                         $guruId = $guruUser->id;
                     }
                 }
-                if (!$guruId && !empty($j['guru_id'])) {
+                if (! $guruId && ! empty($j['guru_id'])) {
                     $guruId = $j['guru_id'];
                 }
-                if (!$guruId) {
+                if (! $guruId) {
                     $guruId = auth()->id() ?? User::where('peran', 'admin')->first()?->id ?? User::first()?->id;
                 }
 
                 $hari = trim($j['hari'] ?? '');
                 $validHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                if (!in_array($hari, $validHari)) {
+                if (! in_array($hari, $validHari)) {
                     $hari = 'Senin';
                 }
-                $jamMulai = !empty($j['jam_mulai']) ? $j['jam_mulai'] : '07:00:00';
-                $jamSelesai = !empty($j['jam_selesai']) ? $j['jam_selesai'] : '08:00:00';
+                $jamMulai = ! empty($j['jam_mulai']) ? $j['jam_mulai'] : '07:00:00';
+                $jamSelesai = ! empty($j['jam_selesai']) ? $j['jam_selesai'] : '08:00:00';
 
                 $existing = null;
                 if ($dapodikId) {
@@ -727,12 +732,12 @@ class DapodikSyncController extends Controller
                         ->where('semester_id', $semester->id)
                         ->first();
                 }
-                if (!$existing && !empty($namaRombel) && !empty($namaMapel)) {
+                if (! $existing && ! empty($namaRombel) && ! empty($namaMapel)) {
                     $existingQuery = JadwalPelajaran::where('semester_id', $semester->id)
                         ->where('kelas', $namaRombel)
                         ->where('mata_pelajaran', $namaMapel);
 
-                    if (!empty($hari)) {
+                    if (! empty($hari)) {
                         $existingQuery->where('hari', $hari);
                     }
                     $existing = $existingQuery->first();
@@ -762,7 +767,7 @@ class DapodikSyncController extends Controller
                 return 'berhasil';
             },
             function ($j, \Throwable $e): void {
-                Log::error('Gagal sync jadwal/pembelajaran: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+                Log::error('Gagal sync jadwal/pembelajaran: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine());
             }
         );
     }
@@ -815,7 +820,7 @@ class DapodikSyncController extends Controller
         if ($semester) {
             $siswaIds = Siswa::where('semester_id', $semester->id)->pluck('id');
             $query->whereIn('siswa_id', $siswaIds)
-                  ->where('tahun_ajaran', $semester->tahun_ajaran);
+                ->where('tahun_ajaran', $semester->tahun_ajaran);
         }
 
         $items = $query->get()->map(function ($nilai) use ($semester) {
@@ -871,7 +876,7 @@ class DapodikSyncController extends Controller
     private function exportSekolah()
     {
         $sekolah = SekolahSettings::first();
-        if (!$sekolah) {
+        if (! $sekolah) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data sekolah belum dikonfigurasi.',

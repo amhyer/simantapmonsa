@@ -65,6 +65,7 @@ class ApiKeyController extends Controller
     {
         $this->ensureKeyAccessible($apiKey);
         $apiKey->delete();
+
         return redirect()->route('admin.api-keys.index')
             ->with('success', 'API Key dihapus.');
     }
@@ -72,7 +73,8 @@ class ApiKeyController extends Controller
     public function toggle(ApiKey $apiKey)
     {
         $this->ensureKeyAccessible($apiKey);
-        $apiKey->update(['active' => !$apiKey->active]);
+        $apiKey->update(['active' => ! $apiKey->active]);
+
         return redirect()->route('admin.api-keys.index')
             ->with('success', $apiKey->active ? 'API Key diaktifkan.' : 'API Key dinonaktifkan.');
     }

@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,7 +17,9 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $authPasswordName = 'kata_sandi';
+
     protected $table = 'users';
+
     protected $fillable = [
         'uuid',
         'nama_lengkap',
@@ -73,14 +75,20 @@ class User extends Authenticatable
     {
         parent::boot();
         static::saving(function ($model) {
-            if ($model->tenant_id !== null) $model->tenant_owned = true;
+            if ($model->tenant_id !== null) {
+                $model->tenant_owned = true;
+            }
         });
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
             if (empty($model->tenant_id) && TenantContext::check()) {
                 $model->tenant_id = TenantContext::id();
             }
-            if ($model->tenant_id !== null) $model->tenant_owned = true;
+            if ($model->tenant_id !== null) {
+                $model->tenant_owned = true;
+            }
         });
     }
 
@@ -92,6 +100,7 @@ class User extends Authenticatable
         if (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()) {
             return $query->whereRaw('1 = 0');
         }
+
         return $query->whereNull('users.tenant_id')->where('users.tenant_owned', false);
     }
 

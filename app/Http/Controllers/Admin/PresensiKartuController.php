@@ -29,7 +29,7 @@ class PresensiKartuController extends Controller
         if ($jenis === 'siswa' && $request->filled('q')) {
             $term = trim((string) $request->query('q'));
             $studentQuery->where(function ($builder) use ($term) {
-                $pattern = '%' . mb_strtolower($term) . '%';
+                $pattern = '%'.mb_strtolower($term).'%';
                 $builder->whereRaw('LOWER(nama_peserta_didik) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(nis) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(COALESCE(nisn, \'\')) LIKE ?', [$pattern]);
@@ -48,7 +48,7 @@ class PresensiKartuController extends Controller
         if ($jenis === 'pegawai' && $request->filled('q')) {
             $term = trim((string) $request->query('q'));
             $pegawaiQuery->where(function ($builder) use ($term) {
-                $pattern = '%' . mb_strtolower($term) . '%';
+                $pattern = '%'.mb_strtolower($term).'%';
                 $builder->whereRaw('LOWER(nama_lengkap) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(nama_pengguna) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(COALESCE(nip, \'\')) LIKE ?', [$pattern]);
@@ -99,7 +99,7 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             $hadCard ? 'Ganti QR kartu siswa' : 'Hubungkan QR kartu siswa',
-            'QR kartu untuk siswa ' . $siswa->nama_peserta_didik . ' ' . ($hadCard ? 'diperbarui.' : 'dihubungkan.'),
+            'QR kartu untuk siswa '.$siswa->nama_peserta_didik.' '.($hadCard ? 'diperbarui.' : 'dihubungkan.'),
             'siswa',
             $siswa->id,
             ['qr_terhubung' => $hadCard],
@@ -108,7 +108,7 @@ class PresensiKartuController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Kartu QR berhasil dihubungkan ke ' . $siswa->nama_peserta_didik . '.',
+            'message' => 'Kartu QR berhasil dihubungkan ke '.$siswa->nama_peserta_didik.'.',
             'student' => ['id' => $siswa->id, 'nama' => $siswa->nama_peserta_didik],
         ]);
     }
@@ -128,7 +128,7 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             'Lepas QR kartu siswa',
-            'QR kartu siswa ' . $siswa->nama_peserta_didik . ' dinonaktifkan oleh admin.',
+            'QR kartu siswa '.$siswa->nama_peserta_didik.' dinonaktifkan oleh admin.',
             'siswa',
             $siswa->id,
             ['qr_terhubung' => true],
@@ -148,14 +148,14 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             $hadCard ? 'Putar ulang kartu identitas siswa' : 'Terbitkan kartu identitas siswa',
-            'Kartu identitas QR sistem untuk siswa ' . $siswa->nama_peserta_didik . ' diterbitkan (v' . $siswa->qr_card_version . ').',
+            'Kartu identitas QR sistem untuk siswa '.$siswa->nama_peserta_didik.' diterbitkan (v'.$siswa->qr_card_version.').',
             'siswa',
             $siswa->id,
             ['qr_terhubung' => $hadCard],
             ['qr_terhubung' => true, 'versi' => $siswa->qr_card_version],
         );
 
-        return redirect()->back()->with('success', 'Kartu identitas QR untuk ' . $siswa->nama_peserta_didik . ' berhasil diterbitkan.');
+        return redirect()->back()->with('success', 'Kartu identitas QR untuk '.$siswa->nama_peserta_didik.' berhasil diterbitkan.');
     }
 
     public function issueSiswaMassal(Request $request, IdentityCardService $cards)
@@ -165,13 +165,15 @@ class PresensiKartuController extends Controller
             $query->where('rombel_id', (int) $request->input('rombel_id'));
         }
         $putarUlang = $request->boolean('putar_ulang');
-        if (!$putarUlang) {
+        if (! $putarUlang) {
             $query->whereNull('qr_token_hash');
         }
 
         $jumlah = 0;
         foreach ($query->cursor() as $siswa) {
-            if ($cards->issueSiswaCard($siswa, $putarUlang) !== null) $jumlah++;
+            if ($cards->issueSiswaCard($siswa, $putarUlang) !== null) {
+                $jumlah++;
+            }
         }
 
         AktivitasService::log(
@@ -196,10 +198,12 @@ class PresensiKartuController extends Controller
         $siswa->loadMissing('rombel');
         $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $card = $cards->buildSiswaCardViewModel($siswa, $sekolah, true);
-        if ($card['qr_svg']) $cards->markSiswaAsPrinted($siswa);
+        if ($card['qr_svg']) {
+            $cards->markSiswaAsPrinted($siswa);
+        }
 
         return view('presensi.kartu-cetak', [
-            'judul' => 'Kartu Identitas Siswa — ' . $siswa->nama_peserta_didik,
+            'judul' => 'Kartu Identitas Siswa — '.$siswa->nama_peserta_didik,
             'subjudul' => ($siswa->rombel?->nama_rombel ?? $siswa->kelas ?? 'Siswa Aktif'),
             'cards' => [$card],
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'siswa']),
@@ -216,7 +220,7 @@ class PresensiKartuController extends Controller
         if ($request->filled('rombel_id')) {
             $currentRombel = Rombel::findOrFail((int) $request->query('rombel_id'));
             $query->where('rombel_id', $currentRombel->id);
-            $subjudul = 'Kelas ' . $currentRombel->nama_rombel;
+            $subjudul = 'Kelas '.$currentRombel->nama_rombel;
         }
 
         $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
@@ -227,11 +231,11 @@ class PresensiKartuController extends Controller
         $page = max(1, (int) $request->query('page', 1));
         $totalPages = (int) max(1, ceil($totalSiswa / $perPage));
 
-        if (!$request->filled('rombel_id') && $totalSiswa > $perPage) {
+        if (! $request->filled('rombel_id') && $totalSiswa > $perPage) {
             $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')
                 ->forPage($page, $perPage)
                 ->get();
-            $subjudul = "Semua Kelas · Batch {$page} dari {$totalPages} (" . count($list) . " dari {$totalSiswa} siswa)";
+            $subjudul = "Semua Kelas · Batch {$page} dari {$totalPages} (".count($list)." dari {$totalSiswa} siswa)";
         } else {
             $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->get();
         }
@@ -331,7 +335,7 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             $hadCard ? 'Ganti QR kartu pegawai' : 'Hubungkan QR kartu pegawai',
-            'QR kartu untuk pegawai ' . $pegawai->nama_lengkap . ' dihubungkan.',
+            'QR kartu untuk pegawai '.$pegawai->nama_lengkap.' dihubungkan.',
             'users',
             $pegawai->id,
             ['qr_terhubung' => $hadCard],
@@ -340,7 +344,7 @@ class PresensiKartuController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Kartu QR berhasil dihubungkan ke ' . $pegawai->nama_lengkap . '.',
+            'message' => 'Kartu QR berhasil dihubungkan ke '.$pegawai->nama_lengkap.'.',
             'staff' => ['id' => $pegawai->id, 'nama' => $pegawai->nama_lengkap],
         ]);
     }
@@ -360,14 +364,14 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             $hadCard ? 'Putar ulang kartu identitas pegawai' : 'Terbitkan kartu identitas pegawai',
-            'Kartu identitas QR sistem untuk ' . $pegawai->nama_lengkap . ' diterbitkan (v' . $pegawai->qr_card_version . ').',
+            'Kartu identitas QR sistem untuk '.$pegawai->nama_lengkap.' diterbitkan (v'.$pegawai->qr_card_version.').',
             'users',
             $pegawai->id,
             ['qr_terhubung' => $hadCard],
             ['qr_terhubung' => true, 'versi' => $pegawai->qr_card_version],
         );
 
-        return redirect()->back()->with('success', 'Kartu identitas QR untuk ' . $pegawai->nama_lengkap . ' berhasil diterbitkan.');
+        return redirect()->back()->with('success', 'Kartu identitas QR untuk '.$pegawai->nama_lengkap.' berhasil diterbitkan.');
     }
 
     public function issuePegawaiMassal(Request $request, IdentityCardService $cards)
@@ -377,13 +381,15 @@ class PresensiKartuController extends Controller
             ->where('aktif', true);
 
         $putarUlang = $request->boolean('putar_ulang');
-        if (!$putarUlang) {
+        if (! $putarUlang) {
             $query->whereNull('qr_token_hash');
         }
 
         $jumlah = 0;
         foreach ($query->cursor() as $person) {
-            if ($cards->issuePegawaiCard($person, $putarUlang) !== null) $jumlah++;
+            if ($cards->issuePegawaiCard($person, $putarUlang) !== null) {
+                $jumlah++;
+            }
         }
 
         AktivitasService::log(
@@ -416,7 +422,7 @@ class PresensiKartuController extends Controller
         AktivitasService::log(
             'kehadiran',
             'Lepas QR kartu pegawai',
-            'QR kartu pegawai ' . $pegawai->nama_lengkap . ' dinonaktifkan oleh admin.',
+            'QR kartu pegawai '.$pegawai->nama_lengkap.' dinonaktifkan oleh admin.',
             'users',
             $pegawai->id,
             ['qr_terhubung' => true],
@@ -436,10 +442,12 @@ class PresensiKartuController extends Controller
         );
         $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $card = $cards->buildPegawaiCardViewModel($pegawai, $sekolah, null, true);
-        if ($card['qr_svg']) $cards->markPegawaiAsPrinted($pegawai);
+        if ($card['qr_svg']) {
+            $cards->markPegawaiAsPrinted($pegawai);
+        }
 
         return view('presensi.kartu-cetak', [
-            'judul' => 'Kartu Identitas Pegawai — ' . $pegawai->nama_lengkap,
+            'judul' => 'Kartu Identitas Pegawai — '.$pegawai->nama_lengkap,
             'subjudul' => ucfirst((string) $pegawai->peran),
             'cards' => [$card],
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'pegawai']),
@@ -465,13 +473,16 @@ class PresensiKartuController extends Controller
             $ptk = $person->dapodik_id ? $ptkByDapodik->get($person->dapodik_id) : null;
 
             $card = $cards->buildPegawaiCardViewModel($person, $sekolah, $ptk, true);
-            if ($card['qr_svg']) $cards->markPegawaiAsPrinted($person);
+            if ($card['qr_svg']) {
+                $cards->markPegawaiAsPrinted($person);
+            }
+
             return $card;
         })->all();
 
         return view('presensi.kartu-cetak', [
             'judul' => 'Cetak Kartu Identitas Guru & Pegawai',
-            'subjudul' => count($cardItems) . ' kartu aktif',
+            'subjudul' => count($cardItems).' kartu aktif',
             'cards' => $cardItems,
             'kembaliUrl' => route('admin.presensi.kartu.index', ['jenis' => 'pegawai']),
         ]);

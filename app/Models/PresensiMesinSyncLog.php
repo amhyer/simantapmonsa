@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 class PresensiMesinSyncLog extends Model
 {
     protected $table = 'presensi_mesin_sync_logs';
+
     protected $hidden = ['user_agent'];
 
     protected $fillable = [
@@ -43,7 +44,7 @@ class PresensiMesinSyncLog extends Model
             }
         });
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = (string) Str::uuid();
             }
             if (TenantContext::check()) {
