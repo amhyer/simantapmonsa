@@ -3,19 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\NilaiErapot;
-use App\Services\AktivitasService;
+use App\Http\Requests\Admin\ResetMassalPasswordRequest;
 use App\Jobs\ProsesAkunMassalJob;
+use App\Models\NilaiErapot;
+use App\Models\PengaturanGuru;
+use App\Models\Ptk;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\Admin\InitialPasswordExportService;
+use App\Services\Admin\MassPasswordResetService;
+use App\Services\AktivitasService;
+use App\Support\InitialPassword;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -53,8 +60,8 @@ class UserController extends Controller
             ->each(function (User $u) {
                 $candidate = $u->email
                     ? str_replace('@erapor.id', '@simantap.sch.id', $u->email)
-                    : (strtolower($u->nama_pengguna) . '@simantap.sch.id');
-                if (!User::withoutGlobalScopes()->withTrashed()->where('email', $candidate)->where('id', '!=', $u->id)->exists()) {
+                    : (strtolower($u->nama_pengguna).'@simantap.sch.id');
+                if (! User::withoutGlobalScopes()->withTrashed()->where('email', $candidate)->where('id', '!=', $u->id)->exists()) {
                     $u->email = $candidate;
                     $u->saveQuietly();
                 }
@@ -68,7 +75,7 @@ class UserController extends Controller
             ->with('guru:id,nama_lengkap')
             ->orderBy('nama_peserta_didik')
             ->get();
-        $ptkList = \App\Models\Ptk::select('id', 'nama', 'nip', 'nuptk', 'gelar_depan', 'gelar_belakang')
+        $ptkList = Ptk::select('id', 'nama', 'nip', 'nuptk', 'gelar_depan', 'gelar_belakang')
             ->orderBy('nama')
             ->get();
 
@@ -84,6 +91,7 @@ class UserController extends Controller
     {
         $this->accounts();
         $siswa = Siswa::all();
+
         return view('admin.users.create', compact('siswa'));
     }
 
@@ -129,20 +137,20 @@ class UserController extends Controller
         ]);
 
         if ($validated['peran'] === 'guru') {
-            \App\Models\PengaturanGuru::create([
+            PengaturanGuru::create([
                 'guru_id' => $user->id,
                 'nama_guru' => $user->nama_lengkap,
                 'kelas' => $validated['kelas_mata_pelajaran'] ?? null,
                 'kkm' => getKKM(),
                 'semester' => 'Ganjil',
-                'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+                'tahun_pelajaran' => date('Y').'/'.(date('Y') + 1),
                 'pembaruan' => now(),
             ]);
         }
 
         AktivitasService::tambah(
-            'Buat Akun: ' . $validated['nama_lengkap'],
-            'Akun ' . $validated['peran'] . ' berhasil dibuat',
+            'Buat Akun: '.$validated['nama_lengkap'],
+            'Akun '.$validated['peran'].' berhasil dibuat',
             'users',
             $user->id,
             ['nama_lengkap' => $validated['nama_lengkap'], 'peran' => $validated['peran']]
@@ -156,6 +164,7 @@ class UserController extends Controller
     {
         $this->ensureAccountAccessible($user);
         $siswa = Siswa::all();
+
         return view('admin.users.edit', compact('user', 'siswa'));
     }
 
@@ -164,8 +173,8 @@ class UserController extends Controller
         $this->ensureAccountAccessible($user);
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,' . $user->id,
-            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,'.$user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
             'kata_sandi' => 'nullable|string|min:8',
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik',
             'terhubung_dengan' => 'nullable|array',
@@ -196,7 +205,7 @@ class UserController extends Controller
             $data['is_wali_kelas'] = null;
         }
 
-        if (!empty($validated['kata_sandi'])) {
+        if (! empty($validated['kata_sandi'])) {
             $data['kata_sandi'] = Hash::make($validated['kata_sandi']);
 
             // PERBAIKAN KEAMANAN (kesiapan launching): sebelumnya sandi yang
@@ -212,27 +221,27 @@ class UserController extends Controller
         $user->update($data);
 
         AktivitasService::ubah(
-            'Ubah Akun: ' . $user->nama_lengkap,
-            'Data akun ' . $user->peran . ' diperbarui',
+            'Ubah Akun: '.$user->nama_lengkap,
+            'Data akun '.$user->peran.' diperbarui',
             'users',
             $user->id,
             null,
             ['nama_lengkap' => $user->nama_lengkap, 'peran' => $user->peran]
         );
 
-        if (!empty($validated['kata_sandi'])) {
+        if (! empty($validated['kata_sandi'])) {
             // Dicatat terpisah dan TANPA nilai sandi, agar jejak audit menunjukkan
             // siapa mereset sandi siapa tanpa membocorkan rahasia.
             AktivitasService::ubah(
-                'Reset Sandi: ' . $user->nama_lengkap,
-                'Sandi akun ' . $user->peran . ' direset oleh administrator',
+                'Reset Sandi: '.$user->nama_lengkap,
+                'Sandi akun '.$user->peran.' direset oleh administrator',
                 'users',
                 $user->id
             );
         }
 
         return redirect()->route('admin.users.index')
-            ->with('success', !empty($validated['kata_sandi']) && $user->force_password_change
+            ->with('success', ! empty($validated['kata_sandi']) && $user->force_password_change
                 ? 'Akun berhasil diperbarui. Pengguna wajib mengganti sandi saat login berikutnya.'
                 : 'Akun berhasil diperbarui.');
     }
@@ -253,8 +262,8 @@ class UserController extends Controller
         });
 
         AktivitasService::hapus(
-            'Hapus Akun: ' . $nama,
-            'Akun ' . $peran . ' dihapus',
+            'Hapus Akun: '.$nama,
+            'Akun '.$peran.' dihapus',
             'users',
             null,
             ['nama_lengkap' => $nama, 'peran' => $peran]
@@ -271,17 +280,17 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Hapus massal dinonaktifkan untuk multi-sekolah sampai seluruh relasi data terisolasi.'], 503);
         }
         $allowed = ['guru', 'siswa', 'ortu', 'tendik'];
-        if (!in_array($peran, $allowed)) {
+        if (! in_array($peran, $allowed)) {
             return response()->json(['success' => false, 'message' => 'Peran tidak valid.'], 400);
         }
 
         // Konfirmasi bertingkat: frasa diketik ulang di peramban sebelum
         // penghapusan massal dijalankan (mengikuti pola `admin.backup.wipe`).
-        $frasaKonfirmasi = 'HAPUS ' . strtoupper($peran);
+        $frasaKonfirmasi = 'HAPUS '.strtoupper($peran);
         if (strtoupper(trim((string) $request->input('konfirmasi'))) !== $frasaKonfirmasi) {
             return response()->json([
                 'success' => false,
-                'message' => 'Teks konfirmasi tidak cocok. Ketik persis: ' . $frasaKonfirmasi,
+                'message' => 'Teks konfirmasi tidak cocok. Ketik persis: '.$frasaKonfirmasi,
             ], 422);
         }
 
@@ -289,7 +298,7 @@ class UserController extends Controller
         $count = $users->count();
 
         if ($count === 0) {
-            return response()->json(['success' => true, 'message' => 'Tidak ada akun ' . $peran . ' yang perlu dihapus.']);
+            return response()->json(['success' => true, 'message' => 'Tidak ada akun '.$peran.' yang perlu dihapus.']);
         }
 
         $labels = ['guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'tendik' => 'Tenaga Kependidikan'];
@@ -302,14 +311,14 @@ class UserController extends Controller
         });
 
         AktivitasService::hapus(
-            'Hapus Semua Akun: ' . ($labels[$peran] ?? $peran),
-            "{$count} akun " . ($labels[$peran] ?? $peran) . " berhasil dihapus",
+            'Hapus Semua Akun: '.($labels[$peran] ?? $peran),
+            "{$count} akun ".($labels[$peran] ?? $peran).' berhasil dihapus',
             'users'
         );
 
         return response()->json([
             'success' => true,
-            'message' => "{$count} akun " . ($labels[$peran] ?? $peran) . " berhasil dihapus.",
+            'message' => "{$count} akun ".($labels[$peran] ?? $peran).' berhasil dihapus.',
         ]);
     }
 
@@ -356,6 +365,7 @@ class UserController extends Controller
         $this->accounts();
         $siswa = Siswa::with('guru')->get();
         $users = $this->accounts()->get();
+
         return view('admin.users.massal', compact('siswa', 'users'));
     }
 
@@ -385,6 +395,7 @@ class UserController extends Controller
     {
         $users = $this->accounts()->get();
         $siswa = Siswa::with('guru')->orderBy('kelas')->orderBy('nama_peserta_didik')->get();
+
         return view('admin.users.siswa', compact('users', 'siswa'));
     }
 
@@ -449,7 +460,7 @@ class UserController extends Controller
         ]);
 
         AktivitasService::ubah(
-            'Update Data Pelengkap Siswa: ' . $siswa->nama_peserta_didik,
+            'Update Data Pelengkap Siswa: '.$siswa->nama_peserta_didik,
             'Biodata & data pelengkap rapor siswa diperbarui oleh administrator',
             'siswa',
             $siswa->id
@@ -497,6 +508,7 @@ class UserController extends Controller
 
         if (! $admin || ! in_array($admin->peran, ['admin', 'super_admin'], true)) {
             auth()->logout();
+
             return redirect()->route('login');
         }
 
@@ -514,9 +526,9 @@ class UserController extends Controller
     {
         $this->ensureAccountAccessible($user);
 
-        $passwordBaru = \App\Support\InitialPassword::generate();
+        $passwordBaru = InitialPassword::generate();
         $forceChange = $user->id !== $request->user()?->id
-            ? ($user->peran === 'siswa' ? \App\Support\InitialPassword::shouldForceChangeSiswa() : true)
+            ? ($user->peran === 'siswa' ? InitialPassword::shouldForceChangeSiswa() : true)
             : false;
 
         $user->forceFill([
@@ -526,8 +538,8 @@ class UserController extends Controller
         ])->save();
 
         AktivitasService::ubah(
-            'Reset Sandi Instan: ' . $user->nama_lengkap,
-            'Sandi akun ' . $user->peran . ' direset instan oleh administrator',
+            'Reset Sandi Instan: '.$user->nama_lengkap,
+            'Sandi akun '.$user->peran.' direset instan oleh administrator',
             'users',
             $user->id
         );
@@ -567,7 +579,7 @@ class UserController extends Controller
         $labelAksi = $statusBaru ? 'Aktifkan' : 'Non-aktifkan';
         AktivitasService::ubah(
             "{$labelAksi} Akun: {$user->nama_lengkap}",
-            "Status akun {$user->peran} diubah menjadi " . ($statusBaru ? 'Aktif' : 'Tidak Aktif'),
+            "Status akun {$user->peran} diubah menjadi ".($statusBaru ? 'Aktif' : 'Tidak Aktif'),
             'users',
             $user->id
         );
@@ -604,10 +616,10 @@ class UserController extends Controller
         $batasMassal = max(1, (int) config('simantap.reset_massal_max', 100));
         $generatedCredentials = [];
 
-        $semesterAktif = \App\Models\Semester::orderByDesc('semester_id')->first()
-            ?? \App\Models\Semester::orderByDesc('id')->first();
+        $semesterAktif = Semester::orderByDesc('semester_id')->first()
+            ?? Semester::orderByDesc('id')->first();
         $namaSemesterDefault = $semesterAktif?->nama_semester ? ucfirst($semesterAktif->nama_semester) : 'Ganjil';
-        $tahunAjaranDefault = $semesterAktif?->tahun_ajaran ?? (date('Y') . '/' . (date('Y') + 1));
+        $tahunAjaranDefault = $semesterAktif?->tahun_ajaran ?? (date('Y').'/'.(date('Y') + 1));
         $kkmDefault = function_exists('getKKM') ? getKKM() : 75;
 
         DB::transaction(function () use (
@@ -649,10 +661,10 @@ class UserController extends Controller
                     if ($uNameKey !== '') {
                         $schoolByUsername[$uNameKey] = $u;
                     }
-                    if (!empty($u->dapodik_id)) {
+                    if (! empty($u->dapodik_id)) {
                         $schoolByDapodik[(string) $u->dapodik_id] = $u;
                     }
-                    if (!empty($u->nip)) {
+                    if (! empty($u->nip)) {
                         $schoolByNip[strtolower(trim((string) $u->nip))] = $u;
                     }
                     if ($u->peran === 'siswa' && is_array($u->terhubung_dengan)) {
@@ -667,66 +679,68 @@ class UserController extends Controller
                 $candidate = $base;
                 $counter = 1;
                 while (isset($allUsernames[strtolower($candidate)])) {
-                    $candidate = $base . '.' . $counter;
+                    $candidate = $base.'.'.$counter;
                     $counter++;
                 }
+
                 return $candidate;
             };
 
             $resolveUniqueEmail = function (string $username) use (&$allEmails): string {
-                $baseEmail = strtolower($username) . '@simantap.sch.id';
+                $baseEmail = strtolower($username).'@simantap.sch.id';
                 $candidate = $baseEmail;
                 $counter = 1;
                 while (isset($allEmails[strtolower($candidate)])) {
-                    $candidate = strtolower($username) . '.' . $counter . '@simantap.sch.id';
+                    $candidate = strtolower($username).'.'.$counter.'@simantap.sch.id';
                     $counter++;
                 }
+
                 return $candidate;
             };
 
             // 1. Generate akun Guru / Kepsek / Tendik dari tabel PTK
             $claimedPtksUserIds = [];
-            $ptkRows = \App\Models\Ptk::orderBy('id')->get();
+            $ptkRows = Ptk::orderBy('id')->get();
             foreach ($ptkRows as $ptk) {
                 $rawCandidate = trim((string) ($ptk->nip ?: ($ptk->nuptk ?: Str::slug($ptk->nama, ''))));
                 if ($rawCandidate === '') {
-                    $rawCandidate = 'guru' . $ptk->id;
+                    $rawCandidate = 'guru'.$ptk->id;
                 }
 
                 $existing = null;
-                if (!empty($ptk->dapodik_id) && isset($schoolByDapodik[(string) $ptk->dapodik_id])) {
+                if (! empty($ptk->dapodik_id) && isset($schoolByDapodik[(string) $ptk->dapodik_id])) {
                     $cand = $schoolByDapodik[(string) $ptk->dapodik_id];
-                    if (!isset($claimedPtksUserIds[$cand->id])) {
+                    if (! isset($claimedPtksUserIds[$cand->id])) {
                         $existing = $cand;
                     }
                 }
-                if (!$existing && !empty($ptk->nip) && isset($schoolByNip[strtolower(trim((string) $ptk->nip))])) {
+                if (! $existing && ! empty($ptk->nip) && isset($schoolByNip[strtolower(trim((string) $ptk->nip))])) {
                     $cand = $schoolByNip[strtolower(trim((string) $ptk->nip))];
-                    if (!isset($claimedPtksUserIds[$cand->id])) {
+                    if (! isset($claimedPtksUserIds[$cand->id])) {
                         $existing = $cand;
                     }
                 }
-                if (!$existing) {
+                if (! $existing) {
                     // Cari berdasarkan kandidat username (termasuk sufiks .1, .2 untuk nama kembar tanpa NIP)
                     $probe = strtolower($rawCandidate);
                     $probeIdx = 0;
                     while (isset($schoolByUsername[$probe])) {
                         $cand = $schoolByUsername[$probe];
-                        if (!isset($claimedPtksUserIds[$cand->id])) {
+                        if (! isset($claimedPtksUserIds[$cand->id])) {
                             $existing = $cand;
                             break;
                         }
                         $probeIdx++;
-                        $probe = strtolower($rawCandidate) . '.' . $probeIdx;
+                        $probe = strtolower($rawCandidate).'.'.$probeIdx;
                     }
                 }
 
-                $namaLengkap = trim(($ptk->gelar_depan ? $ptk->gelar_depan . ' ' : '') . $ptk->nama . ($ptk->gelar_belakang ? ', ' . $ptk->gelar_belakang : '')) ?: $ptk->nama;
+                $namaLengkap = trim(($ptk->gelar_depan ? $ptk->gelar_depan.' ' : '').$ptk->nama.($ptk->gelar_belakang ? ', '.$ptk->gelar_belakang : '')) ?: $ptk->nama;
 
                 $peran = 'guru';
                 if ($ptk->isKepsek()) {
                     $peran = 'kepsek';
-                } elseif (!$ptk->isGuru() && !empty($ptk->jenis_ptk)) {
+                } elseif (! $ptk->isGuru() && ! empty($ptk->jenis_ptk)) {
                     $jenisLower = strtolower((string) $ptk->jenis_ptk);
                     if (
                         str_contains($jenisLower, 'tendik')
@@ -754,17 +768,17 @@ class UserController extends Controller
                     if ($existing->peran !== $peran && in_array($existing->peran, ['guru', 'tendik', 'kepsek'], true)) {
                         $syncPayload['peran'] = $peran;
                     }
-                    if (!empty($ptk->nip) && $existing->nip !== $ptk->nip) {
+                    if (! empty($ptk->nip) && $existing->nip !== $ptk->nip) {
                         $syncPayload['nip'] = $ptk->nip;
                     }
-                    if (!empty($ptk->dapodik_id) && $existing->dapodik_id !== $ptk->dapodik_id) {
+                    if (! empty($ptk->dapodik_id) && $existing->dapodik_id !== $ptk->dapodik_id) {
                         $syncPayload['dapodik_id'] = $ptk->dapodik_id;
                     }
-                    if (!empty($syncPayload)) {
+                    if (! empty($syncPayload)) {
                         $existing->update($syncPayload);
                     }
                     if ($existing->peran === 'guru') {
-                        \App\Models\PengaturanGuru::firstOrCreate(
+                        PengaturanGuru::firstOrCreate(
                             ['guru_id' => $existing->id],
                             [
                                 'nama_guru' => $existing->nama_lengkap,
@@ -775,6 +789,7 @@ class UserController extends Controller
                             ]
                         );
                     }
+
                     continue;
                 }
 
@@ -785,7 +800,7 @@ class UserController extends Controller
 
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
-                $plainPassword = \App\Support\InitialPassword::generate();
+                $plainPassword = InitialPassword::generate();
 
                 $user = User::create([
                     'uuid' => (string) Str::uuid(),
@@ -810,7 +825,7 @@ class UserController extends Controller
                 ];
 
                 if ($peran === 'guru') {
-                    \App\Models\PengaturanGuru::firstOrCreate(
+                    PengaturanGuru::firstOrCreate(
                         ['guru_id' => $user->id],
                         [
                             'nama_guru' => $user->nama_lengkap,
@@ -826,10 +841,10 @@ class UserController extends Controller
                 $allUsernames[strtolower($username)] = $user;
                 $allEmails[strtolower($email)] = $user;
                 $schoolByUsername[strtolower($username)] = $user;
-                if (!empty($ptk->dapodik_id)) {
+                if (! empty($ptk->dapodik_id)) {
                     $schoolByDapodik[(string) $ptk->dapodik_id] = $user;
                 }
-                if (!empty($ptk->nip)) {
+                if (! empty($ptk->nip)) {
                     $schoolByNip[strtolower(trim((string) $ptk->nip))] = $user;
                 }
                 $guruDibuat++;
@@ -843,20 +858,20 @@ class UserController extends Controller
             foreach ($siswaRows as $s) {
                 $rawNisn = trim((string) $s->nisn);
                 $rawNis = trim((string) $s->nis);
-                $rawCandidate = $rawNisn !== '' ? $rawNisn : ($rawNis !== '' ? $rawNis : 'siswa' . $s->id);
+                $rawCandidate = $rawNisn !== '' ? $rawNisn : ($rawNis !== '' ? $rawNis : 'siswa'.$s->id);
 
                 $existing = $schoolBySiswaId[(int) $s->id] ?? null;
-                if (!$existing && !empty($s->dapodik_id) && isset($schoolByDapodik[(string) $s->dapodik_id])) {
+                if (! $existing && ! empty($s->dapodik_id) && isset($schoolByDapodik[(string) $s->dapodik_id])) {
                     $existing = $schoolByDapodik[(string) $s->dapodik_id];
                 }
-                if (!$existing && $rawNisn !== '' && isset($schoolByUsername[strtolower($rawNisn)])) {
+                if (! $existing && $rawNisn !== '' && isset($schoolByUsername[strtolower($rawNisn)])) {
                     $existing = $schoolByUsername[strtolower($rawNisn)];
                 }
-                if (!$existing && $rawNis !== '' && isset($schoolByUsername[strtolower($rawNis)])) {
+                if (! $existing && $rawNis !== '' && isset($schoolByUsername[strtolower($rawNis)])) {
                     $existing = $schoolByUsername[strtolower($rawNis)];
                 }
-                if (!$existing && $rawNis !== '' && isset($schoolByUsername[strtolower('siswa' . $rawNis)])) {
-                    $existing = $schoolByUsername[strtolower('siswa' . $rawNis)];
+                if (! $existing && $rawNis !== '' && isset($schoolByUsername[strtolower('siswa'.$rawNis)])) {
+                    $existing = $schoolByUsername[strtolower('siswa'.$rawNis)];
                 }
 
                 if ($existing) {
@@ -875,12 +890,12 @@ class UserController extends Controller
                         $dipulihkan++;
                         $siswaDibuat++;
                     }
-                    if (!in_array((int) $s->id, array_map('intval', (array) ($existing->terhubung_dengan ?? [])), true)) {
+                    if (! in_array((int) $s->id, array_map('intval', (array) ($existing->terhubung_dengan ?? [])), true)) {
                         $updatePayload['terhubung_dengan'] = $terhubung;
                         $perluUpdate = true;
                         $ditautkan++;
                     }
-                    if (empty($existing->kelas_mata_pelajaran) && !empty($s->kelas)) {
+                    if (empty($existing->kelas_mata_pelajaran) && ! empty($s->kelas)) {
                         $updatePayload['kelas_mata_pelajaran'] = $s->kelas;
                         $perluUpdate = true;
                     }
@@ -888,6 +903,7 @@ class UserController extends Controller
                         $existing->update($updatePayload);
                     }
                     $schoolBySiswaId[(int) $s->id] = $existing;
+
                     continue;
                 }
 
@@ -898,7 +914,7 @@ class UserController extends Controller
 
                 $username = $resolveUniqueUsername($rawCandidate);
                 $email = $resolveUniqueEmail($username);
-                $plainPassword = \App\Support\InitialPassword::generate();
+                $plainPassword = InitialPassword::generate();
 
                 $newSiswaUser = User::create([
                     'uuid' => (string) Str::uuid(),
@@ -911,7 +927,7 @@ class UserController extends Controller
                     'terhubung_dengan' => [(int) $s->id],
                     'kelas_mata_pelajaran' => $s->kelas,
                     'aktif' => true,
-                    'force_password_change' => \App\Support\InitialPassword::shouldForceChangeSiswa(),
+                    'force_password_change' => InitialPassword::shouldForceChangeSiswa(),
                     'sandi_awal_diterbitkan_at' => now(),
                     'dapodik_id' => $s->dapodik_id,
                 ]);
@@ -927,7 +943,7 @@ class UserController extends Controller
                 $allEmails[strtolower($email)] = $newSiswaUser;
                 $schoolByUsername[strtolower($username)] = $newSiswaUser;
                 $schoolBySiswaId[(int) $s->id] = $newSiswaUser;
-                if (!empty($s->dapodik_id)) {
+                if (! empty($s->dapodik_id)) {
                     $schoolByDapodik[(string) $s->dapodik_id] = $newSiswaUser;
                 }
                 $siswaDibuat++;
@@ -947,7 +963,7 @@ class UserController extends Controller
         if ($ditautkan > 0) {
             $detailTambahan[] = "{$ditautkan} akun siswa ditautkan ulang";
         }
-        $infoExtra = $detailTambahan ? ' (' . implode(', ', $detailTambahan) . ')' : '';
+        $infoExtra = $detailTambahan ? ' ('.implode(', ', $detailTambahan).')' : '';
 
         if ($guruDibuat === 0 && $siswaDibuat === 0 && $ditautkan === 0) {
             $pesan = 'Semua Guru (PTK) dan Siswa aktif di database sudah memiliki akun pengguna.';
@@ -959,7 +975,7 @@ class UserController extends Controller
         }
 
         $eksporUrl = $generatedCredentials !== []
-            ? app(\App\Services\Admin\InitialPasswordExportService::class)->store((int) $request->user()?->id, $tenantId, $generatedCredentials)
+            ? app(InitialPasswordExportService::class)->store((int) $request->user()?->id, $tenantId, $generatedCredentials)
             : null;
 
         if ($request->expectsJson() || $request->ajax()) {
@@ -988,20 +1004,20 @@ class UserController extends Controller
      */
     public function eksporSandiAwal(Request $request, string $token)
     {
-        return app(\App\Services\Admin\InitialPasswordExportService::class)->streamOnce($request, $token);
+        return app(InitialPasswordExportService::class)->streamOnce($request, $token);
     }
 
-    public function pratinjauResetMassal(\App\Http\Requests\Admin\ResetMassalPasswordRequest $request)
+    public function pratinjauResetMassal(ResetMassalPasswordRequest $request)
     {
-        $preview = app(\App\Services\Admin\MassPasswordResetService::class)
+        $preview = app(MassPasswordResetService::class)
             ->preview($request->validated(), (int) $request->user()?->id);
 
         return response()->json(['success' => true] + $preview);
     }
 
-    public function resetMassalPassword(\App\Http\Requests\Admin\ResetMassalPasswordRequest $request)
+    public function resetMassalPassword(ResetMassalPasswordRequest $request)
     {
-        $result = app(\App\Services\Admin\MassPasswordResetService::class)
+        $result = app(MassPasswordResetService::class)
             ->execute($request->validated(), $request->user());
 
         if ($result['locked']) {
