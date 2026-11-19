@@ -6,21 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Ekstrakurikuler;
 use App\Models\JadwalPelajaran;
 use App\Models\MataPelajaran;
+use App\Models\NilaiErapot;
+use App\Models\PengaturanGuru;
 use App\Models\Ptk;
 use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\User;
-use App\Models\NilaiErapot;
-use App\Models\PengaturanGuru;
 use App\Models\TanggalRapor;
-use App\Services\JadwalPelajaranResolver;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
+use App\Services\JadwalPelajaranResolver;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class DataReferensiController extends Controller
 {
@@ -67,13 +68,13 @@ class DataReferensiController extends Controller
 
         $ptk = Ptk::create([
             'nama' => trim($validated['nama']),
-            'nip' => !empty($validated['nip']) ? trim($validated['nip']) : null,
-            'nuptk' => !empty($validated['nuptk']) ? trim($validated['nuptk']) : null,
+            'nip' => ! empty($validated['nip']) ? trim($validated['nip']) : null,
+            'nuptk' => ! empty($validated['nuptk']) ? trim($validated['nuptk']) : null,
             'jk' => $validated['jk'] ?? null,
             'jenis_ptk' => $validated['jenis_ptk'],
-            'jabatan' => !empty($validated['jabatan']) ? trim($validated['jabatan']) : null,
-            'gelar_depan' => !empty($validated['gelar_depan']) ? trim($validated['gelar_depan']) : null,
-            'gelar_belakang' => !empty($validated['gelar_belakang']) ? trim($validated['gelar_belakang']) : null,
+            'jabatan' => ! empty($validated['jabatan']) ? trim($validated['jabatan']) : null,
+            'gelar_depan' => ! empty($validated['gelar_depan']) ? trim($validated['gelar_depan']) : null,
+            'gelar_belakang' => ! empty($validated['gelar_belakang']) ? trim($validated['gelar_belakang']) : null,
             'dapodik_id' => null,
             'semester_id' => $semester?->id,
         ]);
@@ -82,19 +83,19 @@ class DataReferensiController extends Controller
         $generatedPassword = null;
         $finalUsername = null;
         if ($buatAkun) {
-            $username = !empty($validated['nama_pengguna'])
+            $username = ! empty($validated['nama_pengguna'])
                 ? trim($validated['nama_pengguna'])
-                : (!empty($validated['nip']) ? trim($validated['nip']) : (!empty($validated['nuptk']) ? trim($validated['nuptk']) : null));
+                : (! empty($validated['nip']) ? trim($validated['nip']) : (! empty($validated['nuptk']) ? trim($validated['nuptk']) : null));
 
-            if (!$username) {
+            if (! $username) {
                 $base = Str::slug($validated['nama'], '');
-                $username = !empty($base) ? $base : 'guru' . rand(100, 999);
+                $username = ! empty($base) ? $base : 'guru'.rand(100, 999);
             }
 
             $finalUsername = $username;
             $counter = 1;
             while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
-                $finalUsername = $username . '.' . $counter;
+                $finalUsername = $username.'.'.$counter;
                 $counter++;
             }
 
@@ -113,7 +114,7 @@ class DataReferensiController extends Controller
                 $peran = 'tendik';
             }
 
-            $password = !empty($validated['kata_sandi']) ? $validated['kata_sandi'] : ($generatedPassword = Str::random(12));
+            $password = ! empty($validated['kata_sandi']) ? $validated['kata_sandi'] : ($generatedPassword = Str::random(12));
 
             $user = User::create([
                 'uuid' => (string) Str::uuid(),
@@ -135,14 +136,14 @@ class DataReferensiController extends Controller
                         'kelas' => $ptk->jabatan,
                         'kkm' => function_exists('getKKM') ? getKKM() : 75,
                         'semester' => $semester?->nama_semester ? ucfirst($semester->nama_semester) : 'Ganjil',
-                        'tahun_pelajaran' => $semester?->tahun_ajaran ?? (date('Y') . '/' . (date('Y') + 1)),
+                        'tahun_pelajaran' => $semester?->tahun_ajaran ?? (date('Y').'/'.(date('Y') + 1)),
                         'pembaruan' => now(),
                     ]
                 );
             }
         }
 
-        $pesan = 'Guru non-Dapodik (' . $ptk->nama_gelar . ') berhasil ditambahkan.';
+        $pesan = 'Guru non-Dapodik ('.$ptk->nama_gelar.') berhasil ditambahkan.';
         if ($generatedPassword !== null) {
             $pesan .= " Akun: {$finalUsername} | Kata sandi awal (tampil sekali): {$generatedPassword}";
         }
@@ -211,7 +212,7 @@ class DataReferensiController extends Controller
         $pembelajaran = JadwalPelajaran::findOrFail($pembelajaran);
         try {
             $pembelajaran->delete();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // kehadiran_mapel.jadwal_pelajaran_id memakai RESTRICT: jangan
             // biarkan tombol Hapus memunculkan 500 saat data masih terpakai.
             return back()->with('error', 'Jadwal pembelajaran masih digunakan oleh data kehadiran mapel dan tidak dapat dihapus.');
@@ -220,7 +221,7 @@ class DataReferensiController extends Controller
         return back()->with('success', 'Jadwal pembelajaran berhasil dihapus.');
     }
 
-        /**
+    /**
      * Halaman alignment-check e-Rapor vs pembelajaran (view: Fase 5).
      */
     public function alignmentCheck(JadwalPelajaranResolver $resolver)
@@ -307,7 +308,7 @@ class DataReferensiController extends Controller
                 });
 
             fclose($output);
-        }, 'nilai-erapor-unmatched-' . now()->format('Y-m-d') . '.csv', [
+        }, 'nilai-erapor-unmatched-'.now()->format('Y-m-d').'.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
@@ -318,7 +319,7 @@ class DataReferensiController extends Controller
         $value = (string) ($value ?? '');
 
         return preg_match('/^[\\x00-\\x20]*[=+\\-@]/', $value) === 1
-            ? "'" . $value
+            ? "'".$value
             : $value;
     }
 
@@ -433,7 +434,7 @@ class DataReferensiController extends Controller
         abort_unless(count($ids) === Ptk::whereIn('id', $ids)->count(), 404);
         foreach ($validated['ptk'] as $id => $row) {
             $ptkModel = Ptk::find($id);
-            if (!$ptkModel) {
+            if (! $ptkModel) {
                 continue;
             }
             $oldNip = $ptkModel->nip;
@@ -445,7 +446,7 @@ class DataReferensiController extends Controller
             if (array_key_exists('nip', $row)) {
                 $dataToUpdate['nip'] = trim((string) ($row['nip'] ?? '')) ?: null;
             }
-            if (array_key_exists('jenis_ptk', $row) && !empty($row['jenis_ptk'])) {
+            if (array_key_exists('jenis_ptk', $row) && ! empty($row['jenis_ptk'])) {
                 $dataToUpdate['jenis_ptk'] = trim($row['jenis_ptk']);
             }
             if (array_key_exists('jabatan', $row)) {
@@ -456,15 +457,15 @@ class DataReferensiController extends Controller
 
             // Sinkronkan NIP, nama bergelar, peran, & jabatan ke akun User terkait jika ada
             $linkedUser = null;
-            if (!empty($ptkModel->dapodik_id)) {
+            if (! empty($ptkModel->dapodik_id)) {
                 $linkedUser = User::forSchool()->where('dapodik_id', $ptkModel->dapodik_id)->first();
             }
-            if (!$linkedUser && !empty($oldNip)) {
+            if (! $linkedUser && ! empty($oldNip)) {
                 $linkedUser = User::forSchool()->where(function ($q) use ($oldNip) {
                     $q->where('nip', $oldNip)->orWhere('nama_pengguna', $oldNip);
                 })->first();
             }
-            if (!$linkedUser) {
+            if (! $linkedUser) {
                 $slug = Str::slug($ptkModel->nama, '');
                 if ($slug !== '') {
                     $linkedUser = User::forSchool()->where('nama_pengguna', $slug)->first();
@@ -474,7 +475,7 @@ class DataReferensiController extends Controller
                 $peranSync = 'guru';
                 if ($ptkModel->isKepsek()) {
                     $peranSync = 'kepsek';
-                } elseif (!$ptkModel->isGuru() && !empty($ptkModel->jenis_ptk)) {
+                } elseif (! $ptkModel->isGuru() && ! empty($ptkModel->jenis_ptk)) {
                     $peranSync = 'tendik';
                 }
                 $linkedUser->update([
@@ -520,7 +521,7 @@ class DataReferensiController extends Controller
         ]);
 
         $sekolah = SekolahSettings::first();
-        if (!$sekolah) {
+        if (! $sekolah) {
             // nama_sekolah wajib (NOT NULL). Arahkan admin mengisi identitas
             // sekolah dulu daripada membuat baris setengah jadi / error 500.
             return redirect()->route('admin.sekolah.index')
@@ -530,7 +531,7 @@ class DataReferensiController extends Controller
         $pengaturan = $sekolah->pengaturan ?? [];
         foreach (['logo_pemda', 'logo_sekolah', 'ttd_kepsek', 'kop_sekolah'] as $key) {
             if ($request->hasFile($key)) {
-                if (!empty($pengaturan[$key]) && Storage::disk('public')->exists($pengaturan[$key])) {
+                if (! empty($pengaturan[$key]) && Storage::disk('public')->exists($pengaturan[$key])) {
                     Storage::disk('public')->delete($pengaturan[$key]);
                 }
                 $pengaturan[$key] = $request->file($key)->store('identitas', 'public');
@@ -621,7 +622,7 @@ class DataReferensiController extends Controller
             'file_zip.max' => 'Ukuran file .zip maksimal 50MB.',
         ]);
 
-        if (!$request->hasFile('foto') && !$request->hasFile('file_zip')) {
+        if (! $request->hasFile('foto') && ! $request->hasFile('file_zip')) {
             return back()->with('error', 'Pilih file foto (.jpg/.png) atau arsip .zip terlebih dahulu.');
         }
 
@@ -642,32 +643,34 @@ class DataReferensiController extends Controller
         // 1. Proses ekstraksi file .zip jika diunggah (ala `#modal_masal` e-Rapor SD)
         if ($request->hasFile('file_zip') && class_exists(\ZipArchive::class)) {
             $zipFile = $request->file('file_zip');
-            $zip = new \ZipArchive();
+            $zip = new \ZipArchive;
             if ($zip->open($zipFile->getRealPath()) === true) {
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $entryName = $zip->getNameIndex($i);
-                    if (!$entryName || str_ends_with($entryName, '/') || str_starts_with(basename($entryName), '.')) {
+                    if (! $entryName || str_ends_with($entryName, '/') || str_starts_with(basename($entryName), '.')) {
                         continue;
                     }
                     $ext = strtolower(pathinfo($entryName, PATHINFO_EXTENSION));
-                    if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+                    if (! in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                         continue;
                     }
                     $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
                     $siswa = Siswa::where('nisn', $kunci)->orWhere('nis', $kunci)->first();
-                    if (!$siswa) {
+                    if (! $siswa) {
                         $tidakCocok[] = basename($entryName);
+
                         continue;
                     }
                     $contents = $zip->getFromIndex($i);
                     if ($contents === false || strlen($contents) > 2 * 1024 * 1024) {
                         $tidakCocok[] = basename($entryName);
+
                         continue;
                     }
                     if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
                         Storage::disk('public')->delete($siswa->foto);
                     }
-                    $targetPath = 'foto-siswa/' . Str::random(32) . '.' . $ext;
+                    $targetPath = 'foto-siswa/'.Str::random(32).'.'.$ext;
                     Storage::disk('public')->put($targetPath, $contents);
                     $siswa->update(['foto' => $targetPath]);
                     $cocok++;
@@ -682,8 +685,9 @@ class DataReferensiController extends Controller
                 $kunci = trim(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
                 $siswa = Siswa::where('nis', $kunci)->orWhere('nisn', $kunci)->first();
 
-                if (!$siswa) {
+                if (! $siswa) {
                     $tidakCocok[] = $file->getClientOriginalName();
+
                     continue;
                 }
 
@@ -696,7 +700,7 @@ class DataReferensiController extends Controller
         }
 
         return redirect()->route('admin.referensi.foto-siswa')->with([
-            'success' => "{$cocok} foto berhasil dipasangkan, " . count($tidakCocok) . ' tidak cocok.',
+            'success' => "{$cocok} foto berhasil dipasangkan, ".count($tidakCocok).' tidak cocok.',
             'foto_tidak_cocok' => array_slice($tidakCocok, 0, 20),
         ]);
     }
