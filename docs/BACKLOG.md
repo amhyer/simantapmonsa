@@ -17,6 +17,8 @@ Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal aga
 - **Pembersihan riwayat Git**: pertimbangkan `git filter-repo` **hanya** jika repositori bersifat publik dan **setelah** seluruh kredensial selesai dirotasi.
 - **Validasi URL unduhan Bridge**: validasi `dapodik.bridge_download_url` wajib diawali `https://` pada konfigurasi produksi.
 - **Opsi (b) Queue Job untuk Reset & Generate Massal**: bila sekolah memiliki >500 akun sekaligus dan batas batch `SIMANTAP_RESET_MASSAL_MAX=100` terasa menyulitkan, pindahkan eksekusi hash ke queue job dengan hasil terenkripsi ber-TTL pendek di cache.
+- **Hashing di luar transaksi `MassPasswordResetService`**: pindahkan proses `Hash::make()` (bcrypt ±270 ms/akun) ke luar `DB::transaction` agar kunci baris tabel `users` selama transaksi tetap singkat.
+- **Prasyarat mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`)**: tabel `tenants` harus kosong dan seluruh `users.tenant_id` harus `NULL`; jika tabel `tenants` berisi baris, akun dengan `tenant_id = NULL` akan terkena `403` global oleh `EnsureSchoolContext`. Selain itu, `POST /daftar-sekolah` (`RegisterSekolahController::store`) belum memeriksa flag `SIMANTAP_MULTI_TENANT` sehingga perlu evaluasi/penutupan saat rilis mode satu sekolah.
 - Evaluasi `set_time_limit(120)` pada `GET /admin/dapodik/api/semesters` (`DapodikController.php:224`) dan pastikan HTTP timeout eksplisit bila memanggil API Dapodik.
 - Ubah cetak kartu QR massal (`PresensiKartuController`, 180s) menjadi queue job + unduhan asinkron.
 - Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
