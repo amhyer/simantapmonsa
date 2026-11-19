@@ -305,7 +305,9 @@
 
             <div class="auth-footer-links">
                 <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
-                <a href="{{ route('sekolah.register') }}">Daftar Sekolah &rarr;</a>
+                @if(config('simantap.multi_tenant_enabled', false))
+                    <a href="{{ route('sekolah.register') }}">Daftar Sekolah &rarr;</a>
+                @endif
             </div>
 
             @if(app()->environment('local'))

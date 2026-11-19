@@ -16,6 +16,8 @@ class RegisterSekolahController extends Controller
 {
     public function create()
     {
+        abort_unless(config('simantap.multi_tenant_enabled', false), 404);
+
         if (Auth::check()) {
             return redirect()->route('home');
         }
@@ -25,6 +27,8 @@ class RegisterSekolahController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(config('simantap.multi_tenant_enabled', false), 404);
+
         $validated = $request->validate([
             // Identitas Sekolah
             'nama_sekolah' => 'required|string|max:255',

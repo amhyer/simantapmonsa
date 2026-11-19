@@ -12,6 +12,43 @@ class RegisterSekolahTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['simantap.multi_tenant_enabled' => true]);
+    }
+
+    public function test_pendaftaran_sekolah_ditutup_dengan_404_saat_mode_satu_sekolah(): void
+    {
+        config(['simantap.multi_tenant_enabled' => false]);
+
+        $this->get(route('sekolah.register'))->assertNotFound();
+
+        $this->post(route('sekolah.register.store'), [
+            'nama_sekolah' => 'Sekolah Iseng',
+            'npsn' => '40318888',
+            'jenjang' => 'SD',
+            'kepala_sekolah' => 'Kepala Iseng',
+            'subdomain' => 'sekolah-iseng',
+            'nama_lengkap' => 'Operator Iseng',
+            'nama_pengguna' => 'operator_iseng',
+            'email' => 'iseng@example.test',
+            'kata_sandi' => 'PasswordSuper123!',
+            'kata_sandi_confirmation' => 'PasswordSuper123!',
+        ])->assertNotFound();
+
+        $this->assertSame(0, Tenant::query()->count());
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSee(route('sekolah.register'));
+
+        $this->get(route('landing'))
+            ->assertOk()
+            ->assertDontSee(route('sekolah.register'));
+    }
+
     public function test_halaman_daftar_sekolah_dapat_dibuka_oleh_tamu(): void
     {
         $response = $this->get(route('sekolah.register'));
