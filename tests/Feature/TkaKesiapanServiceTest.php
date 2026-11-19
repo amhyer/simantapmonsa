@@ -469,6 +469,7 @@ class TkaKesiapanServiceTest extends TestCase
             return $list;
         };
         $hitung = function ($list) {
+            Tenant::forgetExistsCache();
             DB::flushQueryLog();
             DB::enableQueryLog();
             $this->svc()->kelas($list, new KesiapanFilter);
