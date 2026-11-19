@@ -26,8 +26,8 @@ class GoogleSheetsService
         $client->setScopes([Sheets::SPREADSHEETS]);
         $client->setAccessType('offline');
 
-        // Prioritas: kredensial inline dari env (tanpa file kunci di disk).
-        $inline = env('GOOGLE_CREDENTIALS_JSON');
+        // Prioritas: kredensial inline dari config (tanpa file kunci di disk).
+        $inline = config('google.credentials_json');
         if ($inline) {
             $decoded = json_decode($inline, true);
             if (!is_array($decoded)) {

@@ -142,7 +142,7 @@ class IntegrasiSheetsCheck extends Command
      */
     private function periksaKredensial(): array
     {
-        $inline = env('GOOGLE_CREDENTIALS_JSON');
+        $inline = config('google.credentials_json');
 
         if (is_string($inline) && trim($inline) !== '') {
             $decoded = json_decode($inline, true);

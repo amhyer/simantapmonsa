@@ -84,7 +84,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 
             $allowed = array_filter(array_map(
                 'trim',
-                explode(',', (string) env('TELESCOPE_ALLOWED_USERS', 'admin'))
+                explode(',', (string) config('telescope.allowed_users', 'admin'))
             ));
 
             return in_array($user->nama_pengguna, $allowed, true);

@@ -17,6 +17,7 @@ return [
     */
 
     'enabled' => env('TELESCOPE_ENABLED', false),
+    'allowed_users' => env('TELESCOPE_ALLOWED_USERS', 'admin'),
 
     /*
     |--------------------------------------------------------------------------

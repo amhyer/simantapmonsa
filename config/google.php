@@ -10,25 +10,26 @@ return [
     */
 
     'service_account_path' => env('GOOGLE_SERVICE_ACCOUNT_PATH'),
+    'credentials_json' => env('GOOGLE_CREDENTIALS_JSON'),
 
     /*
     | Tab names in spreadsheet - EXACTLY as GAS creates them
     */
     'sheet_tabs' => [
-        'pengguna'      => 'PENGGUNA',
-        'siswa'         => 'SISWA',
-        'nilai'         => 'NILAI',
-        'kehadiran'     => 'KEHADIRAN',
-        'materi'        => 'MATERI',
-        'kuis'          => 'KUIS',
-        'hasil_kuis'    => 'HASIL KUIS',
-        'catatan'       => 'CATATAN',
-        'dimensi'       => 'DIMENSI',
-        'kebiasaan'     => '7 KEBIASAAN',
-        'pengaturan'    => 'PENGATURAN GURU',
-        'sekolah'       => 'SEKOLAH',
-        'ringkasan'     => 'RINGKASAN GURU',
-        'aktivitas'     => 'AKTIVITAS',
+        'pengguna' => 'PENGGUNA',
+        'siswa' => 'SISWA',
+        'nilai' => 'NILAI',
+        'kehadiran' => 'KEHADIRAN',
+        'materi' => 'MATERI',
+        'kuis' => 'KUIS',
+        'hasil_kuis' => 'HASIL KUIS',
+        'catatan' => 'CATATAN',
+        'dimensi' => 'DIMENSI',
+        'kebiasaan' => '7 KEBIASAAN',
+        'pengaturan' => 'PENGATURAN GURU',
+        'sekolah' => 'SEKOLAH',
+        'ringkasan' => 'RINGKASAN GURU',
+        'aktivitas' => 'AKTIVITAS',
     ],
 
     /*
