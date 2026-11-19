@@ -10,8 +10,8 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 class SiswaFotoPrivateUploadTest extends TestCase
@@ -281,6 +281,7 @@ class SiswaFotoPrivateUploadTest extends TestCase
         $this->assertNull($s2->fresh()->foto);
     }
 
+    #[Group('slow')]
     public function test_benchmark_cetak_siswa_massal_100_students_and_100_image_requests(): void
     {
         Storage::fake('local');
@@ -303,27 +304,20 @@ class SiswaFotoPrivateUploadTest extends TestCase
             ]);
         }
 
-        DB::flushQueryLog();
-        DB::enableQueryLog();
-        $tCetak = microtime(true);
         $cetakRes = $this->actingAs($admin)
             ->get(route('admin.presensi.kartu.siswa.cetak-massal', ['kelas' => '6A']))
             ->assertOk();
-        $cetakMs = round((microtime(true) - $tCetak) * 1000, 1);
-        $cetakQueries = count(DB::getQueryLog());
-        DB::disableQueryLog();
 
         $cetakRes->assertDontSee('storage/foto-siswa');
 
-        $tFetch = microtime(true);
+        $loaded = 0;
         foreach ($siswas as $s) {
             $this->actingAs($admin)
                 ->get(route('media.siswa.foto', $s))
                 ->assertOk();
+            $loaded++;
         }
-        $fetch100Ms = round((microtime(true) - $tFetch) * 1000, 1);
 
-        fwrite(STDOUT, "CETAK_MASSAL_100_BENCHMARK: cetak_queries={$cetakQueries}, cetak_ms={$cetakMs}, fetch_100_fotos_ms={$fetch100Ms}\n");
-        $this->assertCount(100, $siswas);
+        $this->assertSame(100, $loaded);
     }
 }

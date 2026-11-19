@@ -251,21 +251,52 @@ class MigrasiFotoSiswaPrivateCommand extends Command
 
     private function resolveSafeReportPath(string $rawPath): ?string
     {
-        $base = str_replace('\\', '/', rtrim((string) realpath(base_path()), '/\\'));
-        $normalized = str_replace('\\', '/', $rawPath);
-
-        // Tolak path relatif yang dapat jatuh ke dalam repositori
-        if (! preg_match('/^([A-Za-z]:\/|\/)/', $normalized)) {
+        $rawPath = trim($rawPath);
+        if ($rawPath === '') {
             return null;
         }
 
-        $parent = dirname($rawPath);
-        $realParent = is_dir($parent) ? realpath($parent) : null;
-        $checkPath = $realParent !== false && $realParent !== null
-            ? str_replace('\\', '/', rtrim($realParent, '/\\')).'/'.basename($rawPath)
-            : $normalized;
+        // Tolak segmen '..' eksplisit (path traversal)
+        if (preg_match('#(^|[\\\\/])\.\.([\\\\/]|$)#', $rawPath) === 1) {
+            return null;
+        }
 
-        if (stripos($checkPath, $base.'/') === 0 || strcasecmp($checkPath, $base) === 0) {
+        $normalized = str_replace('\\', '/', $rawPath);
+
+        // Tolak path relatif — wajib path absolut
+        if (preg_match('/^([A-Za-z]:\/|\/)/', $normalized) !== 1) {
+            return null;
+        }
+
+        $baseReal = realpath(base_path());
+        if ($baseReal === false) {
+            return null;
+        }
+        $base = str_replace('\\', '/', rtrim($baseReal, '/\\'));
+
+        // Telusuri direktori induk yang ada lalu jalankan realpath() untuk mendeteksi symlink/junction
+        $probe = $rawPath;
+        $tail = [];
+        while (! file_exists($probe)) {
+            $tail[] = basename($probe);
+            $parent = dirname($probe);
+            if ($parent === $probe) {
+                return null;
+            }
+            $probe = $parent;
+        }
+
+        $resolvedExisting = realpath($probe);
+        if ($resolvedExisting === false) {
+            return null;
+        }
+
+        $resolved = str_replace('\\', '/', rtrim($resolvedExisting, '/\\'));
+        if ($tail !== []) {
+            $resolved .= '/'.implode('/', array_reverse($tail));
+        }
+
+        if (stripos($resolved, $base.'/') === 0 || strcasecmp($resolved, $base) === 0) {
             return null;
         }
 

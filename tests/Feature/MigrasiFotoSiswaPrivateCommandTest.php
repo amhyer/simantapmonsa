@@ -14,6 +14,31 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?string $tempReportDir = null;
+
+    protected function tearDown(): void
+    {
+        if ($this->tempReportDir !== null && is_dir($this->tempReportDir)) {
+            foreach (glob($this->tempReportDir.DIRECTORY_SEPARATOR.'*') ?: [] as $file) {
+                @unlink($file);
+            }
+            @rmdir($this->tempReportDir);
+        }
+        $this->tempReportDir = null;
+
+        parent::tearDown();
+    }
+
+    private function createTempReportFile(string $name = 'report.json'): string
+    {
+        if ($this->tempReportDir === null) {
+            $this->tempReportDir = dirname(base_path()).DIRECTORY_SEPARATOR.'simantap-test-report-'.uniqid();
+            mkdir($this->tempReportDir, 0750, true);
+        }
+
+        return $this->tempReportDir.DIRECTORY_SEPARATOR.$name;
+    }
+
     private function pngA(): string
     {
         return (string) base64_decode(
@@ -48,7 +73,7 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
         Storage::disk('local')->put($sPrivate->foto, $this->pngA());
         Storage::disk('public')->put('foto-siswa/yatim999.png', $this->pngA());
 
-        $reportFile = dirname(base_path()).DIRECTORY_SEPARATOR.'simantap-migrasi-report-'.uniqid().'.json';
+        $reportFile = $this->createTempReportFile('dryrun.json');
 
         try {
             $this->artisan('siswa:migrasi-foto-private', ['--report' => $reportFile])
@@ -92,7 +117,17 @@ class MigrasiFotoSiswaPrivateCommandTest extends TestCase
 
         $this->artisan('siswa:migrasi-foto-private', ['--delete-public' => true])->assertExitCode(1);
         $this->artisan('siswa:migrasi-foto-private', ['--apply' => true, '--delete-public' => true])->assertExitCode(1);
+
+        // Guard --report: tolak path di dalam repo, path traversal '..', dan path relatif
         $this->artisan('siswa:migrasi-foto-private', ['--report' => base_path('storage/report.json')])->assertExitCode(1);
+        $this->artisan('siswa:migrasi-foto-private', ['--report' => dirname(base_path()).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.basename(dirname(base_path())).DIRECTORY_SEPARATOR.basename(base_path()).DIRECTORY_SEPARATOR.'report.json'])->assertExitCode(1);
+        $this->artisan('siswa:migrasi-foto-private', ['--report' => 'report.json'])->assertExitCode(1);
+        $this->artisan('siswa:migrasi-foto-private', ['--report' => '../report.json'])->assertExitCode(1);
+
+        // Path luar repo yang sah diterima
+        $validReport = $this->createTempReportFile('valid.json');
+        $this->artisan('siswa:migrasi-foto-private', ['--report' => $validReport])->assertExitCode(0);
+        $this->assertFileExists($validReport);
 
         Storage::disk('public')->assertExists($s->foto);
         Storage::disk('local')->assertMissing($s->foto);
