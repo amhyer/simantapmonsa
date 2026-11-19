@@ -209,9 +209,9 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     Route::put('/users/siswa/{siswa}', [UserController::class, 'updateDataSiswa'])->middleware('throttle:30,1')->name('users.siswa.update');
     Route::post('/users/proses-massal', [UserController::class, 'prosesAkunMassal'])->middleware('throttle:5,1')->name('users.proses-massal');
     Route::post('/users/generate-semua', [UserController::class, 'generateSemuaPengguna'])->middleware('throttle:10,1')->name('users.generate-semua');
-    Route::get('/users/generate-semua/ekspor/{token}', [UserController::class, 'eksporSandiAwal'])->middleware('throttle:10,1')->name('users.ekspor-sandi-awal');
-    Route::post('/users/reset-massal/pratinjau', [UserController::class, 'pratinjauResetMassal'])->middleware('throttle:30,1')->name('users.reset-massal.pratinjau');
-    Route::post('/users/reset-massal', [UserController::class, 'resetMassalPassword'])->middleware('throttle:5,1')->name('users.reset-massal');
+    Route::get('/users/generate-semua/ekspor/{token}', [UserController::class, 'eksporSandiAwal'])->middleware('throttle:admin-ekspor-sandi-awal')->name('users.ekspor-sandi-awal');
+    Route::post('/users/reset-massal/pratinjau', [UserController::class, 'pratinjauResetMassal'])->middleware('throttle:admin-reset-massal-pratinjau')->name('users.reset-massal.pratinjau');
+    Route::post('/users/reset-massal', [UserController::class, 'resetMassalPassword'])->middleware('throttle:admin-reset-massal')->name('users.reset-massal');
     Route::delete('/users/hapus-semua/{peran}', [UserController::class, 'destroyAll'])->middleware('throttle:5,1')->name('users.destroy-all');
     Route::post('/users/{user}/impersonate', [UserController::class, 'impersonateGuru'])->name('users.impersonate');
     Route::post('/users/{user}/reset-password', [UserController::class, 'resetPasswordInstan'])->middleware('throttle:30,1')->name('users.reset-password');

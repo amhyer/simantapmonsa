@@ -23,4 +23,4 @@ Route::middleware(['apikey:presensi:import', 'tenant', 'throttle:60,1'])->prefix
 });
 
 // School lookup (Fazriansyah API)
-Route::post('/sekolah/lookup', [SchoolLookupController::class, 'lookup'])->middleware('throttle:10,1');
+Route::post('/sekolah/lookup', [SchoolLookupController::class, 'lookup'])->middleware('throttle:sekolah-lookup');

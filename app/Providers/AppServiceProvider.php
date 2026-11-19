@@ -26,11 +26,14 @@ use App\Policies\TryoutResultPolicy;
 use App\Policies\TryoutSessionPolicy;
 use App\Services\Dapodik\SidebarSyncStatus;
 use Carbon\Carbon;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -54,6 +57,19 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }
+
+        RateLimiter::for('admin-reset-massal', function (Request $request): Limit {
+            return Limit::perMinute(5)->by('admin-reset-massal:'.($request->user()?->id ?: $request->ip()));
+        });
+        RateLimiter::for('admin-reset-massal-pratinjau', function (Request $request): Limit {
+            return Limit::perMinute(30)->by('admin-reset-massal-pratinjau:'.($request->user()?->id ?: $request->ip()));
+        });
+        RateLimiter::for('admin-ekspor-sandi-awal', function (Request $request): Limit {
+            return Limit::perMinute(10)->by('admin-ekspor-sandi-awal:'.($request->user()?->id ?: $request->ip()));
+        });
+        RateLimiter::for('sekolah-lookup', function (Request $request): Limit {
+            return Limit::perMinute(10)->by('sekolah-lookup:'.$request->ip());
+        });
         // Policies modul asesmen (Fase 2). Didaftarkan eksplisit agar model
         // bernamespace (Tryout\*) tidak bergantung pada auto-discovery.
         Gate::policy(CbtQuestionBank::class, CbtQuestionBankPolicy::class);
