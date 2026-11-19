@@ -296,9 +296,6 @@ class MassPasswordResetTest extends TestCase
         ])->assertOk()->assertJsonPath('diproses', 0);
         $this->assertSame($hashAfterBatch1, $siswaBelumLogin->fresh()->kata_sandi);
 
-        // Reset rate limiter sebelum menguji lock agar tidak terhitung akumulasi pratinjau/ekspor sebelumnya
-        Cache::flush();
-
         // Lock single-school bekerja (423 saat terkunci, 200 setelah dilepas)
         $lock = Cache::lock('reset_massal:tenant:single', 30);
         $this->assertTrue($lock->get());
@@ -325,12 +322,20 @@ class MassPasswordResetTest extends TestCase
         $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
         $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
 
-        User::factory()->create([
+        $siswa1 = User::factory()->create([
             'peran' => 'siswa',
             'kelas_mata_pelajaran' => '4C',
             'terakhir_masuk' => null,
             'sandi_awal_diterbitkan_at' => null,
         ]);
+        $siswa2 = User::factory()->create([
+            'peran' => 'siswa',
+            'kelas_mata_pelajaran' => '4C',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+        $hash1Before = $siswa1->kata_sandi;
+        $hash2Before = $siswa2->kata_sandi;
 
         $failingExporter = new class extends InitialPasswordExportService
         {
@@ -348,7 +353,13 @@ class MassPasswordResetTest extends TestCase
             'password_admin' => 'AdminSecret!99',
         ])->assertStatus(500);
 
-        // Pulihkan service normal; permintaan berikutnya TIDAK boleh terkena 423
+        // Rollback atomik: hash password dan sandi_awal_diterbitkan_at SEMUA akun batch tidak berubah
+        $this->assertSame($hash1Before, $siswa1->fresh()->kata_sandi);
+        $this->assertSame($hash2Before, $siswa2->fresh()->kata_sandi);
+        $this->assertNull($siswa1->fresh()->sandi_awal_diterbitkan_at);
+        $this->assertNull($siswa2->fresh()->sandi_awal_diterbitkan_at);
+
+        // Pulihkan service normal; permintaan berikutnya TIDAK boleh terkena 423 dan tetap memproses 2 akun
         $this->app->forgetInstance(InitialPasswordExportService::class);
         $this->app->forgetInstance(MassPasswordResetService::class);
 
@@ -356,9 +367,55 @@ class MassPasswordResetTest extends TestCase
             'peran' => ['siswa'],
             'kelas' => '4C',
             'hanya_belum_login' => true,
-            'sertakan_sudah_diterbitkan' => true,
+            'sertakan_sudah_diterbitkan' => false,
             'password_admin' => 'AdminSecret!99',
-        ])->assertOk()->assertJsonPath('diproses', 1);
+        ])->assertOk()->assertJsonPath('diproses', 2);
+    }
+
+    public function test_mid_batch_exception_rolls_back_all_updated_accounts(): void
+    {
+        Cache::flush();
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+
+        $siswa1 = User::factory()->create([
+            'peran' => 'siswa',
+            'kelas_mata_pelajaran' => '4D',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+        $siswa2 = User::factory()->create([
+            'peran' => 'siswa',
+            'kelas_mata_pelajaran' => '4D',
+            'terakhir_masuk' => null,
+            'sandi_awal_diterbitkan_at' => null,
+        ]);
+        $hash1Before = $siswa1->kata_sandi;
+        $hash2Before = $siswa2->kata_sandi;
+
+        $failTargetId = $siswa2->id;
+        User::updating(function (User $model) use ($failTargetId): void {
+            if ($model->id === $failTargetId) {
+                throw new \RuntimeException('Simulasi error di tengah batch');
+            }
+        });
+
+        try {
+            $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+                'peran' => ['siswa'],
+                'kelas' => '4D',
+                'hanya_belum_login' => true,
+                'password_admin' => 'AdminSecret!99',
+            ])->assertStatus(500);
+        } finally {
+            User::flushEventListeners();
+        }
+
+        // Semua atau tidak sama sekali: akun pertama ikut rollback
+        $this->assertSame($hash1Before, $siswa1->fresh()->kata_sandi);
+        $this->assertSame($hash2Before, $siswa2->fresh()->kata_sandi);
+        $this->assertNull($siswa1->fresh()->sandi_awal_diterbitkan_at);
+        $this->assertNull($siswa2->fresh()->sandi_awal_diterbitkan_at);
     }
 
     public function test_reset_password_instan_sets_sandi_awal_diterbitkan_at_and_prevents_mass_reset_overwrite(): void
@@ -395,5 +452,35 @@ class MassPasswordResetTest extends TestCase
         ])->assertOk()->assertJsonPath('diproses', 0);
 
         $this->assertSame($hashAfterInstan, $siswa->fresh()->kata_sandi);
+    }
+
+    public function test_six_previews_do_not_block_mass_reset_and_sixth_mass_reset_is_429(): void
+    {
+        Cache::flush();
+        $admin = User::findOrFail(E2eFixtureSeeder::USER_IDS['admin']);
+        $admin->update(['kata_sandi' => Hash::make('AdminSecret!99')]);
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->actingAs($admin)->postJson(route('admin.users.reset-massal.pratinjau'), [
+                'peran' => ['siswa'],
+                'kelas' => '9Z',
+                'hanya_belum_login' => true,
+            ])->assertOk();
+        }
+
+        // Setelah 6 pratinjau, 5 kali reset-massal tetap diizinkan, ke-6 kena 429
+        for ($i = 0; $i < 5; $i++) {
+            $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+                'peran' => ['siswa'],
+                'kelas' => '9Z',
+                'password_admin' => 'AdminSecret!99',
+            ])->assertOk();
+        }
+
+        $this->actingAs($admin)->postJson(route('admin.users.reset-massal'), [
+            'peran' => ['siswa'],
+            'kelas' => '9Z',
+            'password_admin' => 'AdminSecret!99',
+        ])->assertStatus(429);
     }
 }

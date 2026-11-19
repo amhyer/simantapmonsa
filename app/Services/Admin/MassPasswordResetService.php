@@ -9,6 +9,7 @@ use App\Services\AktivitasService;
 use App\Support\InitialPassword;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class MassPasswordResetService
@@ -116,43 +117,47 @@ class MassPasswordResetService
             $sisa = max(0, $total - count($targetIds));
             $credentials = [];
             $now = now();
-
-            User::forSchool()
-                ->whereIn('id', $targetIds)
-                ->orderBy('id')
-                ->chunkById(50, function ($users) use (&$credentials, $now): void {
-                    foreach ($users as $user) {
-                        $plain = InitialPassword::generate();
-                        $forceChange = $user->peran === 'siswa'
-                            ? InitialPassword::shouldForceChangeSiswa()
-                            : true;
-
-                        $user->forceFill([
-                            'kata_sandi' => Hash::make($plain),
-                            'force_password_change' => $forceChange,
-                            'sandi_awal_diterbitkan_at' => $now,
-                        ])->save();
-
-                        $credentials[] = [
-                            'nama' => (string) $user->nama_lengkap,
-                            'kelas' => (string) ($user->kelas_mata_pelajaran ?: '-'),
-                            'username' => (string) $user->nama_pengguna,
-                            'password' => $plain,
-                        ];
-                    }
-                });
-
-            $eksporUrl = $credentials !== []
-                ? $this->exporter->store((int) $admin->id, $tenantId, $credentials)
-                : null;
-
+            $eksporUrl = null;
             $rolesLabel = implode(', ', (array) ($filters['peran'] ?? ['siswa']));
             $kelasLabel = trim((string) ($filters['kelas'] ?? '')) ?: 'semua';
-            AktivitasService::ubah(
-                'Reset Sandi Massal',
-                'Reset sandi massal untuk '.count($credentials)." akun (peran: {$rolesLabel}, kelas: {$kelasLabel}, sisa: {$sisa}).",
-                'users'
-            );
+
+            DB::transaction(function () use ($targetIds, $now, $admin, $tenantId, $rolesLabel, $kelasLabel, $sisa, &$credentials, &$eksporUrl): void {
+                User::forSchool()
+                    ->whereIn('id', $targetIds)
+                    ->orderBy('id')
+                    ->chunkById(50, function ($users) use (&$credentials, $now): void {
+                        foreach ($users as $user) {
+                            $plain = InitialPassword::generate();
+                            $forceChange = $user->peran === 'siswa'
+                                ? InitialPassword::shouldForceChangeSiswa()
+                                : true;
+
+                            $user->forceFill([
+                                'kata_sandi' => Hash::make($plain),
+                                'force_password_change' => $forceChange,
+                                'sandi_awal_diterbitkan_at' => $now,
+                            ])->save();
+
+                            $credentials[] = [
+                                'nama' => (string) $user->nama_lengkap,
+                                'kelas' => (string) ($user->kelas_mata_pelajaran ?: '-'),
+                                'username' => (string) $user->nama_pengguna,
+                                'password' => $plain,
+                            ];
+                        }
+                    });
+
+                AktivitasService::ubah(
+                    'Reset Sandi Massal',
+                    'Reset sandi massal untuk '.count($credentials)." akun (peran: {$rolesLabel}, kelas: {$kelasLabel}, sisa: {$sisa}).",
+                    'users'
+                );
+
+                // Simpan ekspor terenkripsi sebelum commit agar kegagalan cache/ekspor ikut me-rollback DB.
+                $eksporUrl = $credentials !== []
+                    ? $this->exporter->store((int) $admin->id, $tenantId, $credentials)
+                    : null;
+            });
 
             $pesan = 'Reset sandi massal selesai untuk '.count($credentials).' akun.';
             if ($sisa > 0) {
