@@ -236,11 +236,16 @@ class PresensiKartuController extends Controller
             $list = $query->orderBy('kelas')->orderBy('nama_peserta_didik')->get();
         }
 
-        $cardItems = $list->map(function (Siswa $s) use ($cards, $sekolah) {
+        $printedSiswas = [];
+        $cardItems = $list->map(function (Siswa $s) use ($cards, $sekolah, &$printedSiswas) {
             $card = $cards->buildSiswaCardViewModel($s, $sekolah, true);
-            if ($card['qr_svg']) $cards->markSiswaAsPrinted($s);
+            if ($card['qr_svg']) {
+                $printedSiswas[] = $s;
+            }
+
             return $card;
         })->all();
+        $cards->markManySiswaAsPrinted($printedSiswas);
         $rombels = Rombel::query()->orderBy('tingkat')->orderBy('nama_rombel')->get(['id', 'nama_rombel']);
 
         return view('presensi.kartu-cetak', [

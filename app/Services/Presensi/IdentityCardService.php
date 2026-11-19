@@ -68,6 +68,18 @@ class IdentityCardService
      */
     public function ensureSiswaCard(Siswa $siswa): ?string
     {
+        // Fast path tanpa re-fetch DB bila kartu sudah aktif/nonaktif dengan token valid
+        if ($siswa->qr_revoked || (filled($siswa->qr_token_hash) && (int) $siswa->qr_card_version === 0)) {
+            return null;
+        }
+
+        if (filled($siswa->qr_token_hash) && (int) $siswa->qr_card_version >= 1 && filled($siswa->qr_generation_nonce)) {
+            $payload = $this->payloadForSiswa($siswa, (int) $siswa->qr_card_version);
+            if ($payload && hash_equals((string) $siswa->qr_token_hash, $this->hasher->hash($payload))) {
+                return $payload;
+            }
+        }
+
         return DB::transaction(function () use ($siswa) {
             $locked = Siswa::whereKey($siswa->id)->lockForUpdate()->firstOrFail();
             $siswa->setRawAttributes($locked->getAttributes(), true);
@@ -183,9 +195,29 @@ class IdentityCardService
 
     public function markManySiswaAsPrinted($siswas): void
     {
+        $byVersion = [];
         foreach ($siswas as $siswa) {
-            $this->markSiswaAsPrinted($siswa);
+            $ver = (int) $siswa->qr_card_version;
+            if ($ver < 1 || ! $siswa->qr_token_hash || $siswa->qr_revoked) {
+                continue;
+            }
+            $byVersion[$ver][] = (int) $siswa->id;
         }
+
+        if ($byVersion === []) {
+            return;
+        }
+
+        $now = now();
+        DB::transaction(function () use ($byVersion, $now): void {
+            foreach ($byVersion as $ver => $ids) {
+                Siswa::whereIn('id', $ids)
+                    ->where('qr_revoked', false)
+                    ->whereNotNull('qr_token_hash')
+                    ->where('qr_card_version', $ver)
+                    ->update(['printed_at' => $now, 'printed_version' => $ver]);
+            }
+        });
     }
 
     public function markPegawaiAsPrinted(User $user, ?int $version = null): void
