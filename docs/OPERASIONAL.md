@@ -42,3 +42,7 @@
 - **Di belakang Nginx lokal**: setel `SIMANTAP_TRUSTED_PROXIES=127.0.0.1` (atau IP privat reverse proxy) dan pastikan Nginx meneruskan `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`.
 - **Di belakang Cloudflare**: masukkan daftar CIDR IP resmi Cloudflare (dipisah koma) ke `SIMANTAP_TRUSTED_PROXIES` (atau konfigurasi `set_real_ip_from` + `real_ip_header CF-Connecting-IP` di Nginx lalu percayai IP Nginx di Laravel).
 - **PERINGATAN**: jangan menyetel `SIMANTAP_TRUSTED_PROXIES=*` apabila server asal dapat diakses langsung dari internet tanpa firewall, karena klien dapat memalsukan `X-Forwarded-For` untuk melewati rate limiter.
+
+## 8. Migrasi Indeks Database (`2026_11_19_000002_add_performance_indexes_to_core_tables`)
+- Pada PostgreSQL, `CREATE INDEX` standar mengunci operasi tulis (`INSERT`/`UPDATE`/`DELETE`) pada tabel target selama proses pembuatan indeks berlangsung. Jalankan migrasi ini pada jendela waktu sepi (di luar jam ujian/presensi).
+- Setelah migrasi selesai pada salinan database PostgreSQL, operator disarankan menjalankan `EXPLAIN ANALYZE` untuk kueri utama (`aktivitas`, `jadwal_pelajaran`, `siswa`, `nilai_erapor`, `cbt_results`) guna memverifikasi penggunaan indeks.
