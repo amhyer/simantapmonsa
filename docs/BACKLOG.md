@@ -23,6 +23,7 @@ Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal aga
 - Evaluasi `set_time_limit(120)` pada `GET /admin/dapodik/api/semesters` (`DapodikController.php:224`) dan pastikan HTTP timeout eksplisit bila memanggil API Dapodik.
 - Ubah cetak kartu QR massal (`PresensiKartuController`, 180s) menjadi queue job + unduhan asinkron.
 - **Tahap 3 — Performa `cetakSiswaMassal`**: pengukuran 100 siswa menghasilkan `406 query` (pola N+1) dan `12,3 detik` di SQLite, masih memakai `GET` dengan `set_time_limit(180)` serta 1 request gambar per foto siswa; optimasi eager loading & mekanisme cetak batch dijadwalkan di Tahap 3.
+- **Pengerasan CSP (menuju Enforce tanpa `unsafe-inline`/`unsafe-eval`)**: inventaris saat ini pada `resources/views/` mencatat `89` blok `<script>` inline, `51` blok `<style>` inline, `7.093` atribut `style="..."`, dan `3` atribut Alpine `x-data=` (memerlukan `'unsafe-eval'` atau `@alpinejs/csp`). Ekstraksi bertahap dan *nonce* dijadwalkan setelah fase observasi Report-Only selesai.
 - Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
 
 ## Usulan Pemeriksaan Akun Password Default (Read-Only)

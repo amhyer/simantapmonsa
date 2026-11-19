@@ -27,3 +27,12 @@
 ## 5. Backup Foto Siswa (Penyimpanan Private)
 - Kolom `siswa.foto` dikecualikan dari ekspor `BackupTables`, dan berkas foto siswa kini disimpan di `storage/app/private/foto-siswa/`.
 - Jadwal backup produksi **WAJIB** menyertakan direktori `storage/app/private/foto-siswa/` secara berkala bersamaan dengan backup database. Lihat panduan migrasi & cutover di [CUTOVER-FOTO.md](CUTOVER-FOTO.md).
+
+## 6. Content-Security-Policy (Mode Report-Only)
+- **Aktivasi**: setel `SIMANTAP_CSP_REPORT_ONLY=true` di `.env` lalu jalankan `php artisan config:cache`. Header yang dikirim hanya `Content-Security-Policy-Report-Only` (mode observasi, tidak memblokir browser).
+- **Membaca log**: laporan pelanggaran browser masuk ke `POST /csp-report` dan dicatat pada channel `csp` di `storage/logs/csp-YYYY-MM-DD.log` (driver `daily`, retensi 14 hari). Field yang disimpan hanya `violated-directive`, `effective-directive`, `blocked-uri` (tanpa query string), `document-uri` (tanpa query string), dan `disposition` — tanpa body mentah, IP, atau cookie.
+- **Kriteria sebelum enforce (`Content-Security-Policy`)**:
+  1. Jalankan mode Report-Only minimal **2 minggu** di produksi hingga tidak ada lagi pelanggaran sah dari fitur aplikasi.
+  2. Evaluasi penggunaan Alpine.js (`x-data`): saat ini memerlukan `'unsafe-eval'` kecuali beralih ke build `@alpinejs/csp`.
+  3. Kurangi/ekstrak blok `<script>` inline dan tambahkan mekanisme *nonce* sebelum menghapus `'unsafe-inline'`.
+- **Peringatan privasi data operasional**: laporan CSP tetap mengandung `document-uri` (path halaman yang diakses pengguna), sehingga file `storage/logs/csp-*.log` harus diperlakukan sebagai data operasional internal dan tidak dibagikan ke pihak luar.

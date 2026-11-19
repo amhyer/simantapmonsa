@@ -88,4 +88,32 @@ return [
 
     'content_security_policy' => env('SECURITY_CSP', ''),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Content-Security-Policy (Report-Only)
+    |--------------------------------------------------------------------------
+    |
+    | Mode observasi (TIDAK memblokir browser). Aktifkan lewat
+    | SIMANTAP_CSP_REPORT_ONLY=true untuk mengumpulkan laporan pelanggaran
+    | ke POST /csp-report (channel log 'csp', retensi 14 hari).
+    |
+    */
+
+    'csp' => [
+        'enabled' => (bool) env('SIMANTAP_CSP_REPORT_ONLY', false),
+        'report_uri' => '/csp-report',
+        'directives' => [
+            'default-src' => ["'self'"],
+            'script-src' => ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://cdn.jsdelivr.net', 'https://unpkg.com'],
+            'style-src' => ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            'font-src' => ["'self'", 'data:'],
+            'img-src' => ["'self'", 'data:', 'blob:'],
+            'connect-src' => ["'self'"],
+            'frame-ancestors' => ["'self'"],
+            'base-uri' => ["'self'"],
+            'form-action' => ["'self'"],
+            'object-src' => ["'none'"],
+        ],
+    ],
+
 ];

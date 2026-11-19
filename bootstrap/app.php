@@ -20,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(remove: [\Illuminate\Routing\Middleware\SubstituteBindings::class], append: [
             \App\Http\Middleware\IdentifyTenant::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\CspReportOnlyHeaders::class,
+        ]);
+
+        // Pengecualian CSRF HANYA untuk endpoint pelaporan CSP browser.
+        $middleware->validateCsrfTokens(except: [
+            'csp-report',
         ]);
 
         $middleware->alias([

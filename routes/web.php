@@ -83,6 +83,7 @@ use App\Http\Controllers\Ortu\LaporanController as OrtuLaporanController;
 use App\Http\Controllers\Ortu\RekapController as OrtuRekapController;
 use App\Http\Controllers\Ortu\TkaRiwayatController;
 use App\Http\Controllers\Pegawai\PresensiController;
+use App\Http\Controllers\Security\CspReportController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboard;
 use App\Http\Controllers\Siswa\KuisController as SiswaKuisController;
 use App\Http\Controllers\Siswa\MateriController as SiswaMateriController;
@@ -133,6 +134,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/daftar-sekolah', [RegisterSekolahController::class, 'create'])->name('sekolah.register');
     Route::post('/daftar-sekolah', [RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
 });
+Route::post('/csp-report', [CspReportController::class, 'store'])
+    ->middleware('throttle:csp-report')
+    ->name('csp.report');
+
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('throttle:30,1')->name('logout');
 
 Route::get('/media/siswa/{siswa:uuid}/foto', [SiswaFotoController::class, 'show'])

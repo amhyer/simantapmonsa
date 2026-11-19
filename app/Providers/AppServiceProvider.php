@@ -68,6 +68,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('sekolah-lookup', function (Request $request): Limit {
             return Limit::perMinute(10)->by('sekolah-lookup:'.$request->ip());
         });
+        RateLimiter::for('csp-report', function (Request $request): Limit {
+            return Limit::perMinute(30)->by('csp-report:'.$request->ip());
+        });
         // Policies modul asesmen (Fase 2). Didaftarkan eksplisit agar model
         // bernamespace (Tryout\*) tidak bergantung pada auto-discovery.
         Gate::policy(CbtQuestionBank::class, CbtQuestionBankPolicy::class);
