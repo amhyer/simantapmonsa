@@ -194,7 +194,7 @@ class PresensiKartuController extends Controller
     {
         abort_unless($siswa->aktif, 404);
         $siswa->loadMissing('rombel');
-        $sekolah = SekolahSettings::query()->first();
+        $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $card = $cards->buildSiswaCardViewModel($siswa, $sekolah, true);
         if ($card['qr_svg']) $cards->markSiswaAsPrinted($siswa);
 
@@ -219,7 +219,7 @@ class PresensiKartuController extends Controller
             $subjudul = 'Kelas ' . $currentRombel->nama_rombel;
         }
 
-        $sekolah = SekolahSettings::query()->first();
+        $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $totalSiswa = (clone $query)->count();
 
         // Ketika mencetak semua kelas, bagi menjadi batch (80 kartu/halaman) agar browser dan printer responsif
@@ -434,7 +434,7 @@ class PresensiKartuController extends Controller
             $pegawai->aktif && in_array($pegawai->peran, IdentityCardService::PERAN_PEGAWAI, true),
             404
         );
-        $sekolah = SekolahSettings::query()->first();
+        $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $card = $cards->buildPegawaiCardViewModel($pegawai, $sekolah, null, true);
         if ($card['qr_svg']) $cards->markPegawaiAsPrinted($pegawai);
 
@@ -457,7 +457,7 @@ class PresensiKartuController extends Controller
             $query->where('peran', (string) $request->query('peran'));
         }
 
-        $sekolah = SekolahSettings::query()->first();
+        $sekolah = SekolahSettings::query()->first() ?? new SekolahSettings;
         $ptkByDapodik = Ptk::query()->whereNotNull('dapodik_id')->get()->keyBy('dapodik_id');
         $list = $query->orderBy('peran')->orderBy('nama_lengkap')->get();
 
