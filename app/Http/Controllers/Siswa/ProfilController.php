@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\SekolahSettings;
+use App\Services\Media\SiswaFotoStorage;
 use App\Services\Presensi\IdentityCardService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ProfilController extends Controller
 {
@@ -15,7 +15,7 @@ class ProfilController extends Controller
     public function show(IdentityCardService $cards)
     {
         $siswa = $this->getSiswa();
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
@@ -29,7 +29,7 @@ class ProfilController extends Controller
     public function kartu(IdentityCardService $cards)
     {
         $siswa = $this->getSiswa();
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
@@ -37,7 +37,7 @@ class ProfilController extends Controller
         $sekolah = SekolahSettings::query()->first();
 
         return view('presensi.kartu-cetak', [
-            'judul' => 'Kartu Identitas Siswa — ' . $siswa->nama_peserta_didik,
+            'judul' => 'Kartu Identitas Siswa — '.$siswa->nama_peserta_didik,
             'subjudul' => $siswa->rombel?->nama_rombel ?? $siswa->kelas ?? 'Siswa Aktif',
             'cards' => [$cards->buildSiswaCardViewModel($siswa, $sekolah, true)],
             'kembaliUrl' => route('siswa.profil.show'),
@@ -47,13 +47,14 @@ class ProfilController extends Controller
     public function edit()
     {
         $siswa = $this->getSiswa();
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
+
         return view('siswa.profil.edit', compact('siswa'));
     }
 
-    public function update(Request $request, \App\Services\Media\SiswaFotoStorage $fotoStorage)
+    public function update(Request $request, SiswaFotoStorage $fotoStorage)
     {
         $siswa = $this->getSiswa();
         if (! $siswa) {

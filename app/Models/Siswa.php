@@ -11,8 +11,11 @@ use Illuminate\Support\Str;
 class Siswa extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'siswa';
+
     protected $hidden = ['rekaman', 'nik', 'alamat', 'qr_token_hash', 'qr_previous_token_hash', 'qr_generation_nonce'];
+
     protected $fillable = [
         'uuid',
         'tenant_id',
@@ -79,7 +82,9 @@ class Siswa extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

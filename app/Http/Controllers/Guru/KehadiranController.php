@@ -9,9 +9,8 @@ use App\Models\KehadiranMapel;
 use App\Models\PengajuanIzinPresensi;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
-use App\Models\User;
-use App\Services\Presensi\IdentityCardService;
 use App\Services\AktivitasService;
+use App\Services\Presensi\IdentityCardService;
 use App\Services\Presensi\MapelAttendancePolicy;
 use App\Services\Presensi\StudentQrHasher;
 use App\Traits\SyncableToSheet;
@@ -73,6 +72,7 @@ class KehadiranController extends Controller
                     ->orWhere(fn ($fallback) => $fallback->whereNull('rombel_id')->where('guru_id', $guruId));
             });
         })->count();
+
         return view('guru.kehadiran.index', compact('kehadiran', 'kehadiranMapel', 'jadwalHariIni', 'menungguIzin'));
     }
 
@@ -93,8 +93,8 @@ class KehadiranController extends Controller
         })->all();
 
         return view('presensi.kartu-cetak', [
-            'judul' => 'Kartu Identitas Siswa — ' . ($jadwal->rombel?->nama_rombel ?? $jadwal->kelas),
-            'subjudul' => $jadwal->mata_pelajaran . ' (' . count($cardItems) . ' siswa)',
+            'judul' => 'Kartu Identitas Siswa — '.($jadwal->rombel?->nama_rombel ?? $jadwal->kelas),
+            'subjudul' => $jadwal->mata_pelajaran.' ('.count($cardItems).' siswa)',
             'cards' => $cardItems,
             'kembaliUrl' => route('guru.kehadiran.index'),
         ]);
@@ -150,7 +150,7 @@ class KehadiranController extends Controller
 
         $student = $cardService->resolveSiswaFromPayload($validated['qr_payload']);
 
-        if (!$student) {
+        if (! $student) {
             $staff = $cardService->resolvePegawaiFromPayload($validated['qr_payload']);
             if ($staff) {
                 return response()->json([
@@ -165,7 +165,7 @@ class KehadiranController extends Controller
             ], 404);
         }
 
-        if (!$this->siswaTerdaftarPadaJadwal($student, $jadwal, $policy)) {
+        if (! $this->siswaTerdaftarPadaJadwal($student, $jadwal, $policy)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kartu ini bukan siswa yang mengikuti kelas atau mata pelajaran pada jadwal ini.',
@@ -181,7 +181,7 @@ class KehadiranController extends Controller
                 ->whereDate('tanggal', $today)
                 ->lockForUpdate()
                 ->first();
-            if ($daily && !$daily->trashed() && in_array($daily->status, ['S', 'I'], true)) {
+            if ($daily && ! $daily->trashed() && in_array($daily->status, ['S', 'I'], true)) {
                 abort(409, 'Status sakit/izin sudah tercatat. Verifikasi dan ubah secara manual sebelum melakukan scan.');
             }
             if ($daily?->trashed()) {
@@ -191,7 +191,7 @@ class KehadiranController extends Controller
                 && $daily?->waktu_masuk !== null
                 && $daily?->metode === 'qr';
 
-            if (!$daily) {
+            if (! $daily) {
                 $daily = Kehadiran::create([
                     'uuid' => (string) Str::uuid(),
                     'guru_id' => auth()->id(),
@@ -203,7 +203,7 @@ class KehadiranController extends Controller
                     'dicatat_oleh' => auth()->id(),
                     'metode' => 'qr',
                 ]);
-            } elseif (!$dailyAlreadyPresent) {
+            } elseif (! $dailyAlreadyPresent) {
                 $daily->update([
                     'guru_id' => auth()->id(),
                     'status' => 'H',
@@ -232,7 +232,7 @@ class KehadiranController extends Controller
                 if ($mapelAttendance && in_array($mapelAttendance->status, ['S', 'I'], true)) {
                     abort(409, 'Status sakit/izin mapel sudah tercatat. Verifikasi sebelum melakukan scan.');
                 }
-                if (!$mapelAttendance) {
+                if (! $mapelAttendance) {
                     $mapelAttendance = KehadiranMapel::create([
                         'jadwal_pelajaran_id' => $jadwal->id,
                         'siswa_id' => $student->id,
@@ -244,7 +244,7 @@ class KehadiranController extends Controller
                         'waktu_hadir' => $now,
                         'metode' => 'qr',
                     ]);
-                } elseif (!$mapelAlreadyPresent) {
+                } elseif (! $mapelAlreadyPresent) {
                     $mapelAttendance->update([
                         'guru_id' => auth()->id(),
                         'status' => 'H',
@@ -315,7 +315,7 @@ class KehadiranController extends Controller
         ]);
 
         $jadwal->loadMissing('rombel');
-        if ($validated['cakupan'] === 'mapel' && !$policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal)) {
+        if ($validated['cakupan'] === 'mapel' && ! $policy->requiresSeparateAttendance($jadwal->mata_pelajaran, $jadwal)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Absensi terpisah belum diaktifkan untuk mata pelajaran ini.',
@@ -348,7 +348,7 @@ class KehadiranController extends Controller
                 'metode' => $status === 'H' && $record->metode === 'qr' && $record->waktu_masuk ? 'qr' : 'manual',
                 'keterangan' => $validated['keterangan'] ?? null,
             ]);
-            if (!$record->exists) {
+            if (! $record->exists) {
                 $record->uuid ??= (string) Str::uuid();
             }
             $record->save();
@@ -372,7 +372,7 @@ class KehadiranController extends Controller
                 'metode' => $status === 'H' && $record->metode === 'qr' && $record->waktu_hadir ? 'qr' : 'manual',
                 'keterangan' => $validated['keterangan'] ?? null,
             ]);
-            if (!$record->exists) {
+            if (! $record->exists) {
                 $record->uuid ??= (string) Str::uuid();
             }
             $record->save();
@@ -389,7 +389,7 @@ class KehadiranController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Status kehadiran ' . $siswa->nama_peserta_didik . ' berhasil diperbarui.',
+            'message' => 'Status kehadiran '.$siswa->nama_peserta_didik.' berhasil diperbarui.',
             'siswa_id' => $siswa->id,
             'cakupan' => $validated['cakupan'],
             'status' => $status,
@@ -475,7 +475,7 @@ class KehadiranController extends Controller
                 ->whereDate('tanggal', $today)
                 ->first();
 
-            if (!$record || $record->trashed() || empty($record->status)) {
+            if (! $record || $record->trashed() || empty($record->status)) {
                 if ($record && $record->trashed()) {
                     $record->restore();
                 }
@@ -504,7 +504,7 @@ class KehadiranController extends Controller
                     ->whereDate('tanggal', $today)
                     ->first();
 
-                if (!$recordMapel || empty($recordMapel->status)) {
+                if (! $recordMapel || empty($recordMapel->status)) {
                     $recordMapel = $recordMapel ?? new KehadiranMapel([
                         'jadwal_pelajaran_id' => $jadwal->id,
                         'siswa_id' => $siswa->id,
@@ -529,12 +529,15 @@ class KehadiranController extends Controller
         foreach ($changedDaily as $daily) {
             $this->syncToGoogleSheet('kehadiran', $daily->fresh('siswa', 'guru'));
         }
+
         return back()->with('success', "Berhasil menandai {$updatedCount} siswa sebagai Hadir.");
     }
 
     public function destroy(Kehadiran $kehadiran)
     {
-        if ($kehadiran->guru_id !== auth()->id()) abort(403);
+        if ($kehadiran->guru_id !== auth()->id()) {
+            abort(403);
+        }
         $kehadiran->delete();
 
         return back()->with('success', 'Kehadiran berhasil dihapus.');
@@ -596,7 +599,7 @@ class KehadiranController extends Controller
 
     private function siswaTerdaftarPadaJadwal(Siswa $siswa, JadwalPelajaran $jadwal, MapelAttendancePolicy $policy): bool
     {
-        if (!$siswa->aktif) {
+        if (! $siswa->aktif) {
             return false;
         }
 
@@ -607,7 +610,7 @@ class KehadiranController extends Controller
                 && Str::lower(trim((string) $siswa->kelas)) === Str::lower(trim((string) $jadwal->kelas));
         }
 
-        if (!$belongsToClass) {
+        if (! $belongsToClass) {
             return false;
         }
 

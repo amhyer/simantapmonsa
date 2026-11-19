@@ -16,6 +16,7 @@ use App\Models\TanggalRapor;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\JadwalPelajaranResolver;
+use App\Services\Media\SiswaFotoStorage;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -589,7 +590,7 @@ class DataReferensiController extends Controller
         ));
     }
 
-    public function storeFotoSiswaSatuan(Request $request, Siswa $siswa, \App\Services\Media\SiswaFotoStorage $fotoStorage)
+    public function storeFotoSiswaSatuan(Request $request, Siswa $siswa, SiswaFotoStorage $fotoStorage)
     {
         $request->validate([
             'foto' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
@@ -610,7 +611,7 @@ class DataReferensiController extends Controller
         return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil diperbarui.");
     }
 
-    public function storeFotoSiswa(Request $request, \App\Services\Media\SiswaFotoStorage $fotoStorage)
+    public function storeFotoSiswa(Request $request, SiswaFotoStorage $fotoStorage)
     {
         $request->validate([
             'foto' => 'nullable|array|max:100',
@@ -666,7 +667,7 @@ class DataReferensiController extends Controller
 
                     $stat = $zip->statIndex($i);
                     $declaredSize = is_array($stat) ? (int) ($stat['size'] ?? 0) : 0;
-                    if ($declaredSize > \App\Services\Media\SiswaFotoStorage::MAX_IMAGE_BYTES || ($totalUncompressedBytes + $declaredSize) > $maxZipBytes) {
+                    if ($declaredSize > SiswaFotoStorage::MAX_IMAGE_BYTES || ($totalUncompressedBytes + $declaredSize) > $maxZipBytes) {
                         $tidakCocok[] = basename($entryName);
 
                         continue;
@@ -740,7 +741,7 @@ class DataReferensiController extends Controller
         ]);
     }
 
-    public function destroyFotoSiswa(Siswa $siswa, \App\Services\Media\SiswaFotoStorage $fotoStorage)
+    public function destroyFotoSiswa(Siswa $siswa, SiswaFotoStorage $fotoStorage)
     {
         $fotoStorage->deleteFromAllDisks($siswa->foto);
         $siswa->update(['foto' => null]);
@@ -748,7 +749,7 @@ class DataReferensiController extends Controller
         return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil dihapus.");
     }
 
-    public function resetSemuaFotoSiswa(\App\Services\Media\SiswaFotoStorage $fotoStorage)
+    public function resetSemuaFotoSiswa(SiswaFotoStorage $fotoStorage)
     {
         $berfoto = Siswa::whereNotNull('foto')->get();
         $jumlah = 0;
