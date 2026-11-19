@@ -10,6 +10,16 @@
 @section('page_subtitle', 'Peta kelas wali ' . ($guru->nama_lengkap ?? ''))
 
 @section('header_actions')
+    @if(isset($daftarKelas) && $daftarKelas->count() > 1)
+        <form method="GET" action="{{ route('kepsek.peta-kelas.detail', $guru->id) }}" style="display:inline-flex;align-items:center;gap:6px;margin-right:8px">
+            <select name="kelas" onchange="this.form.submit()" class="form-control" style="height:32px;padding:2px 8px;font-size:12px" aria-label="Filter kelas">
+                <option value="">Semua Kelas</option>
+                @foreach($daftarKelas as $namaKelas)
+                    <option value="{{ $namaKelas }}" @selected(($kelasDipilih ?? '') === $namaKelas)>Kelas {{ $namaKelas }}</option>
+                @endforeach
+            </select>
+        </form>
+    @endif
     <a href="{{ route('kepsek.peta-kelas.index') }}" class="btn btn-ghost btn-sm">
         <i class="fas fa-arrow-left"></i> Kembali
     </a>

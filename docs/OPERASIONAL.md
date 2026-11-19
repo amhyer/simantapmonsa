@@ -19,3 +19,7 @@
 5. Masukkan ulang **Kata Sandi Administrator** untuk konfirmasi, lalu klik **Reset & Siapkan Ekspor**.
 6. Segera klik **Unduh Daftar Password Awal (Sekali Unduh)** dan bagikan dengan aman ke wali kelas/guru/siswa. File CSV hanya dapat diunduh satu kali.
 7. Untuk audit akun lama yang masih memakai sandi bawaan sebelum pembaruan, gunakan CLI `php artisan akun:audit-password-bawaan` (mode `dry-run` default; lihat [BACKLOG.md](BACKLOG.md)).
+
+## 4. Peringatan Mode Satu Sekolah (`SIMANTAP_MULTI_TENANT=false`)
+- **JANGAN** menjalankan perintah `php artisan tenant:create`, `php artisan tenant:backfill`, atau membuat sekolah baru lewat `/superadmin/tenants` saat aplikasi berjalan dalam mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`).
+- Middleware `EnsureSchoolContext` menolak (`403`) seluruh akun dengan `tenant_id = NULL` apabila tabel `tenants` memiliki minimal satu baris. Pastikan `SELECT count(*) FROM tenants` = `0` dan `SELECT count(*) FROM users WHERE tenant_id IS NOT NULL` = `0` pada database mode satu sekolah.

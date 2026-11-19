@@ -8,6 +8,7 @@ use App\Models\OrangTuaSiswa;
 use App\Models\PengaturanGuru;
 use App\Models\Siswa;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class PetaKelasController extends Controller
 {
@@ -53,15 +54,31 @@ class PetaKelasController extends Controller
         return view('kepsek.peta-kelas.index', compact('peta', 'stats'));
     }
 
-    public function detail($guruId)
+    public function detail(Request $request, $guruId)
     {
         $guru = User::forSchool()->where('peran', 'guru')->where('id', $guruId)->firstOrFail();
         $pengaturan = PengaturanGuru::forSchool()->where('guru_id', $guru->id)->first();
-        $siswaList = Siswa::where('guru_id', $guru->id)
+        $kelasDipilih = trim((string) $request->query('kelas', ''));
+
+        $semuaSiswaAktif = Siswa::query()
+            ->where('guru_id', $guru->id)
             ->where('aktif', true)
             ->with('kebiasaan')
             ->orderBy('nama_peserta_didik')
             ->get();
+
+        $daftarKelas = $semuaSiswaAktif
+            ->pluck('kelas')
+            ->filter(fn ($k) => trim((string) $k) !== '')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $siswaList = $kelasDipilih !== ''
+            ? $semuaSiswaAktif->where('kelas', $kelasDipilih)->values()
+            : $semuaSiswaAktif;
+
+        $siswaIds = $siswaList->pluck('id')->all();
 
         $kkm = (int) ($pengaturan->kkm ?? getKKM($guru->id));
 
@@ -108,12 +125,15 @@ class PetaKelasController extends Controller
                 'predikat' => ($s->rata_rata ?? 0) >= 95 ? 'A+' : 'A',
             ])->values();
 
-        $nilaiRows = Nilai::query()
-            ->where('guru_id', $guru->id)
-            ->whereNotNull('nilai')
-            ->orderBy('tanggal')
-            ->orderBy('id')
-            ->get(['judul_penilaian', 'jenis', 'tanggal', 'nilai']);
+        $nilaiRows = $siswaIds !== []
+            ? Nilai::query()
+                ->where('guru_id', $guru->id)
+                ->whereIn('siswa_id', $siswaIds)
+                ->whereNotNull('nilai')
+                ->orderBy('tanggal')
+                ->orderBy('id')
+                ->get(['judul_penilaian', 'jenis', 'tanggal', 'nilai'])
+            : collect();
 
         $perkembangan = $nilaiRows
             ->groupBy(function (Nilai $row): string {
@@ -136,7 +156,8 @@ class PetaKelasController extends Controller
         return view('kepsek.peta-kelas.detail', compact(
             'guru', 'pengaturan', 'siswaList', 'kelasStats', 'kelas',
             'siswaPerluPendampingan', 'siswaBerprestasi',
-            'chartLabels', 'chartData', 'chartKKM', 'chartPredikatData'
+            'chartLabels', 'chartData', 'chartKKM', 'chartPredikatData',
+            'daftarKelas', 'kelasDipilih'
         ));
     }
 }
