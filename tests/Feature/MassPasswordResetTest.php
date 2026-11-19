@@ -126,7 +126,11 @@ class MassPasswordResetTest extends TestCase
         $this->assertNull($kepsek->fresh()->sandi_awal_diterbitkan_at); // kelas != 4A
 
         // Log aktivitas tercatat TANPA password
-        $log = Aktivitas::where('judul', 'Reset Sandi Massal')->latest('id')->firstOrFail();
+        $log = Aktivitas::withoutGlobalScopes()
+            ->where('tenant_id', $tenantA->id)
+            ->where('judul', 'Reset Sandi Massal')
+            ->latest('id')
+            ->firstOrFail();
         $this->assertStringNotContainsString($exportedPlain, (string) $log->deskripsi);
 
         // Batch 2 (tanpa opsi sertakan): TIDAK boleh me-reset ulang akun batch 1!
