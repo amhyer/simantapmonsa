@@ -642,7 +642,7 @@ class DataReferensiController extends Controller
         $cocok = 0;
         $tidakCocok = [];
         $maxZipEntries = max(1, (int) config('simantap.foto_zip_max_entries', 200));
-        $maxZipBytes = max(1048576, (int) config('simantap.foto_zip_max_uncompressed_bytes', 100 * 1024 * 1024));
+        $maxZipBytes = max(1, (int) config('simantap.foto_zip_max_uncompressed_bytes', 100 * 1024 * 1024));
 
         // 1. Proses ekstraksi file .zip jika diunggah (ala `#modal_masal` e-Rapor SD)
         if ($request->hasFile('file_zip') && class_exists(\ZipArchive::class)) {
@@ -665,14 +665,6 @@ class DataReferensiController extends Controller
                         break;
                     }
 
-                    $stat = $zip->statIndex($i);
-                    $declaredSize = is_array($stat) ? (int) ($stat['size'] ?? 0) : 0;
-                    if ($declaredSize > SiswaFotoStorage::MAX_IMAGE_BYTES || ($totalUncompressedBytes + $declaredSize) > $maxZipBytes) {
-                        $tidakCocok[] = basename($entryName);
-
-                        continue;
-                    }
-
                     $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
                     $siswa = Siswa::where('nisn', $kunci)->orWhere('nis', $kunci)->first();
                     if (! $siswa) {
@@ -681,18 +673,48 @@ class DataReferensiController extends Controller
                         continue;
                     }
 
-                    $contents = $zip->getFromIndex($i);
-                    if ($contents === false) {
+                    // Baca stream secara terbatas terhadap byte nyata (tidak hanya percaya header/stat ZIP)
+                    $remainingBudget = $maxZipBytes - $totalUncompressedBytes;
+                    if ($remainingBudget <= 0) {
+                        $tidakCocok[] = 'Batas total ukuran terdekompresi ZIP terlampaui.';
+
+                        break;
+                    }
+
+                    $entryLimit = min(SiswaFotoStorage::MAX_IMAGE_BYTES, $remainingBudget);
+                    $stream = $zip->getStream($entryName);
+                    if ($stream === false) {
                         $tidakCocok[] = basename($entryName);
 
                         continue;
                     }
 
-                    $totalUncompressedBytes += strlen($contents);
-                    if ($totalUncompressedBytes > $maxZipBytes) {
-                        $tidakCocok[] = 'Batas total ukuran terdekompresi ZIP terlampaui.';
+                    $contents = '';
+                    $exceededEntry = false;
+                    while (! feof($stream)) {
+                        $chunk = fread($stream, 8192);
+                        if ($chunk === false) {
+                            break;
+                        }
+                        $contents .= $chunk;
+                        if (strlen($contents) > $entryLimit) {
+                            $exceededEntry = true;
 
-                        break;
+                            break;
+                        }
+                    }
+                    fclose($stream);
+
+                    $totalUncompressedBytes += strlen($contents);
+                    if ($exceededEntry) {
+                        if ($totalUncompressedBytes > $maxZipBytes) {
+                            $tidakCocok[] = 'Batas total ukuran terdekompresi ZIP terlampaui.';
+
+                            break;
+                        }
+                        $tidakCocok[] = basename($entryName);
+
+                        continue;
                     }
 
                     $targetPath = $fotoStorage->storeRawBytes($contents);

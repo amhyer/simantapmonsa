@@ -6,6 +6,7 @@ use App\Models\JadwalPelajaran;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Services\Presensi\IdentityCardService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -17,11 +18,30 @@ class SiswaFotoPrivateUploadTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Carbon::setTestNow(Carbon::parse('2026-10-19 08:30:00', config('app.timezone'))); // Senin tetap
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
     private function tinyPngBytes(): string
     {
         return (string) base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
         );
+    }
+
+    private function tinyGifBytes(): string
+    {
+        return (string) base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
     }
 
     public function test_all_student_photo_pages_and_layout_use_private_media_route_without_storage_url(): void
@@ -37,7 +57,7 @@ class SiswaFotoPrivateUploadTest extends TestCase
             'guru_id' => $guru->id,
             'kelas' => '4A',
             'mata_pelajaran' => 'Matematika',
-            'hari' => now()->locale('id')->translatedFormat('l'),
+            'hari' => 'Senin',
             'jam_mulai' => '08:00',
             'jam_selesai' => '09:00',
         ]);
@@ -188,12 +208,21 @@ class SiswaFotoPrivateUploadTest extends TestCase
             'aktif' => true,
         ]);
 
+        $siswaGif = Siswa::create([
+            'nis' => '20267704',
+            'nama_peserta_didik' => 'Siswa GIF Ditolak',
+            'jenis_kelamin' => 'P',
+            'kelas' => '5A',
+            'aktif' => true,
+        ]);
+
         $tmpZip = tempnam(sys_get_temp_dir(), 'foto_zip_test_').'.zip';
         $zip = new \ZipArchive;
         $this->assertTrue($zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE));
         $zip->addFromString('20267701.jpg', 'ini bukan gambar, cuma teks biasa');
         $zip->addFromString('20267702.png', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
         $zip->addFromString('20267703.jpg', $this->tinyPngBytes()); // PNG asli dinamai .jpg -> harus disimpan .png
+        $zip->addFromString('20267704.jpg', $this->tinyGifBytes()); // GIF valid tetapi MIME tidak diizinkan
         $zip->close();
 
         try {
@@ -207,12 +236,49 @@ class SiswaFotoPrivateUploadTest extends TestCase
 
         $this->assertNull($siswaFake->fresh()->foto);
         $this->assertNull($siswaSvg->fresh()->foto);
+        $this->assertNull($siswaGif->fresh()->foto);
 
         $validPath = $siswaValid->fresh()->foto;
         $this->assertNotNull($validPath);
         $this->assertStringEndsWith('.png', $validPath);
         Storage::disk('local')->assertExists($validPath);
         Storage::disk('public')->assertMissing($validPath);
+    }
+
+    public function test_zip_upload_enforces_actual_read_byte_budget(): void
+    {
+        if (! class_exists(\ZipArchive::class)) {
+            $this->markTestSkipped('Ekstensi ZipArchive tidak tersedia.');
+        }
+
+        Storage::fake('local');
+        Storage::fake('public');
+
+        // 1 PNG = 67 byte; batas 100 byte hanya cukup untuk 1 entri, entri kedua harus ditolak saat dibaca
+        config(['simantap.foto_zip_max_uncompressed_bytes' => 100]);
+
+        $admin = User::factory()->create(['peran' => 'admin', 'aktif' => true, 'force_password_change' => false]);
+        $s1 = Siswa::create(['nis' => '20267801', 'nama_peserta_didik' => 'Zip Byte 1', 'jenis_kelamin' => 'L', 'kelas' => '5B', 'aktif' => true]);
+        $s2 = Siswa::create(['nis' => '20267802', 'nama_peserta_didik' => 'Zip Byte 2', 'jenis_kelamin' => 'P', 'kelas' => '5B', 'aktif' => true]);
+
+        $tmpZip = tempnam(sys_get_temp_dir(), 'foto_zip_limit_').'.zip';
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($tmpZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE));
+        $zip->addFromString('20267801.png', $this->tinyPngBytes());
+        $zip->addFromString('20267802.png', $this->tinyPngBytes());
+        $zip->close();
+
+        try {
+            $uploadedZip = new UploadedFile($tmpZip, 'limit.zip', 'application/zip', null, true);
+            $this->actingAs($admin)
+                ->post(route('admin.referensi.foto-siswa.store'), ['file_zip' => $uploadedZip])
+                ->assertRedirect(route('admin.referensi.foto-siswa'));
+        } finally {
+            @unlink($tmpZip);
+        }
+
+        $this->assertNotNull($s1->fresh()->foto);
+        $this->assertNull($s2->fresh()->foto);
     }
 
     public function test_benchmark_cetak_siswa_massal_100_students_and_100_image_requests(): void

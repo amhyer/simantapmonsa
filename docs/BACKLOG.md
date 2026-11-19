@@ -22,6 +22,7 @@ Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal aga
 - **Prasyarat mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`)**: tabel `tenants` harus kosong dan seluruh `users.tenant_id` harus `NULL`; jika tabel `tenants` berisi baris, akun dengan `tenant_id = NULL` akan terkena `403` global oleh `EnsureSchoolContext`. Jalur publik `GET/POST /daftar-sekolah` sudah ditutup (404) saat `multi_tenant_enabled=false`; penjagaan serupa untuk `/superadmin/tenants` (`TenantController::store`) serta perintah CLI `tenant:create` / `tenant:backfill` (opsi `--force` atau konfirmasi) dicatat untuk evaluasi lanjutan.
 - Evaluasi `set_time_limit(120)` pada `GET /admin/dapodik/api/semesters` (`DapodikController.php:224`) dan pastikan HTTP timeout eksplisit bila memanggil API Dapodik.
 - Ubah cetak kartu QR massal (`PresensiKartuController`, 180s) menjadi queue job + unduhan asinkron.
+- **Tahap 3 — Performa `cetakSiswaMassal`**: pengukuran 100 siswa menghasilkan `406 query` (pola N+1) dan `12,3 detik` di SQLite, masih memakai `GET` dengan `set_time_limit(180)` serta 1 request gambar per foto siswa; optimasi eager loading & mekanisme cetak batch dijadwalkan di Tahap 3.
 - Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
 
 ## Usulan Pemeriksaan Akun Password Default (Read-Only)

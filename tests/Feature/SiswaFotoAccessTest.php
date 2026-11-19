@@ -9,6 +9,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -158,9 +159,63 @@ class SiswaFotoAccessTest extends TestCase
         ]);
         Storage::disk('local')->put($siswaB->foto, $this->tinyPngBytes());
 
+        // Verifikasi Policy sameTenant secara langsung (di luar global scope route binding)
+        $this->assertTrue(Gate::forUser($adminA)->denies('viewFoto', $siswaB));
+
         $this->actingAs($adminA)
             ->get(route('media.siswa.foto', $siswaB))
             ->assertNotFound();
+    }
+
+    public function test_siswa_isolation_prevents_viewing_other_student_including_prefix_and_collision(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+
+        $siswaA = Siswa::create([
+            'nis' => '20266001',
+            'nisn' => '001001',
+            'nama_peserta_didik' => 'Siswa A',
+            'jenis_kelamin' => 'L',
+            'kelas' => '4A',
+            'foto' => 'foto-siswa/siswaA12345.png',
+            'aktif' => true,
+        ]);
+        $siswaB = Siswa::create([
+            'nis' => '20266002',
+            'nisn' => '0010010',
+            'nama_peserta_didik' => 'Siswa B',
+            'jenis_kelamin' => 'P',
+            'kelas' => '4A',
+            'foto' => 'foto-siswa/siswaB12345.png',
+            'aktif' => true,
+        ]);
+        Storage::disk('local')->put($siswaA->foto, $this->tinyPngBytes());
+        Storage::disk('local')->put($siswaB->foto, $this->tinyPngBytes());
+
+        // Kasus 1: Siswa A terikat eksplisit ke siswaA, meski nama_pengguna bertabrakan dengan NIS siswaB
+        $akunTabrak = User::factory()->create([
+            'peran' => 'siswa',
+            'nama_pengguna' => 'siswa20266002',
+            'terhubung_dengan' => [$siswaA->id],
+            'aktif' => true,
+            'force_password_change' => false,
+        ]);
+
+        $this->actingAs($akunTabrak)->get(route('media.siswa.foto', $siswaA))->assertOk();
+        $this->actingAs($akunTabrak)->get(route('media.siswa.foto', $siswaB))->assertForbidden();
+
+        // Kasus 2: Tanpa terhubung_dengan, prefix mirip ('001001' vs '0010010') tidak boleh lolos
+        $akunPrefix = User::factory()->create([
+            'peran' => 'siswa',
+            'nama_pengguna' => 'siswa001001',
+            'terhubung_dengan' => [],
+            'aktif' => true,
+            'force_password_change' => false,
+        ]);
+
+        $this->actingAs($akunPrefix)->get(route('media.siswa.foto', $siswaA))->assertOk();
+        $this->actingAs($akunPrefix)->get(route('media.siswa.foto', $siswaB))->assertForbidden();
     }
 
     public function test_invalid_paths_missing_file_and_public_fallback_flag(): void

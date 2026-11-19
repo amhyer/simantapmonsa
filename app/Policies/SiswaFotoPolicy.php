@@ -34,12 +34,22 @@ class SiswaFotoPolicy
 
     private function isOwnSiswa(User $user, Siswa $siswa): bool
     {
-        $linkedIds = array_map('intval', (array) ($user->terhubung_dengan ?? []));
-        if (in_array((int) $siswa->id, $linkedIds, true)) {
-            return true;
+        $linkedIds = array_values(array_filter(
+            array_map('intval', (array) ($user->terhubung_dengan ?? [])),
+            fn (int $id): bool => $id > 0
+        ));
+
+        // Jika tautan eksplisit terhubung_dengan sudah terisi, jadikan satu-satunya sumber otoritatif
+        // agar tidak jatuh ke pencocokan NIS/NISN yang bisa bertabrakan dengan siswa lain.
+        if ($linkedIds !== []) {
+            return in_array((int) $siswa->id, $linkedIds, true);
         }
 
-        $namaPengguna = (string) $user->nama_pengguna;
+        $namaPengguna = trim((string) $user->nama_pengguna);
+        if ($namaPengguna === '') {
+            return false;
+        }
+
         $kandidat = array_values(array_unique(array_filter([
             $namaPengguna,
             preg_replace('/^siswa/i', '', $namaPengguna),
