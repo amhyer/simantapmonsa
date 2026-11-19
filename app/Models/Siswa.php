@@ -95,7 +95,8 @@ class Siswa extends Model
                 // Driver DB tanpa dukungan JSON contains (abaikan relasi ortu di sini).
             }
             foreach ($ids as $id) {
-                Cache::forget('layout-foto-' . $id);
+                Cache::forget('layout-foto-v2-'.$id);
+                Cache::forget('layout-foto-'.$id);
             }
         };
 
@@ -114,6 +115,16 @@ class Siswa extends Model
         }
 
         return parent::resolveRouteBinding($value, $field);
+    }
+
+    public function fotoUrl(): ?string
+    {
+        $path = trim((string) ($this->foto ?? ''));
+        if ($path === '' || ! $this->uuid) {
+            return null;
+        }
+
+        return route('media.siswa.foto', $this);
     }
 
     public function semester()

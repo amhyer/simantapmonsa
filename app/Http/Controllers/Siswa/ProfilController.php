@@ -53,28 +53,30 @@ class ProfilController extends Controller
         return view('siswa.profil.edit', compact('siswa'));
     }
 
-    public function update(Request $request)
+    public function update(Request $request, \App\Services\Media\SiswaFotoStorage $fotoStorage)
     {
         $siswa = $this->getSiswa();
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
         $validated = $request->validate([
             'telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string|max:500',
-            'foto' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ], [
             'foto.image' => 'File harus berupa gambar.',
-            'foto.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
+            'foto.mimes' => 'Format gambar harus jpeg, jpg, png, atau webp.',
             'foto.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         if ($request->hasFile('foto')) {
-            if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-                Storage::disk('public')->delete($siswa->foto);
+            $newPath = $fotoStorage->storeUploadedFile($request->file('foto'));
+            if ($newPath === null) {
+                return back()->withErrors(['foto' => 'File gambar tidak valid.']);
             }
-            $validated['foto'] = $request->file('foto')->store('foto-siswa', 'public');
+            $fotoStorage->deleteFromAllDisks($siswa->foto);
+            $validated['foto'] = $newPath;
         }
 
         $siswa->update($validated);

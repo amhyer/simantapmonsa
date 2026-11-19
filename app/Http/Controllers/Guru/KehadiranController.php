@@ -287,7 +287,7 @@ class KehadiranController extends Controller
                 'nama' => $student->nama_peserta_didik,
                 'nis' => $student->nis,
                 'kelas' => $student->kelas,
-                'foto' => $student->foto ? asset('storage/' . ltrim($student->foto, '/')) : null,
+                'foto' => $student->fotoUrl(),
             ],
             'daily' => [
                 'status' => $result['daily']->status,

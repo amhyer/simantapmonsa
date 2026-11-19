@@ -96,7 +96,7 @@
                                     </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
                                         @if($s->foto)
-                                            <img src="{{ asset('storage/' . $s->foto) }}" alt="Foto {{ $s->nama_peserta_didik }}" loading="lazy" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
+                                            <img src="{{ $s->fotoUrl() }}" alt="Foto {{ $s->nama_peserta_didik }}" loading="lazy" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E4E7EC">
                                         @else
                                             <span class="avatar" style="width:48px;height:48px;margin:0 auto;font-size:14px">{{ substr($s->nama_peserta_didik, 0, 2) }}</span>
                                             <div style="font-size:10.5px;color:#98A2B3;margin-top:2px">Belum ada</div>

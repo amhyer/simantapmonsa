@@ -95,21 +95,21 @@ class AppServiceProvider extends ServiceProvider
 
             if ($user) {
                 $foto = Cache::remember(
-                    'layout-foto-'.$user->id,
+                    'layout-foto-v2-'.$user->id,
                     300,
                     function () use ($user) {
                         $siswa = Siswa::query()
                             ->where('nis', $user->nama_pengguna)
-                            ->first(['foto']);
+                            ->first(['id', 'uuid', 'foto']);
 
                         $terhubung = $user->terhubung_dengan;
                         if (! $siswa && is_array($terhubung) && $terhubung !== []) {
                             $siswa = Siswa::query()
                                 ->whereIn('id', $terhubung)
-                                ->first(['foto']);
+                                ->first(['id', 'uuid', 'foto']);
                         }
 
-                        return $siswa->foto ?? null;
+                        return $siswa?->fotoUrl();
                     }
                 );
             }

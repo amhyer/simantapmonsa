@@ -29,7 +29,7 @@
             <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
                 <div style="text-align:center;flex:0 0 140px">
                     @if($siswa->foto)
-                        <img id="fotoPreview" src="{{ asset('storage/' . $siswa->foto) }}" alt="Foto" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--navy)">
+                        <img id="fotoPreview" src="{{ $siswa->fotoUrl() }}" alt="Foto" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--navy)">
                     @else
                         <div id="fotoPreview" style="width:120px;height:120px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto;font-weight:700">
                             {{ substr($siswa->nama_peserta_didik, 0, 1) }}

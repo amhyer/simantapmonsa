@@ -67,7 +67,7 @@
         @endphp
         <div class="sidebar-user">
             @if($userFoto)
-                <img src="{{ asset('storage/' . $userFoto) }}" alt="Foto" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                <img src="{{ $userFoto }}" alt="Foto" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">
             @else
                 <div class="avatar">{{ $currentUser ? substr($currentUser->nama_lengkap, 0, 2) : '?' }}</div>
             @endif
@@ -195,7 +195,7 @@
                 {{-- Profil Pengguna Selalu di Posisi Paling Kanan --}}
                 <div class="user-dropdown" style="position:relative" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
                     @if($userFoto)
-                        <img src="{{ asset('storage/' . $userFoto) }}" alt="Foto" class="avatar-sm" style="object-fit:cover">
+                        <img src="{{ $userFoto }}" alt="Foto" class="avatar-sm" style="object-fit:cover">
                     @else
                         <div class="avatar-sm">{{ $currentUser ? substr($currentUser->nama_lengkap, 0, 2) : '?' }}</div>
                     @endif

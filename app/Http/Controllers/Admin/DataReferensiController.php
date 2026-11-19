@@ -589,71 +589,89 @@ class DataReferensiController extends Controller
         ));
     }
 
-    public function storeFotoSiswaSatuan(Request $request, Siswa $siswa)
+    public function storeFotoSiswaSatuan(Request $request, Siswa $siswa, \App\Services\Media\SiswaFotoStorage $fotoStorage)
     {
         $request->validate([
-            'foto' => 'required|image|mimes:jpeg,jpg,png|max:2048',
+            'foto' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
         ], [
             'foto.image' => 'File harus berupa gambar.',
-            'foto.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
+            'foto.mimes' => 'Format gambar harus jpeg, jpg, png, atau webp.',
             'foto.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
 
-        if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-            Storage::disk('public')->delete($siswa->foto);
+        $newPath = $fotoStorage->storeUploadedFile($request->file('foto'));
+        if ($newPath === null) {
+            return back()->withErrors(['foto' => 'File gambar tidak valid.']);
         }
-        $siswa->update(['foto' => $request->file('foto')->store('foto-siswa', 'public')]);
+
+        $fotoStorage->deleteFromAllDisks($siswa->foto);
+        $siswa->update(['foto' => $newPath]);
 
         return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil diperbarui.");
     }
 
-    public function storeFotoSiswa(Request $request)
+    public function storeFotoSiswa(Request $request, \App\Services\Media\SiswaFotoStorage $fotoStorage)
     {
         $request->validate([
             'foto' => 'nullable|array|max:100',
-            'foto.*' => 'image|mimes:jpeg,jpg,png|max:2048',
+            'foto.*' => 'image|mimes:jpeg,jpg,png,webp|max:2048',
             'file_zip' => 'nullable|file|mimes:zip|max:51200',
             'reset_semua' => 'nullable|boolean',
         ], [
             'foto.*.image' => 'Semua file harus berupa gambar.',
-            'foto.*.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
+            'foto.*.mimes' => 'Format gambar harus jpeg, jpg, png, atau webp.',
             'foto.*.max' => 'Ukuran tiap gambar maksimal 2MB.',
             'file_zip.mimes' => 'File arsip harus berformat .zip.',
             'file_zip.max' => 'Ukuran file .zip maksimal 50MB.',
         ]);
 
         if (! $request->hasFile('foto') && ! $request->hasFile('file_zip')) {
-            return back()->with('error', 'Pilih file foto (.jpg/.png) atau arsip .zip terlebih dahulu.');
+            return back()->with('error', 'Pilih file foto (.jpg/.png/.webp) atau arsip .zip terlebih dahulu.');
         }
 
         // Opsi Reset Semua Foto Siswa sebelum upload massal (sesuai e-Rapor SD)
         if ($request->boolean('reset_semua')) {
             $berfoto = Siswa::whereNotNull('foto')->get();
             foreach ($berfoto as $s) {
-                if ($s->foto && Storage::disk('public')->exists($s->foto)) {
-                    Storage::disk('public')->delete($s->foto);
-                }
+                $fotoStorage->deleteFromAllDisks($s->foto);
                 $s->update(['foto' => null]);
             }
         }
 
         $cocok = 0;
         $tidakCocok = [];
+        $maxZipEntries = max(1, (int) config('simantap.foto_zip_max_entries', 200));
+        $maxZipBytes = max(1048576, (int) config('simantap.foto_zip_max_uncompressed_bytes', 100 * 1024 * 1024));
 
         // 1. Proses ekstraksi file .zip jika diunggah (ala `#modal_masal` e-Rapor SD)
         if ($request->hasFile('file_zip') && class_exists(\ZipArchive::class)) {
             $zipFile = $request->file('file_zip');
             $zip = new \ZipArchive;
             if ($zip->open($zipFile->getRealPath()) === true) {
+                $processedEntries = 0;
+                $totalUncompressedBytes = 0;
+
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $entryName = $zip->getNameIndex($i);
                     if (! $entryName || str_ends_with($entryName, '/') || str_starts_with(basename($entryName), '.')) {
                         continue;
                     }
-                    $ext = strtolower(pathinfo($entryName, PATHINFO_EXTENSION));
-                    if (! in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+
+                    $processedEntries++;
+                    if ($processedEntries > $maxZipEntries) {
+                        $tidakCocok[] = 'Batas maksimal entri ZIP terlampaui.';
+
+                        break;
+                    }
+
+                    $stat = $zip->statIndex($i);
+                    $declaredSize = is_array($stat) ? (int) ($stat['size'] ?? 0) : 0;
+                    if ($declaredSize > \App\Services\Media\SiswaFotoStorage::MAX_IMAGE_BYTES || ($totalUncompressedBytes + $declaredSize) > $maxZipBytes) {
+                        $tidakCocok[] = basename($entryName);
+
                         continue;
                     }
+
                     $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
                     $siswa = Siswa::where('nisn', $kunci)->orWhere('nis', $kunci)->first();
                     if (! $siswa) {
@@ -661,17 +679,29 @@ class DataReferensiController extends Controller
 
                         continue;
                     }
+
                     $contents = $zip->getFromIndex($i);
-                    if ($contents === false || strlen($contents) > 2 * 1024 * 1024) {
+                    if ($contents === false) {
                         $tidakCocok[] = basename($entryName);
 
                         continue;
                     }
-                    if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-                        Storage::disk('public')->delete($siswa->foto);
+
+                    $totalUncompressedBytes += strlen($contents);
+                    if ($totalUncompressedBytes > $maxZipBytes) {
+                        $tidakCocok[] = 'Batas total ukuran terdekompresi ZIP terlampaui.';
+
+                        break;
                     }
-                    $targetPath = 'foto-siswa/'.Str::random(32).'.'.$ext;
-                    Storage::disk('public')->put($targetPath, $contents);
+
+                    $targetPath = $fotoStorage->storeRawBytes($contents);
+                    if ($targetPath === null) {
+                        $tidakCocok[] = basename($entryName);
+
+                        continue;
+                    }
+
+                    $fotoStorage->deleteFromAllDisks($siswa->foto);
                     $siswa->update(['foto' => $targetPath]);
                     $cocok++;
                 }
@@ -691,10 +721,15 @@ class DataReferensiController extends Controller
                     continue;
                 }
 
-                if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-                    Storage::disk('public')->delete($siswa->foto);
+                $newPath = $fotoStorage->storeUploadedFile($file);
+                if ($newPath === null) {
+                    $tidakCocok[] = $file->getClientOriginalName();
+
+                    continue;
                 }
-                $siswa->update(['foto' => $file->store('foto-siswa', 'public')]);
+
+                $fotoStorage->deleteFromAllDisks($siswa->foto);
+                $siswa->update(['foto' => $newPath]);
                 $cocok++;
             }
         }
@@ -705,24 +740,20 @@ class DataReferensiController extends Controller
         ]);
     }
 
-    public function destroyFotoSiswa(Siswa $siswa)
+    public function destroyFotoSiswa(Siswa $siswa, \App\Services\Media\SiswaFotoStorage $fotoStorage)
     {
-        if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-            Storage::disk('public')->delete($siswa->foto);
-        }
+        $fotoStorage->deleteFromAllDisks($siswa->foto);
         $siswa->update(['foto' => null]);
 
         return back()->with('success', "Foto {$siswa->nama_peserta_didik} berhasil dihapus.");
     }
 
-    public function resetSemuaFotoSiswa()
+    public function resetSemuaFotoSiswa(\App\Services\Media\SiswaFotoStorage $fotoStorage)
     {
         $berfoto = Siswa::whereNotNull('foto')->get();
         $jumlah = 0;
         foreach ($berfoto as $siswa) {
-            if ($siswa->foto && Storage::disk('public')->exists($siswa->foto)) {
-                Storage::disk('public')->delete($siswa->foto);
-            }
+            $fotoStorage->deleteFromAllDisks($siswa->foto);
             $siswa->update(['foto' => null]);
             $jumlah++;
         }

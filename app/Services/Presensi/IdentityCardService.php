@@ -308,7 +308,7 @@ class IdentityCardService
             'unit' => $siswa->rombel?->nama_rombel ?? $siswa->kelas ?? '-',
             'info_tambahan_label' => 'Jenis Kelamin',
             'info_tambahan' => $jkLabel,
-            'foto_url' => $siswa->foto ? asset('storage/' . ltrim($siswa->foto, '/')) : null,
+            'foto_url' => $siswa->fotoUrl(),
             'inisial' => mb_strtoupper(mb_substr((string) $siswa->nama_peserta_didik, 0, 2)),
             'kode_kartu' => 'SIS-' . str_pad((string) $siswa->id, 5, '0', STR_PAD_LEFT)
                 . ((int) $siswa->qr_card_version > 0 ? '-V' . $siswa->qr_card_version : '-EXT'),

@@ -83,7 +83,7 @@
                         <td>
                             <div style="display:flex;align-items:center;gap:10px">
                                 @if($student->foto)
-                                    <img src="{{ asset('storage/' . ltrim($student->foto, '/')) }}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+                                    <img src="{{ $student->fotoUrl() }}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
                                 @else
                                     <span class="avatar">{{ mb_substr($student->nama_peserta_didik, 0, 2) }}</span>
                                 @endif
