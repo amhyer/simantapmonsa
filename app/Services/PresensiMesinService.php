@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  * Dipakai bersama oleh impor file (Excel/CSV) dan tarik langsung dari
  * database Attendance Management agar aturan pengamanannya selalu sama:
  * - scan masuk paling awal dan pulang paling akhir per pegawai per hari;
+ * - status "pulang" sebelum scan masuk pertama dianggap scan ganda kedatangan;
+ * - hari presensi dimulai pukul 01:00;
  * - koreksi manual admin serta status izin/sakit/cuti tidak ditimpa;
  * - NIK yang tidak dikenal dilewati.
  */
@@ -108,6 +110,15 @@ class PresensiMesinService
                         $berubah = true;
                     }
 
+                    // Jangan biarkan data lama menyimpan pulang sebelum masuk.
+                    if ($record->waktu_masuk !== null
+                        && $record->waktu_pulang !== null
+                        && $record->waktu_pulang->lte($record->waktu_masuk)) {
+                        $record->waktu_pulang = null;
+                        $record->metode_pulang = null;
+                        $berubah = true;
+                    }
+
                     if ($group['masuk'] !== null) {
                         $status = $this->statusMasuk(array_merge($group, ['masuk' => $record->waktu_masuk]), $user->jenjang);
                         if ($statusLama !== $status) {
@@ -170,37 +181,95 @@ class PresensiMesinService
     }
 
     /**
+     * Mengelompokkan scan per pegawai per hari, lalu menentukan jam masuk dan
+     * pulang. Hari presensi dimulai pukul 01:00 (lihat tanggalPresensi()).
+     *
      * @param  list<array{nik: string, waktu: Carbon, jenis: string}>  $scans
      * @return array<string, array{nik: string, tanggal: Carbon, masuk: ?Carbon, pulang: ?Carbon}>
      */
     private function kelompokkan(array $scans): array
     {
-        $groups = [];
+        $mentah = [];
 
         foreach ($scans as $scan) {
-            $tanggal = $scan['waktu']->copy()->startOfDay();
+            $tanggal = $this->tanggalPresensi($scan['waktu']);
             $nik = $this->normalizeNik($scan['nik']) ?? trim((string) $scan['nik']);
             $key = $nik.'|'.$tanggal->toDateString();
 
-            if (! isset($groups[$key])) {
-                $groups[$key] = [
+            if (! isset($mentah[$key])) {
+                $mentah[$key] = [
                     'nik' => $nik,
                     'tanggal' => $tanggal,
-                    'masuk' => null,
-                    'pulang' => null,
+                    'scans' => [],
                 ];
             }
 
-            if ($scan['jenis'] === 'masuk') {
-                if ($groups[$key]['masuk'] === null || $scan['waktu']->lt($groups[$key]['masuk'])) {
-                    $groups[$key]['masuk'] = $scan['waktu'];
-                }
-            } elseif ($groups[$key]['pulang'] === null || $scan['waktu']->gt($groups[$key]['pulang'])) {
-                $groups[$key]['pulang'] = $scan['waktu'];
-            }
+            $mentah[$key]['scans'][] = $scan;
+        }
+
+        $groups = [];
+        foreach ($mentah as $key => $data) {
+            $groups[$key] = $this->ringkasHarian($data['nik'], $data['tanggal'], $data['scans']);
         }
 
         return $groups;
+    }
+
+    /**
+     * Status 0/1 dari mesin dipakai apa adanya. Bila mesin menandai "pulang"
+     * sebelum scan "masuk" pertama pada hari yang sama, scan itu adalah scan
+     * ganda kedatangan (mis. dua kali tap dalam hitungan detik) sehingga
+     * dihitung sebagai "masuk", bukan pulang.
+     *
+     * @param  list<array{nik: string, waktu: Carbon, jenis: string}>  $scans
+     * @return array{nik: string, tanggal: Carbon, masuk: ?Carbon, pulang: ?Carbon}
+     */
+    private function ringkasHarian(string $nik, Carbon $tanggal, array $scans): array
+    {
+        usort($scans, fn (array $a, array $b): int => $a['waktu'] <=> $b['waktu']);
+
+        $masukPertama = null;
+        foreach ($scans as $scan) {
+            if ($scan['jenis'] === 'masuk') {
+                $masukPertama = $scan['waktu'];
+
+                break;
+            }
+        }
+
+        $masuk = null;
+        $pulang = null;
+
+        foreach ($scans as $scan) {
+            $jenis = $scan['jenis'];
+
+            if ($jenis === 'pulang' && $masukPertama !== null && $scan['waktu']->lt($masukPertama)) {
+                $jenis = 'masuk';
+            }
+
+            if ($jenis === 'masuk') {
+                if ($masuk === null || $scan['waktu']->lt($masuk)) {
+                    $masuk = $scan['waktu'];
+                }
+            } elseif ($pulang === null || $scan['waktu']->gt($pulang)) {
+                $pulang = $scan['waktu'];
+            }
+        }
+
+        if ($masuk !== null && $pulang !== null && $pulang->lte($masuk)) {
+            $pulang = null;
+        }
+
+        return ['nik' => $nik, 'tanggal' => $tanggal, 'masuk' => $masuk, 'pulang' => $pulang];
+    }
+
+    /**
+     * Hari presensi mesin dimulai pukul 01:00, sehingga scan 00:00-00:59
+     * dihitung sebagai bagian dari hari sebelumnya.
+     */
+    private function tanggalPresensi(Carbon $waktu): Carbon
+    {
+        return $waktu->copy()->subHour()->startOfDay();
     }
 
     public function statusMasuk(array $group, ?string $jenjang = null): string

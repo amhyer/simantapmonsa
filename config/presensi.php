@@ -106,4 +106,14 @@ return [
     | cocok dengan users.nik. Isi 0 untuk memakai user id apa adanya.
     */
     'mesin_user_id_pad' => (int) env('PRESENSI_MESIN_USER_ID_PAD', 10),
+
+    /*
+    | Bridge TCP untuk PC sekolah: membaca mesin di LAN sekolah lalu mengirim
+    | hasilnya ke SIMANTAP hosting lewat POST /api/presensi/mesin/sinkron.
+    | Dipakai oleh command `presensi:mesin-bridge`. State disimpan di file
+    | agar tidak bergantung pada cache/database lokal.
+    */
+    'bridge_url' => env('PRESENSI_BRIDGE_URL'),
+    'bridge_key' => env('PRESENSI_BRIDGE_KEY'),
+    'bridge_state_path' => env('PRESENSI_BRIDGE_STATE_PATH', storage_path('app/presensi-bridge-state.json')),
 ];
