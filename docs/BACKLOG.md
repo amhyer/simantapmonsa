@@ -1,42 +1,27 @@
 # Backlog Pengembangan SIMANTAP MONSA
 
-Dokumen ini mencatat item pengembangan lanjutan yang ditunda dari rilis awal agar peluncuran tetap fokus dan aman.
+Dokumen ini mengelompokkan seluruh item backlog dan tugas lanjutan ke dalam tiga prioritas agar peluncuran tetap fokus, aman, dan terukur.
 
-## Fase 2 — Modul CBT (Sebelum `SIMANTAP_CBT_ENABLED=true`)
-1. **Pengelolaan Butir Soal CBT oleh Admin (Opsi a)**
-   - Ekstrak logika mutasi soal (transaksi `lockForUpdate`, batas 200 soal per bank, sinkronisasi `LegacyExamMapper`) dari `App\Http\Controllers\Cbt\CbtQuestionController` ke `App\Services\Cbt\CbtQuestionService`.
-   - Tambahkan halaman/endpoint admin di `/admin/cbt/banks/{bank}/questions/*` menggunakan `CbtQuestionService`, `StoreCbtQuestionRequest` (atau varian admin), dan pencatatan audit via `AktivitasService` agar admin dapat membantu guru menyusun butir soal saat mode persiapan (`cbt_enabled=false`) tanpa membuka route `/cbt/*` milik guru.
-2. **Impor Soal Massal (Word / Excel)**
-   - Tambahkan fitur impor butir soal pilihan ganda dari format Word/Excel pada jalur Bank Soal CBT (belum tersedia baik di sisi guru maupun admin).
-3. **Uji Beban & Redis CBT**
-   - Aktifkan Redis untuk `SIMANTAP_CBT_BUFFER_ASYNC=true` dan lakukan uji beban (k6) sebelum menyalakan `SIMANTAP_CBT_ENABLED=true`.
+## 1. Wajib Sebelum Rilis Publik
+- **Rotasi kredensial manual (pemilik)**: cabut/ganti token Dapodik yang pernah ada di `app/Services/SchoolDataService.php` & riwayat Git, ganti password akun yang pernah ter-hardcode di `dapodik_auto_pull.py`, serta audit & reset akun ber-password bawaan via `php artisan akun:audit-password-bawaan` (dry-run dulu, lalu `--apply --export=/tmp/reset-sandi-awal.csv` setelah backup DB).
+- **Verifikasi prasyarat mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`)**: pastikan pada database target `SELECT count(*) FROM tenants` = `0` dan `SELECT count(*) FROM users WHERE tenant_id IS NOT NULL` = `0` (jika tidak, akun `tenant_id = null` terkena `403` global oleh `app/Http/Middleware/EnsureSchoolContext.php`).
+- **Cutover privasi foto siswa (`docs/CUTOVER-FOTO.md`)**: migrasi foto lama dari disk `public` ke `local` (`php artisan siswa:migrasi-foto-private`), pastikan `hanya_public = 0`, set `SIMANTAP_FOTO_FALLBACK_PUBLIC=false`, dan blokir `/storage/foto-siswa/` (`404`) di Nginx/CDN.
+- **Bangun ulang Bridge & validasi URL HTTPS**: bangun ulang `SIMANTAP-Bridge.exe`, isi `DAPODIK_BRIDGE_SHA256`, dan validasi `dapodik.bridge_download_url` wajib diawali `https://` (`config/dapodik.php`).
+- **Pemindaian rahasia & pembersihan riwayat Git**: jalankan `gitleaks` sebelum membuka repositori publik, dan pertimbangkan `git filter-repo` **hanya** jika repositori bersifat publik serta **setelah** seluruh kredensial dirotasi.
 
-## Backlog Teknis & Keamanan Lainnya
-- **Rotasi kredensial manual (Wajib oleh pemilik)**: cabut/ganti token Dapodik yang sempat ada di `SchoolDataService` & riwayat Git, ganti password akun yang dulu ter-hardcode di `dapodik_auto_pull.py`, dan reset akun yang masih memakai password default.
-- **Pemindai rahasia di CI**: usulkan integrasi `gitleaks` pada `.github/workflows/` setelah rotasi selesai (belum diubah di workflow saat ini).
-- **Pembersihan riwayat Git**: pertimbangkan `git filter-repo` **hanya** jika repositori bersifat publik dan **setelah** seluruh kredensial selesai dirotasi.
-- **Validasi URL unduhan Bridge**: validasi `dapodik.bridge_download_url` wajib diawali `https://` pada konfigurasi produksi.
-- **Privasi Foto Pegawai (`User.foto`)**: foto pegawai di `IdentityCardService.php:383` masih memakai `asset('storage/...')` (disk `public`); logo sekolah/pemda tetap aset publik. Pindahkan foto pegawai ke disk `local` + route terotorisasi pada batch berikutnya.
-- **Opsi (b) Queue Job untuk Reset & Generate Massal**: bila sekolah memiliki >500 akun sekaligus dan batas batch `SIMANTAP_RESET_MASSAL_MAX=100` terasa menyulitkan, pindahkan eksekusi hash ke queue job dengan hasil terenkripsi ber-TTL pendek di cache.
-- **Hashing di luar transaksi `MassPasswordResetService`**: pindahkan proses `Hash::make()` (bcrypt ±270 ms/akun) ke luar `DB::transaction` agar kunci baris tabel `users` selama transaksi tetap singkat.
-- **Prasyarat mode satu sekolah (`SIMANTAP_MULTI_TENANT=false`)**: tabel `tenants` harus kosong dan seluruh `users.tenant_id` harus `NULL`; jika tabel `tenants` berisi baris, akun dengan `tenant_id = NULL` akan terkena `403` global oleh `EnsureSchoolContext`. Jalur publik `GET/POST /daftar-sekolah` sudah ditutup (404) saat `multi_tenant_enabled=false`; penjagaan serupa untuk `/superadmin/tenants` (`TenantController::store`) serta perintah CLI `tenant:create` / `tenant:backfill` (opsi `--force` atau konfirmasi) dicatat untuk evaluasi lanjutan.
-- Evaluasi `set_time_limit(120)` pada `GET /admin/dapodik/api/semesters` (`DapodikController.php:224`) dan pastikan HTTP timeout eksplisit bila memanggil API Dapodik.
-- Ubah cetak kartu QR massal (`PresensiKartuController`, 180s) menjadi queue job + unduhan asinkron.
-- **Tahap 3 — Performa `cetakSiswaMassal`**: N+1 `ensureSiswaCard` & bulk `printed_at` sudah dioptimasi di S5; tersisa pekerjaan arsitektur lanjutan: `GET /admin/presensi/kartu-siswa/cetak-massal` masih melakukan efek samping (penerbitan QR lazy & update `printed_at`) dan `set_time_limit(180)` serta 1 request gambar per foto — pindahkan mutasi ke `POST`/queue pada fase berikutnya.
-- **Pengerasan CSP (menuju Enforce tanpa `unsafe-inline`/`unsafe-eval`)**: inventaris saat ini pada `resources/views/` mencatat `89` blok `<script>` inline, `51` blok `<style>` inline, `7.093` atribut `style="..."`, **`381` event handler inline** (`onclick`/`onchange`/`onsubmit`/`oninput`/dll.), **`1` `javascript:`** (`errors/layout.blade.php`), dan pemakaian Alpine terbatas (`3` file Blade dengan `3` `x-data`, `4` `@click`/`x-on:`, `0` `x-init`, meski Alpine dimuat global di `resources/js/app.js`). Handler inline tidak bisa dibuka oleh nonce saja (membutuhkan `script-src-attr 'unsafe-inline'` atau refactor ke `addEventListener`), dan Alpine membutuhkan `'unsafe-eval'` atau `@alpinejs/csp`.
-- Evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
-- **S6 — Uji TTL nyata & `settings.json` multi-tenant**: tambahkan uji TTL nyata dengan manipulasi waktu `Carbon` untuk `IdentityCardService::svgQr` (di samping guard mock saat ini), dan pindahkan sumber data `setting()` (`storage/app/settings.json` yang masih satu berkas global) ke penyimpanan per-tenant sebelum mode multi-tenant penuh diaktifkan.
+## 2. Segera Setelah Rilis
+- **Privasi foto pegawai (`User.foto`)**: pindahkan foto pegawai di `app/Services/Presensi/IdentityCardService.php:383` dari `asset('storage/...')` (disk `public`) ke disk `local` + route terotorisasi (logo sekolah/pemda tetap aset publik).
+- **Pemindai rahasia di CI**: integrasikan `gitleaks` ke `.github/workflows/ci.yml` setelah rotasi kredensial selesai.
+- **S6 — Uji TTL nyata & `settings.json` multi-tenant**: tambahkan uji TTL nyata via manipulasi waktu `Carbon` untuk `IdentityCardService::svgQr` (`app/Services/Presensi/IdentityCardService.php:325`), dan pindahkan sumber data `setting()` (`app/helpers.php:19`, `storage/app/settings.json`) ke penyimpanan per-tenant sebelum mengaktifkan multi-tenant.
+- **Evaluasi `set_time_limit(120)` Dapodik**: tinjau `app/Http/Controllers/Api/DapodikController.php:224` (`GET /admin/dapodik/api/semesters`) dan pastikan HTTP timeout eksplisit saat memanggil API Dapodik.
+- **Pindahkan mutasi & render berat cetak kartu massal ke POST/Queue**: ubah `GET /admin/presensi/kartu-siswa/cetak-massal` (`app/Http/Controllers/Admin/PresensiKartuController.php:215`, `set_time_limit(180)`) agar tidak melakukan efek samping (penerbitan QR lazy & update `printed_at`) di request `GET`, dan jadikan unduhan asinkron berbasis queue.
+- **Hashing di luar transaksi `MassPasswordResetService`**: pindahkan `Hash::make()` (bcrypt ±270 ms/akun) di `app/Services/Admin/MassPasswordResetService.php` ke luar `DB::transaction` agar kunci baris tabel `users` tetap singkat.
+- **Opsi Queue Job untuk reset & generate massal >500 akun**: jika batas `SIMANTAP_RESET_MASSAL_MAX=100` terasa menyulitkan untuk sekolah besar, pindahkan eksekusi hash ke queue job dengan hasil terenkripsi ber-TTL pendek di cache.
 
-## Usulan Pemeriksaan Akun Password Default (Read-Only)
-> **PERINGATAN**: Backup database terlebih dahulu sebelum menjalankan opsi `--apply`. Jangan simpan file ekspor CSV di dalam folder repositori.
-
-1. **Dry-run (audit read-only, tidak mengubah data)**:
-   ```bash
-   php artisan akun:audit-password-bawaan
-   ```
-   (Masukkan kata sandi bawaan yang ingin diperiksa saat diminta prompt tersembunyi; gunakan `--tenant=<id>` untuk membatasi satu sekolah.)
-
-2. **Terapkan reset acak + ekspor sekali-pakai** (setelah backup database):
-   ```bash
-   php artisan akun:audit-password-bawaan --apply --export=/tmp/reset-sandi-awal.csv
-   ```
+## 3. Nanti
+- **Fase 2 — Modul CBT (`SIMANTAP_CBT_ENABLED=true`) — Ekstraksi `CbtQuestionService` untuk Admin**: ekstrak logika mutasi soal (`lockForUpdate`, batas 200 soal/bank, sinkronisasi `LegacyExamMapper`) dari `app/Http/Controllers/Cbt/CbtQuestionController.php` ke `App\Services\Cbt\CbtQuestionService` dan tambahkan endpoint `/admin/cbt/banks/{bank}/questions/*` + audit `AktivitasService`.
+- **Fase 2 — Modul CBT — Impor soal massal Word/Excel**: tambahkan fitur impor butir soal pilihan ganda dari Word/Excel pada Bank Soal CBT.
+- **Fase 2 — Modul CBT — Uji beban & Redis**: aktifkan Redis untuk `SIMANTAP_CBT_BUFFER_ASYNC=true` dan lakukan uji beban (k6) sebelum menyalakan `SIMANTAP_CBT_ENABLED=true`.
+- **Pengerasan CSP menuju Enforce tanpa `unsafe-inline`/`unsafe-eval`**: refactor bertahap `resources/views/` (tercatat `89` blok `<script>` inline, `51` `<style>` inline, `7.093` atribut `style="..."`, `381` handler event inline `onclick`/`onchange`/dll., `1` `javascript:` di `resources/views/errors/layout.blade.php:1`, serta migrasi Alpine di 3 view `x-data` ke `@alpinejs/csp` atau vanilla JS).
+- **Penjagaan pembuatan tenant saat mode satu sekolah**: tambahkan penjagaan serupa `/daftar-sekolah` pada `/superadmin/tenants` (`app/Http/Controllers/SuperAdmin/TenantController.php`) serta opsi `--force`/konfirmasi pada CLI `tenant:create` dan `tenant:backfill`.
+- **Optimasi kecepatan suite tes**: evaluasi `php artisan test --parallel` untuk mempercepat `composer test`.
