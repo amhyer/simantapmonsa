@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class Materi extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'materi';
+
     protected $fillable = [
         'tenant_id',
         'uuid',
@@ -47,7 +49,9 @@ class Materi extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

@@ -4,10 +4,9 @@ namespace App\Services;
 
 use App\Models\Siswa;
 use App\Models\User;
-use App\Models\OrangTuaSiswa;
 use App\Support\InitialPassword;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DapodikService
 {
@@ -20,18 +19,18 @@ class DapodikService
         foreach ($gtkData as $index => $gtk) {
             try {
                 $user = null;
-                if (!empty($gtk['nip'])) {
+                if (! empty($gtk['nip'])) {
                     $user = User::where('nama_pengguna', $gtk['nip'])->first();
                 }
-                if (!$user && !empty($gtk['nuptk'])) {
+                if (! $user && ! empty($gtk['nuptk'])) {
                     $user = User::where('nama_pengguna', $gtk['nuptk'])->first();
                 }
 
-                if (!$user) {
+                if (! $user) {
                     $user = User::create([
-                        'uuid' => \Illuminate\Support\Str::uuid(),
+                        'uuid' => Str::uuid(),
                         'nama_lengkap' => $gtk['nama'],
-                        'nama_pengguna' => $gtk['nip'] ?? $gtk['nuptk'] ?? 'gtk' . rand(1000, 9999),
+                        'nama_pengguna' => $gtk['nip'] ?? $gtk['nuptk'] ?? 'gtk'.rand(1000, 9999),
                         'kata_sandi' => Hash::make(InitialPassword::generate()),
                         'peran' => 'guru',
                         'aktif' => true,
@@ -65,7 +64,7 @@ class DapodikService
                 $berhasil++;
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "GTK " . ($gtk['nama'] ?? "baris " . ($index + 1)) . ": " . $e->getMessage();
+                $errors[] = 'GTK '.($gtk['nama'] ?? 'baris '.($index + 1)).': '.$e->getMessage();
             }
         }
 
@@ -78,9 +77,13 @@ class DapodikService
         $count = 0;
 
         foreach ($siswa as $s) {
-            if ($kelas && $s->kelas !== $kelas) continue;
+            if ($kelas && $s->kelas !== $kelas) {
+                continue;
+            }
             $guru = User::find($guruId);
-            if (!$guru) continue;
+            if (! $guru) {
+                continue;
+            }
             $s->update(['guru_id' => $guru->id, 'nama_guru' => $guru->nama_lengkap]);
             $count++;
         }

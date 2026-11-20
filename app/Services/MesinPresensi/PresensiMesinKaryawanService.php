@@ -173,7 +173,6 @@ class PresensiMesinKaryawanService
     /**
      * @param  list<string>  $a
      * @param  list<string>  $b
-     * @return bool
      */
     private function isTitleVariant(array $a, array $b): bool
     {

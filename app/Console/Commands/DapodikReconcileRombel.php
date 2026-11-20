@@ -50,15 +50,15 @@ class DapodikReconcileRombel extends Command
                     ->first();
             }
 
-            if (!$rombel && $rombelName) {
+            if (! $rombel && $rombelName) {
                 $rombel = Rombel::withoutGlobalScopes()
                     ->where('nama_rombel', $rombelName)
                     ->where('semester_id', $siswa->semester_id)
                     ->first();
 
-                if (!$rombel) {
+                if (! $rombel) {
                     $rombel = Rombel::withoutGlobalScopes()
-                        ->where('nama_rombel', 'like', '%' . $rombelName . '%')
+                        ->where('nama_rombel', 'like', '%'.$rombelName.'%')
                         ->where('semester_id', $siswa->semester_id)
                         ->first();
                 }

@@ -9,25 +9,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'qr_previous_token_hash')) {
+            if (! Schema::hasColumn('users', 'qr_previous_token_hash')) {
                 $table->string('qr_previous_token_hash', 64)->nullable()->index();
             }
-            if (!Schema::hasColumn('users', 'printed_at')) {
+            if (! Schema::hasColumn('users', 'printed_at')) {
                 $table->timestamp('printed_at')->nullable();
             }
-            if (!Schema::hasColumn('users', 'printed_version')) {
+            if (! Schema::hasColumn('users', 'printed_version')) {
                 $table->unsignedInteger('printed_version')->default(0);
             }
         });
 
         Schema::table('siswa', function (Blueprint $table) {
-            if (!Schema::hasColumn('siswa', 'qr_previous_token_hash')) {
+            if (! Schema::hasColumn('siswa', 'qr_previous_token_hash')) {
                 $table->string('qr_previous_token_hash', 64)->nullable()->index();
             }
-            if (!Schema::hasColumn('siswa', 'printed_at')) {
+            if (! Schema::hasColumn('siswa', 'printed_at')) {
                 $table->timestamp('printed_at')->nullable();
             }
-            if (!Schema::hasColumn('siswa', 'printed_version')) {
+            if (! Schema::hasColumn('siswa', 'printed_version')) {
                 $table->unsignedInteger('printed_version')->default(0);
             }
         });

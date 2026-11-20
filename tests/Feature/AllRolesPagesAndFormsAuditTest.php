@@ -8,6 +8,7 @@ use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -16,12 +17,19 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $guru;
+
     private User $siswaUser;
+
     private User $ortu;
+
     private User $kepsek;
+
     private User $pegawai;
+
     private Siswa $siswa;
+
     private Semester $semester;
 
     protected function setUp(): void
@@ -118,7 +126,7 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
 
         foreach ($routes as $route) {
             $res = $this->actingAs($this->admin)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Admin route '$route' returned HTTP " . $res->getStatusCode());
+            $this->assertLessThan(500, $res->getStatusCode(), "Admin route '$route' returned HTTP ".$res->getStatusCode());
         }
     }
 
@@ -153,9 +161,11 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
 
         foreach ($routes as $route) {
             // Route CBT didaftarkan saat bootstrap, bukan saat config diubah setelahnya.
-            if (str_starts_with($route, 'cbt.') && !\Illuminate\Support\Facades\Route::has($route)) continue;
+            if (str_starts_with($route, 'cbt.') && ! Route::has($route)) {
+                continue;
+            }
             $res = $this->actingAs($this->guru)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Guru route '$route' returned HTTP " . $res->getStatusCode() . ($res->exception ? ": " . $res->exception->getMessage() : ""));
+            $this->assertLessThan(500, $res->getStatusCode(), "Guru route '$route' returned HTTP ".$res->getStatusCode().($res->exception ? ': '.$res->exception->getMessage() : ''));
         }
     }
 
@@ -173,9 +183,11 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
         ];
 
         foreach ($routes as $route) {
-            if (str_starts_with($route, 'cbt.') && !\Illuminate\Support\Facades\Route::has($route)) continue;
+            if (str_starts_with($route, 'cbt.') && ! Route::has($route)) {
+                continue;
+            }
             $res = $this->actingAs($this->siswaUser)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Siswa route '$route' returned HTTP " . $res->getStatusCode() . ($res->exception ? ": " . $res->exception->getMessage() : ""));
+            $this->assertLessThan(500, $res->getStatusCode(), "Siswa route '$route' returned HTTP ".$res->getStatusCode().($res->exception ? ': '.$res->exception->getMessage() : ''));
         }
     }
 
@@ -193,7 +205,7 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
 
         foreach ($routes as $route) {
             $res = $this->actingAs($this->ortu)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Ortu route '$route' returned HTTP " . $res->getStatusCode());
+            $this->assertLessThan(500, $res->getStatusCode(), "Ortu route '$route' returned HTTP ".$res->getStatusCode());
         }
     }
 
@@ -211,7 +223,7 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
 
         foreach ($routes as $route) {
             $res = $this->actingAs($this->kepsek)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Kepsek route '$route' returned HTTP " . $res->getStatusCode());
+            $this->assertLessThan(500, $res->getStatusCode(), "Kepsek route '$route' returned HTTP ".$res->getStatusCode());
         }
     }
 
@@ -223,7 +235,7 @@ class AllRolesPagesAndFormsAuditTest extends TestCase
 
         foreach ($routes as $route) {
             $res = $this->actingAs($this->pegawai)->get(route($route));
-            $this->assertLessThan(500, $res->getStatusCode(), "Pegawai route '$route' returned HTTP " . $res->getStatusCode());
+            $this->assertLessThan(500, $res->getStatusCode(), "Pegawai route '$route' returned HTTP ".$res->getStatusCode());
         }
     }
 }

@@ -14,16 +14,17 @@
  * atau
  *   php setup_api_key.php "<API_KEY_RAHASIA>"
  */
-
-$app = require_once __DIR__ . '/bootstrap/app.php';
-$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app = require_once __DIR__.'/bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
 
 use App\Models\ApiKey;
 use App\Models\User;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Str;
 
 $apiKey = getenv('SIMANTAP_API_KEY') ?: ($argv[1] ?? null);
 
-if (!$apiKey || strlen($apiKey) < 32) {
+if (! $apiKey || strlen($apiKey) < 32) {
     fwrite(STDERR, "API key wajib diisi (minimal 32 karakter).\n");
     fwrite(STDERR, "Contoh: SIMANTAP_API_KEY=\"\$(php -r 'echo bin2hex(random_bytes(32));')\" php setup_api_key.php\n");
     exit(1);
@@ -33,7 +34,7 @@ if (!$apiKey || strlen($apiKey) < 32) {
 $user = User::firstOrCreate(
     ['nama_pengguna' => 'admin'],
     [
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'nama_lengkap' => 'Admin SIMANTAP',
         'kata_sandi' => bcrypt(bin2hex(random_bytes(8))),
         'peran' => 'admin',

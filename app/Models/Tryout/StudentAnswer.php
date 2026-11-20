@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -9,11 +10,12 @@ use Illuminate\Support\Str;
 class StudentAnswer extends Model
 {
     protected $table = 'tryout_student_answers';
+
     protected $fillable = [
         'uuid', 'tryout_session_id', 'tryout_subject_id',
         'siswa_id', 'question_id', 'jawaban', 'adalah_benar',
         'poin_diperoleh', 'waktu_mulai_jawab', 'waktu_selesai_jawab',
-        'durasi_detik', 'attempt_number'
+        'durasi_detik', 'attempt_number',
     ];
 
     protected $casts = [
@@ -27,7 +29,7 @@ class StudentAnswer extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -45,7 +47,7 @@ class StudentAnswer extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     public function question(): BelongsTo

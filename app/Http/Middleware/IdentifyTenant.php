@@ -195,6 +195,7 @@ class IdentifyTenant
         if (! $row) {
             return null;
         }
+
         return [
             'id' => (int) $row->id,
             'aktif' => (bool) $row->aktif,

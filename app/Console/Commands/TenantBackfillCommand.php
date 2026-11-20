@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\SekolahSettings;
-use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -13,11 +12,12 @@ use Illuminate\Support\Str;
 class TenantBackfillCommand extends Command
 {
     protected $signature = 'tenant:backfill-existing';
+
     protected $description = 'Menghubungkan data sekolah dan pengguna eksisting ke tabel tenants';
 
     public function handle(): int
     {
-        $this->info("Memeriksa data sekolah eksisting...");
+        $this->info('Memeriksa data sekolah eksisting...');
 
         $sekolah = SekolahSettings::first();
         $namaSekolah = $sekolah?->nama_sekolah ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1';

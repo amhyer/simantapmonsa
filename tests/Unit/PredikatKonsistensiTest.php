@@ -17,7 +17,7 @@ class PredikatKonsistensiTest extends TestCase
 {
     public function test_ambang_predikat_relatif_terhadap_kkm(): void
     {
-        $service = new NilaiService();
+        $service = new NilaiService;
 
         // KKM 70 → A ≥ 84, B ≥ 77, C ≥ 70, D < 70
         $this->assertSame('A', $service->getPredikat(84, 70)['huruf']);
@@ -31,7 +31,7 @@ class PredikatKonsistensiTest extends TestCase
 
     public function test_kkm_yang_berbeda_menggeser_ambang(): void
     {
-        $service = new NilaiService();
+        $service = new NilaiService;
 
         // KKM 60 → A ≥ 72, B ≥ 66, C ≥ 60
         $this->assertSame('A', $service->getPredikat(72, 60)['huruf']);
@@ -42,7 +42,7 @@ class PredikatKonsistensiTest extends TestCase
 
     public function test_label_dan_kelas_css_konsisten(): void
     {
-        $service = new NilaiService();
+        $service = new NilaiService;
 
         $this->assertSame(
             ['huruf' => 'A', 'label' => 'Sangat Baik', 'kelas' => 'ok'],

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('jenjang', 50)->nullable();
             $table->json('pengaturan')->nullable();
             $table->timestamps();
-            
+
             $table->unique('guru_id');
         });
     }

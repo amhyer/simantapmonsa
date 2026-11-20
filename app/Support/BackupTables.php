@@ -4,13 +4,34 @@ namespace App\Support;
 
 use App\Models\Aktivitas;
 use App\Models\Catatan;
+use App\Models\CbtQuestion;
+use App\Models\CbtQuestionBank;
+use App\Models\CbtResult;
+use App\Models\CbtTestSession;
+use App\Models\CbtViolation;
 use App\Models\Dimensi;
 use App\Models\Ekstrakurikuler;
+use App\Models\Elearning\KelasDigital;
+use App\Models\Elearning\KelasDigitalMateriItem;
+use App\Models\Elearning\KelasDigitalModul;
+use App\Models\Elearning\KelasDigitalPengumpulan;
+use App\Models\Elearning\KelasDigitalPertemuan;
+use App\Models\Elearning\KelasDigitalProgress;
+use App\Models\Elearning\KelasDigitalTugas;
+use App\Models\Exam\Answer;
+use App\Models\Exam\Attempt;
+use App\Models\Exam\Bank;
+use App\Models\Exam\Engine;
+use App\Models\Exam\Question;
+use App\Models\Exam\QuestionOption;
+use App\Models\Exam\Section;
+use App\Models\Exam\Violation;
 use App\Models\HasilKuis;
 use App\Models\JadwalPelajaran;
 use App\Models\Kebiasaan;
 use App\Models\KegiatanKokurikuler;
 use App\Models\Kehadiran;
+use App\Models\KehadiranMapel;
 use App\Models\KelompokKokurikuler;
 use App\Models\Kuis;
 use App\Models\MataPelajaran;
@@ -19,7 +40,12 @@ use App\Models\Nilai;
 use App\Models\NilaiErapot;
 use App\Models\NilaiErapotAudit;
 use App\Models\OrangTuaSiswa;
+use App\Models\PengajuanIzinPresensi;
 use App\Models\PengaturanGuru;
+use App\Models\Perangkat\JurnalMengajar;
+use App\Models\Perangkat\PerangkatPembelajaran;
+use App\Models\PresensiLokasi;
+use App\Models\PresensiPegawai;
 use App\Models\Ptk;
 use App\Models\RingkasanGuru;
 use App\Models\Rombel;
@@ -28,8 +54,30 @@ use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TanggalRapor;
 use App\Models\TemaKokurikuler;
+use App\Models\Tka\AssessmentItem;
+use App\Models\Tka\AssessmentResponse;
+use App\Models\Tka\Dimension;
+use App\Models\Tka\EarlyWarning;
+use App\Models\Tka\HistoricalTracking;
+use App\Models\Tka\Kesiapan\Audit;
+use App\Models\Tka\Kesiapan\Pemetaan;
+use App\Models\Tka\Kesiapan\Pengaturan;
+use App\Models\Tka\Kesiapan\TindakLanjut;
+use App\Models\Tka\Kesiapan\TindakLanjutRevisi;
+use App\Models\Tka\ParentReport;
+use App\Models\Tka\StudentAssessment;
 use App\Models\TranskripNilai;
+use App\Models\Tryout\Category;
+use App\Models\Tryout\Package;
+use App\Models\Tryout\Result;
+use App\Models\Tryout\Session;
+use App\Models\Tryout\StudentAnswer;
+use App\Models\Tryout\Subject;
+use App\Models\Tryout\TryoutQuestion;
+use App\Models\Tryout\TryoutQuestionOption;
 use App\Models\User;
+use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Satu sumber kebenaran untuk cakupan backup (export) dan restore (import).
@@ -48,13 +96,13 @@ use App\Models\User;
 class BackupTables
 {
     /**
-     * @return array<string, array{class: class-string<\Illuminate\Database\Eloquent\Model>|null, except: array<int, string>}>
+     * @return array<string, array{class: class-string<Model>|null, except: array<int, string>}>
      */
     public static function semua(): array
     {
         return [
             // ── Identitas & referensi induk ─────────────────────────────
-            'tenants' => ['class' => \App\Modules\Tenant\Models\Tenant::class, 'except' => []],
+            'tenants' => ['class' => Tenant::class, 'except' => []],
             'users' => ['class' => User::class, 'except' => ['kata_sandi', 'remember_token', 'dapodik_id', 'rekaman']],
             'semesters' => ['class' => Semester::class, 'except' => []],
             'sekolah_settings' => ['class' => SekolahSettings::class, 'except' => []],
@@ -74,23 +122,23 @@ class BackupTables
             'materi' => ['class' => Materi::class, 'except' => []],
             'kuis' => ['class' => Kuis::class, 'except' => []],
             'nilai' => ['class' => Nilai::class, 'except' => []],
-            'kelas_digital' => ['class' => \App\Models\Elearning\KelasDigital::class, 'except' => []],
-            'kelas_digital_modul' => ['class' => \App\Models\Elearning\KelasDigitalModul::class, 'except' => []],
-            'kelas_digital_pertemuan' => ['class' => \App\Models\Elearning\KelasDigitalPertemuan::class, 'except' => []],
-            'kelas_digital_materi_item' => ['class' => \App\Models\Elearning\KelasDigitalMateriItem::class, 'except' => []],
-            'kelas_digital_tugas' => ['class' => \App\Models\Elearning\KelasDigitalTugas::class, 'except' => []],
-            'kelas_digital_pengumpulan' => ['class' => \App\Models\Elearning\KelasDigitalPengumpulan::class, 'except' => []],
-            'kelas_digital_progress' => ['class' => \App\Models\Elearning\KelasDigitalProgress::class, 'except' => []],
-            'perangkat_pembelajaran' => ['class' => \App\Models\Perangkat\PerangkatPembelajaran::class, 'except' => []],
-            'jurnal_mengajar' => ['class' => \App\Models\Perangkat\JurnalMengajar::class, 'except' => []],
+            'kelas_digital' => ['class' => KelasDigital::class, 'except' => []],
+            'kelas_digital_modul' => ['class' => KelasDigitalModul::class, 'except' => []],
+            'kelas_digital_pertemuan' => ['class' => KelasDigitalPertemuan::class, 'except' => []],
+            'kelas_digital_materi_item' => ['class' => KelasDigitalMateriItem::class, 'except' => []],
+            'kelas_digital_tugas' => ['class' => KelasDigitalTugas::class, 'except' => []],
+            'kelas_digital_pengumpulan' => ['class' => KelasDigitalPengumpulan::class, 'except' => []],
+            'kelas_digital_progress' => ['class' => KelasDigitalProgress::class, 'except' => []],
+            'perangkat_pembelajaran' => ['class' => PerangkatPembelajaran::class, 'except' => []],
+            'jurnal_mengajar' => ['class' => JurnalMengajar::class, 'except' => []],
             'nilai_erapor' => ['class' => NilaiErapot::class, 'except' => []],
             'nilai_erapor_audit_logs' => ['class' => NilaiErapotAudit::class, 'except' => []],
             'transkrip_nilai' => ['class' => TranskripNilai::class, 'except' => []],
             'kehadiran' => ['class' => Kehadiran::class, 'except' => []],
-            'kehadiran_mapel' => ['class' => \App\Models\KehadiranMapel::class, 'except' => []],
-            'presensi_lokasi' => ['class' => \App\Models\PresensiLokasi::class, 'except' => []],
-            'presensi_pegawai' => ['class' => \App\Models\PresensiPegawai::class, 'except' => []],
-            'pengajuan_izin_presensi' => ['class' => \App\Models\PengajuanIzinPresensi::class, 'except' => []],
+            'kehadiran_mapel' => ['class' => KehadiranMapel::class, 'except' => []],
+            'presensi_lokasi' => ['class' => PresensiLokasi::class, 'except' => []],
+            'presensi_pegawai' => ['class' => PresensiPegawai::class, 'except' => []],
+            'pengajuan_izin_presensi' => ['class' => PengajuanIzinPresensi::class, 'except' => []],
             'hasil_kuis' => ['class' => HasilKuis::class, 'except' => []],
             'catatan' => ['class' => Catatan::class, 'except' => []],
             'dimensi' => ['class' => Dimensi::class, 'except' => []],
@@ -108,51 +156,51 @@ class BackupTables
             'anggota_kelompok' => ['class' => null, 'except' => []],
 
             // CBT: urutan induk -> anak; snapshot/kunci disertakan dalam backup privat.
-            'cbt_question_banks' => ['class' => \App\Models\CbtQuestionBank::class, 'except' => []],
-            'cbt_questions' => ['class' => \App\Models\CbtQuestion::class, 'except' => []],
-            'cbt_test_sessions' => ['class' => \App\Models\CbtTestSession::class, 'except' => []],
-            'cbt_results' => ['class' => \App\Models\CbtResult::class, 'except' => []],
-            'cbt_violations' => ['class' => \App\Models\CbtViolation::class, 'except' => []],
+            'cbt_question_banks' => ['class' => CbtQuestionBank::class, 'except' => []],
+            'cbt_questions' => ['class' => CbtQuestion::class, 'except' => []],
+            'cbt_test_sessions' => ['class' => CbtTestSession::class, 'except' => []],
+            'cbt_results' => ['class' => CbtResult::class, 'except' => []],
+            'cbt_violations' => ['class' => CbtViolation::class, 'except' => []],
 
             // Tryout legacy tetap diperlukan pembaca admin/laporan selama
             // cutover. Restore mengikuti urutan FK induk -> anak.
-            'tryout_categories' => ['class' => \App\Models\Tryout\Category::class, 'except' => []],
-            'tryout_packages' => ['class' => \App\Models\Tryout\Package::class, 'except' => []],
-            'tryout_subjects' => ['class' => \App\Models\Tryout\Subject::class, 'except' => []],
-            'tryout_questions' => ['class' => \App\Models\Tryout\TryoutQuestion::class, 'except' => []],
-            'tryout_question_options' => ['class' => \App\Models\Tryout\TryoutQuestionOption::class, 'except' => []],
-            'tryout_sessions' => ['class' => \App\Models\Tryout\Session::class, 'except' => []],
-            'tryout_results' => ['class' => \App\Models\Tryout\Result::class, 'except' => []],
-            'tryout_student_answers' => ['class' => \App\Models\Tryout\StudentAnswer::class, 'except' => []],
+            'tryout_categories' => ['class' => Category::class, 'except' => []],
+            'tryout_packages' => ['class' => Package::class, 'except' => []],
+            'tryout_subjects' => ['class' => Subject::class, 'except' => []],
+            'tryout_questions' => ['class' => TryoutQuestion::class, 'except' => []],
+            'tryout_question_options' => ['class' => TryoutQuestionOption::class, 'except' => []],
+            'tryout_sessions' => ['class' => Session::class, 'except' => []],
+            'tryout_results' => ['class' => Result::class, 'except' => []],
+            'tryout_student_answers' => ['class' => StudentAnswer::class, 'except' => []],
 
             // TKA asesmen + laporan orang tua adalah data akademik sumber.
-            'tka_dimensions_enhanced' => ['class' => \App\Models\Tka\Dimension::class, 'except' => []],
-            'tka_assessment_items' => ['class' => \App\Models\Tka\AssessmentItem::class, 'except' => []],
-            'tka_student_assessments' => ['class' => \App\Models\Tka\StudentAssessment::class, 'except' => []],
-            'tka_assessment_responses' => ['class' => \App\Models\Tka\AssessmentResponse::class, 'except' => []],
-            'tka_parent_reports' => ['class' => \App\Models\Tka\ParentReport::class, 'except' => []],
-            'tka_historical_tracking' => ['class' => \App\Models\Tka\HistoricalTracking::class, 'except' => []],
-            'tka_early_warnings' => ['class' => \App\Models\Tka\EarlyWarning::class, 'except' => []],
-            'tka_kesiapan_pengaturan' => ['class' => \App\Models\Tka\Kesiapan\Pengaturan::class, 'except' => []],
-            'tka_kesiapan_pemetaan' => ['class' => \App\Models\Tka\Kesiapan\Pemetaan::class, 'except' => []],
-            'tka_kesiapan_tindak_lanjut' => ['class' => \App\Models\Tka\Kesiapan\TindakLanjut::class, 'except' => []],
-            'tka_kesiapan_tindak_lanjut_revisi' => ['class' => \App\Models\Tka\Kesiapan\TindakLanjutRevisi::class, 'except' => []],
-            'tka_kesiapan_audit' => ['class' => \App\Models\Tka\Kesiapan\Audit::class, 'except' => []],
+            'tka_dimensions_enhanced' => ['class' => Dimension::class, 'except' => []],
+            'tka_assessment_items' => ['class' => AssessmentItem::class, 'except' => []],
+            'tka_student_assessments' => ['class' => StudentAssessment::class, 'except' => []],
+            'tka_assessment_responses' => ['class' => AssessmentResponse::class, 'except' => []],
+            'tka_parent_reports' => ['class' => ParentReport::class, 'except' => []],
+            'tka_historical_tracking' => ['class' => HistoricalTracking::class, 'except' => []],
+            'tka_early_warnings' => ['class' => EarlyWarning::class, 'except' => []],
+            'tka_kesiapan_pengaturan' => ['class' => Pengaturan::class, 'except' => []],
+            'tka_kesiapan_pemetaan' => ['class' => Pemetaan::class, 'except' => []],
+            'tka_kesiapan_tindak_lanjut' => ['class' => TindakLanjut::class, 'except' => []],
+            'tka_kesiapan_tindak_lanjut_revisi' => ['class' => TindakLanjutRevisi::class, 'except' => []],
+            'tka_kesiapan_audit' => ['class' => Audit::class, 'except' => []],
 
             // Engine ujian terpadu (Fase 3): urutan induk -> anak. Tanpa entri
             // ini, hasil ujian baru hilang permanen setelah wipe + restore,
             // karena `exam_*` tidak masuk backup sedangkan `cbt_*`/`tryout_*`
             // hanyalah cermin yang bisa kosong pada alur engine.
-            'exam_engines' => ['class' => \App\Models\Exam\Engine::class, 'except' => []],
-            'exam_banks' => ['class' => \App\Models\Exam\Bank::class, 'except' => []],
-            'exam_sections' => ['class' => \App\Models\Exam\Section::class, 'except' => []],
-            'exam_questions' => ['class' => \App\Models\Exam\Question::class, 'except' => []],
-            'exam_question_options' => ['class' => \App\Models\Exam\QuestionOption::class, 'except' => []],
+            'exam_engines' => ['class' => Engine::class, 'except' => []],
+            'exam_banks' => ['class' => Bank::class, 'except' => []],
+            'exam_sections' => ['class' => Section::class, 'except' => []],
+            'exam_questions' => ['class' => Question::class, 'except' => []],
+            'exam_question_options' => ['class' => QuestionOption::class, 'except' => []],
             'exam_sessions' => ['class' => \App\Models\Exam\Session::class, 'except' => []],
-            'exam_attempts' => ['class' => \App\Models\Exam\Attempt::class, 'except' => []],
-            'exam_answers' => ['class' => \App\Models\Exam\Answer::class, 'except' => []],
+            'exam_attempts' => ['class' => Attempt::class, 'except' => []],
+            'exam_answers' => ['class' => Answer::class, 'except' => []],
             'exam_results' => ['class' => \App\Models\Exam\Result::class, 'except' => []],
-            'exam_violations' => ['class' => \App\Models\Exam\Violation::class, 'except' => []],
+            'exam_violations' => ['class' => Violation::class, 'except' => []],
 
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],

@@ -24,7 +24,7 @@ class NilaiErapotAuditTest extends TestCase
             'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
             'nama_guru' => $guru->nama_lengkap,
-            'nis' => 'AUD-' . $guru->id,
+            'nis' => 'AUD-'.$guru->id,
             'nama_peserta_didik' => 'Siswa Audit',
             'kelas' => '6.A',
             'jenis_kelamin' => 'L',

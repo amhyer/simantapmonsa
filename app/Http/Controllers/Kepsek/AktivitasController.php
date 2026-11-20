@@ -76,11 +76,12 @@ class AktivitasController extends Controller
         $totalForPercent = max($totalAktivitas, 1);
         $statistikAktivitas = $statistikAktivitas->map(function ($item) use ($totalForPercent) {
             $item->persentase = round(($item->jumlah / $totalForPercent) * 100, 1);
-            $item->ikon = match($item->jenis) {
+            $item->ikon = match ($item->jenis) {
                 'login' => '🔑', 'logout' => '🚪', 'input_nilai' => '📝',
                 'input_kehadiran' => '📋', 'lihat_laporan' => '📊',
                 default => '📋',
             };
+
             return $item;
         });
 
@@ -111,6 +112,7 @@ class AktivitasController extends Controller
             $tgl = now()->subDays($i)->format('Y-m-d');
             $data[] = $dailyCounts->get($tgl, 0);
         }
+
         return $data;
     }
 }

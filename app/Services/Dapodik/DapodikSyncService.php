@@ -4,24 +4,28 @@ namespace App\Services\Dapodik;
 
 use App\Models\DapodikConfig;
 use App\Models\DapodikSyncLog;
+use App\Models\Ptk;
 use App\Models\Rombel;
-use App\Models\Semester;
 use App\Models\SekolahSettings;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Support\InitialPassword;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
-use function App\Services\Dapodik\combine_parent_name;
-use function App\Services\Dapodik\normalize_string;
-use function App\Services\Dapodik\resolve_nis;
 
 class DapodikSyncService
 {
     private DapodikClient $client;
+
     private DapodikConfig $config;
+
     private array $seenNis = [];
+
     private array $seenNip = [];
+
     private array $seenRombel = [];
 
     public function __construct()
@@ -50,7 +54,7 @@ class DapodikSyncService
         foreach ($raw['gtk'] as $gtk) {
             $jenisPtk = strtolower(trim($gtk['jenis_ptk_id'] ?? $gtk['jenis_ptk'] ?? ''));
             $isTendik = false;
-            if (!empty($jenisPtk)) {
+            if (! empty($jenisPtk)) {
                 if (in_array($jenisPtk, ['3', '4', 'tendik', 'tenaga kependidikan', 'tenaga'], true)) {
                     $isTendik = true;
                 }
@@ -165,7 +169,7 @@ class DapodikSyncService
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                $allErrors[] = 'Trx-1 (sekolah/gtk/rombel): ' . $e->getMessage();
+                $allErrors[] = 'Trx-1 (sekolah/gtk/rombel): '.$e->getMessage();
             }
 
             // ── TRX-2..n: siswa 100/batch ──
@@ -181,7 +185,7 @@ class DapodikSyncService
                     $siswaResult['diperbarui'] += $batchResult['diperbarui'];
                     $siswaResult['dilewati'] += $batchResult['dilewati'];
                     $siswaResult['gagal'] += $batchResult['gagal'];
-                    if (!empty($batchResult['existing_dapodik_ids'])) {
+                    if (! empty($batchResult['existing_dapodik_ids'])) {
                         $siswaResult['existing_dapodik_ids'] = array_merge(
                             $siswaResult['existing_dapodik_ids'],
                             $batchResult['existing_dapodik_ids']
@@ -193,7 +197,7 @@ class DapodikSyncService
                     DB::rollBack();
                     $failedSiswaBatches++;
                     $siswaResult['gagal'] += count($chunk);
-                    $allErrors[] = "Trx-siswa batch {$chunkIndex}: " . $e->getMessage();
+                    $allErrors[] = "Trx-siswa batch {$chunkIndex}: ".$e->getMessage();
                 }
             }
 
@@ -209,7 +213,7 @@ class DapodikSyncService
                 $archiveResult = ['archived' => 0, 'skipped' => 0, 'errors' => []];
             }
         } catch (\Exception $e) {
-            $allErrors[] = 'Fatal: ' . $e->getMessage();
+            $allErrors[] = 'Fatal: '.$e->getMessage();
         }
 
         $finishedAt = now();
@@ -267,12 +271,14 @@ class DapodikSyncService
                 $npsn = normalize_string($row['npsn'] ?? null);
                 if ($npsn === null) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
                 $nama = normalize_string($row['nama'] ?? $row['nama_sekolah'] ?? null);
                 if ($nama === null) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
@@ -325,18 +331,21 @@ class DapodikSyncService
                 $dapodikId = $row['rombongan_belajar_id'] ?? null;
                 if ($dapodikId === null) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
                 $namaRombel = normalize_string($row['nama'] ?? $row['nama_rombel'] ?? null);
                 if ($namaRombel === null) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
                 // Dedup
                 if (isset($this->seenRombel[$dapodikId])) {
                     $result['dilewati']++;
+
                     continue;
                 }
                 $this->seenRombel[$dapodikId] = true;
@@ -380,7 +389,7 @@ class DapodikSyncService
                 $result['valid_ids'][] = $dapodikId;
             } catch (\Exception $e) {
                 $result['gagal']++;
-                $result['errors'][] = "Rombel {$dapodikId}: " . $e->getMessage();
+                $result['errors'][] = "Rombel {$dapodikId}: ".$e->getMessage();
             }
         }
 
@@ -413,6 +422,7 @@ class DapodikSyncService
                 // Tendik sering tidak punya NIP/NUPTK; jangan lewati jika punya NIK atau dapodikId
                 if (empty($nuptk) && empty($nip) && empty($nik) && empty($dapodikId)) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
@@ -420,6 +430,7 @@ class DapodikSyncService
                 $effectiveNip = $nuptk ?? ($nip ?? ($nik ?? $dapodikId));
                 if (isset($this->seenNip[$effectiveNip])) {
                     $result['dilewati']++;
+
                     continue;
                 }
                 $this->seenNip[$effectiveNip] = true;
@@ -427,6 +438,7 @@ class DapodikSyncService
                 $nama = normalize_string($row['nama'] ?? null);
                 if ($nama === null) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
@@ -437,29 +449,29 @@ class DapodikSyncService
                 if ($dapodikId) {
                     $existing = User::where('dapodik_id', $dapodikId)->first();
                 }
-                if (!$existing && $nip) {
+                if (! $existing && $nip) {
                     $existing = User::where('nama_pengguna', $nip)->first();
                 }
-                if (!$existing && $nuptk) {
+                if (! $existing && $nuptk) {
                     $existing = User::where('nama_pengguna', $nuptk)->first();
                 }
 
                 // Determine username: prefer NIP, fallback NUPTK/NIK/dapodikId
-                $username = $nip ?? ($nuptk ?? ($nik ?? ('gtk_' . ($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
+                $username = $nip ?? ($nuptk ?? ($nik ?? ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
                 if ($existing && $existing->nama_pengguna !== $username) {
                     // Ensure unique username
                     $base = $username;
                     $counter = 1;
                     while (User::where('nama_pengguna', $username)->where('id', '!=', $existing->id)->exists()) {
-                        $username = $base . '.' . $counter;
+                        $username = $base.'.'.$counter;
                         $counter++;
                     }
-                } elseif (!$existing) {
+                } elseif (! $existing) {
                     $base = $username;
                     $username = $base;
                     $counter = 1;
                     while (User::where('nama_pengguna', $username)->exists()) {
-                        $username = $base . '.' . $counter;
+                        $username = $base.'.'.$counter;
                         $counter++;
                     }
                 }
@@ -474,7 +486,7 @@ class DapodikSyncService
                 $isTendik = false;
 
                 // Check jenis_ptk_id for tendik indicators
-                if (!empty($jenisPtk)) {
+                if (! empty($jenisPtk)) {
                     // Common tendik codes in Dapodik: 3, 'Tendik', 'Tenaga Kependidikan'
                     if (in_array($jenisPtk, ['3', '4', 'tendik', 'tenaga kependidikan', 'tenaga'], true)) {
                         $isTendik = true;
@@ -486,7 +498,7 @@ class DapodikSyncService
                 }
 
                 // Secondary heuristic: if no bidang_studi/mata_pelajaran, likely tendik
-                if (!$isTendik && empty($row['bidang_studi'] ?? $row['mata_pelajaran'] ?? null)) {
+                if (! $isTendik && empty($row['bidang_studi'] ?? $row['mata_pelajaran'] ?? null)) {
                     $namaLower = strtolower($nama ?? '');
                     if (str_contains($namaLower, 'tata usaha') || str_contains($namaLower, 'perpustakaan')
                         || str_contains($namaLower, 'laboratorium') || str_contains($namaLower, 'operator')
@@ -521,9 +533,9 @@ class DapodikSyncService
                 if ($isKepsek) {
                     $gelarDepan = normalize_string($row['gelar_depan'] ?? null);
                     $gelarBelakang = normalize_string($row['gelar_belakang'] ?? null);
-                    $namaGelar = trim(($gelarDepan ? $gelarDepan . ' ' : '') . $nama);
+                    $namaGelar = trim(($gelarDepan ? $gelarDepan.' ' : '').$nama);
                     if ($gelarBelakang) {
-                        $namaGelar .= ', ' . $gelarBelakang;
+                        $namaGelar .= ', '.$gelarBelakang;
                     }
                     $sekolah = SekolahSettings::first();
                     if ($sekolah) {
@@ -540,7 +552,7 @@ class DapodikSyncService
 
                 // Sinkronkan juga ke tabel PTK untuk referensi
                 if ($dapodikId) {
-                    \App\Models\Ptk::updateOrCreate(
+                    Ptk::updateOrCreate(
                         ['dapodik_id' => $dapodikId, 'semester_id' => $semester->id],
                         [
                             'nama' => $nama,
@@ -579,7 +591,7 @@ class DapodikSyncService
                 } else {
                     $newUser = User::create(array_merge($data, [
                         'uuid' => Str::uuid(),
-                        'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
+                        'kata_sandi' => Hash::make(InitialPassword::generate()),
                         'force_password_change' => true,
                     ]));
                     $newUser->forceFill([
@@ -596,7 +608,7 @@ class DapodikSyncService
                 }
             } catch (\Exception $e) {
                 $result['gagal']++;
-                $result['errors'][] = "GTK " . ($row['nama'] ?? '?') . ": " . $e->getMessage();
+                $result['errors'][] = 'GTK '.($row['nama'] ?? '?').': '.$e->getMessage();
             }
         }
 
@@ -627,6 +639,7 @@ class DapodikSyncService
                 // Skip if no identifier at all
                 if (empty($dapodikId) && empty($nisn) && empty($nipd)) {
                     $result['dilewati']++;
+
                     continue;
                 }
 
@@ -637,7 +650,8 @@ class DapodikSyncService
 
                 if (empty($rombelId) && empty($namaRombel)) {
                     $result['gagal']++;
-                    $result['errors'][] = "Siswa " . ($row['nama'] ?? $dapodikId ?? "baris " . ($index + 1)) . ": rombel tidak valid, dilewati";
+                    $result['errors'][] = 'Siswa '.($row['nama'] ?? $dapodikId ?? 'baris '.($index + 1)).': rombel tidak valid, dilewati';
+
                     continue;
                 }
 
@@ -647,10 +661,10 @@ class DapodikSyncService
                 // Dedup NIS
                 if (isset($this->seenNis[$nis])) {
                     $counter = 1;
-                    while (isset($this->seenNis[$nis . '.' . $counter])) {
+                    while (isset($this->seenNis[$nis.'.'.$counter])) {
                         $counter++;
                     }
-                    $nis = $nis . '.' . $counter;
+                    $nis = $nis.'.'.$counter;
                 }
                 $this->seenNis[$nis] = true;
 
@@ -658,15 +672,15 @@ class DapodikSyncService
                 $existing = Siswa::where('semester_id', $semester->id)
                     ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
                         $hasCondition = false;
-                        if (!empty($dapodikId)) {
+                        if (! empty($dapodikId)) {
                             $query->where('dapodik_id', $dapodikId);
                             $hasCondition = true;
                         }
-                        if (!empty($nisn)) {
+                        if (! empty($nisn)) {
                             $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
                             $hasCondition = true;
                         }
-                        if (!empty($nipd)) {
+                        if (! empty($nipd)) {
                             $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
                         }
                     })
@@ -693,7 +707,7 @@ class DapodikSyncService
                         ->where('semester_id', $semester->id)
                         ->first();
                 }
-                if (!$rombelDb && $namaRombel) {
+                if (! $rombelDb && $namaRombel) {
                     $rombelDb = Rombel::where('nama_rombel', $namaRombel)
                         ->where('semester_id', $semester->id)
                         ->first();
@@ -752,7 +766,7 @@ class DapodikSyncService
                 }
             } catch (\Exception $e) {
                 $result['gagal']++;
-                $result['errors'][] = "Siswa " . ($row['nama'] ?? $dapodikId ?? "baris " . ($index + 1)) . ": " . $e->getMessage();
+                $result['errors'][] = 'Siswa '.($row['nama'] ?? $dapodikId ?? 'baris '.($index + 1)).': '.$e->getMessage();
             }
         }
 
@@ -784,15 +798,16 @@ class DapodikSyncService
             // SAFETY GUARD: Jangan arsipkan massal jika daftar ID siswa kosong (mencegah salah arsip seluruh sekolah)
             if (empty($currentSiswaDapodikIds)) {
                 $result['skipped'] += $siswaQuery->count();
+
                 return $result;
             }
 
             $siswaChunkSize = (int) config('dapodik.archive_chunk', 500);
             $siswaIdsToArchive = $siswaQuery->pluck('dapodik_id')->filter()
-                ->filter(fn ($id) => !isset($remoteSiswaIds[$id]))
+                ->filter(fn ($id) => ! isset($remoteSiswaIds[$id]))
                 ->toArray();
 
-            if (!empty($siswaIdsToArchive)) {
+            if (! empty($siswaIdsToArchive)) {
                 $chunks = array_chunk($siswaIdsToArchive, $siswaChunkSize);
                 foreach ($chunks as $chunk) {
                     DB::beginTransaction();
@@ -812,7 +827,7 @@ class DapodikSyncService
                         DB::commit();
                     } catch (\Exception $e) {
                         DB::rollBack();
-                        $result['errors'][] = 'Archive siswa chunk: ' . $e->getMessage();
+                        $result['errors'][] = 'Archive siswa chunk: '.$e->getMessage();
                     }
                 }
             }
@@ -824,10 +839,10 @@ class DapodikSyncService
                 ->whereNull('archived_at');
 
             $gtkIdsToArchive = $gtkQuery->pluck('dapodik_id')->filter()
-                ->filter(fn ($id) => !isset($remoteGtkIds[$id]))
+                ->filter(fn ($id) => ! isset($remoteGtkIds[$id]))
                 ->toArray();
 
-            if (!empty($gtkIdsToArchive)) {
+            if (! empty($gtkIdsToArchive)) {
                 $chunks = array_chunk($gtkIdsToArchive, $siswaChunkSize);
                 foreach ($chunks as $chunk) {
                     DB::beginTransaction();
@@ -837,7 +852,7 @@ class DapodikSyncService
                             ->whereNull('archived_at')
                             ->where(function ($q) {
                                 $q->whereNotNull('nama_pengguna')
-                                  ->where('nama_pengguna', '!=', '');
+                                    ->where('nama_pengguna', '!=', '');
                             })
                             ->get();
 
@@ -852,12 +867,12 @@ class DapodikSyncService
                         DB::commit();
                     } catch (\Exception $e) {
                         DB::rollBack();
-                        $result['errors'][] = 'Archive GTK chunk: ' . $e->getMessage();
+                        $result['errors'][] = 'Archive GTK chunk: '.$e->getMessage();
                     }
                 }
             }
         } catch (\Exception $e) {
-            $result['errors'][] = 'Archive fatal: ' . $e->getMessage();
+            $result['errors'][] = 'Archive fatal: '.$e->getMessage();
         }
 
         return $result;
@@ -877,13 +892,15 @@ class DapodikSyncService
             $dapodikId = $row['rombongan_belajar_id'] ?? null;
             $namaRombel = normalize_string($row['nama'] ?? $row['nama_rombel'] ?? null);
 
-            if (!$dapodikId || !$namaRombel) {
+            if (! $dapodikId || ! $namaRombel) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
 
             if (isset($this->seenRombel[$dapodikId])) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
             $this->seenRombel[$dapodikId] = true;
@@ -926,26 +943,29 @@ class DapodikSyncService
 
             if (empty($nuptk) && empty($nip) && empty($nik) && empty($dapodikId)) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
 
             $effectiveNip = $nuptk ?? ($nip ?? ($nik ?? $dapodikId));
             if (isset($this->seenNip[$effectiveNip])) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
             $this->seenNip[$effectiveNip] = true;
 
             $nama = normalize_string($row['nama'] ?? null);
-            if (!$nama) {
+            if (! $nama) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
 
             // Determine if guru or tendik
             $jenisPtk = strtolower(trim($row['jenis_ptk_id'] ?? $row['jenis_ptk'] ?? ''));
             $isTendik = false;
-            if (!empty($jenisPtk)) {
+            if (! empty($jenisPtk)) {
                 if (in_array($jenisPtk, ['3', '4', 'tendik', 'tenaga kependidikan', 'tenaga'], true)) {
                     $isTendik = true;
                 }
@@ -963,13 +983,13 @@ class DapodikSyncService
             if ($dapodikId) {
                 $existing = User::where('dapodik_id', $dapodikId)->first();
             }
-            if (!$existing && $nip) {
+            if (! $existing && $nip) {
                 $existing = User::where('nama_pengguna', $nip)->first();
             }
-            if (!$existing && $nuptk) {
+            if (! $existing && $nuptk) {
                 $existing = User::where('nama_pengguna', $nuptk)->first();
             }
-            if (!$existing && $nik) {
+            if (! $existing && $nik) {
                 $existing = User::where('nama_pengguna', $nik)->first();
             }
 
@@ -1004,6 +1024,7 @@ class DapodikSyncService
 
             if (empty($dapodikId) && empty($nisn) && empty($nipd)) {
                 $result['summary']['dilewati']++;
+
                 continue;
             }
 
@@ -1012,22 +1033,23 @@ class DapodikSyncService
 
             if (empty($rombelId) && empty($namaRombel)) {
                 $result['summary']['error_rombel']++;
-                $result['errors'][] = "Siswa " . ($row['nama'] ?? $dapodikId ?? "baris " . ($index + 1)) . ": rombel tidak valid";
+                $result['errors'][] = 'Siswa '.($row['nama'] ?? $dapodikId ?? 'baris '.($index + 1)).': rombel tidak valid';
+
                 continue;
             }
 
             $existing = Siswa::where('semester_id', $semester->id)
                 ->where(function ($query) use ($dapodikId, $nisn, $nipd) {
                     $hasCondition = false;
-                    if (!empty($dapodikId)) {
+                    if (! empty($dapodikId)) {
                         $query->where('dapodik_id', $dapodikId);
                         $hasCondition = true;
                     }
-                    if (!empty($nisn)) {
+                    if (! empty($nisn)) {
                         $hasCondition ? $query->orWhere('nisn', $nisn) : $query->where('nisn', $nisn);
                         $hasCondition = true;
                     }
-                    if (!empty($nipd)) {
+                    if (! empty($nipd)) {
                         $hasCondition ? $query->orWhere('nis', $nipd) : $query->where('nis', $nipd);
                     }
                 })
@@ -1054,7 +1076,7 @@ class DapodikSyncService
         array $gtkExistingDapodikIds,
         array $remoteGtk,
     ): array {
-        if (!$this->config->archive_unlisted) {
+        if (! $this->config->archive_unlisted) {
             return ['enabled' => false, 'siswa_to_archive' => 0, 'gtk_to_archive' => 0];
         }
 
@@ -1066,7 +1088,7 @@ class DapodikSyncService
             ->whereNull('archived_at')
             ->pluck('dapodik_id')
             ->filter()
-            ->filter(fn ($id) => !isset($siswaDapodikIdSet[$id]))
+            ->filter(fn ($id) => ! isset($siswaDapodikIdSet[$id]))
             ->count();
 
         $gtkToArchive = User::where('aktif', true)
@@ -1074,11 +1096,11 @@ class DapodikSyncService
             ->whereNull('archived_at')
             ->where(function ($q) {
                 $q->whereNotNull('nama_pengguna')
-                  ->where('nama_pengguna', '!=', '');
+                    ->where('nama_pengguna', '!=', '');
             })
             ->pluck('dapodik_id')
             ->filter()
-            ->filter(fn ($id) => !isset($gtkDapodikIdSet[$id]))
+            ->filter(fn ($id) => ! isset($gtkDapodikIdSet[$id]))
             ->count();
 
         return [
@@ -1096,10 +1118,10 @@ class DapodikSyncService
         $semesterDigit = (int) mb_substr($semesterId, -1);
 
         if ($semesterDigit === 2) {
-            $tahunAjaran = ($year - 1) . '/' . $year;
+            $tahunAjaran = ($year - 1).'/'.$year;
             $namaSemester = 'genap';
         } else {
-            $tahunAjaran = $year . '/' . ($year + 1);
+            $tahunAjaran = $year.'/'.($year + 1);
             $namaSemester = 'ganjil';
         }
 
@@ -1118,10 +1140,10 @@ class DapodikSyncService
         $year = (int) date('Y');
 
         if ($month >= 7) {
-            return $year . '1';
+            return $year.'1';
         }
 
-        return $year . '2';
+        return $year.'2';
     }
 
     private function fetchRemoteData(string $semesterId): array
@@ -1163,19 +1185,19 @@ class DapodikSyncService
     private function ensureStudentUser(Siswa $siswa, ?string $nis, bool $isActive = true): void
     {
         try {
-            $username = $nis ?: ($siswa->nis ?: ($siswa->nisn ?: 'siswa' . $siswa->id));
-            
+            $username = $nis ?: ($siswa->nis ?: ($siswa->nisn ?: 'siswa'.$siswa->id));
+
             $user = User::where('peran', 'siswa')
                 ->where(function ($q) use ($siswa, $username) {
                     $q->whereJsonContains('terhubung_dengan', $siswa->id)
-                      ->orWhere('nama_pengguna', $username)
-                      ->orWhere('nama_pengguna', 'siswa' . $username);
+                        ->orWhere('nama_pengguna', $username)
+                        ->orWhere('nama_pengguna', 'siswa'.$username);
                 })
                 ->first();
 
             if ($user) {
                 $terhubung = (array) ($user->terhubung_dengan ?? []);
-                if (!in_array($siswa->id, $terhubung, true)) {
+                if (! in_array($siswa->id, $terhubung, true)) {
                     $terhubung[] = $siswa->id;
                 }
                 $user->update([
@@ -1189,16 +1211,16 @@ class DapodikSyncService
                     'uuid' => (string) Str::uuid(),
                     'nama_lengkap' => $siswa->nama_peserta_didik,
                     'nama_pengguna' => $username,
-                    'kata_sandi' => \Illuminate\Support\Facades\Hash::make(\App\Support\InitialPassword::generate()),
+                    'kata_sandi' => Hash::make(InitialPassword::generate()),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [$siswa->id],
                     'kelas_mata_pelajaran' => $siswa->kelas,
                     'aktif' => $isActive,
-                    'force_password_change' => \App\Support\InitialPassword::shouldForceChangeSiswa(),
+                    'force_password_change' => InitialPassword::shouldForceChangeSiswa(),
                 ]);
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning("Gagal auto-create akun user siswa {$siswa->id}: " . $e->getMessage());
+            Log::warning("Gagal auto-create akun user siswa {$siswa->id}: ".$e->getMessage());
         }
     }
 }

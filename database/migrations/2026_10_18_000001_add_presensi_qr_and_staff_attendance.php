@@ -9,25 +9,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('siswa', function (Blueprint $table) {
-            if (!Schema::hasColumn('siswa', 'qr_token_hash')) {
+            if (! Schema::hasColumn('siswa', 'qr_token_hash')) {
                 // Nilai QR yang tercetak tidak disimpan. Hanya HMAC-nya yang tersimpan.
                 $table->string('qr_token_hash', 64)->nullable()->unique();
             }
         });
 
         Schema::table('kehadiran', function (Blueprint $table) {
-            if (!Schema::hasColumn('kehadiran', 'waktu_masuk')) {
+            if (! Schema::hasColumn('kehadiran', 'waktu_masuk')) {
                 $table->timestamp('waktu_masuk')->nullable();
             }
-            if (!Schema::hasColumn('kehadiran', 'jadwal_pelajaran_id')) {
+            if (! Schema::hasColumn('kehadiran', 'jadwal_pelajaran_id')) {
                 $table->foreignId('jadwal_pelajaran_id')->nullable()
                     ->constrained('jadwal_pelajaran')->nullOnDelete();
             }
-            if (!Schema::hasColumn('kehadiran', 'dicatat_oleh')) {
+            if (! Schema::hasColumn('kehadiran', 'dicatat_oleh')) {
                 $table->foreignId('dicatat_oleh')->nullable()
                     ->constrained('users')->nullOnDelete();
             }
-            if (!Schema::hasColumn('kehadiran', 'metode')) {
+            if (! Schema::hasColumn('kehadiran', 'metode')) {
                 $table->string('metode', 16)->default('manual');
             }
         });

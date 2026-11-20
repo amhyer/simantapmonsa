@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\DapodikTokenMissingException;
+use App\Models\SekolahSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +12,7 @@ class SchoolDataService
 {
     public function getByNpsn(string $npsn): ?array
     {
-        if (!preg_match('/^[0-9]{8}$/', $npsn)) {
+        if (! preg_match('/^[0-9]{8}$/', $npsn)) {
             return null;
         }
 
@@ -41,17 +42,17 @@ class SchoolDataService
                 $token = $this->getDapodikToken();
                 $response = Http::timeout(6)
                     ->withHeaders([
-                        'Authorization' => 'Bearer ' . $token,
+                        'Authorization' => 'Bearer '.$token,
                         'Accept' => 'application/json',
                         'User-Agent' => 'SIMANTAP/2.0 (Mozilla/5.0)',
                     ])
-                    ->get("https://dapo.kemendikdasmen.go.id/api/detail-sekolah", [
+                    ->get('https://dapo.kemendikdasmen.go.id/api/detail-sekolah', [
                         'npsn' => $npsn,
                     ]);
 
                 if ($response->successful()) {
                     $json = $response->json();
-                    if (!empty($json['data'][0])) {
+                    if (! empty($json['data'][0])) {
                         $item = $json['data'][0];
                         $data['nama_sekolah'] = trim($item['nama'] ?? '');
                         $data['jenjang'] = strtoupper(trim($item['bentuk_pendidikan'] ?? $item['jenjang'] ?? 'SD'));
@@ -68,7 +69,7 @@ class SchoolDataService
             } catch (DapodikTokenMissingException $e) {
                 throw $e;
             } catch (\Exception $e) {
-                Log::info("Dapodik Kemendikdasmen API timeout atau gagal: " . $e->getMessage());
+                Log::info('Dapodik Kemendikdasmen API timeout atau gagal: '.$e->getMessage());
             }
 
             // 2. Data Referensi Kemendikdasmen (Tarik Operator Sekolah & Kontak)
@@ -92,7 +93,7 @@ class SchoolDataService
                     }
                     if (preg_match('/Telepon\s*<\/td>\s*<td[^>]*>:\s*<\/td>\s*<td[^>]*>(.*?)<\/td>/is', $html, $m)) {
                         $telp = trim(strip_tags($m[1]));
-                        if ($telp !== '-' && !empty($telp)) {
+                        if ($telp !== '-' && ! empty($telp)) {
                             $data['telepon'] = $telp;
                         }
                     }
@@ -102,10 +103,10 @@ class SchoolDataService
                     }
                 }
             } catch (\Exception $e) {
-                Log::info("Referensi Kemendikdasmen scrap timeout atau gagal: " . $e->getMessage());
+                Log::info('Referensi Kemendikdasmen scrap timeout atau gagal: '.$e->getMessage());
             }
 
-            if ($foundOfficial && !empty($data['nama_sekolah'])) {
+            if ($foundOfficial && ! empty($data['nama_sekolah'])) {
                 return $data;
             }
 
@@ -116,14 +117,15 @@ class SchoolDataService
                         'Accept' => 'application/json',
                         'User-Agent' => 'SIMANTAP/2.0',
                     ])
-                    ->get("https://api-sekolah-indonesia.vercel.app/sekolah", [
+                    ->get('https://api-sekolah-indonesia.vercel.app/sekolah', [
                         'npsn' => $npsn,
                     ]);
 
                 if ($response->successful()) {
                     $json = $response->json();
-                    if (!empty($json['dataSekolah']) && is_array($json['dataSekolah'])) {
+                    if (! empty($json['dataSekolah']) && is_array($json['dataSekolah'])) {
                         $item = $json['dataSekolah'][0];
+
                         return [
                             'npsn' => trim($item['npsn'] ?? $npsn),
                             'nama_sekolah' => trim($item['sekolah'] ?? ''),
@@ -144,11 +146,11 @@ class SchoolDataService
                     }
                 }
             } catch (\Exception $e) {
-                Log::info("Kemendikdasmen Open Data fallback gagal: " . $e->getMessage());
+                Log::info('Kemendikdasmen Open Data fallback gagal: '.$e->getMessage());
             }
 
             // 4. Fallback database lokal (jika sekolah pernah tersimpan)
-            $local = \App\Models\SekolahSettings::where('npsn', $npsn)->first();
+            $local = SekolahSettings::where('npsn', $npsn)->first();
             if ($local) {
                 return [
                     'npsn' => $local->npsn,
@@ -184,12 +186,18 @@ class SchoolDataService
 
     private function normalizeStatus(?string $status): string
     {
-        if (empty($status)) return '';
+        if (empty($status)) {
+            return '';
+        }
 
         $status = strtoupper(trim($status));
 
-        if (in_array($status, ['NEGERI', 'N', 'PUBLIC'])) return 'NEGERI';
-        if (in_array($status, ['SWASTA', 'S', 'PRIVATE'])) return 'SWASTA';
+        if (in_array($status, ['NEGERI', 'N', 'PUBLIC'])) {
+            return 'NEGERI';
+        }
+        if (in_array($status, ['SWASTA', 'S', 'PRIVATE'])) {
+            return 'SWASTA';
+        }
 
         return $status;
     }

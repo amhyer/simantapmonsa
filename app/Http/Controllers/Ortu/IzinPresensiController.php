@@ -40,6 +40,7 @@ class IzinPresensiController extends Controller
         }
 
         AktivitasService::log('kehadiran', 'Pengajuan izin siswa', 'Menunggu verifikasi wali kelas.', 'pengajuan_izin_presensi', $izin->id, null, ['siswa_id' => $anak->id, 'tanggal' => $data['tanggal'], 'jenis' => $data['jenis']]);
+
         return redirect()->route('ortu.kehadiran.index', ['siswa_id' => $anak->id])
             ->with('success', 'Pengajuan terkirim dan menunggu verifikasi wali kelas.');
     }

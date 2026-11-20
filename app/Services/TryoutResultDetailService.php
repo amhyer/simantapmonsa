@@ -41,7 +41,7 @@ class TryoutResultDetailService
     }
 
     /** @param array<int, array<string, mixed>> $details
-     *  @return array<int, array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     public function weaknesses(TryoutResult $result, array $details): array
     {

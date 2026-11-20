@@ -2,13 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Admin\BackupController;
+use App\Jobs\ExportBackupJob;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\CbtViolation;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Services\Backup\BackupStreamWriter;
 use App\Services\CbtExamService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Env;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CbtExamTest extends TestCase
@@ -16,9 +26,13 @@ class CbtExamTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $account;
+
     private Siswa $student;
+
     private CbtQuestionBank $bank;
+
     private array $previousFlag;
 
     protected function setUp(): void
@@ -27,7 +41,7 @@ class CbtExamTest extends TestCase
         $this->previousFlag = [getenv('SIMANTAP_CBT_ENABLED'), $_ENV['SIMANTAP_CBT_ENABLED'] ?? null, $_SERVER['SIMANTAP_CBT_ENABLED'] ?? null];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
         parent::setUp();
         $this->withoutVite();
         $this->guru = User::factory()->guru()->create();
@@ -50,9 +64,17 @@ class CbtExamTest extends TestCase
         parent::tearDown();
         [$env, $arrayEnv, $server] = $this->previousFlag;
         $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
-        if ($arrayEnv === null) { unset($_ENV['SIMANTAP_CBT_ENABLED']); } else { $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv; }
-        if ($server === null) { unset($_SERVER['SIMANTAP_CBT_ENABLED']); } else { $_SERVER['SIMANTAP_CBT_ENABLED'] = $server; }
-        \Illuminate\Support\Env::enablePutenv();
+        if ($arrayEnv === null) {
+            unset($_ENV['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv;
+        }
+        if ($server === null) {
+            unset($_SERVER['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
+        }
+        Env::enablePutenv();
     }
 
     private function createSession(bool $open = true): CbtTestSession
@@ -63,13 +85,17 @@ class CbtExamTest extends TestCase
             'duration_minutes' => 60,
         ]);
         app(CbtExamService::class)->publish($session);
-        if ($open) { app(CbtExamService::class)->open($session); }
+        if ($open) {
+            app(CbtExamService::class)->open($session);
+        }
+
         return $session->fresh();
     }
 
     private function attempt(CbtTestSession $session): CbtResult
     {
         $this->actingAs($this->account)->post(route('cbt.student.begin', $session))->assertRedirect();
+
         return CbtResult::where('session_id', $session->id)->firstOrFail();
     }
 
@@ -207,8 +233,8 @@ class CbtExamTest extends TestCase
             'result' => $result->fresh()->getAttributes(),
             'answers' => $result->fresh()->answers,
             'violations' => $result->fresh()->violations()->count(),
-            'engine_attempts' => \Illuminate\Support\Facades\DB::table('exam_attempts')->count(),
-            'engine_violations' => \Illuminate\Support\Facades\DB::table('exam_violations')->count(),
+            'engine_attempts' => DB::table('exam_attempts')->count(),
+            'engine_violations' => DB::table('exam_violations')->count(),
         ];
 
         $this->actingAs($other)->get(route('cbt.student.result', $result))->assertForbidden();
@@ -220,8 +246,8 @@ class CbtExamTest extends TestCase
             'result' => $result->fresh()->getAttributes(),
             'answers' => $result->fresh()->answers,
             'violations' => $result->fresh()->violations()->count(),
-            'engine_attempts' => \Illuminate\Support\Facades\DB::table('exam_attempts')->count(),
-            'engine_violations' => \Illuminate\Support\Facades\DB::table('exam_violations')->count(),
+            'engine_attempts' => DB::table('exam_attempts')->count(),
+            'engine_violations' => DB::table('exam_violations')->count(),
         ];
         $this->assertSame($before, $after, 'Forbidden requests must not mutate legacy or engine records.');
     }
@@ -298,6 +324,7 @@ class CbtExamTest extends TestCase
     {
         $this->actingAs($this->account)->get(route('cbt.question-banks.api.questions', $this->bank))->assertForbidden();
     }
+
     public function test_guru_dapat_membuat_bank_soal_dan_sesi_melalui_form(): void
     {
         $this->actingAs($this->guru)->get(route('cbt.question-banks.create'))->assertOk();
@@ -397,9 +424,9 @@ class CbtExamTest extends TestCase
 
     public function test_backup_restore_mempertahankan_timestamp_id_non_urut_dan_sequence(): void
     {
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-18 08:05:00'));
-        $opens = \Illuminate\Support\Carbon::parse('2026-10-18 08:00:00');
-        $closes = \Illuminate\Support\Carbon::parse('2026-10-18 10:00:00');
+        $this->travelTo(Carbon::parse('2026-10-18 08:05:00'));
+        $opens = Carbon::parse('2026-10-18 08:00:00');
+        $closes = Carbon::parse('2026-10-18 10:00:00');
         $session = $this->createSession();
         $session->update(['opens_at' => $opens, 'closes_at' => $closes]);
         $result = $this->attempt($session->fresh());
@@ -407,23 +434,23 @@ class CbtExamTest extends TestCase
         $this->actingAs($this->account)->postJson(route('cbt.student.answer', $result), ['question_id' => $qId, 'answer' => 'A'])->assertOk();
         $this->actingAs($this->account)->post(route('cbt.student.submit', $result));
 
-        \Illuminate\Support\Facades\Storage::disk('local')->deleteDirectory('backups');
-        (new \App\Jobs\ExportBackupJob())->handle(app(\App\Services\Backup\BackupStreamWriter::class));
-        $files = \Illuminate\Support\Facades\Storage::disk('local')->files('backups');
+        Storage::disk('local')->deleteDirectory('backups');
+        (new ExportBackupJob)->handle(app(BackupStreamWriter::class));
+        $files = Storage::disk('local')->files('backups');
         $this->assertCount(1, $files);
-        $json = \Illuminate\Support\Facades\Storage::disk('local')->get($files[0]);
+        $json = Storage::disk('local')->get($files[0]);
 
-        \App\Models\CbtViolation::query()->delete();
+        CbtViolation::query()->delete();
         CbtResult::query()->delete();
         CbtTestSession::query()->delete();
         $this->bank->questions()->delete();
         CbtQuestionBank::query()->delete();
 
-        $tmp = tempnam(sys_get_temp_dir(), 'cbt_bkp_') . '.json';
+        $tmp = tempnam(sys_get_temp_dir(), 'cbt_bkp_').'.json';
         file_put_contents($tmp, $json);
-        $uploaded = new \Illuminate\Http\UploadedFile($tmp, 'backup.json', 'application/json', null, true);
-        $req = \Illuminate\Http\Request::create('/admin/backup/import', 'POST', [], [], ['backup_file' => $uploaded]);
-        app(\App\Http\Controllers\Admin\BackupController::class)->import($req);
+        $uploaded = new UploadedFile($tmp, 'backup.json', 'application/json', null, true);
+        $req = Request::create('/admin/backup/import', 'POST', [], [], ['backup_file' => $uploaded]);
+        app(BackupController::class)->import($req);
         @unlink($tmp);
 
         $restoredSession = CbtTestSession::findOrFail($session->id);
@@ -433,7 +460,7 @@ class CbtExamTest extends TestCase
         $this->assertSame(100.0, $restoredResult->score);
         $newBank = CbtQuestionBank::create(['guru_id' => $this->guru->id, 'title' => 'Bank Pasca Restore', 'subject' => 'IPS']);
         $this->assertGreaterThan($this->bank->id, $newBank->id);
-        \Illuminate\Support\Facades\Storage::disk('local')->deleteDirectory('backups');
+        Storage::disk('local')->deleteDirectory('backups');
     }
 
     public function test_pelanggaran_layar_penuh_mereset_jawaban_tanpa_mereset_waktu(): void
@@ -463,5 +490,4 @@ class CbtExamTest extends TestCase
         $this->assertSame($originalDeadlineAt, $fresh->deadline_at->toIso8601String());
         $this->assertDatabaseHas('cbt_violations', ['result_id' => $result->id, 'type' => 'fullscreen_exit']);
     }
-
 }

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\BackupRestoreService;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -66,7 +67,7 @@ class BackupRestoreDrill extends Command
         try {
             $data = json_decode((string) $disk->get($file), true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $e) {
-            $this->error('Berkas backup bukan JSON valid: ' . $e->getMessage());
+            $this->error('Berkas backup bukan JSON valid: '.$e->getMessage());
 
             return self::FAILURE;
         }
@@ -80,7 +81,7 @@ class BackupRestoreDrill extends Command
         $validasi = $service->validasi($data);
 
         if ($validasi['tidak_dikenal'] !== []) {
-            $this->error("Backup memuat tabel tidak dikenal: " . implode(', ', $validasi['tidak_dikenal']));
+            $this->error('Backup memuat tabel tidak dikenal: '.implode(', ', $validasi['tidak_dikenal']));
 
             return self::FAILURE;
         }
@@ -104,7 +105,7 @@ class BackupRestoreDrill extends Command
             return $berhasil ? self::SUCCESS : self::FAILURE;
         }
 
-        $this->info("Drill backup: {$file} (disk: {$diskName}, " . number_format($ukuran / 1024, 1) . ' KB)');
+        $this->info("Drill backup: {$file} (disk: {$diskName}, ".number_format($ukuran / 1024, 1).' KB)');
         $this->newLine();
 
         $this->table(
@@ -132,7 +133,7 @@ class BackupRestoreDrill extends Command
         }
 
         if ($this->option('keep')) {
-            $this->warn('Database sementara disimpan: ' . $laporan['database_sementara']);
+            $this->warn('Database sementara disimpan: '.$laporan['database_sementara']);
         }
 
         return $berhasil ? self::SUCCESS : self::FAILURE;
@@ -155,7 +156,7 @@ class BackupRestoreDrill extends Command
         $sebelum = DB::getDefaultConnection();
         $telescopeConnection = config('telescope.storage.database.connection');
 
-        config(["database.connections." . self::KONEKSI => [
+        config(['database.connections.'.self::KONEKSI => [
             'driver' => 'sqlite',
             'database' => $sementara,
             'prefix' => '',
@@ -178,7 +179,7 @@ class BackupRestoreDrill extends Command
             ]);
 
             if ($kode !== 0) {
-                $this->error('Migrasi database sementara gagal: ' . trim(Artisan::output()));
+                $this->error('Migrasi database sementara gagal: '.trim(Artisan::output()));
 
                 return [false, ['ok' => false, 'tabel' => [], 'relasi' => [], 'database_sementara' => $sementara]];
             }
@@ -198,14 +199,14 @@ class BackupRestoreDrill extends Command
                 'database_sementara' => $this->option('keep') ? $sementara : null,
             ]];
         } catch (\Throwable $e) {
-            $this->error('Drill gagal: ' . $e->getMessage());
+            $this->error('Drill gagal: '.$e->getMessage());
 
             return [false, ['ok' => false, 'tabel' => [], 'relasi' => [], 'database_sementara' => $sementara]];
         } finally {
             DB::purge(self::KONEKSI);
             DB::setDefaultConnection($sebelum);
             config(['telescope.storage.database.connection' => $telescopeConnection]);
-            config(["database.connections." . self::KONEKSI => null]);
+            config(['database.connections.'.self::KONEKSI => null]);
 
             if (! $this->option('keep')) {
                 @unlink($sementara);
@@ -340,14 +341,14 @@ class BackupRestoreDrill extends Command
         ];
     }
 
-    private function pilihBerkas(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $direktori): ?string
+    private function pilihBerkas(Filesystem $disk, string $direktori): ?string
     {
         $file = $this->option('file');
 
         if (is_string($file) && $file !== '') {
             $file = str_replace('\\', '/', $file);
 
-            return str_contains($file, '/') ? $file : trim($direktori . '/' . $file, '/');
+            return str_contains($file, '/') ? $file : trim($direktori.'/'.$file, '/');
         }
 
         $berkas = collect($disk->files($direktori))

@@ -9,9 +9,10 @@ use Illuminate\Support\Str;
 class AssessmentResponse extends Model
 {
     protected $table = 'tka_assessment_responses';
+
     protected $fillable = [
         'uuid', 'assessment_id', 'assessment_item_id',
-        'skor', 'catatan_guru'
+        'skor', 'catatan_guru',
     ];
 
     protected $casts = [
@@ -22,7 +23,7 @@ class AssessmentResponse extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });

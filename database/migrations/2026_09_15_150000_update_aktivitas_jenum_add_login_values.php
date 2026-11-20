@@ -12,7 +12,7 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("ALTER TABLE aktivitas DROP CONSTRAINT IF EXISTS aktivitas_jenis_check");
+        DB::statement('ALTER TABLE aktivitas DROP CONSTRAINT IF EXISTS aktivitas_jenis_check');
         DB::statement("ALTER TABLE aktivitas ADD CONSTRAINT aktivitas_jenis_check CHECK (jenis IN ('materi','kuis','nilai','kehadiran','catatan','dimensi','kebiasaan','pengaturan','login','tambah','ubah','hapus','lihat'))");
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("ALTER TABLE aktivitas DROP CONSTRAINT IF EXISTS aktivitas_jenis_check");
+        DB::statement('ALTER TABLE aktivitas DROP CONSTRAINT IF EXISTS aktivitas_jenis_check');
         DB::statement("ALTER TABLE aktivitas ADD CONSTRAINT aktivitas_jenis_check CHECK (jenis IN ('materi','kuis','nilai','kehadiran','catatan','dimensi','kebiasaan','pengaturan'))");
     }
 };

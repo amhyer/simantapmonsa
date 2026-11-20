@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
+use App\Models\DapodikConfig;
+use App\Models\DapodikSyncLog;
+use App\Models\Rombel;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\User;
+use App\Services\Dapodik\DapodikSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
-use App\Models\DapodikConfig;
-use App\Models\DapodikSyncLog;
-use App\Models\SekolahSettings;
-use App\Models\Semester;
-use App\Models\Siswa;
-use App\Models\Rombel;
-use App\Models\User;
-use App\Services\Dapodik\DapodikSyncService;
 
 class DapodikSyncTest extends TestCase
 {
@@ -221,7 +221,7 @@ class DapodikSyncTest extends TestCase
         $this->setupConfig();
         $this->fakeDapodikApi();
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->preview('20261');
 
         $this->assertArrayHasKey('sekolah', $result);
@@ -253,7 +253,7 @@ class DapodikSyncTest extends TestCase
         $this->setupConfig();
         $this->fakeDapodikApi();
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->preview('20261');
 
         $this->assertEquals('20261', $result['semester_id']);
@@ -287,7 +287,7 @@ class DapodikSyncTest extends TestCase
 
         $this->fakeDapodikApi(['peserta_didik' => $siswa]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->preview('20261');
 
         $this->assertEquals(10, $result['peserta_didik_count']);
@@ -303,7 +303,7 @@ class DapodikSyncTest extends TestCase
         $this->setupConfig();
         $this->fakeDapodikApi();
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->dryRun('20261');
 
         $this->assertEquals('dry-run', $result['mode']);
@@ -345,7 +345,7 @@ class DapodikSyncTest extends TestCase
 
         $this->fakeDapodikApi();
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->dryRun('20261');
 
         $this->assertEquals(0, $result['rombel']['baru']);
@@ -363,7 +363,7 @@ class DapodikSyncTest extends TestCase
         $admin = $this->createAdminUser();
         Auth::login($admin);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $this->assertEquals('commit', $result['mode']);
@@ -428,7 +428,7 @@ class DapodikSyncTest extends TestCase
         $admin = $this->createAdminUser();
         Auth::login($admin);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $result1 = $service->commit('20261');
         $this->assertDatabaseCount('siswa', 2);
@@ -473,7 +473,7 @@ class DapodikSyncTest extends TestCase
 
         $this->fakeDapodikApi();
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $this->assertEquals(1, $result['rombel']['diperbarui']);
@@ -490,7 +490,7 @@ class DapodikSyncTest extends TestCase
         $admin = $this->createAdminUser();
         Auth::login($admin);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $log = DapodikSyncLog::find($result['log_id']);
@@ -562,7 +562,7 @@ class DapodikSyncTest extends TestCase
             ],
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $this->assertDatabaseHas('siswa', [
@@ -619,7 +619,7 @@ class DapodikSyncTest extends TestCase
             ],
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $this->assertDatabaseHas('users', [
@@ -701,7 +701,7 @@ class DapodikSyncTest extends TestCase
             ],
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
         $result = $service->commit('20261');
 
         $this->assertDatabaseHas('siswa', [
@@ -723,10 +723,10 @@ class DapodikSyncTest extends TestCase
         $this->setupConfig();
 
         Http::fake(function ($request) {
-            throw new \Illuminate\Http\Client\ConnectionException('Connection refused');
+            throw new ConnectionException('Connection refused');
         });
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Tidak dapat terhubung ke Dapodik WebService');
@@ -742,7 +742,7 @@ class DapodikSyncTest extends TestCase
             '*' => Http::response(['error' => 'Internal Server Error'], 500),
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Server error from Dapodik API');
@@ -758,7 +758,7 @@ class DapodikSyncTest extends TestCase
             '*' => Http::response('Bad Request', 400),
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Client error from Dapodik API');
@@ -774,7 +774,7 @@ class DapodikSyncTest extends TestCase
             '*' => Http::response('Akses ditolak oleh server', 403),
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Client error from Dapodik API');
@@ -790,7 +790,7 @@ class DapodikSyncTest extends TestCase
             '*' => Http::response('<html>Not JSON</html>', 200, ['Content-Type' => 'text/html']),
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Sekolah Anda tidak ditemukan');
@@ -809,7 +809,7 @@ class DapodikSyncTest extends TestCase
             ], 200),
         ]);
 
-        $service = new DapodikSyncService();
+        $service = new DapodikSyncService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Dapodik API error');

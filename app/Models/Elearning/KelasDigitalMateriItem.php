@@ -80,7 +80,7 @@ class KelasDigitalMateriItem extends Model
 
         $url = trim((string) $this->tautan);
         if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/', $url, $m)) {
-            return 'https://www.youtube-nocookie.com/embed/' . $m[1];
+            return 'https://www.youtube-nocookie.com/embed/'.$m[1];
         }
 
         return null;

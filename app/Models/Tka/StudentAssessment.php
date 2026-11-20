@@ -2,6 +2,9 @@
 
 namespace App\Models\Tka;
 
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\User;
 use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,10 +16,11 @@ class StudentAssessment extends Model
     use BelongsToTenant;
 
     protected $table = 'tka_student_assessments';
+
     protected $fillable = [
         'uuid', 'tenant_id', 'siswa_id', 'semester_id', 'guru_id',
         'tanggal_penilaian', 'total_score', 'max_score',
-        'persentase', 'status_kesiapan', 'skor_per_dimensi'
+        'persentase', 'status_kesiapan', 'skor_per_dimensi',
     ];
 
     protected $casts = [
@@ -31,7 +35,7 @@ class StudentAssessment extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -39,17 +43,17 @@ class StudentAssessment extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Semester::class);
+        return $this->belongsTo(Semester::class);
     }
 
     public function guru(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'guru_id');
+        return $this->belongsTo(User::class, 'guru_id');
     }
 
     public function responses(): HasMany

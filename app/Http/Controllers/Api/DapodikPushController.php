@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class DapodikPushController extends Controller
 {
-    public function __construct(private DapodikPushService $pushService)
-    {
-    }
+    public function __construct(private DapodikPushService $pushService) {}
 
     /**
      * Push data sekolah ke Dapodik
@@ -138,7 +136,7 @@ class DapodikPushController extends Controller
                 'host' => $config->host ?? 'localhost',
                 'port' => $config->port ?? 5774,
                 'protocol' => $config->protocol ?? 'http',
-                'configured' => !empty($config->npsn) && !empty($config->token),
+                'configured' => ! empty($config->npsn) && ! empty($config->token),
                 'last_sync' => $config->last_sync_at,
                 'last_sync_by' => $config->last_sync_by,
             ],

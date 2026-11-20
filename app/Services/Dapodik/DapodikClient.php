@@ -19,19 +19,19 @@ class DapodikClient
 
     private function base(): string
     {
-        $base = $this->protocol . '://' . $this->host;
+        $base = $this->protocol.'://'.$this->host;
 
         $defaultPort = $this->protocol === 'https' ? 443 : 80;
         if ($this->port !== $defaultPort) {
-            $base .= ':' . $this->port;
+            $base .= ':'.$this->port;
         }
 
-        return $base . '/WebService';
+        return $base.'/WebService';
     }
 
     private function requestRaw(string $endpoint, array $params = []): mixed
     {
-        $url = $this->base() . '/' . $endpoint;
+        $url = $this->base().'/'.$endpoint;
         $maxAttempts = 3;
         $delays = [0, 400, 1200];
 
@@ -45,7 +45,7 @@ class DapodikClient
             try {
                 $request = Http::timeout(30)
                     ->withHeaders([
-                        'Authorization' => 'Bearer ' . $this->token,
+                        'Authorization' => 'Bearer '.$this->token,
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
                     ]);
@@ -65,7 +65,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
+                            'Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif.'
                         );
                     }
 
@@ -124,9 +124,9 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. " .
-                    "Pastikan aplikasi Dapodik berjalan dan WebService aktif. " .
-                    "Error teknis: " . $e->getMessage(),
+                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. ".
+                    'Pastikan aplikasi Dapodik berjalan dan WebService aktif. '.
+                    'Error teknis: '.$e->getMessage(),
                     0,
                     $e
                 );
@@ -135,7 +135,7 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Request failed to Dapodik API on {$endpoint}: " . $e->getMessage(),
+                    "Request failed to Dapodik API on {$endpoint}: ".$e->getMessage(),
                     0,
                     $e
                 );
@@ -162,7 +162,7 @@ class DapodikClient
 
             $rows = $response['data'] ?? $response['rows'] ?? $response['records'] ?? [];
 
-            if (!is_array($rows)) {
+            if (! is_array($rows)) {
                 $rows = [];
             }
 
@@ -202,11 +202,11 @@ class DapodikClient
 
         $data = $response['data'] ?? $response['rows'] ?? $response;
 
-        if (is_array($data) && !empty($data) && !isset($data[0])) {
+        if (is_array($data) && ! empty($data) && ! isset($data[0])) {
             $data = [$data];
         }
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             $data = [$data];
         }
 
@@ -218,7 +218,7 @@ class DapodikClient
      */
     private function requestPost(string $endpoint, array $data = []): mixed
     {
-        $url = $this->base() . '/' . $endpoint;
+        $url = $this->base().'/'.$endpoint;
         $maxAttempts = 3;
         $delays = [0, 400, 1200];
 
@@ -232,7 +232,7 @@ class DapodikClient
             try {
                 $request = Http::timeout(30)
                     ->withHeaders([
-                        'Authorization' => 'Bearer ' . $this->token,
+                        'Authorization' => 'Bearer '.$this->token,
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
                     ]);
@@ -252,7 +252,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
+                            'Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif.'
                         );
                     }
 
@@ -311,9 +311,9 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. " .
-                    "Pastikan aplikasi Dapodik berjalan dan WebService aktif. " .
-                    "Error teknis: " . $e->getMessage(),
+                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. ".
+                    'Pastikan aplikasi Dapodik berjalan dan WebService aktif. '.
+                    'Error teknis: '.$e->getMessage(),
                     0,
                     $e
                 );
@@ -322,7 +322,7 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Request failed to Dapodik API on {$endpoint}: " . $e->getMessage(),
+                    "Request failed to Dapodik API on {$endpoint}: ".$e->getMessage(),
                     0,
                     $e
                 );
@@ -337,7 +337,7 @@ class DapodikClient
      */
     private function requestPut(string $endpoint, array $data = []): mixed
     {
-        $url = $this->base() . '/' . $endpoint;
+        $url = $this->base().'/'.$endpoint;
         $maxAttempts = 3;
         $delays = [0, 400, 1200];
 
@@ -351,7 +351,7 @@ class DapodikClient
             try {
                 $request = Http::timeout(30)
                     ->withHeaders([
-                        'Authorization' => 'Bearer ' . $this->token,
+                        'Authorization' => 'Bearer '.$this->token,
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
                     ]);
@@ -371,7 +371,7 @@ class DapodikClient
                             continue;
                         }
                         throw new RuntimeException(
-                            "Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif."
+                            'Sekolah Anda tidak ditemukan. Data tidak ditemukan di Dapodik. Periksa NPSN, token, dan pastikan WebService Dapodik aktif.'
                         );
                     }
 
@@ -430,9 +430,9 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. " .
-                    "Pastikan aplikasi Dapodik berjalan dan WebService aktif. " .
-                    "Error teknis: " . $e->getMessage(),
+                    "Tidak dapat terhubung ke Dapodik WebService di {$this->protocol}://{$this->host}:{$this->port}. ".
+                    'Pastikan aplikasi Dapodik berjalan dan WebService aktif. '.
+                    'Error teknis: '.$e->getMessage(),
                     0,
                     $e
                 );
@@ -441,7 +441,7 @@ class DapodikClient
                     continue;
                 }
                 throw new RuntimeException(
-                    "Request failed to Dapodik API on {$endpoint}: " . $e->getMessage(),
+                    "Request failed to Dapodik API on {$endpoint}: ".$e->getMessage(),
                     0,
                     $e
                 );
@@ -602,7 +602,7 @@ class DapodikClient
                 continue;
             }
 
-            if (!isset($semesterMap[$semesterId])) {
+            if (! isset($semesterMap[$semesterId])) {
                 $semesterMap[$semesterId] = [
                     'semester_id' => $semesterId,
                     'tahun_ajaran' => semester_to_tahun_ajaran($semesterId),
@@ -620,7 +620,7 @@ class DapodikClient
                 continue;
             }
 
-            if (!isset($semesterMap[$semesterId])) {
+            if (! isset($semesterMap[$semesterId])) {
                 $semesterMap[$semesterId] = [
                     'semester_id' => $semesterId,
                     'tahun_ajaran' => semester_to_tahun_ajaran($semesterId),

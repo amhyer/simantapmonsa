@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Tka;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tka\Dimension;
-use App\Models\Tka\AssessmentItem;
 use App\Models\Semester;
+use App\Models\Tka\AssessmentItem;
+use App\Models\Tka\Dimension;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -14,20 +14,20 @@ class TkaDimensionController extends Controller
     public function index()
     {
         $dimensions = Dimension::with(['semester', 'assessmentItems'])
-                              ->withCount('assessmentItems')
-                              ->orderBy('kategori')
-                              ->orderBy('nama_dimensi')
-                              ->paginate(20);
-        
+            ->withCount('assessmentItems')
+            ->orderBy('kategori')
+            ->orderBy('nama_dimensi')
+            ->paginate(20);
+
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('tka.dimensions.index', compact('dimensions', 'semesters'));
     }
 
     public function create()
     {
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('tka.dimensions.create', compact('semesters'));
     }
 
@@ -64,7 +64,7 @@ class TkaDimensionController extends Controller
     public function show(Dimension $dimension)
     {
         $dimension->load(['semester', 'assessmentItems']);
-        
+
         return view('tka.dimensions.show', compact('dimension'));
     }
 
@@ -72,7 +72,7 @@ class TkaDimensionController extends Controller
     {
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
         $dimension->load(['assessmentItems']);
-        
+
         return view('tka.dimensions.edit', compact('dimension', 'semesters'));
     }
 
@@ -80,7 +80,7 @@ class TkaDimensionController extends Controller
     {
         $validated = $request->validate([
             'semester_id' => 'required|exists:semesters,id',
-            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi,' . $dimension->id,
+            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi,'.$dimension->id,
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
@@ -135,8 +135,8 @@ class TkaDimensionController extends Controller
 
         // Reorder remaining items
         $dimension->assessmentItems()
-                 ->where('urutan', '>', $urutan)
-                 ->decrement('urutan');
+            ->where('urutan', '>', $urutan)
+            ->decrement('urutan');
 
         return back()->with('success', 'Item penilaian berhasil dihapus');
     }
@@ -144,7 +144,7 @@ class TkaDimensionController extends Controller
     public function getItems(Dimension $dimension)
     {
         $items = $dimension->assessmentItems()->orderBy('urutan')->get();
-        
+
         return response()->json($items);
     }
 }

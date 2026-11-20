@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class DapodikResetTest extends TestCase
@@ -20,7 +22,7 @@ class DapodikResetTest extends TestCase
         config(['simantap.multi_tenant_enabled' => true]);
 
         $tenantA = Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SD Negeri 1',
             'npsn' => '11111111',
             'subdomain' => 'sdn1',
@@ -28,7 +30,7 @@ class DapodikResetTest extends TestCase
         ]);
 
         $tenantB = Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SD Negeri 2',
             'npsn' => '22222222',
             'subdomain' => 'sdn2',
@@ -38,7 +40,7 @@ class DapodikResetTest extends TestCase
         $adminA = User::factory()->admin()->create(['tenant_id' => $tenantA->id]);
         $guruDapodikA = User::factory()->guru()->create([
             'tenant_id' => $tenantA->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'nama_lengkap' => 'Guru Dapodik A',
         ]);
         $userSiswaA = User::factory()->siswa()->create([
@@ -49,7 +51,7 @@ class DapodikResetTest extends TestCase
 
         $guruDapodikB = User::factory()->guru()->create([
             'tenant_id' => $tenantB->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'nama_lengkap' => 'Guru Dapodik B',
         ]);
 
@@ -63,16 +65,16 @@ class DapodikResetTest extends TestCase
         $rombelA = Rombel::create([
             'tenant_id' => $tenantA->id,
             'semester_id' => $sem->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'nama_rombel' => 'Kelas 1.A',
             'tingkat' => '1',
         ]);
         $siswaA = Siswa::create([
             'tenant_id' => $tenantA->id,
             'semester_id' => $sem->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'rombel_id' => $rombelA->id,
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'nis' => '1001',
             'nisn' => '1111111111',
             'nama_peserta_didik' => 'Siswa A',
@@ -85,16 +87,16 @@ class DapodikResetTest extends TestCase
         $rombelB = Rombel::create([
             'tenant_id' => $tenantB->id,
             'semester_id' => $sem->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'nama_rombel' => 'Kelas 1.B',
             'tingkat' => '1',
         ]);
         $siswaB = Siswa::create([
             'tenant_id' => $tenantB->id,
             'semester_id' => $sem->id,
-            'dapodik_id' => (string) \Illuminate\Support\Str::uuid(),
+            'dapodik_id' => (string) Str::uuid(),
             'rombel_id' => $rombelB->id,
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'nis' => '2001',
             'nisn' => '2222222222',
             'nama_peserta_didik' => 'Siswa B',
@@ -139,7 +141,7 @@ class DapodikResetTest extends TestCase
         config(['simantap.multi_tenant_enabled' => true]);
 
         $tenant = Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'nama_sekolah' => 'SD Negeri 1',
             'npsn' => '11111111',
             'subdomain' => 'sdn1',
@@ -156,7 +158,7 @@ class DapodikResetTest extends TestCase
         $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
         $created = ! is_file($bridgePath);
         if ($created) {
-            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($bridgePath));
+            File::ensureDirectoryExists(dirname($bridgePath));
             file_put_contents($bridgePath, 'bridge-test-fixture');
         }
 

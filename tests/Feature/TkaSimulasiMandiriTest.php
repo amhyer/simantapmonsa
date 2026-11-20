@@ -13,7 +13,9 @@ class TkaSimulasiMandiriTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $studentAccount;
+
     private Siswa $siswa;
 
     protected function setUp(): void
@@ -73,7 +75,7 @@ class TkaSimulasiMandiriTest extends TestCase
 
     public function test_berhasil_mulai_ujian_dengan_token_dan_autosave(): void
     {
-        $token = 'TKA-' . strtoupper(substr(md5('literasi' . $this->studentAccount->id . date('Ymd')), 0, 5));
+        $token = 'TKA-'.strtoupper(substr(md5('literasi'.$this->studentAccount->id.date('Ymd')), 0, 5));
 
         $start = $this->actingAs($this->studentAccount)
             ->post(route('siswa.tka-simulasi.start', 'literasi'), [

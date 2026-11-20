@@ -16,6 +16,7 @@ class MapelController extends Controller
     private function getJenjangSekolah(): string
     {
         $settings = SekolahSettings::first();
+
         return $settings->jenjang ?? 'SD';
     }
 
@@ -27,10 +28,10 @@ class MapelController extends Controller
 
         if ($request->filled('search')) {
             $search = mb_strtolower(trim((string) $request->search));
-            $pattern = '%' . $search . '%';
+            $pattern = '%'.$search.'%';
             $query->where(function ($q) use ($pattern) {
                 $q->whereRaw('LOWER(nama) LIKE ?', [$pattern])
-                  ->orWhereRaw('LOWER(kode) LIKE ?', [$pattern]);
+                    ->orWhereRaw('LOWER(kode) LIKE ?', [$pattern]);
             });
         }
 
@@ -48,6 +49,7 @@ class MapelController extends Controller
     public function create()
     {
         $jenjangSekolah = $this->getJenjangSekolah();
+
         return view('admin.mapel.create', compact('jenjangSekolah'));
     }
 
@@ -67,21 +69,21 @@ class MapelController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()->withInput()->with('error', 'Mata pelajaran "' . $validated['nama'] . '" sudah ada.');
+            return back()->withInput()->with('error', 'Mata pelajaran "'.$validated['nama'].'" sudah ada.');
         }
 
         MataPelajaran::create($validated);
 
         AktivitasService::tambah(
-            'Tambah Mapel: ' . $validated['nama'],
-            'Mata pelajaran ' . $jenjangSekolah . ' ditambahkan',
+            'Tambah Mapel: '.$validated['nama'],
+            'Mata pelajaran '.$jenjangSekolah.' ditambahkan',
             'mata_pelajaran',
             null,
             $validated
         );
 
         return redirect()->route('admin.mapel.index')
-            ->with('success', 'Mata pelajaran "' . $validated['nama'] . '" berhasil ditambahkan.');
+            ->with('success', 'Mata pelajaran "'.$validated['nama'].'" berhasil ditambahkan.');
     }
 
     public function edit(MataPelajaran $mapel)
@@ -103,14 +105,14 @@ class MapelController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()->withInput()->with('error', 'Mata pelajaran "' . $validated['nama'] . '" sudah ada.');
+            return back()->withInput()->with('error', 'Mata pelajaran "'.$validated['nama'].'" sudah ada.');
         }
 
         $validated['aktif'] = $request->boolean('aktif');
         $mapel->update($validated);
 
         AktivitasService::ubah(
-            'Ubah Mapel: ' . $mapel->nama,
+            'Ubah Mapel: '.$mapel->nama,
             'Mata pelajaran diperbarui',
             'mata_pelajaran',
             $mapel->id,
@@ -128,13 +130,13 @@ class MapelController extends Controller
         $mapel->delete();
 
         AktivitasService::hapus(
-            'Hapus Mapel: ' . $nama,
+            'Hapus Mapel: '.$nama,
             'Mata pelajaran berhasil dihapus',
             'mata_pelajaran'
         );
 
         return redirect()->route('admin.mapel.index')
-            ->with('success', 'Mata pelajaran "' . $nama . '" berhasil dihapus.');
+            ->with('success', 'Mata pelajaran "'.$nama.'" berhasil dihapus.');
     }
 
     public function destroyAll(Request $request)
@@ -149,6 +151,7 @@ class MapelController extends Controller
         }
 
         MataPelajaran::where('jenjang', $jenjangSekolah)->where('aktif', true)->delete();
+
         return redirect()->route('admin.mapel.index')
             ->with('success', 'Semua mata pelajaran aktif berhasil dihapus.');
     }
@@ -166,7 +169,7 @@ class MapelController extends Controller
         MataPelajaran::whereIn('id', $idArray)->delete();
 
         return redirect()->route('admin.mapel.index')
-            ->with('success', count($idArray) . ' mata pelajaran berhasil dihapus.');
+            ->with('success', count($idArray).' mata pelajaran berhasil dihapus.');
     }
 
     public function importDapodik()
@@ -181,7 +184,7 @@ class MapelController extends Controller
                 : ' Jalankan tombol "Tarik & Sinkron" pada aplikasi SIMANTAP Bridge di komputer sekolah, atau atur token di menu Pengaturan Dapodik.';
 
             return redirect()->route('admin.mapel.index')
-                ->with('error', 'Koneksi WebService Dapodik langsung belum diatur di server.' . $hint);
+                ->with('error', 'Koneksi WebService Dapodik langsung belum diatur di server.'.$hint);
         }
 
         try {
@@ -197,12 +200,12 @@ class MapelController extends Controller
             $mapelData = $client->getMataPelajaran();
         } catch (\Exception $e) {
             return redirect()->route('admin.mapel.index')
-                ->with('error', 'Gagal mengambil data dari Dapodik: ' . $e->getMessage());
+                ->with('error', 'Gagal mengambil data dari Dapodik: '.$e->getMessage());
         }
 
         $existingNames = MataPelajaran::where('jenjang', $jenjangSekolah)
             ->pluck('nama')
-            ->map(fn($n) => strtolower($n))
+            ->map(fn ($n) => strtolower($n))
             ->toArray();
 
         $imported = 0;
@@ -248,7 +251,7 @@ class MapelController extends Controller
 
         $existingNames = MataPelajaran::where('jenjang', $jenjangSekolah)
             ->pluck('nama')
-            ->map(fn($n) => strtolower($n))
+            ->map(fn ($n) => strtolower($n))
             ->toArray();
 
         $sources = [
@@ -412,7 +415,7 @@ class MapelController extends Controller
         $added = 0;
         foreach ($defaults as $nama => $kode) {
             $exists = MataPelajaran::where('nama', $nama)->where('jenjang', $jenjangSekolah)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 MataPelajaran::create([
                     'nama' => $nama,
                     'kode' => $kode,
@@ -442,6 +445,7 @@ class MapelController extends Controller
         if (preg_match('/^\d+\s*[a-zA-Z]/', $name)) {
             return true;
         }
+
         return false;
     }
 
@@ -450,14 +454,30 @@ class MapelController extends Controller
         $tp = strtolower(trim($item['tingkat_pendidikan_id_str'] ?? ''));
         $nama = strtolower(trim($item['nama'] ?? ''));
 
-        if (str_contains($tp, 'sd') || $tp === 'sd') return 'SD';
-        if (str_contains($tp, 'mi') || $tp === 'mi') return 'MI';
-        if (str_contains($tp, 'smp') || $tp === 'smp') return 'SMP';
-        if (str_contains($tp, 'mts') || $tp === 'mts') return 'MTs';
-        if (str_contains($tp, 'sma') || $tp === 'sma') return 'SMA';
-        if (str_contains($tp, 'ma') && !str_contains($tp, 'mak')) return 'MA';
-        if (str_contains($tp, 'smk')) return 'SMK';
-        if (str_contains($tp, 'slb')) return 'SLB';
+        if (str_contains($tp, 'sd') || $tp === 'sd') {
+            return 'SD';
+        }
+        if (str_contains($tp, 'mi') || $tp === 'mi') {
+            return 'MI';
+        }
+        if (str_contains($tp, 'smp') || $tp === 'smp') {
+            return 'SMP';
+        }
+        if (str_contains($tp, 'mts') || $tp === 'mts') {
+            return 'MTs';
+        }
+        if (str_contains($tp, 'sma') || $tp === 'sma') {
+            return 'SMA';
+        }
+        if (str_contains($tp, 'ma') && ! str_contains($tp, 'mak')) {
+            return 'MA';
+        }
+        if (str_contains($tp, 'smk')) {
+            return 'SMK';
+        }
+        if (str_contains($tp, 'slb')) {
+            return 'SLB';
+        }
 
         return $this->getJenjangSekolah();
     }

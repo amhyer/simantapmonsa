@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('nilai', 5, 2);
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->index(['siswa_id', 'jenis']);
             $table->index('guru_id');
             $table->index('tanggal');

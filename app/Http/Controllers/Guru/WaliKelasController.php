@@ -17,6 +17,7 @@ use App\Models\Siswa;
 use App\Models\TemaKokurikuler;
 use App\Models\TranskripNilai;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -26,10 +27,10 @@ class WaliKelasController extends Controller
     {
         $tahun = (int) date('Y');
 
-        return $tahun . '/' . ($tahun + 1);
+        return $tahun.'/'.($tahun + 1);
     }
 
-    private function daftarKelasGuru(): \Illuminate\Support\Collection
+    private function daftarKelasGuru(): Collection
     {
         $guruId = auth()->id();
 
@@ -567,7 +568,7 @@ class WaliKelasController extends Controller
     public function transkripSimpan(Request $request, Siswa $siswa)
     {
         $validated = $request->validate([
-            'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,' . $siswa->id,
+            'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,'.$siswa->id,
             'nilai' => 'nullable|array',
             'nilai.*' => 'nullable|numeric|min:0|max:100',
         ]);

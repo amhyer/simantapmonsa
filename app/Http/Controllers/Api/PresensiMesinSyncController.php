@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Models\PresensiMesinSyncLog;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
 use App\Services\PresensiMesinService;
-use App\Http\Controllers\Controller;
-use App\Models\PresensiMesinSyncLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;

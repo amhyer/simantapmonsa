@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class CbtResult extends Model
 {
     use BelongsToTenant;
 
     protected $table = 'cbt_results';
+
     protected $fillable = ['id', 'tenant_id', 'session_id', 'siswa_id', 'user_id', 'started_at', 'deadline_at', 'submitted_at', 'answers', 'correct_count', 'score'];
 
     protected function casts(): array
@@ -19,10 +21,21 @@ class CbtResult extends Model
 
     protected function serializeDate(\DateTimeInterface $date): string
     {
-        return \Illuminate\Support\Carbon::instance($date)->timezone(config('app.timezone'))->format('Y-m-d H:i:s');
+        return Carbon::instance($date)->timezone(config('app.timezone'))->format('Y-m-d H:i:s');
     }
 
-    public function session() { return $this->belongsTo(CbtTestSession::class, 'session_id'); }
-    public function siswa() { return $this->belongsTo(Siswa::class, 'siswa_id'); }
-    public function violations() { return $this->hasMany(CbtViolation::class, 'result_id'); }
+    public function session()
+    {
+        return $this->belongsTo(CbtTestSession::class, 'session_id');
+    }
+
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class, 'siswa_id');
+    }
+
+    public function violations()
+    {
+        return $this->hasMany(CbtViolation::class, 'result_id');
+    }
 }

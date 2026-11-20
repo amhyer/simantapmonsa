@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Nilai;
 use App\Models\HasilKuis;
 use App\Models\Kehadiran;
 use App\Models\Kuis;
+use App\Models\Nilai;
 
 class NilaiService
 {
@@ -48,10 +48,11 @@ class NilaiService
         }
 
         $kuisLokal = $hasilKuisCollection->filter(function ($hk) {
-            if (!isset($this->kuisCache[$hk->kuis_id])) {
+            if (! isset($this->kuisCache[$hk->kuis_id])) {
                 $this->kuisCache[$hk->kuis_id] = Kuis::find($hk->kuis_id);
             }
             $kuis = $this->kuisCache[$hk->kuis_id];
+
             return $kuis && $kuis->sumber === 'lokal' && $kuis->cara_nilai === 'guru';
         });
 

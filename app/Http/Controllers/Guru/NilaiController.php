@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Nilai;
+use App\Models\PengaturanGuru;
+use App\Models\Rombel;
 use App\Models\Siswa;
 use App\Traits\SyncableToSheet;
 use Illuminate\Http\Request;
@@ -12,6 +14,7 @@ use Illuminate\Support\Str;
 class NilaiController extends Controller
 {
     use SyncableToSheet;
+
     public function index(Request $request)
     {
         $guruId = auth()->id();
@@ -20,8 +23,8 @@ class NilaiController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $guruId)->value('nama_rombel')
-            ?? \App\Models\PengaturanGuru::where('guru_id', $guruId)->value('kelas')
+            ?? Rombel::where('guru_id', $guruId)->value('nama_rombel')
+            ?? PengaturanGuru::where('guru_id', $guruId)->value('kelas')
             ?? $kelasList->first();
 
         $query = Siswa::where('aktif', true)->whereNull('archived_at');
@@ -44,8 +47,8 @@ class NilaiController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $guruId)->value('nama_rombel')
-            ?? \App\Models\PengaturanGuru::where('guru_id', $guruId)->value('kelas')
+            ?? Rombel::where('guru_id', $guruId)->value('nama_rombel')
+            ?? PengaturanGuru::where('guru_id', $guruId)->value('kelas')
             ?? $kelasList->first();
 
         $query = Siswa::where('aktif', true)->whereNull('archived_at');
@@ -75,7 +78,7 @@ class NilaiController extends Controller
 
         $guru = auth()->user();
         $siswa = Siswa::where('aktif', true)->whereNull('archived_at')->find($validated['siswa_id']);
-        if (!$siswa) {
+        if (! $siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa aktif tidak ditemukan.'])->withInput();
         }
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== $guru->id) {
@@ -102,14 +105,19 @@ class NilaiController extends Controller
 
     public function edit(Nilai $nilai)
     {
-        if ($nilai->guru_id !== auth()->id()) abort(403);
+        if ($nilai->guru_id !== auth()->id()) {
+            abort(403);
+        }
         $siswa = Siswa::where('guru_id', auth()->id())->where('aktif', true)->get();
+
         return view('guru.nilai.edit', compact('nilai', 'siswa'));
     }
 
     public function update(Request $request, Nilai $nilai)
     {
-        if ($nilai->guru_id !== auth()->id()) abort(403);
+        if ($nilai->guru_id !== auth()->id()) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'siswa_id' => 'required|exists:siswa,id',
@@ -121,7 +129,7 @@ class NilaiController extends Controller
         ]);
 
         $siswa = Siswa::find($validated['siswa_id']);
-        if (!$siswa) {
+        if (! $siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan.'])->withInput();
         }
         $nilai->update([
@@ -139,8 +147,11 @@ class NilaiController extends Controller
 
     public function destroy(Nilai $nilai)
     {
-        if ($nilai->guru_id !== auth()->id()) abort(403);
+        if ($nilai->guru_id !== auth()->id()) {
+            abort(403);
+        }
         $nilai->delete();
+
         return redirect()->route('guru.nilai.index')->with('success', 'Nilai berhasil dihapus.');
     }
 }

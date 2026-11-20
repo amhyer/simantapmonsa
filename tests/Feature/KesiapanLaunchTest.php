@@ -171,7 +171,7 @@ class KesiapanLaunchTest extends TestCase
         $this->assertCount(
             0,
             $tanpaPenanda,
-            'Semua akun contoh wajib mengganti sandi: ' . $tanpaPenanda->implode(', ')
+            'Semua akun contoh wajib mengganti sandi: '.$tanpaPenanda->implode(', ')
         );
     }
 
@@ -216,7 +216,7 @@ class KesiapanLaunchTest extends TestCase
             $this->assertStringContainsString(
                 'force.password.change',
                 $middleware,
-                'Grup route CBT tanpa force.password.change: ' . $middleware
+                'Grup route CBT tanpa force.password.change: '.$middleware
             );
         }
     }

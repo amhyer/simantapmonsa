@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Siswa;
 use App\Models\NilaiErapot;
+use App\Models\Siswa;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class ErapotKemdikbudService
 {
     protected $baseUrl;
+
     protected $apiKey;
+
     protected $npsn;
 
     public function __construct()
@@ -32,7 +33,7 @@ class ErapotKemdikbudService
                 return ['success' => true, 'message' => 'Terhubung ke e-Rapor Kemdikbud', 'data' => $response->json()];
             }
 
-            return ['success' => false, 'message' => 'Response: ' . $response->status()];
+            return ['success' => false, 'message' => 'Response: '.$response->status()];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -73,11 +74,11 @@ class ErapotKemdikbudService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Siswa {$s->nama_peserta_didik}: " . $response->body();
+                    $errors[] = "Siswa {$s->nama_peserta_didik}: ".$response->body();
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Siswa {$s->nama_peserta_didik}: " . $e->getMessage();
+                $errors[] = "Siswa {$s->nama_peserta_didik}: ".$e->getMessage();
             }
         }
 
@@ -97,7 +98,9 @@ class ErapotKemdikbudService
         $errors = [];
 
         foreach ($nilai as $n) {
-            if (!$n->siswa || !$n->siswa->nisn) continue;
+            if (! $n->siswa || ! $n->siswa->nisn) {
+                continue;
+            }
 
             try {
                 $payload = [
@@ -125,11 +128,11 @@ class ErapotKemdikbudService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Nilai {$n->siswa->nama_peserta_didik} - {$n->mata_pelajaran}: " . $response->body();
+                    $errors[] = "Nilai {$n->siswa->nama_peserta_didik} - {$n->mata_pelajaran}: ".$response->body();
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Nilai {$n->siswa->nama_peserta_didik}: " . $e->getMessage();
+                $errors[] = "Nilai {$n->siswa->nama_peserta_didik}: ".$e->getMessage();
             }
         }
 
@@ -149,8 +152,8 @@ class ErapotKemdikbudService
                 'tahun_ajaran' => $tahunAjaran,
             ]);
 
-            if (!$response->successful()) {
-                return ['success' => false, 'message' => 'Gagal mengambil data: ' . $response->body()];
+            if (! $response->successful()) {
+                return ['success' => false, 'message' => 'Gagal mengambil data: '.$response->body()];
             }
 
             $data = $response->json();
@@ -158,7 +161,9 @@ class ErapotKemdikbudService
 
             foreach ($data['data'] ?? [] as $item) {
                 $siswa = Siswa::where('nisn', $item['nisn'])->first();
-                if (!$siswa) continue;
+                if (! $siswa) {
+                    continue;
+                }
 
                 NilaiErapot::updateOrCreate(
                     [

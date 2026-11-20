@@ -2,10 +2,11 @@
 
 namespace App\Models\Tka;
 
+use App\Models\Semester;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Dimension extends Model
@@ -13,10 +14,11 @@ class Dimension extends Model
     use SoftDeletes;
 
     protected $table = 'tka_dimensions_enhanced';
+
     protected $fillable = [
         'uuid', 'semester_id', 'kode_dimensi', 'nama_dimensi',
         'deskripsi', 'kategori', 'bobot', 'rubrik_penilaian',
-        'threshold_siap', 'aktif'
+        'threshold_siap', 'aktif',
     ];
 
     protected $casts = [
@@ -30,7 +32,7 @@ class Dimension extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -38,7 +40,7 @@ class Dimension extends Model
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Semester::class);
+        return $this->belongsTo(Semester::class);
     }
 
     public function assessmentItems(): HasMany

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // Guard: jangan gagal ("table already exists") bila DB sudah punya tabel
         // CBT dari instalasi sebelumnya. Skema baru hanya dibuat bila belum ada.
-        if (!Schema::hasTable('cbt_question_banks')) {
+        if (! Schema::hasTable('cbt_question_banks')) {
             Schema::create('cbt_question_banks', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('guru_id')->constrained('users')->restrictOnDelete();
@@ -19,7 +19,7 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-        if (!Schema::hasTable('cbt_questions')) {
+        if (! Schema::hasTable('cbt_questions')) {
             Schema::create('cbt_questions', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('bank_id')->constrained('cbt_question_banks')->cascadeOnDelete();
@@ -29,7 +29,7 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-        if (!Schema::hasTable('cbt_test_sessions')) {
+        if (! Schema::hasTable('cbt_test_sessions')) {
             Schema::create('cbt_test_sessions', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('guru_id')->constrained('users')->restrictOnDelete();
@@ -46,7 +46,7 @@ return new class extends Migration
                 $table->index(['guru_id', 'status']);
             });
         }
-        if (!Schema::hasTable('cbt_results')) {
+        if (! Schema::hasTable('cbt_results')) {
             Schema::create('cbt_results', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('session_id')->constrained('cbt_test_sessions')->restrictOnDelete();
@@ -63,7 +63,7 @@ return new class extends Migration
                 $table->index(['submitted_at', 'deadline_at']);
             });
         }
-        if (!Schema::hasTable('cbt_violations')) {
+        if (! Schema::hasTable('cbt_violations')) {
             Schema::create('cbt_violations', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('result_id')->constrained('cbt_results')->cascadeOnDelete();

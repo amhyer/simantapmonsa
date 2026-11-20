@@ -11,6 +11,7 @@ class HasilKuis extends Model
     use BelongsToTenant;
 
     protected $table = 'hasil_kuis';
+
     protected $fillable = [
         'tenant_id',
         'uuid',
@@ -47,7 +48,9 @@ class HasilKuis extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

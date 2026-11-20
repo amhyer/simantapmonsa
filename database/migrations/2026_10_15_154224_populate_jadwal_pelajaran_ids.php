@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -34,8 +33,9 @@ return new class extends Migration
                 ->where('tahun_ajaran', $nilai->tahun_ajaran)
                 ->first();
 
-            if (!$semester) {
+            if (! $semester) {
                 $unmatched++;
+
                 continue; // Skip jika semester tidak ditemukan
             }
 
@@ -54,6 +54,7 @@ return new class extends Migration
 
             if ($jadwalCandidates->count() === 0) {
                 $unmatched++;
+
                 continue; // No match
             }
 

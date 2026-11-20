@@ -2,6 +2,8 @@
 
 namespace App\Models\Tka;
 
+use App\Models\Semester;
+use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -9,9 +11,10 @@ use Illuminate\Support\Str;
 class HistoricalTracking extends Model
 {
     protected $table = 'tka_historical_tracking';
+
     protected $fillable = [
         'uuid', 'siswa_id', 'dimension_id', 'semester_id',
-        'skor', 'perubahan_skor', 'trend'
+        'skor', 'perubahan_skor', 'trend',
     ];
 
     protected $casts = [
@@ -23,7 +26,7 @@ class HistoricalTracking extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -31,7 +34,7 @@ class HistoricalTracking extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     public function dimension(): BelongsTo
@@ -41,6 +44,6 @@ class HistoricalTracking extends Model
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Semester::class);
+        return $this->belongsTo(Semester::class);
     }
 }

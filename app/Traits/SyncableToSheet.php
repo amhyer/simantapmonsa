@@ -14,15 +14,16 @@ trait SyncableToSheet
             $settings = SekolahSettings::first();
             $googleSheet = $settings->pengaturan['google_sheet'] ?? null;
 
-            if (!$googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
+            if (! $googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
                 return false;
             }
 
             $spreadsheetId = $googleSheet['spreadsheet_id'];
             $tabName = config("google.sheet_tabs.{$type}");
 
-            if (!$tabName) {
+            if (! $tabName) {
                 Log::warning("Unknown sync type: {$type}");
+
                 return false;
             }
 
@@ -33,7 +34,8 @@ trait SyncableToSheet
 
             return $service->syncRow($spreadsheetId, $tabName, $rowData);
         } catch (\Exception $e) {
-            Log::error("Google Sheets sync failed for {$type}: " . $e->getMessage());
+            Log::error("Google Sheets sync failed for {$type}: ".$e->getMessage());
+
             return false;
         }
     }

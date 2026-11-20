@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Tka;
 
 use App\Http\Controllers\Controller;
+use App\Models\Siswa;
 use App\Models\Tka\ParentReport;
 use App\Models\Tka\StudentAssessment;
-use App\Models\Siswa;
-use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TkaParentController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
-        
+
         // Anak terhubung via User.terhubung_dengan (konvensi aplikasi).
         $terhubung = $user->terhubung_dengan;
         $ids = is_array($terhubung) ? $terhubung : [];
@@ -22,11 +22,11 @@ class TkaParentController extends Controller
             : Siswa::whereIn('id', $ids)->where('aktif', true)->orderBy('nama_peserta_didik')->get();
 
         $siswaIds = $children->pluck('id');
-        
+
         $reports = ParentReport::whereIn('siswa_id', $siswaIds)
-                              ->with(['assessment.siswa', 'assessment.semester'])
-                              ->latest()
-                              ->paginate(20);
+            ->with(['assessment.siswa', 'assessment.semester'])
+            ->latest()
+            ->paginate(20);
 
         return view('tka.parent.index', compact('reports', 'children'));
     }
@@ -36,17 +36,17 @@ class TkaParentController extends Controller
         // Authorization check
         $user = auth()->user();
         $siswa = $report->siswa;
-        
+
         $terhubung = $user->terhubung_dengan;
         $linkedStudentIds = is_array($terhubung) ? array_map('intval', $terhubung) : [];
         $isParent = in_array((int) $siswa->id, $linkedStudentIds, true);
-        
-        if (!$isParent) {
+
+        if (! $isParent) {
             abort(403, 'Anda tidak memiliki akses ke laporan ini');
         }
 
         // Mark as read
-        if (!$report->dibaca_oleh_ortu) {
+        if (! $report->dibaca_oleh_ortu) {
             $report->update([
                 'dibaca_oleh_ortu' => true,
                 'tanggal_dibaca' => now(),
@@ -65,7 +65,7 @@ class TkaParentController extends Controller
 
         // Check if report already exists
         $existingReport = ParentReport::where('assessment_id', $assessment->id)->first();
-        
+
         if ($existingReport) {
             return redirect()->route('tka.assessments.show', $assessment);
         }
@@ -89,7 +89,7 @@ class TkaParentController extends Controller
 
         // Create parent report
         $report = ParentReport::create([
-            'uuid' => \Illuminate\Support\Str::uuid(),
+            'uuid' => Str::uuid(),
             'assessment_id' => $assessment->id,
             'siswa_id' => $assessment->siswa_id,
             'rekomendasi_rumah' => $this->generateHomeRecommendations($assessment),
@@ -148,7 +148,7 @@ class TkaParentController extends Controller
     {
         $status = $assessment->status_kesiapan;
         $skorPerDimensi = $assessment->skor_per_dimensi;
-        
+
         $weakDimensions = collect($skorPerDimensi)
             ->filter(function ($item) {
                 $maksimal = (float) ($item['maksimal'] ?? 0);
@@ -158,15 +158,15 @@ class TkaParentController extends Controller
             ->pluck('nama_dimensi')
             ->toArray();
 
-        $recommendation = "Ananda {$assessment->siswa->nama_peserta_didik} memiliki status kesiapan: **" . 
-                         ucfirst(str_replace('_', ' ', $status)) . "**.\n\n";
+        $recommendation = "Ananda {$assessment->siswa->nama_peserta_didik} memiliki status kesiapan: **".
+                         ucfirst(str_replace('_', ' ', $status))."**.\n\n";
 
         if (count($weakDimensions) > 0) {
-            $recommendation .= "Dimensi yang perlu diperhatikan: " . implode(', ', $weakDimensions) . ".\n\n";
-            $recommendation .= "Disarankan untuk memberikan bimbingan lebih intensif pada dimensi-dimensi tersebut.";
+            $recommendation .= 'Dimensi yang perlu diperhatikan: '.implode(', ', $weakDimensions).".\n\n";
+            $recommendation .= 'Disarankan untuk memberikan bimbingan lebih intensif pada dimensi-dimensi tersebut.';
         } else {
-            $recommendation .= "Semua dimensi sudah menunjukkan perkembangan yang baik. " .
-                             "Pertahankan dan tingkatkan aktivitas positif yang sudah berjalan.";
+            $recommendation .= 'Semua dimensi sudah menunjukkan perkembangan yang baik. '.
+                             'Pertahankan dan tingkatkan aktivitas positif yang sudah berjalan.';
         }
 
         return $recommendation;

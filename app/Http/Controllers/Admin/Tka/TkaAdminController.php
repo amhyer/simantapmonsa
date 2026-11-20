@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Admin\Tka;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tka\Dimension;
-use App\Models\Tka\StudentAssessment;
-use App\Models\Tka\EarlyWarning;
-use App\Models\Siswa;
 use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\Tka\Dimension;
+use App\Models\Tka\EarlyWarning;
+use App\Models\Tka\HistoricalTracking;
+use App\Models\Tka\StudentAssessment;
 use App\Services\ExcelExportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class TkaAdminController extends Controller
 {
@@ -24,11 +26,11 @@ class TkaAdminController extends Controller
             'active_dimensions' => Dimension::where('aktif', true)->count(),
             'total_assessments' => StudentAssessment::count(),
             'assessments_this_month' => StudentAssessment::whereMonth('tanggal_penilaian', now()->month)
-                                                        ->whereYear('tanggal_penilaian', now()->year)
-                                                        ->count(),
+                ->whereYear('tanggal_penilaian', now()->year)
+                ->count(),
             'status_distribution' => StudentAssessment::selectRaw('status_kesiapan, count(*) as count')
-                                                     ->groupBy('status_kesiapan')
-                                                     ->pluck('count', 'status_kesiapan'),
+                ->groupBy('status_kesiapan')
+                ->pluck('count', 'status_kesiapan'),
             'early_warnings' => [
                 'total' => EarlyWarning::count(),
                 'pending' => EarlyWarning::where('status', 'pending')->count(),
@@ -36,15 +38,15 @@ class TkaAdminController extends Controller
                 'selesai' => EarlyWarning::where('status', 'selesai')->count(),
             ],
             'recent_assessments' => StudentAssessment::with(['siswa', 'semester'])
-                                                    ->latest('tanggal_penilaian')
-                                                    ->take(5)
-                                                    ->get(),
+                ->latest('tanggal_penilaian')
+                ->take(5)
+                ->get(),
             'critical_warnings' => EarlyWarning::with(['siswa', 'dimension'])
-                                              ->where('tingkat_peringatan', 'kritis')
-                                              ->where('status', 'pending')
-                                              ->latest()
-                                              ->take(5)
-                                              ->get(),
+                ->where('tingkat_peringatan', 'kritis')
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get(),
         ];
 
         $semesters = Semester::orderByDesc('tahun_ajaran')->orderBy('nama_semester')->get();
@@ -79,30 +81,30 @@ class TkaAdminController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_dimensi', 'like', "%{$search}%")
-                  ->orWhere('kode_dimensi', 'like', "%{$search}%");
+                    ->orWhere('kode_dimensi', 'like', "%{$search}%");
             });
         }
 
         $dimensions = $query->withCount(['assessmentItems'])
-                           ->orderBy('kategori')
-                           ->orderBy('nama_dimensi')
-                           ->get();
+            ->orderBy('kategori')
+            ->orderBy('nama_dimensi')
+            ->get();
 
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
 
         return view('admin.tka.dimensions.index', compact('dimensions', 'semesters'));
     }
-    
+
     /**
      * Show the form for creating a new dimension.
      */
     public function createDimension()
     {
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('admin.tka.dimensions.create', compact('semesters'));
     }
-    
+
     /**
      * Store a newly created dimension.
      */
@@ -114,60 +116,60 @@ class TkaAdminController extends Controller
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:akhlak_beragama,kebinekaan_global,berkebhinekaan,mandiri,bernalar_kritis,kreatif',
         ]);
-        
+
         $validated['aktif'] = true;
-        
+
         Dimension::create($validated);
-        
+
         return redirect()->route('admin.tka.dimensions.index')
             ->with('success', 'Dimensi berhasil dibuat');
     }
-    
+
     /**
      * Display the specified dimension.
      */
     public function showDimension(Dimension $dimension)
     {
         $dimension->load(['assessmentItems']);
-        
+
         return view('admin.tka.dimensions.show', compact('dimension'));
     }
-    
+
     /**
      * Show the form for editing the specified dimension.
      */
     public function editDimension(Dimension $dimension)
     {
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('admin.tka.dimensions.edit', compact('dimension', 'semesters'));
     }
-    
+
     /**
      * Update the specified dimension.
      */
     public function updateDimension(Request $request, Dimension $dimension)
     {
         $validated = $request->validate([
-            'kode_dimensi' => 'required|string|max:20|unique:tka_dimensions,kode_dimensi,' . $dimension->id,
+            'kode_dimensi' => 'required|string|max:20|unique:tka_dimensions,kode_dimensi,'.$dimension->id,
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:akhlak_beragama,kebinekaan_global,berkebhinekaan,mandiri,bernalar_kritis,kreatif',
         ]);
-        
+
         $dimension->update($validated);
-        
+
         return redirect()->route('admin.tka.dimensions.index')
             ->with('success', 'Dimensi berhasil diperbarui');
     }
-    
+
     /**
      * Toggle dimension active status.
      */
     public function toggleDimensionStatus(Dimension $dimension)
     {
-        $dimension->update(['aktif' => !$dimension->aktif]);
-        
+        $dimension->update(['aktif' => ! $dimension->aktif]);
+
         return back()->with('success', 'Status dimensi berhasil diubah');
     }
 
@@ -212,7 +214,7 @@ class TkaAdminController extends Controller
         }
 
         $assessments = $query->latest('tanggal_penilaian')
-                            ->paginate(25);
+            ->paginate(25);
 
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
         $dimensions = Dimension::where('aktif', true)->orderBy('nama_dimensi')->get();
@@ -258,7 +260,7 @@ class TkaAdminController extends Controller
         if ($request->filled('tanggal_to')) {
             $query->whereDate('created_at', '<=', $request->tanggal_to);
         }
-        
+
         // Search by student name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -268,8 +270,8 @@ class TkaAdminController extends Controller
         }
 
         $warnings = $query->latest()
-                         ->paginate(25)
-                         ->withQueryString();
+            ->paginate(25)
+            ->withQueryString();
 
         $dimensions = Dimension::where('aktif', true)->orderBy('nama_dimensi')->get();
         $statusCounts = EarlyWarning::query()
@@ -285,14 +287,14 @@ class TkaAdminController extends Controller
 
         return view('admin.tka.warnings.index', compact('warnings', 'dimensions', 'statusCounts', 'levelCounts'));
     }
-    
+
     /**
      * Display the specified warning.
      */
     public function showWarning(EarlyWarning $warning)
     {
         $warning->load(['siswa', 'dimension', 'handler']);
-        
+
         return view('admin.tka.warnings.show', compact('warning'));
     }
 
@@ -338,8 +340,8 @@ class TkaAdminController extends Controller
         }
 
         $rows = $this->assessmentRows($assessments);
-        $filename = 'laporan-tka-semester-' . $semester->id . '-' . now()->format('Y-m-d');
-        $subtitle = 'Semester ' . $semester->label . ' • ' . $assessments->count() . ' penilaian';
+        $filename = 'laporan-tka-semester-'.$semester->id.'-'.now()->format('Y-m-d');
+        $subtitle = 'Semester '.$semester->label.' • '.$assessments->count().' penilaian';
 
         return $this->downloadTable(
             $excel,
@@ -359,17 +361,17 @@ class TkaAdminController extends Controller
     public function studentHistory($siswaId)
     {
         $siswa = Siswa::findOrFail($siswaId);
-        
-        $trackings = \App\Models\Tka\HistoricalTracking::with(['dimension', 'semester'])
-                                                       ->where('siswa_id', $siswaId)
-                                                       ->orderBy('created_at', 'desc')
-                                                       ->get()
-                                                       ->groupBy('dimension.nama_dimensi');
+
+        $trackings = HistoricalTracking::with(['dimension', 'semester'])
+            ->where('siswa_id', $siswaId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('dimension.nama_dimensi');
 
         $assessments = StudentAssessment::with(['semester', 'responses.assessmentItem.dimension'])
-                                       ->where('siswa_id', $siswaId)
-                                       ->orderBy('tanggal_penilaian', 'desc')
-                                       ->get();
+            ->where('siswa_id', $siswaId)
+            ->orderBy('tanggal_penilaian', 'desc')
+            ->get();
 
         return view('admin.tka.students.history', compact('siswa', 'trackings', 'assessments'));
     }
@@ -393,9 +395,9 @@ class TkaAdminController extends Controller
         }
 
         $semester = $semesterId === null ? null : Semester::find($semesterId);
-        $subtitle = $semester ? 'Semester ' . $semester->label : 'Semua semester';
-        $subtitle .= ' • ' . count($rows) . ' baris';
-        $filename = 'tka-' . $validated['type'] . '-' . now()->format('Y-m-d');
+        $subtitle = $semester ? 'Semester '.$semester->label : 'Semua semester';
+        $subtitle .= ' • '.count($rows).' baris';
+        $filename = 'tka-'.$validated['type'].'-'.now()->format('Y-m-d');
 
         return $this->downloadTable(
             $excel,
@@ -420,7 +422,7 @@ class TkaAdminController extends Controller
     }
 
     /**
-     * @param \Illuminate\Support\Collection<int, StudentAssessment> $assessments
+     * @param  Collection<int, StudentAssessment>  $assessments
      * @return list<list<mixed>>
      */
     private function assessmentRows($assessments): array
@@ -553,7 +555,7 @@ class TkaAdminController extends Controller
         string $subtitle,
     ) {
         if ($format === 'excel') {
-            return $excel->download($fileName . '.xlsx', $sheetTitle, $headers, $rows);
+            return $excel->download($fileName.'.xlsx', $sheetTitle, $headers, $rows);
         }
 
         return Pdf::loadView('admin.exports.table', [
@@ -562,6 +564,6 @@ class TkaAdminController extends Controller
             'headers' => $headers,
             'rows' => $rows,
             'generatedAt' => now()->format('d-m-Y H:i'),
-        ])->setPaper('a4', 'landscape')->download($fileName . '.pdf');
+        ])->setPaper('a4', 'landscape')->download($fileName.'.pdf');
     }
 }

@@ -39,7 +39,7 @@ class RaporMerdekaController extends Controller
     {
         $tahun = (int) date('Y');
 
-        return $tahun . '/' . ($tahun + 1);
+        return $tahun.'/'.($tahun + 1);
     }
 
     private function settings(): SekolahSettings

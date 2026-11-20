@@ -30,10 +30,15 @@ class TryoutStudentReaderTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $akun;
+
     private Siswa $siswa;
+
     private Session $sesi;
+
     private Subject $mapel;
+
     private TryoutQuestion $soal;
 
     protected function setUp(): void

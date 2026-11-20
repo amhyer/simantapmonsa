@@ -11,6 +11,7 @@ use App\Models\Siswa;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
 use App\Models\Tryout\StudentAnswer;
+use App\Models\Tryout\Subject;
 use App\Models\Tryout\TryoutQuestion;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Support\Facades\DB;
@@ -210,7 +211,7 @@ class TryoutEngineBridge
         }
 
         // Section memberi tahu mapel mana yang menyimpan jawaban ini.
-        $subjectId = \App\Models\Tryout\Subject::where('id', (int) $examQuestion->section?->sumber_id)->value('id');
+        $subjectId = Subject::where('id', (int) $examQuestion->section?->sumber_id)->value('id');
 
         StudentAnswer::updateOrCreate(
             [

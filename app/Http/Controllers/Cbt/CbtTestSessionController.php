@@ -21,6 +21,7 @@ class CbtTestSessionController extends Controller
     public function index()
     {
         $sessions = CbtTestSession::where('guru_id', auth()->id())->withCount('results')->latest()->paginate(20);
+
         return view('cbt.sessions.index', compact('sessions'));
     }
 
@@ -32,6 +33,7 @@ class CbtTestSessionController extends Controller
         if ($classes->isEmpty()) {
             $classes = Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
         }
+
         return view('cbt.sessions.create', compact('banks', 'classes'));
     }
 
@@ -40,18 +42,21 @@ class CbtTestSessionController extends Controller
         $data = $request->validated();
         $session = DB::transaction(function () use ($data) {
             CbtQuestionBank::whereKey($data['bank_id'])->lockForUpdate()->firstOrFail();
+
             return CbtTestSession::create($data + ['guru_id' => auth()->id(), 'status' => 'draft']);
         });
         if (config('simantap.exam_engine_cbt', true) && $session->bank) {
             $mapper = app(LegacyExamMapper::class);
             $mapper->sesiCbt($mapper->bankCbt($session->bank), $session);
         }
+
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Draf sesi dibuat.');
     }
 
     public function show(CbtTestSession $session)
     {
         $this->authorize('view', $session);
+
         return view('cbt.sessions.show', compact('session'));
     }
 
@@ -60,6 +65,7 @@ class CbtTestSessionController extends Controller
         $this->authorize('publish', $session);
         $this->exam->publish($session);
         Cache::forget("cbt:session:{$session->id}:monitoring:p1");
+
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dipublikasikan; soal dan peserta telah dibekukan.');
     }
 
@@ -68,6 +74,7 @@ class CbtTestSessionController extends Controller
         $this->authorize('start', $session);
         $this->exam->open($session);
         Cache::forget("cbt:session:{$session->id}:monitoring:p1");
+
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi dibuka. Siswa dapat mulai sesuai jadwal.');
     }
 
@@ -76,6 +83,7 @@ class CbtTestSessionController extends Controller
         $this->authorize('complete', $session);
         $this->exam->complete($session);
         Cache::forget("cbt:session:{$session->id}:monitoring:p1");
+
         return redirect()->route('cbt.sessions.show', $session)->with('success', 'Sesi ditutup dan jawaban tersimpan dinilai.');
     }
 
@@ -83,6 +91,7 @@ class CbtTestSessionController extends Controller
     {
         $this->authorize('monitoring', $session);
         $results = $session->results()->with('siswa')->withCount('violations')->orderBy('id')->paginate(50);
+
         return view('cbt.sessions.monitoring', compact('session', 'results'));
     }
 

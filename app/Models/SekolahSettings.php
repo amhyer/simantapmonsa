@@ -10,7 +10,9 @@ class SekolahSettings extends Model
     use BelongsToTenant;
 
     protected $table = 'sekolah_settings';
+
     protected $hidden = ['pengaturan'];
+
     protected $fillable = [
         'tenant_id',
         'guru_id',

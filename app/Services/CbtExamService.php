@@ -40,11 +40,11 @@ class CbtExamService
             $participants = Siswa::where('kelas', $session->kelas)
                 ->where(function ($q) use ($session) {
                     $q->where('guru_id', $session->guru_id)
-                      ->orWhereNotNull('dapodik_id')
-                      ->orWhereNull('guru_id');
+                        ->orWhereNotNull('dapodik_id')
+                        ->orWhereNull('guru_id');
                 })
                 ->where('aktif', true)->whereNull('archived_at')->orderBy('id')->pluck('id')->all();
-            if ($questions->isEmpty() || $questions->count() > 200 || !$participants || count($participants) > 500) {
+            if ($questions->isEmpty() || $questions->count() > 200 || ! $participants || count($participants) > 500) {
                 throw ValidationException::withMessages(['session' => 'Butuh 1–200 soal dan 1–500 siswa aktif pada kelas tersebut.']);
             }
             if (now()->greaterThanOrEqualTo($session->closes_at)) {
@@ -74,11 +74,11 @@ class CbtExamService
 
     public function eligible(CbtTestSession $session, Siswa $siswa): bool
     {
-        if (!$siswa->aktif || $siswa->archived_at) {
+        if (! $siswa->aktif || $siswa->archived_at) {
             return false;
         }
 
-        if (!in_array((int) $siswa->id, array_map('intval', $session->participant_ids ?? []), true)) {
+        if (! in_array((int) $siswa->id, array_map('intval', $session->participant_ids ?? []), true)) {
             return false;
         }
 
@@ -99,6 +99,7 @@ class CbtExamService
             $existing = $session->results()->where('siswa_id', $siswa->id)->first();
             if ($existing) {
                 abort_unless((int) $existing->user_id === $userId, 403);
+
                 return $existing;
             }
             abort_unless($session->status === 'running', 409, 'Guru belum membuka sesi ini.');
@@ -146,7 +147,7 @@ class CbtExamService
             ? $persisted
             : $this->buffer->merge($result->id, $persisted);
 
-        if (!$result->submitted_at) {
+        if (! $result->submitted_at) {
             // Sesi lama/rusak bisa punya snapshot atau jawaban NULL; jangan
             // sampai scheduler finalisasi berhenti dengan TypeError.
             $result->update(CbtScoring::grade(
@@ -179,6 +180,7 @@ class CbtExamService
         if ($result->session->status !== 'completed' && now()->lessThan($result->deadline_at)) {
             return $result;
         }
+
         return $this->lockedResult($result, fn ($session, $locked) => $this->expired($session, $locked) ? $this->finish($session, $locked) : $locked);
     }
 
@@ -211,7 +213,7 @@ class CbtExamService
         $questions = collect($session->question_snapshot)->keyBy('id');
         foreach ($answers as $id => $answer) {
             $question = $questions->get($id);
-            if (!$question || !array_key_exists($answer, $question['options'])) {
+            if (! $question || ! array_key_exists($answer, $question['options'])) {
                 throw ValidationException::withMessages(['answers' => 'Soal atau pilihan jawaban tidak valid untuk sesi ini.']);
             }
         }
@@ -240,6 +242,7 @@ class CbtExamService
         return $this->lockedResult($result, function ($session, $result) use ($questionId, $answer) {
             if ($result->submitted_at || $this->expired($session, $result)) {
                 $this->finish($session, $result);
+
                 return false; // Jangan throw: finalisasi harus tetap COMMIT.
             }
             $this->validateAnswers($session, [$questionId => $answer]);
@@ -260,7 +263,7 @@ class CbtExamService
     {
         return $this->guard->run('cbt-submit', $result->id, function () use ($result, $answers) {
             return $this->lockedResult($result, function ($session, $result) use ($answers) {
-                if (!$result->submitted_at && !$this->expired($session, $result)) {
+                if (! $result->submitted_at && ! $this->expired($session, $result)) {
                     $this->validateAnswers($session, $answers);
                     $saved = $this->buffer->merge($result->id, is_array($result->answers) ? $result->answers : []);
                     foreach ($answers as $id => $answer) {
@@ -268,6 +271,7 @@ class CbtExamService
                     }
                     $result->update(['answers' => $saved]);
                 }
+
                 // Setelah deadline, nilai hanya dihitung dari jawaban yang sudah tersimpan/ter-buffer.
                 return $this->finish($session, $result);
             });
@@ -294,13 +298,14 @@ class CbtExamService
             ->chunkById(100, function ($results) use (&$count) {
                 foreach ($results as $result) {
                     $this->lockedResult($result, function ($session, $result) use (&$count) {
-                        if (!$result->submitted_at && $this->expired($session, $result)) {
+                        if (! $result->submitted_at && $this->expired($session, $result)) {
                             $this->finish($session, $result);
                             $count++;
                         }
                     });
                 }
             });
+
         return $count;
     }
 }

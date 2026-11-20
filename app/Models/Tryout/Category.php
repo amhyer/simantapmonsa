@@ -9,8 +9,9 @@ use Illuminate\Support\Str;
 class Category extends Model
 {
     protected $table = 'tryout_categories';
+
     protected $fillable = [
-        'uuid', 'nama_kategori', 'deskripsi', 'jenis', 'aktif'
+        'uuid', 'nama_kategori', 'deskripsi', 'jenis', 'aktif',
     ];
 
     protected $casts = [
@@ -21,7 +22,7 @@ class Category extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });

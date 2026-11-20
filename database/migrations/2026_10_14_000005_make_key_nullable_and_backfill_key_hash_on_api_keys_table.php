@@ -23,7 +23,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasColumn('api_keys', 'key_hash')) {
+        if (! Schema::hasColumn('api_keys', 'key_hash')) {
             return;
         }
 

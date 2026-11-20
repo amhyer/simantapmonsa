@@ -19,7 +19,9 @@ class TkaAdminPagesTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Siswa $siswa;
+
     private EarlyWarning $warning;
 
     protected function setUp(): void

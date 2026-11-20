@@ -20,6 +20,7 @@ class IzinPresensiController extends Controller
     private function siswaWali(): Builder
     {
         $guruId = auth()->id();
+
         return Siswa::query()->where('aktif', true)->where(function (Builder $query) use ($guruId) {
             $query->whereHas('rombel', fn (Builder $rombel) => $rombel->where('guru_id', $guruId))
                 ->orWhere(fn (Builder $fallback) => $fallback->whereNull('rombel_id')->where('guru_id', $guruId));
@@ -31,6 +32,7 @@ class IzinPresensiController extends Controller
         $izin = PengajuanIzinPresensi::whereIn('siswa_id', $this->siswaWali()->select('id'))
             ->with(['siswa', 'orangTua'])->orderByRaw("CASE WHEN status = 'menunggu' THEN 0 ELSE 1 END")
             ->orderByDesc('tanggal')->limit(100)->get();
+
         return view('guru.kehadiran.izin', compact('izin'));
     }
 
@@ -49,12 +51,14 @@ class IzinPresensiController extends Controller
                 if ($data['keputusan'] === 'setujui') {
                     $record = Kehadiran::withTrashed()->where('siswa_id', $item->siswa_id)
                         ->whereDate('tanggal', $item->tanggal->toDateString())->lockForUpdate()->first();
-                    if ($record && !$record->trashed() && ($record->status === 'H'
+                    if ($record && ! $record->trashed() && ($record->status === 'H'
                         || (in_array($record->status, ['I', 'S'], true) && $record->status !== $item->jenis))) {
                         abort(409, 'Kehadiran yang sudah ada berbeda. Periksa dan koreksi secara manual sebelum menyetujui.');
                     }
                     $before = $record?->only(['status', 'keterangan', 'waktu_masuk']);
-                    if ($record?->trashed()) $record->restore();
+                    if ($record?->trashed()) {
+                        $record->restore();
+                    }
                     $record ??= new Kehadiran(['siswa_id' => $item->siswa_id, 'tanggal' => $item->tanggal]);
                     $record->fill([
                         'guru_id' => auth()->id(), 'status' => $item->jenis,
@@ -70,6 +74,7 @@ class IzinPresensiController extends Controller
                 $item->catatan_pemeriksa = $data['catatan'] ?? null;
                 $item->save();
                 AktivitasService::log('kehadiran', 'Keputusan pengajuan izin', null, 'pengajuan_izin_presensi', $item->id, ['status' => 'menunggu'], ['status' => $item->status]);
+
                 return $record;
             });
         } catch (QueryException $exception) {
@@ -79,7 +84,10 @@ class IzinPresensiController extends Controller
             }
             throw $exception;
         }
-        if ($attendance) $this->syncToGoogleSheet('kehadiran', $attendance->fresh('siswa', 'guru'));
+        if ($attendance) {
+            $this->syncToGoogleSheet('kehadiran', $attendance->fresh('siswa', 'guru'));
+        }
+
         return back()->with('success', 'Pengajuan berhasil diproses.');
     }
 }

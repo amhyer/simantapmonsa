@@ -19,10 +19,10 @@ class RegistrationTest extends TestCase
     public function test_pendaftaran_publik_ditolak_untuk_guru_siswa_dan_orang_tua(): void
     {
         foreach (['guru', 'siswa', 'ortu'] as $peran) {
-            $namaPengguna = 'calon_' . $peran . '_' . rand(1000, 9999);
+            $namaPengguna = 'calon_'.$peran.'_'.rand(1000, 9999);
 
             $this->post('/register', [
-                'nama_lengkap' => 'Calon ' . ucfirst($peran),
+                'nama_lengkap' => 'Calon '.ucfirst($peran),
                 'nama_pengguna' => $namaPengguna,
                 'peran' => $peran,
                 'kata_sandi' => 'password123',
@@ -38,7 +38,7 @@ class RegistrationTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
-        if (!app()->environment('local')) {
+        if (! app()->environment('local')) {
             $response->assertDontSee('admin / admin123');
         } else {
             $this->assertTrue(true);

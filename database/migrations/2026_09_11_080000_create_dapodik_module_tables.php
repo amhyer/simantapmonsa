@@ -38,25 +38,25 @@ return new class extends Migration
         });
 
         Schema::table('siswa', function (Blueprint $table) {
-            if (!Schema::hasColumn('siswa', 'dapodik_id')) {
+            if (! Schema::hasColumn('siswa', 'dapodik_id')) {
                 $table->string('dapodik_id')->nullable()->index()->after('uuid');
             }
-            if (!Schema::hasColumn('siswa', 'semester_id')) {
+            if (! Schema::hasColumn('siswa', 'semester_id')) {
                 $table->foreignId('semester_id')->nullable()->constrained('semesters')->after('nama_guru');
             }
-            if (!Schema::hasColumn('siswa', 'status_siswa')) {
+            if (! Schema::hasColumn('siswa', 'status_siswa')) {
                 $table->string('status_siswa', 20)->nullable()->default('aktif')->after('aktif');
             }
         });
 
         Schema::table('jadwal_pelajaran', function (Blueprint $table) {
-            if (!Schema::hasColumn('jadwal_pelajaran', 'dapodik_id')) {
+            if (! Schema::hasColumn('jadwal_pelajaran', 'dapodik_id')) {
                 $table->string('dapodik_id')->nullable()->index()->after('id');
             }
-            if (!Schema::hasColumn('jadwal_pelajaran', 'semester_id')) {
+            if (! Schema::hasColumn('jadwal_pelajaran', 'semester_id')) {
                 $table->foreignId('semester_id')->nullable()->constrained('semesters')->after('dapodik_id');
             }
-            if (!Schema::hasColumn('jadwal_pelajaran', 'rombel_id')) {
+            if (! Schema::hasColumn('jadwal_pelajaran', 'rombel_id')) {
                 $table->foreignId('rombel_id')->nullable()->constrained('rombel')->after('semester_id');
             }
         });

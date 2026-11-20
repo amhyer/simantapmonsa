@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Dimensi;
-use App\Models\Siswa;
 use App\Models\Kebiasaan;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 
 class TKAController extends Controller
@@ -16,6 +16,7 @@ class TKAController extends Controller
      * agar angka "Siap TKA" tidak selalu 0 seperti saat memakai getKKM() (~70).
      */
     public const SKOR_SIAP = 2.5;
+
     public const SKOR_PERLU_BIMBINGAN = 1.5;
 
     public function index()
@@ -40,8 +41,11 @@ class TKAController extends Controller
                 $avg = $dimensiSiswa->avg();
                 $totalSkor += $avg;
                 $countSkor++;
-                if ($avg >= self::SKOR_SIAP) $jumlahSiap++;
-                else $jumlahPerluBimbingan++;
+                if ($avg >= self::SKOR_SIAP) {
+                    $jumlahSiap++;
+                } else {
+                    $jumlahPerluBimbingan++;
+                }
             }
         }
 
@@ -59,6 +63,7 @@ class TKAController extends Controller
     public function show($id)
     {
         $dimensi = Dimensi::where('guru_id', auth()->id())->findOrFail($id);
+
         return view('guru.tka.show', compact('dimensi'));
     }
 
@@ -75,7 +80,7 @@ class TKAController extends Controller
 
         $guru = auth()->user();
         $siswa = Siswa::find($validated['siswa_id']);
-        if (!$siswa || $siswa->guru_id !== $guru->id) {
+        if (! $siswa || $siswa->guru_id !== $guru->id) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();
         }
 
@@ -121,9 +126,16 @@ class TKAController extends Controller
 
     private function getLevelKognitif($rataSkor)
     {
-        if ($rataSkor >= 3.5) return 'Sangat Baik';
-        if ($rataSkor >= 2.5) return 'Baik';
-        if ($rataSkor >= 1.5) return 'Cukup';
+        if ($rataSkor >= 3.5) {
+            return 'Sangat Baik';
+        }
+        if ($rataSkor >= 2.5) {
+            return 'Baik';
+        }
+        if ($rataSkor >= 1.5) {
+            return 'Cukup';
+        }
+
         return 'Perlu Bimbingan';
     }
 }

@@ -36,12 +36,14 @@ class SemesterController extends Controller
                 ->with('error', 'Tidak bisa menghapus semester yang memiliki data siswa, ptk, atau rombel terkait.');
         }
         $semester->delete();
+
         return redirect()->route('admin.semester.index')->with('success', 'Semester berhasil dihapus.');
     }
 
     public function activate(Semester $semester)
     {
         setting(['active_semester_id' => $semester->id]);
+
         return redirect()->route('admin.semester.index')->with('success', "Semester {$semester->label} diaktifkan.");
     }
 }

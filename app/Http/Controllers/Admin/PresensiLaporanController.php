@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Kehadiran;
 use App\Models\PresensiPegawai;
-use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
@@ -54,6 +53,7 @@ class PresensiLaporanController extends Controller
 
         if ($params['kategori'] === 'siswa') {
             $data = $this->buildSiswaCetakData($params);
+
             return view('admin.presensi.cetak', array_merge($params, $data, [
                 'sekolah' => $sekolah,
                 'selectedUserId' => null,
@@ -83,13 +83,13 @@ class PresensiLaporanController extends Controller
             'Laporan_Presensi_%s_%s_%s.csv',
             strtoupper($kategori),
             ucfirst($periode),
-            $periode === 'harian' ? $params['tanggal'] : ($periode === 'bulanan' ? $params['tahun'] . '-' . str_pad((string) $params['bulan'], 2, '0', STR_PAD_LEFT) : $params['tahun'])
+            $periode === 'harian' ? $params['tanggal'] : ($periode === 'bulanan' ? $params['tahun'].'-'.str_pad((string) $params['bulan'], 2, '0', STR_PAD_LEFT) : $params['tahun'])
         );
 
         return response()->streamDownload(function () use ($params, $data) {
             $handle = fopen('php://output', 'w');
             // Write UTF-8 BOM for Microsoft Excel compatibility
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
             if ($params['kategori'] === 'siswa') {
                 $this->exportSiswaCsv($handle, $params, $data);
@@ -107,12 +107,12 @@ class PresensiLaporanController extends Controller
     private function resolveParams(Request $request): array
     {
         $kategori = $request->input('kategori', 'guru');
-        if (!in_array($kategori, ['guru', 'tendik', 'pegawai', 'siswa'], true)) {
+        if (! in_array($kategori, ['guru', 'tendik', 'pegawai', 'siswa'], true)) {
             $kategori = 'guru';
         }
 
         $periode = $request->input('periode', 'harian');
-        if (!in_array($periode, ['harian', 'bulanan', 'tahunan'], true)) {
+        if (! in_array($periode, ['harian', 'bulanan', 'tahunan'], true)) {
             $periode = 'harian';
         }
 
@@ -192,12 +192,12 @@ class PresensiLaporanController extends Controller
             ->orderBy('peran')
             ->orderBy('nama_lengkap');
 
-        if (!empty($params['userId'])) {
+        if (! empty($params['userId'])) {
             $pegawaiQuery->where('id', $params['userId']);
         }
 
-        if (!empty($params['search'])) {
-            $term = '%' . $params['search'] . '%';
+        if (! empty($params['search'])) {
+            $term = '%'.$params['search'].'%';
             $pegawaiQuery->where(function ($q) use ($term) {
                 $q->where('nama_lengkap', 'like', $term)
                     ->orWhere('nip', 'like', $term)
@@ -326,7 +326,9 @@ class PresensiLaporanController extends Controller
             if ($periode === 'harian') {
                 if (in_array($statusHari, ['hadir', 'terlambat'], true)) {
                     $totalHadir++;
-                    if ($statusHari === 'terlambat') $totalTerlambat++;
+                    if ($statusHari === 'terlambat') {
+                        $totalTerlambat++;
+                    }
                 } elseif ($statusHari === 'izin') {
                     $totalIzin++;
                 } elseif ($statusHari === 'sakit') {
@@ -435,8 +437,8 @@ class PresensiLaporanController extends Controller
             $pegawaiQuery->where('id', $userId);
         }
 
-        if (!empty($params['search'])) {
-            $term = '%' . $params['search'] . '%';
+        if (! empty($params['search'])) {
+            $term = '%'.$params['search'].'%';
             $pegawaiQuery->where(function ($q) use ($term) {
                 $q->where('nama_lengkap', 'like', $term)
                     ->orWhere('nip', 'like', $term);
@@ -485,7 +487,7 @@ class PresensiLaporanController extends Controller
                         $totalMenitKeseluruhan += $menit;
                         $label = self::formatShortHours($menit);
                         $tipe = 'jam';
-                    } elseif ($rec->waktu_masuk && !$rec->waktu_pulang) {
+                    } elseif ($rec->waktu_masuk && ! $rec->waktu_pulang) {
                         $label = '0j';
                         $tipe = 'belum_pulang';
                     } else {
@@ -558,12 +560,12 @@ class PresensiLaporanController extends Controller
 
         $siswaQuery = Siswa::where('aktif', true)->orderBy('kelas')->orderBy('nama_peserta_didik');
 
-        if (!empty($params['kelas'])) {
+        if (! empty($params['kelas'])) {
             $siswaQuery->where('kelas', $params['kelas']);
         }
 
-        if (!empty($params['search'])) {
-            $term = '%' . $params['search'] . '%';
+        if (! empty($params['search'])) {
+            $term = '%'.$params['search'].'%';
             $siswaQuery->where(function ($q) use ($term) {
                 $q->where('nama_peserta_didik', 'like', $term)
                     ->orWhere('nisn', 'like', $term)
@@ -657,12 +659,12 @@ class PresensiLaporanController extends Controller
             ->orderBy('kelas')
             ->orderBy('nama_peserta_didik');
 
-        if (!empty($params['kelas'])) {
+        if (! empty($params['kelas'])) {
             $siswaQuery->where('kelas', $params['kelas']);
         }
 
-        if (!empty($params['search'])) {
-            $term = '%' . $params['search'] . '%';
+        if (! empty($params['search'])) {
+            $term = '%'.$params['search'].'%';
             $siswaQuery->where(function ($q) use ($term) {
                 $q->where('nama_peserta_didik', 'like', $term)
                     ->orWhere('nisn', 'like', $term)
@@ -703,10 +705,15 @@ class PresensiLaporanController extends Controller
 
             foreach ($userRecords as $tgl => $kh) {
                 $st = strtoupper((string) $kh->status);
-                if ($st === 'H' || $st === 'HADIR') $hadirTahun++;
-                elseif ($st === 'S' || $st === 'SAKIT') $sakitTahun++;
-                elseif ($st === 'I' || $st === 'IZIN') $izinTahun++;
-                elseif ($st === 'A' || $st === 'ALPA') $alpaTahun++;
+                if ($st === 'H' || $st === 'HADIR') {
+                    $hadirTahun++;
+                } elseif ($st === 'S' || $st === 'SAKIT') {
+                    $sakitTahun++;
+                } elseif ($st === 'I' || $st === 'IZIN') {
+                    $izinTahun++;
+                } elseif ($st === 'A' || $st === 'ALPA') {
+                    $alpaTahun++;
+                }
             }
 
             // Bulanan
@@ -721,10 +728,15 @@ class PresensiLaporanController extends Controller
                 if (isset($userRecords[$tglStr])) {
                     $kh = $userRecords[$tglStr];
                     $st = strtoupper((string) $kh->status);
-                    if ($st === 'H' || $st === 'HADIR') $hadirBulan++;
-                    elseif ($st === 'S' || $st === 'SAKIT') $sakitBulan++;
-                    elseif ($st === 'I' || $st === 'IZIN') $izinBulan++;
-                    elseif ($st === 'A' || $st === 'ALPA') $alpaBulan++;
+                    if ($st === 'H' || $st === 'HADIR') {
+                        $hadirBulan++;
+                    } elseif ($st === 'S' || $st === 'SAKIT') {
+                        $sakitBulan++;
+                    } elseif ($st === 'I' || $st === 'IZIN') {
+                        $izinBulan++;
+                    } elseif ($st === 'A' || $st === 'ALPA') {
+                        $alpaBulan++;
+                    }
                 }
             }
 
@@ -741,10 +753,15 @@ class PresensiLaporanController extends Controller
             $jamMasuk = $todayKh?->waktu_masuk ? Carbon::parse($todayKh->waktu_masuk)->format('H:i') : '-';
 
             if ($periode === 'harian') {
-                if ($statusHari === 'Hadir') $totalHadir++;
-                elseif ($statusHari === 'Sakit') $totalSakit++;
-                elseif ($statusHari === 'Izin') $totalIzin++;
-                elseif ($statusHari === 'Alpa') $totalAlpa++;
+                if ($statusHari === 'Hadir') {
+                    $totalHadir++;
+                } elseif ($statusHari === 'Sakit') {
+                    $totalSakit++;
+                } elseif ($statusHari === 'Izin') {
+                    $totalIzin++;
+                } elseif ($statusHari === 'Alpa') {
+                    $totalAlpa++;
+                }
             } elseif ($periode === 'bulanan') {
                 $totalHadir += $hadirBulan;
                 $totalSakit += $sakitBulan;
@@ -808,7 +825,7 @@ class PresensiLaporanController extends Controller
             fputcsv($handle, [
                 'No', 'Nama Pegawai', 'NIP', 'Peran', 'Tanggal', 'Status',
                 'Jam Masuk', 'Jam Pulang', 'Jam Kerja Hari Ini', 'Akumulasi Jam Minggu Ini',
-                'Akumulasi Jam Tahun Ini', 'Metode Presensi'
+                'Akumulasi Jam Tahun Ini', 'Metode Presensi',
             ]);
 
             foreach ($data['rows'] as $i => $row) {
@@ -832,7 +849,7 @@ class PresensiLaporanController extends Controller
                 'No', 'Nama Pegawai', 'NIP', 'Peran', 'Bulan/Tahun',
                 'Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpa',
                 'Total Jam Bulan Ini', 'Rata-rata Jam/Hari',
-                'Jam Minggu Ini', 'Akumulasi Jam Tahun Ini'
+                'Jam Minggu Ini', 'Akumulasi Jam Tahun Ini',
             ]);
 
             $bulanTahun = Carbon::create($params['tahun'], $params['bulan'], 1)->locale('id')->translatedFormat('F Y');
@@ -858,7 +875,7 @@ class PresensiLaporanController extends Controller
             fputcsv($handle, [
                 'No', 'Nama Pegawai', 'NIP', 'Peran', 'Tahun',
                 'Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpa',
-                'Total Jam Tahun Ini', 'Rata-rata Jam/Minggu', 'Rata-rata Jam/Hari'
+                'Total Jam Tahun Ini', 'Rata-rata Jam/Minggu', 'Rata-rata Jam/Hari',
             ]);
 
             foreach ($data['rows'] as $i => $row) {
@@ -888,7 +905,7 @@ class PresensiLaporanController extends Controller
         if ($periode === 'harian') {
             fputcsv($handle, [
                 'No', 'NISN', 'NIS', 'Nama Siswa', 'Kelas', 'Tanggal', 'Status Kehadiran',
-                'Jam Masuk', 'Metode', 'Keterangan'
+                'Jam Masuk', 'Metode', 'Keterangan',
             ]);
 
             foreach ($data['rows'] as $i => $row) {
@@ -908,7 +925,7 @@ class PresensiLaporanController extends Controller
         } elseif ($periode === 'bulanan') {
             fputcsv($handle, [
                 'No', 'NISN', 'NIS', 'Nama Siswa', 'Kelas', 'Bulan/Tahun',
-                'Hadir (H)', 'Sakit (S)', 'Izin (I)', 'Alpa (A)', '% Kehadiran'
+                'Hadir (H)', 'Sakit (S)', 'Izin (I)', 'Alpa (A)', '% Kehadiran',
             ]);
 
             $bulanTahun = Carbon::create($params['tahun'], $params['bulan'], 1)->locale('id')->translatedFormat('F Y');
@@ -924,13 +941,13 @@ class PresensiLaporanController extends Controller
                     $row['sakit_bulan'],
                     $row['izin_bulan'],
                     $row['alpa_bulan'],
-                    $row['persen_bulan'] . '%',
+                    $row['persen_bulan'].'%',
                 ]);
             }
         } else {
             fputcsv($handle, [
                 'No', 'NISN', 'NIS', 'Nama Siswa', 'Kelas', 'Tahun',
-                'Hadir (H)', 'Sakit (S)', 'Izin (I)', 'Alpa (A)', '% Kehadiran Tahunan'
+                'Hadir (H)', 'Sakit (S)', 'Izin (I)', 'Alpa (A)', '% Kehadiran Tahunan',
             ]);
 
             foreach ($data['rows'] as $i => $row) {
@@ -945,7 +962,7 @@ class PresensiLaporanController extends Controller
                     $row['sakit_tahun'],
                     $row['izin_tahun'],
                     $row['alpa_tahun'],
-                    $row['persen_tahun'] . '%',
+                    $row['persen_tahun'].'%',
                 ]);
             }
         }

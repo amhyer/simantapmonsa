@@ -7,6 +7,7 @@ use App\Models\Dimensi;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -134,7 +135,7 @@ class PerbaikanRoleTest extends TestCase
         foreach ($rute as $route) {
             $this->actingAs($ortu)->get(route($route))
                 ->assertOk()
-                ->assertViewHas('anakList', fn ($l) => $l instanceof \Illuminate\Support\Collection && $l->isEmpty());
+                ->assertViewHas('anakList', fn ($l) => $l instanceof Collection && $l->isEmpty());
         }
     }
 

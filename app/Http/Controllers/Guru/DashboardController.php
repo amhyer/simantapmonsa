@@ -3,18 +3,24 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\Materi;
-use App\Models\Kuis;
-use App\Models\Nilai;
-use App\Models\Kehadiran;
+use App\Models\Catatan;
+use App\Models\Dimensi;
+use App\Models\Ekstrakurikuler;
 use App\Models\HasilKuis;
 use App\Models\JadwalPelajaran;
+use App\Models\Kehadiran;
+use App\Models\KenaikanKelas;
+use App\Models\Kuis;
+use App\Models\Materi;
+use App\Models\Nilai;
 use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
+use App\Models\Rombel;
+use App\Models\Siswa;
 use App\Models\TanggalRapor;
+use App\Services\Exam\CbtDashboardProvider;
 use App\Services\NilaiService;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 class DashboardController extends Controller
 {
@@ -58,8 +64,12 @@ class DashboardController extends Controller
             if ($na['nilai_akhir'] > 0) {
                 $totalNilai += $na['nilai_akhir'];
                 $countNilai++;
-                if ($na['nilai_akhir'] > $tertinggi) $tertinggi = $na['nilai_akhir'];
-                if ($na['nilai_akhir'] >= $kkm) $tuntas++;
+                if ($na['nilai_akhir'] > $tertinggi) {
+                    $tertinggi = $na['nilai_akhir'];
+                }
+                if ($na['nilai_akhir'] >= $kkm) {
+                    $tuntas++;
+                }
                 if ($na['nilai_akhir'] < $kkm) {
                     $perluPendampingan[] = ['siswa' => $s, 'nilai' => $na['nilai_akhir']];
                 }
@@ -163,23 +173,23 @@ class DashboardController extends Controller
         $sistem = $pengaturan->sistem ?? [];
         $riwayatSinkron = $sistem['riwayat_sinkron'] ?? [];
         $sheetStatus = [
-            'terhubung' => !empty($sistem['google_sheet_url']),
+            'terhubung' => ! empty($sistem['google_sheet_url']),
             'nama' => $sistem['spreadsheet_name'] ?? null,
             'url' => $sistem['google_sheet_url'] ?? null,
             'terakhir' => $riwayatSinkron[0] ?? null,
         ];
 
         // Modul CBT: ringkasan disiapkan provider (engine `exam_*` atau `cbt_*`).
-        $cbtRingkasan = config('simantap.cbt_enabled', false) && \Illuminate\Support\Facades\Route::has('cbt.sessions.index')
-            ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanGuru((int) auth()->id())
+        $cbtRingkasan = config('simantap.cbt_enabled', false) && Route::has('cbt.sessions.index')
+            ? app(CbtDashboardProvider::class)->ringkasanGuru((int) auth()->id())
             : null;
 
         // Modul TKA Kesiapan Belajar Kelas:
-        $dimensiScores = \App\Models\Dimensi::where('guru_id', $guruId)->pluck('skor');
+        $dimensiScores = Dimensi::where('guru_id', $guruId)->pluck('skor');
         $tkaCount = $dimensiScores->count();
         $tkaRata = $tkaCount > 0 ? round($dimensiScores->avg(), 2) : 0;
-        $tkaSiap = $dimensiScores->filter(fn($s) => $s >= 2.5)->count();
-        $tkaPerlu = $dimensiScores->filter(fn($s) => $s < 2.5)->count();
+        $tkaSiap = $dimensiScores->filter(fn ($s) => $s >= 2.5)->count();
+        $tkaPerlu = $dimensiScores->filter(fn ($s) => $s < 2.5)->count();
         $tkaRingkasan = [
             'total' => $tkaCount,
             'rata_rata' => $tkaRata,
@@ -188,16 +198,16 @@ class DashboardController extends Controller
         ];
 
         // Beban Mengajar & Status Kerja Guru/Wali Kelas (ala e-Rapor SD 2025.1)
-        $rombelDiampu = \App\Models\Rombel::where('guru_id', $guruId)->count();
+        $rombelDiampu = Rombel::where('guru_id', $guruId)->count();
         if ($rombelDiampu === 0) {
             $rombelDiampu = $siswa->pluck('kelas')->filter()->unique()->count();
         }
         $jadwalSemua = JadwalPelajaran::where('guru_id', $guruId)->get(['mata_pelajaran', 'kelas']);
         $mapelDiampu = $jadwalSemua->pluck('mata_pelajaran')->filter()->unique()->count();
-        if ($mapelDiampu === 0 && !empty($pengaturan?->mata_pelajaran)) {
+        if ($mapelDiampu === 0 && ! empty($pengaturan?->mata_pelajaran)) {
             $mapelDiampu = 1;
         }
-        $ekskulDiampu = \App\Models\Ekstrakurikuler::where('pembina_id', $guruId)->count();
+        $ekskulDiampu = Ekstrakurikuler::where('pembina_id', $guruId)->count();
         $bebanMengajar = [
             'rombel' => $rombelDiampu,
             'siswa' => $jumlah,
@@ -211,14 +221,14 @@ class DashboardController extends Controller
             : [];
         $persenTp = (count($tpItems) > 0 || $materiTerbaru->isNotEmpty()) ? 100.0 : 0.0;
         $persenNilaiMapel = $jumlah > 0 ? round(min(100, max($siswaErapot, $countNilai) / $jumlah * 100), 2) : 0.0;
-        $siswaLengkap = $siswa->filter(fn ($s) => !empty($s->nisn) && !empty($s->jenis_kelamin))->count();
+        $siswaLengkap = $siswa->filter(fn ($s) => ! empty($s->nisn) && ! empty($s->jenis_kelamin))->count();
         $persenKelengkapan = $jumlah > 0 ? round($siswaLengkap / $jumlah * 100, 2) : 0.0;
-        $siswaEkskul = $siswa->filter(fn ($s) => !empty(($s->rekaman ?? [])['ekskul']))->count();
+        $siswaEkskul = $siswa->filter(fn ($s) => ! empty(($s->rekaman ?? [])['ekskul']))->count();
         $persenEkskul = $jumlah > 0 ? round($siswaEkskul / $jumlah * 100, 2) : 0.0;
         $persenKehadiranInput = $jumlah > 0 ? round($countHadir / $jumlah * 100, 2) : 0.0;
-        $siswaCatatan = $siswaIds->isEmpty() ? 0 : \App\Models\Catatan::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
+        $siswaCatatan = $siswaIds->isEmpty() ? 0 : Catatan::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
         $persenCatatan = $jumlah > 0 ? round($siswaCatatan / $jumlah * 100, 2) : 0.0;
-        $siswaNaikKelas = $siswaIds->isEmpty() ? 0 : \App\Models\KenaikanKelas::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
+        $siswaNaikKelas = $siswaIds->isEmpty() ? 0 : KenaikanKelas::whereIn('siswa_id', $siswaIds)->distinct()->count('siswa_id');
         $persenNaikKelas = $jumlah > 0 ? round($siswaNaikKelas / $jumlah * 100, 2) : 0.0;
 
         $statusKerjaGuru = [

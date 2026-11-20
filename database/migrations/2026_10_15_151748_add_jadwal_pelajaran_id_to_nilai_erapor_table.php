@@ -45,10 +45,10 @@ return new class extends Migration
         Schema::table('nilai_erapor', function (Blueprint $table) {
             // Drop foreign key constraint
             $table->dropForeign(['jadwal_pelajaran_id']);
-            
+
             // Drop index
             $table->dropIndex('nilai_erapor_alignment_index');
-            
+
             // Drop column
             $table->dropColumn('jadwal_pelajaran_id');
         });

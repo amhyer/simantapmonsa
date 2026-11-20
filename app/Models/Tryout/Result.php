@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Models\Siswa;
 use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,12 +14,13 @@ class Result extends Model
     use BelongsToTenant;
 
     protected $table = 'tryout_results';
+
     protected $fillable = [
         'uuid', 'tenant_id', 'tryout_session_id', 'siswa_id', 'attempt_number',
         'nilai_total', 'nilai_maksimal', 'persentase', 'peringkat',
         'lulus', 'prediksi_peminatan', 'detail_nilai_mapel',
         'analisis_kelemahan', 'rekomendasi_pembelajaran',
-        'waktu_mulai', 'waktu_selesai', 'durasi_total_detik'
+        'waktu_mulai', 'waktu_selesai', 'durasi_total_detik',
     ];
 
     protected $casts = [
@@ -37,7 +39,7 @@ class Result extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -50,7 +52,7 @@ class Result extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     /**

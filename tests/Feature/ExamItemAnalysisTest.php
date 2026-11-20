@@ -29,8 +29,8 @@ class ExamItemAnalysisTest extends TestCase
             'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
             'nama_guru' => $guru->nama_lengkap,
-            'nis' => 'BUTIR-' . $n . '-' . $guru->id,
-            'nama_peserta_didik' => 'Siswa Butir ' . $n,
+            'nis' => 'BUTIR-'.$n.'-'.$guru->id,
+            'nama_peserta_didik' => 'Siswa Butir '.$n,
             'kelas' => '6.A',
             'jenis_kelamin' => 'L',
         ]);

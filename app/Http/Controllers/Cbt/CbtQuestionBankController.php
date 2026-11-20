@@ -13,6 +13,7 @@ class CbtQuestionBankController extends Controller
     public function index()
     {
         $banks = CbtQuestionBank::where('guru_id', auth()->id())->withCount('questions')->latest()->paginate(20);
+
         return view('cbt.banks.index', compact('banks'));
     }
 
@@ -30,6 +31,7 @@ class CbtQuestionBankController extends Controller
     {
         $bank = CbtQuestionBank::create($this->data($request) + ['guru_id' => auth()->id()]);
         $this->sinkronEngine($bank);
+
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Bank soal dibuat.');
     }
 
@@ -37,12 +39,14 @@ class CbtQuestionBankController extends Controller
     {
         $this->authorize('view', $bank);
         $questions = $bank->questions()->orderBy('id')->paginate(20);
+
         return view('cbt.banks.show', compact('bank', 'questions'));
     }
 
     public function edit(CbtQuestionBank $bank)
     {
         $this->authorize('update', $bank);
+
         return view('cbt.banks.form', compact('bank'));
     }
 
@@ -55,6 +59,7 @@ class CbtQuestionBankController extends Controller
             $locked->update($data);
         });
         $this->sinkronEngine($bank->fresh());
+
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Bank soal diperbarui.');
     }
 
@@ -67,6 +72,7 @@ class CbtQuestionBankController extends Controller
             $locked->delete();
         });
         $this->lupakanEngine($bank->id);
+
         return redirect()->route('cbt.question-banks.index')->with('success', 'Bank soal dihapus.');
     }
 
@@ -87,6 +93,7 @@ class CbtQuestionBankController extends Controller
     public function apiGetQuestions(CbtQuestionBank $bank)
     {
         $this->authorize('view', $bank);
+
         // Endpoint khusus guru pemilik. Kunci tetap hidden pada model.
         return response()->json($bank->questions()->orderBy('id')->paginate(50));
     }

@@ -10,6 +10,7 @@ class Rombel extends Model
     use BelongsToTenant;
 
     protected $table = 'rombel';
+
     protected $fillable = [
         'tenant_id', 'dapodik_id', 'semester_id', 'nama_rombel', 'tingkat', 'kurikulum', 'jenis_rombel', 'guru_id', 'kunci_input_rapor',
     ];

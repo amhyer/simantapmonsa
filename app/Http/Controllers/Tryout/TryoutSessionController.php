@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tryout\StoreTryoutSessionRequest;
-use App\Models\Tryout\Session;
-use App\Models\Tryout\Package;
-use App\Models\Semester;
 use App\Models\Rombel;
+use App\Models\Semester;
+use App\Models\Tryout\Package;
+use App\Models\Tryout\Session;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -17,21 +17,21 @@ class TryoutSessionController extends Controller
     public function index()
     {
         $sessions = Session::with(['package', 'semester', 'guru', 'rombel'])
-                          ->where('guru_id', auth()->id())
-                          ->latest()
-                          ->paginate(20);
-        
+            ->where('guru_id', auth()->id())
+            ->latest()
+            ->paginate(20);
+
         return view('tryout.sessions.index', compact('sessions'));
     }
 
     public function create()
     {
         $packages = Package::where('aktif', true)
-                          ->with(['subjects.mataPelajaran'])
-                          ->get();
+            ->with(['subjects.mataPelajaran'])
+            ->get();
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
         $rombels = Rombel::with('guru')->orderBy('nama_rombel')->get();
-        
+
         return view('tryout.sessions.create', compact('packages', 'semesters', 'rombels'));
     }
 
@@ -41,7 +41,7 @@ class TryoutSessionController extends Controller
 
         $session = Session::create([
             'uuid' => Str::uuid(),
-            'kode_sesi' => 'TRY-' . strtoupper(Str::random(8)),
+            'kode_sesi' => 'TRY-'.strtoupper(Str::random(8)),
             'package_id' => $validated['package_id'],
             'semester_id' => $validated['semester_id'],
             'guru_id' => auth()->id(),
@@ -66,7 +66,7 @@ class TryoutSessionController extends Controller
         $this->authorize('view', $session);
         $session->load(['package.subjects.mataPelajaran', 'semester', 'guru', 'rombel']);
         $results = $session->results()->with('siswa')->paginate(20);
-        
+
         return view('tryout.sessions.show', compact('session', 'results'));
     }
 
@@ -75,6 +75,7 @@ class TryoutSessionController extends Controller
         $this->authorize('publish', $session);
         $session->update(['status' => 'published']);
         Cache::forget("tryout:session:{$session->id}:monitoring");
+
         return back()->with('success', 'Sesi tryout dipublikasikan');
     }
 
@@ -83,6 +84,7 @@ class TryoutSessionController extends Controller
         $this->authorize('start', $session);
         $session->update(['status' => 'ongoing']);
         Cache::forget("tryout:session:{$session->id}:monitoring");
+
         return back()->with('success', 'Sesi tryout dimulai');
     }
 
@@ -91,6 +93,7 @@ class TryoutSessionController extends Controller
         $this->authorize('complete', $session);
         $session->update(['status' => 'completed']);
         Cache::forget("tryout:session:{$session->id}:monitoring");
+
         return back()->with('success', 'Sesi tryout selesai');
     }
 
@@ -98,17 +101,17 @@ class TryoutSessionController extends Controller
     {
         $this->authorize('monitoring', $session);
         $session->load(['package.subjects', 'results.siswa']);
-        
+
         $activeStudents = $session->results()
-                                ->whereNull('waktu_selesai')
-                                ->with('siswa')
-                                ->get();
+            ->whereNull('waktu_selesai')
+            ->with('siswa')
+            ->get();
 
         $completedStudents = $session->results()
-                                   ->whereNotNull('waktu_selesai')
-                                   ->with('siswa')
-                                   ->orderBy('nilai_total', 'desc')
-                                   ->get();
+            ->whereNotNull('waktu_selesai')
+            ->with('siswa')
+            ->orderBy('nilai_total', 'desc')
+            ->get();
 
         return view('tryout.sessions.monitoring', compact('session', 'activeStudents', 'completedStudents'));
     }

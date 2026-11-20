@@ -159,7 +159,7 @@ class DapodikController extends Controller
         }
 
         try {
-            $service = new DapodikSyncService();
+            $service = new DapodikSyncService;
             $semesterId = $request->input('semester_id');
             $result = $service->preview($semesterId);
 
@@ -171,7 +171,7 @@ class DapodikController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data dari Dapodik: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data dari Dapodik: '.$e->getMessage(),
             ], 502);
         }
     }
@@ -202,7 +202,7 @@ class DapodikController extends Controller
         }
 
         try {
-            $service = new DapodikSyncService();
+            $service = new DapodikSyncService;
             $semesterId = $request->input('semester_id');
             $result = $service->dryRun($semesterId);
 
@@ -214,7 +214,7 @@ class DapodikController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data dari Dapodik: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data dari Dapodik: '.$e->getMessage(),
             ], 502);
         }
     }
@@ -252,7 +252,7 @@ class DapodikController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data semester dari Dapodik: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data semester dari Dapodik: '.$e->getMessage(),
             ], 502);
         }
     }
@@ -287,7 +287,7 @@ class DapodikController extends Controller
         $semesterId = $request->input('semester_id');
 
         try {
-            $service = new DapodikSyncService();
+            $service = new DapodikSyncService;
 
             if ($mode === 'commit') {
                 $result = $service->commit($semesterId);
@@ -314,7 +314,7 @@ class DapodikController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
             ], 502);
         }
     }

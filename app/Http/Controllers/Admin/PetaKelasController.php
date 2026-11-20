@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PengaturanGuru;
 use App\Models\Rombel;
+use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PetaKelasController extends Controller
 {
@@ -173,7 +176,7 @@ class PetaKelasController extends Controller
         return response()->json(['kelas' => $kelasList]);
     }
 
-    public function toggleKunciRapor(\App\Models\Rombel $rombel): \Illuminate\Http\RedirectResponse
+    public function toggleKunciRapor(Rombel $rombel): RedirectResponse
     {
         $rombel->update(['kunci_input_rapor' => ! $rombel->kunci_input_rapor]);
         $status = $rombel->kunci_input_rapor ? 'dikunci' : 'dibuka kembali';
@@ -181,12 +184,12 @@ class PetaKelasController extends Controller
         return back()->with('success', "Input rapor untuk rombel {$rombel->nama_rombel} berhasil {$status}.");
     }
 
-    public function toggleKunciSemua(): \Illuminate\Http\RedirectResponse
+    public function toggleKunciSemua(): RedirectResponse
     {
-        $terkunciSekarang = \App\Models\Rombel::apakahTerkunciGlobal();
+        $terkunciSekarang = Rombel::apakahTerkunciGlobal();
         $targetKunci = ! $terkunciSekarang;
 
-        $sekolah = \App\Models\SekolahSettings::firstOrCreate(
+        $sekolah = SekolahSettings::firstOrCreate(
             [],
             ['nama_sekolah' => config('app.name', 'SIMANTAP')]
         );
@@ -194,8 +197,8 @@ class PetaKelasController extends Controller
         $pengaturan['kunci_input_rapor_global'] = $targetKunci;
         $sekolah->update(['pengaturan' => $pengaturan]);
 
-        \App\Models\Rombel::query()->update(['kunci_input_rapor' => $targetKunci]);
-        \Illuminate\Support\Facades\Cache::forget('admin-dashboard:single:v3');
+        Rombel::query()->update(['kunci_input_rapor' => $targetKunci]);
+        Cache::forget('admin-dashboard:single:v3');
 
         $status = $targetKunci ? 'dikunci (ditutup)' : 'dibuka kembali';
 

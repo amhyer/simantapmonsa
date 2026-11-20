@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -79,7 +80,7 @@ class BackupCoverageTest extends TestCase
             'waktu_selesai' => now(), 'durasi_total_detik' => 60,
         ]);
         DB::table('transkrip_nilai')->insert([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'siswa_id' => $siswa->id, 'nama_mapel' => 'IPA', 'nilai_akhir' => 90,
             'created_at' => now(), 'updated_at' => now(),
         ]);

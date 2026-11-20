@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
 use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
+use App\Models\Rombel;
+use App\Models\Siswa;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class NilaiErapotController extends Controller
         $kelas = $request->get('kelas', optional($pengaturan)->kelas ?? 'V A');
         $mapel = $request->get('mapel', optional($pengaturan)->mata_pelajaran ?? 'Matematika');
         $semester = $request->get('semester', optional($pengaturan)->semester ?? 'Ganjil');
-        $tahunAjaran = $request->get('tahun_ajaran', optional($pengaturan)->tahun_pelajaran ?? date('Y') . '/' . (date('Y') + 1));
+        $tahunAjaran = $request->get('tahun_ajaran', optional($pengaturan)->tahun_pelajaran ?? date('Y').'/'.(date('Y') + 1));
 
         $siswa = Siswa::where('guru_id', $guru->id)
             ->where('kelas', $kelas)
@@ -56,7 +57,7 @@ class NilaiErapotController extends Controller
             'tahun_ajaran' => 'required|string',
         ]);
 
-        if (\App\Models\Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+        if (Rombel::apakahTerkunciUntukKelas($request->kelas)) {
             return back()->with('error', "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
 
@@ -74,7 +75,9 @@ class NilaiErapotController extends Controller
         try {
             $berhasil = 0;
             foreach ($request->nilai as $item) {
-                if (empty($item['formatif']) && empty($item['sumatif']) && empty($item['sumatif_akhir'])) continue;
+                if (empty($item['formatif']) && empty($item['sumatif']) && empty($item['sumatif_akhir'])) {
+                    continue;
+                }
 
                 $nilai = NilaiErapot::updateOrCreate(
                     [
@@ -104,10 +107,12 @@ class NilaiErapotController extends Controller
                 $berhasil++;
             }
             DB::commit();
+
             return response()->json(['success' => true, 'message' => "{$berhasil} nilai berhasil disimpan.", 'count' => $berhasil]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Gagal menyimpan nilai erapor: ' . $e->getMessage());
+            Log::error('Gagal menyimpan nilai erapor: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Gagal menyimpan data nilai.'], 500);
         }
     }
@@ -124,7 +129,7 @@ class NilaiErapotController extends Controller
             'tahun_ajaran' => 'required|string',
         ]);
 
-        if (\App\Models\Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+        if (Rombel::apakahTerkunciUntukKelas($request->kelas)) {
             return response()->json([
                 'success' => false,
                 'message' => "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.",
@@ -149,7 +154,7 @@ class NilaiErapotController extends Controller
         $nilai->jadwal_pelajaran_id = app(JadwalPelajaranResolver::class)->resolve(
             $guru->id, $request->mapel, $request->kelas, $request->semester, $request->tahun_ajaran
         );
-        $field = 'nilai_' . $request->field;
+        $field = 'nilai_'.$request->field;
         $nilai->$field = $request->value ?? 0;
         $nilai->save();
 
@@ -169,7 +174,9 @@ class NilaiErapotController extends Controller
     {
         $guru = auth()->user();
         $siswa = Siswa::find($siswaId);
-        if (!$siswa) return response()->json(['success' => false]);
+        if (! $siswa) {
+            return response()->json(['success' => false]);
+        }
 
         $nilai = NilaiErapot::where('siswa_id', $siswaId)
             ->where('guru_id', $guru->id)
@@ -178,7 +185,9 @@ class NilaiErapotController extends Controller
             ->where('tahun_ajaran', $request->tahun_ajaran)
             ->first();
 
-        if (!$nilai) return response()->json(['success' => false, 'message' => 'Belum ada nilai']);
+        if (! $nilai) {
+            return response()->json(['success' => false, 'message' => 'Belum ada nilai']);
+        }
 
         return response()->json([
             'success' => true,

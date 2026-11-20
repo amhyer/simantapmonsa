@@ -2,11 +2,15 @@
 
 namespace App\Models\Tryout;
 
+use App\Models\Rombel;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\User;
 use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Session extends Model
@@ -14,10 +18,11 @@ class Session extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $table = 'tryout_sessions';
+
     protected $fillable = [
         'uuid', 'tenant_id', 'kode_sesi', 'nama_sesi', 'package_id',
         'semester_id', 'guru_id', 'kelas', 'rombel_id',
-        'tanggal_mulai', 'tanggal_selesai', 'durasi_menit', 'instruksi', 'status'
+        'tanggal_mulai', 'tanggal_selesai', 'durasi_menit', 'instruksi', 'status',
     ];
 
     protected $casts = [
@@ -29,11 +34,11 @@ class Session extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
-            if (!$model->kode_sesi) {
-                $model->kode_sesi = 'TRY-' . strtoupper(Str::random(8));
+            if (! $model->kode_sesi) {
+                $model->kode_sesi = 'TRY-'.strtoupper(Str::random(8));
             }
         });
     }
@@ -45,17 +50,17 @@ class Session extends Model
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Semester::class);
+        return $this->belongsTo(Semester::class);
     }
 
     public function guru(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'guru_id');
+        return $this->belongsTo(User::class, 'guru_id');
     }
 
     public function rombel(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Rombel::class);
+        return $this->belongsTo(Rombel::class);
     }
 
     public function results(): HasMany
@@ -85,13 +90,21 @@ class Session extends Model
      */
     public function canStudentTake($siswaId): bool
     {
-        if (!$this->isOngoing()) return false;
+        if (! $this->isOngoing()) {
+            return false;
+        }
 
-        $siswa = \App\Models\Siswa::find($siswaId);
-        if (!$siswa) return false;
+        $siswa = Siswa::find($siswaId);
+        if (! $siswa) {
+            return false;
+        }
 
-        if ($this->kelas && $siswa->kelas !== $this->kelas) return false;
-        if ($this->rombel_id && (int) $siswa->rombel_id !== (int) $this->rombel_id) return false;
+        if ($this->kelas && $siswa->kelas !== $this->kelas) {
+            return false;
+        }
+        if ($this->rombel_id && (int) $siswa->rombel_id !== (int) $this->rombel_id) {
+            return false;
+        }
 
         return true;
     }

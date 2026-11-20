@@ -22,7 +22,7 @@ class RaporController extends Controller
     {
         $tahun = (int) date('Y');
 
-        return $tahun . '/' . ($tahun + 1);
+        return $tahun.'/'.($tahun + 1);
     }
 
     public function capaian(Request $request)

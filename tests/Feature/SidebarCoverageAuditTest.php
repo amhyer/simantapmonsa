@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\MataPelajaran;
-use App\Models\Kehadiran;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
@@ -31,7 +30,7 @@ class SidebarCoverageAuditTest extends TestCase
             'nama_semester' => 'ganjil',
         ]);
         MataPelajaran::create(['nama' => 'Matematika', 'kode' => 'MTK', 'aktif' => true]);
-        
+
         $siswa = Siswa::create([
             'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
@@ -71,12 +70,12 @@ class SidebarCoverageAuditTest extends TestCase
                         $errors[] = "[$role] route '$route' return HTTP $status";
                     }
                 } catch (\Throwable $e) {
-                    $errors[] = "[$role] route '$route' EXCEPTION: " . $e->getMessage();
+                    $errors[] = "[$role] route '$route' EXCEPTION: ".$e->getMessage();
                 }
             }
         }
 
-        $this->assertEmpty($errors, "Ditemukan error pada menu sidebar:\n" . implode("\n", $errors));
+        $this->assertEmpty($errors, "Ditemukan error pada menu sidebar:\n".implode("\n", $errors));
         $this->assertGreaterThan(70, $testedCount);
     }
 }

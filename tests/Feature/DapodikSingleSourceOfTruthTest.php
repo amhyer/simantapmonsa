@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\CbtExamService;
 use App\Services\Exam\CbtStudentReader;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 class DapodikSingleSourceOfTruthTest extends TestCase
@@ -19,16 +20,20 @@ class DapodikSingleSourceOfTruthTest extends TestCase
     use RefreshDatabase;
 
     private User $guruMapel;
+
     private User $waliKelas;
+
     private Siswa $siswaDapodik;
+
     private Semester $semester;
+
     private Rombel $rombel;
 
     protected function setUp(): void
     {
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
         $this->withoutVite();

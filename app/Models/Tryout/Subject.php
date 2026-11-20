@@ -2,6 +2,7 @@
 
 namespace App\Models\Tryout;
 
+use App\Models\MataPelajaran;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,9 +11,10 @@ use Illuminate\Support\Str;
 class Subject extends Model
 {
     protected $table = 'tryout_subjects';
+
     protected $fillable = [
         'uuid', 'package_id', 'mata_pelajaran_id', 'urutan',
-        'bobot', 'jumlah_soal', 'durasi_menit', 'passing_grade_mapel'
+        'bobot', 'jumlah_soal', 'durasi_menit', 'passing_grade_mapel',
     ];
 
     protected $casts = [
@@ -24,7 +26,7 @@ class Subject extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -37,7 +39,7 @@ class Subject extends Model
 
     public function mataPelajaran(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\MataPelajaran::class);
+        return $this->belongsTo(MataPelajaran::class);
     }
 
     public function questions(): HasMany

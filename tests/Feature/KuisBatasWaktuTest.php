@@ -6,6 +6,7 @@ use App\Models\Kuis;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -110,6 +111,6 @@ class KuisBatasWaktuTest extends TestCase
     {
         [, , $kuis] = $this->siapkanKuis(now()->addDays(2));
 
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $kuis->fresh()->batas_waktu);
+        $this->assertInstanceOf(Carbon::class, $kuis->fresh()->batas_waktu);
     }
 }

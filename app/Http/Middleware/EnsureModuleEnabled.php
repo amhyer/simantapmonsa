@@ -23,7 +23,7 @@ class EnsureModuleEnabled
             return $next($request);
         }
 
-        if (!config('simantap.cbt_enabled', false)) {
+        if (! config('simantap.cbt_enabled', false)) {
             abort(404);
         }
 

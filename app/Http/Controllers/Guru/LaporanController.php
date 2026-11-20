@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\Nilai;
 use App\Models\HasilKuis;
-use App\Models\Kehadiran;
 use App\Models\Kebiasaan;
-use App\Models\Kuis;
+use App\Models\Kehadiran;
+use App\Models\Nilai;
 use App\Models\PengaturanGuru;
 use App\Models\Semester;
+use App\Models\Siswa;
 use App\Services\NilaiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -82,6 +81,7 @@ class LaporanController extends Controller
 
             $nilaiPerMapel = $nilai->groupBy('mata_pelajaran')->map(function ($items, $mapel) use ($guruId) {
                 $rata = round($items->avg('nilai'), 1);
+
                 return [
                     'nama' => $mapel,
                     'rata_rata' => $rata,
@@ -117,17 +117,17 @@ class LaporanController extends Controller
         $stats = [
             'total_siswa' => count($dataLaporan),
             'rata_nilai' => count($dataLaporan) > 0 ? round(collect($dataLaporan)->avg('nilai_akhir'), 1) : 0,
-            'tuntas' => collect($dataLaporan)->filter(fn($d) => $d['nilai_akhir'] >= getKKM($guruId))->count(),
-            'belum_tuntas' => collect($dataLaporan)->filter(fn($d) => $d['nilai_akhir'] > 0 && $d['nilai_akhir'] < getKKM($guruId))->count(),
-            'belum_dinilai' => collect($dataLaporan)->filter(fn($d) => $d['nilai_akhir'] == 0)->count(),
+            'tuntas' => collect($dataLaporan)->filter(fn ($d) => $d['nilai_akhir'] >= getKKM($guruId))->count(),
+            'belum_tuntas' => collect($dataLaporan)->filter(fn ($d) => $d['nilai_akhir'] > 0 && $d['nilai_akhir'] < getKKM($guruId))->count(),
+            'belum_dinilai' => collect($dataLaporan)->filter(fn ($d) => $d['nilai_akhir'] == 0)->count(),
             'rata_kehadiran' => count($dataLaporan) > 0 ? round(collect($dataLaporan)->avg('kehadiran_persen'), 1) : 0,
         ];
 
         $predikatDistribusi = [
-            'A' => collect($dataLaporan)->filter(fn($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'A')->count(),
-            'B' => collect($dataLaporan)->filter(fn($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'B')->count(),
-            'C' => collect($dataLaporan)->filter(fn($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'C')->count(),
-            'D' => collect($dataLaporan)->filter(fn($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'D')->count(),
+            'A' => collect($dataLaporan)->filter(fn ($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'A')->count(),
+            'B' => collect($dataLaporan)->filter(fn ($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'B')->count(),
+            'C' => collect($dataLaporan)->filter(fn ($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'C')->count(),
+            'D' => collect($dataLaporan)->filter(fn ($d) => is_array($d['predikat']) && ($d['predikat']['huruf'] ?? '') === 'D')->count(),
         ];
 
         return view('guru.laporan.index', compact(
@@ -190,6 +190,7 @@ class LaporanController extends Controller
 
             $nilaiPerMapel = $nilai->groupBy('mata_pelajaran')->map(function ($items, $mapel) use ($guruId) {
                 $rata = round($items->avg('nilai'), 1);
+
                 return [
                     'nama' => $mapel,
                     'rata_rata' => $rata,
@@ -215,9 +216,11 @@ class LaporanController extends Controller
         $pdf = Pdf::loadView('guru.laporan.pdf', compact('dataLaporan', 'guru', 'pengaturan', 'kelasFilter', 'semesterId', 'mapelFilter'))
             ->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan_' . ($guru->nama_lengkap ?? 'Guru');
-        if ($kelasFilter) $filename .= '_Kelas-' . $kelasFilter;
-        $filename .= '_' . date('Y-m-d') . '.pdf';
+        $filename = 'Laporan_'.($guru->nama_lengkap ?? 'Guru');
+        if ($kelasFilter) {
+            $filename .= '_Kelas-'.$kelasFilter;
+        }
+        $filename .= '_'.date('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }

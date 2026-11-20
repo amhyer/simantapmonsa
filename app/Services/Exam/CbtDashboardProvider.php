@@ -2,6 +2,7 @@
 
 namespace App\Services\Exam;
 
+use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\Siswa;
@@ -107,7 +108,7 @@ class CbtDashboardProvider
         }
 
         return [
-            'total_bank' => \App\Models\CbtQuestionBank::where('guru_id', $guruId)->count(),
+            'total_bank' => CbtQuestionBank::where('guru_id', $guruId)->count(),
             'sesi_aktif' => CbtTestSession::where('guru_id', $guruId)
                 ->whereIn('status', ['published', 'running'])->count(),
             'sesi_selesai' => CbtTestSession::where('guru_id', $guruId)->where('status', 'completed')->count(),

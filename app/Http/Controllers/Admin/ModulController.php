@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SekolahSettings;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
 
 class ModulController extends Controller
 {
@@ -36,7 +35,7 @@ class ModulController extends Controller
 
         $sekolahSettings = SekolahSettings::first();
 
-        if (!$sekolahSettings) {
+        if (! $sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([
                 'guru_id' => auth()->id(),
                 'nama_sekolah' => 'SIMANTAP',

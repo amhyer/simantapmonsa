@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Kepsek;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Siswa;
 use App\Models\RingkasanGuru;
+use App\Models\Siswa;
+use App\Models\User;
 use App\Services\NilaiService;
-use Illuminate\Http\Request;
 
 class RekapController extends Controller
 {
@@ -58,8 +57,9 @@ class RekapController extends Controller
         foreach ($ringkasan as $r) {
             $csv .= "{$r->nama_guru},{$r->mata_pelajaran},{$r->kelas},{$r->jumlah_siswa},{$r->rata_rata},{$r->ketuntasan_persen},{$r->kehadiran_persen}\n";
         }
+
         return response($csv)
             ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="rekap-sekolah-' . date('Y-m-d') . '.csv"');
+            ->header('Content-Disposition', 'attachment; filename="rekap-sekolah-'.date('Y-m-d').'.csv"');
     }
 }

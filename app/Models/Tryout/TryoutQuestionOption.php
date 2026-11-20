@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TryoutQuestionOption extends Model
 {
     protected $table = 'tryout_question_options';
+
     protected $fillable = [
-        'question_id', 'huruf', 'isi_opsi', 'adalah_benar', 'urutan'
+        'question_id', 'huruf', 'isi_opsi', 'adalah_benar', 'urutan',
     ];
 
     protected $casts = [

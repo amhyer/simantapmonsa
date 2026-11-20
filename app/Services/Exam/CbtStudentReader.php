@@ -23,7 +23,6 @@ class CbtStudentReader
         return (bool) config('simantap.exam_engine_readers', false);
     }
 
-    /** @return LengthAwarePaginator */
     public function sesiSiswa(Siswa $siswa, int $perPage = 20): LengthAwarePaginator
     {
         return $this->pakaiEngine()

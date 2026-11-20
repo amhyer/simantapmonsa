@@ -3,45 +3,47 @@
 namespace App\Http\Controllers\Tka;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tka\Dimension;
-use App\Models\Tka\AssessmentItem;
-use App\Models\Tka\StudentAssessment;
-use App\Models\Tka\AssessmentResponse;
-use App\Models\Tka\HistoricalTracking;
-use App\Models\Tka\EarlyWarning;
-use App\Models\Siswa;
 use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\Tka\AssessmentItem;
+use App\Models\Tka\AssessmentResponse;
+use App\Models\Tka\Dimension;
+use App\Models\Tka\EarlyWarning;
+use App\Models\Tka\HistoricalTracking;
+use App\Models\Tka\StudentAssessment;
+use App\Services\Tka\TkaCognitiveAnalyticsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class TkaAssessmentController extends Controller
 {
     public function index()
     {
         $assessments = StudentAssessment::with(['siswa', 'semester', 'guru'])
-                                       ->where('guru_id', auth()->id())
-                                       ->latest('tanggal_penilaian')
-                                       ->paginate(20);
-        
+            ->where('guru_id', auth()->id())
+            ->latest('tanggal_penilaian')
+            ->paginate(20);
+
         return view('tka.assessments.index', compact('assessments'));
     }
 
     public function create()
     {
         $siswas = Siswa::where('guru_id', auth()->id())
-                      ->where('aktif', true)
-                      ->orderBy('kelas')
-                      ->orderBy('nama_peserta_didik')
-                      ->get();
-        
+            ->where('aktif', true)
+            ->orderBy('kelas')
+            ->orderBy('nama_peserta_didik')
+            ->get();
+
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         $dimensions = Dimension::with(['assessmentItems'])
-                              ->where('aktif', true)
-                              ->orderBy('kategori')
-                              ->get();
-        
+            ->where('aktif', true)
+            ->orderBy('kategori')
+            ->get();
+
         return view('tka.assessments.create', compact('siswas', 'semesters', 'dimensions'));
     }
 
@@ -58,13 +60,13 @@ class TkaAssessmentController extends Controller
         ]);
 
         $siswa = Siswa::findOrFail($validated['siswa_id']);
-        $this->authorize('createForStudent', [new StudentAssessment(), $siswa]);
+        $this->authorize('createForStudent', [new StudentAssessment, $siswa]);
 
         // Check if assessment already exists
         $existing = StudentAssessment::where('siswa_id', $validated['siswa_id'])
-                                    ->where('semester_id', $validated['semester_id'])
-                                    ->first();
-        
+            ->where('semester_id', $validated['semester_id'])
+            ->first();
+
         if ($existing) {
             return back()->with('error', 'Penilaian TKA untuk siswa ini pada semester tersebut sudah ada');
         }
@@ -87,7 +89,7 @@ class TkaAssessmentController extends Controller
 
                 // Group by dimension
                 $dimId = $item->dimension_id;
-                if (!isset($skorPerDimensi[$dimId])) {
+                if (! isset($skorPerDimensi[$dimId])) {
                     $skorPerDimensi[$dimId] = [
                         'dimension_id' => $dimId,
                         'nama_dimensi' => $item->dimension->nama_dimensi,
@@ -141,16 +143,16 @@ class TkaAssessmentController extends Controller
             // Track historical data
             foreach ($skorPerDimensi as $dimId => $data) {
                 $avgDimScore = $data['maksimal'] > 0 ? ($data['total_skor'] / $data['maksimal'] * 4) : 0;
-                
+
                 // Get previous score for comparison
                 $previousTracking = HistoricalTracking::where('siswa_id', $validated['siswa_id'])
-                                                     ->where('dimension_id', $dimId)
-                                                     ->latest()
-                                                     ->first();
-                
+                    ->where('dimension_id', $dimId)
+                    ->latest()
+                    ->first();
+
                 $perubahan = null;
                 $trend = null;
-                
+
                 if ($previousTracking) {
                     $perubahan = $avgDimScore - $previousTracking->skor;
                     $trend = $perubahan > 0.1 ? 'meningkat' : ($perubahan < -0.1 ? 'menurun' : 'stabil');
@@ -170,9 +172,13 @@ class TkaAssessmentController extends Controller
                 $dimension = Dimension::find($dimId);
                 if ($avgDimScore < $dimension->threshold_siap && $statusKesiapan !== 'sangat_siap') {
                     $tingkat = 'rendah';
-                    if ($avgDimScore < 2.0) $tingkat = 'kritis';
-                    elseif ($avgDimScore < 2.5) $tingkat = 'tinggi';
-                    elseif ($avgDimScore < 3.0) $tingkat = 'sedang';
+                    if ($avgDimScore < 2.0) {
+                        $tingkat = 'kritis';
+                    } elseif ($avgDimScore < 2.5) {
+                        $tingkat = 'tinggi';
+                    } elseif ($avgDimScore < 3.0) {
+                        $tingkat = 'sedang';
+                    }
 
                     EarlyWarning::create([
                         'uuid' => Str::uuid(),
@@ -189,8 +195,8 @@ class TkaAssessmentController extends Controller
 
             DB::commit();
 
-            if (\Illuminate\Support\Facades\Schema::hasTable('tka_learning_recommendations')) {
-                $analytics = app(\App\Services\Tka\TkaCognitiveAnalyticsService::class);
+            if (Schema::hasTable('tka_learning_recommendations')) {
+                $analytics = app(TkaCognitiveAnalyticsService::class);
                 $analytics->generateRecommendation($siswa, (int) $validated['semester_id'], (int) auth()->id());
 
                 if ($request->filled('sync_mata_pelajaran')) {
@@ -211,7 +217,8 @@ class TkaAssessmentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+
+            return back()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
         }
     }
 
@@ -219,20 +226,20 @@ class TkaAssessmentController extends Controller
     {
         $this->authorize('view', $assessment);
         $assessment->load(['siswa', 'semester', 'guru', 'responses.assessmentItem.dimension']);
-        
+
         return view('tka.assessments.show', compact('assessment'));
     }
 
     public function bySiswa($siswaId)
     {
         $siswa = Siswa::findOrFail($siswaId);
-        $this->authorize('viewStudentHistory', [new StudentAssessment(), $siswa]);
+        $this->authorize('viewStudentHistory', [new StudentAssessment, $siswa]);
         $assessments = StudentAssessment::where('siswa_id', $siswaId)
-                                       ->where('guru_id', auth()->id())
-                                       ->with(['semester', 'guru'])
-                                       ->latest('tanggal_penilaian')
-                                       ->get();
-        
+            ->where('guru_id', auth()->id())
+            ->with(['semester', 'guru'])
+            ->latest('tanggal_penilaian')
+            ->get();
+
         return view('tka.assessments.by-siswa', compact('siswa', 'assessments'));
     }
 }

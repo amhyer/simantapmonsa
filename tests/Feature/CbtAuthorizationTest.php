@@ -9,6 +9,7 @@ use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 /**
@@ -20,12 +21,19 @@ class CbtAuthorizationTest extends TestCase
     use RefreshDatabase;
 
     private array $flagSebelumnya;
+
     private User $guruA;
+
     private User $guruB;
+
     private CbtQuestionBank $bankA;
+
     private CbtQuestionBank $bankB;
+
     private CbtQuestion $soalB;
+
     private CbtTestSession $sesiB;
+
     private CbtResult $hasilB;
 
     protected function setUp(): void
@@ -37,7 +45,7 @@ class CbtAuthorizationTest extends TestCase
         ];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
         $this->withoutVite();
@@ -96,7 +104,7 @@ class CbtAuthorizationTest extends TestCase
         } else {
             $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
         }
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
     }
 
     public function test_guru_lain_tidak_bisa_membaca_atau_mengubah_bank(): void

@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
 use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ImportErapotController extends Controller
 {
@@ -26,7 +26,7 @@ class ImportErapotController extends Controller
             ->orderBy('nama_peserta_didik')
             ->get();
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = ['No', 'NISN', 'Nama Siswa', 'Nilai Formatif', 'Nilai Sumatif', 'Nilai Sumatif Akhir'];
@@ -38,9 +38,9 @@ class ImportErapotController extends Controller
 
         $row = 2;
         foreach ($siswa as $i => $s) {
-            $sheet->setCellValue('A' . $row, $i + 1);
-            $sheet->setCellValue('B' . $row, $s->nisn ?? $s->nis);
-            $sheet->setCellValue('C' . $row, $s->nama_peserta_didik);
+            $sheet->setCellValue('A'.$row, $i + 1);
+            $sheet->setCellValue('B'.$row, $s->nisn ?? $s->nis);
+            $sheet->setCellValue('C'.$row, $s->nama_peserta_didik);
             $row++;
         }
 
@@ -88,17 +88,20 @@ class ImportErapotController extends Controller
 
             foreach ($rows as $index => $row) {
                 $nisn = trim($row[1] ?? '');
-                if (empty($nisn)) continue;
+                if (empty($nisn)) {
+                    continue;
+                }
 
                 $siswa = Siswa::where('guru_id', $guru->id)
                     ->where(function ($q) use ($nisn) {
                         $q->where('nisn', $nisn)
-                          ->orWhere('nis', $nisn);
+                            ->orWhere('nis', $nisn);
                     })
                     ->first();
 
-                if (!$siswa) {
-                    $errors[] = "Baris " . ($index + 2) . ": NISN {$nisn} tidak ditemukan.";
+                if (! $siswa) {
+                    $errors[] = 'Baris '.($index + 2).": NISN {$nisn} tidak ditemukan.";
+
                     continue;
                 }
 
@@ -130,10 +133,12 @@ class ImportErapotController extends Controller
             }
 
             DB::commit();
+
             return response()->json(['success' => true, 'message' => "Berhasil import {$berhasil} nilai.", 'berhasil' => $berhasil, 'errors' => $errors]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Gagal: ' . $e->getMessage()], 500);
+
+            return response()->json(['success' => false, 'message' => 'Gagal: '.$e->getMessage()], 500);
         }
     }
 
@@ -148,7 +153,7 @@ class ImportErapotController extends Controller
             ->where('tahun_ajaran', $request->get('tahun_ajaran'))
             ->get();
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = ['No', 'NISN', 'Nama Siswa', 'Formatif', 'Sumatif', 'Sumatif Akhir', 'Nilai Akhir', 'Predikat', 'Deskripsi'];
@@ -157,15 +162,15 @@ class ImportErapotController extends Controller
 
         $row = 2;
         foreach ($nilai as $i => $n) {
-            $sheet->setCellValue('A' . $row, $i + 1);
-            $sheet->setCellValue('B' . $row, $n->siswa->nisn ?? $n->siswa->nis);
-            $sheet->setCellValue('C' . $row, $n->siswa->nama_peserta_didik);
-            $sheet->setCellValue('D' . $row, $n->nilai_formatif);
-            $sheet->setCellValue('E' . $row, $n->nilai_sumatif);
-            $sheet->setCellValue('F' . $row, $n->nilai_sumatif_akhir);
-            $sheet->setCellValue('G' . $row, $n->nilai_akhir);
-            $sheet->setCellValue('H' . $row, $n->predikat);
-            $sheet->setCellValue('I' . $row, $n->deskripsi_capaian);
+            $sheet->setCellValue('A'.$row, $i + 1);
+            $sheet->setCellValue('B'.$row, $n->siswa->nisn ?? $n->siswa->nis);
+            $sheet->setCellValue('C'.$row, $n->siswa->nama_peserta_didik);
+            $sheet->setCellValue('D'.$row, $n->nilai_formatif);
+            $sheet->setCellValue('E'.$row, $n->nilai_sumatif);
+            $sheet->setCellValue('F'.$row, $n->nilai_sumatif_akhir);
+            $sheet->setCellValue('G'.$row, $n->nilai_akhir);
+            $sheet->setCellValue('H'.$row, $n->predikat);
+            $sheet->setCellValue('I'.$row, $n->deskripsi_capaian);
             $row++;
         }
 

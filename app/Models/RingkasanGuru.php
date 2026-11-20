@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Modules\Tenant\Traits\HasSchoolOwnership;
+use Illuminate\Database\Eloquent\Model;
 
 class RingkasanGuru extends Model
 {
     use HasSchoolOwnership;
 
     protected $table = 'ringkasan_guru';
+
     protected $fillable = [
         'guru_id',
         'nama_guru',

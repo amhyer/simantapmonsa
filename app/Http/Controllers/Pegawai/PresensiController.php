@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\PresensiLokasi;
 use App\Models\PresensiPegawai;
 use App\Models\SekolahSettings;
-use App\Models\Siswa;
-use App\Models\User;
 use App\Services\AktivitasService;
 use App\Services\Presensi\GeofenceService;
 use App\Services\Presensi\IdentityCardService;
@@ -54,7 +52,7 @@ class PresensiController extends Controller
         $sekolah = SekolahSettings::query()->first();
 
         return view('presensi.kartu-cetak', [
-            'judul' => 'Kartu Identitas Saya — ' . $user->nama_lengkap,
+            'judul' => 'Kartu Identitas Saya — '.$user->nama_lengkap,
             'subjudul' => ucfirst((string) $user->peran),
             'cards' => [$cards->buildPegawaiCardViewModel($user, $sekolah, null, true)],
             'kembaliUrl' => route('presensi.pegawai.index'),
@@ -78,7 +76,7 @@ class PresensiController extends Controller
             'accuracy' => 'nullable|required_with:latitude,longitude|numeric|min:0|max:5000',
         ]);
 
-        if (!filled($user->qr_token_hash) && !filled($user->qr_previous_token_hash)) {
+        if (! filled($user->qr_token_hash) && ! filled($user->qr_previous_token_hash)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kartu identitas Anda belum aktif. Muat ulang halaman atau minta admin menerbitkan kartu.',
@@ -87,7 +85,7 @@ class PresensiController extends Controller
 
         $resolvedUser = $cardService->resolvePegawaiFromPayload($validated['qr_payload']);
 
-        if (!$resolvedUser || (int) $resolvedUser->id !== (int) $user->id) {
+        if (! $resolvedUser || (int) $resolvedUser->id !== (int) $user->id) {
             if ($resolvedUser && (int) $resolvedUser->id !== (int) $user->id) {
                 return response()->json([
                     'success' => false,
@@ -115,7 +113,7 @@ class PresensiController extends Controller
             && $validated['latitude'] !== null
             && $validated['longitude'] !== null;
 
-        if ($wajibGps && !$hasCoords) {
+        if ($wajibGps && ! $hasCoords) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kebijakan sekolah mewajibkan izin lokasi GPS aktif saat memindai kartu identitas.',
@@ -133,7 +131,7 @@ class PresensiController extends Controller
             $accuracy = (float) ($validated['accuracy'] ?? 50);
             $location = $geofence->lokasiCocok($latitude, $longitude, $accuracy);
 
-            if (!$location) {
+            if (! $location) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Lokasi perangkat berada di luar area sekolah yang diizinkan saat scan kartu identitas.',
@@ -185,9 +183,8 @@ class PresensiController extends Controller
         $accuracy = (float) $validated['accuracy'];
         $location = $geofence->lokasiCocok($latitude, $longitude, $accuracy);
 
-        if (!$location) {
-            $insideAnyRadius = $zones->contains(fn (PresensiLokasi $zone) =>
-                $geofence->jarakMeter($latitude, $longitude, $zone->latitude, $zone->longitude) <= $zone->radius_meter
+        if (! $location) {
+            $insideAnyRadius = $zones->contains(fn (PresensiLokasi $zone) => $geofence->jarakMeter($latitude, $longitude, $zone->latitude, $zone->longitude) <= $zone->radius_meter
             );
 
             if ($insideAnyRadius) {
@@ -253,7 +250,7 @@ class PresensiController extends Controller
                         $record->status = 'hadir';
                     }
                 } else {
-                    if (!$record || !$record->waktu_masuk) {
+                    if (! $record || ! $record->waktu_masuk) {
                         abort(422, 'Catat jam masuk terlebih dahulu sebelum jam pulang.');
                     }
                     if ($record->waktu_pulang) {
@@ -276,13 +273,13 @@ class PresensiController extends Controller
                 $record->save();
 
                 $sumberLabel = str_starts_with($metode, 'qr')
-                    ? 'scan mandiri kartu identitas QR' . ($location ? ' di ' . $location->nama : '')
-                    : 'geofence lokasi ' . ($location?->nama ?? '-');
+                    ? 'scan mandiri kartu identitas QR'.($location ? ' di '.$location->nama : '')
+                    : 'geofence lokasi '.($location?->nama ?? '-');
 
                 AktivitasService::log(
                     'kehadiran',
-                    ucfirst($jenis) . ' pegawai: ' . auth()->user()->nama_lengkap,
-                    'Presensi ' . $jenis . ' tercatat melalui ' . $sumberLabel . '.',
+                    ucfirst($jenis).' pegawai: '.auth()->user()->nama_lengkap,
+                    'Presensi '.$jenis.' tercatat melalui '.$sumberLabel.'.',
                     'presensi_pegawai',
                     $record->id,
                     null,
@@ -310,7 +307,7 @@ class PresensiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => ($jenis === 'masuk' ? 'Jam masuk berhasil dicatat' : 'Jam pulang berhasil dicatat') . $labelMetode . '.',
+            'message' => ($jenis === 'masuk' ? 'Jam masuk berhasil dicatat' : 'Jam pulang berhasil dicatat').$labelMetode.'.',
             'record' => [
                 'status' => $record->status,
                 'metode' => $record->metode,

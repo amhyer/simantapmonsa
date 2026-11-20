@@ -197,7 +197,7 @@ final class RouteExpectationRegistry
      * Return stable fixture values for named parameters; unknown route
      * parameters fall back to `1` in the broad sweep and are not core routes.
      *
-     * @param array<int, string> $parameterNames
+     * @param  array<int, string>  $parameterNames
      * @return array<string, int|string>
      */
     public static function parametersFor(?string $routeName, array $parameterNames): array

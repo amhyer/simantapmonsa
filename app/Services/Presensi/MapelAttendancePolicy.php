@@ -22,7 +22,7 @@ class MapelAttendancePolicy
         foreach (config('presensi.mapel_terpisah', []) as $keyword) {
             $needle = $this->normalize($keyword);
             $matches = in_array($needle, ['pai', 'pak', 'tik', 'btq'], true)
-                ? (bool) preg_match('/(^| )' . preg_quote($needle, '/') . '($| )/', $normalized)
+                ? (bool) preg_match('/(^| )'.preg_quote($needle, '/').'($| )/', $normalized)
                 : Str::contains($normalized, $needle);
             if ($matches) {
                 return true;
@@ -54,7 +54,7 @@ class MapelAttendancePolicy
         foreach ($students as $student) {
             $agama = $this->normalize((string) ($student->agama ?? ''));
             $agama = str_replace(['katholik', 'khonghucu'], ['katolik', 'konghucu'], $agama);
-            if ($religion && $agama !== '' && !Str::contains($agama, $religion)) {
+            if ($religion && $agama !== '' && ! Str::contains($agama, $religion)) {
                 continue;
             }
             $result[] = $student;

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class DapodikImportLog extends Model
 {
     protected $table = 'dapodik_import_logs';
+
     protected $fillable = [
         'user_id', 'sekolah_id', 'nama_sekolah',
         'total_siswa', 'berhasil', 'gagal', 'diperbarui',

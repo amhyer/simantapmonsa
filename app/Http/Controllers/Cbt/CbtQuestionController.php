@@ -33,6 +33,7 @@ class CbtQuestionController extends Controller
             $locked->questions()->create($data);
         });
         $this->sinkronEngine($bank->fresh());
+
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal ditambahkan.');
     }
 
@@ -43,6 +44,7 @@ class CbtQuestionController extends Controller
         $data = $this->data($request);
         $this->mutate($bank, fn () => $question->update($data));
         $this->sinkronEngine($bank->fresh());
+
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal diperbarui.');
     }
 
@@ -55,6 +57,7 @@ class CbtQuestionController extends Controller
         if (config('simantap.exam_engine_cbt', true)) {
             app(LegacyExamMapper::class)->lupakanSoalCbt($questionId);
         }
+
         return redirect()->route('cbt.question-banks.show', $bank)->with('success', 'Soal dihapus.');
     }
 

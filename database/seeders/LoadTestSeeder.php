@@ -46,7 +46,7 @@ class LoadTestSeeder extends Seeder
                 ['nama_pengguna' => $username],
                 [
                     'uuid' => Str::uuid(),
-                    'nama_lengkap' => 'Load Test Guru ' . $i,
+                    'nama_lengkap' => 'Load Test Guru '.$i,
                     'kata_sandi' => Hash::make($password),
                     'peran' => 'guru',
                     'terhubung_dengan' => [],
@@ -64,7 +64,7 @@ class LoadTestSeeder extends Seeder
                     'kelas' => '6A',
                     'kkm' => 75,
                     'semester' => 'Ganjil',
-                    'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+                    'tahun_pelajaran' => date('Y').'/'.(date('Y') + 1),
                     'pembaruan' => now(),
                 ]
             );
@@ -79,7 +79,7 @@ class LoadTestSeeder extends Seeder
                 ['nama_pengguna' => $username],
                 [
                     'uuid' => Str::uuid(),
-                    'nama_lengkap' => 'Load Test Siswa ' . $i,
+                    'nama_lengkap' => 'Load Test Siswa '.$i,
                     'kata_sandi' => Hash::make($password),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [],

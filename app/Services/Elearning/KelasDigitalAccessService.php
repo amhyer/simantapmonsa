@@ -260,7 +260,7 @@ class KelasDigitalAccessService
         }
 
         $skala = max(0, min(100, round($nilaiSkala100, 2)));
-        $judulPenilaian = Str::limit('[Kelas Digital] ' . $tugas->judul, 255, '');
+        $judulPenilaian = Str::limit('[Kelas Digital] '.$tugas->judul, 255, '');
 
         $nilaiRecord = $pengumpulan->nilai_id ? Nilai::find($pengumpulan->nilai_id) : null;
 

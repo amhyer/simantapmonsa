@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 class KebiasaanController extends Controller
 {
     use HasAnakLookup, HasPredikatKaih, SyncableToSheet;
+
     public function index(Request $request)
     {
         $anakList = $this->anakList();
@@ -71,11 +72,17 @@ class KebiasaanController extends Controller
         $fields = ['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'];
         $hasValue = false;
         foreach ($fields as $field) {
-            if (!empty($validated[$field])) { $hasValue = true; break; }
+            if (! empty($validated[$field])) {
+                $hasValue = true;
+                break;
+            }
         }
 
-        if (!$hasValue && empty($validated['catatan'])) {
-            if ($kebiasaan) $kebiasaan->delete();
+        if (! $hasValue && empty($validated['catatan'])) {
+            if ($kebiasaan) {
+                $kebiasaan->delete();
+            }
+
             return redirect()->back()->with('success', 'Laporan dikosongkan.');
         }
 

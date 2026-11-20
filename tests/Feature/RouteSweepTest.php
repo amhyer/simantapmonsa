@@ -3,15 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\CbtResult;
-use App\Models\User;
-use App\Models\Tryout\Result as TryoutResult;
-use App\Models\Tryout\StudentAnswer;
+use App\Models\Exam\Attempt as ExamAttempt;
 use App\Models\Tka\AssessmentItem;
 use App\Models\Tka\ParentReport;
-use App\Models\Exam\Attempt as ExamAttempt;
+use App\Models\Tryout\Result as TryoutResult;
+use App\Models\Tryout\StudentAnswer;
+use App\Models\User;
 use Database\Seeders\E2eFixtureSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -37,7 +38,7 @@ class RouteSweepTest extends TestCase
         ];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
 
@@ -73,7 +74,7 @@ class RouteSweepTest extends TestCase
             $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
         }
 
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
     }
 
     public function test_core_route_registry_matches_expected_statuses_with_fixture_ids(): void

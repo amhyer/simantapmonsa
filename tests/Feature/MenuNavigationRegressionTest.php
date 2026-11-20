@@ -56,7 +56,9 @@ class MenuNavigationRegressionTest extends TestCase
         $request = Request::create('/test');
         app()->instance('request', $request);
         $route = (new RoutingRoute('GET', '/test', fn () => null))->name('siswa.materi.show');
-        $request->setRouteResolver(function () use (&$route) { return $route; });
+        $request->setRouteResolver(function () use (&$route) {
+            return $route;
+        });
         $this->assertTrue(sidebarRouteActive('siswa.materi.index'));
         $this->assertFalse(sidebarRouteActive('siswa.kuis.index'));
 

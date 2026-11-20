@@ -33,10 +33,15 @@ class TryoutEngineParityTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $akun;
+
     private Siswa $siswa;
+
     private TryoutSession $sesi;
+
     private Subject $mapel;
+
     private TryoutQuestion $soalBenar;
 
     protected function setUp(): void

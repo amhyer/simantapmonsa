@@ -33,7 +33,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (!Schema::hasColumn('nilai_erapor', 'jadwal_pelajaran_id')) {
+        if (! Schema::hasColumn('nilai_erapor', 'jadwal_pelajaran_id')) {
             return;
         }
 

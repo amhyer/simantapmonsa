@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\JadwalPelajaran;
 use App\Models\PresensiLokasi;
+use App\Models\PresensiPegawai;
 use App\Models\Rombel;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Services\Presensi\IdentityCardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -17,7 +20,9 @@ class PresensiTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private Rombel $rombel;
+
     private Siswa $siswa;
 
     protected function setUp(): void
@@ -25,7 +30,7 @@ class PresensiTest extends TestCase
         parent::setUp();
         // Skenario QR-only lama sengaja dijalankan dengan kebijakan GPS opsional.
         config(['presensi.wajib_gps_scan_qr_pegawai' => false]);
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
+        $this->travelTo(Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
 
         $this->guru = User::factory()->guru()->create();
         $semester = Semester::create([
@@ -103,7 +108,7 @@ class PresensiTest extends TestCase
             'metode' => 'qr',
         ]);
 
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 08:45:00', config('app.timezone')));
+        $this->travelTo(Carbon::parse('2026-10-19 08:45:00', config('app.timezone')));
         $this->postJson(route('guru.kehadiran.status', [$jadwal, $this->siswa]), [
             'cakupan' => 'harian',
             'status' => 'H',
@@ -135,7 +140,7 @@ class PresensiTest extends TestCase
             'qr_payload' => 'QR-WINDOW-001',
         ])->assertOk();
 
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 11:30:00', config('app.timezone')));
+        $this->travelTo(Carbon::parse('2026-10-19 11:30:00', config('app.timezone')));
         $this->actingAs($this->guru)->postJson(route('guru.kehadiran.scan', $jadwal), [
             'qr_payload' => 'QR-WINDOW-001',
         ])->assertForbidden();
@@ -313,7 +318,7 @@ class PresensiTest extends TestCase
             'alasan_koreksi' => 'GPS perangkat bermasalah; diverifikasi kepala sekolah.',
         ])->assertRedirect(route('admin.presensi.index', ['tanggal' => '2026-10-20']));
 
-        $record = \App\Models\PresensiPegawai::where('user_id', $teacher->id)->firstOrFail();
+        $record = PresensiPegawai::where('user_id', $teacher->id)->firstOrFail();
         $this->assertSame('terlambat', $record->status);
         $this->assertSame('2026-10-20 08:15:00', $record->waktu_masuk->format('Y-m-d H:i:s'));
         $this->assertSame('2026-10-20 16:30:00', $record->waktu_pulang->format('Y-m-d H:i:s'));
@@ -359,7 +364,7 @@ class PresensiTest extends TestCase
     public function test_admin_dapat_menerbitkan_dan_mencetak_kartu_identitas_siswa_dan_pegawai(): void
     {
         $admin = User::factory()->admin()->create();
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
 
         // Siswa sebelum diterbitkan
         $this->assertNull($this->siswa->qr_token_hash);
@@ -395,7 +400,7 @@ class PresensiTest extends TestCase
 
     public function test_guru_dan_pegawai_dapat_scan_mandiri_kartu_identitas_sendiri_untuk_masuk_dan_pulang(): void
     {
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
         $payload = $cardService->issuePegawaiCard($this->guru, false);
 
         // 1. Scan mandiri jam masuk
@@ -419,7 +424,7 @@ class PresensiTest extends TestCase
         ])->assertStatus(409);
 
         // 3. Scan mandiri jam pulang
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-19 16:00:00', config('app.timezone')));
+        $this->travelTo(Carbon::parse('2026-10-19 16:00:00', config('app.timezone')));
         $responsePulang = $this->actingAs($this->guru)->postJson(route('presensi.pegawai.scan'), [
             'qr_payload' => $payload,
             'jenis' => 'pulang',
@@ -437,7 +442,7 @@ class PresensiTest extends TestCase
 
     public function test_scan_mandiri_menolak_kartu_milik_pegawai_lain_dan_kartu_siswa(): void
     {
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
         $cardService->issuePegawaiCard($this->guru, false);
         $otherTeacher = User::factory()->guru()->create();
         $otherPayload = $cardService->issuePegawaiCard($otherTeacher, false);
@@ -460,7 +465,7 @@ class PresensiTest extends TestCase
 
     public function test_guru_mapel_scan_kartu_siswa_pada_jadwal_hari_ini_mencatat_kehadiran_mapel(): void
     {
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
         $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
         $jadwal = $this->jadwal('Bahasa Inggris');
 
@@ -484,7 +489,7 @@ class PresensiTest extends TestCase
 
     public function test_guru_tidak_dapat_scan_siswa_jika_bukan_jadwal_hari_ini_atau_bukan_pengampu(): void
     {
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
         $studentPayload = $cardService->issueSiswaCard($this->siswa, false);
 
         // 1. Jadwal bukan hari ini (tanggal pengujian adalah Senin).
@@ -565,7 +570,7 @@ class PresensiTest extends TestCase
     public function test_kartu_fisik_lama_tetap_bisa_discan_meskipun_admin_ganti_qr_dan_dapat_dipulihkan(): void
     {
         $admin = User::factory()->admin()->create();
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
         $jadwal = $this->jadwal('Bahasa Inggris');
 
         // 1. Terbitkan kartu v1 dan cetak kartu fisik
@@ -607,7 +612,7 @@ class PresensiTest extends TestCase
     public function test_kartu_fisik_lama_pegawai_tetap_sah_setelah_admin_ganti_qr_dan_bisa_dipulihkan(): void
     {
         $admin = User::factory()->admin()->create();
-        $cardService = app(\App\Services\Presensi\IdentityCardService::class);
+        $cardService = app(IdentityCardService::class);
 
         // 1. Terbitkan kartu v1 dan cetak untuk guru
         $payloadV1 = $cardService->issuePegawaiCard($this->guru, true);

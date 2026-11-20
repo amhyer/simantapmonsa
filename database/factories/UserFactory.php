@@ -32,7 +32,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'peran' => 'admin',
-            'nama_pengguna' => 'admin_' . Str::random(5),
+            'nama_pengguna' => 'admin_'.Str::random(5),
         ]);
     }
 
@@ -54,7 +54,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'peran' => 'ortu',
-            'nama_pengguna' => 'ortu_' . Str::random(5),
+            'nama_pengguna' => 'ortu_'.Str::random(5),
         ]);
     }
 
@@ -62,7 +62,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'peran' => 'kepsek',
-            'nama_pengguna' => 'kepsek_' . Str::random(5),
+            'nama_pengguna' => 'kepsek_'.Str::random(5),
         ]);
     }
 
@@ -70,7 +70,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'peran' => 'tendik',
-            'nama_pengguna' => 'tendik_' . Str::random(5),
+            'nama_pengguna' => 'tendik_'.Str::random(5),
         ]);
     }
 
@@ -78,7 +78,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'peran' => 'super_admin',
-            'nama_pengguna' => 'superadmin_' . Str::random(5),
+            'nama_pengguna' => 'superadmin_'.Str::random(5),
             'tenant_id' => null,
         ]);
     }

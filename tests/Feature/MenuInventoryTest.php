@@ -288,6 +288,7 @@ class MenuInventoryTest extends TestCase
                 $route = Route::getRoutes()->getByName($entry['route']);
                 if ($route === null) {
                     $lines[] = "| {$entry['tab']} | {$entry['label']} | `{$entry['route']}` | — | — (rute tidak terdaftar) | — | {$entry['flag']} |";
+
                     continue;
                 }
                 $uri = '/'.ltrim($route->uri(), '/');

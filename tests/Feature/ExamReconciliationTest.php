@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\Exam\Answer;
 use App\Models\Exam\Bank;
 use App\Models\Exam\Question;
 use App\Models\MataPelajaran;
@@ -116,7 +117,7 @@ class ExamReconciliationTest extends TestCase
     {
         $this->artisan('exam:backfill')->assertSuccessful();
 
-        \App\Models\Exam\Answer::query()->firstOrFail()->delete();
+        Answer::query()->firstOrFail()->delete();
 
         $this->artisan('exam:rekonsiliasi')
             ->expectsOutputToContain('jawaban tidak ada di engine')

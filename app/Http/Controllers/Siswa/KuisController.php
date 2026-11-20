@@ -20,7 +20,7 @@ class KuisController extends Controller
     {
         $siswa = $this->getSiswa();
 
-        if (!$siswa) {
+        if (! $siswa) {
             return view('siswa.kuis.index', ['kuis' => collect(), 'hasilKuis' => collect(), 'siswa' => null]);
         }
 
@@ -38,7 +38,7 @@ class KuisController extends Controller
     {
         $siswa = $this->getSiswa();
 
-        if (!$siswa) {
+        if (! $siswa) {
             abort(404);
         }
 
@@ -58,7 +58,7 @@ class KuisController extends Controller
     {
         $siswa = $this->getSiswa();
 
-        if (!$siswa) {
+        if (! $siswa) {
             abort(404);
         }
 
@@ -97,7 +97,9 @@ class KuisController extends Controller
         foreach ($soal as $i => $item) {
             $jawabanSiswa = $validated['jawaban'][$i] ?? null;
             $isBenar = ($jawabanSiswa === ($item['kunci'] ?? null));
-            if ($isBenar) $benar++;
+            if ($isBenar) {
+                $benar++;
+            }
             $jawabanDetail[] = [
                 'no' => $i + 1,
                 'jawaban' => $jawabanSiswa,
@@ -149,13 +151,13 @@ class KuisController extends Controller
             // Hanya pelanggaran unique hasil_kuis (kuis_id, siswa_id) yang
             // diperlakukan sebagai "sudah tersimpan" (index default:
             // hasil_kuis_kuis_id_siswa_id_unique).
-            Log::warning('Submit kuis ganda dicegah (kuis_id ' . $kuis->id . ', siswa_id ' . $siswa->id . ', index: ' . ($e->index ?? '-') . ').');
+            Log::warning('Submit kuis ganda dicegah (kuis_id '.$kuis->id.', siswa_id '.$siswa->id.', index: '.($e->index ?? '-').').');
 
             return redirect()->route('siswa.kuis.index')
                 ->with('error', 'Jawaban Anda sudah tersimpan sebelumnya.');
         }
 
         return redirect()->route('siswa.kuis.index')
-            ->with('success', 'Kuis berhasil dikirim. Skor Anda: ' . $skor);
+            ->with('success', 'Kuis berhasil dikirim. Skor Anda: '.$skor);
     }
 }

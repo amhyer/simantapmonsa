@@ -30,7 +30,7 @@ class ExamAnswerBuffer
         $store = Cache::getStore();
         if ($store instanceof RedisStore) {
             $conn = $store->connection();
-            $redisKey = $store->getPrefix() . $this->key($resultId);
+            $redisKey = $store->getPrefix().$this->key($resultId);
             $conn->hset($redisKey, (string) $questionId, $answer);
             $conn->expire($redisKey, self::TTL_SECONDS);
 
@@ -65,7 +65,7 @@ class ExamAnswerBuffer
         $store = Cache::getStore();
         if ($store instanceof RedisStore) {
             $conn = $store->connection();
-            $redisKey = $store->getPrefix() . $this->key($resultId);
+            $redisKey = $store->getPrefix().$this->key($resultId);
             foreach ($normalized as $qId => $ans) {
                 $conn->hset($redisKey, (string) $qId, $ans);
             }
@@ -88,7 +88,7 @@ class ExamAnswerBuffer
     {
         $store = Cache::getStore();
         if ($store instanceof RedisStore) {
-            $raw = $store->connection()->hgetall($store->getPrefix() . $this->key($resultId));
+            $raw = $store->connection()->hgetall($store->getPrefix().$this->key($resultId));
             if (! is_array($raw)) {
                 return [];
             }
@@ -144,7 +144,7 @@ class ExamAnswerBuffer
     {
         $store = Cache::getStore();
         if ($store instanceof RedisStore) {
-            $store->connection()->del($store->getPrefix() . $this->key($resultId));
+            $store->connection()->del($store->getPrefix().$this->key($resultId));
 
             return;
         }

@@ -3,19 +3,17 @@
 namespace App\Services\Dapodik;
 
 use App\Models\DapodikConfig;
-use App\Models\DapodikSyncLog;
 use App\Models\JadwalPelajaran;
 use App\Models\Kehadiran;
 use App\Models\Nilai;
 use App\Models\NilaiErapot;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class DapodikPushService
 {
@@ -46,7 +44,7 @@ class DapodikPushService
 
         try {
             $sekolah = SekolahSettings::first();
-            if (!$sekolah) {
+            if (! $sekolah) {
                 return ['berhasil' => 0, 'gagal' => 1, 'errors' => ['Data sekolah tidak ditemukan']];
             }
 
@@ -99,10 +97,11 @@ class DapodikPushService
             if (isset($result['success']) && $result['success']) {
                 return ['berhasil' => 1, 'gagal' => 0, 'errors' => []];
             } else {
-                return ['berhasil' => 0, 'gagal' => 1, 'errors' => ['Gagal push sekolah: ' . ($result['message'] ?? 'Unknown error')]];
+                return ['berhasil' => 0, 'gagal' => 1, 'errors' => ['Gagal push sekolah: '.($result['message'] ?? 'Unknown error')]];
             }
         } catch (\Exception $e) {
-            Log::error('Push sekolah gagal: ' . $e->getMessage());
+            Log::error('Push sekolah gagal: '.$e->getMessage());
+
             return ['berhasil' => 0, 'gagal' => 1, 'errors' => [$e->getMessage()]];
         }
     }
@@ -115,7 +114,7 @@ class DapodikPushService
         $gagal = 0;
         $errors = [];
 
-        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $semester = Semester::where('semester_id', $semesterId)->first();
         $semesterKey = $semester?->id ?? $semesterId;
 
         $siswaList = Siswa::where('semester_id', $semesterKey)
@@ -137,12 +136,12 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Siswa {$siswa->nama_peserta_didik}: " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Siswa {$siswa->nama_peserta_didik}: ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Siswa {$siswa->nama_peserta_didik}: " . $e->getMessage();
-                Log::error("Push siswa gagal: " . $e->getMessage());
+                $errors[] = "Siswa {$siswa->nama_peserta_didik}: ".$e->getMessage();
+                Log::error('Push siswa gagal: '.$e->getMessage());
             }
         }
 
@@ -310,12 +309,12 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Guru {$gtk->nama_lengkap}: " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Guru {$gtk->nama_lengkap}: ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Guru {$gtk->nama_lengkap}: " . $e->getMessage();
-                Log::error("Push GTK gagal: " . $e->getMessage());
+                $errors[] = "Guru {$gtk->nama_lengkap}: ".$e->getMessage();
+                Log::error('Push GTK gagal: '.$e->getMessage());
             }
         }
 
@@ -359,11 +358,11 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Rombel {$rombel->nama_rombel}: " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Rombel {$rombel->nama_rombel}: ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Rombel {$rombel->nama_rombel}: " . $e->getMessage();
+                $errors[] = "Rombel {$rombel->nama_rombel}: ".$e->getMessage();
             }
         }
 
@@ -411,11 +410,11 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Jadwal {$jadwal->mata_pelajaran}: " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Jadwal {$jadwal->mata_pelajaran}: ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Jadwal {$jadwal->mata_pelajaran}: " . $e->getMessage();
+                $errors[] = "Jadwal {$jadwal->mata_pelajaran}: ".$e->getMessage();
             }
         }
 
@@ -430,7 +429,7 @@ class DapodikPushService
         $gagal = 0;
         $errors = [];
 
-        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $semester = Semester::where('semester_id', $semesterId)->first();
         $siswaIds = $semester
             ? Siswa::where('semester_id', $semester->id)->pluck('id')
             : collect();
@@ -462,12 +461,12 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): " . $e->getMessage();
-                Log::error("Push nilai rapor gagal: " . $e->getMessage());
+                $errors[] = "Nilai {$nilai->mata_pelajaran} (siswa #{$nilai->siswa_id}): ".$e->getMessage();
+                Log::error('Push nilai rapor gagal: '.$e->getMessage());
             }
         }
 
@@ -482,7 +481,7 @@ class DapodikPushService
         $gagal = 0;
         $errors = [];
 
-        $semester = \App\Models\Semester::where('semester_id', $semesterId)->first();
+        $semester = Semester::where('semester_id', $semesterId)->first();
         $siswaIds = $semester
             ? Siswa::where('semester_id', $semester->id)->pluck('id')
             : collect();
@@ -511,12 +510,12 @@ class DapodikPushService
                     $berhasil++;
                 } else {
                     $gagal++;
-                    $errors[] = "Kehadiran #{$hadir->id}: " . ($response['message'] ?? 'Unknown error');
+                    $errors[] = "Kehadiran #{$hadir->id}: ".($response['message'] ?? 'Unknown error');
                 }
             } catch (\Exception $e) {
                 $gagal++;
-                $errors[] = "Kehadiran #{$hadir->id}: " . $e->getMessage();
-                Log::error("Push kehadiran gagal: " . $e->getMessage());
+                $errors[] = "Kehadiran #{$hadir->id}: ".$e->getMessage();
+                Log::error('Push kehadiran gagal: '.$e->getMessage());
             }
         }
 

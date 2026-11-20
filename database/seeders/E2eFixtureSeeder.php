@@ -39,26 +39,43 @@ class E2eFixtureSeeder extends Seeder
     ];
 
     public const CBT_BANK_ID = 9301;
+
     public const CBT_SESSION_ID = 9311;
+
     public const CBT_RESULT_ID = 9321;
 
     public const TRYOUT_CATEGORY_ID = 9400;
+
     public const TRYOUT_PACKAGE_ID = 9401;
+
     public const TRYOUT_SUBJECT_ID = 9402;
+
     public const MATA_PELAJARAN_ID = 9403;
+
     public const TRYOUT_QUESTION_ID = 9404;
+
     public const TRYOUT_SESSION_ID = 9407;
+
     public const TRYOUT_RESULT_ID = 9411;
 
     public const TKA_ASSESSMENT_A_ID = 9501;
+
     public const TKA_ASSESSMENT_B_ID = 9502;
+
     public const TKA_PARENT_REPORT_ID = 9561;
+
     public const TKA_SEMESTER_A_ID = 9541;
+
     public const TKA_SEMESTER_B_ID = 9542;
+
     public const TKA_DIMENSION_ID = 9551;
+
     public const TKA_ITEM_LIGHT_ID = 9552;
+
     public const TKA_ITEM_HEAVY_ID = 9553;
+
     public const TKA_OTHER_DIMENSION_ID = 9554;
+
     public const TKA_OTHER_ITEM_ID = 9555;
 
     public const USERNAMES = [

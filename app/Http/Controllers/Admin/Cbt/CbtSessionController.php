@@ -5,10 +5,15 @@ namespace App\Http\Controllers\Admin\Cbt;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Cbt\CbtSessionStatusRequest;
 use App\Http\Requests\Admin\Cbt\CbtSessionStoreRequest;
+use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\Rombel;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Services\CbtExamService;
+use App\Services\Exam\ExamItemAnalysisService;
+use App\Services\Exam\ExamReportService;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,11 +49,11 @@ class CbtSessionController extends Controller
     public function create()
     {
         $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
-        $banks = \App\Models\CbtQuestionBank::with('guru')->orderBy('title')->get();
-        $classes = \App\Models\Siswa::where('aktif', true)->whereNull('archived_at')
+        $banks = CbtQuestionBank::with('guru')->orderBy('title')->get();
+        $classes = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         if ($classes->isEmpty()) {
-            $classes = \App\Models\Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
+            $classes = Rombel::orderBy('nama_rombel')->pluck('nama_rombel')->unique()->values();
         }
 
         return view('admin.cbt.sessions.create', compact('gurus', 'banks', 'classes'));
@@ -59,7 +64,7 @@ class CbtSessionController extends Controller
         $validated = $request->validated();
 
         $session = DB::transaction(function () use ($validated) {
-            \App\Models\CbtQuestionBank::whereKey($validated['bank_id'])->lockForUpdate()->firstOrFail();
+            CbtQuestionBank::whereKey($validated['bank_id'])->lockForUpdate()->firstOrFail();
 
             return CbtTestSession::create($validated + ['status' => 'draft']);
         });
@@ -122,7 +127,7 @@ class CbtSessionController extends Controller
         return redirect()->route('admin.cbt.sessions.index')->with('success', 'Sesi beserta hasilnya dihapus.');
     }
 
-    public function analisisButir(CbtTestSession $session, \App\Services\Exam\ExamItemAnalysisService $analysis)
+    public function analisisButir(CbtTestSession $session, ExamItemAnalysisService $analysis)
     {
         $session->load(['guru', 'bank']);
         $hasil = $analysis->untukSesiCbt($session);
@@ -166,7 +171,7 @@ class CbtSessionController extends Controller
      * dapat dibandingkan langsung (diuji `ExamReportParityTest`), sehingga
      * langkah 6 (hapus tabel lama) punya pembaca pengganti yang terbukti.
      */
-    public function exportResultsEngine(CbtTestSession $session, string $format, \App\Services\Exam\ExamReportService $report)
+    public function exportResultsEngine(CbtTestSession $session, string $format, ExamReportService $report)
     {
         abort_unless($format === 'csv', 404, 'Format ekspor hanya mendukung csv.');
 

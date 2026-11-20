@@ -11,6 +11,7 @@ class PengaturanController extends Controller
     public function index()
     {
         $pengaturan = PengaturanGuru::where('guru_id', auth()->id())->first();
+
         return view('guru.pengaturan.index', compact('pengaturan'));
     }
 
@@ -34,7 +35,7 @@ class PengaturanController extends Controller
         );
 
         // Update user kelas_mata_pelajaran
-        if (!empty($validated['kelas'])) {
+        if (! empty($validated['kelas'])) {
             auth()->user()->update(['kelas_mata_pelajaran' => $validated['kelas']]);
         }
 

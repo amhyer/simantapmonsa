@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Database\Seeders\Support\SeedGuard;
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\NilaiErapot;
 use App\Models\Kebiasaan;
 use App\Models\Kehadiran;
+use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
+use App\Models\Siswa;
+use App\Models\User;
+use Database\Seeders\Support\SeedGuard;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -71,16 +71,16 @@ class DemoDataSeeder extends Seeder
 
         foreach ($namaSiswa as $i => [$nama, $jk]) {
             $siswa = Siswa::firstOrCreate(
-                ['nis' => '2401' . str_pad($i + 1, 3, '0', STR_PAD_LEFT)],
+                ['nis' => '2401'.str_pad($i + 1, 3, '0', STR_PAD_LEFT)],
                 [
                     'uuid' => Str::uuid(),
                     'guru_id' => $guru->id,
                     'nama_guru' => $guru->nama_lengkap,
-                    'nisn' => '012345' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                    'nisn' => '012345'.str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                     'nama_peserta_didik' => $nama,
                     'kelas' => 'V A',
                     'jenis_kelamin' => $jk,
-                    'nama_orang_tua' => 'ORT' . str_pad(1000 + $i * 7, 4, '0', STR_PAD_LEFT),
+                    'nama_orang_tua' => 'ORT'.str_pad(1000 + $i * 7, 4, '0', STR_PAD_LEFT),
                     'aktif' => true,
                 ]
             );
@@ -108,7 +108,9 @@ class DemoDataSeeder extends Seeder
 
             for ($d = 11; $d >= 0; $d--) {
                 $tgl = now()->subDays($d)->format('Y-m-d');
-                if (now()->subDays($d)->isSunday()) continue;
+                if (now()->subDays($d)->isSunday()) {
+                    continue;
+                }
 
                 $r = rand(1, 100);
                 $status = $r > 94 ? 'S' : ($r > 91 ? 'I' : ($r > 90 ? 'A' : 'H'));
@@ -121,7 +123,9 @@ class DemoDataSeeder extends Seeder
 
             for ($d = 6; $d >= 0; $d--) {
                 $tgl = now()->subDays($d)->format('Y-m-d');
-                if (rand(0, 100) < 20) continue;
+                if (rand(0, 100) < 20) {
+                    continue;
+                }
 
                 Kebiasaan::updateOrCreate(
                     ['siswa_id' => $siswa->id, 'tanggal' => $tgl],

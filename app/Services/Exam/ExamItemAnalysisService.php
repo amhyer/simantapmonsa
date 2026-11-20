@@ -86,7 +86,7 @@ class ExamItemAnalysisService
 
         $dipakai = $selesai->isNotEmpty() ? $selesai : $semua;
 
-        $attempts = $dipakai->map(function (Attempt $attempt) use ($questions): array {
+        $attempts = $dipakai->map(function (Attempt $attempt): array {
             $jawaban = [];
             $benar = [];
 

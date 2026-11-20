@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Tryout;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tryout\StoreTryoutPackageRequest;
 use App\Http\Requests\Tryout\UpdateTryoutPackageRequest;
+use App\Models\MataPelajaran;
 use App\Models\Tryout\Category;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Subject;
-use App\Models\MataPelajaran;
 use App\Services\Exam\LegacyExamMapper;
 use Illuminate\Support\Str;
 
@@ -17,12 +17,12 @@ class TryoutPackageController extends Controller
     public function index()
     {
         $packages = Package::with(['category', 'subjects'])
-                          ->whereHas('category')
-                          ->latest()
-                          ->paginate(20);
-        
+            ->whereHas('category')
+            ->latest()
+            ->paginate(20);
+
         $categories = Category::where('aktif', true)->get();
-        
+
         return view('tryout.packages.index', compact('packages', 'categories'));
     }
 
@@ -30,7 +30,7 @@ class TryoutPackageController extends Controller
     {
         $categories = Category::where('aktif', true)->get();
         $mataPelajarans = MataPelajaran::where('aktif', true)->orderBy('kelompok')->orderBy('urutan')->get();
-        
+
         return view('tryout.packages.create', compact('categories', 'mataPelajarans'));
     }
 
@@ -76,7 +76,7 @@ class TryoutPackageController extends Controller
     public function show(Package $package)
     {
         $package->load(['category', 'subjects.mataPelajaran', 'subjects.questions']);
-        
+
         return view('tryout.packages.show', compact('package'));
     }
 
@@ -85,7 +85,7 @@ class TryoutPackageController extends Controller
         $categories = Category::where('aktif', true)->get();
         $mataPelajarans = MataPelajaran::where('aktif', true)->orderBy('kelompok')->orderBy('urutan')->get();
         $package->load(['subjects']);
-        
+
         return view('tryout.packages.edit', compact('package', 'categories', 'mataPelajarans'));
     }
 

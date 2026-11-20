@@ -10,13 +10,13 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
         $user = Auth::user();
-        
-        if (!in_array($user->peran, $roles)) {
+
+        if (! in_array($user->peran, $roles)) {
             // Pengalihan ramah untuk Admin / Guru yang membuka link kartu/profil siswa
             if ($request->isMethod('GET')) {
                 if ($user->peran === 'admin') {

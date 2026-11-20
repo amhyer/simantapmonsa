@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 class PengaturanGuru extends Model
 {
     protected $table = 'pengaturan_guru';
+
     protected $fillable = [
         'guru_id',
         'nama_guru',
@@ -59,7 +60,7 @@ class PengaturanGuru extends Model
                 forgetKKMCache($pengaturan->guru_id ? (int) $pengaturan->guru_id : null, $tenantId !== null ? (int) $tenantId : null);
             } else {
                 if ($pengaturan->guru_id) {
-                    Cache::forget('kkm-guru-' . $pengaturan->guru_id);
+                    Cache::forget('kkm-guru-'.$pengaturan->guru_id);
                 }
                 Cache::forget('kkm-global');
             }

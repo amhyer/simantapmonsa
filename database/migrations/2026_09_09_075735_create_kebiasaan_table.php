@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamp('waktu_simpan')->nullable();
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['siswa_id', 'tanggal']);
             $table->index(['siswa_id', 'tanggal']);
         });

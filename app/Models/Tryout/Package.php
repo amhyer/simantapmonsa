@@ -4,9 +4,9 @@ namespace App\Models\Tryout;
 
 use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Package extends Model
@@ -14,10 +14,11 @@ class Package extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $table = 'tryout_packages';
+
     protected $fillable = [
         'uuid', 'tenant_id', 'category_id', 'kode_paket', 'nama_paket',
         'deskripsi', 'jenjang', 'tahun_paket', 'jumlah_mapel',
-        'durasi_total_menit', 'passing_grade', 'standar_nilai', 'aktif'
+        'durasi_total_menit', 'passing_grade', 'standar_nilai', 'aktif',
     ];
 
     protected $casts = [
@@ -30,7 +31,7 @@ class Package extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });

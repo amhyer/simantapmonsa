@@ -73,12 +73,12 @@ function resolve_nis(?string $nipd, string $nama, string $id, int $kelas): strin
 
     $year = date('Y');
     $classStr = (string) $kelas;
-    $hashInput = $nama . '|' . $id;
+    $hashInput = $nama.'|'.$id;
     $hash = hash_deterministic($hashInput, 9999);
 
     return str_pad($year, 4, '0', STR_PAD_LEFT)
-        . str_pad($classStr, 2, '0', STR_PAD_LEFT)
-        . str_pad((string) $hash, 4, '0', STR_PAD_LEFT);
+        .str_pad($classStr, 2, '0', STR_PAD_LEFT)
+        .str_pad((string) $hash, 4, '0', STR_PAD_LEFT);
 }
 
 function parse_grade_from_rombel(?string $nama_rombel): string
@@ -128,10 +128,10 @@ function current_academic_year(): string
     $month = (int) date('n');
 
     if ($month >= 7) {
-        return $year . '/' . ($year + 1);
+        return $year.'/'.($year + 1);
     }
 
-    return ($year - 1) . '/' . $year;
+    return ($year - 1).'/'.$year;
 }
 
 function semester_to_tahun_ajaran(string $semester_id): string
@@ -140,10 +140,10 @@ function semester_to_tahun_ajaran(string $semester_id): string
     $semesterDigit = (int) mb_substr($semester_id, -1);
 
     if ($semesterDigit === 2) {
-        return ($year - 1) . '/' . $year;
+        return ($year - 1).'/'.$year;
     }
 
-    return $year . '/' . ($year + 1);
+    return $year.'/'.($year + 1);
 }
 
 function hash_deterministic(string $input, int $mod = 9999): int

@@ -31,12 +31,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function ($table) {
-            if (!Schema::hasColumn('users', 'is_active')) {
+            if (! Schema::hasColumn('users', 'is_active')) {
                 $table->boolean('is_active')->default(true)->after('aktif');
             }
         });
         Schema::table('siswa', function ($table) {
-            if (!Schema::hasColumn('siswa', 'is_active')) {
+            if (! Schema::hasColumn('siswa', 'is_active')) {
                 $table->boolean('is_active')->default(true)->after('aktif');
             }
         });

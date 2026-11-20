@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guru;
 use App\Http\Controllers\Controller;
 use App\Models\Kebiasaan;
 use App\Models\Siswa;
+use Carbon\Carbon;
 
 class GuruKebiasaanController extends Controller
 {
@@ -20,7 +21,7 @@ class GuruKebiasaanController extends Controller
 
         $semuaKebiasaan = Kebiasaan::whereIn('siswa_id', $siswaIds)->with('siswa')->latest('tanggal')->get();
 
-        $kebiasaanMingguIni = $semuaKebiasaan->filter(fn($k) => \Carbon\Carbon::parse($k->tanggal)->between($mingguIni, $akhirMinggu));
+        $kebiasaanMingguIni = $semuaKebiasaan->filter(fn ($k) => Carbon::parse($k->tanggal)->between($mingguIni, $akhirMinggu));
 
         $totalLaporan = $semuaKebiasaan->count();
         $totalDilaporkan = $kebiasaanMingguIni->pluck('siswa_id')->unique()->count();
@@ -31,8 +32,8 @@ class GuruKebiasaanController extends Controller
         $fieldSkor = ['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'];
         $semuaSkor = $semuaKebiasaan->flatMap(function ($k) use ($fieldSkor) {
             return collect($fieldSkor)
-                ->map(fn($f) => $k->$f)
-                ->filter(fn($nilai) => is_numeric($nilai) && (int) $nilai > 0)
+                ->map(fn ($f) => $k->$f)
+                ->filter(fn ($nilai) => is_numeric($nilai) && (int) $nilai > 0)
                 ->values();
         });
         $rataRataSkor = $semuaSkor->count() > 0 ? round($semuaSkor->avg(), 1) : 0;
@@ -40,19 +41,22 @@ class GuruKebiasaanController extends Controller
         // View mengakses $item->bangun_pagi dan $item->siswa, jadi harus tetap
         // berupa model Eloquent (bukan array hasil toArray()).
         $kebiasaanByDate = $semuaKebiasaan
-            ->groupBy(fn($k) => (string) $k->tanggal)
+            ->groupBy(fn ($k) => (string) $k->tanggal)
             ->sortKeysDesc();
 
         $chartLabels = $siswaList->pluck('nama_peserta_didik')->toArray();
         $chartData = $siswaList->map(function ($siswa) use ($semuaKebiasaan, $fieldSkor) {
-            $data = $semuaKebiasaan->filter(fn($k) => $k->siswa_id == $siswa->id);
-            if ($data->isEmpty()) return 0;
+            $data = $semuaKebiasaan->filter(fn ($k) => $k->siswa_id == $siswa->id);
+            if ($data->isEmpty()) {
+                return 0;
+            }
             $skor = $data->flatMap(function ($k) use ($fieldSkor) {
                 return collect($fieldSkor)
-                    ->map(fn($f) => $k->$f)
-                    ->filter(fn($nilai) => is_numeric($nilai) && (int) $nilai > 0)
+                    ->map(fn ($f) => $k->$f)
+                    ->filter(fn ($nilai) => is_numeric($nilai) && (int) $nilai > 0)
                     ->values();
             });
+
             return $skor->count() > 0 ? round($skor->avg(), 1) : 0;
         })->toArray();
 

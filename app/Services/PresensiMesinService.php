@@ -76,8 +76,9 @@ class PresensiMesinService
                     ->first();
 
                 // Scan pulang saja hanya dapat melengkapi catatan dengan jam masuk.
-                if ($group['masuk'] === null && (!$record || !$record->waktu_masuk)) {
+                if ($group['masuk'] === null && (! $record || ! $record->waktu_masuk)) {
                     $hasil['dilindungi']++;
+
                     continue;
                 }
 

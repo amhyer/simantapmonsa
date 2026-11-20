@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 class ApiKey extends Model
 {
     protected $table = 'api_keys';
+
     protected $fillable = [
         'user_id', 'name', 'key', 'key_hash', 'abilities',
         'last_used_at', 'expires_at', 'active',
@@ -63,7 +64,7 @@ class ApiKey extends Model
      */
     public function verifyKey(string $providedKey): bool
     {
-        if (!$this->key_hash) {
+        if (! $this->key_hash) {
             // Fallback for legacy keys without hash
             return hash_equals($this->key, $providedKey);
         }
@@ -73,8 +74,13 @@ class ApiKey extends Model
 
     public function isValid(): bool
     {
-        if (!$this->active) return false;
-        if ($this->expires_at && $this->expires_at->isPast()) return false;
+        if (! $this->active) {
+            return false;
+        }
+        if ($this->expires_at && $this->expires_at->isPast()) {
+            return false;
+        }
+
         return true;
     }
 

@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class Dimensi extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'dimensi';
+
     protected $fillable = [
         'tenant_id',
         'uuid',
@@ -37,7 +39,9 @@ class Dimensi extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

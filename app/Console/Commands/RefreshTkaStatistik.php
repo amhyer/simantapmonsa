@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class RefreshTkaStatistik extends Command
 {
     protected $signature = 'tka:refresh';
+
     protected $description = 'Refresh TKA statistics cache from tka.kemendikdasmen.go.id';
 
     public function handle(TkaStatistikService $tkaService): int
@@ -17,12 +18,13 @@ class RefreshTkaStatistik extends Command
         $data = $tkaService->refresh();
 
         if (isset($data['error'])) {
-            $this->error('Failed to fetch TKA data: ' . ($data['message'] ?? 'Unknown error'));
+            $this->error('Failed to fetch TKA data: '.($data['message'] ?? 'Unknown error'));
+
             return Command::FAILURE;
         }
 
         $this->info('TKA statistics refreshed successfully.');
-        $this->info('Last update: ' . ($data['last_update'] ?? 'unknown'));
+        $this->info('Last update: '.($data['last_update'] ?? 'unknown'));
 
         return Command::SUCCESS;
     }

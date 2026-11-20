@@ -10,6 +10,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class RaporProFeaturesTest extends TestCase
@@ -17,9 +18,13 @@ class RaporProFeaturesTest extends TestCase
     use RefreshDatabase;
 
     private Tenant $tenant;
+
     private User $admin;
+
     private User $guru;
+
     private Rombel $rombel;
+
     private Siswa $siswa;
 
     protected function setUp(): void
@@ -27,7 +32,7 @@ class RaporProFeaturesTest extends TestCase
         parent::setUp();
 
         $this->tenant = Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'npsn' => '40301234',
             'nama_sekolah' => 'SD Negeri Uji Pro',
             'kode_sekolah' => 'sd-uji-pro',
@@ -64,7 +69,7 @@ class RaporProFeaturesTest extends TestCase
 
         $this->siswa = Siswa::create([
             'tenant_id' => $this->tenant->id,
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'guru_id' => $this->guru->id,
             'nama_guru' => $this->guru->nama_lengkap,
             'rombel_id' => $this->rombel->id,
@@ -86,7 +91,7 @@ class RaporProFeaturesTest extends TestCase
             'mata_pelajaran' => 'Matematika',
             'kelas' => '6A',
             'semester' => 'Ganjil',
-            'tahun_ajaran' => date('Y') . '/' . (date('Y') + 1),
+            'tahun_ajaran' => date('Y').'/'.(date('Y') + 1),
             'nilai_akhir' => 88.5,
             'predikat' => 'B',
         ]);
@@ -125,7 +130,7 @@ class RaporProFeaturesTest extends TestCase
             'mata_pelajaran' => 'Matematika',
             'kelas' => '6A',
             'semester' => 'Ganjil',
-            'tahun_ajaran' => date('Y') . '/' . (date('Y') + 1),
+            'tahun_ajaran' => date('Y').'/'.(date('Y') + 1),
             'nilai_akhir' => 88.5,
             'predikat' => 'B',
         ]);
@@ -197,7 +202,7 @@ class RaporProFeaturesTest extends TestCase
         $this->assertFalse(session()->has('admin_impersonator_id'));
 
         $otherTenant = Tenant::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'npsn' => '40309999',
             'nama_sekolah' => 'SD Lain',
             'kode_sekolah' => 'sd-lain',
@@ -212,7 +217,7 @@ class RaporProFeaturesTest extends TestCase
 
     public function test_pengaturan_naik_kelas_simpan_dan_tampil_di_rapor(): void
     {
-        $tahun = date('Y') . '/' . (date('Y') + 1);
+        $tahun = date('Y').'/'.(date('Y') + 1);
         $this->actingAs($this->admin)
             ->post(route('admin.rapor.naik-kelas.simpan'), [
                 'kelas' => '6A',
@@ -274,7 +279,7 @@ class RaporProFeaturesTest extends TestCase
 
     public function test_penilaian_p5bk_dan_cetak_pts_buku_induk_p5bk(): void
     {
-        $tahun = date('Y') . '/' . (date('Y') + 1);
+        $tahun = date('Y').'/'.(date('Y') + 1);
         NilaiErapot::create([
             'tenant_id' => $this->tenant->id,
             'siswa_id' => $this->siswa->id,

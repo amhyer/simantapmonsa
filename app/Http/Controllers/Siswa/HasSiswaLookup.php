@@ -43,7 +43,7 @@ trait HasSiswaLookup
 
         return Siswa::where(function ($q) use ($kandidatNis) {
             $q->whereIn('nis', $kandidatNis)
-              ->orWhereIn('nisn', $kandidatNis);
+                ->orWhereIn('nisn', $kandidatNis);
         })->orderBy('id')->first();
     }
 }

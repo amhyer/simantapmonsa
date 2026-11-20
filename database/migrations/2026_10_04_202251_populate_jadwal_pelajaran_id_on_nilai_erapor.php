@@ -18,8 +18,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('nilai_erapor', 'jadwal_pelajaran_id')) {
+        if (! Schema::hasColumn('nilai_erapor', 'jadwal_pelajaran_id')) {
             Log::warning('Populate jadwal_pelajaran_id dilewati: kolom belum ada.');
+
             return;
         }
 
@@ -28,7 +29,7 @@ return new class extends Migration
         // 1. Peta semester teks -> semesters.id ("ganjil|2025/2026" => [ids]).
         $semMap = [];
         foreach (DB::table('semesters')->get(['id', 'nama_semester', 'tahun_ajaran']) as $s) {
-            $semMap[$norm($s->nama_semester) . '|' . trim((string) $s->tahun_ajaran)][] = $s->id;
+            $semMap[$norm($s->nama_semester).'|'.trim((string) $s->tahun_ajaran)][] = $s->id;
         }
 
         // 2. Indeks jadwal "guru|mapel|kelas|semester_id" (id terkecil menang;
@@ -36,8 +37,8 @@ return new class extends Migration
         $index = [];
         $ambigu = 0;
         foreach (DB::table('jadwal_pelajaran')->orderBy('id')->get(['id', 'guru_id', 'mata_pelajaran', 'kelas', 'semester_id']) as $j) {
-            $kunci = $j->guru_id . '|' . $norm($j->mata_pelajaran) . '|' . $norm($j->kelas) . '|' . $j->semester_id;
-            if (!isset($index[$kunci])) {
+            $kunci = $j->guru_id.'|'.$norm($j->mata_pelajaran).'|'.$norm($j->kelas).'|'.$j->semester_id;
+            if (! isset($index[$kunci])) {
                 $index[$kunci] = $j->id;
             } else {
                 $ambigu++;
@@ -62,18 +63,20 @@ return new class extends Migration
             ->orderBy('id')
             ->chunkById(500, function ($rows) use ($norm, $semMap, $index, $guruBerjadwal, &$matched, &$unmatched) {
                 foreach ($rows as $n) {
-                    $sids = $semMap[$norm($n->semester) . '|' . trim((string) $n->tahun_ajaran)] ?? null;
+                    $sids = $semMap[$norm($n->semester).'|'.trim((string) $n->tahun_ajaran)] ?? null;
                     if ($sids === null) {
                         $unmatched['semester_tak_cocok']++;
+
                         continue;
                     }
-                    if (!isset($guruBerjadwal[$n->guru_id])) {
+                    if (! isset($guruBerjadwal[$n->guru_id])) {
                         $unmatched['guru_tak_punya_jadwal']++;
+
                         continue;
                     }
                     $ditemukan = null;
                     foreach ($sids as $sid) {
-                        $kunci = $n->guru_id . '|' . $norm($n->mata_pelajaran) . '|' . $norm($n->kelas) . '|' . $sid;
+                        $kunci = $n->guru_id.'|'.$norm($n->mata_pelajaran).'|'.$norm($n->kelas).'|'.$sid;
                         if (isset($index[$kunci])) {
                             $ditemukan = $index[$kunci];
                             break;
@@ -97,9 +100,9 @@ return new class extends Migration
                                 }
                             }
                         }
-                        if (!$adaMapel) {
+                        if (! $adaMapel) {
                             $unmatched['mapel_tak_cocok']++;
-                        } elseif (!$adaKelas) {
+                        } elseif (! $adaKelas) {
                             $unmatched['kelas_tak_cocok']++;
                         } else {
                             $unmatched['semester_tak_cocok']++;
@@ -112,6 +115,7 @@ return new class extends Migration
                             'semester' => $n->semester,
                             'tahun_ajaran' => $n->tahun_ajaran,
                         ]);
+
                         continue;
                     }
                     DB::table('nilai_erapor')->where('id', $n->id)->update(['jadwal_pelajaran_id' => $ditemukan]);
@@ -119,7 +123,7 @@ return new class extends Migration
                 }
             });
 
-        Log::info("Populate jadwal_pelajaran_id selesai: {$matched} matched, " . json_encode($unmatched) . ", {$ambigu} baris jadwal ambigu (hari ganda).");
+        Log::info("Populate jadwal_pelajaran_id selesai: {$matched} matched, ".json_encode($unmatched).", {$ambigu} baris jadwal ambigu (hari ganda).");
     }
 
     public function down(): void

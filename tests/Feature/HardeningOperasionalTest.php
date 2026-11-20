@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -72,13 +73,13 @@ class HardeningOperasionalTest extends TestCase
         $response = $this->lewatMiddleware(['HTTPS' => 'on']);
 
         $this->assertSame(
-            'max-age=' . config('security.hsts_max_age'),
+            'max-age='.config('security.hsts_max_age'),
             $response->headers->get('Strict-Transport-Security')
         );
     }
 
     /** Jalankan SecurityHeaders pada request dengan server bag tertentu. */
-    private function lewatMiddleware(array $server): \Illuminate\Http\Response
+    private function lewatMiddleware(array $server): Response
     {
         $request = Request::create('/login', 'GET', [], [], [], $server);
 
@@ -142,7 +143,7 @@ class HardeningOperasionalTest extends TestCase
         config(['app.debug' => false]);
 
         Route::get('/__uji-419', function () {
-            throw new \Illuminate\Session\TokenMismatchException('CSRF token mismatch.');
+            throw new TokenMismatchException('CSRF token mismatch.');
         });
 
         $this->get('/__uji-419')

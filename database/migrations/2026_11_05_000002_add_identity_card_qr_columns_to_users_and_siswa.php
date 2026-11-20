@@ -20,29 +20,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'qr_token_hash')) {
+            if (! Schema::hasColumn('users', 'qr_token_hash')) {
                 $table->string('qr_token_hash', 64)->nullable()->unique();
             }
-            if (!Schema::hasColumn('users', 'qr_card_version')) {
+            if (! Schema::hasColumn('users', 'qr_card_version')) {
                 $table->unsignedInteger('qr_card_version')->default(0);
             }
-            if (!Schema::hasColumn('users', 'nip')) {
+            if (! Schema::hasColumn('users', 'nip')) {
                 $table->string('nip', 50)->nullable();
             }
-            if (!Schema::hasColumn('users', 'foto')) {
+            if (! Schema::hasColumn('users', 'foto')) {
                 $table->string('foto', 255)->nullable();
             }
         });
 
         Schema::table('siswa', function (Blueprint $table) {
-            if (!Schema::hasColumn('siswa', 'qr_card_version')) {
+            if (! Schema::hasColumn('siswa', 'qr_card_version')) {
                 $table->unsignedInteger('qr_card_version')->default(0);
             }
         });
 
         if (Schema::hasTable('tenants')) {
             foreach ($this->attendanceTenantTables as $tableName) {
-                if (!Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'tenant_id')) {
+                if (! Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'tenant_id')) {
                     continue;
                 }
 
@@ -60,7 +60,7 @@ return new class extends Migration
     public function down(): void
     {
         foreach (array_reverse($this->attendanceTenantTables) as $tableName) {
-            if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, 'tenant_id')) {
+            if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, 'tenant_id')) {
                 continue;
             }
 

@@ -48,7 +48,7 @@ class ForgotPasswordController extends Controller
                         ->with('status', 'Permintaan terlalu sering. Coba lagi beberapa saat lagi.');
                 }
             } catch (\Throwable $e) {
-                Log::error('Gagal mengirim tautan reset sandi: ' . $e->getMessage());
+                Log::error('Gagal mengirim tautan reset sandi: '.$e->getMessage());
             }
         }
 

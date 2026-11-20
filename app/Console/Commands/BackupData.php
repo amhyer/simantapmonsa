@@ -70,7 +70,7 @@ class BackupData extends Command
      * Salinan offsite. Kegagalan di sini TIDAK boleh membatalkan cadangan utama:
      * jaringan ke penyimpanan awan bisa putus, sementara disk lokal sudah aman.
      *
-     * @return array{0: string, 1: Disk}|null  [nama disk, instance]
+     * @return array{0: string, 1: Disk}|null [nama disk, instance]
      */
     private function diskSalinan(string $diskUtama): ?array
     {

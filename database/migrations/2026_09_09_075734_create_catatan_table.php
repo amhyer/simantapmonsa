@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('catatan');
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->index(['siswa_id', 'jenis']);
             $table->index('guru_id');
         });

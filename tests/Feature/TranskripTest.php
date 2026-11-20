@@ -24,7 +24,7 @@ class TranskripTest extends TestCase
             'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
             'nama_guru' => $guru->nama_lengkap,
-            'nis' => 'S' . $nisn,
+            'nis' => 'S'.$nisn,
             'nisn' => $nisn,
             'nama_peserta_didik' => 'Budi Transkrip',
             'kelas' => '6.A',
@@ -140,7 +140,7 @@ class TranskripTest extends TestCase
 
         $this->actingAs($admin)->put(route('admin.transkrip.input.store', $siswa), [
             'nilai' => [$mapel->id => 150],
-        ])->assertSessionHasErrors('nilai.' . $mapel->id);
+        ])->assertSessionHasErrors('nilai.'.$mapel->id);
         $this->assertSame(0, TranskripNilai::count());
     }
 

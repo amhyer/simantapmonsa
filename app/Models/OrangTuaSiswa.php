@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OrangTuaSiswa extends Model
 {
     protected $table = 'orang_tua_siswa';
+
     protected $fillable = [
         'siswa_id', 'tipe', 'nama', 'nik', 'tahun_lahir',
         'pendidikan', 'pekerjaan', 'penghasilan', 'no_telepon',

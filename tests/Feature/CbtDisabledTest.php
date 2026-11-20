@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 class CbtDisabledTest extends TestCase
@@ -12,7 +13,7 @@ class CbtDisabledTest extends TestCase
         try {
             putenv('SIMANTAP_CBT_ENABLED=false');
             $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'false';
-            \Illuminate\Support\Env::enablePutenv();
+            Env::enablePutenv();
             $this->refreshApplication();
             $this->assertFalse(config('simantap.cbt_enabled'));
             $this->assertFalse(app('router')->has('cbt.student.index'));
@@ -20,9 +21,17 @@ class CbtDisabledTest extends TestCase
         } finally {
             [$env, $arrayEnv, $server] = $old;
             $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
-            if ($arrayEnv === null) { unset($_ENV['SIMANTAP_CBT_ENABLED']); } else { $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv; }
-            if ($server === null) { unset($_SERVER['SIMANTAP_CBT_ENABLED']); } else { $_SERVER['SIMANTAP_CBT_ENABLED'] = $server; }
-            \Illuminate\Support\Env::enablePutenv();
+            if ($arrayEnv === null) {
+                unset($_ENV['SIMANTAP_CBT_ENABLED']);
+            } else {
+                $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv;
+            }
+            if ($server === null) {
+                unset($_SERVER['SIMANTAP_CBT_ENABLED']);
+            } else {
+                $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
+            }
+            Env::enablePutenv();
         }
     }
 }

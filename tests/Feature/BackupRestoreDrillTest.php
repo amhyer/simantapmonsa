@@ -3,12 +3,13 @@
 namespace Tests\Feature;
 
 use App\Jobs\ExportBackupJob;
-use App\Services\Backup\BackupStreamWriter;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\Exam\Attempt;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Services\Backup\BackupStreamWriter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -57,7 +58,7 @@ class BackupRestoreDrillTest extends TestCase
         $sebelum = [
             'siswa' => Siswa::count(),
             'cbt_results' => CbtResult::count(),
-            'exam_attempts' => \App\Models\Exam\Attempt::count(),
+            'exam_attempts' => Attempt::count(),
         ];
 
         $this->artisan('simantap:backup:drill', ['--file' => $file])
@@ -66,7 +67,7 @@ class BackupRestoreDrillTest extends TestCase
 
         $this->assertSame($sebelum['siswa'], Siswa::count());
         $this->assertSame($sebelum['cbt_results'], CbtResult::count());
-        $this->assertSame($sebelum['exam_attempts'], \App\Models\Exam\Attempt::count());
+        $this->assertSame($sebelum['exam_attempts'], Attempt::count());
     }
 
     public function test_relasi_yatim_di_backup_terdeteksi(): void
@@ -101,7 +102,7 @@ class BackupRestoreDrillTest extends TestCase
 
     private function buatBackup(): string
     {
-        (new ExportBackupJob())->handle(app(BackupStreamWriter::class));
+        (new ExportBackupJob)->handle(app(BackupStreamWriter::class));
 
         $berkas = collect(Storage::disk('local')->files('backups'))
             ->filter(fn (string $path) => str_ends_with($path, '.json'))

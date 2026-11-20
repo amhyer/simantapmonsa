@@ -25,7 +25,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('kuis', 'batas_waktu')) {
+        if (! Schema::hasColumn('kuis', 'batas_waktu')) {
             return;
         }
 
@@ -40,7 +40,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (!Schema::hasColumn('kuis', 'batas_waktu')) {
+        if (! Schema::hasColumn('kuis', 'batas_waktu')) {
             return;
         }
 

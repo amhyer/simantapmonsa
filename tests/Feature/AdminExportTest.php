@@ -21,8 +21,11 @@ class AdminExportTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $guru;
+
     private Siswa $siswa;
+
     private Semester $semester;
 
     protected function setUp(): void
@@ -61,7 +64,7 @@ class AdminExportTest extends TestCase
                 'lulus' => 'true',
             ]))
             ->assertOk()
-            ->assertDownload('hasil-tryout-' . now()->format('Y-m-d') . '.xlsx');
+            ->assertDownload('hasil-tryout-'.now()->format('Y-m-d').'.xlsx');
 
         $xlsx = $response->streamedContent();
         $this->assertStringStartsWith('PK', $xlsx, 'Ekspor hasil Tryout harus berupa berkas XLSX yang valid.');
@@ -91,7 +94,7 @@ class AdminExportTest extends TestCase
                 'format' => 'excel',
             ])
             ->assertOk()
-            ->assertDownload('laporan-tka-semester-' . $this->semester->id . '-' . now()->format('Y-m-d') . '.xlsx');
+            ->assertDownload('laporan-tka-semester-'.$this->semester->id.'-'.now()->format('Y-m-d').'.xlsx');
         $this->assertStringStartsWith('PK', $excelResponse->streamedContent());
 
         $pdfResponse = $this->actingAs($this->admin)
@@ -100,7 +103,7 @@ class AdminExportTest extends TestCase
                 'format' => 'pdf',
             ])
             ->assertOk()
-            ->assertDownload('laporan-tka-semester-' . $this->semester->id . '-' . now()->format('Y-m-d') . '.pdf');
+            ->assertDownload('laporan-tka-semester-'.$this->semester->id.'-'.now()->format('Y-m-d').'.pdf');
         $this->assertStringStartsWith('%PDF-', $pdfResponse->getContent());
     }
 
@@ -136,7 +139,7 @@ class AdminExportTest extends TestCase
                     'semester_id' => $this->semester->id,
                 ])
                 ->assertOk()
-                ->assertDownload($case['name'] . now()->format('Y-m-d') . ($case['format'] === 'pdf' ? '.pdf' : '.xlsx'));
+                ->assertDownload($case['name'].now()->format('Y-m-d').($case['format'] === 'pdf' ? '.pdf' : '.xlsx'));
         }
     }
 
@@ -184,13 +187,13 @@ class AdminExportTest extends TestCase
     private function createTryoutResult(string $packageName, bool $passed): Result
     {
         $category = Category::create([
-            'nama_kategori' => 'Ekspor ' . Str::random(6),
+            'nama_kategori' => 'Ekspor '.Str::random(6),
             'jenis' => 'akademik',
             'aktif' => true,
         ]);
         $package = Package::create([
             'category_id' => $category->id,
-            'kode_paket' => 'PKT-' . Str::upper(Str::random(8)),
+            'kode_paket' => 'PKT-'.Str::upper(Str::random(8)),
             'nama_paket' => $packageName,
             'jenjang' => 'SD',
             'tahun_paket' => 2026,
@@ -198,8 +201,8 @@ class AdminExportTest extends TestCase
             'aktif' => true,
         ]);
         $session = TryoutSession::create([
-            'kode_sesi' => 'SES-' . Str::upper(Str::random(8)),
-            'nama_sesi' => 'Sesi ' . $packageName,
+            'kode_sesi' => 'SES-'.Str::upper(Str::random(8)),
+            'nama_sesi' => 'Sesi '.$packageName,
             'package_id' => $package->id,
             'semester_id' => $this->semester->id,
             'guru_id' => $this->guru->id,

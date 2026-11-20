@@ -43,7 +43,7 @@ class AuditRemediation2026Test extends TestCase
         ];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
         $this->withoutVite();
@@ -55,7 +55,7 @@ class AuditRemediation2026Test extends TestCase
         parent::tearDown();
 
         [$envVal, $arrayEnv, $server] = $this->previousFlag;
-        $envVal === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED=' . $envVal);
+        $envVal === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$envVal);
         if ($arrayEnv === null) {
             unset($_ENV['SIMANTAP_CBT_ENABLED']);
         } else {
@@ -66,7 +66,7 @@ class AuditRemediation2026Test extends TestCase
         } else {
             $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
         }
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
     }
 
     private function buatSesiCbtBerjalan(): array
@@ -300,16 +300,16 @@ class AuditRemediation2026Test extends TestCase
                     $before = substr($content, max(0, $offset - 300), 300);
                     if (! preg_match('/table-wrapper|table-responsive/i', $before)) {
                         $line = substr_count(substr($content, 0, $offset), "\n") + 1;
-                        $pelanggaran[] = str_replace(str_replace('\\', '/', base_path()) . '/', '', $path) . ':' . $line;
+                        $pelanggaran[] = str_replace(str_replace('\\', '/', base_path()).'/', '', $path).':'.$line;
                     }
                 }
             }
         }
 
-        $this->assertSame([], $pelanggaran, 'Masih ada tabel Web UI tanpa .table-wrapper: ' . implode(', ', $pelanggaran));
+        $this->assertSame([], $pelanggaran, 'Masih ada tabel Web UI tanpa .table-wrapper: '.implode(', ', $pelanggaran));
 
         foreach (['cbt/banks/show.blade.php', 'cbt/student/exam.blade.php'] as $rel) {
-            $blade = (string) file_get_contents(resource_path('views/' . $rel));
+            $blade = (string) file_get_contents(resource_path('views/'.$rel));
             $this->assertStringNotContainsString('cdn.jsdelivr.net', $blade);
             $this->assertStringContainsString('resources/css/katex.css', $blade);
             $this->assertStringContainsString('resources/js/katex.js', $blade);

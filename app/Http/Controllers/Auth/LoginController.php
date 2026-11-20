@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\AktivitasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
@@ -37,22 +40,22 @@ class LoginController extends Controller
         ]);
 
         $attemptSuccess = false;
-        if (\App\Modules\Tenant\Contexts\TenantContext::check()) {
+        if (TenantContext::check()) {
             $attemptSuccess = Auth::attempt([
                 'nama_pengguna' => $credentials['nama_pengguna'],
                 'password' => $credentials['kata_sandi'],
-                'tenant_id' => \App\Modules\Tenant\Contexts\TenantContext::id(),
+                'tenant_id' => TenantContext::id(),
             ]);
 
             // Izinkan Super Admin login dari portal mana saja (tanpa terhalang TenantScope karena super_admin memiliki tenant_id = null)
             if (! $attemptSuccess) {
-                $superAdminUser = \App\Models\User::withoutGlobalScopes()
+                $superAdminUser = User::withoutGlobalScopes()
                     ->whereNull('deleted_at')
                     ->where('nama_pengguna', $credentials['nama_pengguna'])
                     ->where('peran', 'super_admin')
                     ->first();
 
-                if ($superAdminUser && \Illuminate\Support\Facades\Hash::check($credentials['kata_sandi'], $superAdminUser->kata_sandi)) {
+                if ($superAdminUser && Hash::check($credentials['kata_sandi'], $superAdminUser->kata_sandi)) {
                     Auth::login($superAdminUser);
                     $attemptSuccess = true;
                 }

@@ -69,11 +69,11 @@ class IntegrasiDapodikCheck extends Command
             if (! $config->auto_sync_last_run_at) {
                 $peringatan[] = 'Auto-sync aktif tetapi belum pernah berjalan.';
             } elseif ($config->auto_sync_last_run_at->lt(now()->subDays(7))) {
-                $peringatan[] = 'Auto-sync terakhir lebih dari 7 hari lalu: ' . $config->auto_sync_last_run_at->diffForHumans();
+                $peringatan[] = 'Auto-sync terakhir lebih dari 7 hari lalu: '.$config->auto_sync_last_run_at->diffForHumans();
             }
 
             if ($config->auto_sync_run_status === 'gagal') {
-                $peringatan[] = 'Auto-sync terakhir berstatus gagal: ' . ($config->auto_sync_run_error ?: 'tanpa pesan');
+                $peringatan[] = 'Auto-sync terakhir berstatus gagal: '.($config->auto_sync_run_error ?: 'tanpa pesan');
             }
         }
 
@@ -98,7 +98,7 @@ class IntegrasiDapodikCheck extends Command
                     $peringatan[] = 'Koneksi berhasil tetapi respons getSekolah tidak memuat nama sekolah.';
                 }
             } catch (\Throwable $e) {
-                $masalah[] = 'Koneksi live gagal: ' . $e->getMessage();
+                $masalah[] = 'Koneksi live gagal: '.$e->getMessage();
             }
         }
 
@@ -114,7 +114,7 @@ class IntegrasiDapodikCheck extends Command
 
         $this->table(['Pemeriksaan', 'Nilai'], [
             ['NPSN', $config->npsn ?: '—'],
-            ['Host:Port', ($config->host ?: '—') . ':' . ($config->port ?: '—')],
+            ['Host:Port', ($config->host ?: '—').':'.($config->port ?: '—')],
             ['Protocol', $config->protocol ?: '—'],
             ['Token', $config->masked_token ?: '—'],
             ['Auto-sync', $config->auto_sync_enabled ? 'aktif' : 'nonaktif'],
@@ -124,15 +124,15 @@ class IntegrasiDapodikCheck extends Command
         ]);
 
         foreach ($peringatan as $pesan) {
-            $this->warn('⚠ ' . $pesan);
+            $this->warn('⚠ '.$pesan);
         }
 
         foreach ($masalah as $pesan) {
-            $this->error('✗ ' . $pesan);
+            $this->error('✗ '.$pesan);
         }
 
         if ($data['ok']) {
-            $this->info('✅ Konfigurasi Dapodik siap.' . ($data['live'] ? ' Koneksi live berhasil.' : ' Jalankan --live untuk menguji koneksi.'));
+            $this->info('✅ Konfigurasi Dapodik siap.'.($data['live'] ? ' Koneksi live berhasil.' : ' Jalankan --live untuk menguji koneksi.'));
 
             return self::SUCCESS;
         }

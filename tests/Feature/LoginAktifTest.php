@@ -66,7 +66,7 @@ class LoginAktifTest extends TestCase
 
     public function test_pendaftaran_publik_ditutup(): void
     {
-        $namaPengguna = 'calon_' . rand(1000, 9999);
+        $namaPengguna = 'calon_'.rand(1000, 9999);
 
         $this->post('/register', [
             'nama_lengkap' => 'Calon Pengguna',

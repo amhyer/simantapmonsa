@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('terakhir_masuk')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            
+
             $table->index('peran');
             $table->index('aktif');
         });

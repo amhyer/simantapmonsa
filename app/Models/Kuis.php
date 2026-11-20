@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class Kuis extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'kuis';
+
     protected $fillable = [
         'tenant_id',
         'uuid',
@@ -51,7 +53,9 @@ class Kuis extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

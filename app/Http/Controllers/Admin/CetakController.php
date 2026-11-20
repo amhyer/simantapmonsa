@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Catatan;
 use App\Models\Kehadiran;
+use App\Models\KenaikanKelas;
 use App\Models\NilaiErapot;
+use App\Models\P5Penilaian;
+use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\TanggalRapor;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CetakController extends Controller
@@ -25,7 +29,7 @@ class CetakController extends Controller
     {
         $tahun = (int) date('Y');
 
-        return $tahun . '/' . ($tahun + 1);
+        return $tahun.'/'.($tahun + 1);
     }
 
     private function rekapKehadiran(int $siswaId): array
@@ -187,10 +191,10 @@ class CetakController extends Controller
         $tampilanRapor = self::ambilTampilanRapor($sekolah);
         $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
         $waliGuruId = $siswa->guru_id
-            ?? ($siswa->kelas ? \App\Models\Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
+            ?? ($siswa->kelas ? Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
         $ttdWaliUri = $waliGuruId ? ($ttdWaliMap[(string) $waliGuruId] ?? null) : null;
         $naikKelas = $semester === 'Genap'
-            ? \App\Models\KenaikanKelas::where('siswa_id', $siswa->id)
+            ? KenaikanKelas::where('siswa_id', $siswa->id)
                 ->where('tahun_ajaran', $tahunAjaran)
                 ->where('semester', $semester)
                 ->first()
@@ -240,7 +244,7 @@ class CetakController extends Controller
             ->whereNotNull('nilai_akhir')
             ->get(['kelas', 'siswa_id', 'mata_pelajaran']);
 
-        $rombelMap = \App\Models\Rombel::whereIn('nama_rombel', $kelasList->all())
+        $rombelMap = Rombel::whereIn('nama_rombel', $kelasList->all())
             ->get()
             ->keyBy('nama_rombel');
 
@@ -250,7 +254,7 @@ class CetakController extends Controller
             $nilaiKelas = $nilaiSemua->where('kelas', $k);
             $jmlMapel = $nilaiKelas->pluck('mata_pelajaran')->unique()->count();
             $expected = $jmlSiswa * $jmlMapel;
-            $filled = $nilaiKelas->unique(fn ($n) => $n->siswa_id . '|' . $n->mata_pelajaran)->count();
+            $filled = $nilaiKelas->unique(fn ($n) => $n->siswa_id.'|'.$n->mata_pelajaran)->count();
             $persen = $expected > 0 ? round(($filled / $expected) * 100, 1) : 0.0;
             $kelasStats[$k] = [
                 'siswa' => $jmlSiswa,
@@ -291,7 +295,7 @@ class CetakController extends Controller
         $sekolah = SekolahSettings::first();
         $raporConfig = self::ambilConfigRapor($sekolah);
         $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
-        $waliKelasList = \App\Models\User::where('peran', 'guru')
+        $waliKelasList = User::where('peran', 'guru')
             ->where('aktif', true)
             ->orderBy('nama_lengkap')
             ->get(['id', 'nama_lengkap', 'nama_pengguna']);
@@ -329,7 +333,7 @@ class CetakController extends Controller
         if ($request->hasFile('ttd_kepsek')) {
             $file = $request->file('ttd_kepsek');
             $mime = $file->getMimeType() ?: 'image/png';
-            $ttdDataUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $ttdDataUri = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $ttdWaliMap = is_array($pengaturan['ttd_wali_kelas'] ?? null) ? $pengaturan['ttd_wali_kelas'] : [];
@@ -339,7 +343,7 @@ class CetakController extends Controller
         foreach ((array) $request->file('ttd_wali', []) as $guruId => $file) {
             if ($file && $file->isValid()) {
                 $mime = $file->getMimeType() ?: 'image/png';
-                $ttdWaliMap[(string) $guruId] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+                $ttdWaliMap[(string) $guruId] = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($file->getRealPath()));
             }
         }
 
@@ -380,7 +384,7 @@ class CetakController extends Controller
         $hadir = $this->rekapKehadiran($siswa->id);
         $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
         $waliGuruId = $siswa->guru_id
-            ?? ($siswa->kelas ? \App\Models\Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
+            ?? ($siswa->kelas ? Rombel::where('nama_rombel', $siswa->kelas)->value('guru_id') : null);
         $ttdWaliUri = $waliGuruId ? ($ttdWaliMap[(string) $waliGuruId] ?? null) : null;
 
         return view('admin.cetak.pts-show', compact(
@@ -398,7 +402,7 @@ class CetakController extends Controller
             2 => ['bold' => true, 'size' => 13, 'color' => '#000000', 'text' => 'DINAS PENDIDIKAN'],
             3 => ['bold' => true, 'size' => 16, 'color' => '#000000', 'text' => strtoupper((string) ($sekolah?->nama_sekolah ?? config('app.name', 'SEKOLAH DASAR')))],
             4 => ['bold' => false, 'size' => 11, 'color' => '#000000', 'text' => trim((string) ($sekolah?->alamat ?? ''))],
-            5 => ['bold' => false, 'size' => 11, 'color' => '#000000', 'text' => 'NPSN: ' . ($sekolah?->npsn ?? '-') . ($sekolah?->telepon ? ' • Telp: ' . $sekolah->telepon : '')],
+            5 => ['bold' => false, 'size' => 11, 'color' => '#000000', 'text' => 'NPSN: '.($sekolah?->npsn ?? '-').($sekolah?->telepon ? ' • Telp: '.$sekolah->telepon : '')],
             6 => ['bold' => false, 'size' => 11, 'color' => '#000000', 'text' => ''],
         ];
 
@@ -416,7 +420,7 @@ class CetakController extends Controller
         }
 
         return [
-            'terapkan_semester' => !empty($saved) ? (bool) ($saved['terapkan_semester'] ?? false) : false,
+            'terapkan_semester' => ! empty($saved) ? (bool) ($saved['terapkan_semester'] ?? false) : false,
             'terapkan_pts' => (bool) ($saved['terapkan_pts'] ?? false),
             'font_family' => (string) ($saved['font_family'] ?? 'Arial'),
             'size_judul_rapor' => (float) ($saved['size_judul_rapor'] ?? 18),
@@ -494,7 +498,7 @@ class CetakController extends Controller
         if ($request->hasFile('file_watermark')) {
             $file = $request->file('file_watermark');
             $mime = $file->getMimeType() ?: 'image/png';
-            $watermarkUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $watermarkUri = 'data:'.$mime.';base64,'.base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $kopBaris = [];
@@ -572,7 +576,7 @@ class CetakController extends Controller
             ->orderBy('semester')
             ->orderBy('mata_pelajaran')
             ->get()
-            ->groupBy(fn ($n) => $n->tahun_ajaran . ' — Semester ' . $n->semester);
+            ->groupBy(fn ($n) => $n->tahun_ajaran.' — Semester '.$n->semester);
 
         return view('admin.cetak.buku-induk-show', compact('siswa', 'sekolah', 'raporConfig', 'riwayatNilai'));
     }
@@ -588,7 +592,7 @@ class CetakController extends Controller
 
         $sekolah = SekolahSettings::first();
         $raporConfig = self::ambilConfigRapor($sekolah);
-        $penilaian = \App\Models\P5Penilaian::where('siswa_id', $siswa->id)
+        $penilaian = P5Penilaian::where('siswa_id', $siswa->id)
             ->where('semester', $semester)
             ->where('tahun_ajaran', $tahunAjaran)
             ->orderBy('tema')

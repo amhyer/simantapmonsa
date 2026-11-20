@@ -22,7 +22,7 @@ return new class extends Migration
             $table->json('pengaturan')->nullable();
             $table->json('sistem')->nullable();
             $table->timestamps();
-            
+
             $table->unique('guru_id');
         });
     }

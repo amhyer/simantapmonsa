@@ -25,6 +25,7 @@ class CbtScoring
     {
         return array_map(function (array $question) {
             unset($question['correct_answer']);
+
             return $question;
         }, $questions);
     }

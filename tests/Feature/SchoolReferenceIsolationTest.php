@@ -11,8 +11,8 @@ use App\Models\Semester;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\AktivitasService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -113,6 +113,7 @@ class SchoolReferenceIsolationTest extends TestCase
         $this->actingAs($user)->withHeader('X-Tenant-Subdomain', $school->subdomain)
             ->get(route('kepsek.aktivitas.index'))->assertForbidden();
     }
+
     public function test_login_menggunakan_sekolah_akun_bukan_konteks_header(): void
     {
         config(['simantap.multi_tenant_enabled' => true]);
@@ -120,7 +121,7 @@ class SchoolReferenceIsolationTest extends TestCase
         $b = $this->school('10000002');
         $guru = User::factory()->guru()->create(['tenant_id' => $b->id]);
         $this->actingAs($guru);
-        TenantContext::run($a->id, fn () => \App\Services\AktivitasService::login('Login uji'));
+        TenantContext::run($a->id, fn () => AktivitasService::login('Login uji'));
         $this->assertDatabaseHas('aktivitas', ['guru_id' => $guru->id, 'tenant_id' => $b->id, 'tenant_owned' => true]);
         $this->assertSame(0, TenantContext::run($a->id, fn () => Aktivitas::where('guru_id', $guru->id)->count()));
     }
@@ -136,5 +137,4 @@ class SchoolReferenceIsolationTest extends TestCase
         $this->actingAs($superadmin)->delete(route('superadmin.tenants.destroy', $a->uuid))->assertSessionHas('error');
         $this->assertDatabaseHas('tenants', ['id' => $a->id]);
     }
-
 }

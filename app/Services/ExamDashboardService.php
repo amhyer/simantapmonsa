@@ -92,8 +92,7 @@ class ExamDashboardService
     public function ringkasanCbtSekolah(): array
     {
         $sesi = fn () => ExamSession::where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SESI);
-        $peserta = fn () => ExamAttempt::whereHas('session', fn ($q) =>
-            $q->where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SESI));
+        $peserta = fn () => ExamAttempt::whereHas('session', fn ($q) => $q->where('sumber_tabel', LegacyExamMapper::SUMBER_CBT_SESI));
 
         $totalPeserta = (clone $peserta())->count();
         $lulus = (clone $peserta())->whereHas('result', fn ($q) => $q->where('persentase', '>=', 70))->count();

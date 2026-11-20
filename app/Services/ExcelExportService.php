@@ -16,19 +16,19 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ExcelExportService
 {
     /**
-     * @param list<string> $headers
-     * @param iterable<array<int, mixed>> $rows
+     * @param  list<string>  $headers
+     * @param  iterable<array<int, mixed>>  $rows
      */
     public function download(string $fileName, string $sheetTitle, array $headers, iterable $rows): StreamedResponse
     {
         abort_if($headers === [], 500, 'Kolom ekspor tidak boleh kosong.');
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle($this->safeSheetTitle($sheetTitle));
 
         foreach (array_values($headers) as $column => $header) {
-            $coordinate = Coordinate::stringFromColumnIndex($column + 1) . '1';
+            $coordinate = Coordinate::stringFromColumnIndex($column + 1).'1';
             $sheet->setCellValueExplicit($coordinate, $header, DataType::TYPE_STRING);
         }
 
@@ -41,7 +41,7 @@ class ExcelExportService
                     break;
                 }
 
-                $coordinate = Coordinate::stringFromColumnIndex($column + 1) . $rowNumber;
+                $coordinate = Coordinate::stringFromColumnIndex($column + 1).$rowNumber;
                 $this->setCellValue($sheet, $coordinate, $value);
             }
         }

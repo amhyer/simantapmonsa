@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class Kebiasaan extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'kebiasaan';
 
     protected $fillable = [
@@ -43,7 +44,9 @@ class Kebiasaan extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

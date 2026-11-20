@@ -21,7 +21,7 @@ return new class extends Migration
             $table->json('data_lama')->nullable();
             $table->json('data_baru')->nullable();
             $table->timestamps();
-            
+
             $table->index(['guru_id', 'jenis']);
             $table->index('created_at');
         });

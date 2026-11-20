@@ -13,6 +13,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Services\CbtExamService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 /**
@@ -27,9 +28,13 @@ class CbtEngineParityTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $account;
+
     private Siswa $student;
+
     private CbtQuestionBank $bank;
+
     private array $previousFlag;
 
     protected function setUp(): void
@@ -38,7 +43,7 @@ class CbtEngineParityTest extends TestCase
         $this->previousFlag = [getenv('SIMANTAP_CBT_ENABLED'), $_ENV['SIMANTAP_CBT_ENABLED'] ?? null, $_SERVER['SIMANTAP_CBT_ENABLED'] ?? null];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
         $this->withoutVite();
@@ -64,9 +69,17 @@ class CbtEngineParityTest extends TestCase
         parent::tearDown();
         [$env, $arrayEnv, $server] = $this->previousFlag;
         $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
-        if ($arrayEnv === null) { unset($_ENV['SIMANTAP_CBT_ENABLED']); } else { $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv; }
-        if ($server === null) { unset($_SERVER['SIMANTAP_CBT_ENABLED']); } else { $_SERVER['SIMANTAP_CBT_ENABLED'] = $server; }
-        \Illuminate\Support\Env::enablePutenv();
+        if ($arrayEnv === null) {
+            unset($_ENV['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv;
+        }
+        if ($server === null) {
+            unset($_SERVER['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
+        }
+        Env::enablePutenv();
     }
 
     private function sesi(): CbtTestSession

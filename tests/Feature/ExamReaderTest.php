@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\CbtViolation;
+use App\Models\Exam\Attempt;
+use App\Models\Exam\Violation;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -12,14 +15,16 @@ use App\Models\Tryout\Category;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
-use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\Subject;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\User;
 use App\Services\CbtExamService;
+use App\Services\Exam\CbtDashboardProvider;
 use App\Services\Exam\ExamReportService;
+use App\Services\Exam\TryoutResultProvider;
 use App\Services\ExamDashboardService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 /**
@@ -34,9 +39,13 @@ class ExamReaderTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $admin;
+
     private User $akun;
+
     private Siswa $siswa;
+
     private array $previousFlag;
 
     protected function setUp(): void
@@ -44,7 +53,7 @@ class ExamReaderTest extends TestCase
         $this->previousFlag = [getenv('SIMANTAP_CBT_ENABLED'), $_ENV['SIMANTAP_CBT_ENABLED'] ?? null, $_SERVER['SIMANTAP_CBT_ENABLED'] ?? null];
         putenv('SIMANTAP_CBT_ENABLED=true');
         $_ENV['SIMANTAP_CBT_ENABLED'] = $_SERVER['SIMANTAP_CBT_ENABLED'] = 'true';
-        \Illuminate\Support\Env::enablePutenv();
+        Env::enablePutenv();
 
         parent::setUp();
         config(['simantap.cbt_enabled' => true, 'simantap.exam_engine_cbt' => true, 'simantap.exam_engine_tryout' => true]);
@@ -64,9 +73,17 @@ class ExamReaderTest extends TestCase
         parent::tearDown();
         [$env, $arrayEnv, $server] = $this->previousFlag;
         $env === false ? putenv('SIMANTAP_CBT_ENABLED') : putenv('SIMANTAP_CBT_ENABLED='.$env);
-        if ($arrayEnv === null) { unset($_ENV['SIMANTAP_CBT_ENABLED']); } else { $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv; }
-        if ($server === null) { unset($_SERVER['SIMANTAP_CBT_ENABLED']); } else { $_SERVER['SIMANTAP_CBT_ENABLED'] = $server; }
-        \Illuminate\Support\Env::enablePutenv();
+        if ($arrayEnv === null) {
+            unset($_ENV['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_ENV['SIMANTAP_CBT_ENABLED'] = $arrayEnv;
+        }
+        if ($server === null) {
+            unset($_SERVER['SIMANTAP_CBT_ENABLED']);
+        } else {
+            $_SERVER['SIMANTAP_CBT_ENABLED'] = $server;
+        }
+        Env::enablePutenv();
     }
 
     /** Mulai satu ujian CBT dan jawab 2 soal (1 benar). Belum disubmit. */
@@ -250,8 +267,8 @@ class ExamReaderTest extends TestCase
             ->postJson(route('cbt.student.integrity', $result), ['type' => 'fullscreen_exit'])
             ->assertOk();
 
-        $this->assertSame(1, \App\Models\Exam\Violation::count());
-        $violation = \App\Models\Exam\Violation::firstOrFail();
+        $this->assertSame(1, Violation::count());
+        $violation = Violation::firstOrFail();
         $this->assertSame('fullscreen_exit', $violation->tipe);
         $this->assertSame('cbt_violations', $violation->sumber_tabel);
         $this->assertSame('cbt_results', $violation->attempt->sumber_tabel);
@@ -268,8 +285,8 @@ class ExamReaderTest extends TestCase
             ->postJson(route('cbt.student.integrity', $result), ['type' => 'tab_hidden'])
             ->assertOk();
 
-        $this->assertSame(1, \App\Models\CbtViolation::count());
-        $this->assertSame(0, \App\Models\Exam\Violation::count());
+        $this->assertSame(1, CbtViolation::count());
+        $this->assertSame(0, Violation::count());
     }
 
     // ------------------------------------------- dasbor: parity ke engine
@@ -281,35 +298,35 @@ class ExamReaderTest extends TestCase
         $engineGuru = app(ExamDashboardService::class)->ringkasanCbtGuru($this->guru->id);
 
         $this->assertSame(
-            \App\Models\CbtQuestionBank::where('guru_id', $this->guru->id)->count(),
+            CbtQuestionBank::where('guru_id', $this->guru->id)->count(),
             $engineGuru['total_bank']
         );
         $this->assertSame(
-            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)
+            CbtTestSession::where('guru_id', $this->guru->id)
                 ->whereIn('status', ['published', 'running'])->count(),
             $engineGuru['sesi_aktif']
         );
         $this->assertSame(
-            \App\Models\CbtTestSession::where('guru_id', $this->guru->id)->where('status', 'completed')->count(),
+            CbtTestSession::where('guru_id', $this->guru->id)->where('status', 'completed')->count(),
             $engineGuru['sesi_selesai']
         );
         $this->assertSame(
-            \App\Models\CbtResult::whereHas('session', fn ($q) => $q->where('guru_id', $this->guru->id))->count(),
+            CbtResult::whereHas('session', fn ($q) => $q->where('guru_id', $this->guru->id))->count(),
             $engineGuru['total_peserta']
         );
 
-        $legacyTotal = \App\Models\CbtResult::count();
-        $legacyAvg = (float) (\App\Models\CbtResult::avg('score') ?? 0);
-        $legacyPass = \App\Models\CbtResult::where('score', '>=', 70)->count() / max($legacyTotal, 1) * 100;
+        $legacyTotal = CbtResult::count();
+        $legacyAvg = (float) (CbtResult::avg('score') ?? 0);
+        $legacyPass = CbtResult::where('score', '>=', 70)->count() / max($legacyTotal, 1) * 100;
 
         $engine = app(ExamDashboardService::class)->ringkasanCbtSekolah();
 
-        $this->assertSame(\App\Models\CbtTestSession::count(), $engine['total_sessions']);
+        $this->assertSame(CbtTestSession::count(), $engine['total_sessions']);
         $this->assertSame(
-            \App\Models\CbtTestSession::whereIn('status', ['published', 'running'])->count(),
+            CbtTestSession::whereIn('status', ['published', 'running'])->count(),
             $engine['ongoing']
         );
-        $this->assertSame(\App\Models\CbtTestSession::where('status', 'completed')->count(), $engine['completed']);
+        $this->assertSame(CbtTestSession::where('status', 'completed')->count(), $engine['completed']);
         $this->assertSame($legacyTotal, $engine['total_participants']);
         $this->assertEqualsWithDelta($legacyAvg, $engine['avg_score'], 0.01);
         $this->assertEqualsWithDelta($legacyPass, $engine['pass_rate'], 0.01);
@@ -319,7 +336,7 @@ class ExamReaderTest extends TestCase
     {
         $this->selesaikanCbt();
 
-        $legacy = \App\Models\CbtResult::where('siswa_id', $this->siswa->id)
+        $legacy = CbtResult::where('siswa_id', $this->siswa->id)
             ->with('session.bank')
             ->whereNotNull('submitted_at')
             ->orderByDesc('submitted_at')
@@ -347,7 +364,7 @@ class ExamReaderTest extends TestCase
     {
         $this->mulaiCbt();
 
-        $legacy = \App\Models\CbtTestSession::with('bank')
+        $legacy = CbtTestSession::with('bank')
             ->whereIn('status', ['published', 'running'])
             ->where('opens_at', '<=', now())
             ->where('closes_at', '>', now())
@@ -400,7 +417,7 @@ class ExamReaderTest extends TestCase
     {
         $this->selesaikanCbt();
 
-        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+        $provider = app(CbtDashboardProvider::class);
 
         config(['simantap.exam_engine_readers' => false]);
         $lama = $this->potretDasbor($provider);
@@ -421,11 +438,11 @@ class ExamReaderTest extends TestCase
     {
         $this->selesaikanCbt();
 
-        \App\Models\CbtResult::query()->delete();
-        \App\Models\CbtTestSession::query()->delete();
-        \App\Models\CbtQuestionBank::query()->delete();
+        CbtResult::query()->delete();
+        CbtTestSession::query()->delete();
+        CbtQuestionBank::query()->delete();
 
-        $provider = app(\App\Services\Exam\CbtDashboardProvider::class);
+        $provider = app(CbtDashboardProvider::class);
         config(['simantap.exam_engine_readers' => true]);
 
         $potret = $this->potretDasbor($provider);
@@ -473,7 +490,7 @@ class ExamReaderTest extends TestCase
      *
      * @return array<string, mixed>
      */
-    private function potretDasbor(\App\Services\Exam\CbtDashboardProvider $provider): array
+    private function potretDasbor(CbtDashboardProvider $provider): array
     {
         $waktu = fn ($nilai) => $nilai instanceof \DateTimeInterface
             ? $nilai->format('Y-m-d H:i')
@@ -498,7 +515,7 @@ class ExamReaderTest extends TestCase
     {
         $this->selesaikanTryout();
 
-        $provider = app(\App\Services\Exam\TryoutResultProvider::class);
+        $provider = app(TryoutResultProvider::class);
 
         config(['simantap.exam_engine_readers' => false]);
         $lama = $provider->daftar([]);
@@ -528,7 +545,7 @@ class ExamReaderTest extends TestCase
         TryoutResult::query()->delete();
         config(['simantap.exam_engine_readers' => true]);
 
-        $this->assertSame(1, app(\App\Services\Exam\TryoutResultProvider::class)->daftar([])['ringkasan']['total']);
+        $this->assertSame(1, app(TryoutResultProvider::class)->daftar([])['ringkasan']['total']);
 
         $this->actingAs($this->admin)
             ->get(route('admin.tryout.results.index'))
@@ -545,7 +562,7 @@ class ExamReaderTest extends TestCase
         TryoutResult::query()->delete();
         config(['simantap.exam_engine_readers' => true]);
 
-        $attempt = \App\Models\Exam\Attempt::firstOrFail();
+        $attempt = Attempt::firstOrFail();
 
         $this->actingAs($this->admin)
             ->get(route('admin.tryout.results.engine.show', $attempt))

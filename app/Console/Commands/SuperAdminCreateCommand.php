@@ -26,6 +26,7 @@ class SuperAdminCreateCommand extends Command
 
         if (User::where('nama_pengguna', $user)->exists()) {
             $this->error("Gagal: Username {$user} sudah digunakan!");
+
             return self::FAILURE;
         }
 
@@ -41,7 +42,7 @@ class SuperAdminCreateCommand extends Command
             'force_password_change' => false,
         ]);
 
-        $this->info("✅ Super Administrator berhasil dibuat!");
+        $this->info('✅ Super Administrator berhasil dibuat!');
         $this->table(
             ['ID', 'Nama Lengkap', 'Username', 'Peran', 'Tenant ID'],
             [[$superAdmin->id, $superAdmin->nama_lengkap, $superAdmin->nama_pengguna, $superAdmin->peran, 'NULL (Pusat)']]

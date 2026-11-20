@@ -7,6 +7,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CriticalRoutesRegressionTest extends TestCase
@@ -76,14 +77,14 @@ class CriticalRoutesRegressionTest extends TestCase
         $guru = User::factory()->guru()->create();
         $siswa = $this->buatBanyakSiswa($guru, 12);
         Kehadiran::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
             'siswa_id' => $siswa[0]->id,
             'tanggal' => now()->toDateString(),
             'status' => 'H',
         ]);
         Kehadiran::create([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'guru_id' => $guru->id,
             'siswa_id' => $siswa[0]->id,
             'tanggal' => now()->subDay()->toDateString(),
@@ -139,7 +140,7 @@ class CriticalRoutesRegressionTest extends TestCase
     }
 
     /** @param array<int, array{query: string, bindings: array, time: float}> $queries
-     *  @return array<int, array{query: string, bindings: array, time: float}>
+     * @return array<int, array{query: string, bindings: array, time: float}>
      */
     private function individualAttendanceCountQueries(array $queries): array
     {

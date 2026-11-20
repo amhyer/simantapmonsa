@@ -11,7 +11,7 @@ class MapelAttendancePolicyTest extends TestCase
 {
     public function test_nama_mapel_khusus_dikenali_dalam_variasi_penulisan(): void
     {
-        $policy = new MapelAttendancePolicy();
+        $policy = new MapelAttendancePolicy;
 
         foreach ([
             'Bahasa Inggris',
@@ -22,7 +22,7 @@ class MapelAttendancePolicyTest extends TestCase
             'PJOK',
             'Pendidikan Jasmani, Olahraga, dan Kesehatan',
         ] as $subject) {
-            $this->assertTrue($policy->requiresSeparateAttendance($subject), $subject . ' harus punya catatan terpisah.');
+            $this->assertTrue($policy->requiresSeparateAttendance($subject), $subject.' harus punya catatan terpisah.');
         }
 
         $this->assertFalse($policy->requiresSeparateAttendance('Matematika'));
@@ -31,7 +31,7 @@ class MapelAttendancePolicyTest extends TestCase
 
     public function test_sesi_agama_menyaring_siswa_dengan_agama_yang_berbeda(): void
     {
-        $policy = new MapelAttendancePolicy();
+        $policy = new MapelAttendancePolicy;
         $jadwal = new JadwalPelajaran(['mata_pelajaran' => 'Pendidikan Agama Kristen']);
         $kristen = new Siswa(['nama_peserta_didik' => 'Kristen', 'agama' => 'Kristen']);
         $islam = new Siswa(['nama_peserta_didik' => 'Islam', 'agama' => 'Islam']);

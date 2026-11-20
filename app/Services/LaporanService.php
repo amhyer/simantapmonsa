@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Kuis;
+use App\Models\Kehadiran;
 use App\Models\Nilai;
 use App\Models\Siswa;
-use App\Models\Kehadiran;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class LaporanService
@@ -42,7 +40,7 @@ class LaporanService
     public function statistikKelas($guruId, $kelas = null)
     {
         $siswaList = Siswa::where('guru_id', $guruId)
-            ->when($kelas, fn($q) => $q->where('kelas', $kelas))
+            ->when($kelas, fn ($q) => $q->where('kelas', $kelas))
             ->get();
 
         $totalSiswa = $siswaList->count();
@@ -69,10 +67,19 @@ class LaporanService
     public function getPredikatNilai($nilai, $kkm = null)
     {
         $kkm = $kkm ?? getKKM();
-        if ($nilai >= 90) return 'A';
-        if ($nilai >= 80) return 'B';
-        if ($nilai >= $kkm) return 'C';
-        if ($nilai >= 60) return 'D';
+        if ($nilai >= 90) {
+            return 'A';
+        }
+        if ($nilai >= 80) {
+            return 'B';
+        }
+        if ($nilai >= $kkm) {
+            return 'C';
+        }
+        if ($nilai >= 60) {
+            return 'D';
+        }
+
         return 'E';
     }
 }

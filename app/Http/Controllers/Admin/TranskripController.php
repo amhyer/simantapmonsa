@@ -9,7 +9,6 @@ use App\Models\Siswa;
 use App\Models\TranskripNilai;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class TranskripController extends Controller
 {
@@ -51,7 +50,7 @@ class TranskripController extends Controller
         ]);
 
         $row = SekolahSettings::first();
-        if (!$row) {
+        if (! $row) {
             return redirect()->route('admin.sekolah.index')
                 ->with('error', 'Lengkapi Identitas Sekolah terlebih dahulu sebelum mengatur transkrip.');
         }
@@ -83,7 +82,7 @@ class TranskripController extends Controller
     public function updateNomor(Request $request, Siswa $siswa)
     {
         $validated = $request->validate([
-            'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,' . $siswa->id,
+            'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,'.$siswa->id,
         ]);
 
         $siswa->nomor_ijazah = ($validated['nomor_ijazah'] ?? null) ?: null;
@@ -114,7 +113,7 @@ class TranskripController extends Controller
                     continue;
                 }
                 $siswa = Siswa::where('nisn', $nisn)->first();
-                if (!$siswa) {
+                if (! $siswa) {
                     continue;
                 }
                 $bentrok = Siswa::where('nomor_ijazah', $nomor)->where('id', '!=', $siswa->id)->exists();
@@ -174,7 +173,7 @@ class TranskripController extends Controller
                     continue;
                 }
                 $mapel = MataPelajaran::find($mapelId);
-                if (!$mapel) {
+                if (! $mapel) {
                     continue;
                 }
                 $angka = round((float) $mentah, 2);
@@ -235,7 +234,7 @@ class TranskripController extends Controller
                 $nisn = trim((string) ($row['nisn'] ?? ''));
                 $kode = strtolower(trim((string) ($row['kode_mapel'] ?? '')));
                 $nilaiMentah = trim((string) ($row['nilai_akhir'] ?? ''));
-                if ($nisn === '' || $kode === '' || $nilaiMentah === '' || !is_numeric($nilaiMentah)) {
+                if ($nisn === '' || $kode === '' || $nilaiMentah === '' || ! is_numeric($nilaiMentah)) {
                     continue;
                 }
                 $angka = round((float) $nilaiMentah, 2);
@@ -244,7 +243,7 @@ class TranskripController extends Controller
                 }
                 $siswa = Siswa::where('nisn', $nisn)->first();
                 $mapel = $mapelByKode->get($kode);
-                if (!$siswa || !$mapel) {
+                if (! $siswa || ! $mapel) {
                     continue;
                 }
                 TranskripNilai::updateOrCreate(
@@ -300,18 +299,18 @@ class TranskripController extends Controller
     private function parseCsv($file, array $headerWajib): ?array
     {
         $handle = fopen($file->getRealPath(), 'r');
-        if (!$handle) {
+        if (! $handle) {
             return null;
         }
         $header = fgetcsv($handle);
-        if (!$header) {
+        if (! $header) {
             fclose($handle);
 
             return null;
         }
         $header = array_map(fn ($h) => strtolower(trim((string) $h)), $header);
         foreach ($headerWajib as $kolom) {
-            if (!in_array($kolom, $header, true)) {
+            if (! in_array($kolom, $header, true)) {
                 fclose($handle);
 
                 return null;
@@ -325,6 +324,7 @@ class TranskripController extends Controller
             }
             if (count($baris) !== count($header)) {
                 $skipped++;
+
                 continue;
             }
             $rows[] = array_combine($header, $baris);

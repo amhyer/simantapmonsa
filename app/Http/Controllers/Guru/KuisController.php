@@ -17,6 +17,7 @@ class KuisController extends Controller
             ->orderBy('tanggal', 'desc')
             ->get();
         $siswaCount = Siswa::where('guru_id', auth()->id())->where('aktif', true)->count();
+
         return view('guru.kuis.index', compact('kuis', 'siswaCount'));
     }
 
@@ -65,7 +66,7 @@ class KuisController extends Controller
             'tautan_soal' => $validated['tautan'] ?? null,
             'materi_id' => $validated['materi_id'] ?? null,
             'kkm' => $validated['kkm'],
-            'batas_waktu' => !empty($validated['batas_waktu']) ? $validated['batas_waktu'] : null,
+            'batas_waktu' => ! empty($validated['batas_waktu']) ? $validated['batas_waktu'] : null,
             'aktif' => $validated['aktif'] ?? true,
             'jenis' => $validated['jenis'],
             'petunjuk' => $validated['petunjuk'] ?? null,
@@ -125,7 +126,7 @@ class KuisController extends Controller
             'tautan_soal' => $validated['tautan'] ?? null,
             'materi_id' => $validated['materi_id'] ?? null,
             'kkm' => $validated['kkm'],
-            'batas_waktu' => !empty($validated['batas_waktu']) ? $validated['batas_waktu'] : null,
+            'batas_waktu' => ! empty($validated['batas_waktu']) ? $validated['batas_waktu'] : null,
             'aktif' => $validated['aktif'] ?? true,
             'jenis' => $validated['jenis'],
             'petunjuk' => $validated['petunjuk'] ?? null,
@@ -157,7 +158,7 @@ class KuisController extends Controller
             abort(403);
         }
 
-        $kuis->aktif = !$kuis->aktif;
+        $kuis->aktif = ! $kuis->aktif;
         $kuis->save();
 
         return back()->with('success', $kuis->aktif ? 'Kuis dibuka untuk siswa.' : 'Kuis ditutup.');

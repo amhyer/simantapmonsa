@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -142,7 +142,7 @@ class SuperAdminTenantSubscriptionTest extends TestCase
         $res->assertSessionHas('success');
         $adminSekolah->refresh();
 
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('PasswordBaru2026!', $adminSekolah->kata_sandi));
+        $this->assertTrue(Hash::check('PasswordBaru2026!', $adminSekolah->kata_sandi));
     }
 
     public function test_superadmin_dapat_memisahkan_daftar_akun_pengguna_per_sekolah_dan_per_wilayah(): void

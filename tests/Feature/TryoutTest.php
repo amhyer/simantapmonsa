@@ -14,6 +14,7 @@ use App\Models\Tryout\Subject;
 use App\Models\Tryout\TryoutQuestion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -27,10 +28,15 @@ class TryoutTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $akun;
+
     private Siswa $siswa;
+
     private Session $sesi;
+
     private Subject $mapel;
+
     private TryoutQuestion $soal;
 
     protected function setUp(): void
@@ -162,8 +168,8 @@ class TryoutTest extends TestCase
         $before = [
             'result' => $result->fresh()->getAttributes(),
             'legacy_answers' => StudentAnswer::count(),
-            'engine_answers' => \Illuminate\Support\Facades\DB::table('exam_answers')->count(),
-            'engine_results' => \Illuminate\Support\Facades\DB::table('exam_results')->count(),
+            'engine_answers' => DB::table('exam_answers')->count(),
+            'engine_results' => DB::table('exam_results')->count(),
         ];
 
         $this->actingAs($lain)->get(route('tryout.student.result', $result))->assertForbidden();
@@ -175,8 +181,8 @@ class TryoutTest extends TestCase
         $after = [
             'result' => $result->fresh()->getAttributes(),
             'legacy_answers' => StudentAnswer::count(),
-            'engine_answers' => \Illuminate\Support\Facades\DB::table('exam_answers')->count(),
-            'engine_results' => \Illuminate\Support\Facades\DB::table('exam_results')->count(),
+            'engine_answers' => DB::table('exam_answers')->count(),
+            'engine_results' => DB::table('exam_results')->count(),
         ];
         $this->assertSame($before, $after, 'Forbidden requests must not mutate legacy or engine records.');
     }

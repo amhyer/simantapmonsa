@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('catatan')->nullable();
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['siswa_id', 'no_dimensi']);
             $table->index(['siswa_id', 'no_dimensi']);
         });

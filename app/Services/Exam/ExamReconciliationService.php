@@ -2,6 +2,7 @@
 
 namespace App\Services\Exam;
 
+use App\Models\CbtQuestion;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
@@ -18,7 +19,10 @@ use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
 use App\Models\Tryout\StudentAnswer;
+use App\Models\Tryout\Subject;
+use App\Models\Tryout\TryoutQuestion;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Rekonsiliasi berbasis ISI, bukan sekadar jumlah baris.
@@ -45,9 +49,7 @@ class ExamReconciliationService
     /** @var array<string, array<string, int>> */
     private array $jumlah = ['legacy' => [], 'engine' => []];
 
-    public function __construct(private LegacyExamMapper $mapper)
-    {
-    }
+    public function __construct(private LegacyExamMapper $mapper) {}
 
     /**
      * @return array{
@@ -89,7 +91,7 @@ class ExamReconciliationService
     {
         $this->hitung('cbt_question_banks', CbtQuestionBank::count());
         $this->hitung('exam_banks.cbt', $this->hitungEngine(Bank::class, LegacyExamMapper::SUMBER_CBT_BANK));
-        $this->hitung('cbt_questions', \App\Models\CbtQuestion::count());
+        $this->hitung('cbt_questions', CbtQuestion::count());
         $this->hitung('exam_questions.cbt', $this->hitungEngine(Question::class, LegacyExamMapper::SUMBER_CBT_SOAL));
         $this->hitung('cbt_test_sessions', CbtTestSession::count());
         $this->hitung('exam_sessions.cbt', $this->hitungEngine(ExamSession::class, LegacyExamMapper::SUMBER_CBT_SESI));
@@ -132,7 +134,7 @@ class ExamReconciliationService
         }
     }
 
-    private function periksaSoalCbt(Bank $bank, \App\Models\CbtQuestion $cbtQuestion): void
+    private function periksaSoalCbt(Bank $bank, CbtQuestion $cbtQuestion): void
     {
         $question = $this->cari(Question::class, LegacyExamMapper::SUMBER_CBT_SOAL, $cbtQuestion->id);
 
@@ -255,7 +257,7 @@ class ExamReconciliationService
         ] : []);
     }
 
-    /** @return \Illuminate\Support\Collection<int, Question> */
+    /** @return Collection<int, Question> */
     private function petaSoalCbt(Bank $bank)
     {
         return Question::with('options')
@@ -289,9 +291,9 @@ class ExamReconciliationService
     {
         $this->hitung('tryout_packages', Package::withTrashed()->count());
         $this->hitung('exam_banks.tryout', $this->hitungEngine(Bank::class, LegacyExamMapper::SUMBER_TRYOUT_PAKET));
-        $this->hitung('tryout_subjects', \App\Models\Tryout\Subject::count());
+        $this->hitung('tryout_subjects', Subject::count());
         $this->hitung('exam_sections.tryout', $this->hitungEngine(Section::class, LegacyExamMapper::SUMBER_TRYOUT_MAPEL));
-        $this->hitung('tryout_questions', \App\Models\Tryout\TryoutQuestion::withTrashed()->count());
+        $this->hitung('tryout_questions', TryoutQuestion::withTrashed()->count());
         $this->hitung('exam_questions.tryout', $this->hitungEngine(Question::class, LegacyExamMapper::SUMBER_TRYOUT_SOAL));
         $this->hitung('tryout_sessions', TryoutSession::withTrashed()->count());
         $this->hitung('exam_sessions.tryout', $this->hitungEngine(ExamSession::class, LegacyExamMapper::SUMBER_TRYOUT_SESI));
@@ -332,7 +334,7 @@ class ExamReconciliationService
         }
     }
 
-    private function periksaMapelTryout(Bank $bank, \App\Models\Tryout\Subject $subject): void
+    private function periksaMapelTryout(Bank $bank, Subject $subject): void
     {
         $section = $this->cari(Section::class, LegacyExamMapper::SUMBER_TRYOUT_MAPEL, $subject->id);
 
@@ -354,7 +356,7 @@ class ExamReconciliationService
         }
     }
 
-    private function periksaSoalTryout(Bank $bank, Section $section, \App\Models\Tryout\TryoutQuestion $tryoutQuestion): void
+    private function periksaSoalTryout(Bank $bank, Section $section, TryoutQuestion $tryoutQuestion): void
     {
         $question = $this->cari(Question::class, LegacyExamMapper::SUMBER_TRYOUT_SOAL, $tryoutQuestion->id);
 

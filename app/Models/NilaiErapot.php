@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Modules\Tenant\Traits\BelongsToTenant;
+use App\Services\NilaiService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -11,6 +12,7 @@ class NilaiErapot extends Model
     use BelongsToTenant;
 
     protected $table = 'nilai_erapor';
+
     protected $fillable = [
         'uuid', 'tenant_id', 'siswa_id', 'guru_id', 'jadwal_pelajaran_id',
         'mata_pelajaran', 'kelas',
@@ -34,25 +36,42 @@ class NilaiErapot extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 
-    public function siswa() { return $this->belongsTo(Siswa::class); }
-    public function guru() { return $this->belongsTo(User::class, 'guru_id'); }
-    public function auditLogs() { return $this->hasMany(NilaiErapotAudit::class, 'nilai_erapor_id')->orderBy('id'); }
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class);
+    }
+
+    public function guru()
+    {
+        return $this->belongsTo(User::class, 'guru_id');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(NilaiErapotAudit::class, 'nilai_erapor_id')->orderBy('id');
+    }
 
     /**
      * Pembelajaran resmi (Dapodik) yang menjadi sumber nilai ini.
      * Nullable: nilai lama/belum terpetakan mengembalikan null (bukan error).
      */
-    public function jadwalPelajaran() { return $this->belongsTo(JadwalPelajaran::class); }
+    public function jadwalPelajaran()
+    {
+        return $this->belongsTo(JadwalPelajaran::class);
+    }
 
     public function hitungNilaiAkhir(float $bobotFormatif = 0.30, float $bobotSumatif = 0.40, float $bobotSumatifAkhir = 0.30): float
     {
         $nilai = ($this->nilai_formatif * $bobotFormatif)
                + ($this->nilai_sumatif * $bobotSumatif)
                + ($this->nilai_sumatif_akhir * $bobotSumatifAkhir);
+
         return round($nilai, 2);
     }
 
@@ -64,7 +83,7 @@ class NilaiErapot extends Model
      */
     public function generatePredikat(?int $kkm = null): string
     {
-        return app(\App\Services\NilaiService::class)
+        return app(NilaiService::class)
             ->getPredikat((float) $this->nilai_akhir, $kkm ?? getKKM())['huruf'];
     }
 
@@ -74,18 +93,19 @@ class NilaiErapot extends Model
         // yang menghitung deskripsi sebelum predikat tersimpan), hitung dari
         // nilai_akhir alih-alih jatuh ke cabang default.
         $predikat = $this->predikat ?: $this->generatePredikat();
-        $deskripsi = match($predikat) {
-            'A' => "Menunjukkan penguasaan yang sangat baik dalam",
-            'B' => "Menunjukkan penguasaan yang baik dalam",
-            'C' => "Menunjukkan penguasaan yang cukup dalam",
-            'D' => "Perlu bimbingan dalam",
-            default => "Menunjukkan penguasaan dalam",
+        $deskripsi = match ($predikat) {
+            'A' => 'Menunjukkan penguasaan yang sangat baik dalam',
+            'B' => 'Menunjukkan penguasaan yang baik dalam',
+            'C' => 'Menunjukkan penguasaan yang cukup dalam',
+            'D' => 'Perlu bimbingan dalam',
+            default => 'Menunjukkan penguasaan dalam',
         };
         $capaian = $this->capaian_tertinggi ?? 'seluruh materi';
         $text = "{$deskripsi} {$capaian}.";
         if ($this->capaian_terendah && $predikat !== 'A') {
             $text .= " Perlu peningkatan dalam {$this->capaian_terendah}.";
         }
+
         return $text;
     }
 }

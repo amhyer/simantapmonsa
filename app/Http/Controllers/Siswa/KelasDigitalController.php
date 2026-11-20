@@ -10,6 +10,7 @@ use App\Models\Elearning\KelasDigitalPertemuan;
 use App\Models\Elearning\KelasDigitalProgress;
 use App\Models\Elearning\KelasDigitalTugas;
 use App\Models\HasilKuis;
+use App\Models\Siswa;
 use App\Services\Elearning\ElearningFileService;
 use App\Services\Elearning\KelasDigitalAccessService;
 use Illuminate\Http\Request;
@@ -315,7 +316,7 @@ class KelasDigitalController extends Controller
         return $this->files->download($pengumpulan->file_path, $pengumpulan->file_nama_asli);
     }
 
-    private function requireSiswa(): \App\Models\Siswa
+    private function requireSiswa(): Siswa
     {
         $siswa = $this->getSiswa();
         abort_if(! $siswa, 404, 'Data siswa belum tertaut pada akun ini.');

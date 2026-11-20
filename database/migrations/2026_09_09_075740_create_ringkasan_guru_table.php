@@ -42,7 +42,7 @@ return new class extends Migration
             $table->json('kegiatan')->nullable();
             $table->timestamp('pembaruan')->nullable();
             $table->timestamps();
-            
+
             $table->unique('guru_id');
             $table->index('guru_id');
         });

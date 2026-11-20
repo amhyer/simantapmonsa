@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Catatan;
+use App\Models\PengaturanGuru;
+use App\Models\Rombel;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,8 +20,8 @@ class CatatanController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $guruId)->value('nama_rombel')
-            ?? \App\Models\PengaturanGuru::where('guru_id', $guruId)->value('kelas')
+            ?? Rombel::where('guru_id', $guruId)->value('nama_rombel')
+            ?? PengaturanGuru::where('guru_id', $guruId)->value('kelas')
             ?? $kelasList->first();
 
         $query = Siswa::where('aktif', true)->whereNull('archived_at');
@@ -47,10 +49,10 @@ class CatatanController extends Controller
 
         $guru = auth()->user();
         $siswa = Siswa::where('aktif', true)->whereNull('archived_at')->find($validated['siswa_id']);
-        if (!$siswa) {
+        if (! $siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa aktif tidak ditemukan.'])->withInput();
         }
-        if (\App\Models\Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
+        if (Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
             return back()->with('error', "Input rapor & catatan untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== $guru->id) {
@@ -73,8 +75,11 @@ class CatatanController extends Controller
 
     public function destroy(Catatan $catatan)
     {
-        if ($catatan->guru_id !== auth()->id()) abort(403);
+        if ($catatan->guru_id !== auth()->id()) {
+            abort(403);
+        }
         $catatan->delete();
+
         return back()->with('success', 'Catatan berhasil dihapus.');
     }
 }

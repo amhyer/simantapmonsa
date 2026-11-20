@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class Catatan extends Model
 {
     use BelongsToTenant, SoftDeletes;
+
     protected $table = 'catatan';
+
     protected $fillable = [
         'tenant_id',
         'uuid',
@@ -35,7 +37,9 @@ class Catatan extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

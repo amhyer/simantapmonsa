@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Nilai;
-use App\Models\Kuis;
 use App\Models\HasilKuis;
+use App\Models\Kuis;
+use App\Models\Nilai;
 use App\Models\Siswa;
 
 class AnalisisController extends Controller
@@ -24,7 +24,7 @@ class AnalisisController extends Controller
         $skorTertinggi = $semuaNilai->count() > 0 ? $semuaNilai->max() : 0;
 
         $kkm = getKKM($guruId);
-        $tuntas = $semuaNilai->filter(fn($n) => $n >= $kkm)->count();
+        $tuntas = $semuaNilai->filter(fn ($n) => $n >= $kkm)->count();
         $ketuntasan = $semuaNilai->count() > 0 ? round($tuntas / $semuaNilai->count() * 100, 1) : 0;
 
         $kuisLabels = $kuisList->pluck('judul')->toArray();
@@ -37,10 +37,15 @@ class AnalisisController extends Controller
 
         $predikatCount = [0, 0, 0, 0];
         foreach ($semuaNilai as $n) {
-            if ($n >= 90) $predikatCount[0]++;
-            elseif ($n >= 75) $predikatCount[1]++;
-            elseif ($n >= $kkm) $predikatCount[2]++;
-            else $predikatCount[3]++;
+            if ($n >= 90) {
+                $predikatCount[0]++;
+            } elseif ($n >= 75) {
+                $predikatCount[1]++;
+            } elseif ($n >= $kkm) {
+                $predikatCount[2]++;
+            } else {
+                $predikatCount[3]++;
+            }
         }
 
         $soalSulit = $this->getButirSoalSulit($guruId);
@@ -88,22 +93,24 @@ class AnalisisController extends Controller
 
         $soalStats = [];
         foreach ($hasilKuis as $hasil) {
-            if (empty($hasil->jawaban)) continue;
+            if (empty($hasil->jawaban)) {
+                continue;
+            }
             foreach ($hasil->jawaban as $idx => $jawaban) {
                 $key = "kuis_{$hasil->kuis_id}_soal_{$idx}";
-                if (!isset($soalStats[$key])) {
+                if (! isset($soalStats[$key])) {
                     $kuis = $hasil->kuis;
                     $soalStats[$key] = [
                         'kuis_id' => $hasil->kuis_id,
-                        'judul_kuis' => $kuis->judul ?? 'Kuis #' . $hasil->kuis_id,
-                        'pertanyaan' => $jawaban['pertanyaan'] ?? 'Soal #' . ($idx + 1),
+                        'judul_kuis' => $kuis->judul ?? 'Kuis #'.$hasil->kuis_id,
+                        'pertanyaan' => $jawaban['pertanyaan'] ?? 'Soal #'.($idx + 1),
                         'soal_ke' => $idx + 1,
                         'total_jawaban' => 0,
                         'benar' => 0,
                     ];
                 }
                 $soalStats[$key]['total_jawaban']++;
-                if (!empty($jawaban['benar'])) {
+                if (! empty($jawaban['benar'])) {
                     $soalStats[$key]['benar']++;
                 }
             }
@@ -112,6 +119,7 @@ class AnalisisController extends Controller
         return collect($soalStats)
             ->map(function ($stat) {
                 $stat['rata_rata_benar'] = $stat['total_jawaban'] > 0 ? round($stat['benar'] / $stat['total_jawaban'] * 100, 2) : 0;
+
                 return $stat;
             })
             ->sortBy('rata_rata_benar')

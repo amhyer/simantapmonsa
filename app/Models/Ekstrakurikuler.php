@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Modules\Tenant\Traits\HasSchoolOwnership;
+use Illuminate\Database\Eloquent\Model;
 
 class Ekstrakurikuler extends Model
 {

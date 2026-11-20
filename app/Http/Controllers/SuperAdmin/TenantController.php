@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CbtQuestionBank;
+use App\Models\CbtResult;
+use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
@@ -26,9 +29,9 @@ class TenantController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_sekolah', 'like', "%{$search}%")
-                  ->orWhere('npsn', 'like', "%{$search}%")
-                  ->orWhere('subdomain', 'like', "%{$search}%")
-                  ->orWhere('domain_kustom', 'like', "%{$search}%");
+                    ->orWhere('npsn', 'like', "%{$search}%")
+                    ->orWhere('subdomain', 'like', "%{$search}%")
+                    ->orWhere('domain_kustom', 'like', "%{$search}%");
             });
         }
 
@@ -44,12 +47,12 @@ class TenantController extends Controller
             $query->whereNotNull('tgl_kedaluwarsa')->where('tgl_kedaluwarsa', '<', now()->toDateString());
         } elseif ($langganan === 'warning') {
             $query->whereNotNull('tgl_kedaluwarsa')
-                  ->where('tgl_kedaluwarsa', '>=', now()->toDateString())
-                  ->where('tgl_kedaluwarsa', '<=', now()->addDays(30)->toDateString());
+                ->where('tgl_kedaluwarsa', '>=', now()->toDateString())
+                ->where('tgl_kedaluwarsa', '<=', now()->addDays(30)->toDateString());
         } elseif ($langganan === 'aktif') {
             $query->where(function ($q) {
                 $q->whereNull('tgl_kedaluwarsa')
-                  ->orWhere('tgl_kedaluwarsa', '>=', now()->toDateString());
+                    ->orWhere('tgl_kedaluwarsa', '>=', now()->toDateString());
             });
         }
 
@@ -126,9 +129,9 @@ class TenantController extends Controller
         $totalKepsek = User::withoutGlobalScopes()->whereNull('deleted_at')->where('tenant_id', $tenant->id)->where('peran', 'kepsek')->count();
         $totalTendik = User::withoutGlobalScopes()->whereNull('deleted_at')->where('tenant_id', $tenant->id)->where('peran', 'tendik')->count();
 
-        $cbtBankCount = \App\Models\CbtQuestionBank::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
-        $cbtSessionCount = \App\Models\CbtTestSession::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
-        $cbtResultCount = \App\Models\CbtResult::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $cbtBankCount = CbtQuestionBank::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $cbtSessionCount = CbtTestSession::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $cbtResultCount = CbtResult::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
 
         $recentUsers = User::withoutGlobalScopes()
             ->whereNull('deleted_at')
@@ -156,7 +159,7 @@ class TenantController extends Controller
         $validated = $request->validate([
             'nama_sekolah' => 'required|string|max:255',
             'wilayah' => 'nullable|string|max:100',
-            'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom,' . $tenant->id,
+            'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom,'.$tenant->id,
             'paket' => 'required|string|in:standar,pro,enterprise',
             'kuota_siswa' => 'required|integer|min:10|max:100000',
             'kuota_storage_mb' => 'required|integer|min:100|max:1048576',
@@ -179,10 +182,11 @@ class TenantController extends Controller
 
     public function toggleActive(Tenant $tenant)
     {
-        $tenant->aktif = !$tenant->aktif;
+        $tenant->aktif = ! $tenant->aktif;
         $tenant->save();
 
         $statusStr = $tenant->aktif ? 'diaktifkan' : 'dinonaktifkan';
+
         return back()->with('success', "Sekolah '{$tenant->nama_sekolah}' berhasil {$statusStr}.");
     }
 
@@ -210,7 +214,7 @@ class TenantController extends Controller
         $today = now()->toDateString();
         $expiredTenants = Tenant::where(function ($q) use ($today) {
             $q->whereNotNull('tgl_kedaluwarsa')
-              ->where('tgl_kedaluwarsa', '<', $today);
+                ->where('tgl_kedaluwarsa', '<', $today);
         })->orWhere('aktif', false)->get();
 
         if ($expiredTenants->isEmpty()) {
@@ -237,7 +241,9 @@ class TenantController extends Controller
                 $siswaIds = DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id');
                 if ($siswaIds->isNotEmpty()) {
                     foreach (Schema::getTableListing() as $tbl) {
-                        if ($tbl === 'siswa') continue;
+                        if ($tbl === 'siswa') {
+                            continue;
+                        }
                         if (Schema::hasColumn($tbl, 'siswa_id')) {
                             DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
                         }
@@ -272,7 +278,9 @@ class TenantController extends Controller
 
             // 4. Hapus seluruh data ber-tenant_id dari tabel-tabel terdaftar
             foreach (Schema::getTableListing() as $tbl) {
-                if ($tbl === 'tenants') continue;
+                if ($tbl === 'tenants') {
+                    continue;
+                }
                 if (Schema::hasColumn($tbl, 'tenant_id')) {
                     DB::table($tbl)->where('tenant_id', $tenantId)->delete();
                 }
@@ -381,8 +389,8 @@ class TenantController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nama_pengguna', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('nama_pengguna', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -397,7 +405,7 @@ class TenantController extends Controller
         }
 
         if ($wilayah !== null && $wilayah !== '') {
-            $query->whereHas('tenant', fn($q) => $q->where('wilayah', $wilayah));
+            $query->whereHas('tenant', fn ($q) => $q->where('wilayah', $wilayah));
         }
 
         $perPage = $perPageParam === 'all' ? max(1, (clone $query)->count()) : (int) $perPageParam;
@@ -417,21 +425,21 @@ class TenantController extends Controller
 
         // Daftar sekolah untuk filter
         $tenantsList = Tenant::query()
-            ->when($wilayah, fn($q) => $q->where('wilayah', $wilayah))
+            ->when($wilayah, fn ($q) => $q->where('wilayah', $wilayah))
             ->orderBy('nama_sekolah')
             ->get(['id', 'nama_sekolah', 'wilayah', 'npsn', 'subdomain']);
 
         // Rekap per-sekolah
         $rekapSekolah = Tenant::withCount([
             'users as total_akun',
-            'users as guru_count' => fn($q) => $q->where('peran', 'guru'),
-            'users as siswa_count' => fn($q) => $q->where('peran', 'siswa'),
-            'users as admin_count' => fn($q) => $q->where('peran', 'admin'),
-            'users as tendik_count' => fn($q) => $q->whereIn('peran', ['tendik', 'kepsek']),
+            'users as guru_count' => fn ($q) => $q->where('peran', 'guru'),
+            'users as siswa_count' => fn ($q) => $q->where('peran', 'siswa'),
+            'users as admin_count' => fn ($q) => $q->where('peran', 'admin'),
+            'users as tendik_count' => fn ($q) => $q->whereIn('peran', ['tendik', 'kepsek']),
         ])
-        ->when($wilayah, fn($q) => $q->where('wilayah', $wilayah))
-        ->orderBy('nama_sekolah')
-        ->get();
+            ->when($wilayah, fn ($q) => $q->where('wilayah', $wilayah))
+            ->orderBy('nama_sekolah')
+            ->get();
 
         // Rekap per-wilayah
         $rekapWilayah = Tenant::query()
@@ -447,6 +455,7 @@ class TenantController extends Controller
                 $rw->total_siswa = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'siswa')->count();
                 $rw->total_guru = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'guru')->count();
                 $rw->total_admin = User::withoutGlobalScopes()->whereNull('deleted_at')->whereIn('tenant_id', $tenantIds)->where('peran', 'admin')->count();
+
                 return $rw;
             });
 
@@ -523,6 +532,7 @@ class TenantController extends Controller
         if (! $superAdmin || $superAdmin->peran !== 'super_admin') {
             session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
             auth()->logout();
+
             return redirect()->route('login');
         }
 

@@ -580,7 +580,6 @@ class PerangkatController extends Controller
     }
 
     /**
-     * @param  mixed  $rows
      * @param  array<int, string>  $keys
      * @return array<int, array<string, string>>
      */

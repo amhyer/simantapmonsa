@@ -29,7 +29,7 @@ return new class extends Migration
             $table->json('jawaban')->nullable();
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['kuis_id', 'siswa_id']);
             $table->index(['siswa_id', 'kuis_id']);
             $table->index('guru_id');

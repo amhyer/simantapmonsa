@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
-use App\Services\PresensiMesinService;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -47,7 +47,7 @@ class PresensiMesinSyncTest extends TestCase
 
     public function test_scheduler_menjalankan_perintah_sync_bukan_closure(): void
     {
-        $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+        $events = collect(app(Schedule::class)->events())
             ->filter(fn ($event) => str_contains((string) $event->command, 'presensi:mesin-sync'));
 
         $this->assertNotEmpty($events, 'presensi:mesin-sync harus terdaftar di scheduler.');

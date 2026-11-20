@@ -40,10 +40,10 @@ class SekolahController extends Controller
         }
         $sekolah = $query->first();
 
-        if (!$sekolah) {
+        if (! $sekolah) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data sekolah dengan NPSN ' . $npsn . ' tidak ditemukan di database sekolah Anda.',
+                'message' => 'Data sekolah dengan NPSN '.$npsn.' tidak ditemukan di database sekolah Anda.',
             ]);
         }
 
@@ -97,7 +97,7 @@ class SekolahController extends Controller
         }
         $sekolahSettings = $query->first();
 
-        if (!$sekolahSettings) {
+        if (! $sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([
                 'tenant_id' => $tenantId,
                 'guru_id' => auth()->id(),

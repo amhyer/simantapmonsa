@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
 use App\Models\Catatan;
+use App\Models\Dimensi;
 use App\Models\Kebiasaan;
 use App\Models\Kehadiran;
+use App\Models\Tka\ParentReport;
+use App\Services\Exam\CbtDashboardProvider;
+use App\Services\NilaiService;
 
 class DashboardController extends Controller
 {
@@ -26,7 +30,7 @@ class DashboardController extends Controller
         }
 
         // Ringkasan pantauan: nilai, kehadiran, kebiasaan, catatan
-        $nilaiService = app(\App\Services\NilaiService::class);
+        $nilaiService = app(NilaiService::class);
         $na = $nilaiService->hitungNilaiAkhir($anak->id);
         $totalKehadiran = Kehadiran::where('siswa_id', $anak->id)->count();
         $hadir = Kehadiran::where('siswa_id', $anak->id)->where('status', 'H')->count();
@@ -34,11 +38,11 @@ class DashboardController extends Controller
         // Hasil CBT (hanya saat modul asesmen aktif). Sumber data dipilih
         // provider: engine `exam_*` atau tabel lama `cbt_*`.
         $cbtResults = config('simantap.cbt_enabled', false)
-            ? app(\App\Services\Exam\CbtDashboardProvider::class)->hasilTerbaru($anak->id)
+            ? app(CbtDashboardProvider::class)->hasilTerbaru($anak->id)
             : [];
 
-        $tkaReport = \App\Models\Tka\ParentReport::where('siswa_id', $anak->id)->latest()->first();
-        $tkaDimensi = \App\Models\Dimensi::where('siswa_id', $anak->id)->pluck('skor');
+        $tkaReport = ParentReport::where('siswa_id', $anak->id)->latest()->first();
+        $tkaDimensi = Dimensi::where('siswa_id', $anak->id)->pluck('skor');
         $tkaRata = $tkaDimensi->count() > 0 ? round($tkaDimensi->avg(), 2) : null;
         $kehadiranHariIni = Kehadiran::where('siswa_id', $anak->id)
             ->whereDate('tanggal', now()->toDateString())

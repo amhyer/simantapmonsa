@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Admin\BackupController;
 use App\Services\Backup\BackupStreamWriter;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -105,15 +108,15 @@ class BackupStreamingTest extends TestCase
         file_put_contents($path, json_encode($payload, JSON_THROW_ON_ERROR));
 
         try {
-            $upload = new \Illuminate\Http\UploadedFile($path, 'backup.json', 'application/json', null, true);
-            $request = \Illuminate\Http\Request::create(
+            $upload = new UploadedFile($path, 'backup.json', 'application/json', null, true);
+            $request = Request::create(
                 '/admin/backup/import',
                 'POST',
                 [],
                 [],
                 ['backup_file' => $upload]
             );
-            app(\App\Http\Controllers\Admin\BackupController::class)->import($request);
+            app(BackupController::class)->import($request);
         } finally {
             @unlink($path);
         }

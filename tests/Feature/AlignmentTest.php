@@ -30,7 +30,7 @@ class AlignmentTest extends TestCase
         ]);
         $siswa = Siswa::create([
             'uuid' => (string) Str::uuid(), 'guru_id' => $guru->id,
-            'nama_guru' => $guru->nama_lengkap, 'nis' => 'AL' . $guru->id,
+            'nama_guru' => $guru->nama_lengkap, 'nis' => 'AL'.$guru->id,
             'nama_peserta_didik' => 'Siswa Align', 'kelas' => '6.A', 'jenis_kelamin' => 'L',
         ]);
 
@@ -51,7 +51,7 @@ class AlignmentTest extends TestCase
     {
         $guru = User::factory()->guru()->create(['aktif' => true]);
         [, $jadwal] = $this->seedDasar($guru);
-        $r = new JadwalPelajaranResolver();
+        $r = new JadwalPelajaranResolver;
 
         $this->assertSame($jadwal->id, $r->resolve($guru->id, 'Matematika', '6.A', 'Ganjil', '2025/2026'));
         $this->assertSame($jadwal->id, $r->resolve($guru->id, '  MATEMATIKA ', '6.a', 'ganjil', '2025/2026'));
@@ -71,7 +71,7 @@ class AlignmentTest extends TestCase
 
         $this->assertSame(
             $jadwal->id,
-            (new JadwalPelajaranResolver())->resolve($guru->id, 'Matematika', '6.A', 'Ganjil', '2025/2026')
+            (new JadwalPelajaranResolver)->resolve($guru->id, 'Matematika', '6.A', 'Ganjil', '2025/2026')
         );
     }
 
@@ -123,7 +123,7 @@ class AlignmentTest extends TestCase
         $response = $this->actingAs($admin)
             ->get(route('admin.referensi.alignment.export'))
             ->assertOk()
-            ->assertDownload('nilai-erapor-unmatched-' . now()->format('Y-m-d') . '.csv');
+            ->assertDownload('nilai-erapor-unmatched-'.now()->format('Y-m-d').'.csv');
 
         $csv = $response->streamedContent();
         $this->assertStringContainsString('Nama siswa', $csv);

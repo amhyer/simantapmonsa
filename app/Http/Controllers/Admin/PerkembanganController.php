@@ -13,7 +13,7 @@ class PerkembanganController extends Controller
         $tren = NilaiErapot::whereNotNull('nilai_akhir')
             ->get()
             ->groupBy(function ($n) {
-                return ($n->tahun_ajaran ?? '-') . ' ' . ucfirst($n->semester ?? '-');
+                return ($n->tahun_ajaran ?? '-').' '.ucfirst($n->semester ?? '-');
             })
             ->map(function ($items, $label) {
                 return [
@@ -43,6 +43,7 @@ class PerkembanganController extends Controller
 
         $sebaran = collect(['A', 'B', 'C', 'D'])->mapWithKeys(function ($p) use ($nilai, $total) {
             $jml = $nilai->where('predikat', $p)->count();
+
             return [$p => ['jumlah' => $jml, 'persen' => $total > 0 ? round($jml / $total * 100, 1) : 0]];
         });
 

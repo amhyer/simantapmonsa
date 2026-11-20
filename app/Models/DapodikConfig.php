@@ -59,7 +59,7 @@ class DapodikConfig extends Model
 
     public static function getInstance(): static
     {
-        $id = TenantContext::check() ? 'tenant-' . TenantContext::id() : 'singleton';
+        $id = TenantContext::check() ? 'tenant-'.TenantContext::id() : 'singleton';
 
         return static::firstOrCreate(
             ['id' => $id],
@@ -83,7 +83,7 @@ class DapodikConfig extends Model
                 return '****';
             }
 
-            return mb_substr($value, 0, 4) . '****' . mb_substr($value, -4);
+            return mb_substr($value, 0, 4).'****'.mb_substr($value, -4);
         });
     }
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('keterangan', 255)->nullable();
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['siswa_id', 'tanggal']);
             $table->index(['guru_id', 'tanggal']);
         });

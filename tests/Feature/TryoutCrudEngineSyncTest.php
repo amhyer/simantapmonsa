@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Exam\Bank;
+use App\Models\Exam\Question;
+use App\Models\Exam\Section;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Tryout\Category;
@@ -23,9 +26,13 @@ class TryoutCrudEngineSyncTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private User $admin;
+
     private MataPelajaran $mapel;
+
     private Category $kategori;
+
     private Semester $semester;
 
     protected function setUp(): void
@@ -74,11 +81,11 @@ class TryoutCrudEngineSyncTest extends TestCase
             ->assertRedirect();
 
         $package = Package::latest('id')->firstOrFail();
-        $bank = \App\Models\Exam\Bank::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_PAKET)
+        $bank = Bank::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_PAKET)
             ->where('sumber_id', $package->id)
             ->firstOrFail();
         $subject = $package->subjects()->firstOrFail();
-        $section = \App\Models\Exam\Section::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_MAPEL)
+        $section = Section::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_MAPEL)
             ->where('sumber_id', $subject->id)
             ->firstOrFail();
 
@@ -115,7 +122,7 @@ class TryoutCrudEngineSyncTest extends TestCase
         $mapper = app(LegacyExamMapper::class);
         $mapper->paketTryout($package);
 
-        $engineQuestion = \App\Models\Exam\Question::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_SOAL)
+        $engineQuestion = Question::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_SOAL)
             ->where('sumber_id', $question->id)
             ->firstOrFail();
         $this->assertSame(2, $engineQuestion->options()->count());

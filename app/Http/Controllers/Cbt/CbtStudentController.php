@@ -10,6 +10,7 @@ use App\Models\CbtTestSession;
 use App\Models\Siswa;
 use App\Services\CbtExamService;
 use App\Services\CbtScoring;
+use App\Services\Exam\CbtStudentReader;
 use App\Services\Exam\ExamAnswerBuffer;
 
 class CbtStudentController extends Controller
@@ -26,16 +27,17 @@ class CbtStudentController extends Controller
             $siswa = Siswa::whereIn('id', $ids)->first();
         }
 
-        if (!$siswa) {
+        if (! $siswa) {
             $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
         }
 
-        if (!$siswa) {
+        if (! $siswa) {
             $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
             $siswa = Siswa::where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna)->first();
         }
 
-        abort_unless($siswa && $siswa->aktif && !$siswa->archived_at, 403, 'Data siswa aktif tidak ditemukan untuk akun ini.');
+        abort_unless($siswa && $siswa->aktif && ! $siswa->archived_at, 403, 'Data siswa aktif tidak ditemukan untuk akun ini.');
+
         return $siswa;
     }
 
@@ -47,7 +49,8 @@ class CbtStudentController extends Controller
     public function index()
     {
         $student = $this->student();
-        $sessions = app(\App\Services\Exam\CbtStudentReader::class)->sesiSiswa($student);
+        $sessions = app(CbtStudentReader::class)->sesiSiswa($student);
+
         return view('cbt.student.index', compact('sessions'));
     }
 
@@ -57,7 +60,7 @@ class CbtStudentController extends Controller
         $student = $this->student();
         abort_unless($this->exam->eligible($session, $student) && $session->status !== 'draft', 403);
         $result = $session->results()->where('siswa_id', $student->id)->first();
-        if (!$result) {
+        if (! $result) {
             return view('cbt.student.start', compact('session'));
         }
         $this->own($result);
@@ -70,12 +73,14 @@ class CbtStudentController extends Controller
             app(ExamAnswerBuffer::class)->merge($result->id, is_array($result->answers) ? $result->answers : [])
         );
         $questions = CbtScoring::publicQuestions($session->question_snapshot ?? []);
+
         return view('cbt.student.exam', compact('session', 'result', 'questions'));
     }
 
     public function begin(CbtTestSession $session)
     {
         $result = $this->exam->begin($session, $this->student(), (int) auth()->id());
+
         return redirect()->route($result->submitted_at ? 'cbt.student.result' : 'cbt.student.start', $result->submitted_at ? $result : $session);
     }
 
@@ -84,6 +89,7 @@ class CbtStudentController extends Controller
         $this->own($result);
         $data = $request->validated();
         $accepted = $this->exam->answer($result, $data['question_id'], $data['answer']);
+
         return response()->json([
             'saved' => $accepted, 'server_time' => now()->toIso8601String(),
             'message' => $accepted ? 'Jawaban tersimpan.' : 'Waktu habis atau ujian telah dikumpulkan.',
@@ -96,6 +102,7 @@ class CbtStudentController extends Controller
         $this->own($result);
         $data = $request->validated();
         $this->exam->submit($result, $data['answers'] ?? []);
+
         return redirect()->route('cbt.student.result', $result)->with('success', 'Ujian telah dikumpulkan.');
     }
 
@@ -104,6 +111,7 @@ class CbtStudentController extends Controller
         $this->authorize('view', $result);
         $result = $this->exam->syncResult($result);
         $session = $result->session;
+
         return view('cbt.student.result', compact('result', 'session'));
     }
 }

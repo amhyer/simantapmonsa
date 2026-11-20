@@ -30,7 +30,7 @@ class SheetController extends Controller
 
         $sekolahSettings = SekolahSettings::first();
 
-        if (!$sekolahSettings) {
+        if (! $sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([
                 'guru_id' => auth()->id(),
                 'nama_sekolah' => 'SIMANTAP',

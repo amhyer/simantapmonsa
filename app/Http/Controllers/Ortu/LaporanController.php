@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\Ortu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Nilai;
-use App\Models\Kehadiran;
 use App\Models\Kebiasaan;
+use App\Models\Kehadiran;
+use App\Models\Nilai;
 use App\Services\NilaiService;
 
 class LaporanController extends Controller
 {
     use HasAnakLookup;
     use HasPredikatKaih;
+
     protected $nilaiService;
 
     public function __construct(NilaiService $nilaiService)

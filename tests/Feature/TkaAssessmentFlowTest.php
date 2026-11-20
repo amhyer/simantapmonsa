@@ -17,12 +17,19 @@ class TkaAssessmentFlowTest extends TestCase
     use RefreshDatabase;
 
     private User $guruA;
+
     private User $guruB;
+
     private Siswa $siswaA;
+
     private Siswa $siswaB;
+
     private Semester $semester;
+
     private Dimension $dimension;
+
     private AssessmentItem $itemRingan;
+
     private AssessmentItem $itemBerat;
 
     protected function setUp(): void

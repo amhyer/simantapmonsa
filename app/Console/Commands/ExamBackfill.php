@@ -15,7 +15,6 @@ use App\Models\Exam\Session;
 use App\Models\Exam\Violation;
 use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
-use App\Models\Tryout\Session as TryoutSession;
 use App\Models\Tryout\StudentAnswer;
 use App\Services\Exam\ExamReconciliationService;
 use App\Services\Exam\LegacyExamMapper;

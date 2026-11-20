@@ -2,6 +2,9 @@
 
 namespace App\Models\Tka;
 
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -9,10 +12,11 @@ use Illuminate\Support\Str;
 class EarlyWarning extends Model
 {
     protected $table = 'tka_early_warnings';
+
     protected $fillable = [
         'uuid', 'siswa_id', 'semester_id', 'dimension_id',
         'tingkat_peringatan', 'alasan_peringatan', 'rekomendasi_tindakan',
-        'status', 'ditangani_oleh', 'tanggal_selesai'
+        'status', 'ditangani_oleh', 'tanggal_selesai',
     ];
 
     protected $casts = [
@@ -23,7 +27,7 @@ class EarlyWarning extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -31,12 +35,12 @@ class EarlyWarning extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     public function semester(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Semester::class);
+        return $this->belongsTo(Semester::class);
     }
 
     public function dimension(): BelongsTo
@@ -46,6 +50,6 @@ class EarlyWarning extends Model
 
     public function handler(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'ditangani_oleh');
+        return $this->belongsTo(User::class, 'ditangani_oleh');
     }
 }

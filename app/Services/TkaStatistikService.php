@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 class TkaStatistikService
 {
     private string $baseUrl = 'https://tka.kemendikdasmen.go.id';
+
     private int $cacheMinutes = 360; // 6 hours
 
     /**
@@ -36,7 +37,8 @@ class TkaStatistikService
 
             return $data;
         } catch (\Exception $e) {
-            Log::error('TKA fetch failed: ' . $e->getMessage());
+            Log::error('TKA fetch failed: '.$e->getMessage());
+
             return Cache::get('tka_statistik', [
                 'error' => true,
                 'message' => 'Gagal mengambil data TKA',
@@ -75,6 +77,7 @@ class TkaStatistikService
     public function refresh(): array
     {
         Cache::forget('tka_statistik');
+
         return $this->fetchAll();
     }
 
@@ -84,7 +87,9 @@ class TkaStatistikService
     public function getChart(string $type, ?string $kdProp = null, ?string $kdJenjang = null): ?array
     {
         $data = $this->get();
-        if (isset($data['error'])) return null;
+        if (isset($data['error'])) {
+            return null;
+        }
 
         return $this->post('/api/v1/chart', [
             'kd_prop' => $kdProp,
@@ -101,7 +106,7 @@ class TkaStatistikService
                 'Content-Type' => 'application/x-www-form-urlencoded',
                 'X-Requested-With' => 'XMLHttpRequest',
             ])
-            ->post($this->baseUrl . $path, $payload);
+            ->post($this->baseUrl.$path, $payload);
 
         if ($response->successful()) {
             return $response->json();

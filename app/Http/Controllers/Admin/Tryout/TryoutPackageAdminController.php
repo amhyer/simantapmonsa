@@ -9,14 +9,17 @@ use App\Http\Requests\Admin\Tryout\TryoutPackageFiltersRequest;
 use App\Http\Requests\Admin\Tryout\TryoutResultFiltersRequest;
 use App\Http\Requests\Admin\Tryout\TryoutSessionAdminRequest;
 use App\Http\Requests\Admin\Tryout\TryoutSessionFiltersRequest;
-use App\Models\Tryout\Category;
-use App\Models\Tryout\Package;
-use App\Models\Tryout\Session;
-use App\Models\Tryout\Result;
+use App\Models\Exam\Attempt;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
-use App\Services\Exam\LegacyExamMapper;
+use App\Models\Tryout\Category;
+use App\Models\Tryout\Package;
+use App\Models\Tryout\Result;
+use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
+use App\Services\Exam\ExamReportService;
+use App\Services\Exam\LegacyExamMapper;
+use App\Services\Exam\TryoutResultProvider;
 use App\Services\ExcelExportService;
 use App\Services\TryoutResultDetailService;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,17 +44,17 @@ class TryoutPackageAdminController extends Controller
         if (isset($filters['jenjang'])) {
             $query->where('jenjang', $filters['jenjang']);
         }
-        
+
         // Filter by tipe ujian
         if (isset($filters['tipe_ujian'])) {
             $query->where('tipe_ujian', $filters['tipe_ujian']);
         }
-        
+
         // Filter by mata pelajaran
         if (isset($filters['mata_pelajaran_id'])) {
             $query->where('mata_pelajaran_id', $filters['mata_pelajaran_id']);
         }
-        
+
         // Filter by year
         if (isset($filters['tahun'])) {
             $query->where('tahun_paket', $filters['tahun']);
@@ -67,20 +70,20 @@ class TryoutPackageAdminController extends Controller
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('nama_paket', 'like', "%{$search}%")
-                  ->orWhere('kode_paket', 'like', "%{$search}%");
+                    ->orWhere('kode_paket', 'like', "%{$search}%");
             });
         }
 
         $packages = $query->withCount(['subjects', 'sessions'])
-                         ->latest()
-                         ->paginate(20);
+            ->latest()
+            ->paginate(20);
 
         $categories = Category::where('aktif', true)->get();
         $mataPelajarans = MataPelajaran::orderBy('nama')->get();
 
         return view('admin.tryout.packages.index', compact('packages', 'categories', 'mataPelajarans'));
     }
-    
+
     /**
      * Show the form for creating a new package.
      */
@@ -88,17 +91,17 @@ class TryoutPackageAdminController extends Controller
     {
         $categories = Category::where('aktif', true)->get();
         $mataPelajarans = MataPelajaran::orderBy('nama')->get();
-        
+
         return view('admin.tryout.packages.create', compact('categories', 'mataPelajarans'));
     }
-    
+
     /**
      * Store a newly created package.
      */
     public function store(TryoutPackageAdminRequest $request)
     {
         $validated = $request->validated();
-        
+
         $validated['uuid'] = Str::uuid();
         $validated['aktif'] = true;
         // Form admin memakai nama kolom lama (waktu_menit/kkm); skema paket
@@ -108,24 +111,24 @@ class TryoutPackageAdminController extends Controller
         // Form admin tidak memilih kategori, padahal kolomnya NOT NULL.
         $validated['category_id'] ??= Category::query()->value('id')
             ?? Category::create(['nama_kategori' => 'Umum', 'aktif' => true])->id;
-        
+
         $package = Package::create($validated);
         $this->sinkronPaket($package);
 
         return redirect()->route('admin.tryout.packages.index')
             ->with('success', 'Paket tryout berhasil dibuat');
     }
-    
+
     /**
      * Display the specified package.
      */
     public function show(Package $package)
     {
         $package->load(['subjects.questions', 'sessions.results']);
-        
+
         return view('admin.tryout.packages.show', compact('package'));
     }
-    
+
     /**
      * Show the form for editing the specified package.
      */
@@ -133,17 +136,17 @@ class TryoutPackageAdminController extends Controller
     {
         $categories = Category::where('aktif', true)->get();
         $mataPelajarans = MataPelajaran::orderBy('nama')->get();
-        
+
         return view('admin.tryout.packages.edit', compact('package', 'categories', 'mataPelajarans'));
     }
-    
+
     /**
      * Update the specified package.
      */
     public function update(TryoutPackageAdminRequest $request, Package $package)
     {
         $validated = $request->validated();
-        
+
         $package->update($validated + [
             'durasi_total_menit' => $validated['waktu_menit'],
             'passing_grade' => $validated['kkm'],
@@ -153,7 +156,7 @@ class TryoutPackageAdminController extends Controller
         return redirect()->route('admin.tryout.packages.index')
             ->with('success', 'Paket tryout berhasil diperbarui');
     }
-    
+
     /**
      * Remove the specified package.
      */
@@ -162,7 +165,7 @@ class TryoutPackageAdminController extends Controller
         if ($package->sessions()->exists()) {
             return back()->with('error', 'Tidak dapat menghapus paket yang memiliki sesi');
         }
-        
+
         $package->delete();
 
         if (config('simantap.exam_engine_tryout', true)) {
@@ -181,25 +184,25 @@ class TryoutPackageAdminController extends Controller
         // Angka agregat hasil bisa dibaca dari engine (flag 6b); daftar paket &
         // sesi terbaru masih katalog lama sampai langkah 6c (CRUD).
         $agregat = config('simantap.exam_engine_readers', false)
-            ? app(\App\Services\Exam\ExamReportService::class)->ringkasanTryout()
+            ? app(ExamReportService::class)->ringkasanTryout()
             : [
                 'total_packages' => Package::count(),
                 'total_sessions' => Session::count(),
                 'active_sessions' => Session::where('status', 'ongoing')->count(),
-                'total_results' => \App\Models\Tryout\Result::count(),
-                'average_pass_rate' => \App\Models\Tryout\Result::whereNotNull('waktu_selesai')
+                'total_results' => Result::count(),
+                'average_pass_rate' => Result::whereNotNull('waktu_selesai')
                     ->selectRaw('AVG(CASE WHEN lulus THEN 100 ELSE 0 END) as pass_rate')
                     ->value('pass_rate') ?? 0,
             ];
 
         $stats = array_merge($agregat, [
             'packages_by_jenjang' => Package::selectRaw('jenjang, count(*) as count')
-                                           ->groupBy('jenjang')
-                                           ->pluck('count', 'jenjang'),
+                ->groupBy('jenjang')
+                ->pluck('count', 'jenjang'),
             'recent_sessions' => Session::with(['package', 'guru'])
-                                       ->latest()
-                                       ->take(5)
-                                       ->get(),
+                ->latest()
+                ->take(5)
+                ->get(),
         ]);
 
         return view('admin.tryout.statistics', compact('stats'));
@@ -232,15 +235,15 @@ class TryoutPackageAdminController extends Controller
         }
 
         $sessions = $query->withCount('results')
-                         ->latest()
-                         ->paginate(20);
+            ->latest()
+            ->paginate(20);
 
         $packages = Package::where('aktif', true)->orderBy('nama_paket')->get();
         $tahunAjarans = Semester::orderBy('tahun_ajaran', 'desc')->get();
 
         return view('admin.tryout.sessions.index', compact('sessions', 'packages', 'tahunAjarans'));
     }
-    
+
     /**
      * Show the form for creating a new session.
      */
@@ -248,38 +251,38 @@ class TryoutPackageAdminController extends Controller
     {
         $packages = Package::where('aktif', true)->orderBy('nama_paket')->get();
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('admin.tryout.sessions.create', compact('packages', 'semesters'));
     }
-    
+
     /**
      * Store a newly created session.
      */
     public function storeSession(TryoutSessionAdminRequest $request)
     {
         $validated = $request->validated();
-        
+
         $validated['uuid'] = Str::uuid();
         $validated['status'] = 'draft';
         $validated['guru_id'] = auth()->id();
-        
+
         $session = Session::create($validated);
         $this->sinkronSesi($session);
-        
+
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil dibuat');
     }
-    
+
     /**
      * Display the specified session.
      */
     public function showSession(Session $session)
     {
         $session->load(['package.subjects', 'participants', 'results.siswa']);
-        
+
         return view('admin.tryout.sessions.show', compact('session'));
     }
-    
+
     /**
      * Show the form for editing the specified session.
      */
@@ -287,24 +290,24 @@ class TryoutPackageAdminController extends Controller
     {
         $packages = Package::where('aktif', true)->orderBy('nama_paket')->get();
         $semesters = Semester::orderBy('tahun_ajaran', 'desc')->get();
-        
+
         return view('admin.tryout.sessions.edit', compact('session', 'packages', 'semesters'));
     }
-    
+
     /**
      * Update the specified session.
      */
     public function updateSession(TryoutSessionAdminRequest $request, Session $session)
     {
         $validated = $request->validated();
-        
+
         $session->update($validated);
         $this->sinkronSesi($session->fresh());
 
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil diperbarui');
     }
-    
+
     /**
      * Remove the specified session.
      */
@@ -313,7 +316,7 @@ class TryoutPackageAdminController extends Controller
         if ($session->results()->exists()) {
             return back()->with('error', 'Tidak dapat menghapus sesi yang memiliki hasil ujian');
         }
-        
+
         $sessionId = $session->id;
         $session->delete();
 
@@ -324,7 +327,7 @@ class TryoutPackageAdminController extends Controller
         return redirect()->route('admin.tryout.sessions.index')
             ->with('success', 'Sesi tryout berhasil dihapus');
     }
-    
+
     /**
      * Force complete an ongoing session.
      */
@@ -333,12 +336,12 @@ class TryoutPackageAdminController extends Controller
         if ($session->status !== 'ongoing') {
             return back()->with('error', 'Hanya sesi yang sedang berjalan yang dapat dipaksa selesai');
         }
-        
+
         // End all active results
         $session->results()->whereNull('waktu_selesai')->update([
             'waktu_selesai' => now(),
         ]);
-        
+
         $session->update(['status' => 'completed']);
         $this->sinkronSesi($session->fresh());
 
@@ -365,8 +368,7 @@ class TryoutPackageAdminController extends Controller
         // The package filter is exposed by the page and must also be applied to
         // the results query (and therefore to its export).
         if (isset($filters['package_id'])) {
-            $query->whereHas('session', fn (Builder $sessionQuery) =>
-                $sessionQuery->where('package_id', $filters['package_id'])
+            $query->whereHas('session', fn (Builder $sessionQuery) => $sessionQuery->where('package_id', $filters['package_id'])
             );
         }
 
@@ -379,8 +381,7 @@ class TryoutPackageAdminController extends Controller
 
         if (isset($filters['search']) && trim($filters['search']) !== '') {
             $search = trim($filters['search']);
-            $query->whereHas('siswa', fn (Builder $siswaQuery) =>
-                $siswaQuery->where('nama_peserta_didik', 'like', "%{$search}%")
+            $query->whereHas('siswa', fn (Builder $siswaQuery) => $siswaQuery->where('nama_peserta_didik', 'like', "%{$search}%")
             );
         }
 
@@ -392,7 +393,7 @@ class TryoutPackageAdminController extends Controller
      */
     public function allResults(TryoutResultFiltersRequest $request)
     {
-        $hasil = app(\App\Services\Exam\TryoutResultProvider::class)->daftar(
+        $hasil = app(TryoutResultProvider::class)->daftar(
             $request->only(['lulus', 'session_id', 'tanggal_from', 'tanggal_to', 'search'])
         );
 
@@ -406,7 +407,7 @@ class TryoutPackageAdminController extends Controller
             'packages' => $packages,
         ]);
     }
-    
+
     /**
      * Display the specified result.
      */
@@ -414,7 +415,7 @@ class TryoutPackageAdminController extends Controller
     {
         $result->load(['session.package.subjects.questions', 'siswa', 'answers.question']);
 
-        $rincian = app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariLegacy($result);
+        $rincian = app(TryoutResultProvider::class)->rincianDariLegacy($result);
         $detailNilaiMapel = $details->forResult($result);
         if ($detailNilaiMapel !== []) {
             $rincian['detail_mapel'] = $detailNilaiMapel;
@@ -427,20 +428,20 @@ class TryoutPackageAdminController extends Controller
     /**
      * Rincian hasil dari engine terpadu (flag pembaca `exam_*` aktif).
      */
-    public function showEngineResult(\App\Models\Exam\Attempt $attempt)
+    public function showEngineResult(Attempt $attempt)
     {
         $attempt->load(['session.bank', 'siswa', 'result']);
 
         abort_unless(
-            $attempt->session?->sumber_tabel === \App\Services\Exam\LegacyExamMapper::SUMBER_TRYOUT_SESI,
+            $attempt->session?->sumber_tabel === LegacyExamMapper::SUMBER_TRYOUT_SESI,
             404
         );
 
         return view('admin.tryout.results.show', [
-            'rincian' => app(\App\Services\Exam\TryoutResultProvider::class)->rincianDariEngine($attempt),
+            'rincian' => app(TryoutResultProvider::class)->rincianDariEngine($attempt),
         ]);
     }
-    
+
     /**
      * Download every result matching the filters shown on the results page.
      */
@@ -493,7 +494,7 @@ class TryoutPackageAdminController extends Controller
         })->all();
 
         return $excel->download(
-            'hasil-tryout-' . now()->format('Y-m-d') . '.xlsx',
+            'hasil-tryout-'.now()->format('Y-m-d').'.xlsx',
             'Hasil Tryout',
             [
                 'No', 'Nama siswa', 'NIS', 'Kelas', 'Sesi', 'Paket', 'Percobaan',
@@ -509,7 +510,7 @@ class TryoutPackageAdminController extends Controller
      */
     public function toggleStatus(Package $package)
     {
-        $package->update(['aktif' => !$package->aktif]);
+        $package->update(['aktif' => ! $package->aktif]);
 
         return back()->with('success', 'Status paket berhasil diubah');
     }
@@ -523,7 +524,7 @@ class TryoutPackageAdminController extends Controller
 
         $newPackage = $package->replicate();
         $newPackage->uuid = Str::uuid();
-        $newPackage->kode_paket = $package->kode_paket . '-' . $validated['tahun_paket'];
+        $newPackage->kode_paket = $package->kode_paket.'-'.$validated['tahun_paket'];
         $newPackage->nama_paket = $validated['nama_paket'];
         $newPackage->tahun_paket = $validated['tahun_paket'];
         $newPackage->aktif = false;

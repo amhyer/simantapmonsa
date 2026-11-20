@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\ApiKey;
-use App\Models\DapodikSyncLog;
+use App\Models\Kehadiran;
+use App\Models\NilaiErapot;
 use App\Models\Ptk;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
@@ -11,6 +12,7 @@ use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -19,7 +21,9 @@ class DapodikBridgeSyncTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private string $apiKeyPlaintext;
+
     private ApiKey $apiKeyModel;
 
     protected function setUp(): void
@@ -483,9 +487,9 @@ class DapodikBridgeSyncTest extends TestCase
         // Binary build tidak disimpan dalam repository. Buat fixture kecil jika
         // artefak sungguhan tidak ada, dan jangan menimpa artefak yang sudah ada.
         $path = public_path('bridge/SIMANTAP-Bridge.exe');
-        $created = !is_file($path);
+        $created = ! is_file($path);
         if ($created) {
-            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($path));
+            File::ensureDirectoryExists(dirname($path));
             file_put_contents($path, 'bridge-test-fixture');
         }
         try {
@@ -493,7 +497,9 @@ class DapodikBridgeSyncTest extends TestCase
             $response->assertOk();
             $this->assertStringContainsString('SIMANTAP-Bridge.exe', $response->headers->get('content-disposition'));
         } finally {
-            if ($created) unlink($path);
+            if ($created) {
+                unlink($path);
+            }
         }
     }
 
@@ -514,7 +520,7 @@ class DapodikBridgeSyncTest extends TestCase
             'jenis_kelamin' => 'L',
         ]);
 
-        \App\Models\NilaiErapot::create([
+        NilaiErapot::create([
             'guru_id' => $this->admin->id,
             'siswa_id' => $siswa->id,
             'mata_pelajaran' => 'Matematika',
@@ -557,7 +563,7 @@ class DapodikBridgeSyncTest extends TestCase
             'jenis_kelamin' => 'P',
         ]);
 
-        \App\Models\Kehadiran::create([
+        Kehadiran::create([
             'guru_id' => $this->admin->id,
             'siswa_id' => $siswa->id,
             'tanggal' => '2026-11-09',

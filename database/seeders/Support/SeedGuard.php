@@ -34,8 +34,8 @@ final class SeedGuard
         $command?->error('Seeder ditolak: APP_ENV=production.');
         $command?->line(
             'Seeder ini membuat akun dengan sandi yang ada di repositori. '
-            . 'Buat akun admin pertama secara manual (lihat DEPLOYMENT.md §6), '
-            . 'atau set SIMANTAP_ALLOW_SEED=true bila Anda benar-benar yakin.'
+            .'Buat akun admin pertama secara manual (lihat DEPLOYMENT.md §6), '
+            .'atau set SIMANTAP_ALLOW_SEED=true bila Anda benar-benar yakin.'
         );
 
         return false;

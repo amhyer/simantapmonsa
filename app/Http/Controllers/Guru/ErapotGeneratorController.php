@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\NilaiErapot;
-use App\Models\Kehadiran;
 use App\Models\Catatan;
 use App\Models\Dimensi;
-use App\Models\PengaturanGuru;
+use App\Models\Kehadiran;
+use App\Models\NilaiErapot;
 use App\Models\OrangTuaSiswa;
-use Illuminate\Http\Request;
+use App\Models\PengaturanGuru;
+use App\Models\Rombel;
+use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ErapotGeneratorController extends Controller
 {
@@ -24,7 +27,7 @@ class ErapotGeneratorController extends Controller
         $kelasList = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();
         $selectedKelas = $request->input('kelas')
-            ?? \App\Models\Rombel::where('guru_id', $guru->id)->value('nama_rombel')
+            ?? Rombel::where('guru_id', $guru->id)->value('nama_rombel')
             ?? $pengaturan?->kelas
             ?? $kelasList->first();
 
@@ -57,7 +60,8 @@ class ErapotGeneratorController extends Controller
         $pdf = Pdf::loadView('guru.erapor.pdf', $data);
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = 'e-Rapor_' . str_replace(' ', '_', $siswa->nama_peserta_didik) . '_' . date('Y-m-d') . '.pdf';
+        $filename = 'e-Rapor_'.str_replace(' ', '_', $siswa->nama_peserta_didik).'_'.date('Y-m-d').'.pdf';
+
         return $pdf->download($filename);
     }
 
@@ -82,8 +86,8 @@ class ErapotGeneratorController extends Controller
             // Authorization: return students belonging to this guru or school's dapodik
             $siswa = Siswa::whereIn('id', $siswaIds)->where(function ($q) use ($guru) {
                 $q->where('guru_id', $guru->id)
-                  ->orWhereNotNull('dapodik_id')
-                  ->orWhereNull('guru_id');
+                    ->orWhereNotNull('dapodik_id')
+                    ->orWhereNull('guru_id');
             })->get();
         }
 
@@ -95,7 +99,7 @@ class ErapotGeneratorController extends Controller
         $pdf = Pdf::loadView('guru.erapor.pdf-bulk', ['data' => $allData, 'pengaturan' => $pengaturan]);
         $pdf->setPaper('A4', 'portrait');
 
-        return $pdf->download('e-Rapor_Bulk_' . date('Y-m-d') . '.pdf');
+        return $pdf->download('e-Rapor_Bulk_'.date('Y-m-d').'.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -117,7 +121,7 @@ class ErapotGeneratorController extends Controller
             $siswa = Siswa::where('guru_id', $guru->id)->orderBy('nama_peserta_didik')->get();
         }
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('e-Rapor');
 
@@ -132,13 +136,13 @@ class ErapotGeneratorController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
 
         $sheet->mergeCells('A3:L3');
-        $sheet->setCellValue('A3', 'Tahun Pelajaran: ' . ($pengaturan->tahun_pelajaran ?? '-') . ' | Semester: ' . ($pengaturan->semester ?? '-'));
+        $sheet->setCellValue('A3', 'Tahun Pelajaran: '.($pengaturan->tahun_pelajaran ?? '-').' | Semester: '.($pengaturan->semester ?? '-'));
         $sheet->getStyle('A3')->getAlignment()->setHorizontal('center');
 
         $headers = ['No', 'NISN', 'Nama Siswa', 'L/P', 'Kelas', 'Formatif', 'Sumatif', 'Sumatif Akhir', 'Nilai Akhir', 'Predikat', 'Deskripsi', 'Kehadiran (%)'];
         $sheet->fromArray($headers, null, 'A5');
         $sheet->getStyle('A5:L5')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-        $sheet->getStyle('A5:L5')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F3864');
+        $sheet->getStyle('A5:L5')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F3864');
 
         $row = 6;
         foreach ($siswa as $i => $s) {
@@ -153,18 +157,18 @@ class ErapotGeneratorController extends Controller
                 ? round($kehadiran->where('status', 'H')->count() / $kehadiran->count() * 100, 1)
                 : 0;
 
-            $sheet->setCellValue('A' . $row, $i + 1);
-            $sheet->setCellValue('B' . $row, $s->nisn ?? $s->nis);
-            $sheet->setCellValue('C' . $row, $s->nama_peserta_didik);
-            $sheet->setCellValue('D' . $row, $s->jenis_kelamin);
-            $sheet->setCellValue('E' . $row, $s->kelas);
-            $sheet->setCellValue('F' . $row, $nilai->nilai_formatif ?? 0);
-            $sheet->setCellValue('G' . $row, $nilai->nilai_sumatif ?? 0);
-            $sheet->setCellValue('H' . $row, $nilai->nilai_sumatif_akhir ?? 0);
-            $sheet->setCellValue('I' . $row, $nilai->nilai_akhir ?? 0);
-            $sheet->setCellValue('J' . $row, $nilai->predikat ?? '-');
-            $sheet->setCellValue('K' . $row, $nilai->deskripsi_capaian ?? '-');
-            $sheet->setCellValue('L' . $row, $persenHadir);
+            $sheet->setCellValue('A'.$row, $i + 1);
+            $sheet->setCellValue('B'.$row, $s->nisn ?? $s->nis);
+            $sheet->setCellValue('C'.$row, $s->nama_peserta_didik);
+            $sheet->setCellValue('D'.$row, $s->jenis_kelamin);
+            $sheet->setCellValue('E'.$row, $s->kelas);
+            $sheet->setCellValue('F'.$row, $nilai->nilai_formatif ?? 0);
+            $sheet->setCellValue('G'.$row, $nilai->nilai_sumatif ?? 0);
+            $sheet->setCellValue('H'.$row, $nilai->nilai_sumatif_akhir ?? 0);
+            $sheet->setCellValue('I'.$row, $nilai->nilai_akhir ?? 0);
+            $sheet->setCellValue('J'.$row, $nilai->predikat ?? '-');
+            $sheet->setCellValue('K'.$row, $nilai->deskripsi_capaian ?? '-');
+            $sheet->setCellValue('L'.$row, $persenHadir);
             $row++;
         }
 
@@ -172,7 +176,7 @@ class ErapotGeneratorController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $filename = 'e-Rapor_Export_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $kelas ?? 'Semua') . '_' . date('Y-m-d') . '.xlsx';
+        $filename = 'e-Rapor_Export_'.preg_replace('/[^a-zA-Z0-9_-]/', '', $kelas ?? 'Semua').'_'.date('Y-m-d').'.xlsx';
 
         $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
 
@@ -190,7 +194,7 @@ class ErapotGeneratorController extends Controller
 
         $nilaiMapel = NilaiErapot::where('siswa_id', $siswa->id)
             ->where('semester', $pengaturan->semester ?? 'Ganjil')
-            ->where('tahun_ajaran', $pengaturan->tahun_pelajaran ?? date('Y') . '/' . (date('Y') + 1))
+            ->where('tahun_ajaran', $pengaturan->tahun_pelajaran ?? date('Y').'/'.(date('Y') + 1))
             ->get();
 
         $kehadiran = Kehadiran::where('siswa_id', $siswa->id)->get();

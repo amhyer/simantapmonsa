@@ -21,12 +21,14 @@ class CbtIntegrityController extends Controller
         $data = $request->validated();
         $resetAnswers = (bool) ($data['reset_answers'] ?? false);
         $this->exam->recordViolation($result, $student, $data['type'], $resetAnswers);
+
         return response()->json(['recorded' => true, 'reset' => $resetAnswers]);
     }
 
     public function getViolations(CbtResult $result)
     {
         $this->authorize('viewViolations', $result);
+
         return response()->json($result->violations()->latest('id')->paginate(50));
     }
 }

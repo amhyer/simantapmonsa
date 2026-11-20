@@ -12,10 +12,12 @@ use Illuminate\Support\Str;
 class DimensiController extends Controller
 {
     use SyncableToSheet;
+
     public function index()
     {
         $dimensi = Dimensi::where('guru_id', auth()->id())->get();
         $siswa = Siswa::where('guru_id', auth()->id())->where('aktif', true)->get();
+
         return view('guru.dimensi.index', compact('dimensi', 'siswa'));
     }
 
@@ -30,7 +32,7 @@ class DimensiController extends Controller
 
         $guru = auth()->user();
         $siswa = Siswa::find($validated['siswa_id']);
-        if (!$siswa || $siswa->guru_id !== $guru->id) {
+        if (! $siswa || $siswa->guru_id !== $guru->id) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();
         }
 

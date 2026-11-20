@@ -16,8 +16,11 @@ class PresensiLaporanTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $guru;
+
     private User $tendik;
+
     private Siswa $siswa;
 
     protected function setUp(): void
@@ -237,7 +240,7 @@ class PresensiLaporanTest extends TestCase
 
         $htmlOkt = $responseOkt->getContent();
         for ($d = 1; $d <= 31; $d++) {
-            $this->assertMatchesRegularExpression('/<th[^>]*>' . $d . '<\/th>/', $htmlOkt, "Kolom tanggal {$d} harus ada pada bulan 31 hari.");
+            $this->assertMatchesRegularExpression('/<th[^>]*>'.$d.'<\/th>/', $htmlOkt, "Kolom tanggal {$d} harus ada pada bulan 31 hari.");
         }
 
         // Jam harian dihitung dari waktu masuk & pulang: 8j dan 8j 30m, total bulan = 16j 30m

@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Tryout;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tryout\StoreTryoutAnswerRequest;
+use App\Models\Siswa;
 use App\Models\Tryout\Result;
 use App\Models\Tryout\Session;
 use App\Models\Tryout\StudentAnswer;
 use App\Models\Tryout\TryoutQuestion;
-use App\Models\Siswa;
 use App\Services\Exam\DistributedConsistencyGuard;
+use App\Services\Exam\TryoutStudentReader;
 use App\Services\TryoutEngineBridge;
 use App\Services\TryoutResultDetailService;
 use App\Services\TryoutScoring;
@@ -28,11 +29,11 @@ class TryoutStudentController extends Controller
     {
         $siswa = $this->siswaSaya();
 
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan');
         }
 
-        $reader = app(\App\Services\Exam\TryoutStudentReader::class);
+        $reader = app(TryoutStudentReader::class);
         $availableSessions = $reader->sesiTersedia($siswa);
         $myResults = $reader->hasilSaya($siswa);
 
@@ -43,11 +44,11 @@ class TryoutStudentController extends Controller
     {
         $siswa = $this->siswaSaya();
 
-        if (!$siswa) {
+        if (! $siswa) {
             return redirect()->route('siswa.dashboard')->with('error', 'Data siswa tidak ditemukan');
         }
 
-        if (!$session->canStudentTake($siswa->id)) {
+        if (! $session->canStudentTake($siswa->id)) {
             return back()->with('error', 'Anda tidak dapat mengikuti tryout ini');
         }
 
@@ -56,15 +57,15 @@ class TryoutStudentController extends Controller
             $result = $this->bridge->mulai($session, $siswa);
         } else {
             $result = Result::where('tryout_session_id', $session->id)
-                            ->where('siswa_id', $siswa->id)
-                            ->whereNull('waktu_selesai')
-                            ->latest('id')
-                            ->first();
+                ->where('siswa_id', $siswa->id)
+                ->whereNull('waktu_selesai')
+                ->latest('id')
+                ->first();
 
-            if (!$result) {
+            if (! $result) {
                 $attemptNumber = (int) Result::where('tryout_session_id', $session->id)
-                            ->where('siswa_id', $siswa->id)
-                            ->max('attempt_number') + 1;
+                    ->where('siswa_id', $siswa->id)
+                    ->max('attempt_number') + 1;
 
                 $result = Result::create([
                     'uuid' => Str::uuid(),
@@ -99,7 +100,7 @@ class TryoutStudentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tryout sudah diselesaikan'], 409);
         }
 
-        if (!$result->session->isOngoing()) {
+        if (! $result->session->isOngoing()) {
             return response()->json(['success' => false, 'message' => 'Sesi tryout sudah berakhir'], 409);
         }
 
@@ -112,7 +113,7 @@ class TryoutStudentController extends Controller
             ->whereHas('subject', fn ($q) => $q->where('package_id', $result->session->package_id))
             ->first();
 
-        if (!$question) {
+        if (! $question) {
             return response()->json(['success' => false, 'message' => 'Soal bukan bagian dari tryout ini'], 422);
         }
 
@@ -180,10 +181,10 @@ class TryoutStudentController extends Controller
 
             foreach ($subjects as $subject) {
                 $answers = StudentAnswer::where('tryout_session_id', $result->tryout_session_id)
-                                       ->where('siswa_id', $result->siswa_id)
-                                       ->where('attempt_number', $result->attempt_number)
-                                       ->where('tryout_subject_id', $subject->id)
-                                       ->get();
+                    ->where('siswa_id', $result->siswa_id)
+                    ->where('attempt_number', $result->attempt_number)
+                    ->where('tryout_subject_id', $subject->id)
+                    ->get();
 
                 $subjectScore = $answers->sum('poin_diperoleh');
                 $subjectMax = $subject->questions->sum('poin');
@@ -206,9 +207,9 @@ class TryoutStudentController extends Controller
             $lulus = $persentase >= $result->session->package->passing_grade;
 
             $ranking = Result::where('tryout_session_id', $result->tryout_session_id)
-                            ->whereNotNull('waktu_selesai')
-                            ->where('nilai_total', '>', $totalScore)
-                            ->count() + 1;
+                ->whereNotNull('waktu_selesai')
+                ->where('nilai_total', '>', $totalScore)
+                ->count() + 1;
 
             $weakSubjects = collect($detailNilaiMapel)
                 ->where('persentase', '<', 60)

@@ -14,6 +14,7 @@ class MateriController extends Controller
         $materi = Materi::where('guru_id', auth()->id())
             ->orderBy('tanggal', 'desc')
             ->get();
+
         return view('guru.materi.index', compact('materi'));
     }
 
@@ -72,6 +73,7 @@ class MateriController extends Controller
         if ($materi->guru_id !== auth()->id()) {
             abort(403);
         }
+
         return view('guru.materi.edit', compact('materi'));
     }
 
@@ -136,6 +138,7 @@ class MateriController extends Controller
         if ($materi->guru_id !== auth()->id()) {
             abort(403);
         }
+
         return view('guru.materi.show', compact('materi'));
     }
 }

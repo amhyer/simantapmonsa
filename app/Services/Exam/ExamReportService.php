@@ -4,6 +4,7 @@ namespace App\Services\Exam;
 
 use App\Models\CbtTestSession;
 use App\Models\Exam\Attempt as ExamAttempt;
+use App\Models\Exam\Bank;
 use App\Models\Exam\Session as ExamSession;
 use App\Models\Tryout\Session as TryoutSession;
 
@@ -102,7 +103,7 @@ class ExamReportService
 
         $totalSessions = (clone $sesi)->count();
         $activeSessions = (clone $sesi)->where('status', 'ongoing')->count();
-        $totalPackages = \App\Models\Exam\Bank::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_PAKET)->count();
+        $totalPackages = Bank::where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_PAKET)->count();
 
         $attempts = ExamAttempt::whereHas('session', function ($q) {
             $q->where('sumber_tabel', LegacyExamMapper::SUMBER_TRYOUT_SESI);

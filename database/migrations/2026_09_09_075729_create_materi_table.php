@@ -27,7 +27,7 @@ return new class extends Migration
             $table->boolean('sematkan')->default(false);
             $table->json('rekaman')->nullable();
             $table->timestamps();
-            
+
             $table->index(['guru_id', 'kelas']);
             $table->index('judul');
         });

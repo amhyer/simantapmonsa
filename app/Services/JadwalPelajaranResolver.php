@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\NilaiErapot;
 use App\Models\JadwalPelajaran;
+use App\Models\NilaiErapot;
 use App\Models\Semester;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Service untuk mencocokkan nilai_erapor dengan jadwal_pelajaran (Dapodik).
- * 
+ *
  * Matching rules:
  * 1. Semester text → semesters.id (case-insensitive)
  * 2. Normalize mata_pelajaran & kelas (lowercase + trim)
@@ -24,7 +24,7 @@ class JadwalPelajaranResolver
      * Signature 1: resolve(NilaiErapot $nilai)
      * Signature 2: resolve(int $guruId, string $mapel, string $kelas, string $semester, string $tahunAjaran)
      *
-     * @param NilaiErapot|int ...$args
+     * @param  NilaiErapot|int  ...$args
      * @return int|null jadwal_pelajaran_id atau null jika tidak ditemukan
      */
     public function resolve(...$args): ?int
@@ -33,12 +33,12 @@ class JadwalPelajaranResolver
         if (count($args) === 1 && $args[0] instanceof NilaiErapot) {
             return $this->resolveFromModel($args[0]);
         }
-        
+
         // Signature 2: resolve(int $guruId, string $mapel, string $kelas, string $semester, string $tahunAjaran)
         if (count($args) === 5) {
             return $this->resolveFromParams($args[0], $args[1], $args[2], $args[3], $args[4]);
         }
-        
+
         throw new \InvalidArgumentException('Invalid arguments for resolve()');
     }
 
@@ -52,8 +52,9 @@ class JadwalPelajaranResolver
             ->where('tahun_ajaran', $nilai->tahun_ajaran)
             ->first();
 
-        if (!$semester) {
+        if (! $semester) {
             Log::debug("Semester tidak ditemukan untuk nilai #{$nilai->id}");
+
             return null;
         }
 
@@ -71,6 +72,7 @@ class JadwalPelajaranResolver
 
         if ($candidates->isEmpty()) {
             Log::debug("Tidak ada jadwal untuk nilai #{$nilai->id}");
+
             return null;
         }
 
@@ -91,8 +93,9 @@ class JadwalPelajaranResolver
             ->where('tahun_ajaran', $tahunAjaran)
             ->first();
 
-        if (!$semesterModel) {
+        if (! $semesterModel) {
             Log::debug("Semester tidak ditemukan: {$semester} {$tahunAjaran}");
+
             return null;
         }
 
@@ -122,10 +125,10 @@ class JadwalPelajaranResolver
     /**
      * Pilih kandidat jadwal yang paling sesuai (untuk unit test tanpa DB).
      *
-     * @param array $kandidat Array of candidates with keys: id, mata_pelajaran, kelas, semester_id
-     * @param string $mapel Nama mata pelajaran
-     * @param string $kelas Nama kelas
-     * @param int|null $semesterId ID semester atau null
+     * @param  array  $kandidat  Array of candidates with keys: id, mata_pelajaran, kelas, semester_id
+     * @param  string  $mapel  Nama mata pelajaran
+     * @param  string  $kelas  Nama kelas
+     * @param  int|null  $semesterId  ID semester atau null
      * @return int|null ID kandidat terpilih atau null
      */
     public function pilihKandidat(array $kandidat, string $mapel, string $kelas, ?int $semesterId): ?int
@@ -143,6 +146,7 @@ class JadwalPelajaranResolver
             $kMapel = preg_replace('/\s+/', ' ', $kMapel);
             $kKelas = strtolower(trim($k['kelas']));
             $kKelas = preg_replace('/\s+/', ' ', $kKelas);
+
             return $kMapel === $mapelNorm && $kKelas === $kelasNorm;
         });
 

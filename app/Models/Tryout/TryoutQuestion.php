@@ -3,9 +3,9 @@
 namespace App\Models\Tryout;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class TryoutQuestion extends Model
@@ -13,10 +13,11 @@ class TryoutQuestion extends Model
     use SoftDeletes;
 
     protected $table = 'tryout_questions';
+
     protected $fillable = [
         'uuid', 'tryout_subject_id', 'urutan', 'tipe_soal',
         'pertanyaan', 'media_type', 'media_url', 'poin',
-        'tingkat_kesulitan', 'pembahasan', 'aktif'
+        'tingkat_kesulitan', 'pembahasan', 'aktif',
     ];
 
     protected $casts = [
@@ -28,7 +29,7 @@ class TryoutQuestion extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });

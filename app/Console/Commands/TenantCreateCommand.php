@@ -32,11 +32,13 @@ class TenantCreateCommand extends Command
 
         if (Tenant::where('npsn', $npsn)->exists()) {
             $this->error("Gagal: NPSN {$npsn} sudah terdaftar!");
+
             return self::FAILURE;
         }
 
         if (Tenant::where('subdomain', $subdomain)->exists()) {
             $this->error("Gagal: Subdomain {$subdomain} sudah digunakan!");
+
             return self::FAILURE;
         }
 
@@ -47,6 +49,7 @@ class TenantCreateCommand extends Command
 
         if (User::where('nama_pengguna', $adminUser)->exists()) {
             $this->error("Gagal: Username {$adminUser} sudah digunakan!");
+
             return self::FAILURE;
         }
 

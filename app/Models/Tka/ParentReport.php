@@ -2,6 +2,8 @@
 
 namespace App\Models\Tka;
 
+use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -9,10 +11,11 @@ use Illuminate\Support\Str;
 class ParentReport extends Model
 {
     protected $table = 'tka_parent_reports';
+
     protected $fillable = [
         'uuid', 'assessment_id', 'siswa_id', 'ortu_user_id',
         'dibaca_oleh_ortu', 'tanggal_dibaca', 'rekomendasi_rumah',
-        'aktivitas_suggested'
+        'aktivitas_suggested',
     ];
 
     protected $casts = [
@@ -25,7 +28,7 @@ class ParentReport extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
@@ -38,11 +41,11 @@ class ParentReport extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Siswa::class);
+        return $this->belongsTo(Siswa::class);
     }
 
     public function ortuUser(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'ortu_user_id');
+        return $this->belongsTo(User::class, 'ortu_user_id');
     }
 }

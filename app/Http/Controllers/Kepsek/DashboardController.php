@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Kepsek;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\NilaiErapot;
-use App\Models\Kehadiran;
-use App\Models\Kebiasaan;
-use App\Models\RingkasanGuru;
-use App\Models\Materi;
-use App\Models\Kuis;
 use App\Models\Aktivitas;
+use App\Models\Dimensi;
+use App\Models\Kebiasaan;
+use App\Models\Kehadiran;
+use App\Models\Kuis;
+use App\Models\Materi;
+use App\Models\NilaiErapot;
+use App\Models\PresensiPegawai;
+use App\Models\Siswa;
+use App\Models\User;
+use App\Services\Exam\CbtDashboardProvider;
+use App\Services\NilaiService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -55,7 +59,7 @@ class DashboardController extends Controller
             $tgl = today()->subDays($i)->format('Y-m-d');
             $aktivitasGuru[] = [
                 'tanggal' => $tgl,
-                'label' => \Carbon\Carbon::parse($tgl)->translatedFormat('D'),
+                'label' => Carbon::parse($tgl)->translatedFormat('D'),
                 'nilai_input' => $dailyNilai->get($tgl, 0),
                 'materi' => $dailyMateri->get($tgl, 0),
                 'kuis' => $dailyKuis->get($tgl, 0),
@@ -75,6 +79,7 @@ class DashboardController extends Controller
             $totalMateri = $materiPerGuru->get($guru->id, 0);
             $totalKuis = $kuisPerGuru->get($guru->id, 0);
             $totalSiswa = $siswaPerGuru->get($guru->id, 0);
+
             return [
                 'guru' => $guru,
                 'total_aktivitas' => $totalNilai + $totalMateri + $totalKuis,
@@ -122,13 +127,13 @@ class DashboardController extends Controller
             // $kehadiranSemua sudah di-groupBy('siswa_id'): nilai tiap kunci
             // adalah collection baris, bukan model tunggal.
             $kehadiranKelas = $kehadiranSemua
-                ->filter(fn($baris, $siswaId) => $kelasSiswaIds->contains($siswaId))
+                ->filter(fn ($baris, $siswaId) => $kelasSiswaIds->contains($siswaId))
                 ->flatten(1);
             $totalKehadiran = $kehadiranKelas->sum('jumlah');
-            $hadirCount = $kehadiranKelas->filter(fn($h) => $h->status === 'H')->sum('jumlah');
+            $hadirCount = $kehadiranKelas->filter(fn ($h) => $h->status === 'H')->sum('jumlah');
             $persenHadir = $totalKehadiran > 0 ? round($hadirCount / $totalKehadiran * 100, 1) : 0;
 
-            $laporOrtu = $kebiasaanSemua->filter(fn($id) => $kelasSiswaIds->contains($id))->count();
+            $laporOrtu = $kebiasaanSemua->filter(fn ($id) => $kelasSiswaIds->contains($id))->count();
 
             return [
                 'kelas' => $item->kelas,
@@ -141,13 +146,13 @@ class DashboardController extends Controller
 
         // Modul CBT: analisis sekolah dari provider (engine `exam_*` atau `cbt_*`).
         $cbtRingkasan = config('simantap.cbt_enabled', false)
-            ? app(\App\Services\Exam\CbtDashboardProvider::class)->ringkasanSekolah()
+            ? app(CbtDashboardProvider::class)->ringkasanSekolah()
             : null;
 
-        $tkaScores = \App\Models\Dimensi::pluck('skor');
+        $tkaScores = Dimensi::pluck('skor');
         $tkaTotal = $tkaScores->count();
         $tkaRata = $tkaTotal > 0 ? round($tkaScores->avg(), 2) : 0;
-        $tkaSiap = $tkaScores->filter(fn($s) => $s >= 2.5)->count();
+        $tkaSiap = $tkaScores->filter(fn ($s) => $s >= 2.5)->count();
         $tkaSekolah = [
             'total' => $tkaTotal,
             'rata_rata' => $tkaRata,
@@ -157,7 +162,7 @@ class DashboardController extends Controller
 
         $todayStr = today()->toDateString();
         $kehadiranSiswaHariIni = Kehadiran::whereDate('tanggal', $todayStr)->where('status', 'H')->count();
-        $presensiPegawaiHariIni = \App\Models\PresensiPegawai::whereDate('tanggal', $todayStr)->whereNotNull('waktu_masuk')->count();
+        $presensiPegawaiHariIni = PresensiPegawai::whereDate('tanggal', $todayStr)->whereNotNull('waktu_masuk')->count();
         $presensiHariIni = [
             'siswa_hadir' => $kehadiranSiswaHariIni,
             'pegawai_hadir' => $presensiPegawaiHariIni,
@@ -197,6 +202,7 @@ class DashboardController extends Controller
 
         $statistikGuru = $guru->map(function ($g) use ($aktivitasPerGuru, $nilaiPerGuru, $materiPerGuru, $kuisPerGuru, $siswaPerGuru) {
             $aktivitasGuru = $aktivitasPerGuru->get($g->id, collect());
+
             return [
                 'guru' => $g,
                 'total_aktivitas' => $aktivitasGuru->count(),
@@ -218,7 +224,7 @@ class DashboardController extends Controller
      */
     protected function getPredikat($nilai, $kkm = null)
     {
-        $predikat = app(\App\Services\NilaiService::class)
+        $predikat = app(NilaiService::class)
             ->getPredikat((float) $nilai, $kkm ?? getKKM());
 
         $kelas = match ($predikat['huruf']) {

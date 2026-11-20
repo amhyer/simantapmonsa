@@ -2,17 +2,27 @@
 
 namespace App\Console\Commands;
 
-use App\Models\{
-    User, Siswa, Nilai, Kehadiran, Materi, Kuis, HasilKuis,
-    Catatan, Dimensi, Kebiasaan, PengaturanGuru, Semester,
-    RingkasanGuru, Aktivitas, OrangTuaSiswa, SekolahSettings
-};
+use App\Models\Aktivitas;
+use App\Models\Catatan;
+use App\Models\Dimensi;
+use App\Models\HasilKuis;
+use App\Models\Kebiasaan;
+use App\Models\Kehadiran;
+use App\Models\Kuis;
+use App\Models\Materi;
+use App\Models\Nilai;
+use App\Models\PengaturanGuru;
+use App\Models\RingkasanGuru;
+use App\Models\SekolahSettings;
+use App\Models\Siswa;
+use App\Models\User;
 use App\Services\GoogleSheetsService;
 use Illuminate\Console\Command;
 
 class FullSyncSheet extends Command
 {
     protected $signature = 'sheets:full-sync';
+
     protected $description = 'Full sync semua data SIMANTAP ke Google Sheets (14 tabel sesuai GAS v4.2)';
 
     public function handle()
@@ -20,8 +30,9 @@ class FullSyncSheet extends Command
         $settings = SekolahSettings::first();
         $googleSheet = $settings->pengaturan['google_sheet'] ?? null;
 
-        if (!$googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
+        if (! $googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
             $this->error('Google Sheets belum terhubung.');
+
             return 1;
         }
 
@@ -34,62 +45,63 @@ class FullSyncSheet extends Command
         $totalRecords = 0;
 
         // 1. PENGGUNA
-        $this->syncTable($service, $spreadsheetId, 'pengguna', fn() => User::all());
+        $this->syncTable($service, $spreadsheetId, 'pengguna', fn () => User::all());
         $totalRecords += User::count();
 
         // 2. SISWA
-        $this->syncTable($service, $spreadsheetId, 'siswa', fn() => Siswa::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'siswa', fn () => Siswa::with('guru')->get());
         $totalRecords += Siswa::count();
 
         // 3. NILAI
-        $this->syncTable($service, $spreadsheetId, 'nilai', fn() => Nilai::with('siswa', 'guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'nilai', fn () => Nilai::with('siswa', 'guru')->get());
         $totalRecords += Nilai::count();
 
         // 4. KEHADIRAN
-        $this->syncTable($service, $spreadsheetId, 'kehadiran', fn() => Kehadiran::with('siswa', 'guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'kehadiran', fn () => Kehadiran::with('siswa', 'guru')->get());
         $totalRecords += Kehadiran::count();
 
         // 5. MATERI
-        $this->syncTable($service, $spreadsheetId, 'materi', fn() => Materi::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'materi', fn () => Materi::with('guru')->get());
         $totalRecords += Materi::count();
 
         // 6. KUIS
-        $this->syncTable($service, $spreadsheetId, 'kuis', fn() => Kuis::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'kuis', fn () => Kuis::with('guru')->get());
         $totalRecords += Kuis::count();
 
         // 7. HASIL KUIS
-        $this->syncTable($service, $spreadsheetId, 'hasil_kuis', fn() => HasilKuis::with('siswa', 'kuis', 'guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'hasil_kuis', fn () => HasilKuis::with('siswa', 'kuis', 'guru')->get());
         $totalRecords += HasilKuis::count();
 
         // 8. CATATAN
-        $this->syncTable($service, $spreadsheetId, 'catatan', fn() => Catatan::with('siswa', 'guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'catatan', fn () => Catatan::with('siswa', 'guru')->get());
         $totalRecords += Catatan::count();
 
         // 9. DIMENSI
-        $this->syncTable($service, $spreadsheetId, 'dimensi', fn() => Dimensi::with('siswa', 'guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'dimensi', fn () => Dimensi::with('siswa', 'guru')->get());
         $totalRecords += Dimensi::count();
 
         // 10. 7 KEBIASAAN
-        $this->syncTable($service, $spreadsheetId, 'kebiasaan', fn() => Kebiasaan::with('siswa')->get());
+        $this->syncTable($service, $spreadsheetId, 'kebiasaan', fn () => Kebiasaan::with('siswa')->get());
         $totalRecords += Kebiasaan::count();
 
         // 11. PENGATURAN GURU
-        $this->syncTable($service, $spreadsheetId, 'pengaturan', fn() => PengaturanGuru::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'pengaturan', fn () => PengaturanGuru::with('guru')->get());
         $totalRecords += PengaturanGuru::count();
 
         // 12. SEKOLAH (key-value store)
         $this->syncSekolah($service, $spreadsheetId);
 
         // 13. RINGKASAN GURU
-        $this->syncTable($service, $spreadsheetId, 'ringkasan', fn() => RingkasanGuru::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'ringkasan', fn () => RingkasanGuru::with('guru')->get());
         $totalRecords += RingkasanGuru::count();
 
         // 14. AKTIVITAS
-        $this->syncTable($service, $spreadsheetId, 'aktivitas', fn() => Aktivitas::with('guru')->get());
+        $this->syncTable($service, $spreadsheetId, 'aktivitas', fn () => Aktivitas::with('guru')->get());
         $totalRecords += Aktivitas::count();
 
         $this->newLine();
         $this->info("Full sync selesai! Total: {$totalRecords} data ke 14 sheet.");
+
         return 0;
     }
 
@@ -105,9 +117,9 @@ class FullSyncSheet extends Command
         $service->clearSheet($spreadsheetId, $tabName);
         $service->ensureHeaders($spreadsheetId, $tabName, $headers);
 
-        $rows = $data->map(fn($model) => $service->buildRow($type, $model))->toArray();
+        $rows = $data->map(fn ($model) => $service->buildRow($type, $model))->toArray();
 
-        if (!empty($rows)) {
+        if (! empty($rows)) {
             $chunks = array_chunk($rows, 100);
             foreach ($chunks as $chunk) {
                 $service->syncBatch($spreadsheetId, $tabName, $chunk);
@@ -157,14 +169,16 @@ class FullSyncSheet extends Command
         // Add pengaturan array fields
         $pengaturan = $settings->pengaturan ?? [];
         foreach ($pengaturan as $key => $value) {
-            if (in_array($key, ['google_sheet'])) continue; // Skip internal
+            if (in_array($key, ['google_sheet'])) {
+                continue;
+            } // Skip internal
             $rows[] = ['Pengaturan', $key, is_array($value) ? json_encode($value) : $value];
         }
 
-        if (!empty($rows)) {
+        if (! empty($rows)) {
             $service->syncBatch($spreadsheetId, $tabName, $rows);
         }
 
-        $this->info("  ✓ {$tabName}: " . count($rows) . " data ter-sync");
+        $this->info("  ✓ {$tabName}: ".count($rows).' data ter-sync');
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\CbtExamService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -13,11 +14,11 @@ Schedule::command('tka:refresh')->everySixHours();
 Schedule::command('menu:usage-prune')->dailyAt('03:30')->withoutOverlapping();
 
 // Menilai jawaban tersimpan walau browser siswa ditutup/terputus.
-\Illuminate\Support\Facades\Artisan::command('cbt:finalize-expired', function () {
-    $count = app(\App\Services\CbtExamService::class)->finalizeExpired();
+Artisan::command('cbt:finalize-expired', function () {
+    $count = app(CbtExamService::class)->finalizeExpired();
     $this->info("CBT: {$count} percobaan kedaluwarsa difinalisasi.");
 })->purpose('Finalisasi CBT yang melewati deadline server');
 
-\Illuminate\Support\Facades\Schedule::command('cbt:finalize-expired')
+Schedule::command('cbt:finalize-expired')
     ->everyMinute()->withoutOverlapping()
     ->when(fn () => config('simantap.cbt_enabled', false));

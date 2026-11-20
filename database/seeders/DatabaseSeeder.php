@@ -2,16 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\Materi;
-use App\Models\Kuis;
-use App\Models\Nilai;
-use App\Models\Kehadiran;
-use App\Models\HasilKuis;
 use App\Models\Catatan;
 use App\Models\Dimensi;
+use App\Models\Kehadiran;
+use App\Models\Kuis;
+use App\Models\Materi;
 use App\Models\PengaturanGuru;
+use App\Models\Siswa;
+use App\Models\User;
 use Database\Seeders\Support\SeedGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -45,7 +43,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $admin = User::where('nama_pengguna', 'admin')->first();
-        if (!$admin) {
+        if (! $admin) {
             $admin = User::create([
                 'uuid' => Str::uuid(),
                 'nama_lengkap' => 'Administrator',
@@ -77,7 +75,7 @@ class DatabaseSeeder extends Seeder
             'kelas' => 'Kelas 7A',
             'kkm' => 70,
             'semester' => 'Ganjil',
-            'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+            'tahun_pelajaran' => date('Y').'/'.(date('Y') + 1),
             'pembaruan' => now(),
         ]);
 
@@ -102,7 +100,7 @@ class DatabaseSeeder extends Seeder
                 'nama_peserta_didik' => $nama,
                 'jenis_kelamin' => $i % 2 == 0 ? 'L' : 'P',
                 'kelas' => 'Kelas 7A',
-                'nama_orang_tua' => 'Orang Tua ' . $nama,
+                'nama_orang_tua' => 'Orang Tua '.$nama,
                 'aktif' => true,
             ]);
             $siswaIds[] = $siswa->id;
@@ -110,7 +108,7 @@ class DatabaseSeeder extends Seeder
             User::create([
                 'uuid' => Str::uuid(),
                 'nama_lengkap' => $nama,
-                'nama_pengguna' => 'siswa' . $nis,
+                'nama_pengguna' => 'siswa'.$nis,
                 'kata_sandi' => Hash::make($nis),
                 'peran' => 'siswa',
                 'terhubung_dengan' => [$siswa->id],
@@ -121,8 +119,8 @@ class DatabaseSeeder extends Seeder
 
             User::create([
                 'uuid' => Str::uuid(),
-                'nama_lengkap' => 'Orang Tua ' . $nama,
-                'nama_pengguna' => 'ortu' . $nis,
+                'nama_lengkap' => 'Orang Tua '.$nama,
+                'nama_pengguna' => 'ortu'.$nis,
                 'kata_sandi' => Hash::make($nis),
                 'peran' => 'ortu',
                 'terhubung_dengan' => [$siswa->id],
@@ -148,8 +146,8 @@ class DatabaseSeeder extends Seeder
                 'judul' => $m['judul'],
                 'mata_pelajaran' => $m['mata_pelajaran'],
                 'kelas' => $m['kelas'],
-                'tujuan_pembelajaran' => 'Memahami konsep ' . strtolower($m['judul']),
-                'materi_pokok' => 'Materi pembelajaran tentang ' . strtolower($m['judul']),
+                'tujuan_pembelajaran' => 'Memahami konsep '.strtolower($m['judul']),
+                'materi_pokok' => 'Materi pembelajaran tentang '.strtolower($m['judul']),
                 'kegiatan' => 'Diskusi dan latihan soal',
                 'sematkan' => false,
             ]);

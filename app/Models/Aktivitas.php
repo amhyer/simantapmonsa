@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Modules\Tenant\Traits\HasSchoolOwnership;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Aktivitas extends Model
@@ -11,6 +11,7 @@ class Aktivitas extends Model
     use HasSchoolOwnership;
 
     protected $table = 'aktivitas';
+
     protected $hidden = ['data_lama', 'data_baru'];
 
     protected $fillable = [
@@ -38,7 +39,9 @@ class Aktivitas extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) $model->uuid = Str::uuid();
+            if (! $model->uuid) {
+                $model->uuid = Str::uuid();
+            }
         });
     }
 

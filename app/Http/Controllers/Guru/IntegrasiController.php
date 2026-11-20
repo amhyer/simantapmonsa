@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dimensi;
+use App\Models\Kebiasaan;
+use App\Models\Kehadiran;
+use App\Models\Nilai;
 use App\Models\PengaturanGuru;
 use App\Models\SekolahSettings;
 use App\Services\GoogleSheetsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class IntegrasiController extends Controller
@@ -14,8 +19,8 @@ class IntegrasiController extends Controller
     {
         $pengaturan = PengaturanGuru::where('guru_id', auth()->id())->first();
         $sistem = optional($pengaturan)->sistem ?? [];
-        $terhubung = !empty($sistem['google_sheet_url']);
-        $terakhirSinkron = isset($sistem['terhubung_pada']) ? \Carbon\Carbon::parse($sistem['terhubung_pada']) : null;
+        $terhubung = ! empty($sistem['google_sheet_url']);
+        $terakhirSinkron = isset($sistem['terhubung_pada']) ? Carbon::parse($sistem['terhubung_pada']) : null;
         $spreadsheetName = $sistem['spreadsheet_name'] ?? null;
         $spreadsheetUrl = $sistem['google_sheet_url'] ?? null;
         // Extract spreadsheet ID from Google Sheets URL
@@ -113,7 +118,7 @@ class IntegrasiController extends Controller
         $settings = SekolahSettings::first();
         $googleSheet = $settings->pengaturan['google_sheet'] ?? null;
 
-        if (!$googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
+        if (! $googleSheet || empty($googleSheet['terhubung']) || empty($googleSheet['spreadsheet_id'])) {
             return back()->with('error', 'Google Sheets belum terhubung. Hubungkan melalui Admin > Sheet.');
         }
 
@@ -127,12 +132,12 @@ class IntegrasiController extends Controller
         try {
             $types = ['nilai', 'kehadiran', 'kebiasaan', 'dimensi'];
             $models = [
-                'nilai'     => \App\Models\Nilai::where('guru_id', $guruId)->with('siswa')->get(),
-                'kehadiran' => \App\Models\Kehadiran::where('guru_id', $guruId)->with('siswa', 'guru')->get(),
+                'nilai' => Nilai::where('guru_id', $guruId)->with('siswa')->get(),
+                'kehadiran' => Kehadiran::where('guru_id', $guruId)->with('siswa', 'guru')->get(),
                 // Kebiasaan tidak punya kolom guru_id → filter lewat relasi siswa.
-                'kebiasaan' => \App\Models\Kebiasaan::whereHas('siswa', fn ($q) => $q->where('guru_id', $guruId))
+                'kebiasaan' => Kebiasaan::whereHas('siswa', fn ($q) => $q->where('guru_id', $guruId))
                     ->with('siswa')->get(),
-                'dimensi'   => \App\Models\Dimensi::where('guru_id', $guruId)->with('siswa')->get(),
+                'dimensi' => Dimensi::where('guru_id', $guruId)->with('siswa')->get(),
             ];
 
             foreach ($types as $type) {
@@ -144,9 +149,9 @@ class IntegrasiController extends Controller
                 $service->clearSheet($spreadsheetId, $tabName);
                 $service->ensureHeaders($spreadsheetId, $tabName, $headers);
 
-                $rows = $data->map(fn($model) => $service->buildRow($type, $model))->toArray();
+                $rows = $data->map(fn ($model) => $service->buildRow($type, $model))->toArray();
 
-                if (!empty($rows)) {
+                if (! empty($rows)) {
                     $chunks = array_chunk($rows, 100);
                     foreach ($chunks as $chunk) {
                         $service->syncBatch($spreadsheetId, $tabName, $chunk);
@@ -172,7 +177,7 @@ class IntegrasiController extends Controller
 
             return back()->with('success', 'Full sync berhasil! Semua data telah terkirim ke Google Sheets.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal melakukan sync: ' . $e->getMessage());
+            return back()->with('error', 'Gagal melakukan sync: '.$e->getMessage());
         }
     }
 }

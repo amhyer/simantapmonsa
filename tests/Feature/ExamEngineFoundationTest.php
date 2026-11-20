@@ -37,6 +37,7 @@ class ExamEngineFoundationTest extends TestCase
     use RefreshDatabase;
 
     private User $guru;
+
     private Siswa $siswa;
 
     protected function setUp(): void

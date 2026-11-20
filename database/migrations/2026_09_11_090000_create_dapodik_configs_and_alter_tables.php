@@ -29,16 +29,16 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'dapodik_id')) {
+            if (! Schema::hasColumn('users', 'dapodik_id')) {
                 $table->string('dapodik_id')->nullable()->index();
             }
-            if (!Schema::hasColumn('users', 'archived_at')) {
+            if (! Schema::hasColumn('users', 'archived_at')) {
                 $table->timestamp('archived_at')->nullable();
             }
         });
 
         Schema::table('siswa', function (Blueprint $table) {
-            if (!Schema::hasColumn('siswa', 'archived_at')) {
+            if (! Schema::hasColumn('siswa', 'archived_at')) {
                 $table->timestamp('archived_at')->nullable();
             }
         });

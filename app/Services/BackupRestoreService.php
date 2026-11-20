@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\BackupTables;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -123,7 +124,7 @@ class BackupRestoreService
             }
 
             if ($modelClass) {
-                \Illuminate\Database\Eloquent\Model::unguarded(function () use ($modelClass, $id, $row) {
+                Model::unguarded(function () use ($modelClass, $id, $row) {
                     $modelClass::withoutEvents(function () use ($modelClass, $id, $row) {
                         $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Dimensi;
-use App\Models\Kebiasaan;
 use App\Models\Siswa;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +11,9 @@ class TKAService
     public function hitungTKA($siswaId)
     {
         $siswa = Siswa::find($siswaId);
-        if (!$siswa) return null;
+        if (! $siswa) {
+            return null;
+        }
 
         $dimensi = Dimensi::where('siswa_id', $siswaId)->get();
 
@@ -63,10 +64,19 @@ class TKAService
 
     public function getPredikat($nilai)
     {
-        if ($nilai >= 90) return 'Sangat Baik';
-        if ($nilai >= 75) return 'Baik';
-        if ($nilai >= 60) return 'Cukup';
-        if ($nilai >= 40) return 'Perlu Bimbingan';
+        if ($nilai >= 90) {
+            return 'Sangat Baik';
+        }
+        if ($nilai >= 75) {
+            return 'Baik';
+        }
+        if ($nilai >= 60) {
+            return 'Cukup';
+        }
+        if ($nilai >= 40) {
+            return 'Perlu Bimbingan';
+        }
+
         return 'Kurang';
     }
 

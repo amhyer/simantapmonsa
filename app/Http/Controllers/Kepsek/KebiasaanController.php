@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Kepsek;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kebiasaan;
-use App\Models\User;
 use App\Models\Siswa;
+use App\Models\User;
 
 class KebiasaanController extends Controller
 {
@@ -47,7 +47,7 @@ class KebiasaanController extends Controller
 
         $totalSiswa = $siswaList->count();
         $partisipasiRataRata = $rekapKebiasaan->count()
-            ? round($rekapKebiasaan->avg(fn($r) => $r['jumlah_input']), 1)
+            ? round($rekapKebiasaan->avg(fn ($r) => $r['jumlah_input']), 1)
             : 0;
 
         $fieldTotals = collect([
@@ -59,7 +59,7 @@ class KebiasaanController extends Controller
                 $fieldTotals[$field] += $rk['rata_rata'][$field] ?? 0;
             }
         }
-        $fieldTotals = $fieldTotals->map(fn($v) => $totalSiswa > 0 ? round($v / $totalSiswa, 2) : 0);
+        $fieldTotals = $fieldTotals->map(fn ($v) => $totalSiswa > 0 ? round($v / $totalSiswa, 2) : 0);
         $kebiasaanTerbaik = $fieldTotals->keys()->first() ?? '—';
         $daftarKebiasaan = [
             'bangun_pagi' => 'Bangun Pagi', 'beribadah' => 'Beribadah', 'berolahraga' => 'Berolahraga',
@@ -94,6 +94,7 @@ class KebiasaanController extends Controller
                 $kebiasaanValues[$field] = round($kelasKebiasaan->avg($field) ?? 0, 1);
             }
             $overall = round(collect($kebiasaanValues)->avg(), 1);
+
             return (object) [
                 'kelas' => $kelas,
                 'nama_kelas' => $kelas,
@@ -105,9 +106,10 @@ class KebiasaanController extends Controller
 
         $detailKebiasaan = collect($daftarKebiasaan)->map(function ($label, $key) use ($fieldTotals, $totalSiswa) {
             $partisipasi = $fieldTotals[$key] ?? 0;
+
             return (object) [
                 'nama' => $label,
-                'ikon' => match($key) {
+                'ikon' => match ($key) {
                     'bangun_pagi' => '🌅', 'beribadah' => '🙏', 'berolahraga' => '🏃',
                     'makan_sehat' => '🥗', 'gemar_belajar' => '📚', 'bermasyarakat' => '🤝',
                     'tidur_cepat' => '🌙', default => '⭐',

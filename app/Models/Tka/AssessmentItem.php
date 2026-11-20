@@ -10,9 +10,10 @@ use Illuminate\Support\Str;
 class AssessmentItem extends Model
 {
     protected $table = 'tka_assessment_items';
+
     protected $fillable = [
         'uuid', 'dimension_id', 'urutan', 'indikator',
-        'pertanyaan_penilaian', 'tipe_jawaban', 'bobot_item'
+        'pertanyaan_penilaian', 'tipe_jawaban', 'bobot_item',
     ];
 
     protected $casts = [
@@ -23,7 +24,7 @@ class AssessmentItem extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            if (!$model->uuid) {
+            if (! $model->uuid) {
                 $model->uuid = Str::uuid();
             }
         });
