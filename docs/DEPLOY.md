@@ -70,6 +70,10 @@ Salin `.env.example` menjadi `.env`, buat kunci aplikasi (`php artisan key:gener
 | `DAPODIK_BRIDGE_DOWNLOAD_URL` / `DAPODIK_BRIDGE_SHA256` | — | Opsional | URL HTTPS + SHA-256 `.exe` baru | Untuk unduhan SIMANTAP-Bridge |
 | `GOOGLE_CREDENTIALS_JSON` | — | Opsional | JSON service account (1 baris) | Opsional bila sinkron Google Sheets dipakai |
 | `BACKUP_DISK` / `BACKUP_DIRECTORY` / `BACKUP_RETENTION_DAYS` | `local` / `backups` / `14` | Opsional | `local` / `backups` / `14` | Retensi backup JSON otomatis |
+| `TKA_KESIAPAN_AKTIF` / `SIMANTAP_MENU_USAGE_TELEMETRY` | `true` / `true` | Opsional | `true` / `true` | Modul Kesiapan TKA & telemetri menu anonim |
+| `SIMANTAP_EXAM_ENGINE_READERS` / `SIMANTAP_LANDING_*` | `false` / `false` | Opsional | `false` / `false` | Fitur bertahap (tetap `false` di Fase 1) |
+| `MAIL_MAILER` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_FROM_*` | `log` | Opsional | SMTP sekolah (atau `log`) | Diperlukan bila fitur reset sandi via email dipakai |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | `127.0.0.1` / `6379` / `null` | Opsional | Diisi bila pakai Redis | Untuk `SESSION_DRIVER`/`CACHE_STORE`/`QUEUE_CONNECTION=redis` |
 
 **Catatan `database` vs `redis` untuk `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION`:**
 - Mode `database` siap pakai tanpa layanan tambahan, cocok untuk 1 sekolah bertrafik ringan–menengah. Konsekuensinya: tiap request web menambah ≥ 2 query (`sessions`) + 1 query per cache lookup + polling berkala worker ke tabel `jobs`.
