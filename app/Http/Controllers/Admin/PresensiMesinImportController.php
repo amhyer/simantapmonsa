@@ -3,44 +3,35 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ImportPresensiMesinRequest;
 use App\Models\PresensiMesinSyncLog;
 use App\Models\SekolahSettings;
 use App\Models\User;
-use App\Modules\Tenant\Support\TenantMode;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\MesinPresensi\PresensiMesinFileParser;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
+use App\Services\MesinPresensi\PresensiMesinPullService;
 use App\Services\PresensiMesinService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Csv as CsvReader;
-use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PresensiMesinImportController extends Controller
 {
     private const PERAN_PEGAWAI = ['guru', 'kepsek', 'tendik'];
 
-    private const EKSTENSI_DIIZINKAN = ['xls', 'xlsx', 'csv', 'txt'];
+    public function __construct(
+        private readonly PresensiMesinKaryawanService $karyawan,
+        private readonly PresensiMesinFileParser $parser,
+        private readonly PresensiMesinPullService $pull,
+    ) {}
 
-    private const KUNCI_SINKRON_TERAKHIR = 'presensi.mesin.terakhir_tarik';
-
-    private const MAKS_HARI_TARIK = 31;
-
-    private PresensiMesinKaryawanService $karyawan;
-
-    public function __construct(PresensiMesinKaryawanService $karyawan)
-    {
-        $this->karyawan = $karyawan;
-    }
-
-    public function index(AttendanceDatabaseReader $reader)
+    public function index(AttendanceDatabaseReader $reader): View
     {
         $jumlahPegawai = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)->where('aktif', true)->count();
         $sudahAdaNik = User::forSchool()->whereIn('peran', self::PERAN_PEGAWAI)
@@ -48,22 +39,16 @@ class PresensiMesinImportController extends Controller
             ->where('nik', '<>', '')
             ->count();
 
-        $directDisabled = $this->tarikLangsungDinonaktifkan();
-        $koneksi = $directDisabled ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null] : $reader->status();
-        $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
-        $mesinEngineTerpilih = $directDisabled ? (string) config('presensi.mesin_db_engine', 'auto') : $reader->engineTerpilih();
+        $directDisabled = $this->pull->tarikLangsungDinonaktifkan();
+        $koneksi = $directDisabled
+            ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null]
+            : $reader->status();
+        $terakhirTarik = $this->pull->terakhirTarik();
+        $mesinEngineTerpilih = $directDisabled
+            ? (string) config('presensi.mesin_db_engine', 'auto')
+            : $reader->engineTerpilih();
 
         return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled', 'mesinEngineTerpilih'));
-    }
-
-    /**
-     * Tarik langsung hanya dibuka untuk instalasi satu sekolah yang memang
-     * menyimpan database mesin di server ini (PRESENSI_MESIN_ALLOW_TENANT).
-     */
-    private function tarikLangsungDinonaktifkan(): bool
-    {
-        return TenantMode::isMultiSchool()
-            && ! (bool) config('presensi.mesin_izinkan_tenant', false);
     }
 
     /**
@@ -78,8 +63,8 @@ class PresensiMesinImportController extends Controller
             ->limit(25)
             ->get();
         $terakhir = PresensiMesinSyncLog::orderByDesc('created_at')->orderByDesc('id')->first();
-        $directDisabled = $this->tarikLangsungDinonaktifkan();
-        $terakhirTarik = $directDisabled ? null : Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+        $directDisabled = $this->pull->tarikLangsungDinonaktifkan();
+        $terakhirTarik = $this->pull->terakhirTarik();
 
         $koneksi = $directDisabled
             ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null]
@@ -94,7 +79,7 @@ class PresensiMesinImportController extends Controller
         ]);
     }
 
-    public function templateKaryawan()
+    public function templateKaryawan(): StreamedResponse
     {
         return $this->csvDownload('template-import-karyawan-mesin.csv', ['nik', 'nama'], [
             ['PIN001', 'Contoh Pegawai A'],
@@ -102,7 +87,7 @@ class PresensiMesinImportController extends Controller
         ]);
     }
 
-    public function templateLog()
+    public function templateLog(): StreamedResponse
     {
         return $this->csvDownload('template-import-log-mesin.csv', ['nik', 'tanggal', 'jam_masuk', 'jam_pulang'], [
             ['PIN001', now()->toDateString(), '07:05', '14:10'],
@@ -110,49 +95,16 @@ class PresensiMesinImportController extends Controller
         ]);
     }
 
-    public function importKaryawan(Request $request): RedirectResponse
+    public function importKaryawan(ImportPresensiMesinRequest $request): RedirectResponse
     {
-        if ($response = $this->validateUpload($request)) {
-            return $response;
-        }
-
         try {
-            $rows = $this->readRows($request->file('file'));
+            $pasangan = $this->parser->parseKaryawan($request->file('file'));
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['file' => $e->getMessage()]);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->withErrors(['file' => 'File tidak dapat dibaca: '.$e->getMessage()]);
-        }
-
-        if ($rows === []) {
-            return back()->withErrors(['file' => 'File kosong atau tidak memiliki data.']);
-        }
-
-        $headerIndex = $this->findHeaderRow($rows);
-        if ($headerIndex !== null) {
-            $headers = array_map(fn (array $cell) => $this->normalizeHeader($cell['fmt']), $rows[$headerIndex]);
-            $nikIndex = $this->findColumn($headers, ['nik', 'no pin', 'pin']);
-            $namaIndex = $this->findColumn($headers, ['nama', 'nama karyawan', 'nama pegawai', 'nama lengkap']);
-            $dataRows = array_slice($rows, $headerIndex + 1);
-        } else {
-            [$nikIndex, $namaIndex] = $this->inferMasterColumns($rows);
-            $dataRows = $rows;
-        }
-
-        if ($nikIndex === null || $namaIndex === null) {
-            return back()->withErrors(['file' => 'Kolom NIK dan Nama tidak ditemukan. Gunakan template yang disediakan.']);
-        }
-
-        $pasangan = [];
-        foreach ($dataRows as $row) {
-            $nik = $this->normalizeNikCell($row[$nikIndex] ?? null);
-            $nama = trim((string) ($row[$namaIndex]['fmt'] ?? ''));
-
-            if ($nik === null || $nama === '') {
-                continue;
-            }
-
-            $pasangan[] = ['nik' => $nik, 'nama' => $nama];
         }
 
         $hasil = $this->karyawan->simpanNikKaryawan($pasangan);
@@ -167,7 +119,7 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        return back()->with('success', $this->pesanKaryawan($hasil));
+        return back()->with('success', $this->pull->pesanKaryawan($hasil));
     }
 
     /**
@@ -204,130 +156,25 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        return back()->with('success', $this->pesanKaryawan($hasil));
+        return back()->with('success', $this->pull->pesanKaryawan($hasil));
     }
 
-    /**
-     * @param  array{diperbarui: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok?: list<string>}  $hasil
-     */
-    private function pesanKaryawan(array $hasil): string
+    public function importLog(ImportPresensiMesinRequest $request, PresensiMesinService $presensi): RedirectResponse
     {
-        $pesan = "Data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, "
-            ."{$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.";
-
-        $contoh = (array) ($hasil['contoh_tidak_cocok'] ?? []);
-        if ($contoh !== []) {
-            $pesan .= ' Contoh nama tidak cocok: '.implode(', ', $contoh).'.';
-        }
-
-        return $pesan;
-    }
-
-    public function importLog(Request $request, PresensiMesinService $presensi): RedirectResponse
-    {
-        if ($response = $this->validateUpload($request)) {
-            return $response;
-        }
-
         try {
-            $rows = $this->readRows($request->file('file'));
+            $parsed = $this->parser->parseLogScans($request->file('file'));
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['file' => $e->getMessage()]);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->withErrors(['file' => 'File tidak dapat dibaca: '.$e->getMessage()]);
         }
 
-        if ($rows === []) {
-            return back()->withErrors(['file' => 'File kosong atau tidak memiliki data.']);
-        }
+        $hasil = $presensi->importScans($parsed['scans'], auth()->id());
+        $hasil['baris_diabaikan'] = $parsed['baris_diabaikan'];
 
-        $headerIndex = $this->findHeaderRow($rows);
-        if ($headerIndex === null) {
-            return back()->withErrors(['file' => 'Header file tidak dikenali. Gunakan export mesin atau template yang disediakan.']);
-        }
-
-        $headers = array_map(fn (array $cell) => $this->normalizeHeader($cell['fmt']), $rows[$headerIndex]);
-        $nikIndex = $this->findColumn($headers, ['nik', 'no pin', 'pin']);
-        $statusIndex = $this->findColumn($headers, ['status']);
-        $dateTimeIndex = $this->findColumn($headers, ['tgl waktu', 'tanggal waktu', 'waktu lengkap', 'datetime']);
-        $tanggalIndex = $this->findColumn($headers, ['tanggal', 'tgl', 'date']);
-        $masukIndex = $this->findColumn($headers, ['jam masuk', 'masuk', 'check in', 'jam datang']);
-        $pulangIndex = $this->findColumn($headers, ['jam pulang', 'pulang', 'check out', 'jam keluar']);
-
-        if ($nikIndex === null) {
-            return back()->withErrors(['file' => 'Kolom NIK/No.PIN tidak ditemukan pada file.']);
-        }
-
-        $mode = null;
-        if ($tanggalIndex !== null && ($masukIndex !== null || $pulangIndex !== null)) {
-            $mode = 'kolom';
-        } elseif ($dateTimeIndex !== null) {
-            $mode = 'datetime';
-        }
-
-        if ($mode === null) {
-            return back()->withErrors(['file' => 'Kolom tanggal/waktu tidak ditemukan. Gunakan export mesin atau template yang disediakan.']);
-        }
-
-        $dataRows = array_slice($rows, $headerIndex + 1);
-        $scans = [];
-        $barisDiabaikan = 0;
-
-        foreach ($dataRows as $row) {
-            $nik = $this->normalizeNikCell($row[$nikIndex] ?? null);
-            if ($nik === null) {
-                $barisDiabaikan++;
-
-                continue;
-            }
-
-            if ($mode === 'datetime') {
-                $waktu = $this->parseDateTimeCell($row[$dateTimeIndex] ?? null);
-                if ($waktu === null) {
-                    $barisDiabaikan++;
-
-                    continue;
-                }
-                $jenis = $this->jenisScan($statusIndex !== null ? (string) ($row[$statusIndex]['fmt'] ?? '') : '', $waktu);
-                $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
-
-                continue;
-            }
-
-            $tanggal = $this->parseDateCell($row[$tanggalIndex] ?? null);
-            if ($tanggal === null) {
-                $barisDiabaikan++;
-
-                continue;
-            }
-
-            $adaJam = false;
-            foreach (['masuk' => $masukIndex, 'pulang' => $pulangIndex] as $jenis => $index) {
-                if ($index === null) {
-                    continue;
-                }
-                $jam = $this->parseTimeCell($row[$index] ?? null);
-                if ($jam === null) {
-                    continue;
-                }
-                $adaJam = true;
-                $waktu = $tanggal->copy()->setTime($jam[0], $jam[1], $jam[2]);
-                $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
-            }
-
-            if (! $adaJam) {
-                $barisDiabaikan++;
-            }
-        }
-
-        if ($scans === []) {
-            return back()->withErrors(['file' => 'Tidak ada baris presensi yang valid. Periksa format tanggal dan jam pada file.']);
-        }
-
-        $hasil = $presensi->importScans($scans, auth()->id());
-        $hasil['baris_diabaikan'] = $barisDiabaikan;
-
-        $this->catatPerubahanKehadiran($hasil);
+        $this->pull->catatPerubahanKehadiran($hasil);
 
         AktivitasService::log(
             'tambah',
@@ -339,7 +186,7 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        return back()->with('success', $this->pesanHasil($hasil, 'Import log mesin selesai'));
+        return back()->with('success', $this->pull->pesanHasil($hasil, 'Import log mesin selesai'));
     }
 
     /**
@@ -359,9 +206,9 @@ class PresensiMesinImportController extends Controller
         $dari = Carbon::parse($data['dari'], config('app.timezone'))->startOfDay();
         $sampai = Carbon::parse($data['sampai'], config('app.timezone'))->startOfDay();
 
-        if ((int) $dari->diffInDays($sampai) > self::MAKS_HARI_TARIK - 1) {
+        if ((int) $dari->diffInDays($sampai) > PresensiMesinPullService::MAKS_HARI_TARIK - 1) {
             return back()
-                ->withErrors(['dari' => 'Rentang tarik data maksimal '.self::MAKS_HARI_TARIK.' hari agar proses tetap cepat.'])
+                ->withErrors(['dari' => 'Rentang tarik data maksimal '.PresensiMesinPullService::MAKS_HARI_TARIK.' hari agar proses tetap cepat.'])
                 ->withInput();
         }
 
@@ -376,7 +223,7 @@ class PresensiMesinImportController extends Controller
         }
 
         if ($scans === []) {
-            Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+            $this->pull->tandaiTerakhirTarik();
 
             return back()->with(
                 'success',
@@ -387,9 +234,8 @@ class PresensiMesinImportController extends Controller
         $hasil = $presensi->importScans($scans, auth()->id());
         $hasil['baris_diabaikan'] = 0;
 
-        $this->catatPerubahanKehadiran($hasil);
-
-        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+        $this->pull->catatPerubahanKehadiran($hasil);
+        $this->pull->tandaiTerakhirTarik();
 
         AktivitasService::log(
             'tambah',
@@ -401,7 +247,7 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        return back()->with('success', $this->pesanHasil(
+        return back()->with('success', $this->pull->pesanHasil(
             $hasil,
             'Tarik data mesin '.$dari->format('d/m/Y').' – '.$sampai->format('d/m/Y').' selesai',
         ));
@@ -438,71 +284,20 @@ class PresensiMesinImportController extends Controller
         $sampai = $rentang['maks'];
 
         if ($dari === null || $sampai === null) {
-            Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+            $this->pull->tandaiTerakhirTarik();
 
             return back()->with('success', 'Database mesin berhasil dibaca, tetapi tidak ada scan pada database.');
         }
 
-        $hasil = [
-            'scans' => 0,
-            'dibuat' => 0,
-            'diperbarui' => 0,
-            'tetap' => 0,
-            'dilindungi' => 0,
-            'nik_tidak_dikenal' => 0,
-            'contoh_nik_tidak_dikenal' => [],
-            'baris_diabaikan' => 0,
-        ];
+        try {
+            $hasil = $this->pull->tarikSemuaRentang($reader, $presensi, $dari, $sampai, auth()->id());
+        } catch (\Throwable $e) {
+            report($e);
 
-        // Mesin TCP selalu mengirim seluruh log sekaligus, jadi cukup dibaca
-        // satu kali. Database Access dibaca per 31 hari agar hemat memori.
-        $rentangBaca = [];
-        if ($reader->engine() === 'tcp') {
-            $rentangBaca[] = [$dari->copy()->startOfDay(), $sampai->copy()->startOfDay()];
-        } else {
-            $mulai = $dari->copy()->startOfDay();
-            $batasAkhir = $sampai->copy()->startOfDay();
-
-            while ($mulai->lte($batasAkhir)) {
-                $batasChunk = $mulai->copy()->addDays(self::MAKS_HARI_TARIK - 1);
-                $sampaiChunk = $batasChunk->lt($batasAkhir) ? $batasChunk : $batasAkhir;
-                $rentangBaca[] = [$mulai->copy(), $sampaiChunk->copy()];
-
-                if ($sampaiChunk->eq($batasAkhir)) {
-                    break;
-                }
-
-                $mulai = $sampaiChunk->copy()->addDay();
-            }
+            return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
         }
 
-        foreach ($rentangBaca as [$mulaiChunk, $sampaiChunk]) {
-            try {
-                $scans = $reader->baca($mulaiChunk, $sampaiChunk);
-            } catch (\Throwable $e) {
-                report($e);
-
-                return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
-            }
-
-            $hasil['scans'] += count($scans);
-
-            if ($scans !== []) {
-                $r = $presensi->importScans($scans, auth()->id());
-                $this->catatPerubahanKehadiran($r);
-                $hasil['dibuat'] += $r['dibuat'];
-                $hasil['diperbarui'] += $r['diperbarui'];
-                $hasil['tetap'] += $r['tetap'];
-                $hasil['dilindungi'] += $r['dilindungi'];
-                $hasil['nik_tidak_dikenal'] += $r['nik_tidak_dikenal'];
-                $hasil['contoh_nik_tidak_dikenal'] = array_values(array_unique(array_merge(
-                    (array) $hasil['contoh_nik_tidak_dikenal'],
-                    (array) $r['contoh_nik_tidak_dikenal'],
-                )));
-            }
-        }
-
-        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+        $this->pull->tandaiTerakhirTarik();
 
         AktivitasService::log(
             'tambah',
@@ -514,7 +309,7 @@ class PresensiMesinImportController extends Controller
             $hasil,
         );
 
-        return back()->with('success', $this->pesanHasil($hasil, 'Tarik semua data mesin selesai'));
+        return back()->with('success', $this->pull->pesanHasil($hasil, 'Tarik semua data mesin selesai'));
     }
 
     /**
@@ -592,438 +387,10 @@ class PresensiMesinImportController extends Controller
     }
 
     /**
-     * Mencatat perubahan kehadiran (mis. terdeteksi terlambat) ke log aktivitas
-     * sebagai notifikasi internal setelah proses import/tarik selesai.
-     *
-     * @param  array<string, mixed>  $hasil
-     */
-    private function catatPerubahanKehadiran(array $hasil): void
-    {
-        if (empty($hasil['perubahan'])) {
-            return;
-        }
-
-        AktivitasService::log(
-            'kehadiran',
-            'Perubahan kehadiran dari mesin fingerprint',
-            'Terdeteksi perubahan kehadiran (mis. terlambat): '.count($hasil['perubahan']).' kejadian.',
-            'presensi_pegawai',
-            null,
-            null,
-            $hasil['perubahan'],
-        );
-    }
-
-    /**
-     * @param  array<string, mixed>  $hasil
-     */
-    private function pesanHasil(array $hasil, string $awalan): string
-    {
-        $pesan = "{$awalan}: {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, "
-            ."{$hasil['tetap']} tidak berubah, {$hasil['dilindungi']} dilindungi (koreksi manual/izin/sakit), "
-            ."{$hasil['nik_tidak_dikenal']} NIK tidak dikenal";
-
-        if (($hasil['baris_diabaikan'] ?? 0) > 0) {
-            $pesan .= ", {$hasil['baris_diabaikan']} baris diabaikan";
-        }
-
-        $pesan .= '.';
-
-        $contoh = (array) ($hasil['contoh_nik_tidak_dikenal'] ?? []);
-        if ($contoh !== []) {
-            $pesan .= ' Contoh NIK tidak dikenal: '.implode(', ', $contoh).'.';
-        }
-
-        return $pesan;
-    }
-
-    private function validateUpload(Request $request): ?RedirectResponse
-    {
-        $request->validate([
-            'file' => 'required|file|max:10240',
-        ]);
-
-        $ext = strtolower((string) $request->file('file')->getClientOriginalExtension());
-        if (! in_array($ext, self::EKSTENSI_DIIZINKAN, true)) {
-            return back()->withErrors(['file' => 'Format file harus XLS, XLSX, CSV, atau TXT.']);
-        }
-
-        return null;
-    }
-
-    /**
-     * @return list<list<array{raw: mixed, fmt: string}>>
-     */
-    private function readRows(UploadedFile $file): array
-    {
-        $ext = strtolower((string) $file->getClientOriginalExtension());
-
-        $reader = match ($ext) {
-            'xlsx' => IOFactory::createReader('Xlsx'),
-            'xls' => IOFactory::createReader('Xls'),
-            default => $this->makeCsvReader($file),
-        };
-        $reader->setReadDataOnly(false);
-
-        $spreadsheet = $reader->load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-
-        $highestRow = min($sheet->getHighestDataRow(), 20000);
-        $highestColumn = min(Coordinate::columnIndexFromString($sheet->getHighestDataColumn()), 40);
-
-        $rows = [];
-        for ($r = 1; $r <= $highestRow; $r++) {
-            $cells = [];
-            $adaIsi = false;
-
-            for ($c = 1; $c <= $highestColumn; $c++) {
-                $cell = $sheet->getCell([$c, $r]);
-                $raw = $cell->getValue();
-                $fmt = trim((string) $cell->getFormattedValue());
-
-                if ($raw !== null && trim((string) $raw) !== '') {
-                    $adaIsi = true;
-                }
-
-                $cells[] = ['raw' => $raw, 'fmt' => $fmt];
-            }
-
-            if ($adaIsi) {
-                $rows[] = $cells;
-            }
-        }
-
-        $spreadsheet->disconnectWorksheets();
-
-        return $rows;
-    }
-
-    private function makeCsvReader(UploadedFile $file): CsvReader
-    {
-        $reader = new CsvReader;
-        $reader->setInputEncoding('UTF-8');
-        $reader->setEnclosure('"');
-
-        $sample = (string) @file_get_contents($file->getRealPath(), false, null, 0, 4096);
-        $delimiter = ',';
-        $tertinggi = substr_count($sample, ',');
-        foreach ([',', ';', "\t", '|'] as $kandidat) {
-            $jumlah = substr_count($sample, $kandidat);
-            if ($jumlah > $tertinggi) {
-                $tertinggi = $jumlah;
-                $delimiter = $kandidat;
-            }
-        }
-
-        $reader->setDelimiter($delimiter);
-
-        return $reader;
-    }
-
-    /**
-     * @param  list<list<array{raw: mixed, fmt: string}>>  $rows
-     */
-    private function findHeaderRow(array $rows): ?int
-    {
-        $batas = min(count($rows), 20);
-
-        for ($i = 0; $i < $batas; $i++) {
-            $headers = array_map(fn (array $cell) => $this->normalizeHeader($cell['fmt']), $rows[$i]);
-
-            $skor = 0;
-            if ($this->findColumn($headers, ['nik', 'no pin', 'pin']) !== null) {
-                $skor += 2;
-            }
-            if ($this->findColumn($headers, ['nama', 'nama karyawan', 'nama pegawai', 'nama lengkap']) !== null) {
-                $skor += 2;
-            }
-            if ($this->findColumn($headers, ['tgl waktu', 'tanggal waktu', 'waktu lengkap', 'datetime', 'tanggal', 'tgl']) !== null) {
-                $skor += 2;
-            }
-            if ($this->findColumn($headers, ['status']) !== null) {
-                $skor += 1;
-            }
-            if ($this->findColumn($headers, ['jam masuk', 'jam pulang']) !== null) {
-                $skor += 2;
-            }
-
-            if ($skor >= 3) {
-                return $i;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  list<string>  $headers
-     * @param  list<string>  $aliases
-     */
-    private function findColumn(array $headers, array $aliases): ?int
-    {
-        foreach ($headers as $index => $header) {
-            if ($header !== '' && in_array($header, $aliases, true)) {
-                return $index;
-            }
-        }
-
-        foreach ($headers as $index => $header) {
-            if ($header === '') {
-                continue;
-            }
-            foreach ($aliases as $alias) {
-                if (mb_strlen($alias) >= 4 && str_contains($header, $alias)) {
-                    return $index;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function normalizeHeader(string $value): string
-    {
-        $value = str_replace("\u{FEFF}", '', $value);
-        $value = mb_strtolower(trim($value));
-        $value = preg_replace('/[^a-z0-9]+/u', ' ', $value) ?? '';
-        $value = preg_replace('/\s+/', ' ', $value) ?? '';
-
-        return trim($value);
-    }
-
-    /**
-     * Deteksi kolom untuk file tanpa baris header (mis. export daftar guru).
-     *
-     * @param  list<list<array{raw: mixed, fmt: string}>>  $rows
-     * @return array{0: int|null, 1: int|null}
-     */
-    private function inferMasterColumns(array $rows): array
-    {
-        $jumlahKolom = 0;
-        foreach ($rows as $row) {
-            $jumlahKolom = max($jumlahKolom, count($row));
-        }
-        if ($jumlahKolom === 0) {
-            return [null, null];
-        }
-
-        $skorNik = array_fill(0, $jumlahKolom, 0);
-        $skorNama = array_fill(0, $jumlahKolom, 0);
-
-        foreach (array_slice($rows, 0, 10) as $row) {
-            foreach ($row as $index => $cell) {
-                $fmt = trim((string) ($cell['fmt'] ?? ''));
-                $digit = preg_replace('/\D+/', '', $fmt) ?? '';
-
-                if (strlen($digit) >= 15 && strlen($digit) <= 20 && strlen($fmt) <= 30) {
-                    $skorNik[$index]++;
-                }
-                if (preg_match('/[A-Za-z]{3,}/', $fmt) === 1) {
-                    $skorNama[$index]++;
-                }
-            }
-        }
-
-        $nikIndex = $this->argMax($skorNik);
-        if ($nikIndex !== null && $skorNik[$nikIndex] === 0) {
-            $nikIndex = null;
-        }
-
-        $namaIndex = null;
-        $nilaiTerbaik = 0;
-        foreach ($skorNama as $index => $skor) {
-            if ($index === $nikIndex) {
-                continue;
-            }
-            if ($skor > $nilaiTerbaik) {
-                $nilaiTerbaik = $skor;
-                $namaIndex = $index;
-            }
-        }
-
-        return [$nikIndex, $namaIndex];
-    }
-
-    /**
-     * @param  list<int>  $values
-     */
-    private function argMax(array $values): ?int
-    {
-        $best = null;
-        $bestValue = -1;
-
-        foreach ($values as $index => $value) {
-            if ($value > $bestValue) {
-                $bestValue = $value;
-                $best = $index;
-            }
-        }
-
-        return $best;
-    }
-
-    private function normalizeNikCell(?array $cell): ?string
-    {
-        if ($cell === null) {
-            return null;
-        }
-
-        $raw = $cell['raw'] ?? null;
-        $fmt = trim((string) ($cell['fmt'] ?? ''));
-        $value = $fmt;
-
-        if (is_numeric($raw)) {
-            $angka = (float) $raw;
-            if ($fmt === '' || stripos($fmt, 'e+') !== false || stripos($fmt, 'e-') !== false) {
-                $value = number_format($angka, 0, '', '');
-            }
-        }
-
-        return $this->karyawan->normalizeNikValue($value);
-    }
-
-    private function parseDateTimeCell(?array $cell): ?Carbon
-    {
-        if ($cell === null) {
-            return null;
-        }
-
-        $raw = $cell['raw'] ?? null;
-        $fmt = trim((string) ($cell['fmt'] ?? ''));
-
-        if (is_numeric($raw)) {
-            $angka = (float) $raw;
-            if ($angka > 20000 && $angka < 100000) {
-                $waktu = $this->dariSerialExcel($angka);
-                if ($waktu !== null) {
-                    return $waktu;
-                }
-            }
-        }
-
-        if (preg_match('/^\d{5}(\.\d+)?$/', $fmt) === 1) {
-            $waktu = $this->dariSerialExcel((float) $fmt);
-            if ($waktu !== null) {
-                return $waktu;
-            }
-        }
-
-        $formatTanggal = [
-            'Y-m-d H:i:s',
-            'Y-m-d H:i',
-            'Y/m/d H:i:s',
-            'Y/m/d H:i',
-            'd/m/Y H:i:s',
-            'd/m/Y H:i',
-            'd-m-Y H:i:s',
-            'd-m-Y H:i',
-            'd.m.Y H:i:s',
-            'd.m.Y H:i',
-            'm/d/Y H:i:s',
-            'm/d/Y H:i',
-            'YmdHis',
-            'Ymd',
-        ];
-
-        foreach ($formatTanggal as $format) {
-            try {
-                $waktu = Carbon::createFromFormat($format, $fmt, config('app.timezone'));
-                if ($waktu !== false) {
-                    return $waktu;
-                }
-            } catch (\Throwable) {
-                // Coba format berikutnya.
-            }
-        }
-
-        try {
-            return Carbon::parse($fmt, config('app.timezone'));
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    private function parseDateCell(?array $cell): ?Carbon
-    {
-        return $this->parseDateTimeCell($cell)?->copy()->startOfDay();
-    }
-
-    /**
-     * @return array{0: int, 1: int, 2: int}|null
-     */
-    private function parseTimeCell(?array $cell): ?array
-    {
-        if ($cell === null) {
-            return null;
-        }
-
-        $raw = $cell['raw'] ?? null;
-        $fmt = trim((string) ($cell['fmt'] ?? ''));
-
-        if (is_numeric($raw)) {
-            $angka = (float) $raw;
-            if ($angka >= 0 && $angka < 1) {
-                $detik = (int) round($angka * 86400);
-
-                return [intdiv($detik, 3600) % 24, intdiv($detik, 60) % 60, $detik % 60];
-            }
-        }
-
-        if (preg_match('/(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?/', $fmt, $cocok) === 1) {
-            $jam = (int) $cocok[1];
-            $menit = (int) $cocok[2];
-            $detik = (int) ($cocok[3] ?? 0);
-
-            if ($jam < 24 && $menit < 60 && $detik < 60) {
-                return [$jam, $menit, $detik];
-            }
-        }
-
-        if (preg_match('/^\d{3,4}$/', $fmt) === 1) {
-            $angka = str_pad($fmt, 4, '0', STR_PAD_LEFT);
-            $jam = (int) substr($angka, 0, 2);
-            $menit = (int) substr($angka, 2, 2);
-
-            if ($jam < 24 && $menit < 60) {
-                return [$jam, $menit, 0];
-            }
-        }
-
-        return null;
-    }
-
-    private function dariSerialExcel(float $serial): ?Carbon
-    {
-        try {
-            $waktu = ExcelDate::excelToDateTimeObject($serial, config('app.timezone'));
-
-            return Carbon::instance($waktu);
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    private function jenisScan(string $status, Carbon $waktu): string
-    {
-        $status = mb_strtolower(trim($status));
-
-        if ($status !== '') {
-            if (str_contains($status, 'keluar') || str_contains($status, 'pulang') || str_contains($status, 'out')) {
-                return 'pulang';
-            }
-            if (str_contains($status, 'masuk') || str_contains($status, 'datang') || str_contains($status, 'in')) {
-                return 'masuk';
-            }
-        }
-
-        return $waktu->hour >= 12 ? 'pulang' : 'masuk';
-    }
-
-    /**
      * @param  list<string>  $header
      * @param  list<list<string>>  $rows
      */
-    private function csvDownload(string $filename, array $header, array $rows)
+    private function csvDownload(string $filename, array $header, array $rows): StreamedResponse
     {
         return response()->streamDownload(function () use ($header, $rows) {
             $out = fopen('php://output', 'w');
