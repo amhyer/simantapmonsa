@@ -29,11 +29,12 @@ class PresensiSecurityWorkflowTest extends TestCase
     {
         parent::setUp();
         config(['simantap.multi_tenant_enabled' => true]);
-        $this->travelTo(Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
     }
 
     protected function tearDown(): void
     {
+        Carbon::setTestNow();
         TenantContext::clear();
         parent::tearDown();
     }
@@ -50,7 +51,7 @@ class PresensiSecurityWorkflowTest extends TestCase
         return TenantContext::run($school->id, function () use ($school, $wali, $semester) {
             $rombel = Rombel::create(['dapodik_id' => 'R-'.$school->id, 'semester_id' => $semester->id, 'nama_rombel' => '6.A', 'guru_id' => $wali->id]);
             $student = Siswa::create(['guru_id' => $wali->id, 'rombel_id' => $rombel->id, 'nama_peserta_didik' => 'Anak '.$school->id, 'nis' => 'NIS-'.$school->id, 'kelas' => '6.A', 'jenis_kelamin' => 'L', 'aktif' => true]);
-            $jadwal = JadwalPelajaran::create(['guru_id' => $wali->id, 'semester_id' => $semester->id, 'rombel_id' => $rombel->id, 'kelas' => '6.A', 'mata_pelajaran' => 'Bahasa Inggris', 'hari' => now()->locale('id')->translatedFormat('l'), 'jam_mulai' => '08:00', 'jam_selesai' => '09:00']);
+            $jadwal = JadwalPelajaran::create(['guru_id' => $wali->id, 'semester_id' => $semester->id, 'rombel_id' => $rombel->id, 'kelas' => '6.A', 'mata_pelajaran' => 'Bahasa Inggris', 'hari' => 'Senin', 'jam_mulai' => '08:00', 'jam_selesai' => '09:00']);
 
             return [$student, $jadwal];
         });

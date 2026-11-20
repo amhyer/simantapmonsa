@@ -30,7 +30,7 @@ class PresensiTest extends TestCase
         parent::setUp();
         // Skenario QR-only lama sengaja dijalankan dengan kebijakan GPS opsional.
         config(['presensi.wajib_gps_scan_qr_pegawai' => false]);
-        $this->travelTo(Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-10-19 08:30:00', config('app.timezone')));
 
         $this->guru = User::factory()->guru()->create();
         $semester = Semester::create([
@@ -59,6 +59,12 @@ class PresensiTest extends TestCase
         ]);
     }
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     private function jadwal(string $mapel = 'Bahasa Inggris'): JadwalPelajaran
     {
         return JadwalPelajaran::create([
@@ -67,7 +73,7 @@ class PresensiTest extends TestCase
             'rombel_id' => $this->rombel->id,
             'kelas' => $this->rombel->nama_rombel,
             'mata_pelajaran' => $mapel,
-            'hari' => now()->locale('id')->translatedFormat('l'),
+            'hari' => 'Senin',
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '09:00:00',
         ]);
@@ -166,7 +172,7 @@ class PresensiTest extends TestCase
             'rombel_id' => $otherClass->id,
             'kelas' => $otherClass->nama_rombel,
             'mata_pelajaran' => 'Bahasa Inggris',
-            'hari' => now()->locale('id')->translatedFormat('l'),
+            'hari' => 'Senin',
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '09:00:00',
         ]);
@@ -516,7 +522,7 @@ class PresensiTest extends TestCase
             'rombel_id' => $this->rombel->id,
             'kelas' => $this->rombel->nama_rombel,
             'mata_pelajaran' => 'Bahasa Inggris',
-            'hari' => now()->locale('id')->translatedFormat('l'),
+            'hari' => 'Senin',
             'jam_mulai' => '08:00:00',
             'jam_selesai' => '09:00:00',
         ]);
