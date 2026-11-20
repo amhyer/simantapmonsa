@@ -6,12 +6,12 @@ Panduan berurutan untuk operator server (Ubuntu/Debian Linux) dalam menyiapkan, 
 
 ## 1. Prasyarat Server
 
-Versi PHP produksi **harus sama** dengan versi yang diuji di CI GitHub Actions (`.github/workflows/ci.yml`: **PHP 8.3** atau **PHP 8.4**).
+Versi PHP produksi **harus sama** dengan versi yang diuji di CI GitHub Actions (`.github/workflows/ci.yml`: **PHP 8.4**).
 
 | Komponen | Versi Disarankan | Keterangan |
 |---|---|---|
 | **OS** | Ubuntu 22.04 / 24.04 LTS | Disarankan server Linux khusus |
-| **PHP-FPM & CLI** | **8.3** atau **8.4** (`composer.json`: `^8.3`) | Ekstensi wajib: `pdo_pgsql`, `pgsql`, `mbstring`, `xml`, `ctype`, `json`, `bcmath`, `gd`, `zip`, `fileinfo`, `intl`, `openssl`, `curl` |
+| **PHP-FPM & CLI** | **8.4** (`composer.json`: `^8.4`) | Ekstensi wajib (`php8.4-*`): `pdo_pgsql`, `pgsql`, `mbstring`, `xml`, `ctype`, `json`, `bcmath`, `gd`, `zip`, `fileinfo`, `intl`, `openssl`, `curl` |
 | **PostgreSQL** | **16** | Database utama aplikasi |
 | **Nginx** | Stable terbaru | Reverse proxy + TLS termination |
 | **Node.js & npm** | **20 LTS** | Hanya dibutuhkan saat build aset (`npm run build`), atau build di CI/mesin lain lalu unggah folder `public/build` |

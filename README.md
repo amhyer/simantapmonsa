@@ -8,7 +8,7 @@ dan **Tenaga Kependidikan**.
 
 | | |
 |---|---|
-| **Stack** | Laravel 13 · PHP 8.3+ · PostgreSQL 16 · Blade + Tailwind CSS · Alpine.js |
+| **Stack** | Laravel 13 · PHP 8.4+ · PostgreSQL 16 · Blade + Tailwind CSS · Alpine.js |
 | **Integrasi** | Dapodik (sinkron dua arah), Google Sheets, e-Rapor Kemdikbud, DomPDF, PhpSpreadsheet |
 | **Modul** | Penilaian & e-Rapor, Presensi (geofence + QR), 7 Kebiasaan, Kokurikuler, Kuis, Tryout/TKA, CBT (opsional) |
 
