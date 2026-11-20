@@ -8,6 +8,7 @@ Dokumen ini mengelompokkan seluruh item backlog dan tugas lanjutan ke dalam tiga
 - **Cutover privasi foto siswa (`docs/CUTOVER-FOTO.md`)**: migrasi foto lama dari disk `public` ke `local` (`php artisan siswa:migrasi-foto-private`), pastikan `hanya_public = 0`, set `SIMANTAP_FOTO_FALLBACK_PUBLIC=false`, dan blokir `/storage/foto-siswa/` (`404`) di Nginx/CDN.
 - **Bangun ulang Bridge & validasi URL HTTPS**: bangun ulang `SIMANTAP-Bridge.exe`, isi `DAPODIK_BRIDGE_SHA256`, dan validasi `dapodik.bridge_download_url` wajib diawali `https://` (`config/dapodik.php`).
 - **Pemindaian rahasia & pembersihan riwayat Git**: jalankan `gitleaks` sebelum membuka repositori publik, dan pertimbangkan `git filter-repo` **hanya** jika repositori bersifat publik serta **setelah** seluruh kredensial dirotasi.
+- **Keselarasan versi PHP 8.3 vs 8.4 (`composer.lock`)**: `composer.lock` saat ini mengunci `symfony/* v8.1.x` (`php >= 8.4.1`) sementara `composer.json` menyebut `^8.3`; putuskan sebelum rilis apakah produksi & CI distandarkan ke PHP 8.4 atau di-lock ulang ke Symfony 7.4 dengan `config.platform.php = "8.3.0"`.
 
 ## 2. Segera Setelah Rilis
 - **Privasi foto pegawai (`User.foto`)**: pindahkan foto pegawai di `app/Services/Presensi/IdentityCardService.php:383` dari `asset('storage/...')` (disk `public`) ke disk `local` + route terotorisasi (logo sekolah/pemda tetap aset publik).
