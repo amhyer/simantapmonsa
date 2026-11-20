@@ -46,3 +46,9 @@
 ## 8. Migrasi Indeks Database (`2026_11_19_000002_add_performance_indexes_to_core_tables`)
 - Pada PostgreSQL, `CREATE INDEX` standar mengunci operasi tulis (`INSERT`/`UPDATE`/`DELETE`) pada tabel target selama proses pembuatan indeks berlangsung. Jalankan migrasi ini pada jendela waktu sepi (di luar jam ujian/presensi).
 - Setelah migrasi selesai pada salinan database PostgreSQL, operator disarankan menjalankan `EXPLAIN ANALYZE` untuk kueri utama (`aktivitas`, `jadwal_pelajaran`, `siswa`, `nilai_erapor`, `cbt_results`) guna memverifikasi penggunaan indeks.
+
+## Mesin Presensi ZKTeco (TCP Langsung vs Bridge)
+
+- Pengaturan host/port mesin ZKTeco hanya berasal dari environment server (`SIMANTAP_MESIN_HOST`, `SIMANTAP_MESIN_PORT=4370`, `SIMANTAP_MESIN_LIVE_TIMEOUT=3`; alias lama `PRESENSI_MESIN_DB_TCP_HOST`/`PORT` tetap didukung). Tidak ada form admin untuk mengubah IP/host mesin sehingga aman dari SSRF.
+- **Default `SIMANTAP_MESIN_HOST` adalah kosong (`''`)**: pada hosting internet, biarkan kosong agar `GET /admin/presensi/mesin/live` dan tarik TCP langsung mengembalikan pesan `"Mesin tidak dikonfigurasi; gunakan jalur Bridge."` tanpa membuka socket maupun menahan worker PHP-FPM.
+- Untuk sekolah dengan server hosting internet, gunakan jalur Bridge PC (`POST /api/presensi/mesin/sinkron`). Jika server dipasang on-premise di LAN yang sama dengan mesin ZKTeco, isi `SIMANTAP_MESIN_HOST` dan pastikan timeout Nginx/PHP-FPM memadai (`live` connect timeout ≤ 3 dtk, stream ≤ 60 dtk; `tarik` 300 dtk; `tarikSemua` 600 dtk).

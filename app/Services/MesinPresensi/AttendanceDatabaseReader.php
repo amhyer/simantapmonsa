@@ -175,7 +175,7 @@ class AttendanceDatabaseReader
             $timeoutTcp = min(5.0, (float) config('presensi.mesin_db_timeout', 120));
             $errnoTcp = 0;
             $errstrTcp = '';
-            $socketTcp = @fsockopen($tcpHost, $tcpPort, $errnoTcp, $errstrTcp, $timeoutTcp);
+            $socketTcp = $this->openTcpSocket($tcpHost, $tcpPort, $timeoutTcp, $errnoTcp, $errstrTcp);
             if ($socketTcp === false) {
                 return [
                     'ok' => false,
@@ -291,12 +291,19 @@ class AttendanceDatabaseReader
         $path = $this->path();
         $engine = $this->engine();
         if ($engine === 'tidak-tersedia') {
+            if ($this->engineTerpilih() === 'tcp' && trim((string) config('presensi.mesin_db_tcp_host', '')) === '') {
+                throw new RuntimeException('Mesin tidak dikonfigurasi; gunakan jalur Bridge.');
+            }
+
             throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
         }
 
         if ($engine === 'tcp') {
-            $host = (string) config('presensi.mesin_db_tcp_host', '192.168.1.7');
+            $host = trim((string) config('presensi.mesin_db_tcp_host', ''));
             $port = (int) config('presensi.mesin_db_tcp_port', 4370);
+            if ($host === '') {
+                throw new RuntimeException('Mesin tidak dikonfigurasi; gunakan jalur Bridge.');
+            }
 
             try {
                 $hasilTcp = $this->bacaLewatTcp($host, $port);
@@ -438,14 +445,22 @@ class AttendanceDatabaseReader
     {
         $engine = $this->engine();
         if ($engine === 'tidak-tersedia') {
+            if ($this->engineTerpilih() === 'tcp' && trim((string) config('presensi.mesin_db_tcp_host', '')) === '') {
+                throw new RuntimeException('Mesin tidak dikonfigurasi; gunakan jalur Bridge.');
+            }
+
             throw new RuntimeException('Tidak ada pembaca database yang tersedia. Aktifkan ekstensi pdo_odbc atau jalankan di Windows.');
         }
 
         // Mesin ZKTeco via TCP tidak punya tabel SQL, jadi rentang dihitung
         // dari log yang dibaca langsung dari perangkat.
         if ($engine === 'tcp') {
+            $host = trim((string) config('presensi.mesin_db_tcp_host', ''));
+            if ($host === '') {
+                throw new RuntimeException('Mesin tidak dikonfigurasi; gunakan jalur Bridge.');
+            }
             $hasilTcp = $this->bacaLewatTcp(
-                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
+                $host,
                 (int) config('presensi.mesin_db_tcp_port', 4370),
             );
 
@@ -498,6 +513,15 @@ class AttendanceDatabaseReader
      */
     public function bacaLive(): array
     {
+        $host = trim((string) config('presensi.mesin_db_tcp_host', ''));
+        if ($host === '') {
+            return [
+                'ok' => false,
+                'pesan' => 'Mesin tidak dikonfigurasi; gunakan jalur Bridge.',
+                'scans' => [],
+            ];
+        }
+
         $engine = $this->engine();
         if ($engine === 'tidak-tersedia') {
             return [
@@ -510,15 +534,17 @@ class AttendanceDatabaseReader
         if ($engine !== 'tcp') {
             return [
                 'ok' => false,
-                'pesan' => 'Mode live memakai mesin ZKTeco via TCP. Aktifkan pembaca TCP (PRESENSI_MESIN_DB_TCP_HOST).',
+                'pesan' => 'Mode live memakai mesin ZKTeco via TCP. Aktifkan pembaca TCP (SIMANTAP_MESIN_HOST).',
                 'scans' => [],
             ];
         }
 
         try {
+            $liveTimeout = min(3, max(1, (int) config('presensi.mesin_db_live_timeout', 3)));
             $hasilTcp = $this->bacaLewatTcp(
-                (string) config('presensi.mesin_db_tcp_host', '192.168.1.7'),
+                $host,
                 (int) config('presensi.mesin_db_tcp_port', 4370),
+                $liveTimeout,
             );
 
             $scans = [];
@@ -705,16 +731,34 @@ class AttendanceDatabaseReader
     }
 
     /**
+     * Pembungkus koneksi socket TCP agar dapat di-mock di pengujian tanpa membuka jaringan nyata.
+     *
+     * @return resource|false
+     */
+    protected function openTcpSocket(string $host, int $port, float $timeout, int &$errno, string &$errstr)
+    {
+        return @fsockopen($host, $port, $errno, $errstr, $timeout);
+    }
+
+    /**
      * Baca log presensi langsung dari mesin ZKTeco via TCP (port default: 4370).
      *
      * @return array{ok: bool, pesan: string, scans?: list<array<string, mixed>>}
      */
-    private function bacaLewatTcp(string $host, int $port): array
+    private function bacaLewatTcp(string $host, int $port, ?int $connectTimeout = null): array
     {
+        $host = trim($host);
+        if ($host === '') {
+            throw new RuntimeException('Mesin tidak dikonfigurasi; gunakan jalur Bridge.');
+        }
+
         $batas = max(5, (int) config('presensi.mesin_db_timeout', 120));
+        $timeoutKoneksi = $connectTimeout !== null
+            ? (float) max(1, min($connectTimeout, $batas))
+            : (float) min(10, $batas);
         $errno = 0;
         $errstr = '';
-        $socket = @fsockopen($host, $port, $errno, $errstr, min(10, $batas));
+        $socket = $this->openTcpSocket($host, $port, $timeoutKoneksi, $errno, $errstr);
         if ($socket === false) {
             throw new RuntimeException(
                 'Gagal koneksi ke mesin via TCP ('.$host.':'.$port.') : '

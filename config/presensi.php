@@ -86,10 +86,12 @@ return [
 
     /*
     | Komunikasi langsung ke mesin fingerprint via TCP (port default ZKTeco: 4370).
-    | Digunakan bila mesin dapat dijangkau di jaringan lokal yang sama.
+    | Default KOSONG agar fitur TCP langsung tidak aktif di hosting internet;
+    | gunakan jalur Bridge (POST /api/presensi/mesin/sinkron) bila mesin berada di LAN sekolah.
     */
-    'mesin_db_tcp_host' => env('PRESENSI_MESIN_DB_TCP_HOST', '192.168.1.7'),
-    'mesin_db_tcp_port' => env('PRESENSI_MESIN_DB_TCP_PORT', 4370),
+    'mesin_db_tcp_host' => env('SIMANTAP_MESIN_HOST', env('PRESENSI_MESIN_DB_TCP_HOST', '')),
+    'mesin_db_tcp_port' => (int) env('SIMANTAP_MESIN_PORT', env('PRESENSI_MESIN_DB_TCP_PORT', 4370)),
+    'mesin_db_live_timeout' => (int) env('SIMANTAP_MESIN_LIVE_TIMEOUT', 3),
 
     /*
     | Communication key mesin (menu Komunikasi / Comm Key di perangkat).
