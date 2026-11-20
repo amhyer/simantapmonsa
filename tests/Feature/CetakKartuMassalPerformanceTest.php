@@ -52,8 +52,8 @@ class CetakKartuMassalPerformanceTest extends TestCase
         $queries = count(DB::getQueryLog());
         DB::disableQueryLog();
 
-        // Budget ketat <= 60 query (sebelumnya 320-406 query)
-        $this->assertLessThanOrEqual(60, $queries, "Query cetakSiswaMassal terlalu tinggi: {$queries}");
+        // Budget ketat <= 20 query (aktual 6 query; sebelumnya 320-406 query)
+        $this->assertLessThanOrEqual(20, $queries, "Query cetakSiswaMassal terlalu tinggi: {$queries}");
 
         // Pastikan HTML kartu tetap lengkap dan token TIDAK dirotasi saat cetak ulang
         $res->assertSee('Cetak Kartu Identitas Siswa')
