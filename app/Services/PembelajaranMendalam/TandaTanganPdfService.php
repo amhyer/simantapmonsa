@@ -56,6 +56,9 @@ class TandaTanganPdfService
             'nip_guru' => trim((string) ($pengGuru['nip_guru'] ?? '')),
             'jabatan_guru' => trim((string) ($pengGuru['jabatan_guru'] ?? '')) ?: 'Guru Kelas / Mata Pelajaran',
             'ttd_guru_uri' => $this->toDataUri($pengGuru['ttd_guru'] ?? null),
+            'nama_pengawas' => trim((string) ($pengSekolah['nama_pengawas'] ?? '')),
+            'nip_pengawas' => trim((string) ($pengSekolah['nip_pengawas'] ?? '')),
+            'ttd_pengawas_uri' => $this->toDataUri($pengSekolah['ttd_pengawas'] ?? null),
         ];
     }
 

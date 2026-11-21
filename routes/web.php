@@ -86,6 +86,7 @@ use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\RekapController;
 use App\Http\Controllers\Kepsek\SupervisiPmController;
 use App\Http\Controllers\Kepsek\TkaLaporanController;
+use App\Http\Controllers\Pengawas\DashboardController as PengawasDashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Media\SiswaFotoController;
 use App\Http\Controllers\Ortu\CatatanController as OrtuCatatanController;
@@ -205,6 +206,7 @@ Route::get('/dashboard', function () {
         'siswa' => redirect()->route('siswa.dashboard'),
         'ortu' => redirect()->route('ortu.dashboard'),
         'kepsek' => redirect()->route('kepsek.dashboard'),
+        'pengawas' => redirect()->route('pengawas.dashboard'),
         'tendik' => redirect()->route('presensi.pegawai.index'),
         default => redirect()->route('login'),
     };
@@ -912,6 +914,40 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganIndex'])->name('ttd.index');
     Route::post('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganStore'])->middleware('throttle:20,1')->name('ttd.store');
     Route::delete('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganHapus'])->middleware('throttle:20,1')->name('ttd.hapus');
+});
+
+// ==================== PENGAWAS SEKOLAH ROUTES ====================
+Route::middleware(['auth', 'role:pengawas', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('pengawas')->name('pengawas.')->group(function () {
+    Route::get('/dashboard', [PengawasDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/sekolah-binaan', [PengawasDashboardController::class, 'gantiSekolahBinaan'])->middleware('throttle:30,1')->name('sekolah.ganti');
+
+    // Verifikasi Berjenjang Perangkat Pembelajaran Mendalam (Guru -> Kepsek -> Pengawas)
+    Route::prefix('supervisi')->name('supervisi.')->group(function () {
+        Route::get('/', [PengawasDashboardController::class, 'supervisiIndex'])->name('index');
+        Route::get('/guru/{guru:uuid}', [PengawasDashboardController::class, 'supervisiShow'])->name('show');
+        Route::post('/guru/{guru:uuid}/verifikasi', [PengawasDashboardController::class, 'simpanVerifikasi'])
+            ->middleware('throttle:30,1')
+            ->name('verifikasi');
+    });
+
+    // E-Visitasi & Instrumen Observasi Kelas Pembelajaran Mendalam
+    Route::prefix('visitasi')->name('visitasi.')->group(function () {
+        Route::get('/', [PengawasDashboardController::class, 'visitasiIndex'])->name('index');
+        Route::post('/', [PengawasDashboardController::class, 'visitasiStore'])->middleware('throttle:20,1')->name('store');
+        Route::delete('/{visitasi:uuid}', [PengawasDashboardController::class, 'visitasiDestroy'])->middleware('throttle:20,1')->name('destroy');
+        Route::get('/{visitasi:uuid}/pdf', [PengawasDashboardController::class, 'visitasiPdf'])->name('pdf');
+    });
+
+    // Audit Keselarasan Kurikulum — KKTP — e-Rapor & Peta Hasil Belajar
+    Route::get('/audit-kurikulum', [PengawasDashboardController::class, 'auditIndex'])->name('audit.index');
+
+    // Tanda Tangan Digital Mandiri Pengawas
+    Route::get('/tanda-tangan', [PengawasDashboardController::class, 'tandaTanganIndex'])->name('ttd.index');
+    Route::post('/tanda-tangan', [PengawasDashboardController::class, 'tandaTanganStore'])->middleware('throttle:20,1')->name('ttd.store');
+    Route::delete('/tanda-tangan', [PengawasDashboardController::class, 'tandaTanganHapus'])->middleware('throttle:20,1')->name('ttd.hapus');
+
+    // Generator 1-Klik Laporan Kepengawasan Semester PDF
+    Route::get('/laporan-semester-pdf', [PengawasDashboardController::class, 'cetakLaporanSemesterPdf'])->name('laporan.pdf');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

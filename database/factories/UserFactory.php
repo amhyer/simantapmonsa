@@ -74,6 +74,14 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function pengawas(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'peran' => 'pengawas',
+            'nama_pengguna' => 'pengawas_'.Str::random(5),
+        ]);
+    }
+
     public function superAdmin(): static
     {
         return $this->state(fn (array $attributes) => [

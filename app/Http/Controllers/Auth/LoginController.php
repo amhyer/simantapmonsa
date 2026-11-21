@@ -103,6 +103,7 @@ class LoginController extends Controller
                 'siswa' => redirect()->route('siswa.dashboard'),
                 'ortu' => redirect()->route('ortu.dashboard'),
                 'kepsek' => redirect()->route('kepsek.dashboard'),
+                'pengawas' => redirect()->route('pengawas.dashboard'),
                 'tendik' => redirect()->route('presensi.pegawai.index'),
                 default => redirect()->route('login'),
             };

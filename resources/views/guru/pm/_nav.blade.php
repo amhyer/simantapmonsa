@@ -100,6 +100,13 @@
         @if($pmSupervisi->catatan_kepsek)
             <div style="margin-top:4px;font-size:12px"><strong>Catatan Kepsek:</strong> {{ $pmSupervisi->catatan_kepsek }}</div>
         @endif
+        @if($pmSupervisi->status_pengawas && $pmSupervisi->status_pengawas !== 'menunggu')
+            <div style="margin-top:4px;font-size:12px">
+                <strong>Verifikasi Pengawas:</strong> {{ $pmSupervisi->statusPengawasLabel() }}
+                @if($pmSupervisi->catatan_pengawas) — {{ $pmSupervisi->catatan_pengawas }} @endif
+                @if($pmSupervisi->rekomendasi_rtl) · <em>RTL: {{ $pmSupervisi->rekomendasi_rtl }}</em> @endif
+            </div>
+        @endif
     </div>
 @endif
 

@@ -50,6 +50,17 @@
                     <button type="submit" class="btn btn-sm"><i class="fas fa-check-circle"></i> Simpan Keputusan Supervisi</button>
                 </div>
             </form>
+            @if($supervisi && ($supervisi->status_pengawas !== 'menunggu' || $supervisi->catatan_pengawas || $supervisi->rekomendasi_rtl))
+                <div style="margin-top:12px;padding:10px 12px;background:#F4F3FF;border:1px solid #D9D6FE;border-radius:8px;font-size:12.5px;color:#5925DC">
+                    <strong><i class="fas fa-shield-alt"></i> Verifikasi Pengawas Sekolah: {{ $supervisi->statusPengawasLabel() }}</strong>
+                    @if($supervisi->catatan_pengawas)
+                        <div style="margin-top:4px"><strong>Catatan Pembinaan:</strong> {{ $supervisi->catatan_pengawas }}</div>
+                    @endif
+                    @if($supervisi->rekomendasi_rtl)
+                        <div style="margin-top:2px"><strong>Rekomendasi Tindak Lanjut (RTL):</strong> {{ $supervisi->rekomendasi_rtl }}</div>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 

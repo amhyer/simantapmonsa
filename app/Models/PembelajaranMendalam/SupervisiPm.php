@@ -36,17 +36,40 @@ class SupervisiPm extends Model
         self::STATUS_REVISI => 'badge-danger',
     ];
 
+    public const PENGAWAS_MENUNGGU = 'menunggu';
+
+    public const PENGAWAS_TERVERIFIKASI = 'terverifikasi';
+
+    public const PENGAWAS_PEMBINAAN = 'pembinaan';
+
+    public const PENGAWAS_LABELS = [
+        self::PENGAWAS_MENUNGGU => 'Menunggu Verifikasi Pengawas',
+        self::PENGAWAS_TERVERIFIKASI => 'Terverifikasi Pengawas',
+        self::PENGAWAS_PEMBINAAN => 'Catatan Pembinaan Pengawas',
+    ];
+
+    public const PENGAWAS_BADGES = [
+        self::PENGAWAS_MENUNGGU => 'badge-warning',
+        self::PENGAWAS_TERVERIFIKASI => 'badge-success',
+        self::PENGAWAS_PEMBINAAN => 'badge-info',
+    ];
+
     protected $fillable = [
         'uuid',
         'tenant_id',
         'guru_id',
         'kepsek_id',
+        'pengawas_id',
         'tahun_ajaran',
         'semester',
         'status',
         'skor_kelengkapan',
         'catatan_kepsek',
         'disetujui_at',
+        'status_pengawas',
+        'catatan_pengawas',
+        'rekomendasi_rtl',
+        'diverifikasi_pengawas_at',
     ];
 
     protected function casts(): array
@@ -55,6 +78,7 @@ class SupervisiPm extends Model
             'semester' => 'integer',
             'skor_kelengkapan' => 'integer',
             'disetujui_at' => 'datetime',
+            'diverifikasi_pengawas_at' => 'datetime',
         ];
     }
 
@@ -78,6 +102,11 @@ class SupervisiPm extends Model
         return $this->belongsTo(User::class, 'kepsek_id');
     }
 
+    public function pengawas(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pengawas_id');
+    }
+
     public function statusLabel(): string
     {
         return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
@@ -86,5 +115,19 @@ class SupervisiPm extends Model
     public function statusBadge(): string
     {
         return self::STATUS_BADGES[$this->status] ?? 'badge-info';
+    }
+
+    public function statusPengawasLabel(): string
+    {
+        $st = $this->status_pengawas ?: self::PENGAWAS_MENUNGGU;
+
+        return self::PENGAWAS_LABELS[$st] ?? ucfirst((string) $st);
+    }
+
+    public function statusPengawasBadge(): string
+    {
+        $st = $this->status_pengawas ?: self::PENGAWAS_MENUNGGU;
+
+        return self::PENGAWAS_BADGES[$st] ?? 'badge-warning';
     }
 }

@@ -42,6 +42,7 @@ class MenuAuditTest extends TestCase
         $ortu->update(['terhubung_dengan' => [$siswa->id]]);
 
         $tendik = User::factory()->tendik()->create();
+        $pengawas = User::factory()->pengawas()->create();
 
         $map = [
             'super_admin' => [$superAdmin, [
@@ -112,6 +113,10 @@ class MenuAuditTest extends TestCase
             ]],
             'tendik' => [$tendik, [
                 'presensi.pegawai.index', 'presensi.pegawai.kartu',
+            ]],
+            'pengawas' => [$pengawas, [
+                'pengawas.dashboard', 'pengawas.supervisi.index', 'pengawas.visitasi.index',
+                'pengawas.audit.index', 'pengawas.ttd.index',
             ]],
         ];
 

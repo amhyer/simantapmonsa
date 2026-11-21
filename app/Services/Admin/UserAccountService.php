@@ -24,6 +24,7 @@ class UserAccountService
         'ortu' => 'Orang Tua',
         'kepsek' => 'Kepala Sekolah',
         'tendik' => 'Tenaga Kependidikan',
+        'pengawas' => 'Pengawas Sekolah',
     ];
 
     public function accountsQuery(): Builder
