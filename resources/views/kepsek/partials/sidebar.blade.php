@@ -10,6 +10,7 @@
             ['route' => 'kepsek.hasil-belajar.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Hasil Belajar'],
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
+            ['route' => 'kepsek.supervisi-pm.index', 'icon' => 'lucide-sparkles', 'label' => 'Supervisi Pembelajaran Mendalam'],
             ['route' => 'kepsek.perangkat.index', 'icon' => 'lucide-folder-open', 'label' => 'Supervisi Perangkat Ajar'],
             ['route' => 'kepsek.tka-kesiapan.index', 'kesiapan_tka' => true, 'icon' => 'lucide-compass', 'label' => 'Pemantauan Kesiapan TKA'],
             ['route' => 'kepsek.tka-laporan.index', 'icon' => 'lucide-bar-chart-2', 'label' => 'Heatmap & Laporan TKA'],

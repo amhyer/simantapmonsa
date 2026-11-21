@@ -61,6 +61,18 @@ use App\Http\Controllers\Guru\MateriController;
 use App\Http\Controllers\Guru\NilaiController;
 use App\Http\Controllers\Guru\NilaiErapotController;
 use App\Http\Controllers\Guru\PengaturanController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\AlokasiWaktuController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\AtpController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\BukuPaketController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\CpController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\GeneratorBatchController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\KalenderController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\KktpController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\KokurikulerPmController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\ProsemController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\ProtaController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\TandaTanganController;
+use App\Http\Controllers\Guru\PembelajaranMendalam\TpController as PmTpController;
 use App\Http\Controllers\Guru\PerangkatController;
 use App\Http\Controllers\Guru\SiswaController;
 use App\Http\Controllers\Guru\TKAController;
@@ -72,6 +84,7 @@ use App\Http\Controllers\Kepsek\KebiasaanController as KepsekKebiasaanController
 use App\Http\Controllers\Kepsek\PerangkatSupervisiController;
 use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
 use App\Http\Controllers\Kepsek\RekapController;
+use App\Http\Controllers\Kepsek\SupervisiPmController;
 use App\Http\Controllers\Kepsek\TkaLaporanController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Media\SiswaFotoController;
@@ -119,7 +132,7 @@ Route::get('/demo', [LandingController::class, 'demo'])->name('demo');
 Route::get('/tka-statistik', [TkaStatsController::class, 'index'])->name('tka.statistik');
 Route::get('/api/tka-statistik', [TkaStatsController::class, 'api'])->name('tka.api');
 Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
-    ->middleware('auth')
+    ->middleware(['auth', 'throttle:10,1'])
     ->name('tka.refresh');
 
 // Auth Routes
@@ -165,7 +178,7 @@ Route::get('/media/siswa/{siswa:uuid}/foto', [SiswaFotoController::class, 'show'
 // Force Password Change
 Route::middleware(['auth'])->group(function () {
     Route::get('/force-password-change', [ForcePasswordChangeController::class, 'show'])->name('force-password-change.show');
-    Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->name('force-password-change.update');
+    Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->middleware('throttle:10,1')->name('force-password-change.update');
 });
 
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
@@ -201,18 +214,18 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.telemetry'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/tenants', [TenantController::class, 'index'])->name('tenants.index');
-    Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store');
-    Route::post('/tenants/bulk-destroy-expired', [TenantController::class, 'destroyExpiredTenants'])->name('tenants.bulk-destroy-expired');
+    Route::post('/tenants', [TenantController::class, 'store'])->middleware('throttle:30,1')->name('tenants.store');
+    Route::post('/tenants/bulk-destroy-expired', [TenantController::class, 'destroyExpiredTenants'])->middleware('throttle:10,1')->name('tenants.bulk-destroy-expired');
     Route::get('/tenants/{tenant}', [TenantController::class, 'show'])->name('tenants.show');
-    Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
-    Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.destroy');
-    Route::post('/tenants/{tenant}/toggle', [TenantController::class, 'toggleActive'])->name('tenants.toggle');
-    Route::post('/tenants/{tenant}/impersonate', [TenantController::class, 'impersonate'])->name('tenants.impersonate');
-    Route::post('/tenants/{tenant}/reset-admin-password', [TenantController::class, 'resetAdminPassword'])->name('tenants.reset-admin-password');
+    Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->middleware('throttle:30,1')->name('tenants.update');
+    Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->middleware('throttle:15,1')->name('tenants.destroy');
+    Route::post('/tenants/{tenant}/toggle', [TenantController::class, 'toggleActive'])->middleware('throttle:30,1')->name('tenants.toggle');
+    Route::post('/tenants/{tenant}/impersonate', [TenantController::class, 'impersonate'])->middleware('throttle:20,1')->name('tenants.impersonate');
+    Route::post('/tenants/{tenant}/reset-admin-password', [TenantController::class, 'resetAdminPassword'])->middleware('throttle:10,1')->name('tenants.reset-admin-password');
     Route::get('/users', [TenantController::class, 'users'])->name('users.index');
-    Route::delete('/users/{user}', [TenantController::class, 'destroyUser'])->name('users.destroy');
-    Route::post('/users/bulk-destroy', [TenantController::class, 'bulkDestroyUsers'])->name('users.bulk-destroy');
-    Route::post('/users/{user}/assign-tenant', [TenantController::class, 'assignTenant'])->name('users.assign-tenant');
+    Route::delete('/users/{user}', [TenantController::class, 'destroyUser'])->middleware('throttle:20,1')->name('users.destroy');
+    Route::post('/users/bulk-destroy', [TenantController::class, 'bulkDestroyUsers'])->middleware('throttle:10,1')->name('users.bulk-destroy');
+    Route::post('/users/{user}/assign-tenant', [TenantController::class, 'assignTenant'])->middleware('throttle:30,1')->name('users.assign-tenant');
 });
 
 Route::post('/superadmin/impersonate/leave', [TenantController::class, 'leaveImpersonate'])
@@ -451,26 +464,26 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // API Keys & Dapodik
     Route::prefix('api-keys')->name('api-keys.')->group(function () {
         Route::get('/', [ApiKeyController::class, 'index'])->name('index');
-        Route::post('/', [ApiKeyController::class, 'store'])->name('store');
-        Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
-        Route::post('/{apiKey}/toggle', [ApiKeyController::class, 'toggle'])->name('toggle');
+        Route::post('/', [ApiKeyController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->middleware('throttle:20,1')->name('destroy');
+        Route::post('/{apiKey}/toggle', [ApiKeyController::class, 'toggle'])->middleware('throttle:20,1')->name('toggle');
     });
 
     // Semester Management
     Route::prefix('semester')->name('semester.')->group(function () {
         Route::get('/', [SemesterController::class, 'index'])->name('index');
-        Route::post('/', [SemesterController::class, 'store'])->name('store');
-        Route::delete('/{semester}', [SemesterController::class, 'destroy'])->name('destroy');
-        Route::post('/{semester}/activate', [SemesterController::class, 'activate'])->name('activate');
+        Route::post('/', [SemesterController::class, 'store'])->middleware('throttle:30,1')->name('store');
+        Route::delete('/{semester}', [SemesterController::class, 'destroy'])->middleware('throttle:20,1')->name('destroy');
+        Route::post('/{semester}/activate', [SemesterController::class, 'activate'])->middleware('throttle:20,1')->name('activate');
     });
 
     // Dapodik Import
     Route::prefix('dapodik')->name('dapodik.')->group(function () {
         Route::get('/', [DapodikImportController::class, 'index'])->name('index');
-        Route::post('/import', [DapodikImportController::class, 'import'])->name('import');
-        Route::post('/preview', [DapodikImportController::class, 'preview'])->name('preview');
+        Route::post('/import', [DapodikImportController::class, 'import'])->middleware('throttle:15,1')->name('import');
+        Route::post('/preview', [DapodikImportController::class, 'preview'])->middleware('throttle:20,1')->name('preview');
         Route::get('/log/{id}', [DapodikImportController::class, 'logDetail'])->name('log-detail');
-        Route::delete('/log/{id}', [DapodikImportController::class, 'logDestroy'])->name('log-destroy');
+        Route::delete('/log/{id}', [DapodikImportController::class, 'logDestroy'])->middleware('throttle:20,1')->name('log-destroy');
         Route::post('/reset', [DapodikImportController::class, 'resetData'])->middleware('throttle:10,5')->name('reset');
         Route::get('/download-bridge', [DapodikImportController::class, 'downloadBridge'])->name('download-bridge');
     });
@@ -478,12 +491,12 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // Dapodik WebService API (moved from api.php to get session auth)
     Route::prefix('dapodik/api')->name('dapodik.api.')->group(function () {
         Route::get('/config', [DapodikController::class, 'config'])->name('config');
-        Route::post('/config', [DapodikController::class, 'saveConfig'])->name('config.save');
-        Route::post('/test-connection', [DapodikController::class, 'testConnection'])->name('test-connection');
-        Route::post('/preview-data', [DapodikController::class, 'preview'])->name('preview');
-        Route::post('/pull', [DapodikController::class, 'pull'])->name('pull');
+        Route::post('/config', [DapodikController::class, 'saveConfig'])->middleware('throttle:20,1')->name('config.save');
+        Route::post('/test-connection', [DapodikController::class, 'testConnection'])->middleware('throttle:15,1')->name('test-connection');
+        Route::post('/preview-data', [DapodikController::class, 'preview'])->middleware('throttle:15,1')->name('preview');
+        Route::post('/pull', [DapodikController::class, 'pull'])->middleware('throttle:15,1')->name('pull');
         Route::get('/semesters', [DapodikController::class, 'semesters'])->name('semesters');
-        Route::post('/sync', [DapodikController::class, 'sync'])->name('sync');
+        Route::post('/sync', [DapodikController::class, 'sync'])->middleware('throttle:15,1')->name('sync');
     });
 
     // Dapodik Push (Sync ke Dapodik Server)
@@ -554,6 +567,96 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
         Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
     });
 
+    // Pembelajaran Mendalam (Fase 1: Alokasi Waktu, CP, TP, ATP, Buku Paket SIBI, KKTP)
+    Route::prefix('pembelajaran-mendalam')->name('pm.')->group(function () {
+        // Alokasi Waktu
+        Route::get('/alokasi', [AlokasiWaktuController::class, 'index'])->name('alokasi.index');
+        Route::post('/alokasi', [AlokasiWaktuController::class, 'store'])->middleware('throttle:30,1')->name('alokasi.store');
+        Route::post('/alokasi/standar', [AlokasiWaktuController::class, 'isiStandar'])->middleware('throttle:15,1')->name('alokasi.standar');
+        Route::get('/alokasi/cetak-pdf', [AlokasiWaktuController::class, 'cetakPdf'])->name('alokasi.pdf');
+
+        // Capaian Pembelajaran (CP)
+        Route::get('/cp', [CpController::class, 'index'])->name('cp.index');
+        Route::post('/cp', [CpController::class, 'store'])->middleware('throttle:30,1')->name('cp.store');
+        Route::put('/cp/{cp}', [CpController::class, 'update'])->middleware('throttle:30,1')->name('cp.update');
+        Route::delete('/cp/{cp}', [CpController::class, 'destroy'])->middleware('throttle:30,1')->name('cp.destroy');
+        Route::post('/cp/ai', [CpController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('cp.ai');
+        Route::post('/cp/import-excel', [CpController::class, 'importExcel'])->middleware('throttle:15,1')->name('cp.import');
+        Route::get('/cp/export-excel', [CpController::class, 'exportExcel'])->name('cp.excel');
+        Route::get('/cp/cetak-pdf', [CpController::class, 'cetakPdf'])->name('cp.pdf');
+
+        // Tujuan Pembelajaran (TP)
+        Route::get('/tp', [PmTpController::class, 'index'])->name('tp.index');
+        Route::post('/tp', [PmTpController::class, 'store'])->middleware('throttle:30,1')->name('tp.store');
+        Route::put('/tp/{tp}', [PmTpController::class, 'update'])->middleware('throttle:30,1')->name('tp.update');
+        Route::delete('/tp/{tp}', [PmTpController::class, 'destroy'])->middleware('throttle:30,1')->name('tp.destroy');
+        Route::post('/tp/ai', [PmTpController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('tp.ai');
+        Route::post('/tp/import-excel', [PmTpController::class, 'importExcel'])->middleware('throttle:15,1')->name('tp.import');
+        Route::post('/tp/sinkron-erapor', [PmTpController::class, 'sinkronErapor'])->middleware('throttle:15,1')->name('tp.sinkron-erapor');
+        Route::get('/tp/export-excel', [PmTpController::class, 'exportExcel'])->name('tp.excel');
+        Route::get('/tp/cetak-pdf', [PmTpController::class, 'cetakPdf'])->name('tp.pdf');
+
+        // Alur Tujuan Pembelajaran (ATP)
+        Route::get('/atp', [AtpController::class, 'index'])->name('atp.index');
+        Route::post('/atp', [AtpController::class, 'simpanAlur'])->middleware('throttle:30,1')->name('atp.simpan');
+        Route::post('/atp/ai', [AtpController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('atp.ai');
+        Route::get('/atp/cetak-pdf', [AtpController::class, 'cetakPdf'])->name('atp.pdf');
+
+        // Buku Paket (SIBI)
+        Route::get('/buku-paket', [BukuPaketController::class, 'index'])->name('buku-paket.index');
+        Route::post('/buku-paket', [BukuPaketController::class, 'store'])->middleware('throttle:30,1')->name('buku-paket.store');
+        Route::post('/buku-paket/ai', [BukuPaketController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('buku-paket.ai');
+
+        // KKTP
+        Route::get('/kktp', [KktpController::class, 'index'])->name('kktp.index');
+        Route::post('/kktp/interval', [KktpController::class, 'simpanInterval'])->middleware('throttle:30,1')->name('kktp.interval');
+        Route::post('/kktp/item', [KktpController::class, 'simpanItem'])->middleware('throttle:30,1')->name('kktp.item');
+        Route::get('/kktp/export-excel', [KktpController::class, 'exportExcel'])->name('kktp.excel');
+        Route::get('/kktp/cetak-pdf', [KktpController::class, 'cetakPdf'])->name('kktp.pdf');
+
+        // Fase 2: Kalender Pendidikan & Hari Libur
+        Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender.index');
+        Route::post('/kalender', [KalenderController::class, 'simpanKalender'])->middleware('throttle:30,1')->name('kalender.simpan');
+        Route::post('/kalender/default', [KalenderController::class, 'isiDefault'])->middleware('throttle:15,1')->name('kalender.default');
+        Route::post('/kalender/libur', [KalenderController::class, 'storeLibur'])->middleware('throttle:30,1')->name('kalender.libur.store');
+        Route::delete('/kalender/libur/{libur}', [KalenderController::class, 'destroyLibur'])->middleware('throttle:30,1')->name('kalender.libur.destroy');
+
+        // Fase 2: Program Tahunan (Prota)
+        Route::get('/prota', [ProtaController::class, 'index'])->name('prota.index');
+        Route::post('/prota', [ProtaController::class, 'store'])->middleware('throttle:30,1')->name('prota.store');
+        Route::post('/prota/ambil-atp', [ProtaController::class, 'ambilDariAtp'])->middleware('throttle:15,1')->name('prota.ambil-atp');
+        Route::post('/prota/ai', [ProtaController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('prota.ai');
+        Route::get('/prota/cetak-pdf', [ProtaController::class, 'cetakPdf'])->name('prota.pdf');
+
+        // Fase 2: Program Semester (Prosem Matriks)
+        Route::get('/prosem', [ProsemController::class, 'index'])->name('prosem.index');
+        Route::post('/prosem/susun', [ProsemController::class, 'susunOtomatis'])->middleware('throttle:15,1')->name('prosem.susun');
+        Route::post('/prosem', [ProsemController::class, 'storeBaris'])->middleware('throttle:30,1')->name('prosem.store');
+        Route::delete('/prosem/{prosem}', [ProsemController::class, 'destroyBaris'])->middleware('throttle:30,1')->name('prosem.destroy');
+        Route::get('/prosem/cetak-pdf', [ProsemController::class, 'cetakPdf'])->name('prosem.pdf');
+
+        // Fase 3 & Sprint 3: Generator Batch (Jadwal + Pratinjau + Bundel 1 Semester) + Bantuan AI RPM & Jurnal
+        Route::get('/generate', [GeneratorBatchController::class, 'index'])->name('generate.index');
+        Route::post('/generate/pratinjau', [GeneratorBatchController::class, 'pratinjau'])->middleware('throttle:30,1')->name('generate.pratinjau');
+        Route::post('/generate/batch', [GeneratorBatchController::class, 'generateBatch'])->middleware('throttle:15,1')->name('generate.batch');
+        Route::post('/generate/rpm-ai', [GeneratorBatchController::class, 'generateRpmAi'])->middleware('throttle:15,1')->name('generate.rpm-ai');
+        Route::post('/generate/jurnal-ai', [GeneratorBatchController::class, 'generateJurnalAi'])->middleware('throttle:15,1')->name('generate.jurnal-ai');
+        Route::get('/bundel-pdf', [GeneratorBatchController::class, 'cetakBundelSemesterPdf'])->name('bundel.pdf');
+
+        // Fase 3: Kokurikuler Pembelajaran Mendalam
+        Route::get('/kokurikuler', [KokurikulerPmController::class, 'index'])->name('kokurikuler.index');
+        Route::post('/kokurikuler', [KokurikulerPmController::class, 'store'])->middleware('throttle:30,1')->name('kokurikuler.store');
+        Route::delete('/kokurikuler/{kokurikuler}', [KokurikulerPmController::class, 'destroy'])->middleware('throttle:30,1')->name('kokurikuler.destroy');
+        Route::post('/kokurikuler/ai', [KokurikulerPmController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('kokurikuler.ai');
+        Route::get('/kokurikuler/export-excel', [KokurikulerPmController::class, 'exportExcel'])->name('kokurikuler.excel');
+        Route::get('/kokurikuler/cetak-pdf', [KokurikulerPmController::class, 'cetakPdf'])->name('kokurikuler.pdf');
+
+        // Tanda Tangan Digital Guru (untuk cetakan PDF perangkat ajar)
+        Route::get('/tanda-tangan', [TandaTanganController::class, 'index'])->name('ttd.index');
+        Route::post('/tanda-tangan', [TandaTanganController::class, 'store'])->middleware('throttle:20,1')->name('ttd.store');
+        Route::delete('/tanda-tangan', [TandaTanganController::class, 'hapus'])->middleware('throttle:20,1')->name('ttd.hapus');
+    });
+
     // Perangkat Ajar (CP, TP, ATP, Prota, Promes, Modul Ajar/RPP, KKM/KKTP) & Jurnal Mengajar — Gelombang 6
     Route::prefix('perangkat')->name('perangkat.')->group(function () {
         Route::get('/jurnal', [PerangkatController::class, 'jurnalIndex'])->name('jurnal.index');
@@ -589,14 +692,14 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
     Route::post('/nilai-erapor/auto-save', [NilaiErapotController::class, 'autoSave'])->middleware('throttle:120,1')->name('nilai-erapor.auto-save');
     Route::get('/nilai-erapor/deskripsi/{siswaId}', [NilaiErapotController::class, 'deskripsi'])->name('nilai-erapor.deskripsi');
     Route::get('/nilai-erapor/template', [ImportErapotController::class, 'downloadTemplate'])->name('nilai-erapor.template');
-    Route::post('/nilai-erapor/import', [ImportErapotController::class, 'import'])->name('nilai-erapor.import');
+    Route::post('/nilai-erapor/import', [ImportErapotController::class, 'import'])->middleware('throttle:15,1')->name('nilai-erapor.import');
     Route::get('/nilai-erapor/export', [ImportErapotController::class, 'export'])->name('nilai-erapor.export');
 
     // Generate e-Rapor (PDF & Excel)
     Route::prefix('erapor')->name('erapor.')->group(function () {
         Route::get('/', [ErapotGeneratorController::class, 'index'])->name('index');
         Route::get('/pdf/{siswa}', [ErapotGeneratorController::class, 'generatePdf'])->name('pdf');
-        Route::post('/pdf-bulk', [ErapotGeneratorController::class, 'generateBulkPdf'])->name('pdf-bulk');
+        Route::post('/pdf-bulk', [ErapotGeneratorController::class, 'generateBulkPdf'])->middleware('throttle:15,1')->name('pdf-bulk');
         Route::get('/excel', [ErapotGeneratorController::class, 'exportExcel'])->name('excel');
     });
 
@@ -775,6 +878,16 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
     Route::get('/tka-kesiapan/ekspor', [KesiapanController::class, 'ekspor'])->name('tka-kesiapan.ekspor');
     Route::get('/perangkat', [PerangkatSupervisiController::class, 'index'])->name('perangkat.index');
     Route::get('/perangkat/{perangkat}/cetak-pdf', [PerangkatSupervisiController::class, 'cetakPdf'])->name('perangkat.pdf');
+
+    // Sprint 2: Supervisi Pembelajaran Mendalam Kepala Sekolah (+ Persetujuan Digital)
+    Route::prefix('supervisi-pm')->name('supervisi-pm.')->group(function () {
+        Route::get('/', [SupervisiPmController::class, 'index'])->name('index');
+        Route::get('/rekap-pdf', [SupervisiPmController::class, 'cetakRekapPdf'])->name('pdf');
+        Route::get('/guru/{guru:uuid}', [SupervisiPmController::class, 'show'])->name('show');
+        Route::post('/guru/{guru:uuid}/keputusan', [SupervisiPmController::class, 'simpanKeputusan'])
+            ->middleware('throttle:30,1')
+            ->name('keputusan');
+    });
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

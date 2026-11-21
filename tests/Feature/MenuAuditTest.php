@@ -76,7 +76,11 @@ class MenuAuditTest extends TestCase
                 'admin.tka-kesiapan.pengaturan',
             ]],
             'guru' => [$guru, [
-                'guru.dashboard', 'guru.kelas-digital.index', 'guru.perangkat.index', 'guru.perangkat.create', 'guru.perangkat.jurnal.index', 'guru.tp.index', 'guru.materi.index', 'guru.dimensi.index',
+                'guru.dashboard', 'guru.kelas-digital.index',
+                'guru.pm.alokasi.index', 'guru.pm.cp.index', 'guru.pm.tp.index', 'guru.pm.atp.index', 'guru.pm.buku-paket.index', 'guru.pm.kktp.index',
+                'guru.pm.kalender.index', 'guru.pm.prota.index', 'guru.pm.prosem.index',
+                'guru.pm.generate.index', 'guru.pm.kokurikuler.index', 'guru.pm.ttd.index',
+                'guru.perangkat.index', 'guru.perangkat.create', 'guru.perangkat.jurnal.index', 'guru.tp.index', 'guru.materi.index', 'guru.dimensi.index',
                 'guru.tka.index', 'guru.tka-kesiapan.index', 'guru.input-nilai.index', 'guru.nilai-erapor.index',
                 'guru.p5.index', 'guru.cek-penilaian.index',
                 'guru.walas.ekskul', 'guru.walas.naik-kelas', 'guru.walas.status-penilaian',
@@ -99,7 +103,7 @@ class MenuAuditTest extends TestCase
                 'ortu.laporan.index', 'ortu.tka-kesiapan.index',
             ]],
             'kepsek' => [$kepsek, [
-                'kepsek.dashboard', 'kepsek.perangkat.index', 'kepsek.rekap.index', 'kepsek.peta-kelas.index',
+                'kepsek.dashboard', 'kepsek.supervisi-pm.index', 'kepsek.perangkat.index', 'kepsek.rekap.index', 'kepsek.peta-kelas.index',
                 'kepsek.hasil-belajar.index', 'kepsek.pantau.index',
                 'kepsek.kebiasaan.index', 'kepsek.aktivitas.index', 'kepsek.tka-kesiapan.index',
                 'presensi.pegawai.index', 'presensi.pegawai.kartu',
