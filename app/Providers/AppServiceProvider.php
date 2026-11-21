@@ -7,6 +7,12 @@ use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
 use App\Models\NilaiErapot;
+use App\Models\PembelajaranMendalam\CapaianPembelajaran;
+use App\Models\PembelajaranMendalam\HariLibur;
+use App\Models\PembelajaranMendalam\KokurikulerPm;
+use App\Models\PembelajaranMendalam\ProsemItem;
+use App\Models\PembelajaranMendalam\ProtaItem;
+use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\Tka\Kesiapan\TindakLanjut;
@@ -21,6 +27,7 @@ use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
+use App\Policies\PembelajaranMendalamPolicy;
 use App\Policies\SiswaFotoPolicy;
 use App\Policies\TkaAssessmentPolicy;
 use App\Policies\TkaKesiapanPolicy;
@@ -89,6 +96,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Result::class, TryoutResultPolicy::class);
         Gate::policy(StudentAssessment::class, TkaAssessmentPolicy::class);
         Gate::policy(TindakLanjut::class, TkaKesiapanPolicy::class);
+
+        // Policies modul Pembelajaran Mendalam
+        Gate::policy(CapaianPembelajaran::class, PembelajaranMendalamPolicy::class);
+        Gate::policy(TujuanPembelajaranPm::class, PembelajaranMendalamPolicy::class);
+        Gate::policy(ProtaItem::class, PembelajaranMendalamPolicy::class);
+        Gate::policy(ProsemItem::class, PembelajaranMendalamPolicy::class);
+        Gate::policy(KokurikulerPm::class, PembelajaranMendalamPolicy::class);
+        Gate::policy(HariLibur::class, PembelajaranMendalamPolicy::class);
 
         // Jejak audit nilai e-Rapor: observer memastikan input guru, import,
         // dan sinkronisasi memakai rantai hash yang sama.

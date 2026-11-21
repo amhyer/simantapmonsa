@@ -7,6 +7,7 @@ use App\Models\SekolahSettings;
 use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 
 class SekolahController extends Controller
 {
@@ -88,7 +89,15 @@ class SekolahController extends Controller
             'jenis_sekolah' => 'nullable|string|max:50',
             'jenjang' => 'nullable|string|max:50',
             'akreditasi' => 'nullable|string|max:10',
+            'gemini_api_key' => 'nullable|string|max:255',
+            'gemini_model' => 'nullable|string|max:80',
+            'gemini_daily_quota' => 'nullable|integer|min:1|max:5000',
         ]);
+
+        $geminiKey = trim((string) ($validated['gemini_api_key'] ?? ''));
+        $geminiModel = trim((string) ($validated['gemini_model'] ?? ''));
+        $geminiQuota = isset($validated['gemini_daily_quota']) ? (int) $validated['gemini_daily_quota'] : null;
+        unset($validated['gemini_api_key'], $validated['gemini_model'], $validated['gemini_daily_quota']);
 
         $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
         $query = SekolahSettings::query();
@@ -96,6 +105,19 @@ class SekolahController extends Controller
             $query->where('tenant_id', $tenantId);
         }
         $sekolahSettings = $query->first();
+
+        $pengaturan = is_array($sekolahSettings?->pengaturan) ? $sekolahSettings->pengaturan : [];
+        if ($geminiKey !== '') {
+            $pengaturan['gemini_api_key_encrypted'] = Crypt::encryptString($geminiKey);
+            unset($pengaturan['gemini_api_key']);
+        }
+        if ($geminiModel !== '') {
+            $pengaturan['gemini_model'] = $geminiModel;
+        }
+        if ($geminiQuota !== null) {
+            $pengaturan['gemini_daily_quota'] = $geminiQuota;
+        }
+        $validated['pengaturan'] = $pengaturan;
 
         if (! $sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([

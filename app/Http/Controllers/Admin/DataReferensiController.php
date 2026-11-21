@@ -514,14 +514,19 @@ class DataReferensiController extends Controller
             'logo_pemda' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'logo_sekolah' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'ttd_kepsek' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'stempel_sekolah' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'kop_sekolah' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'nip_kepsek' => 'nullable|string|max:40',
         ], [
             '*.image' => 'File harus berupa gambar.',
             '*.mimes' => 'Format gambar harus jpeg, jpg, atau png.',
             '*.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
 
-        $sekolah = SekolahSettings::first();
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $sekolah = SekolahSettings::query()
+            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->first();
         if (! $sekolah) {
             // nama_sekolah wajib (NOT NULL). Arahkan admin mengisi identitas
             // sekolah dulu daripada membuat baris setengah jadi / error 500.
@@ -530,13 +535,25 @@ class DataReferensiController extends Controller
         }
 
         $pengaturan = $sekolah->pengaturan ?? [];
-        foreach (['logo_pemda', 'logo_sekolah', 'ttd_kepsek', 'kop_sekolah'] as $key) {
+        $privateKeys = ['ttd_kepsek', 'stempel_sekolah'];
+        foreach (['logo_pemda', 'logo_sekolah', 'ttd_kepsek', 'stempel_sekolah', 'kop_sekolah'] as $key) {
             if ($request->hasFile($key)) {
-                if (! empty($pengaturan[$key]) && Storage::disk('public')->exists($pengaturan[$key])) {
-                    Storage::disk('public')->delete($pengaturan[$key]);
+                if (! empty($pengaturan[$key])) {
+                    foreach (['local', 'public'] as $disk) {
+                        if (Storage::disk($disk)->exists($pengaturan[$key])) {
+                            Storage::disk($disk)->delete($pengaturan[$key]);
+                        }
+                    }
                 }
-                $pengaturan[$key] = $request->file($key)->store('identitas', 'public');
+                if (in_array($key, $privateKeys, true)) {
+                    $pengaturan[$key] = $request->file($key)->store('private/identitas', 'local');
+                } else {
+                    $pengaturan[$key] = $request->file($key)->store('identitas', 'public');
+                }
             }
+        }
+        if ($request->has('nip_kepsek')) {
+            $pengaturan['nip_kepsek'] = trim((string) $request->input('nip_kepsek', ''));
         }
         $sekolah->update(['pengaturan' => $pengaturan]);
 

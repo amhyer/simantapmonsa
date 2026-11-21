@@ -117,6 +117,40 @@
 
                 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
                     <button type="submit" class="btn btn-primary">💾 Simpan Identitas</button>
+                    @php
+                        $aiCfg = is_array($sekolahSettings?->pengaturan) ? $sekolahSettings->pengaturan : [];
+                        $hasGeminiKey = !empty($aiCfg['gemini_api_key_encrypted']) || !empty($aiCfg['gemini_api_key']);
+                    @endphp
+                    <div style="margin:18px 0 14px;padding:14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px">
+                        <div style="font-weight:700;font-size:13px;color:#101828;margin-bottom:8px">
+                            <i class="fas fa-magic"></i> Integrasi AI Pembelajaran Mendalam (Google Gemini)
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
+                            <div>
+                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">
+                                    Gemini API Key
+                                    @if($hasGeminiKey)<span class="badge badge-success" style="font-size:10px;margin-left:4px">Tersimpan</span>@endif
+                                </label>
+                                <input type="password" name="gemini_api_key" autocomplete="new-password"
+                                       placeholder="{{ $hasGeminiKey ? '•••••••• (kosongkan jika tidak diubah)' : 'AIzaSy...' }}"
+                                       style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Model Gemini</label>
+                                <input type="text" name="gemini_model"
+                                       value="{{ old('gemini_model', $aiCfg['gemini_model'] ?? 'gemini-2.5-flash') }}"
+                                       style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Kuota Harian AI (req/hari)</label>
+                                <input type="number" name="gemini_daily_quota" min="1" max="5000"
+                                       value="{{ old('gemini_daily_quota', $aiCfg['gemini_daily_quota'] ?? 60) }}"
+                                       style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            </div>
+                        </div>
+                        <small style="display:block;margin-top:6px;color:#667085">Jika dikosongkan, sistem otomatis memakai konfigurasi <code>GEMINI_API_KEY</code> di file <code>.env</code>.</small>
+                    </div>
+
                     <button type="button" class="btn btn-outline-secondary" onclick="resetFormFields()">🧹 Bersihkan Input Form</button>
                     @if($sekolahSettings)
                         <button type="button" class="btn btn-outline-danger" onclick="if(confirm('Yakin ingin mengosongkan identitas sekolah yang tersimpan di database?')) { document.getElementById('resetSekolahForm').submit(); }">
