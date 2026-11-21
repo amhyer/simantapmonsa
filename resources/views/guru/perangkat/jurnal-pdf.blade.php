@@ -63,12 +63,7 @@
         </tbody>
     </table>
 
-    <table class="ttd">
-        <tr>
-            <td>Mengetahui,<br>Kepala Sekolah<br><br><br><br><strong>{{ $kop['kepala_sekolah'] }}</strong></td>
-            <td>Guru Pengampu<br><br><br><br><br><strong>{{ $guru->nama_lengkap }}</strong></td>
-        </tr>
-    </table>
+    @include('guru.pm.pdf._ttd', ['guru' => $guru, 'kop' => $kop])
     <p style="text-align:right;font-size:8px;color:#6B7280;margin-top:10px">Dicetak melalui SIMANTAP pada {{ $dicetakPada }}</p>
 </body>
 </html>

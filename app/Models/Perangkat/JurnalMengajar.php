@@ -23,6 +23,7 @@ class JurnalMengajar extends Model
         'guru_id',
         'rombel_id',
         'perangkat_id',
+        'tp_id',
         'kelas_digital_id',
         'tanggal',
         'jam_ke',
@@ -30,7 +31,11 @@ class JurnalMengajar extends Model
         'mata_pelajaran',
         'pertemuan_ke',
         'topik',
+        'praktik_pedagogis',
+        'prinsip_pm',
+        'pengalaman_belajar',
         'kegiatan',
+        'asesmen',
         'jumlah_hadir',
         'jumlah_tidak_hadir',
         'catatan',
@@ -44,6 +49,8 @@ class JurnalMengajar extends Model
             'pertemuan_ke' => 'integer',
             'jumlah_hadir' => 'integer',
             'jumlah_tidak_hadir' => 'integer',
+            'prinsip_pm' => 'array',
+            'pengalaman_belajar' => 'array',
         ];
     }
 

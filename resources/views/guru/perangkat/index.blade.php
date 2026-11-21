@@ -9,18 +9,19 @@
 @endsection
 
 @section('header_actions')
+    <a href="{{ route('guru.pm.generate.index') }}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-magic"></i> Buat dengan AI / Batch
+    </a>
     <a href="{{ route('guru.perangkat.jurnal.index') }}" class="btn btn-ghost btn-sm">
         <i class="fas fa-book-reader"></i> Jurnal Mengajar ({{ $jumlahJurnal }})
     </a>
-    <a href="{{ route('guru.perangkat.create', ['jenis' => $jenisFilter ?: 'cp']) }}" class="btn btn-sm">
+    <a href="{{ route('guru.perangkat.create', ['jenis' => $jenisFilter ?: 'modul_ajar']) }}" class="btn btn-sm">
         <i class="fas fa-plus"></i> Buat Perangkat Ajar
     </a>
 @endsection
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-ok" style="margin-bottom:14px">{{ session('success') }}</div>
-    @endif
+    @include('guru.pm._nav')
 
     {{-- Tab cepat jenis perangkat (termasuk CP, TP, ATP) --}}
     <div class="card" style="margin-bottom:16px">

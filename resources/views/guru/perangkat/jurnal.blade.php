@@ -9,19 +9,17 @@
 @endsection
 
 @section('header_actions')
-    <a href="{{ route('guru.perangkat.index') }}" class="btn btn-ghost btn-sm">← Perangkat Ajar</a>
+    <a href="{{ route('guru.pm.generate.index') }}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-magic"></i> Isi Jurnal dengan AI
+    </a>
+    <a href="{{ route('guru.perangkat.index') }}" class="btn btn-ghost btn-sm">← Modul Ajar / RPM</a>
     <a href="{{ route('guru.perangkat.jurnal.pdf', ['dari' => $dari, 'sampai' => $sampai]) }}" target="_blank" class="btn btn-sm">
         <i class="fas fa-file-pdf"></i> Cetak Rekap PDF
     </a>
 @endsection
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-ok" style="margin-bottom:14px">{{ session('success') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="alert alert-bad" style="margin-bottom:14px">{{ $errors->first() }}</div>
-    @endif
+    @include('guru.pm._nav')
 
     {{-- Form Catat Jurnal Baru --}}
     <div class="card" style="margin-bottom:18px">
@@ -96,6 +94,57 @@
                     </div>
                 </div>
 
+                <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
+                    <div>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tujuan Pembelajaran (Bank TP)</label>
+                        <select name="tp_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                            <option value="">— Opsional: Pilih dari Bank TP —</option>
+                            @foreach($tpOptions ?? [] as $tp)
+                                <option value="{{ $tp->id }}">
+                                    [{{ $tp->nama_mapel }}] {{ $tp->kode_tp ? $tp->kode_tp.' — ' : '' }}{{ \Illuminate\Support\Str::limit($tp->deskripsi, 60) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Praktik Pedagogis</label>
+                        <select name="praktik_pedagogis" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                            <option value="">— Pilih Praktik Pedagogis —</option>
+                            @foreach($modelList ?? [] as $mdl)
+                                <option value="{{ $mdl }}" {{ old('praktik_pedagogis') === $mdl ? 'selected' : '' }}>{{ $mdl }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Asesmen</label>
+                        <input type="text" name="asesmen" value="{{ old('asesmen') }}" placeholder="Mis. Observasi, LKPD, kuis singkat"
+                               style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    </div>
+                </div>
+
+                <div class="grid grid-2" style="gap:12px;margin-bottom:12px;padding:10px 12px;background:#F9FAFB;border:1px solid #EAECF0;border-radius:8px">
+                    <div>
+                        <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Prinsip Pembelajaran Mendalam</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                            @foreach(['Berkesadaran (Mindful)', 'Bermakna (Meaningful)', 'Menggembirakan (Joyful)'] as $prinsip)
+                                <label style="display:flex;align-items:center;gap:5px">
+                                    <input type="checkbox" name="prinsip_pm[]" value="{{ $prinsip }}"> {{ $prinsip }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Pengalaman Belajar</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                            @foreach(['Memahami', 'Mengaplikasi', 'Merefleksi'] as $peng)
+                                <label style="display:flex;align-items:center;gap:5px">
+                                    <input type="checkbox" name="pengalaman_belajar[]" value="{{ $peng }}"> {{ $peng }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
                 <div style="margin-bottom:12px">
                     <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Ringkasan Kegiatan Pembelajaran *</label>
                     <textarea name="kegiatan" rows="3" required placeholder="Uraikan pelaksanaan pembelajaran hari ini..."
@@ -160,7 +209,20 @@
                                     </td>
                                     <td>
                                         <div><strong>{{ $j->topik }}</strong></div>
+                                        @if($j->praktik_pedagogis || !empty($j->prinsip_pm) || !empty($j->pengalaman_belajar))
+                                            <div style="display:flex;flex-wrap:wrap;gap:4px;margin:3px 0">
+                                                @if($j->praktik_pedagogis)
+                                                    <span class="badge badge-info" style="font-size:10px">{{ $j->praktik_pedagogis }}</span>
+                                                @endif
+                                                @foreach(is_array($j->pengalaman_belajar) ? $j->pengalaman_belajar : [] as $pb)
+                                                    <span class="badge badge-success" style="font-size:10px">{{ $pb }}</span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                         <div style="font-size:12px;color:#475467">{{ \Illuminate\Support\Str::limit($j->kegiatan, 120) }}</div>
+                                        @if($j->asesmen)
+                                            <div style="font-size:11px;color:#475467">Asesmen: {{ $j->asesmen }}</div>
+                                        @endif
                                         @if($j->tindak_lanjut)
                                             <div style="font-size:11px;color:#0F766E">Tindak lanjut: {{ $j->tindak_lanjut }}</div>
                                         @endif

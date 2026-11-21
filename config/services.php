@@ -45,4 +45,11 @@ return [
         'service_account_path' => env('GOOGLE_SERVICE_ACCOUNT_PATH'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'daily_quota' => (int) env('GEMINI_DAILY_QUOTA', 60),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+    ],
+
 ];

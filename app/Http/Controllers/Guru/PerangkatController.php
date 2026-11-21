@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Elearning\KelasDigital;
+use App\Models\PembelajaranMendalam\KokurikulerPm;
+use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\Perangkat\JurnalMengajar;
 use App\Models\Perangkat\PerangkatPembelajaran;
 use App\Models\Rombel;
@@ -343,10 +345,19 @@ class PerangkatController extends Controller
             ->limit(50)
             ->get(['id', 'jenis', 'judul', 'kelas', 'mata_pelajaran']);
 
+        $tpOptions = TujuanPembelajaranPm::query()
+            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->orderBy('nama_mapel')
+            ->orderBy('urutan')
+            ->limit(150)
+            ->get(['id', 'nama_mapel', 'kode_tp', 'deskripsi']);
+
         return view('guru.perangkat.jurnal', [
             'jurnalList' => $jurnalList,
             'rombelList' => $this->rombelOptions($guru),
             'perangkatOptions' => $perangkatOptions,
+            'tpOptions' => $tpOptions,
+            'modelList' => KokurikulerPm::MODEL_PEMBELAJARAN,
             'kelasDigitalList' => $this->kelasDigitalOptions($guru),
             'dari' => $dari,
             'sampai' => $sampai,
@@ -368,9 +379,14 @@ class PerangkatController extends Controller
             'mata_pelajaran' => ['required', 'string', 'max:120'],
             'pertemuan_ke' => ['nullable', 'integer', 'min:1', 'max:200'],
             'perangkat_id' => ['nullable', 'integer'],
+            'tp_id' => ['nullable', 'integer'],
             'kelas_digital_id' => ['nullable', 'integer'],
             'topik' => ['required', 'string', 'max:220'],
+            'praktik_pedagogis' => ['nullable', 'string', 'max:120'],
+            'prinsip_pm' => ['nullable', 'array'],
+            'pengalaman_belajar' => ['nullable', 'array'],
             'kegiatan' => ['required', 'string', 'max:4000'],
+            'asesmen' => ['nullable', 'string', 'max:2000'],
             'jumlah_hadir' => ['nullable', 'integer', 'min:0', 'max:500'],
             'jumlah_tidak_hadir' => ['nullable', 'integer', 'min:0', 'max:500'],
             'catatan' => ['nullable', 'string', 'max:2000'],
@@ -390,11 +406,21 @@ class PerangkatController extends Controller
             $perangkatId = $perangkat?->id;
         }
 
+        $tpId = null;
+        if (! empty($validated['tp_id'])) {
+            $tp = TujuanPembelajaranPm::query()
+                ->where('id', (int) $validated['tp_id'])
+                ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+                ->first();
+            $tpId = $tp?->id;
+        }
+
         $jurnal = JurnalMengajar::create([
             'tenant_id' => $tenantId,
             'guru_id' => $guru->id,
             'rombel_id' => $rombel?->id,
             'perangkat_id' => $perangkatId,
+            'tp_id' => $tpId,
             'kelas_digital_id' => $kelasDigital?->id,
             'tanggal' => $validated['tanggal'],
             'jam_ke' => $validated['jam_ke'] ?? null,
@@ -402,7 +428,11 @@ class PerangkatController extends Controller
             'mata_pelajaran' => $validated['mata_pelajaran'],
             'pertemuan_ke' => $validated['pertemuan_ke'] ?? null,
             'topik' => $validated['topik'],
+            'praktik_pedagogis' => ! empty($validated['praktik_pedagogis']) ? $validated['praktik_pedagogis'] : null,
+            'prinsip_pm' => array_values(array_filter(is_array($validated['prinsip_pm'] ?? null) ? $validated['prinsip_pm'] : [])),
+            'pengalaman_belajar' => array_values(array_filter(is_array($validated['pengalaman_belajar'] ?? null) ? $validated['pengalaman_belajar'] : [])),
             'kegiatan' => $validated['kegiatan'],
+            'asesmen' => ! empty($validated['asesmen']) ? $validated['asesmen'] : null,
             'jumlah_hadir' => $validated['jumlah_hadir'] ?? null,
             'jumlah_tidak_hadir' => $validated['jumlah_tidak_hadir'] ?? null,
             'catatan' => $validated['catatan'] ?? null,

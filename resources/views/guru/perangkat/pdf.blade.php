@@ -202,12 +202,7 @@
         </table>
     @endif
 
-    <table class="ttd">
-        <tr>
-            <td>Mengetahui,<br>Kepala Sekolah<div class="ttd-space"></div><strong>{{ $kop['kepala_sekolah'] }}</strong></td>
-            <td>Guru Mata Pelajaran / Penyusun<div class="ttd-space"></div><strong>{{ $perangkat->guru?->nama_lengkap ?? '-' }}</strong></td>
-        </tr>
-    </table>
+    @include('guru.pm.pdf._ttd', ['guru' => $perangkat->guru, 'kop' => $kop])
 
     <div class="footer-note">Dicetak melalui SIMANTAP pada {{ $dicetakPada }}</div>
 </body>
