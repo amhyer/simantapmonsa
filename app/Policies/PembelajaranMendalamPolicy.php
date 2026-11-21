@@ -103,7 +103,7 @@ class PembelajaranMendalamPolicy
         $pengaturan = is_array($sekolah?->pengaturan) ? $sekolah->pengaturan : [];
 
         if (! array_key_exists('pm_mode_kolaboratif', $pengaturan)) {
-            return true;
+            return false;
         }
 
         return (bool) $pengaturan['pm_mode_kolaboratif'];

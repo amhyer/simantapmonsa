@@ -25,11 +25,12 @@ class PembelajaranContextService
     }
 
     /**
-     * Ambil konteks aktif Pembelajaran Mendalam (prioritas: query string -> session -> default).
+     * Ambil konteks aktif Pembelajaran Mendalam (prioritas: query string -> session -> default),
+     * dan otomatis menyelaraskan dengan cakupan kelas/tingkat yang diampu guru bila ada.
      *
      * @return array{tahun_ajaran: string, semester: int, tingkat: int, fase: string}
      */
-    public function getContext(?Request $request = null): array
+    public function getContext(?Request $request = null, ?User $guru = null): array
     {
         $saved = session('pm_context', []);
         $tahunAjaran = trim((string) ($request?->query('tahun_ajaran') ?: ($saved['tahun_ajaran'] ?? $this->tahunAjaranAktif())));
@@ -40,8 +41,20 @@ class PembelajaranContextService
         $semRaw = (int) ($request?->query('semester') ?: ($saved['semester'] ?? 1));
         $semester = in_array($semRaw, [1, 2], true) ? $semRaw : 1;
 
-        $tingkatRaw = (int) ($request?->query('tingkat') ?: ($saved['tingkat'] ?? 1));
+        $guru ??= auth()->user();
+        $allowedTingkat = [1, 2, 3, 4, 5, 6];
+        if ($guru && $guru->peran === 'guru') {
+            $scope = app(GuruScopeService::class)->resolveForGuru($guru, $this->tenantId($guru));
+            if ($scope['is_scoped'] && ! empty($scope['tingkat_list'])) {
+                $allowedTingkat = $scope['tingkat_list'];
+            }
+        }
+
+        $tingkatRaw = (int) ($request?->query('tingkat') ?: ($saved['tingkat'] ?? $allowedTingkat[0]));
         $tingkat = max(1, min(6, $tingkatRaw));
+        if (! $request?->query('tingkat') && ! in_array($tingkat, $allowedTingkat, true)) {
+            $tingkat = $allowedTingkat[0];
+        }
 
         $faseQuery = strtoupper(trim((string) ($request?->query('fase') ?? '')));
         $fase = in_array($faseQuery, ['A', 'B', 'C'], true)

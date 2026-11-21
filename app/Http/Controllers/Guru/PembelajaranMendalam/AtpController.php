@@ -7,6 +7,7 @@ use App\Models\PembelajaranMendalam\CapaianPembelajaran;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class AtpController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -28,14 +30,16 @@ class AtpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $mapelList = $this->ctx->daftarMapel();
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
 
-        $ctx = $this->ctx->getContext($request);
+        $ctx = $this->ctx->getContext($request, $guru);
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
         $faseAktif = $ctx['fase'];
         if (! array_key_exists($faseAktif, CapaianPembelajaran::FASE_LABELS)) {
             $faseAktif = 'A';
         }
+        $this->scope->authorizeFase($guru, $faseAktif, $tenantId);
+        $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
 
         $cpAcuan = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))

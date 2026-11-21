@@ -1,8 +1,12 @@
 @php
     $pmCtxService = app(\App\Services\PembelajaranMendalam\PembelajaranContextService::class);
-    $pmCtx = $pmCtxService->getContext(request());
     $pmUser = auth()->user();
     $pmTenantId = $pmCtxService->tenantId($pmUser);
+    $pmCtx = $pmCtxService->getContext(request(), $pmUser);
+    $pmScope = ($pmUser && $pmUser->peran === 'guru')
+        ? app(\App\Services\PembelajaranMendalam\GuruScopeService::class)->resolveForGuru($pmUser, $pmTenantId)
+        : ['is_scoped' => false, 'tingkat_list' => [1, 2, 3, 4, 5, 6], 'kelas_list' => []];
+    $pmAllowedTingkat = $pmScope['tingkat_list'] ?? [1, 2, 3, 4, 5, 6];
     $pmSupervisi = $pmUser?->peran === 'guru'
         ? $pmCtxService->supervisiAktifGuru($pmTenantId, $pmUser->id, $pmCtx['tahun_ajaran'], $pmCtx['semester'])
         : null;
@@ -32,12 +36,17 @@
             @csrf
             <span style="font-size:11px;font-weight:700;color:#667085;text-transform:uppercase;letter-spacing:.3px">Konteks Aktif:</span>
             <select name="tingkat" onchange="this.form.submit()" style="padding:4px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px;font-weight:600">
-                @for($t = 1; $t <= 6; $t++)
+                @foreach($pmAllowedTingkat as $t)
                     <option value="{{ $t }}" {{ $pmCtx['tingkat'] === $t ? 'selected' : '' }}>
                         Kelas {{ $t }} (Fase {{ \App\Models\PembelajaranMendalam\TujuanPembelajaranPm::faseUntukKelas($t) }})
                     </option>
-                @endfor
+                @endforeach
             </select>
+            @if(!empty($pmScope['is_scoped']) && !empty($pmScope['kelas_list']))
+                <span class="badge badge-info" style="font-size:11px;white-space:nowrap" title="Kelas yang Anda ampu">
+                    Rombel: {{ implode(', ', $pmScope['kelas_list']) }}
+                </span>
+            @endif
             <select name="semester" onchange="this.form.submit()" style="padding:4px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
                 <option value="1" {{ $pmCtx['semester'] === 1 ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
                 <option value="2" {{ $pmCtx['semester'] === 2 ? 'selected' : '' }}>Semester 2 (Genap)</option>

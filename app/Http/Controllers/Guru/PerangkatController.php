@@ -663,10 +663,8 @@ class PerangkatController extends Controller
     {
         $tenantId = $this->access->currentTenantId($guru);
 
-        return Rombel::query()
-            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
-            ->orderBy('nama_rombel')
-            ->get(['id', 'nama_rombel', 'tingkat']);
+        return app(\App\Services\PembelajaranMendalam\GuruScopeService::class)
+            ->rombelOptionsForGuru($guru, $tenantId);
     }
 
     private function kelasDigitalOptions(User $guru)

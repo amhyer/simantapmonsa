@@ -7,6 +7,7 @@ use App\Models\PembelajaranMendalam\KktpInterval;
 use App\Models\PembelajaranMendalam\KktpItem;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\User;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,7 @@ class KktpController extends Controller
 {
     public function __construct(
         private readonly PembelajaranContextService $ctx,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -29,12 +31,14 @@ class KktpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $mapelList = $this->ctx->daftarMapel();
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
 
-        $ctx = $this->ctx->getContext($request);
+        $ctx = $this->ctx->getContext($request, $guru);
         $tingkat = $ctx['tingkat'];
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = $ctx['fase'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
+        $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
 
         $interval = KktpInterval::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guru\PembelajaranMendalam;
 use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\AlokasiWaktu;
 use App\Models\User;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -17,16 +18,22 @@ class AlokasiWaktuController extends Controller
 {
     public function __construct(
         private readonly PembelajaranContextService $ctx,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function simpanKonteks(Request $request): RedirectResponse
     {
+        /** @var User $guru */
+        $guru = Auth::user();
+        $tenantId = $this->ctx->tenantId($guru);
+
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
             'semester' => ['required', 'in:1,2'],
             'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
         ]);
 
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
         $this->ctx->setContext($data['tahun_ajaran'], (int) $data['semester'], (int) $data['tingkat']);
 
         return back()->with('success', "Konteks aktif diubah ke Kelas {$data['tingkat']} · {$data['tahun_ajaran']} Semester {$data['semester']}.");

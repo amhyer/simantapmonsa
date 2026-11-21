@@ -26,10 +26,10 @@
     <div class="card" style="margin-bottom:16px">
         <div class="card-body" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
             <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-                @for($t = 1; $t <= 6; $t++)
+                @foreach($pmAllowedTingkat ?? [1,2,3,4,5,6] as $t)
                     <a href="{{ route('guru.pm.prosem.index', ['tahun_ajaran' => $tahunAjaran, 'tingkat' => $t, 'semester' => $semester, 'mapel' => $mapelAktif]) }}"
                        class="btn btn-sm {{ $tingkat === $t ? '' : 'btn-ghost' }}">Kls {{ $t }}</a>
-                @endfor
+                @endforeach
                 <span style="margin:0 4px;color:#D0D5DD">|</span>
                 <a href="{{ route('guru.pm.prosem.index', ['tahun_ajaran' => $tahunAjaran, 'tingkat' => $tingkat, 'semester' => 1, 'mapel' => $mapelAktif]) }}"
                    class="btn btn-sm {{ $semester === 1 ? '' : 'btn-ghost' }}">Semester 1</a>

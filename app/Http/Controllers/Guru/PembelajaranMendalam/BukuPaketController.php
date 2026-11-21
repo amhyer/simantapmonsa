@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\BukuPaketSibi;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class BukuPaketController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -25,11 +27,13 @@ class BukuPaketController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $mapelList = $this->ctx->daftarMapel();
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
 
-        $ctx = $this->ctx->getContext($request);
+        $ctx = $this->ctx->getContext($request, $guru);
         $tingkat = $ctx['tingkat'];
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
+        $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
 
         $bukuAktif = BukuPaketSibi::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))

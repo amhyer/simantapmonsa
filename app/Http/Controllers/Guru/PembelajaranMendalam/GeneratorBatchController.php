@@ -16,6 +16,7 @@ use App\Models\Rombel;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
 use App\Services\PembelajaranMendalam\GeneratorRencanaService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class GeneratorBatchController extends Controller
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
         private readonly GeneratorRencanaService $planner,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -120,6 +122,10 @@ class GeneratorBatchController extends Controller
         }
 
         $tingkat = (int) $data['tingkat'];
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
+        foreach ($data['mapel'] as $m) {
+            $this->scope->authorizeMapel($guru, (string) $m, $tenantId);
+        }
         $semester = (int) $data['semester'];
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $kelasLabel = trim((string) ($data['kelas'] ?? '')) ?: (string) $tingkat;
@@ -461,14 +467,12 @@ class GeneratorBatchController extends Controller
      */
     private function indexViewData(User $guru, ?int $tenantId, string $tahunAjaran): array
     {
-        $rombelList = Rombel::query()
-            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
-            ->orderBy('nama_rombel')
-            ->get(['id', 'nama_rombel', 'tingkat']);
+        $rombelList = $this->scope->rombelOptionsForGuru($guru, $tenantId);
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
 
         return [
             'tahunAjaran' => $tahunAjaran,
-            'mapelList' => $this->ctx->daftarMapel(),
+            'mapelList' => $mapelList,
             'rombelList' => $rombelList,
             'jadwalMap' => $this->planner->jadwalGuruPerMapel($tenantId, $guru->id),
             'modelList' => KokurikulerPm::MODEL_PEMBELAJARAN,

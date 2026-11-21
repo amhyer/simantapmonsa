@@ -7,6 +7,7 @@ use App\Models\PembelajaranMendalam\KalenderPendidikan;
 use App\Models\PembelajaranMendalam\ProsemItem;
 use App\Models\PembelajaranMendalam\ProtaItem;
 use App\Models\User;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\KalenderPendidikanService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,6 +23,7 @@ class ProsemController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly KalenderPendidikanService $kalender,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -29,13 +31,15 @@ class ProsemController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $mapelList = $this->ctx->daftarMapel();
-        $ctx = $this->ctx->getContext($request);
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
+        $ctx = $this->ctx->getContext($request, $guru);
         $tahunAjaran = $ctx['tahun_ajaran'];
 
         $tingkat = $ctx['tingkat'];
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $semester = $ctx['semester'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
+        $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
 
         $defaultJp = $this->kalender->jpPerMingguMapel($tenantId, $tahunAjaran, $mapelAktif, $tingkat);
         $jpPerMinggu = max(1, min(20, (int) $request->query('jp', $defaultJp)));
@@ -44,6 +48,7 @@ class ProsemController extends Controller
 
         $prosemRows = ProsemItem::query()
             ->with('tp:id,kode_tp,deskripsi')
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -55,6 +60,7 @@ class ProsemController extends Controller
             ->get();
 
         $jumlahProtaSem = ProtaItem::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)

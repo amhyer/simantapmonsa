@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\KokurikulerPm;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class KokurikulerPmController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -31,11 +33,15 @@ class KokurikulerPmController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $ctx = $this->ctx->getContext($request);
+        $ctx = $this->ctx->getContext($request, $guru);
         $tahunAjaran = $ctx['tahun_ajaran'];
         $tingkatFilter = $request->query('tingkat') ? (int) $request->query('tingkat') : null;
+        if ($tingkatFilter !== null) {
+            $this->scope->authorizeTingkat($guru, $tingkatFilter, $tenantId);
+        }
 
         $list = KokurikulerPm::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->when($tingkatFilter !== null, fn ($q) => $q->where('tingkat', $tingkatFilter))
@@ -73,6 +79,8 @@ class KokurikulerPmController extends Controller
             'mitra' => ['nullable', 'string', 'max:255'],
             'refleksi_hasil' => ['nullable', 'string'],
         ]);
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
 
         KokurikulerPm::create([
             'tenant_id' => $tenantId,
@@ -161,6 +169,8 @@ class KokurikulerPmController extends Controller
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
 
         KokurikulerPm::create([
             'tenant_id' => $tenantId,

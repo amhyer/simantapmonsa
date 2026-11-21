@@ -8,6 +8,7 @@ use App\Models\PembelajaranMendalam\ProtaItem;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\KalenderPendidikanService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -24,6 +25,7 @@ class ProtaController extends Controller
         private readonly PembelajaranContextService $ctx,
         private readonly KalenderPendidikanService $kalender,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -31,13 +33,16 @@ class ProtaController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $mapelList = $this->ctx->daftarMapel();
-        $ctx = $this->ctx->getContext($request);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
+        $ctx = $this->ctx->getContext($request, $guru);
         $tahunAjaran = $ctx['tahun_ajaran'];
 
         $tingkat = $ctx['tingkat'];
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = $ctx['fase'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
+        $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
 
         $defaultJp = $this->kalender->jpPerMingguMapel($tenantId, $tahunAjaran, $mapelAktif, $tingkat);
         $jpPerMinggu = max(1, min(20, (int) $request->query('jp', $defaultJp)));
@@ -47,6 +52,7 @@ class ProtaController extends Controller
 
         $protaRows = ProtaItem::query()
             ->with('tp:id,kode_tp,deskripsi')
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -93,7 +99,11 @@ class ProtaController extends Controller
             'rows' => ['nullable', 'array'],
         ]);
 
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
+
         ProtaItem::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $data['tahun_ajaran'])
             ->where('tingkat', (int) $data['tingkat'])
