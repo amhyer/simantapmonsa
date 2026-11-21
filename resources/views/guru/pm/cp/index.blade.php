@@ -9,6 +9,13 @@
 @endsection
 
 @section('header_actions')
+    <form method="POST" action="{{ route('guru.pm.cp.standar') }}" style="display:inline"
+          onsubmit="return confirm('Muat CP standar Kurikulum Merdeka SD (BSKAP 2025) ke bank CP?');">
+        @csrf
+        <button type="submit" class="btn btn-sm">
+            <i class="fas fa-book-open"></i> Muat CP BSKAP 2025
+        </button>
+    </form>
     <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('boxImportCp').style.display = document.getElementById('boxImportCp').style.display === 'none' ? 'block' : 'none'">
         <i class="fas fa-file-import"></i> Import Excel
     </button>

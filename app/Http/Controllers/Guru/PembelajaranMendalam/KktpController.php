@@ -31,8 +31,9 @@ class KktpController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $mapelList = $this->ctx->daftarMapel();
 
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
-        $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
+        $ctx = $this->ctx->getContext($request);
+        $tingkat = $ctx['tingkat'];
+        $fase = $ctx['fase'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
 
         $interval = KktpInterval::query()

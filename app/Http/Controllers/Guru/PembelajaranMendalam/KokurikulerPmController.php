@@ -31,7 +31,8 @@ class KokurikulerPmController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
+        $ctx = $this->ctx->getContext($request);
+        $tahunAjaran = $ctx['tahun_ajaran'];
         $tingkatFilter = $request->query('tingkat') ? (int) $request->query('tingkat') : null;
 
         $list = KokurikulerPm::query()
@@ -91,6 +92,39 @@ class KokurikulerPmController extends Controller
         ]);
 
         return back()->with('success', 'Rencana kegiatan Kokurikuler berhasil disimpan.');
+    }
+
+    public function update(Request $request, KokurikulerPm $kokurikuler): RedirectResponse
+    {
+        Gate::authorize('update', $kokurikuler);
+
+        $data = $request->validate([
+            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tema_judul' => ['required', 'string', 'max:255'],
+            'bentuk_kegiatan' => ['required', 'in:kolaboratif_lintas_disiplin,tujuh_kebiasaan,lainnya'],
+            'dimensi_profil' => ['nullable', 'array'],
+            'tanggal_mulai' => ['nullable', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+            'tujuan' => ['nullable', 'string'],
+            'rangkaian_kegiatan' => ['nullable', 'string'],
+            'mitra' => ['nullable', 'string', 'max:255'],
+            'refleksi_hasil' => ['nullable', 'string'],
+        ]);
+
+        $kokurikuler->update([
+            'tingkat' => (int) $data['tingkat'],
+            'tema_judul' => $data['tema_judul'],
+            'bentuk_kegiatan' => $data['bentuk_kegiatan'],
+            'dimensi_profil' => array_values(array_filter(is_array($data['dimensi_profil'] ?? null) ? $data['dimensi_profil'] : [])),
+            'tanggal_mulai' => ! empty($data['tanggal_mulai']) ? $data['tanggal_mulai'] : null,
+            'tanggal_selesai' => ! empty($data['tanggal_selesai']) ? $data['tanggal_selesai'] : null,
+            'tujuan' => $data['tujuan'] ?? null,
+            'rangkaian_kegiatan' => $data['rangkaian_kegiatan'] ?? null,
+            'mitra' => $data['mitra'] ?? null,
+            'refleksi_hasil' => $data['refleksi_hasil'] ?? null,
+        ]);
+
+        return back()->with('success', 'Kegiatan Kokurikuler berhasil diperbarui.');
     }
 
     public function destroy(KokurikulerPm $kokurikuler): RedirectResponse

@@ -26,7 +26,7 @@ class KalenderController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
+        $tahunAjaran = $this->ctx->getContext($request)['tahun_ajaran'];
 
         $this->kalender->ensureDefaults($tenantId, $tahunAjaran, $guru->id);
 

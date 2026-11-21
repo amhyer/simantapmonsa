@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Kepsek;
 
 use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\SupervisiPm;
+use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Services\AktivitasService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use App\Services\PembelajaranMendalam\SupervisiPmService;
+use App\Services\PembelajaranMendalam\TandaTanganPdfService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SupervisiPmController extends Controller
@@ -20,6 +23,7 @@ class SupervisiPmController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly SupervisiPmService $service,
+        private readonly TandaTanganPdfService $ttdService,
     ) {}
 
     public function index(Request $request): View
@@ -134,6 +138,88 @@ class SupervisiPmController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->stream("rekap-supervisi-pm-sem-{$semester}.pdf");
+    }
+
+    public function tandaTanganIndex(): View
+    {
+        /** @var User $kepsek */
+        $kepsek = Auth::user();
+        $tenantId = $this->ctx->tenantId($kepsek);
+        $sekolah = $this->ctx->sekolah($tenantId);
+
+        return view('kepsek.supervisi-pm.ttd', [
+            'kepsek' => $kepsek,
+            'sekolah' => $sekolah,
+            'preview' => $this->ttdService->resolveForPdf($sekolah, $kepsek),
+        ]);
+    }
+
+    public function tandaTanganStore(Request $request): RedirectResponse
+    {
+        /** @var User $kepsek */
+        $kepsek = Auth::user();
+        $tenantId = $this->ctx->tenantId($kepsek);
+
+        $validated = $request->validate([
+            'ttd_kepsek' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
+            'nip_kepsek' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $sekolah = $this->ctx->sekolah($tenantId);
+        if (! $sekolah) {
+            $sekolah = SekolahSettings::create([
+                'tenant_id' => $tenantId,
+                'guru_id' => $kepsek->id,
+                'nama_sekolah' => 'Sekolah Dasar',
+                'kepala_sekolah' => $kepsek->nama_lengkap,
+                'pengaturan' => [],
+            ]);
+        }
+
+        $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
+        if ($request->hasFile('ttd_kepsek')) {
+            if (! empty($pengaturan['ttd_kepsek'])) {
+                foreach (['local', 'public'] as $disk) {
+                    if (Storage::disk($disk)->exists($pengaturan['ttd_kepsek'])) {
+                        Storage::disk($disk)->delete($pengaturan['ttd_kepsek']);
+                    }
+                }
+            }
+            $pengaturan['ttd_kepsek'] = $request->file('ttd_kepsek')->store('private/identitas', 'local');
+        }
+        $pengaturan['nip_kepsek'] = trim((string) ($validated['nip_kepsek'] ?? ''));
+
+        $sekolah->update([
+            'kepala_sekolah' => $sekolah->kepala_sekolah ?: $kepsek->nama_lengkap,
+            'pengaturan' => $pengaturan,
+        ]);
+
+        return redirect()
+            ->route('kepsek.ttd.index')
+            ->with('success', 'Tanda tangan digital Kepala Sekolah berhasil disimpan (disk privat).');
+    }
+
+    public function tandaTanganHapus(): RedirectResponse
+    {
+        /** @var User $kepsek */
+        $kepsek = Auth::user();
+        $tenantId = $this->ctx->tenantId($kepsek);
+        $sekolah = $this->ctx->sekolah($tenantId);
+
+        if ($sekolah && is_array($sekolah->pengaturan) && ! empty($sekolah->pengaturan['ttd_kepsek'])) {
+            $pengaturan = $sekolah->pengaturan;
+            foreach (['local', 'public'] as $disk) {
+                if (Storage::disk($disk)->exists($pengaturan['ttd_kepsek'])) {
+                    Storage::disk($disk)->delete($pengaturan['ttd_kepsek']);
+                }
+            }
+            unset($pengaturan['ttd_kepsek']);
+            $sekolah->update(['pengaturan' => $pengaturan]);
+        }
+
+        return redirect()
+            ->route('kepsek.ttd.index')
+            ->with('success', 'Gambar tanda tangan digital Kepala Sekolah telah dihapus.');
     }
 
     private function authorizeGuruSameTenant(?int $tenantId, User $guru): void

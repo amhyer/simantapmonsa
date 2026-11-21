@@ -103,7 +103,7 @@ class MenuAuditTest extends TestCase
                 'ortu.laporan.index', 'ortu.tka-kesiapan.index',
             ]],
             'kepsek' => [$kepsek, [
-                'kepsek.dashboard', 'kepsek.supervisi-pm.index', 'kepsek.perangkat.index', 'kepsek.rekap.index', 'kepsek.peta-kelas.index',
+                'kepsek.dashboard', 'kepsek.supervisi-pm.index', 'kepsek.ttd.index', 'kepsek.perangkat.index', 'kepsek.rekap.index', 'kepsek.peta-kelas.index',
                 'kepsek.hasil-belajar.index', 'kepsek.pantau.index',
                 'kepsek.kebiasaan.index', 'kepsek.aktivitas.index', 'kepsek.tka-kesiapan.index',
                 'presensi.pegawai.index', 'presensi.pegawai.kartu',

@@ -30,8 +30,9 @@ class AtpController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $mapelList = $this->ctx->daftarMapel();
 
+        $ctx = $this->ctx->getContext($request);
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
-        $faseAktif = strtoupper(trim((string) $request->query('fase', 'A')));
+        $faseAktif = $ctx['fase'];
         if (! array_key_exists($faseAktif, CapaianPembelajaran::FASE_LABELS)) {
             $faseAktif = 'A';
         }

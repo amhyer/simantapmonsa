@@ -569,6 +569,9 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
 
     // Pembelajaran Mendalam (Fase 1: Alokasi Waktu, CP, TP, ATP, Buku Paket SIBI, KKTP)
     Route::prefix('pembelajaran-mendalam')->name('pm.')->group(function () {
+        // Konteks Aktif Persisten (Tahun Ajaran · Semester · Kelas)
+        Route::post('/konteks', [AlokasiWaktuController::class, 'simpanKonteks'])->middleware('throttle:60,1')->name('konteks.simpan');
+
         // Alokasi Waktu
         Route::get('/alokasi', [AlokasiWaktuController::class, 'index'])->name('alokasi.index');
         Route::post('/alokasi', [AlokasiWaktuController::class, 'store'])->middleware('throttle:30,1')->name('alokasi.store');
@@ -581,6 +584,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
         Route::put('/cp/{cp}', [CpController::class, 'update'])->middleware('throttle:30,1')->name('cp.update');
         Route::delete('/cp/{cp}', [CpController::class, 'destroy'])->middleware('throttle:30,1')->name('cp.destroy');
         Route::post('/cp/ai', [CpController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('cp.ai');
+        Route::post('/cp/standar-bskap', [CpController::class, 'muatStandarBskap'])->middleware('throttle:15,1')->name('cp.standar');
         Route::post('/cp/import-excel', [CpController::class, 'importExcel'])->middleware('throttle:15,1')->name('cp.import');
         Route::get('/cp/export-excel', [CpController::class, 'exportExcel'])->name('cp.excel');
         Route::get('/cp/cetak-pdf', [CpController::class, 'cetakPdf'])->name('cp.pdf');
@@ -646,6 +650,7 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
         // Fase 3: Kokurikuler Pembelajaran Mendalam
         Route::get('/kokurikuler', [KokurikulerPmController::class, 'index'])->name('kokurikuler.index');
         Route::post('/kokurikuler', [KokurikulerPmController::class, 'store'])->middleware('throttle:30,1')->name('kokurikuler.store');
+        Route::put('/kokurikuler/{kokurikuler}', [KokurikulerPmController::class, 'update'])->middleware('throttle:30,1')->name('kokurikuler.update');
         Route::delete('/kokurikuler/{kokurikuler}', [KokurikulerPmController::class, 'destroy'])->middleware('throttle:30,1')->name('kokurikuler.destroy');
         Route::post('/kokurikuler/ai', [KokurikulerPmController::class, 'aiGenerate'])->middleware('throttle:15,1')->name('kokurikuler.ai');
         Route::get('/kokurikuler/export-excel', [KokurikulerPmController::class, 'exportExcel'])->name('kokurikuler.excel');
@@ -888,6 +893,11 @@ Route::middleware(['auth', 'role:kepsek', 'force.password.change', 'school.conte
             ->middleware('throttle:30,1')
             ->name('keputusan');
     });
+
+    // Tanda Tangan Digital Mandiri Kepala Sekolah
+    Route::get('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganIndex'])->name('ttd.index');
+    Route::post('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganStore'])->middleware('throttle:20,1')->name('ttd.store');
+    Route::delete('/tanda-tangan', [SupervisiPmController::class, 'tandaTanganHapus'])->middleware('throttle:20,1')->name('ttd.hapus');
 });
 
 // ==================== CBT (PILIHAN GANDA) ====================

@@ -263,6 +263,71 @@ class CpController extends Controller
         return back()->with('success', "{$imported} Capaian Pembelajaran berhasil diimpor dari Excel.");
     }
 
+    /**
+     * Muat CP standar Kurikulum Merdeka SD (acuan BSKAP No. 046/H/KR/2025) secara idempoten.
+     */
+    public function muatStandarBskap(): RedirectResponse
+    {
+        /** @var User $guru */
+        $guru = Auth::user();
+        $tenantId = $this->ctx->tenantId($guru);
+        $daftarMapel = $this->ctx->daftarMapel();
+
+        $standar = [
+            ['mapel' => 'Matematika', 'fase' => 'A', 'elemen' => 'Bilangan', 'deskripsi' => 'Murid menunjukkan pemahaman dan memiliki intuisi bilangan (number sense) pada bilangan cacah sampai 100, serta melakukan operasi penjumlahan dan pengurangan menggunakan benda konkret.'],
+            ['mapel' => 'Matematika', 'fase' => 'A', 'elemen' => 'Pengukuran & Geometri', 'deskripsi' => 'Murid membandingkan panjang, berat, dan durasi waktu secara langsung serta mengenal berbagai bangun datar dan bangun ruang sederhana di lingkungan sekitar.'],
+            ['mapel' => 'Matematika', 'fase' => 'B', 'elemen' => 'Bilangan', 'deskripsi' => 'Murid menunjukkan pemahaman dan intuisi bilangan cacah sampai 10.000, melakukan operasi hitung penjumlahan, pengurangan, perkalian, pembagian, serta mengenal pecahan senilai.'],
+            ['mapel' => 'Matematika', 'fase' => 'C', 'elemen' => 'Bilangan & Aljabar', 'deskripsi' => 'Murid menunjukkan pemahaman bilangan cacah sampai 1.000.000, bilangan desimal, pecahan, rasio, serta menyelesaikan masalah kontekstual menggunakan penalaran proporsional.'],
+            ['mapel' => 'Bahasa Indonesia', 'fase' => 'A', 'elemen' => 'Menyimak & Membaca', 'deskripsi' => 'Murid mampu bersikap menjadi pendengar yang penuh perhatian, memahami pesan lisan, serta membaca kata-kata sederhana yang dikenalnya sehari-hari dengan fasih.'],
+            ['mapel' => 'Bahasa Indonesia', 'fase' => 'B', 'elemen' => 'Membaca & Memirsa', 'deskripsi' => 'Murid mampu memahami pesan dan informasi tentang kehidupan sehari-hari, teks narasi, dan puisi anak dalam bentuk cetak atau elektronik.'],
+            ['mapel' => 'Bahasa Indonesia', 'fase' => 'C', 'elemen' => 'Menulis & Berbicara', 'deskripsi' => 'Murid mampu menyampaikan informasi secara lisan maupun tulis secara logis, kritis, dan kreatif berdasarkan fakta serta pengalaman dalam teks eksplanasi dan persuasi.'],
+            ['mapel' => 'Pendidikan Pancasila', 'fase' => 'A', 'elemen' => 'Pancasila', 'deskripsi' => 'Murid mengenal bendera negara, lagu kebangsaan, simbol dan sila-sila Pancasila, serta menerapkan nilai-nilai Pancasila di lingkungan keluarga dan sekolah.'],
+            ['mapel' => 'Pendidikan Pancasila', 'fase' => 'B', 'elemen' => 'UUD NRI Tahun 1945', 'deskripsi' => 'Murid mengidentifikasi aturan di sekolah dan lingkungan tempat tinggal serta melaksanakan hak dan kewajiban sebagai anggota keluarga dan warga sekolah.'],
+            ['mapel' => 'Pendidikan Pancasila', 'fase' => 'C', 'elemen' => 'Bhinneka Tunggal Ika', 'deskripsi' => 'Murid menyajikan hasil identifikasi sikap menghormati, menjaga, dan melestarikan keberagaman budaya dalam bingkai Bhinneka Tunggal Ika di lingkungan sekitar.'],
+            ['mapel' => 'Ilmu Pengetahuan Alam dan Sosial (IPAS)', 'fase' => 'B', 'elemen' => 'Pemahaman IPAS', 'deskripsi' => 'Murid menganalisis hubungan antara bentuk serta fungsi bagian tubuh manusia, siklus hidup makhluk hidup, perubahan wujud zat, serta keragaman sosial budaya di daerahnya.'],
+            ['mapel' => 'Ilmu Pengetahuan Alam dan Sosial (IPAS)', 'fase' => 'C', 'elemen' => 'Pemahaman IPAS', 'deskripsi' => 'Murid melakukan simulasi menggunakan gambar/bagan tentang sistem organ tubuh manusia, ekosistem, tata surya, serta menganalisis sejarah dan kegiatan ekonomi masyarakat Indonesia.'],
+        ];
+
+        $added = 0;
+        foreach ($standar as $idx => $item) {
+            $matched = $daftarMapel->first(function ($m) use ($item): bool {
+                $a = mb_strtolower($m->nama);
+                $b = mb_strtolower($item['mapel']);
+
+                return $a === $b || str_contains($a, $b) || str_contains($b, $a);
+            });
+
+            $namaMapel = $matched ? $matched->nama : $item['mapel'];
+            $exists = CapaianPembelajaran::query()
+                ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+                ->where('nama_mapel', $namaMapel)
+                ->where('fase', $item['fase'])
+                ->where('elemen', $item['elemen'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            CapaianPembelajaran::create([
+                'tenant_id' => $tenantId,
+                'guru_id' => $guru->id,
+                'mata_pelajaran_id' => $matched?->id,
+                'nama_mapel' => $namaMapel,
+                'fase' => $item['fase'],
+                'elemen' => $item['elemen'],
+                'deskripsi' => $item['deskripsi'],
+                'urutan' => $idx + 1,
+                'sumber' => 'bskap_2025',
+            ]);
+            $added++;
+        }
+
+        return back()->with('success', $added > 0
+            ? "{$added} Capaian Pembelajaran standar BSKAP 2025 berhasil dimuat."
+            : 'Seluruh CP standar BSKAP 2025 sudah tersedia di bank CP Anda.');
+    }
+
     public function cetakPdf(Request $request): Response
     {
         /** @var User $guru */

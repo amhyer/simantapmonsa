@@ -179,7 +179,12 @@
                                         @endforeach
                                     </td>
                                     <td style="font-size:12px">{{ $item->tanggal_mulai?->format('d/m/Y') ?? '—' }}</td>
-                                    <td style="text-align:right">
+                                    <td style="text-align:right;white-space:nowrap">
+                                        <button type="button" class="btn btn-sm btn-ghost"
+                                                onclick="openEditKoku({{ json_encode(['url' => route('guru.pm.kokurikuler.update', $item), 'tingkat' => $item->tingkat, 'tema_judul' => $item->tema_judul, 'bentuk_kegiatan' => $item->bentuk_kegiatan, 'tanggal_mulai' => $item->tanggal_mulai?->format('Y-m-d'), 'tanggal_selesai' => $item->tanggal_selesai?->format('Y-m-d'), 'tujuan' => $item->tujuan, 'rangkaian_kegiatan' => $item->rangkaian_kegiatan, 'mitra' => $item->mitra, 'refleksi_hasil' => $item->refleksi_hasil, 'dimensi_profil' => $item->dimensi_profil ?? []]) }})"
+                                                title="Edit Kokurikuler">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
                                         <form method="POST" action="{{ route('guru.pm.kokurikuler.destroy', $item) }}"
                                               onsubmit="return confirm('Hapus kegiatan ini?');" style="display:inline">
                                             @csrf
@@ -196,4 +201,85 @@
             @endif
         </div>
     </div>
+
+    {{-- Modal Edit Inline Kokurikuler --}}
+    <div id="modalEditKoku" style="display:none;position:fixed;inset:0;background:rgba(16,24,40,.45);z-index:1000;align-items:center;justify-content:center;padding:16px">
+        <div class="card" style="width:100%;max-width:600px;max-height:90vh;overflow:auto">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                <strong>Edit Kegiatan Kokurikuler</strong>
+                <button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('modalEditKoku').style.display='none'">×</button>
+            </div>
+            <div class="card-body">
+                <form id="formEditKoku" method="POST" style="display:grid;gap:10px">
+                    @csrf
+                    @method('PUT')
+                    <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Tema / Judul *</label>
+                            <input type="text" id="editKokuTema" name="tema_judul" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Kelas *</label>
+                            <select id="editKokuTingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                                @for($t = 1; $t <= 6; $t++)<option value="{{ $t }}">Kelas {{ $t }}</option>@endfor
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
+                        <select id="editKokuBentuk" name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            @foreach($bentukLabels as $kode => $label)<option value="{{ $kode }}">{{ $label }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Tanggal Mulai</label>
+                            <input type="date" id="editKokuMulai" name="tanggal_mulai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Tanggal Selesai</label>
+                            <input type="date" id="editKokuSelesai" name="tanggal_selesai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600">Tujuan</label>
+                        <textarea id="editKokuTujuan" name="tujuan" rows="2" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600">Rangkaian Kegiatan</label>
+                        <textarea id="editKokuRangkaian" name="rangkaian_kegiatan" rows="3" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Mitra</label>
+                            <input type="text" id="editKokuMitra" name="mitra" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:600">Refleksi &amp; Hasil</label>
+                            <input type="text" id="editKokuRefleksi" name="refleksi_hasil" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px">
+                        <button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('modalEditKoku').style.display='none'">Batal</button>
+                        <button type="submit" class="btn btn-sm"><i class="fas fa-save"></i> Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function openEditKoku(d) {
+            document.getElementById('formEditKoku').action = d.url;
+            document.getElementById('editKokuTema').value = d.tema_judul || '';
+            document.getElementById('editKokuTingkat').value = d.tingkat || 1;
+            document.getElementById('editKokuBentuk').value = d.bentuk_kegiatan || 'kolaboratif_lintas_disiplin';
+            document.getElementById('editKokuMulai').value = d.tanggal_mulai || '';
+            document.getElementById('editKokuSelesai').value = d.tanggal_selesai || '';
+            document.getElementById('editKokuTujuan').value = d.tujuan || '';
+            document.getElementById('editKokuRangkaian').value = d.rangkaian_kegiatan || '';
+            document.getElementById('editKokuMitra').value = d.mitra || '';
+            document.getElementById('editKokuRefleksi').value = d.refleksi_hasil || '';
+            document.getElementById('modalEditKoku').style.display = 'flex';
+        }
+    </script>
 @endsection

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\PembelajaranMendalam\SupervisiPm;
 use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
@@ -50,12 +51,26 @@ class PembelajaranMendalamPolicy
             return false;
         }
 
+        // Kunci otomatis bila dokumen guru pada tahun ajaran terkait sudah Disetujui Kepala Sekolah
+        $tenantId = $this->resolveTenantId($user);
+        $tahunRecord = $record->getAttribute('tahun_ajaran');
+        $terkunci = SupervisiPm::query()
+            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->where('guru_id', $user->id)
+            ->where('status', SupervisiPm::STATUS_DISETUJUI)
+            ->when(! empty($tahunRecord), fn ($q) => $q->where('tahun_ajaran', $tahunRecord))
+            ->exists();
+
+        if ($terkunci) {
+            return false;
+        }
+
         $ownerId = $record->getAttribute('guru_id') ?? $record->getAttribute('created_by');
         if ($ownerId !== null && (int) $ownerId === (int) $user->id) {
             return true;
         }
 
-        return $this->isModeKolaboratif($this->resolveTenantId($user));
+        return $this->isModeKolaboratif($tenantId);
     }
 
     private function sameTenant(User $user, Model $record): bool

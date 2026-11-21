@@ -32,10 +32,11 @@ class ProtaController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $mapelList = $this->ctx->daftarMapel();
-        $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
+        $ctx = $this->ctx->getContext($request);
+        $tahunAjaran = $ctx['tahun_ajaran'];
 
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
-        $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
+        $tingkat = $ctx['tingkat'];
+        $fase = $ctx['fase'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
 
         $defaultJp = $this->kalender->jpPerMingguMapel($tenantId, $tahunAjaran, $mapelAktif, $tingkat);

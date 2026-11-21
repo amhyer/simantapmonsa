@@ -144,6 +144,8 @@ class GeneratorBatchController extends Controller
         $cpCache = [];
         $totalModul = 0;
         $totalJurnal = 0;
+        $skippedModul = 0;
+        $skippedJurnal = 0;
 
         foreach ($rencana['items'] as $item) {
             $namaMapel = $item['mapel'];
@@ -159,65 +161,96 @@ class GeneratorBatchController extends Controller
             $perangkatId = null;
 
             if ($buatModul) {
-                $konten = $this->bangunKontenRpm(
-                    $data['mode'],
-                    $namaMapel,
-                    $tingkat,
-                    $item['materi'],
-                    $item['tp_teks'] ?: $cpCache[$namaMapel],
-                    (bool) ($data['sertakan_lkpd'] ?? false),
-                    $tenantId,
-                    $guru->id
-                );
+                $judulRpm = "RPM {$namaMapel} — {$item['materi']}";
+                $existingRpm = PerangkatPembelajaran::query()
+                    ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+                    ->where('guru_id', $guru->id)
+                    ->where('jenis', PerangkatPembelajaran::JENIS_MODUL_AJAR)
+                    ->where('mata_pelajaran', $namaMapel)
+                    ->where('judul', $judulRpm)
+                    ->first();
 
-                $perangkat = PerangkatPembelajaran::create([
-                    'tenant_id' => $tenantId,
-                    'guru_id' => $guru->id,
-                    'jenis' => PerangkatPembelajaran::JENIS_MODUL_AJAR,
-                    'judul' => "RPM {$namaMapel} — {$item['materi']}",
-                    'mata_pelajaran' => $namaMapel,
-                    'fase' => $fase,
-                    'kelas' => $kelasLabel,
-                    'tahun_ajaran' => $data['tahun_ajaran'],
-                    'semester' => $semester === 1 ? 'ganjil' : 'genap',
-                    'alokasi_waktu' => "{$item['jp']} JP",
-                    'ringkasan' => "Tanggal: {$item['tanggal_id']} ({$item['hari']}) · Mode: ".strtoupper($data['mode']),
-                    'konten' => $konten,
-                    'status' => 'final',
-                ]);
-                $perangkatId = $perangkat->id;
-                $totalModul++;
+                if ($existingRpm) {
+                    $perangkatId = $existingRpm->id;
+                    $skippedModul++;
+                } else {
+                    $konten = $this->bangunKontenRpm(
+                        $data['mode'],
+                        $namaMapel,
+                        $tingkat,
+                        $item['materi'],
+                        $item['tp_teks'] ?: $cpCache[$namaMapel],
+                        (bool) ($data['sertakan_lkpd'] ?? false),
+                        $tenantId,
+                        $guru->id
+                    );
+
+                    $perangkat = PerangkatPembelajaran::create([
+                        'tenant_id' => $tenantId,
+                        'guru_id' => $guru->id,
+                        'jenis' => PerangkatPembelajaran::JENIS_MODUL_AJAR,
+                        'judul' => $judulRpm,
+                        'mata_pelajaran' => $namaMapel,
+                        'fase' => $fase,
+                        'kelas' => $kelasLabel,
+                        'tahun_ajaran' => $data['tahun_ajaran'],
+                        'semester' => $semester === 1 ? 'ganjil' : 'genap',
+                        'alokasi_waktu' => "{$item['jp']} JP",
+                        'ringkasan' => "Tanggal: {$item['tanggal_id']} ({$item['hari']}) · Mode: ".strtoupper($data['mode']),
+                        'konten' => $konten,
+                        'status' => 'final',
+                    ]);
+                    $perangkatId = $perangkat->id;
+                    $totalModul++;
+                }
             }
 
             if ($buatJurnal) {
-                JurnalMengajar::create([
-                    'tenant_id' => $tenantId,
-                    'guru_id' => $guru->id,
-                    'perangkat_id' => $perangkatId,
-                    'tp_id' => $item['tp_id'],
-                    'tanggal' => $item['tanggal'],
-                    'jam_ke' => $item['jam_ke'],
-                    'kelas' => $kelasLabel,
-                    'mata_pelajaran' => $namaMapel,
-                    'pertemuan_ke' => $item['pertemuan_ke'],
-                    'topik' => $item['materi'],
-                    'praktik_pedagogis' => 'Pembelajaran Berdiferensiasi',
-                    'prinsip_pm' => ['Berkesadaran (Mindful)', 'Bermakna (Meaningful)', 'Menggembirakan (Joyful)'],
-                    'pengalaman_belajar' => ['Memahami', 'Mengaplikasi', 'Merefleksi'],
-                    'kegiatan' => "Pelaksanaan pembelajaran mendalam topik {$item['materi']} sesuai RPM.",
-                    'asesmen' => 'Observasi aktivitas murid & asesmen formatif singkat.',
-                    'catatan' => $item['sumber_jadwal'] === 'jadwal_pelajaran'
-                        ? 'Dibuat otomatis sesuai Jadwal Pelajaran.'
-                        : 'Dibuat otomatis melalui Generator Batch Pembelajaran Mendalam.',
-                    'tindak_lanjut' => 'Penguatan konsep dan refleksi pada pertemuan berikutnya.',
-                ]);
-                $totalJurnal++;
+                $jurnalAda = JurnalMengajar::query()
+                    ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+                    ->where('guru_id', $guru->id)
+                    ->whereDate('tanggal', $item['tanggal'])
+                    ->where('mata_pelajaran', $namaMapel)
+                    ->where('topik', $item['materi'])
+                    ->exists();
+
+                if ($jurnalAda) {
+                    $skippedJurnal++;
+                } else {
+                    JurnalMengajar::create([
+                        'tenant_id' => $tenantId,
+                        'guru_id' => $guru->id,
+                        'perangkat_id' => $perangkatId,
+                        'tp_id' => $item['tp_id'],
+                        'tanggal' => $item['tanggal'],
+                        'jam_ke' => $item['jam_ke'],
+                        'kelas' => $kelasLabel,
+                        'mata_pelajaran' => $namaMapel,
+                        'pertemuan_ke' => $item['pertemuan_ke'],
+                        'topik' => $item['materi'],
+                        'praktik_pedagogis' => 'Pembelajaran Berdiferensiasi',
+                        'prinsip_pm' => ['Berkesadaran (Mindful)', 'Bermakna (Meaningful)', 'Menggembirakan (Joyful)'],
+                        'pengalaman_belajar' => ['Memahami', 'Mengaplikasi', 'Merefleksi'],
+                        'kegiatan' => "Pelaksanaan pembelajaran mendalam topik {$item['materi']} sesuai RPM.",
+                        'asesmen' => 'Observasi aktivitas murid & asesmen formatif singkat.',
+                        'catatan' => $item['sumber_jadwal'] === 'jadwal_pelajaran'
+                            ? 'Dibuat otomatis sesuai Jadwal Pelajaran.'
+                            : 'Dibuat otomatis melalui Generator Batch Pembelajaran Mendalam.',
+                        'tindak_lanjut' => 'Penguatan konsep dan refleksi pada pertemuan berikutnya.',
+                    ]);
+                    $totalJurnal++;
+                }
             }
+        }
+
+        $msg = "Berhasil membuat {$totalModul} Modul Ajar (RPM) dan {$totalJurnal} Jurnal Mengajar sekaligus!";
+        if ($skippedModul > 0 || $skippedJurnal > 0) {
+            $msg .= " (Dilewati anti-duplikat: {$skippedModul} RPM, {$skippedJurnal} Jurnal sudah ada.)";
         }
 
         return redirect()
             ->route('guru.pm.generate.index')
-            ->with('success', "Berhasil membuat {$totalModul} Modul Ajar (RPM) dan {$totalJurnal} Jurnal Mengajar sekaligus!");
+            ->with('success', $msg);
     }
 
     /**

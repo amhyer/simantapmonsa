@@ -27,7 +27,8 @@ class BukuPaketController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $mapelList = $this->ctx->daftarMapel();
 
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $ctx = $this->ctx->getContext($request);
+        $tingkat = $ctx['tingkat'];
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
 
         $bukuAktif = BukuPaketSibi::query()

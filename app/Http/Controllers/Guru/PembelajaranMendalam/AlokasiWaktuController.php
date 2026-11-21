@@ -19,12 +19,25 @@ class AlokasiWaktuController extends Controller
         private readonly PembelajaranContextService $ctx,
     ) {}
 
+    public function simpanKonteks(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tahun_ajaran' => ['required', 'string', 'max:20'],
+            'semester' => ['required', 'in:1,2'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+        ]);
+
+        $this->ctx->setContext($data['tahun_ajaran'], (int) $data['semester'], (int) $data['tingkat']);
+
+        return back()->with('success', "Konteks aktif diubah ke Kelas {$data['tingkat']} · {$data['tahun_ajaran']} Semester {$data['semester']}.");
+    }
+
     public function index(Request $request): View
     {
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
+        $tahunAjaran = $this->ctx->getContext($request)['tahun_ajaran'];
 
         $mapelList = $this->ctx->daftarMapel();
         $records = AlokasiWaktu::query()
@@ -129,15 +142,25 @@ class AlokasiWaktuController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = trim((string) $request->input('tahun_ajaran', $this->ctx->tahunAjaranAktif()));
-        $mapelByName = $this->ctx->daftarMapel()->keyBy('nama');
+        $daftarMapel = $this->ctx->daftarMapel();
 
-        foreach (AlokasiWaktu::STANDAR_PERMENDIKDASMEN_2025 as $namaMapel => $perTingkat) {
-            $mapelId = $mapelByName->get($namaMapel)?->id;
+        foreach (AlokasiWaktu::STANDAR_PERMENDIKDASMEN_2025 as $namaStandar => $perTingkat) {
+            // Cocokkan dengan nama mapel aktual sekolah (misal: "Matematika" -> "Matematika (Umum)")
+            $matched = $daftarMapel->first(function ($m) use ($namaStandar): bool {
+                $a = mb_strtolower($m->nama);
+                $b = mb_strtolower($namaStandar);
+
+                return $a === $b || str_contains($a, $b) || str_contains($b, $a);
+            });
+
+            $namaTarget = $matched ? $matched->nama : $namaStandar;
+            $mapelId = $matched?->id;
+
             foreach ($perTingkat as $tingkat => [$intra, $ko]) {
                 AlokasiWaktu::updateOrCreate(
                     [
                         'tenant_id' => $tenantId,
-                        'nama_mapel' => $namaMapel,
+                        'nama_mapel' => $namaTarget,
                         'tingkat' => $tingkat,
                         'tahun_ajaran' => $tahunAjaran,
                     ],
