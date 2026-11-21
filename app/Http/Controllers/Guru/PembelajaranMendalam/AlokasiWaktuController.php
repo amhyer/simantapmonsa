@@ -88,11 +88,16 @@ class AlokasiWaktuController extends Controller
             ];
         }
 
+        $canEdit = $guru->peran === 'admin';
+
         return view('guru.pm.alokasi.index', [
             'tahunAjaran' => $tahunAjaran,
             'namaMapelList' => $namaMapelSet,
             'matrix' => $matrix,
             'ringkasanTingkat' => $ringkasanTingkat,
+            'canEdit' => $canEdit,
+            'routePrefix' => $canEdit ? 'admin.pm' : 'guru.pm',
+            'layout' => $canEdit ? 'layouts.admin-with-tabs' : 'layouts.app',
         ]);
     }
 
@@ -100,6 +105,9 @@ class AlokasiWaktuController extends Controller
     {
         /** @var User $guru */
         $guru = Auth::user();
+        if ($guru->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat mengubah master Alokasi Waktu.');
+        }
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = trim((string) $request->input('tahun_ajaran', $this->ctx->tahunAjaranAktif()));
         $alokasi = $request->input('a', []);
@@ -139,7 +147,7 @@ class AlokasiWaktuController extends Controller
         }
 
         return redirect()
-            ->route('guru.pm.alokasi.index', ['tahun_ajaran' => $tahunAjaran])
+            ->route('admin.pm.alokasi.index', ['tahun_ajaran' => $tahunAjaran])
             ->with('success', 'Alokasi waktu struktur kurikulum berhasil disimpan.');
     }
 
@@ -147,6 +155,9 @@ class AlokasiWaktuController extends Controller
     {
         /** @var User $guru */
         $guru = Auth::user();
+        if ($guru->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat mengubah master Alokasi Waktu.');
+        }
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = trim((string) $request->input('tahun_ajaran', $this->ctx->tahunAjaranAktif()));
         $daftarMapel = $this->ctx->daftarMapel();
@@ -182,7 +193,7 @@ class AlokasiWaktuController extends Controller
         }
 
         return redirect()
-            ->route('guru.pm.alokasi.index', ['tahun_ajaran' => $tahunAjaran])
+            ->route('admin.pm.alokasi.index', ['tahun_ajaran' => $tahunAjaran])
             ->with('success', 'Alokasi waktu berhasil diisi sesuai standar Permendikdasmen No. 13 Tahun 2025.');
     }
 

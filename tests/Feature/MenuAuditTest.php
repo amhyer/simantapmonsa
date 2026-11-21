@@ -74,6 +74,8 @@ class MenuAuditTest extends TestCase
                 'admin.presensi.kartu.pegawai.cetak-massal',
                 'admin.tka-kesiapan.index',
                 'admin.tka-kesiapan.pengaturan',
+                'admin.pm.alokasi.index',
+                'admin.pm.kalender.index',
             ]],
             'guru' => [$guru, [
                 'guru.dashboard', 'guru.kelas-digital.index',

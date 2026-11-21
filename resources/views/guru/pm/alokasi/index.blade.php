@@ -1,29 +1,38 @@
-@extends('layouts.app')
+@extends($layout ?? 'layouts.app')
 
 @section('title', 'Alokasi Waktu - Pembelajaran Mendalam')
 @section('page_title', 'Alokasi Waktu Struktur Kurikulum')
 @section('page_subtitle', 'Distribusi JP/minggu Intrakurikuler & Kokurikuler Kelas I–VI (Permendikdasmen No. 13 Tahun 2025)')
 
-@section('sidebar')
-    @include('guru.partials.sidebar')
-@endsection
+@if(!($canEdit ?? false))
+    @section('sidebar')
+        @include('guru.partials.sidebar')
+    @endsection
+@endif
 
 @section('header_actions')
-    <a href="{{ route('guru.pm.alokasi.pdf', ['tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-ghost btn-sm">
+    <a href="{{ route(($routePrefix ?? 'guru.pm').'.alokasi.pdf', ['tahun_ajaran' => $tahunAjaran]) }}" target="_blank" class="btn btn-ghost btn-sm">
         <i class="fas fa-print"></i> Cetak Semua Kelas
     </a>
-    <form method="POST" action="{{ route('guru.pm.alokasi.standar') }}" style="display:inline"
-          onsubmit="return confirm('Isi seluruh tabel sesuai standar Permendikdasmen No. 13 Tahun 2025?');">
-        @csrf
-        <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
-        <button type="submit" class="btn btn-sm">
-            <i class="fas fa-wand-magic-sparkles"></i> Isi Standar Permendikdasmen 2025
-        </button>
-    </form>
+    @if($canEdit ?? false)
+        <form method="POST" action="{{ route('admin.pm.alokasi.standar') }}" style="display:inline"
+              onsubmit="return confirm('Isi seluruh tabel sesuai standar Permendikdasmen No. 13 Tahun 2025?');">
+            @csrf
+            <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
+            <button type="submit" class="btn btn-sm">
+                <i class="fas fa-wand-magic-sparkles"></i> Isi Standar Permendikdasmen 2025
+            </button>
+        </form>
+    @endif
 @endsection
 
 @section('content')
-    @include('guru.pm._nav')
+    @if(!($canEdit ?? false))
+        @include('guru.pm._nav')
+        <div style="margin-bottom:12px;padding:10px 14px;background:#EFF8FF;border:1px solid #B2DDFF;border-radius:8px;font-size:12px;color:#175CD3">
+            <i class="fas fa-info-circle"></i> <strong>Mode Baca (Read-Only):</strong> Master Alokasi Waktu struktur kurikulum dikelola oleh Admin/Operator Sekolah.
+        </div>
+    @endif
 
     {{-- Ringkasan JP per Tingkat --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px">
@@ -57,7 +66,7 @@
                 <span style="font-size:12px;color:#667085;margin-left:6px">Tahun Ajaran {{ $tahunAjaran }} · 1 JP = 35 menit</span>
             </div>
         </div>
-        <form method="POST" action="{{ route('guru.pm.alokasi.store') }}">
+        <form method="POST" action="{{ route(($routePrefix ?? 'guru.pm').'.alokasi.store') }}">
             @csrf
             <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
             <div class="card-body" style="padding:0">
@@ -87,16 +96,24 @@
                                             $ko = $matrix[$namaMapel][$t]['ko'] ?? 0;
                                         @endphp
                                         <td style="text-align:center;border-left:1px solid #EAECF0;padding:6px">
-                                            <input type="number" min="0" max="30"
-                                                   name="a[{{ $namaMapel }}][{{ $t }}][intra]"
-                                                   value="{{ $intra }}"
-                                                   style="width:52px;text-align:center;padding:4px;border:1px solid #D0D5DD;border-radius:6px;font-size:13px">
+                                            @if($canEdit ?? false)
+                                                <input type="number" min="0" max="30"
+                                                       name="a[{{ $namaMapel }}][{{ $t }}][intra]"
+                                                       value="{{ $intra }}"
+                                                       style="width:52px;text-align:center;padding:4px;border:1px solid #D0D5DD;border-radius:6px;font-size:13px">
+                                            @else
+                                                {{ $intra }}
+                                            @endif
                                         </td>
                                         <td style="text-align:center;padding:6px">
-                                            <input type="number" min="0" max="20"
-                                                   name="a[{{ $namaMapel }}][{{ $t }}][ko]"
-                                                   value="{{ $ko }}"
-                                                   style="width:46px;text-align:center;padding:4px;border:1px solid #D0D5DD;border-radius:6px;font-size:13px">
+                                            @if($canEdit ?? false)
+                                                <input type="number" min="0" max="20"
+                                                       name="a[{{ $namaMapel }}][{{ $t }}][ko]"
+                                                       value="{{ $ko }}"
+                                                       style="width:46px;text-align:center;padding:4px;border:1px solid #D0D5DD;border-radius:6px;font-size:13px">
+                                            @else
+                                                {{ $ko }}
+                                            @endif
                                         </td>
                                     @endfor
                                 </tr>
@@ -114,11 +131,13 @@
                     </table>
                 </div>
             </div>
-            <div class="card-body" style="border-top:1px solid #EAECF0;display:flex;justify-content:flex-end">
-                <button type="submit" class="btn">
-                    <i class="fas fa-save"></i> Simpan Alokasi Waktu
-                </button>
-            </div>
+            @if($canEdit ?? false)
+                <div class="card-body" style="border-top:1px solid #EAECF0;display:flex;justify-content:flex-end">
+                    <button type="submit" class="btn">
+                        <i class="fas fa-save"></i> Simpan Alokasi Waktu
+                    </button>
+                </div>
+            @endif
         </form>
     </div>
 @endsection

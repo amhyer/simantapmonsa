@@ -60,17 +60,26 @@ class PembelajaranMendalamFase2Test extends TestCase
 
     public function test_kalender_pendidikan_default_simpan_dan_hari_libur(): void
     {
+        $admin = User::factory()->admin()->create(['tenant_id' => $this->tenant->id]);
+
+        // Guru dapat membaca kalender (read-only), namun ditolak 403 saat mencoba mengubah
         $this->actingAs($this->guru)
             ->get(route('guru.pm.kalender.index', ['tahun_ajaran' => '2026/2027']))
             ->assertOk()
-            ->assertSee('Juli');
+            ->assertSee('Juli')
+            ->assertSee('Mode Baca');
 
         $this->assertSame(12, KalenderPendidikan::where('tahun_ajaran', '2026/2027')->count());
 
         $juli = KalenderPendidikan::where('tahun_ajaran', '2026/2027')->where('bulan', 7)->firstOrFail();
 
         $this->actingAs($this->guru)
-            ->post(route('guru.pm.kalender.simpan'), [
+            ->post(route('guru.pm.kalender.simpan'), ['kalender' => [$juli->id => ['jumlah_minggu' => 5]]])
+            ->assertForbidden();
+
+        // Admin mengelola Kalender Pendidikan & Hari Libur
+        $this->actingAs($admin)
+            ->post(route('admin.pm.kalender.simpan'), [
                 'kalender' => [
                     $juli->id => [
                         'jumlah_minggu' => 5,
@@ -87,8 +96,8 @@ class PembelajaranMendalamFase2Test extends TestCase
         $this->assertSame([1, 2], $juli->minggu_libur);
         $this->assertSame(14, $juli->hari_efektif);
 
-        $this->actingAs($this->guru)
-            ->post(route('guru.pm.kalender.libur.store'), [
+        $this->actingAs($admin)
+            ->post(route('admin.pm.kalender.libur.store'), [
                 'tahun_ajaran' => '2026/2027',
                 'nama' => 'Hari Kemerdekaan RI',
                 'tanggal_mulai' => '2026-08-17',
@@ -100,8 +109,8 @@ class PembelajaranMendalamFase2Test extends TestCase
         $libur = HariLibur::firstOrFail();
         $this->assertSame('Hari Kemerdekaan RI', $libur->nama);
 
-        $this->actingAs($this->guru)
-            ->delete(route('guru.pm.kalender.libur.destroy', $libur))
+        $this->actingAs($admin)
+            ->delete(route('admin.pm.kalender.libur.destroy', $libur))
             ->assertRedirect();
 
         $this->assertDatabaseCount('pm_hari_libur', 0);

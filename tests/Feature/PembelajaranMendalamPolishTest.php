@@ -115,9 +115,11 @@ class PembelajaranMendalamPolishTest extends TestCase
 
     public function test_3_anti_duplikat_generator_batch_dan_normalisasi_mapel_alokasi(): void
     {
-        // Normalisasi mapel: "Matematika" standar harus masuk ke "Matematika (Umum)" sekolah
-        $this->actingAs($this->guru)
-            ->post(route('guru.pm.alokasi.standar'), ['tahun_ajaran' => '2026/2027'])
+        $admin = User::factory()->admin()->create(['tenant_id' => $this->tenant->id]);
+
+        // Normalisasi mapel oleh Admin: "Matematika" standar harus masuk ke "Matematika (Umum)" sekolah
+        $this->actingAs($admin)
+            ->post(route('admin.pm.alokasi.standar'), ['tahun_ajaran' => '2026/2027'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('pm_alokasi_waktu', [

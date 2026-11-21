@@ -521,6 +521,20 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
         Route::post('/pemetaan', [KesiapanController::class, 'simpanPemetaan'])->middleware('throttle:30,1')->name('pemetaan.simpan');
         Route::delete('/pemetaan/{id}', [KesiapanController::class, 'hapusPemetaan'])->whereNumber('id')->middleware('throttle:30,1')->name('pemetaan.hapus');
     });
+
+    // Master Pembelajaran Mendalam Sekolah (dikelola Admin/Operator, Read-Only untuk Guru)
+    Route::prefix('pembelajaran-mendalam')->name('pm.')->group(function () {
+        Route::get('/alokasi', [AlokasiWaktuController::class, 'index'])->name('alokasi.index');
+        Route::post('/alokasi', [AlokasiWaktuController::class, 'store'])->middleware('throttle:30,1')->name('alokasi.store');
+        Route::post('/alokasi/standar', [AlokasiWaktuController::class, 'isiStandar'])->middleware('throttle:15,1')->name('alokasi.standar');
+        Route::get('/alokasi/cetak-pdf', [AlokasiWaktuController::class, 'cetakPdf'])->name('alokasi.pdf');
+
+        Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender.index');
+        Route::post('/kalender', [KalenderController::class, 'simpanKalender'])->middleware('throttle:30,1')->name('kalender.simpan');
+        Route::post('/kalender/default', [KalenderController::class, 'isiDefault'])->middleware('throttle:15,1')->name('kalender.default');
+        Route::post('/kalender/libur', [KalenderController::class, 'storeLibur'])->middleware('throttle:30,1')->name('kalender.libur.store');
+        Route::delete('/kalender/libur/{libur}', [KalenderController::class, 'destroyLibur'])->middleware('throttle:30,1')->name('kalender.libur.destroy');
+    });
 });
 
 // ==================== GURU ROUTES ====================

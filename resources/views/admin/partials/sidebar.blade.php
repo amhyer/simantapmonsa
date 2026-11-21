@@ -113,6 +113,8 @@
             ['label' => 'KELAS & PEMBELAJARAN', 'icon' => 'lucide-school', 'children' => [
                 ['route' => 'admin.peta-kelas.daftar', 'icon' => 'lucide-school', 'label' => 'Rombel & Peta Kelas'],
                 ['route' => 'admin.mapel.index', 'icon' => 'lucide-book', 'label' => 'Mata Pelajaran'],
+                ['route' => 'admin.pm.alokasi.index', 'icon' => 'lucide-clock', 'label' => 'Alokasi Waktu Kurikulum'],
+                ['route' => 'admin.pm.kalender.index', 'icon' => 'lucide-calendar-range', 'label' => 'Kalender & Hari Libur'],
                 ['route' => 'admin.referensi.pembelajaran', 'icon' => 'lucide-calendar-days', 'label' => 'Data Pembelajaran'],
                 ['route' => 'admin.referensi.ekstrakurikuler', 'icon' => 'lucide-activity', 'label' => 'Data Ekstrakurikuler'],
                 ['route' => 'admin.referensi.kelompok-mapel', 'icon' => 'lucide-layers', 'label' => 'Data Kelompok Mapel'],

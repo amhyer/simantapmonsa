@@ -39,12 +39,17 @@ class KalenderController extends Controller
             ->orderBy('tanggal_mulai')
             ->get();
 
+        $canEdit = $guru->peran === 'admin';
+
         return view('guru.pm.kalender.index', [
             'tahunAjaran' => $tahunAjaran,
             'sem1' => $sem1,
             'sem2' => $sem2,
             'hariLibur' => $hariLibur,
             'jenisLiburLabels' => HariLibur::JENIS_LABELS,
+            'canEdit' => $canEdit,
+            'routePrefix' => $canEdit ? 'admin.pm' : 'guru.pm',
+            'layout' => $canEdit ? 'layouts.admin-with-tabs' : 'layouts.app',
         ]);
     }
 
@@ -52,6 +57,9 @@ class KalenderController extends Controller
     {
         /** @var User $guru */
         $guru = Auth::user();
+        if ($guru->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat mengubah Kalender Pendidikan.');
+        }
         $tenantId = $this->ctx->tenantId($guru);
         $items = $request->input('kalender', []);
 
@@ -107,13 +115,16 @@ class KalenderController extends Controller
     {
         /** @var User $guru */
         $guru = Auth::user();
+        if ($guru->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat mengubah Kalender Pendidikan.');
+        }
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = trim((string) $request->input('tahun_ajaran', $this->ctx->tahunAjaranAktif()));
 
         $this->kalender->isiDefault($tenantId, $tahunAjaran, $guru->id);
 
         return redirect()
-            ->route('guru.pm.kalender.index', ['tahun_ajaran' => $tahunAjaran])
+            ->route('admin.pm.kalender.index', ['tahun_ajaran' => $tahunAjaran])
             ->with('success', 'Kalender Pendidikan standar berhasil dimuat ulang.');
     }
 
@@ -121,6 +132,9 @@ class KalenderController extends Controller
     {
         /** @var User $guru */
         $guru = Auth::user();
+        if ($guru->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat menambah Hari Libur.');
+        }
         $tenantId = $this->ctx->tenantId($guru);
 
         $data = $request->validate([
@@ -148,6 +162,9 @@ class KalenderController extends Controller
 
     public function destroyLibur(HariLibur $libur): RedirectResponse
     {
+        if (Auth::user()?->peran !== 'admin') {
+            abort(403, 'Hanya Admin/Operator sekolah yang dapat menghapus Hari Libur.');
+        }
         Gate::authorize('delete', $libur);
         $libur->delete();
 

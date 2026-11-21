@@ -62,8 +62,16 @@ class PembelajaranMendalamFase1Test extends TestCase
 
     public function test_alokasi_waktu_standar_simpan_dan_cetak_pdf(): void
     {
+        $admin = User::factory()->admin()->create(['tenant_id' => $this->tenant->id]);
+
+        // Guru ditolak (403) mengubah master Alokasi Waktu sekolah
         $this->actingAs($this->guru)
             ->post(route('guru.pm.alokasi.standar'), ['tahun_ajaran' => '2026/2027'])
+            ->assertForbidden();
+
+        // Admin mengelola master Alokasi Waktu
+        $this->actingAs($admin)
+            ->post(route('admin.pm.alokasi.standar'), ['tahun_ajaran' => '2026/2027'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('pm_alokasi_waktu', [
@@ -74,10 +82,12 @@ class PembelajaranMendalamFase1Test extends TestCase
             'jp_kokurikuler' => 1,
         ]);
 
+        // Guru tetap dapat melihat (read-only) dan mencetak PDF
         $this->actingAs($this->guru)
             ->get(route('guru.pm.alokasi.index'))
             ->assertOk()
-            ->assertSee('Matematika');
+            ->assertSee('Matematika')
+            ->assertSee('Mode Baca');
 
         $this->actingAs($this->guru)
             ->get(route('guru.pm.alokasi.pdf', ['tingkat' => 1]))
