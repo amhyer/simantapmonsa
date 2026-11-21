@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\CapaianPembelajaran;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,7 @@ class CpController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -32,12 +34,24 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
+
         $mapelFilter = trim((string) $request->query('mapel', ''));
         $faseFilter = trim((string) $request->query('fase', ''));
         $cari = trim((string) $request->query('q', ''));
 
+        if ($faseFilter !== '') {
+            $this->scope->authorizeFase($guru, $faseFilter, $tenantId);
+        }
+        if ($mapelFilter !== '') {
+            $this->scope->authorizeMapel($guru, $mapelFilter, $tenantId);
+        }
+
         $query = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->orderBy('nama_mapel')
             ->orderBy('fase')
             ->orderBy('urutan');
@@ -58,7 +72,7 @@ class CpController extends Controller
 
         return view('guru.pm.cp.index', [
             'cpList' => $query->paginate(20)->withQueryString(),
-            'mapelList' => $this->ctx->daftarMapel(),
+            'mapelList' => $mapelList,
             'faseLabels' => CapaianPembelajaran::FASE_LABELS,
             'mapelFilter' => $mapelFilter,
             'faseFilter' => $faseFilter,
@@ -72,6 +86,7 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -80,6 +95,9 @@ class CpController extends Controller
             'deskripsi' => ['required', 'string'],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $mapelId = $this->ctx->daftarMapel()->firstWhere('nama', $data['nama_mapel'])?->id;
 
@@ -101,6 +119,9 @@ class CpController extends Controller
     public function update(Request $request, CapaianPembelajaran $cp): RedirectResponse
     {
         Gate::authorize('update', $cp);
+        /** @var User $guru */
+        $guru = Auth::user();
+        $tenantId = $this->ctx->tenantId($guru);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -109,6 +130,9 @@ class CpController extends Controller
             'deskripsi' => ['required', 'string'],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $cp->update([
             'nama_mapel' => $data['nama_mapel'],
@@ -134,12 +158,16 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
             'fase' => ['required', 'in:A,B,C,D,E,F'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         try {
             $items = $this->ai->susunCp($data['nama_mapel'], $data['fase'], $data['catatan'] ?? null, $tenantId, $guru->id);
@@ -179,9 +207,19 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+
+        if ($request->query('fase')) {
+            $this->scope->authorizeFase($guru, (string) $request->query('fase'), $tenantId);
+        }
+        if ($request->query('mapel')) {
+            $this->scope->authorizeMapel($guru, (string) $request->query('mapel'), $tenantId);
+        }
 
         $rows = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->when($request->query('mapel'), fn ($q, $m) => $q->where('nama_mapel', $m))
             ->when($request->query('fase'), fn ($q, $f) => $q->where('fase', $f))
             ->orderBy('nama_mapel')
@@ -212,6 +250,8 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
 
         $request->validate([
             'file_excel' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:2048'],
@@ -241,6 +281,15 @@ class CpController extends Controller
             if ($namaMapel === '' || $deskripsi === '' || ! in_array($faseRaw, ['A', 'B', 'C', 'D', 'E', 'F'], true)) {
                 continue;
             }
+            if ($guruScope['is_scoped'] && ! in_array($faseRaw, $guruScope['fase_list'], true)) {
+                continue;
+            }
+            if ($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list'])) {
+                $allowedMapel = collect($guruScope['mapel_list'])->contains(fn (string $m) => mb_strtolower(trim($m)) === mb_strtolower($namaMapel));
+                if (! $allowedMapel) {
+                    continue;
+                }
+            }
 
             CapaianPembelajaran::create([
                 'tenant_id' => $tenantId,
@@ -257,7 +306,7 @@ class CpController extends Controller
         }
 
         if ($imported === 0) {
-            return back()->with('error', 'Tidak ada baris CP valid yang ditemukan. Gunakan format kolom Export Excel.');
+            return back()->with('error', 'Tidak ada baris CP valid sesuai fase/mapel Anda yang ditemukan. Gunakan format kolom Export Excel.');
         }
 
         return back()->with('success', "{$imported} Capaian Pembelajaran berhasil diimpor dari Excel.");
@@ -271,6 +320,8 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
         $daftarMapel = $this->ctx->daftarMapel();
 
         $standar = [
@@ -290,6 +341,9 @@ class CpController extends Controller
 
         $added = 0;
         foreach ($standar as $idx => $item) {
+            if ($guruScope['is_scoped'] && ! in_array($item['fase'], $guruScope['fase_list'], true)) {
+                continue;
+            }
             $matched = $daftarMapel->first(function ($m) use ($item): bool {
                 $a = mb_strtolower($m->nama);
                 $b = mb_strtolower($item['mapel']);
@@ -298,6 +352,13 @@ class CpController extends Controller
             });
 
             $namaMapel = $matched ? $matched->nama : $item['mapel'];
+            if ($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list'])) {
+                $allowedMapel = collect($guruScope['mapel_list'])->contains(fn (string $m) => mb_strtolower(trim($m)) === mb_strtolower($namaMapel));
+                if (! $allowedMapel) {
+                    continue;
+                }
+            }
+
             $exists = CapaianPembelajaran::query()
                 ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
                 ->where('nama_mapel', $namaMapel)
@@ -333,9 +394,19 @@ class CpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+
+        if ($request->query('fase')) {
+            $this->scope->authorizeFase($guru, (string) $request->query('fase'), $tenantId);
+        }
+        if ($request->query('mapel')) {
+            $this->scope->authorizeMapel($guru, (string) $request->query('mapel'), $tenantId);
+        }
 
         $rows = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->when($request->query('mapel'), fn ($q, $m) => $q->where('nama_mapel', $m))
             ->when($request->query('fase'), fn ($q, $f) => $q->where('fase', $f))
             ->orderBy('nama_mapel')

@@ -154,6 +154,7 @@ class KalenderPendidikanService
         }
 
         $protaRows = ProtaItem::query()
+            ->where('guru_id', $guruId)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -167,8 +168,9 @@ class KalenderPendidikanService
             return 0;
         }
 
-        // Bersihkan prosem lama untuk scope ini sebelum menyusun ulang
+        // Bersihkan prosem lama milik guru ini untuk scope ini sebelum menyusun ulang
         ProsemItem::query()
+            ->where('guru_id', $guruId)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)

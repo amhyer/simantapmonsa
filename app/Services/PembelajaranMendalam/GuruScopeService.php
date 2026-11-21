@@ -3,6 +3,7 @@
 namespace App\Services\PembelajaranMendalam;
 
 use App\Models\JadwalPelajaran;
+use App\Models\PembelajaranMendalam\SupervisiPm;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\PengaturanGuru;
 use App\Models\Rombel;
@@ -177,6 +178,55 @@ class GuruScopeService
 
         if (! $allowed) {
             abort(403, 'Akses ditolak: Anda hanya dapat mengakses mata pelajaran yang Anda ampu ('.implode(', ', $scope['mapel_list']).').');
+        }
+    }
+
+    /**
+     * Validasi nama kelas/rombel (misal "1A" atau "1") berada pada kelas/tingkat yang diampu guru.
+     */
+    public function authorizeKelas(User $guru, string $kelas, ?int $tenantId = null): void
+    {
+        $scope = $this->resolveForGuru($guru, $tenantId);
+        if (! $scope['is_scoped']) {
+            return;
+        }
+
+        $target = mb_strtolower(trim($kelas));
+        $allowedKelas = collect($scope['kelas_list'])->contains(
+            fn (string $k) => mb_strtolower(trim($k)) === $target
+        );
+
+        if ($allowedKelas) {
+            return;
+        }
+
+        $tingkat = $this->parseTingkat(null, $kelas);
+        if ($tingkat !== null && in_array($tingkat, $scope['tingkat_list'], true)) {
+            return;
+        }
+
+        abort(403, 'Akses ditolak: Anda hanya dapat mengakses kelas yang Anda ampu.');
+    }
+
+    /**
+     * Tolak mutasi/overwrite perangkat pembelajaran apabila sudah disetujui Kepala Sekolah (status = disetujui).
+     */
+    public function authorizeNotLockedBySupervisi(
+        User $guru,
+        ?int $tenantId = null,
+        ?string $tahunAjaran = null,
+        ?int $semester = null
+    ): void {
+        $locked = SupervisiPm::query()
+            ->where('guru_id', $guru->id)
+            ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($tahunAjaran !== null && $tahunAjaran !== '', fn ($q) => $q->where('tahun_ajaran', $tahunAjaran))
+            ->when($semester !== null && in_array($semester, [1, 2], true), fn ($q) => $q->where('semester', $semester))
+            ->where('status', SupervisiPm::STATUS_DISETUJUI)
+            ->exists();
+
+        if ($locked) {
+            abort(403, 'Akses ditolak: Dokumen perangkat pembelajaran Anda telah disetujui Kepala Sekolah dan dikunci.');
         }
     }
 

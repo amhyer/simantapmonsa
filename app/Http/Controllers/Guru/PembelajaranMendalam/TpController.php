@@ -8,6 +8,7 @@ use App\Models\PembelajaranMendalam\CapaianPembelajaran;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GeminiPembelajaranService;
+use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class TpController extends Controller
     public function __construct(
         private readonly PembelajaranContextService $ctx,
         private readonly GeminiPembelajaranService $ai,
+        private readonly GuruScopeService $scope,
     ) {}
 
     public function index(Request $request): View
@@ -35,12 +37,24 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+        $mapelList = $this->scope->filterMapelCollection($this->ctx->daftarMapel(), $guru, $tenantId);
+
         $mapelFilter = trim((string) $request->query('mapel', ''));
         $faseFilter = trim((string) $request->query('fase', ''));
         $cari = trim((string) $request->query('q', ''));
 
+        if ($faseFilter !== '') {
+            $this->scope->authorizeFase($guru, $faseFilter, $tenantId);
+        }
+        if ($mapelFilter !== '') {
+            $this->scope->authorizeMapel($guru, $mapelFilter, $tenantId);
+        }
+
         $query = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->orderBy('nama_mapel')
             ->orderBy('fase')
             ->orderBy('urutan');
@@ -61,6 +75,8 @@ class TpController extends Controller
 
         $cpList = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->orderBy('nama_mapel')
             ->orderBy('fase')
             ->get(['id', 'nama_mapel', 'fase', 'elemen']);
@@ -68,7 +84,7 @@ class TpController extends Controller
         return view('guru.pm.tp.index', [
             'tpList' => $query->paginate(20)->withQueryString(),
             'cpList' => $cpList,
-            'mapelList' => $this->ctx->daftarMapel(),
+            'mapelList' => $mapelList,
             'faseLabels' => CapaianPembelajaran::FASE_LABELS,
             'mapelFilter' => $mapelFilter,
             'faseFilter' => $faseFilter,
@@ -82,6 +98,7 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -92,6 +109,9 @@ class TpController extends Controller
             'deskripsi' => ['required', 'string'],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $mapelId = $this->ctx->daftarMapel()->firstWhere('nama', $data['nama_mapel'])?->id;
 
@@ -115,6 +135,9 @@ class TpController extends Controller
     public function update(Request $request, TujuanPembelajaranPm $tp): RedirectResponse
     {
         Gate::authorize('update', $tp);
+        /** @var User $guru */
+        $guru = Auth::user();
+        $tenantId = $this->ctx->tenantId($guru);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -124,6 +147,9 @@ class TpController extends Controller
             'deskripsi' => ['required', 'string'],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $tp->update([
             'nama_mapel' => $data['nama_mapel'],
@@ -150,6 +176,7 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -158,6 +185,9 @@ class TpController extends Controller
             'jumlah' => ['nullable', 'integer', 'min:1', 'max:15'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $acuanCp = CapaianPembelajaran::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
@@ -215,9 +245,19 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+
+        if ($request->query('fase')) {
+            $this->scope->authorizeFase($guru, (string) $request->query('fase'), $tenantId);
+        }
+        if ($request->query('mapel')) {
+            $this->scope->authorizeMapel($guru, (string) $request->query('mapel'), $tenantId);
+        }
 
         $rows = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->when($request->query('mapel'), fn ($q, $m) => $q->where('nama_mapel', $m))
             ->when($request->query('fase'), fn ($q, $f) => $q->where('fase', $f))
             ->orderBy('nama_mapel')
@@ -255,6 +295,8 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
 
         $request->validate([
             'file_excel' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:2048'],
@@ -285,6 +327,15 @@ class TpController extends Controller
             if ($namaMapel === '' || $deskripsi === '' || ! in_array($faseRaw, ['A', 'B', 'C', 'D', 'E', 'F'], true)) {
                 continue;
             }
+            if ($guruScope['is_scoped'] && ! in_array($faseRaw, $guruScope['fase_list'], true)) {
+                continue;
+            }
+            if ($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list'])) {
+                $allowedMapel = collect($guruScope['mapel_list'])->contains(fn (string $m) => mb_strtolower(trim($m)) === mb_strtolower($namaMapel));
+                if (! $allowedMapel) {
+                    continue;
+                }
+            }
 
             TujuanPembelajaranPm::create([
                 'tenant_id' => $tenantId,
@@ -302,7 +353,7 @@ class TpController extends Controller
         }
 
         if ($imported === 0) {
-            return back()->with('error', 'Tidak ada baris TP valid yang ditemukan. Gunakan format kolom Export Excel.');
+            return back()->with('error', 'Tidak ada baris TP valid sesuai fase/mapel Anda yang ditemukan. Gunakan format kolom Export Excel.');
         }
 
         return back()->with('success', "{$imported} Tujuan Pembelajaran berhasil diimpor dari Excel.");
@@ -316,11 +367,24 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
         $mapelFilter = trim((string) $request->input('mapel', ''));
         $faseFilter = trim((string) $request->input('fase', ''));
 
+        if ($faseFilter !== '') {
+            $this->scope->authorizeFase($guru, $faseFilter, $tenantId);
+        }
+        if ($mapelFilter !== '') {
+            $this->scope->authorizeMapel($guru, $mapelFilter, $tenantId);
+        }
+
         $tpRows = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->where(function ($q) use ($guru): void {
+                $q->where('guru_id', $guru->id)->orWhereNull('guru_id');
+            })
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->when($mapelFilter !== '', fn ($q) => $q->where('nama_mapel', $mapelFilter))
             ->when($faseFilter !== '', fn ($q) => $q->where('fase', $faseFilter))
             ->orderBy('nama_mapel')
@@ -328,7 +392,7 @@ class TpController extends Controller
             ->get();
 
         if ($tpRows->isEmpty()) {
-            return back()->with('error', 'Belum ada Tujuan Pembelajaran di Bank TP untuk disinkronkan.');
+            return back()->with('error', 'Belum ada Tujuan Pembelajaran milik Anda di Bank TP untuk disinkronkan.');
         }
 
         $pengaturan = PengaturanGuru::firstOrCreate(
@@ -387,9 +451,19 @@ class TpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $guruScope = $this->scope->resolveForGuru($guru, $tenantId);
+
+        if ($request->query('fase')) {
+            $this->scope->authorizeFase($guru, (string) $request->query('fase'), $tenantId);
+        }
+        if ($request->query('mapel')) {
+            $this->scope->authorizeMapel($guru, (string) $request->query('mapel'), $tenantId);
+        }
 
         $rows = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->when($guruScope['is_scoped'], fn ($q) => $q->whereIn('fase', $guruScope['fase_list']))
+            ->when($guruScope['is_scoped'] && ! $guruScope['is_wali_kelas'] && ! empty($guruScope['mapel_list']), fn ($q) => $q->whereIn('nama_mapel', $guruScope['mapel_list']))
             ->when($request->query('mapel'), fn ($q, $m) => $q->where('nama_mapel', $m))
             ->when($request->query('fase'), fn ($q, $f) => $q->where('fase', $f))
             ->orderBy('nama_mapel')

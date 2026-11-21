@@ -120,6 +120,10 @@ class ProsemController extends Controller
             'jp_per_minggu' => ['required', 'integer', 'min:1', 'max:20'],
         ]);
 
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId, $data['tahun_ajaran'], (int) $data['semester']);
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
+
         $created = $this->kalender->susunProsemOtomatis(
             $tenantId,
             $guru->id,
@@ -164,6 +168,10 @@ class ProsemController extends Controller
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId, $data['tahun_ajaran'], (int) $data['semester']);
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
+
         ProsemItem::create([
             'tenant_id' => $tenantId,
             'guru_id' => $guru->id,
@@ -197,13 +205,18 @@ class ProsemController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
         $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $semester = in_array((int) $request->query('semester', 1), [1, 2], true) ? (int) $request->query('semester', 1) : 1;
         $mapel = trim((string) $request->query('mapel', ''));
+        if ($mapel !== '') {
+            $this->scope->authorizeMapel($guru, $mapel, $tenantId);
+        }
 
         $ringkasan = $this->kalender->ringkasanSemester($tenantId, $tahunAjaran, $semester, 4);
 
         $rows = ProsemItem::query()
             ->with('tp:id,kode_tp')
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)

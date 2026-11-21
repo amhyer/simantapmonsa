@@ -6,6 +6,11 @@ use App\Models\JadwalPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\PembelajaranMendalam\CapaianPembelajaran;
 use App\Models\PembelajaranMendalam\KokurikulerPm;
+use App\Models\PembelajaranMendalam\ProsemItem;
+use App\Models\PembelajaranMendalam\ProtaItem;
+use App\Models\PembelajaranMendalam\SupervisiPm;
+use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
+use App\Models\PengaturanGuru;
 use App\Models\Rombel;
 use App\Models\Semester;
 use App\Models\User;
@@ -163,5 +168,162 @@ class GuruClassIsolationTest extends TestCase
         $this->actingAs($this->guruMapelPjok)
             ->get(route('guru.pm.prota.index', ['tingkat' => 1, 'mapel' => 'PJOK']))
             ->assertForbidden();
+    }
+
+    public function test_guru_kelas_1_ditolak_membuat_cp_dan_tp_fase_c(): void
+    {
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.cp.store'), [
+            'nama_mapel' => 'Matematika',
+            'fase' => 'C',
+            'elemen' => 'Aljabar',
+            'deskripsi' => 'CP Fase C ilegal bagi Guru Kelas 1',
+        ])->assertForbidden();
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.tp.store'), [
+            'nama_mapel' => 'Matematika',
+            'fase' => 'C',
+            'elemen' => 'Aljabar',
+            'deskripsi' => 'TP Fase C ilegal bagi Guru Kelas 1',
+        ])->assertForbidden();
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.kktp.interval'), [
+            'nama_mapel' => 'Matematika',
+            'tingkat' => 6,
+            'batas_bawah' => 60,
+            'nilai_kktp' => 75,
+            'batas_atas' => 88,
+        ])->assertForbidden();
+    }
+
+    public function test_guru_kelas_paralel_1a_dan_1b_tidak_saling_menimpa_prota_dan_prosem(): void
+    {
+        $guruKelas1B = User::factory()->guru()->create(['tenant_id' => $this->tenant->id, 'is_wali_kelas' => true]);
+        Rombel::create([
+            'tenant_id' => $this->tenant->id,
+            'dapodik_id' => (string) Str::uuid(),
+            'semester_id' => $this->semester->id,
+            'nama_rombel' => '1B',
+            'tingkat' => 1,
+            'guru_id' => $guruKelas1B->id,
+        ]);
+
+        // Buat TP Fase A untuk acuan ATP
+        $tp = TujuanPembelajaranPm::create([
+            'tenant_id' => $this->tenant->id,
+            'guru_id' => $this->guruKelas1->id,
+            'nama_mapel' => 'Matematika',
+            'fase' => 'A',
+            'elemen' => 'Bilangan',
+            'kode_tp' => 'TP.1',
+            'deskripsi' => 'Mengenal bilangan 1-20',
+            'kelas_target' => 1,
+            'semester_target' => 1,
+            'materi_pokok' => 'Bilangan Cacah 1-20',
+            'alokasi_jp' => 8,
+            'urutan' => 1,
+        ]);
+
+        // Guru 1B sudah punya Prota & Prosem sendiri untuk Kelas 1
+        $prota1B = ProtaItem::create([
+            'tenant_id' => $this->tenant->id,
+            'guru_id' => $guruKelas1B->id,
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+            'semester' => 1,
+            'tp_id' => $tp->id,
+            'urutan' => 1,
+            'materi' => 'Materi Khusus Guru 1B',
+            'alokasi_jp' => 8,
+        ]);
+        $prosem1B = ProsemItem::create([
+            'tenant_id' => $this->tenant->id,
+            'guru_id' => $guruKelas1B->id,
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+            'semester' => 1,
+            'prota_id' => $prota1B->id,
+            'tp_id' => $tp->id,
+            'bab' => 'Bab 1',
+            'materi' => 'Materi Khusus Guru 1B',
+            'bulan' => 7,
+            'minggu_ke' => 3,
+            'alokasi_jp' => 4,
+        ]);
+
+        // Guru 1A menjalankan Ambil dari ATP & Susun Prosem Otomatis untuk Kelas 1
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.prota.ambil-atp'), [
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+        ])->assertRedirect();
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.prosem.susun'), [
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+            'semester' => 1,
+            'jp_per_minggu' => 4,
+        ])->assertRedirect();
+
+        // Pastikan Prota & Prosem milik Guru 1B tetap utuh dan tidak terhapus!
+        $this->assertDatabaseHas('pm_prota', [
+            'id' => $prota1B->id,
+            'guru_id' => $guruKelas1B->id,
+            'materi' => 'Materi Khusus Guru 1B',
+        ]);
+        $this->assertDatabaseHas('pm_prosem', [
+            'id' => $prosem1B->id,
+            'guru_id' => $guruKelas1B->id,
+            'materi' => 'Materi Khusus Guru 1B',
+        ]);
+    }
+
+    public function test_guru_terkunci_supervisi_kepsek_ditolak_pada_endpoint_mutasi_dan_bulk(): void
+    {
+        SupervisiPm::create([
+            'tenant_id' => $this->tenant->id,
+            'guru_id' => $this->guruKelas1->id,
+            'tahun_ajaran' => '2026/2027',
+            'semester' => 1,
+            'status' => SupervisiPm::STATUS_DISETUJUI,
+        ]);
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.cp.store'), [
+            'nama_mapel' => 'Matematika',
+            'fase' => 'A',
+            'elemen' => 'Bilangan',
+            'deskripsi' => 'CP baru saat sudah disetujui',
+        ])->assertForbidden();
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.prota.ambil-atp'), [
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+        ])->assertForbidden();
+
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.prosem.susun'), [
+            'tahun_ajaran' => '2026/2027',
+            'tingkat' => 1,
+            'nama_mapel' => 'Matematika',
+            'semester' => 1,
+            'jp_per_minggu' => 4,
+        ])->assertForbidden();
+    }
+
+    public function test_simpan_interval_kktp_otomatis_sinkron_ke_kkm_pengaturan_guru(): void
+    {
+        $this->actingAs($this->guruKelas1)->post(route('guru.pm.kktp.interval'), [
+            'nama_mapel' => 'Matematika',
+            'tingkat' => 1,
+            'batas_bawah' => 65,
+            'nilai_kktp' => 78,
+            'batas_atas' => 90,
+        ])->assertRedirect();
+
+        $pengaturan = PengaturanGuru::where('guru_id', $this->guruKelas1->id)->first();
+        $this->assertNotNull($pengaturan);
+        $this->assertSame(78, (int) $pengaturan->kkm);
     }
 }

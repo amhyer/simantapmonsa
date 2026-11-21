@@ -80,6 +80,7 @@ class KokurikulerPmController extends Controller
             'refleksi_hasil' => ['nullable', 'string'],
         ]);
 
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId, $data['tahun_ajaran']);
         $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
 
         KokurikulerPm::create([
@@ -105,6 +106,9 @@ class KokurikulerPmController extends Controller
     public function update(Request $request, KokurikulerPm $kokurikuler): RedirectResponse
     {
         Gate::authorize('update', $kokurikuler);
+        /** @var User $guru */
+        $guru = Auth::user();
+        $tenantId = $this->ctx->tenantId($guru);
 
         $data = $request->validate([
             'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
@@ -118,6 +122,8 @@ class KokurikulerPmController extends Controller
             'mitra' => ['nullable', 'string', 'max:255'],
             'refleksi_hasil' => ['nullable', 'string'],
         ]);
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
 
         $kokurikuler->update([
             'tingkat' => (int) $data['tingkat'],
@@ -156,6 +162,8 @@ class KokurikulerPmController extends Controller
             'bentuk_kegiatan' => ['required', 'in:kolaboratif_lintas_disiplin,tujuh_kebiasaan,lainnya'],
         ]);
 
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId, $data['tahun_ajaran']);
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
         $bentukLabel = KokurikulerPm::BENTUK_LABELS[$data['bentuk_kegiatan']] ?? $data['bentuk_kegiatan'];
 
         try {
@@ -169,8 +177,6 @@ class KokurikulerPmController extends Controller
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
-
-        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
 
         KokurikulerPm::create([
             'tenant_id' => $tenantId,
@@ -199,6 +205,7 @@ class KokurikulerPmController extends Controller
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
 
         $rows = KokurikulerPm::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->orderBy('tingkat')
@@ -240,6 +247,7 @@ class KokurikulerPmController extends Controller
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
 
         $rows = KokurikulerPm::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->orderBy('tingkat')

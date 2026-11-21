@@ -63,6 +63,7 @@ class BukuPaketController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -72,6 +73,9 @@ class BukuPaketController extends Controller
             'tautan_sibi' => ['nullable', 'url', 'max:500'],
             'daftar_isi' => ['nullable', 'string'],
         ]);
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $mapelId = $this->ctx->daftarMapel()->firstWhere('nama', $data['nama_mapel'])?->id;
 
@@ -101,12 +105,16 @@ class BukuPaketController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
             'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
             'judul' => ['required', 'string', 'max:255'],
         ]);
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         try {
             $babList = $this->ai->susunDaftarIsiBuku($data['nama_mapel'], (int) $data['tingkat'], $data['judul'], $tenantId, $guru->id);

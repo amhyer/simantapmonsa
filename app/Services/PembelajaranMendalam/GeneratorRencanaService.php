@@ -165,7 +165,7 @@ class GeneratorRencanaService
                 continue;
             }
 
-            $sumberTopik = $this->kumpulkanTopik($tenantId, $tahunAjaran, $tingkat, $semester, $fase, $namaMapel);
+            $sumberTopik = $this->kumpulkanTopik($tenantId, $guruId, $tahunAjaran, $tingkat, $semester, $fase, $namaMapel);
             $limit = min(count($sumberTopik), count($slotTanggal), $mode === 'ai' ? 5 : 20);
 
             for ($i = 0; $i < $limit; $i++) {
@@ -214,6 +214,7 @@ class GeneratorRencanaService
      */
     private function kumpulkanTopik(
         ?int $tenantId,
+        int $guruId,
         string $tahunAjaran,
         int $tingkat,
         int $semester,
@@ -222,6 +223,7 @@ class GeneratorRencanaService
     ): array {
         $prosemRows = ProsemItem::query()
             ->with('tp:id,kode_tp,deskripsi')
+            ->where('guru_id', $guruId)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -249,6 +251,7 @@ class GeneratorRencanaService
 
         $protaRows = ProtaItem::query()
             ->with('tp:id,kode_tp,deskripsi')
+            ->where('guru_id', $guruId)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)

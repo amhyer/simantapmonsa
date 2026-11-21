@@ -69,6 +69,11 @@ class GeneratorBatchController extends Controller
             'sertakan_lkpd' => ['nullable', 'boolean'],
         ]);
 
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        foreach ($data['mapel'] as $m) {
+            $this->scope->authorizeMapel($guru, (string) $m, $tenantId);
+        }
+
         $rencana = $this->planner->susunRencana(
             $tenantId,
             $guru->id,
@@ -122,11 +127,12 @@ class GeneratorBatchController extends Controller
         }
 
         $tingkat = (int) $data['tingkat'];
+        $semester = (int) $data['semester'];
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId, $data['tahun_ajaran'], $semester);
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         foreach ($data['mapel'] as $m) {
             $this->scope->authorizeMapel($guru, (string) $m, $tenantId);
         }
-        $semester = (int) $data['semester'];
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $kelasLabel = trim((string) ($data['kelas'] ?? '')) ?: (string) $tingkat;
 
@@ -269,8 +275,12 @@ class GeneratorBatchController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
         $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $semester = in_array((int) $request->query('semester', 1), [1, 2], true) ? (int) $request->query('semester', 1) : 1;
         $mapel = trim((string) $request->query('mapel', ''));
+        if ($mapel !== '') {
+            $this->scope->authorizeMapel($guru, $mapel, $tenantId);
+        }
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
 
         $alokasi = AlokasiWaktu::query()
@@ -300,6 +310,7 @@ class GeneratorBatchController extends Controller
             ->first() ?? new KktpInterval(['nilai_kktp' => 75, 'batas_bawah' => 60, 'batas_atas' => 88]);
 
         $protaList = ProtaItem::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -307,6 +318,7 @@ class GeneratorBatchController extends Controller
             ->orderBy('nama_mapel')->orderBy('semester')->orderBy('urutan')->get();
 
         $prosemList = ProsemItem::query()
+            ->where('guru_id', $guru->id)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->where('tahun_ajaran', $tahunAjaran)
             ->where('tingkat', $tingkat)
@@ -369,6 +381,9 @@ class GeneratorBatchController extends Controller
         ]);
 
         $tingkat = (int) $data['tingkat'];
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
 
         try {
@@ -426,6 +441,10 @@ class GeneratorBatchController extends Controller
             'topik' => ['required', 'string', 'max:255'],
             'kejadian_kelas' => ['nullable', 'string', 'max:600'],
         ]);
+
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
+        $this->scope->authorizeKelas($guru, $data['kelas'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         try {
             $aiRes = $this->ai->susunJurnalMengajar(

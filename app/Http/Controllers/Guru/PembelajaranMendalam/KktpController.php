@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PembelajaranMendalam\KktpInterval;
 use App\Models\PembelajaranMendalam\KktpItem;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
+use App\Models\PengaturanGuru;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
@@ -84,6 +85,7 @@ class KktpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
@@ -92,6 +94,9 @@ class KktpController extends Controller
             'nilai_kktp' => ['required', 'integer', 'gt:batas_bawah', 'max:95'],
             'batas_atas' => ['required', 'integer', 'gt:nilai_kktp', 'max:99'],
         ]);
+
+        $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $mapelId = $this->ctx->daftarMapel()->firstWhere('nama', $data['nama_mapel'])?->id;
 
@@ -110,9 +115,23 @@ class KktpController extends Controller
             ]
         );
 
+        // Sinkronkan nilai KKTP ke KKM PengaturanGuru agar e-Rapor & analisis nilai selaras
+        $pengaturan = PengaturanGuru::firstOrCreate(
+            ['guru_id' => $guru->id],
+            [
+                'nama_guru' => $guru->nama_lengkap,
+                'kkm' => (int) $data['nilai_kktp'],
+                'semester' => 'Ganjil',
+                'tahun_pelajaran' => $this->ctx->tahunAjaranAktif(),
+            ]
+        );
+        if ((int) $pengaturan->kkm !== (int) $data['nilai_kktp']) {
+            $pengaturan->update(['kkm' => (int) $data['nilai_kktp'], 'pembaruan' => now()]);
+        }
+
         return redirect()
             ->route('guru.pm.kktp.index', ['tingkat' => $data['tingkat'], 'mapel' => $data['nama_mapel']])
-            ->with('success', 'Interval KKTP berhasil disimpan.');
+            ->with('success', 'Interval KKTP berhasil disimpan dan disinkronkan ke KKM e-Rapor.');
     }
 
     public function simpanItem(Request $request): RedirectResponse
@@ -120,6 +139,7 @@ class KktpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
         $items = $request->input('items', []);
 
         if (! is_array($items)) {
@@ -139,6 +159,9 @@ class KktpController extends Controller
             if (! $tp) {
                 continue;
             }
+
+            $this->scope->authorizeFase($guru, $tp->fase, $tenantId);
+            $this->scope->authorizeMapel($guru, $tp->nama_mapel, $tenantId);
 
             $pendekatan = in_array((string) ($row['pendekatan'] ?? ''), array_keys(KktpItem::PENDEKATAN_LABELS), true)
                 ? (string) $row['pendekatan']
@@ -168,8 +191,12 @@ class KktpController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $mapel = trim((string) $request->query('mapel', ''));
+        if ($mapel !== '') {
+            $this->scope->authorizeMapel($guru, $mapel, $tenantId);
+        }
 
         $tpList = TujuanPembelajaranPm::query()
             ->with('kktpItem')
@@ -212,8 +239,12 @@ class KktpController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $mapel = trim((string) $request->query('mapel', ''));
+        if ($mapel !== '') {
+            $this->scope->authorizeMapel($guru, $mapel, $tenantId);
+        }
 
         $interval = KktpInterval::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))

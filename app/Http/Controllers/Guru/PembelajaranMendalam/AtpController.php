@@ -88,6 +88,7 @@ class AtpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
         $items = $request->input('items', []);
 
         if (! is_array($items)) {
@@ -108,9 +109,16 @@ class AtpController extends Controller
                 continue;
             }
 
+            $this->scope->authorizeFase($guru, $tp->fase, $tenantId);
+            $this->scope->authorizeMapel($guru, $tp->nama_mapel, $tenantId);
+            $kelasTarget = ! empty($row['kelas_target']) ? max(1, min(6, (int) $row['kelas_target'])) : null;
+            if ($kelasTarget !== null) {
+                $this->scope->authorizeTingkat($guru, $kelasTarget, $tenantId);
+            }
+
             $tp->update([
                 'urutan' => max(1, (int) ($row['urutan'] ?? $tp->urutan)),
-                'kelas_target' => ! empty($row['kelas_target']) ? max(1, min(6, (int) $row['kelas_target'])) : null,
+                'kelas_target' => $kelasTarget,
                 'semester_target' => in_array((int) ($row['semester_target'] ?? 0), [1, 2], true) ? (int) $row['semester_target'] : null,
                 'materi_pokok' => trim((string) ($row['materi_pokok'] ?? '')) ?: null,
                 'alokasi_jp' => max(0, min(100, (int) ($row['alokasi_jp'] ?? 0))),
@@ -126,11 +134,15 @@ class AtpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
+        $this->scope->authorizeNotLockedBySupervisi($guru, $tenantId);
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
             'fase' => ['required', 'in:A,B,C,D,E,F'],
         ]);
+
+        $this->scope->authorizeFase($guru, $data['fase'], $tenantId);
+        $this->scope->authorizeMapel($guru, $data['nama_mapel'], $tenantId);
 
         $tpList = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
@@ -184,6 +196,14 @@ class AtpController extends Controller
         $mapel = trim((string) $request->query('mapel', ''));
         $fase = strtoupper(trim((string) $request->query('fase', 'A')));
         $kelasFilter = $request->query('kelas') ? (int) $request->query('kelas') : null;
+
+        $this->scope->authorizeFase($guru, $fase, $tenantId);
+        if ($mapel !== '') {
+            $this->scope->authorizeMapel($guru, $mapel, $tenantId);
+        }
+        if ($kelasFilter !== null) {
+            $this->scope->authorizeTingkat($guru, $kelasFilter, $tenantId);
+        }
 
         $tpList = TujuanPembelajaranPm::query()
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
