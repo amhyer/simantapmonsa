@@ -1,4 +1,8 @@
-name: CI
+name: CI (production boot)
+
+# Workflow ini SENGAJA tidak mengulang PHPUnit/Pint/build — itu tugas
+# .github/workflows/test.yml (kanonis). File ini hanya menjaga agar aplikasi
+# tetap bisa boot dengan dependensi produksi (--no-dev) dan cache terkompilasi.
 
 on:
   push:
@@ -12,71 +16,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-build:
-    name: PHP ${{ matrix.php }} / Test, Pint & Build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.4']
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, xml, ctype, json, bcmath, pdo_sqlite, sqlite3, pdo_pgsql, gd, zip, fileinfo, intl
-          coverage: none
-
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Composer packages
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php }}-composer-
-
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Check code style with Pint
-        run: vendor/bin/pint --test
-
-      - name: Run full PHPUnit test suite (SQLite)
-        env:
-          APP_ENV: testing
-          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
-          CACHE_STORE: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
-        run: composer test:full
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install NPM dependencies & build assets
-        run: npm ci && npm run build
-
-      - name: Composer security audit (advisory)
-        continue-on-error: true
-        run: composer audit --no-interaction
-
-      - name: NPM production security audit (advisory)
-        continue-on-error: true
-        run: npm audit --omit=dev
-
   no-dev-smoke:
     name: PHP ${{ matrix.php }} / --no-dev Boot Check
     runs-on: ubuntu-latest
@@ -119,6 +58,10 @@ jobs:
       - name: Verify production caches (config, route, view, event) and route:list
         env:
           APP_ENV: testing
+          APP_DEBUG: 'false'
+          # Scramble mendaftarkan rute /docs/api berbasis Closure saat dev tools
+          # aktif; route:cache menolak Closure. Di produksi dev tools memang off.
+          SCRAMBLE_DEV_TOOLS: 'false'
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
           CACHE_STORE: array
@@ -130,3 +73,23 @@ jobs:
           php artisan view:cache
           php artisan event:cache
           php artisan route:list
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install NPM dependencies (lockfile only, tanpa script)
+        run: npm ci --ignore-scripts
+
+      # Audit keamanan: saat ini advisory (tidak memblokir merge) karena
+      # dependensi historis belum diaudit penuh. Setelah baseline bersih,
+      # hapus continue-on-error agar kerentanan baru memblokir merge.
+      - name: Composer security audit (advisory)
+        continue-on-error: true
+        run: composer audit --no-interaction
+
+      - name: NPM production security audit (advisory)
+        continue-on-error: true
+        run: npm audit --omit=dev

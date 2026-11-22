@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\TarikSemuaPresensiJob;
 use App\Models\PresensiPegawai;
 use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\MesinPresensi\PresensiMesinPullService;
 use App\Services\PresensiMesinService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -232,10 +236,49 @@ class PresensiMesinTarikTest extends TestCase
             ]);
     }
 
-    public function test_tarik_semua_memproses_seluruh_rentang_scan(): void
+    public function test_tarik_semua_dijadwalkan_lewat_queue_bukan_sinkron(): void
+    {
+        Bus::fake();
+
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.presensi.mesin.tarik.semua'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        Bus::assertDispatched(TarikSemuaPresensiJob::class);
+        $this->assertDatabaseCount('presensi_pegawai', 0);
+
+        // Job di-fake tidak melepas lock; bersihkan untuk test berikutnya.
+        Cache::flush();
+    }
+
+    public function test_tarik_semua_menolak_permintaan_ganda_saat_lock_aktif(): void
+    {
+        Bus::fake();
+
+        $admin = User::factory()->admin()->create();
+        $lock = Cache::lock(TarikSemuaPresensiJob::KUNCI_LOCK, TarikSemuaPresensiJob::TTL_LOCK);
+        $this->assertTrue($lock->acquire());
+
+        try {
+            $this->actingAs($admin)
+                ->post(route('admin.presensi.mesin.tarik.semua'))
+                ->assertRedirect()
+                ->assertSessionHasErrors('mesin');
+
+            Bus::assertNotDispatched(TarikSemuaPresensiJob::class);
+        } finally {
+            $lock->forceRelease();
+        }
+    }
+
+    public function test_job_tarik_semua_memproses_seluruh_rentang_scan(): void
     {
         $admin = User::factory()->admin()->create();
-        $guru = User::factory()->guru()->create(['nama_lengkap' => 'Amirullah', 'nik' => '0000000002']);
+        User::factory()->guru()->create(['nama_lengkap' => 'Amirullah', 'nik' => '0000000002']);
 
         $this->mock(AttendanceDatabaseReader::class, function ($mock) {
             $mock->shouldReceive('rentang')->once()->andReturn([
@@ -249,26 +292,16 @@ class PresensiMesinTarikTest extends TestCase
             ]);
         });
 
-        $this->actingAs($admin)
-            ->post(route('admin.presensi.mesin.tarik.semua'))
-            ->assertRedirect()
-            ->assertSessionHasNoErrors()
-            ->assertSessionHas('success');
+        (new TarikSemuaPresensiJob($admin->id, $admin->tenant_id))->handle(
+            app(AttendanceDatabaseReader::class),
+            app(PresensiMesinService::class),
+            app(PresensiMesinPullService::class),
+        );
 
         $this->assertDatabaseCount('presensi_pegawai', 1);
     }
 
-    public function test_halaman_tarik_semua_lewat_get_diarahkan_ke_import(): void
-    {
-        $admin = User::factory()->admin()->create();
-
-        $this->actingAs($admin)
-            ->get(route('admin.presensi.mesin.tarik.semua.form'))
-            ->assertRedirect(route('admin.presensi.mesin.index'))
-            ->assertSessionHas('warning');
-    }
-
-    public function test_tarik_semua_mendapatkan_error_jika_tidak_bisa_membaca(): void
+    public function test_job_tarik_semua_menangani_kegagalan_membaca_tanpa_melempar(): void
     {
         $admin = User::factory()->admin()->create();
 
@@ -276,15 +309,16 @@ class PresensiMesinTarikTest extends TestCase
             $mock->shouldReceive('rentang')->once()->andThrow(new RuntimeException('Database terkunci.'));
         });
 
-        $this->actingAs($admin)
-            ->post(route('admin.presensi.mesin.tarik.semua'))
-            ->assertRedirect()
-            ->assertSessionHasErrors('mesin');
+        (new TarikSemuaPresensiJob($admin->id, $admin->tenant_id))->handle(
+            app(AttendanceDatabaseReader::class),
+            app(PresensiMesinService::class),
+            app(PresensiMesinPullService::class),
+        );
 
         $this->assertDatabaseCount('presensi_pegawai', 0);
     }
 
-    public function test_tarik_semua_dengan_tanpa_scan_membuat_tidak_ada_data(): void
+    public function test_job_tarik_semua_tanpa_scan_tidak_membuat_data(): void
     {
         $admin = User::factory()->admin()->create();
 
@@ -295,11 +329,23 @@ class PresensiMesinTarikTest extends TestCase
             ]);
         });
 
+        (new TarikSemuaPresensiJob($admin->id, $admin->tenant_id))->handle(
+            app(AttendanceDatabaseReader::class),
+            app(PresensiMesinService::class),
+            app(PresensiMesinPullService::class),
+        );
+
+        $this->assertDatabaseCount('presensi_pegawai', 0);
+    }
+
+    public function test_halaman_tarik_semua_lewat_get_diarahkan_ke_import(): void
+    {
+        $admin = User::factory()->admin()->create();
+
         $this->actingAs($admin)
-            ->post(route('admin.presensi.mesin.tarik.semua'))
-            ->assertRedirect()
-            ->assertSessionHasNoErrors()
-            ->assertSessionHas('success');
+            ->get(route('admin.presensi.mesin.tarik.semua.form'))
+            ->assertRedirect(route('admin.presensi.mesin.index'))
+            ->assertSessionHas('warning');
     }
 
     public function test_baca_menggunakan_engine_tcp_mengembalikan_data_via_fallback(): void

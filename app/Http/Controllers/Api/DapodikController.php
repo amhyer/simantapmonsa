@@ -33,16 +33,34 @@ class DapodikController extends Controller
                 'auto_sync_run_error' => $config->auto_sync_run_error,
                 'last_sync_at' => $config->last_sync_at,
                 'last_sync_by' => $config->last_sync_by,
-                'cf_access' => $config->cf_access,
+                // Nilai cf_access adalah secret (CF Access client secret) —
+                // jangan pernah dikembalikan mentah ke browser/log.
+                'cf_access' => self::maskCfAccess($config->cf_access),
             ],
         ]);
+    }
+
+    /** @param  array<string, string>|null  $cfAccess */
+    private static function maskCfAccess(?array $cfAccess): array
+    {
+        $masked = [];
+        foreach ((array) ($cfAccess ?? []) as $key => $value) {
+            $value = (string) $value;
+            $masked[$key] = mb_strlen($value) <= 8
+                ? '****'
+                : mb_substr($value, 0, 4).'****'.mb_substr($value, -4);
+        }
+
+        return $masked;
     }
 
     public function saveConfig(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'npsn' => 'required|string|size:8',
-            'host' => 'nullable|string|max:255',
+            // Host harus hostname/IP polos tanpa skema, path, port, atau '@',
+            // agar tidak bisa dipakai untuk SSRF ke URL arbitrer.
+            'host' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
             'port' => 'nullable|integer|min:1|max:65535',
             'protocol' => 'nullable|in:http,https',
             'token' => 'nullable|string',
@@ -51,6 +69,7 @@ class DapodikController extends Controller
             'auto_sync_enabled' => 'nullable|boolean',
             'auto_sync_interval_hours' => 'nullable|integer|min:1|max:168',
             'cf_access' => 'nullable|array',
+            'cf_access.*' => 'string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -66,6 +85,18 @@ class DapodikController extends Controller
 
         if (empty($data['token']) || $data['token'] === $config->masked_token) {
             unset($data['token']);
+        }
+
+        // Nilai cf_access yang dikirim balik dalam bentuk masked tidak boleh
+        // menimpa secret asli — kembalikan nilai lama untuk kunci tersebut.
+        if (! empty($data['cf_access']) && is_array($config->cf_access)) {
+            foreach ($data['cf_access'] as $key => $value) {
+                $old = (string) ($config->cf_access[$key] ?? '');
+                $maskedOld = mb_strlen($old) <= 8 ? '****' : mb_substr($old, 0, 4).'****'.mb_substr($old, -4);
+                if ($old !== '' && (string) $value === $maskedOld) {
+                    $data['cf_access'][$key] = $old;
+                }
+            }
         }
 
         $config->update($data);

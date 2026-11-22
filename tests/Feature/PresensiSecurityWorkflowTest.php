@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\TarikSemuaPresensiJob;
 use App\Models\JadwalPelajaran;
 use App\Models\Kehadiran;
 use App\Models\PengajuanIzinPresensi;
@@ -18,6 +19,8 @@ use App\Services\PresensiMesinService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -123,10 +126,17 @@ class PresensiSecurityWorkflowTest extends TestCase
             ->assertSee('id="btn-tarik-semua"', false)
             ->assertDontSee('dinonaktifkan untuk sekolah bertenant');
 
+        Bus::fake();
+
         $this->actingAs($admin)
             ->post(route('admin.presensi.mesin.tarik.semua'))
             ->assertRedirect()
             ->assertSessionHasNoErrors();
+
+        Bus::assertDispatched(TarikSemuaPresensiJob::class);
+
+        // Bersihkan lock yang dipegang controller (job di-fake tidak melepasnya).
+        Cache::flush();
     }
 
     public function test_akun_tanpa_sekolah_ditolak_pada_menu_guru_ortu_dan_pegawai(): void

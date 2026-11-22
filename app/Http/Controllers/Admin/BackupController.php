@@ -269,8 +269,6 @@ class BackupController extends Controller
         $tabelData = BackupTables::dikosongkan();
 
         $dihapus = [];
-        $gagal = [];
-        $driver = DB::getDriverName();
         $tenantId = auth()->user()?->tenant_id ?? TenantContext::id();
         $hasTenants = Schema::hasTable('tenants') && Tenant::hasAnyTenant();
         $isMultiTenant = config('simantap.multi_tenant_enabled', false) || $tenantId !== null || $hasTenants;
@@ -286,53 +284,55 @@ class BackupController extends Controller
             ? DB::table('users')->where('tenant_id', $tenantId)->pluck('id')
             : collect();
 
-        Schema::disableForeignKeyConstraints();
+        // Seluruh wipe berjalan dalam SATU transaksi: gagal di tabel mana pun
+        // membatalkan semuanya (tidak ada DB setengah terhapus). Pakai DELETE
+        // biasa — BUKAN TRUNCATE ... CASCADE yang bisa ikut mengosongkan tabel
+        // referensi di luar daftar BackupTables::dikosongkan().
         try {
-            foreach ($tabelData as $tabel) {
-                if (! Schema::hasTable($tabel)) {
-                    continue;
-                }
+            DB::transaction(function () use ($tabelData, $isMultiTenant, $tenantId, $siswaIds, $userIds, &$dihapus): void {
+                Schema::disableForeignKeyConstraints();
                 try {
-                    if ($isMultiTenant) {
-                        // DILARANG mengeksekusi TRUNCATE global saat multi-sekolah aktif.
-                        if (Schema::hasColumn($tabel, 'tenant_id')) {
-                            DB::table($tabel)->where('tenant_id', $tenantId)->delete();
-                        } elseif (Schema::hasColumn($tabel, 'siswa_id')) {
-                            DB::table($tabel)->whereIn('siswa_id', $siswaIds)->delete();
-                        } elseif (Schema::hasColumn($tabel, 'guru_id')) {
-                            DB::table($tabel)->whereIn('guru_id', $userIds)->delete();
-                        } elseif (Schema::hasColumn($tabel, 'user_id')) {
-                            DB::table($tabel)->whereIn('user_id', $userIds)->delete();
-                        } else {
-                            // Tabel referensi/anak tanpa kolom kepemilikan langsung dilewati
-                            // agar data sekolah lain tetap 100% utuh.
+                    foreach ($tabelData as $tabel) {
+                        if (! Schema::hasTable($tabel)) {
                             continue;
                         }
-                    } else {
-                        if ($driver === 'pgsql') {
-                            // CASCADE agar constraint FK antar tabel data ikut teratasi;
-                            // RESTART IDENTITY agar ID mulai lagi dari 1.
-                            DB::statement('TRUNCATE TABLE "'.$tabel.'" RESTART IDENTITY CASCADE');
+                        if ($isMultiTenant) {
+                            // DILARANG mengeksekusi TRUNCATE global saat multi-sekolah aktif.
+                            if (Schema::hasColumn($tabel, 'tenant_id')) {
+                                DB::table($tabel)->where('tenant_id', $tenantId)->delete();
+                            } elseif (Schema::hasColumn($tabel, 'siswa_id')) {
+                                DB::table($tabel)->whereIn('siswa_id', $siswaIds)->delete();
+                            } elseif (Schema::hasColumn($tabel, 'guru_id')) {
+                                DB::table($tabel)->whereIn('guru_id', $userIds)->delete();
+                            } elseif (Schema::hasColumn($tabel, 'user_id')) {
+                                DB::table($tabel)->whereIn('user_id', $userIds)->delete();
+                            } else {
+                                // Tabel referensi/anak tanpa kolom kepemilikan langsung dilewati
+                                // agar data sekolah lain tetap 100% utuh.
+                                continue;
+                            }
                         } else {
-                            // MySQL / SQLite: truncate tanpa sintaks Postgres.
-                            DB::table($tabel)->truncate();
+                            DB::table($tabel)->delete();
                         }
+                        $dihapus[] = $tabel;
                     }
-                    $dihapus[] = $tabel;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengosongkan tabel '.$tabel.': '.$e->getMessage());
-                    $gagal[] = $tabel;
+                } finally {
+                    Schema::enableForeignKeyConstraints();
                 }
-            }
-        } finally {
-            Schema::enableForeignKeyConstraints();
+            });
+        } catch (\Throwable $e) {
+            Log::error('Wipe data gagal, transaksi dibatalkan: '.$e->getMessage());
+
+            return redirect()->route('admin.backup.index')->with(
+                'error',
+                'Wipe dibatalkan — tidak ada data yang diubah. Periksa log server untuk detail.'
+            );
         }
 
         if (count($dihapus) === 0) {
             return redirect()->route('admin.backup.index')->with(
                 'error',
-                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.'.
-                (count($gagal) ? ' Gagal pada: '.implode(', ', $gagal).'.' : '')
+                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.'
             );
         }
 
@@ -352,9 +352,6 @@ class BackupController extends Controller
         }
 
         $pesan = 'Berhasil mengosongkan '.count($dihapus).' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
-        if (count($gagal) > 0) {
-            $pesan .= ' Sebagian gagal: '.implode(', ', $gagal).'.';
-        }
 
         return redirect()->route('admin.backup.index')->with('success', $pesan);
     }

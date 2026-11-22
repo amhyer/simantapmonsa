@@ -19,6 +19,12 @@ class DapodikClient
 
     private function base(): string
     {
+        // Pertahanan berlapis: host dari DB/config tetap divalidasi di sini
+        // (hostname/IP polos tanpa skema/path/@) sebelum dipakai membangun URL.
+        if (! preg_match('/^[A-Za-z0-9.-]+$/', $this->host)) {
+            throw new RuntimeException('Host Dapodik tidak valid: '.$this->host);
+        }
+
         $base = $this->protocol.'://'.$this->host;
 
         $defaultPort = $this->protocol === 'https' ? 443 : 80;

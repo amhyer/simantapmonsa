@@ -132,6 +132,11 @@ class NilaiController extends Controller
         if (! $siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan.'])->withInput();
         }
+        // Samakan dengan store(): siswa tujuan wajib milik guru ini, agar record
+        // nilai tidak bisa dipindahkan ke siswa kelas/sekolah lain (IDOR).
+        if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== auth()->id()) {
+            return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();
+        }
         $nilai->update([
             'siswa_id' => $validated['siswa_id'],
             'nama_siswa' => $siswa->nama_peserta_didik,

@@ -99,8 +99,17 @@ class TkaStatistikService
 
     private function post(string $path, array $payload = []): mixed
     {
-        $response = Http::timeout(15)
-            ->withoutVerifying()
+        $request = Http::timeout(15);
+
+        // Verifikasi TLS tetap aktif (jangan withoutVerifying()). Bila server
+        // memakai CA kustom, taruh bundle-nya di storage/app/cacert.pem —
+        // pola yang sama dengan GoogleSheetsService.
+        $cacertPath = base_path('storage/app/cacert.pem');
+        if (is_file($cacertPath)) {
+            $request = $request->withOptions(['verify' => $cacertPath]);
+        }
+
+        $response = $request
             ->withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/x-www-form-urlencoded',

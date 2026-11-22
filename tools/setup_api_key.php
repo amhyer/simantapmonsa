@@ -52,7 +52,9 @@ ApiKey::where('name', 'Dapodik Bridge')->delete();
 $apiKeyModel = ApiKey::create([
     'user_id' => $user->id,
     'name' => 'Dapodik Bridge',
-    'key' => $apiKey,
+    // Kunci polos TIDAK disimpan — hanya hash-nya (lihat ApiKey::generate()).
+    // Kolom `key` dibiarkan null agar dump database tidak membocorkan secret.
+    'key' => null,
     'key_hash' => hash('sha256', $apiKey),
     'abilities' => ['dapodik:import'],
     'active' => true,

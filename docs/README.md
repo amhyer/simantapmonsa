@@ -63,3 +63,20 @@ Dokumen historis, scratchpad investigasi agen, dan laporan audit Sept–Okt 2026
 | Isolasi Dapodik & bridge desktop | [`PERBAIKAN-ISOLASI-DAPODIK-2026-11-08.md`](PERBAIKAN-ISOLASI-DAPODIK-2026-11-08.md) · [`../dapodik-bridge/README.md`](../dapodik-bridge/README.md) · [`../dapodik-bridge/QUICK_START.md`](../dapodik-bridge/QUICK_START.md) · [`../dapodik-bridge/OPSI_B_AUTO_PULL.md`](../dapodik-bridge/OPSI_B_AUTO_PULL.md) |
 | Presensi, izin orang tua & bridge mesin | [`PRESENSI-PENGERASAN-DAN-IZIN-2026-11-08.md`](PRESENSI-PENGERASAN-DAN-IZIN-2026-11-08.md) · [`PRESENSI-BRIDGE-HOSTING.md`](PRESENSI-BRIDGE-HOSTING.md) · [`PRESENSI-BRIDGE-TCP.md`](PRESENSI-BRIDGE-TCP.md) · [`../presensi-bridge/README.md`](../presensi-bridge/README.md) |
 | Panduan uji route & E2E Playwright | [`PANDUAN_UJI_ROUTE_PLAYWRIGHT.md`](PANDUAN_UJI_ROUTE_PLAYWRIGHT.md) |
+
+---
+
+## 5. Operasional, Backlog & Build Bridge
+
+| Topik | Berkas |
+|---|---|
+| Panduan deploy produksi (alternatif DEPLOYMENT.md) | [`DEPLOY.md`](DEPLOY.md) |
+| Panduan operasional produksi (cache, reset massal, login) | [`OPERASIONAL.md`](OPERASIONAL.md) |
+| Backlog pengembangan & tugas lanjutan | [`BACKLOG.md`](BACKLOG.md) |
+| Cutover foto siswa ke penyimpanan private | [`CUTOVER-FOTO.md`](CUTOVER-FOTO.md) |
+| Build ulang SIMANTAP-Bridge.exe | [`BRIDGE-BUILD.md`](BRIDGE-BUILD.md) |
+| Rencana pemecahan god file & rute | [`REFACTOR-RENCANA.md`](REFACTOR-RENCANA.md) |
+
+> Catatan: [`../DEPLOYMENT.md`](../DEPLOYMENT.md) adalah dokumen deploy kanonis.
+> [`DEPLOY.md`](DEPLOY.md) adalah panduan alternatif dengan isi yang tumpang tindih —
+> bila keduanya berbeda, DEPLOYMENT.md yang menang.
