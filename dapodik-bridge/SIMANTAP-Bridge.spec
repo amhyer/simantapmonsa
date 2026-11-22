@@ -5,7 +5,9 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('config.json', '.'), ('icon.ico', '.'), ('logo_gui.png', '.')],
+    # JANGAN bundel config.json: berisi api_key + token Dapodik asli.
+    # Operator menyalin config.example.json -> config.json di samping exe.
+    datas=[('icon.ico', '.'), ('logo_gui.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -123,16 +123,16 @@ Laporkan celah keamanan secara pribadi ke pengelola proyek — jangan lewat issu
 
 ```
 app/
-  Http/Controllers/   89 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Cbt, Tka)
-  Models/             65 model Eloquent
+  Http/Controllers/   127 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Pengawas, Cbt, Tka, Tryout, Api, Auth)
+  Models/             103 model Eloquent (termasuk Exam/Tryout/Tka/Elearning/Perangkat)
   Services/           Dapodik, Nilai, Google Sheets, CBT/Exam engine, Presensi
   Support/            BackupTables (satu sumber kebenaran cakupan backup/restore)
 database/
-  migrations/         85 migrasi
+  migrations/         119 migrasi
   seeders/            DatabaseSeeder, DemoDataSeeder, ApiKeySeeder (+ Support/SeedGuard)
 dapodik-bridge/       Bridge Python yang berjalan di komputer operator sekolah
 docs/                 Audit, rencana perbaikan, desain CBT/Tryout/TKA
-routes/web.php        414 pendaftaran route
+routes/web.php        700 pendaftaran route (+ 9 di routes/api.php)
 tools/                Skrip verifikasi statis & pemeriksaan runtime
 ```
 

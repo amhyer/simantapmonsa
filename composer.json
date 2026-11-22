@@ -2,9 +2,9 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/laravel",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "SIMANTAP - Situs Mandiri Terintegrasi Aplikasi Pembelajaran (TKA, Pembelajaran Mendalam, Manajemen Kelas)",
     "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "license": "proprietary",
     "require": {
         "php": "^8.4",
         "bacon/bacon-qr-code": "^3.1",

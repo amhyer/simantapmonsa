@@ -27,8 +27,8 @@ BAD=$(find app routes database config -name "*.php" -exec php -l {} \; 2>&1 | gr
 # 2. Route
 echo "[2] Route terdaftar"
 ROUTES=$(php artisan route:list --json 2>/dev/null | php -r 'echo count(json_decode(file_get_contents("php://stdin"), true) ?? []);')
-[[ $ROUTES -ge 187 ]] && { echo -e "${GRN}✓${NC} $ROUTES route"; PASS=$((PASS+1)); } \
-                      || { echo -e "${YLW}⚠${NC} Hanya $ROUTES route (target 187)"; FAIL=$((FAIL+1)); }
+[[ $ROUTES -ge 600 ]] && { echo -e "${GRN}✓${NC} $ROUTES route"; PASS=$((PASS+1)); } \
+                      || { echo -e "${YLW}⚠${NC} Hanya $ROUTES route (target 600)"; FAIL=$((FAIL+1)); }
 
 # 3. Config
 # Timezone tidak di-hardcode: .env.example memakai Asia/Makassar (WITA),

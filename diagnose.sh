@@ -19,10 +19,12 @@ while IFS= read -r file; do
 done < <(find app routes database config -name "*.php" 2>/dev/null)
 [[ $ERR -eq 0 ]] && echo -e "${GRN}✓ Semua file bersih${NC}" || echo -e "${RED}Total error: $ERR${NC}"
 
-echo -e "\n${CYN}━━━ [2/6] Cek 3 File yang Dilaporkan Bermasalah ━━━${NC}"
-for f in app/Http/Controllers/DapodikImportController.php \
-         app/Http/Controllers/UserController.php \
-         app/Http/Controllers/DapodikSyncController.php; do
+echo -e "\n${CYN}━━━ [2/6] Cek File Kunci (path saat ini) ━━━${NC}"
+for f in app/Http/Controllers/Admin/DapodikImportController.php \
+         app/Http/Controllers/Admin/UserController.php \
+         app/Http/Controllers/Api/DapodikSyncController.php \
+         routes/web.php \
+         bootstrap/app.php; do
     if [[ -f "$f" ]]; then
         echo -e "${YLW}▸ $f${NC}"
         php -l "$f" 2>&1 | sed 's/^/    /'
@@ -31,13 +33,13 @@ for f in app/Http/Controllers/DapodikImportController.php \
     fi
 done
 
-echo -e "\n${CYN}━━━ [3/6] Cek Route Terdaftar (target ≥ 187) ━━━${NC}"
+echo -e "\n${CYN}━━━ [3/6] Cek Route Terdaftar (target ≥ 600) ━━━${NC}"
 COUNT=$(php artisan route:list --json 2>/dev/null | php -r 'echo count(json_decode(file_get_contents("php://stdin"), true) ?? []);')
 echo -e "  Total route: ${YLW}$COUNT${NC}"
 
 echo -e "\n${CYN}━━━ [4/6] Cek Model Load ━━━${NC}"
 php artisan tinker --execute="
-\$models = ['Guru','Siswa','Kelas','Mapel','Materi','Kuis','Soal'];
+\$models = ['User','Siswa','MataPelajaran','Materi','Kuis','Nilai','NilaiErapot'];
 foreach (\$models as \$m) {
     \$cls = 'App\\\\Models\\\\' . \$m;
     try { \$cls::first(); echo \"✓ \$m\n\"; }
@@ -53,9 +55,9 @@ echo 'Env      : ' . config('app.env') . PHP_EOL;
 echo 'Debug    : ' . (config('app.debug') ? 'true (BAHAYA di produksi)' : 'false (aman)') . PHP_EOL;
 " 2>/dev/null
 
-echo -e "\n${CYN}━━━ [6/6] Cek Soft Deletes di 9 Model ━━━${NC}"
+echo -e "\n${CYN}━━━ [6/6] Cek Soft Deletes di Model Inti ━━━${NC}"
 php artisan tinker --execute="
-\$models = ['Guru','Siswa','Kelas','Mapel','Materi','Kuis','Soal','Jawaban','Nilai'];
+\$models = ['User','Siswa','Materi','Kuis','Nilai','NilaiErapot','Kehadiran'];
 foreach (\$models as \$m) {
     \$cls = 'App\\\\Models\\\\' . \$m;
     if (!class_exists(\$cls)) { echo \"− \$m (tidak ada)\n\"; continue; }
