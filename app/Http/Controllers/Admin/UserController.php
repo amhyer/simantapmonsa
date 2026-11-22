@@ -51,7 +51,10 @@ class UserController extends Controller
     public function create()
     {
         $this->accounts->accountsQuery();
-        $siswa = Siswa::all();
+        // Kolom dibatasi — dulu Siswa::all() memuat seluruh kolom semua siswa.
+        $siswa = Siswa::select('id', 'nama_peserta_didik', 'nis', 'kelas')
+            ->orderBy('nama_peserta_didik')
+            ->get();
 
         return view('admin.users.create', compact('siswa'));
     }
@@ -82,7 +85,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $this->accounts->ensureAccountAccessible($user);
-        $siswa = Siswa::all();
+        $siswa = Siswa::select('id', 'nama_peserta_didik', 'nis', 'kelas')
+            ->orderBy('nama_peserta_didik')
+            ->get();
 
         return view('admin.users.edit', compact('user', 'siswa'));
     }

@@ -69,13 +69,14 @@ class DashboardController extends Controller
         $guruUsers = User::forSchool()->where('peran', 'guru')->where('aktif', true)->get();
         $guruIds = $guruUsers->pluck('id');
 
-        $nilaiPerGuru = NilaiErapot::whereIn('guru_id', $guruIds)->get()->groupBy('guru_id');
+        // Agregasi di SQL (dulu get() seluruh baris lalu count di PHP).
+        $nilaiPerGuru = NilaiErapot::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $materiPerGuru = Materi::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $kuisPerGuru = Kuis::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $siswaPerGuru = Siswa::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
 
         $topGuru = $guruUsers->map(function ($guru) use ($nilaiPerGuru, $materiPerGuru, $kuisPerGuru, $siswaPerGuru) {
-            $totalNilai = $nilaiPerGuru->get($guru->id, collect())->count();
+            $totalNilai = $nilaiPerGuru->get($guru->id, 0);
             $totalMateri = $materiPerGuru->get($guru->id, 0);
             $totalKuis = $kuisPerGuru->get($guru->id, 0);
             $totalSiswa = $siswaPerGuru->get($guru->id, 0);
@@ -92,11 +93,17 @@ class DashboardController extends Controller
             ->sortByDesc('total_aktivitas')
             ->take(5);
 
+        // Satu query groupBy alih-alih 4 query count terpisah.
+        $predikatCounts = NilaiErapot::whereIn('predikat', ['A', 'B', 'C', 'D'])
+            ->selectRaw('predikat, count(*) as jumlah')
+            ->groupBy('predikat')
+            ->get()
+            ->pluck('jumlah', 'predikat');
         $distribusiPredikat = [
-            'A' => NilaiErapot::where('predikat', 'A')->count(),
-            'B' => NilaiErapot::where('predikat', 'B')->count(),
-            'C' => NilaiErapot::where('predikat', 'C')->count(),
-            'D' => NilaiErapot::where('predikat', 'D')->count(),
+            'A' => $predikatCounts->get('A', 0),
+            'B' => $predikatCounts->get('B', 0),
+            'C' => $predikatCounts->get('C', 0),
+            'D' => $predikatCounts->get('D', 0),
         ];
 
         $perKelasData = Siswa::where('aktif', true)
@@ -105,42 +112,44 @@ class DashboardController extends Controller
             ->orderBy('kelas')
             ->get();
 
-        $siswaSemua = Siswa::where('aktif', true)->get();
-        $nilaiSemua = NilaiErapot::whereIn('siswa_id', $siswaIds)
-            ->selectRaw('kelas, nilai_akhir')
+        // Agregasi per kelas di SQL — dulu seluruh baris siswa/nilai/kehadiran
+        // dimuat ke memori lalu dihitung di PHP (OOM seiring data membesar).
+        $rataNilaiPerKelas = NilaiErapot::whereIn('siswa_id', $siswaIds)
+            ->selectRaw('kelas, avg(nilai_akhir) as rata')
+            ->groupBy('kelas')
             ->get()
-            ->groupBy('kelas');
-        $kehadiranSemua = Kehadiran::whereIn('siswa_id', $siswaIds)
-            ->selectRaw('siswa_id, status, count(*) as jumlah')
-            ->groupBy('siswa_id', 'status')
+            ->pluck('rata', 'kelas');
+
+        $kehadiranPerKelas = Kehadiran::query()
+            ->join('siswa', 'siswa.id', '=', 'kehadiran.siswa_id')
+            ->whereIn('kehadiran.siswa_id', $siswaIds)
+            ->selectRaw('siswa.kelas as kelas, count(*) as total, sum(case when kehadiran.status = \'H\' then 1 else 0 end) as hadir')
+            ->groupBy('siswa.kelas')
             ->get()
-            ->groupBy('siswa_id');
-        $kebiasaanSemua = Kebiasaan::whereIn('siswa_id', $siswaIds)
-            ->selectRaw('DISTINCT siswa_id')
-            ->pluck('siswa_id');
+            ->keyBy('kelas');
 
-        $perKelas = $perKelasData->map(function ($item) use ($siswaSemua, $nilaiSemua, $kehadiranSemua, $kebiasaanSemua) {
-            $kelasSiswaIds = $siswaSemua->where('kelas', $item->kelas)->pluck('id');
-            $nilaiKelas = $nilaiSemua->get($item->kelas, collect());
-            $rataNilai = $nilaiKelas->count() > 0 ? round($nilaiKelas->avg('nilai_akhir'), 1) : 0;
+        $laporOrtuPerKelas = Kebiasaan::query()
+            ->join('siswa', 'siswa.id', '=', 'kebiasaan.siswa_id')
+            ->whereIn('kebiasaan.siswa_id', $siswaIds)
+            ->selectRaw('siswa.kelas as kelas, count(distinct kebiasaan.siswa_id) as jumlah')
+            ->groupBy('siswa.kelas')
+            ->get()
+            ->pluck('jumlah', 'kelas');
 
-            // $kehadiranSemua sudah di-groupBy('siswa_id'): nilai tiap kunci
-            // adalah collection baris, bukan model tunggal.
-            $kehadiranKelas = $kehadiranSemua
-                ->filter(fn ($baris, $siswaId) => $kelasSiswaIds->contains($siswaId))
-                ->flatten(1);
-            $totalKehadiran = $kehadiranKelas->sum('jumlah');
-            $hadirCount = $kehadiranKelas->filter(fn ($h) => $h->status === 'H')->sum('jumlah');
-            $persenHadir = $totalKehadiran > 0 ? round($hadirCount / $totalKehadiran * 100, 1) : 0;
-
-            $laporOrtu = $kebiasaanSemua->filter(fn ($id) => $kelasSiswaIds->contains($id))->count();
+        $perKelas = $perKelasData->map(function ($item) use ($rataNilaiPerKelas, $kehadiranPerKelas, $laporOrtuPerKelas) {
+            $rataNilai = round((float) ($rataNilaiPerKelas->get($item->kelas) ?? 0), 1);
+            $hadirRow = $kehadiranPerKelas->get($item->kelas);
+            $totalKehadiran = (int) ($hadirRow->total ?? 0);
+            $hadirCount = (int) ($hadirRow->hadir ?? 0);
+            $persenHadir = $totalKehadiran > 0 ? round(($hadirCount / $totalKehadiran) * 100, 1) : 0;
+            $laporOrtu = (int) ($laporOrtuPerKelas->get($item->kelas) ?? 0);
 
             return [
                 'kelas' => $item->kelas,
                 'jumlah' => $item->jumlah,
                 'rata_nilai' => $rataNilai,
                 'persen_hadir' => $persenHadir,
-                'partisipasi_ortu' => $item->jumlah > 0 ? round($laporOrtu / $item->jumlah * 100, 1) : 0,
+                'partisipasi_ortu' => $item->jumlah > 0 ? round(($laporOrtu / $item->jumlah) * 100, 1) : 0,
             ];
         });
 
@@ -149,10 +158,10 @@ class DashboardController extends Controller
             ? app(CbtDashboardProvider::class)->ringkasanSekolah()
             : null;
 
-        $tkaScores = Dimensi::pluck('skor');
-        $tkaTotal = $tkaScores->count();
-        $tkaRata = $tkaTotal > 0 ? round($tkaScores->avg(), 2) : 0;
-        $tkaSiap = $tkaScores->filter(fn ($s) => $s >= 2.5)->count();
+        // Agregat di SQL — dulu pluck() seluruh skor lalu dihitung di PHP.
+        $tkaTotal = Dimensi::count();
+        $tkaRata = $tkaTotal > 0 ? round((float) (Dimensi::avg('skor') ?? 0), 2) : 0;
+        $tkaSiap = Dimensi::where('skor', '>=', 2.5)->count();
         $tkaSekolah = [
             'total' => $tkaTotal,
             'rata_rata' => $tkaRata,
