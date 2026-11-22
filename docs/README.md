@@ -75,6 +75,7 @@ Dokumen historis, scratchpad investigasi agen, dan laporan audit Sept–Okt 2026
 | Backlog pengembangan & tugas lanjutan | [`BACKLOG.md`](BACKLOG.md) |
 | Cutover foto siswa ke penyimpanan private | [`CUTOVER-FOTO.md`](CUTOVER-FOTO.md) |
 | Build ulang SIMANTAP-Bridge.exe | [`BRIDGE-BUILD.md`](BRIDGE-BUILD.md) |
+| Rencana pemecahan god file & rute | [`REFACTOR-RENCANA.md`](REFACTOR-RENCANA.md) |
 
 > Catatan: [`../DEPLOYMENT.md`](../DEPLOYMENT.md) adalah dokumen deploy kanonis.
 > [`DEPLOY.md`](DEPLOY.md) adalah panduan alternatif dengan isi yang tumpang tindih —

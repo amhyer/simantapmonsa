@@ -51,12 +51,11 @@ class UserController extends Controller
     public function create()
     {
         $this->accounts->accountsQuery();
-        // Kolom dibatasi — dulu Siswa::all() memuat seluruh kolom semua siswa.
-        $siswa = Siswa::select('id', 'nama_peserta_didik', 'nis', 'kelas')
-            ->orderBy('nama_peserta_didik')
-            ->get();
 
-        return view('admin.users.create', compact('siswa'));
+        // Dulu di sini ada `Siswa::all()` untuk dropdown yang ternyata tidak
+        // dipakai view. Query-nya dihapus total: form Tambah Akun tidak butuh
+        // daftar siswa, jadi tidak ada lagi biaya memuat seluruh siswa.
+        return view('admin.users.create');
     }
 
     public function store(Request $request)
@@ -85,11 +84,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $this->accounts->ensureAccountAccessible($user);
-        $siswa = Siswa::select('id', 'nama_peserta_didik', 'nis', 'kelas')
-            ->orderBy('nama_peserta_didik')
-            ->get();
 
-        return view('admin.users.edit', compact('user', 'siswa'));
+        // Daftar siswa tidak dipakai form Ubah Akun (lihat create()).
+        return view('admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)

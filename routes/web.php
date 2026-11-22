@@ -43,6 +43,7 @@ use App\Http\Controllers\Cbt\CbtQuestionController;
 use App\Http\Controllers\Cbt\CbtStudentController;
 use App\Http\Controllers\Cbt\CbtTestSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\Guru\AnalisisController;
 use App\Http\Controllers\Guru\CatatanController;
 use App\Http\Controllers\Guru\DashboardController as GuruDashboard;
@@ -192,25 +193,8 @@ Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', '
         Route::post('/pulang', [PresensiController::class, 'pulang'])->middleware('throttle:10,1')->name('pulang');
     });
 
-// Dashboard redirect
-Route::get('/dashboard', function () {
-    if (! auth()->check()) {
-        return redirect()->route('login');
-    }
-    $user = auth()->user();
-
-    return match ($user->peran) {
-        'super_admin' => redirect()->route('superadmin.dashboard'),
-        'admin' => redirect()->route('admin.dashboard'),
-        'guru' => redirect()->route('guru.dashboard'),
-        'siswa' => redirect()->route('siswa.dashboard'),
-        'ortu' => redirect()->route('ortu.dashboard'),
-        'kepsek' => redirect()->route('kepsek.dashboard'),
-        'pengawas' => redirect()->route('pengawas.dashboard'),
-        'tendik' => redirect()->route('presensi.pegawai.index'),
-        default => redirect()->route('login'),
-    };
-})->name('home');
+// Dashboard redirect (controller invokable agar route:cache berfungsi)
+Route::get('/dashboard', DashboardRedirectController::class)->name('home');
 
 // ==================== SUPER ADMIN ROUTES ====================
 Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.telemetry'])->prefix('superadmin')->name('superadmin.')->group(function () {

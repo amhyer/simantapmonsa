@@ -8,6 +8,7 @@ use App\Models\Tryout\Package;
 use App\Models\Tryout\Result as TryoutResult;
 use App\Models\Tryout\Session as TryoutSession;
 use App\Models\User;
+use App\Services\Backup\BackupStreamWriter;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,34 @@ class BackupCoverageTest extends TestCase
             $this->assertContains($tabel, $dicadangkan);
             $this->assertNotContains($tabel, $dikosongkan);
         }
+    }
+
+    public function test_backup_menyertakan_nik_dan_no_kk_siswa(): void
+    {
+        $guru = User::factory()->guru()->create();
+        Siswa::create([
+            'uuid' => (string) Str::uuid(),
+            'guru_id' => $guru->id,
+            'nama_guru' => $guru->nama_lengkap,
+            'nis' => 'N-NIK-01',
+            'nama_peserta_didik' => 'Siswa Ber-NIK',
+            'kelas' => '6.A',
+            'jenis_kelamin' => 'L',
+            'nik' => '7309082109930003',
+            'no_kk' => '7309080101010001',
+        ]);
+
+        $stream = fopen('php://temp', 'w+b');
+        app(BackupStreamWriter::class)->writeTo($stream);
+        rewind($stream);
+        $isi = json_decode((string) stream_get_contents($stream), true);
+        fclose($stream);
+
+        $this->assertIsArray($isi);
+        $baris = collect($isi['siswa'] ?? [])->firstWhere('nis', 'N-NIK-01');
+        $this->assertNotNull($baris, 'Baris siswa harus ada di backup.');
+        $this->assertSame('7309082109930003', $baris['nik']);
+        $this->assertSame('7309080101010001', $baris['no_kk']);
     }
 
     public function test_hapus_semua_data_mengosongkan_tryout_transkrip_dan_mempertahankan_akun(): void

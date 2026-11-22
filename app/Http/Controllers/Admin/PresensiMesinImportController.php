@@ -272,12 +272,21 @@ class PresensiMesinImportController extends Controller
         // Tarik seluruh riwayat berjalan di queue worker (bukan request web),
         // dengan lock agar tidak bisa dikirim ganda. Hasilnya tercatat di
         // Aktivitas + tandaiTerakhirTarik oleh TarikSemuaPresensiJob.
-        $lock = Cache::lock('presensi-tarik-semua', 600);
+        $lock = Cache::lock(TarikSemuaPresensiJob::KUNCI_LOCK, TarikSemuaPresensiJob::TTL_LOCK);
+
         if (! $lock->acquire()) {
             return back()->withErrors(['mesin' => 'Tarik semua data sedang berjalan. Tunggu hingga selesai, lalu muat ulang halaman.']);
         }
 
-        TarikSemuaPresensiJob::dispatch(auth()->id());
+        try {
+            TarikSemuaPresensiJob::dispatch(auth()->id(), auth()->user()?->tenant_id);
+        } catch (\Throwable $e) {
+            // Driver queue bermasalah: jangan tinggalkan lock menggantung.
+            $lock->forceRelease();
+            report($e);
+
+            return back()->withErrors(['mesin' => 'Gagal menjadwalkan penarikan data. Coba lagi atau hubungi admin server.']);
+        }
 
         return back()->with('success', 'Tarik semua data mesin dimulai di latar belakang. Data akan muncul setelah proses selesai — muat ulang halaman dalam beberapa saat.');
     }

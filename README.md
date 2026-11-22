@@ -62,9 +62,15 @@ composer test                        # PHPUnit (SQLite)
 npm run test:e2e                     # Playwright (Chromium)
 ```
 
-CI (`.github/workflows/test.yml`) menjalankan empat job pada setiap push/PR ke `main`:
-PHPUnit di SQLite, PHPUnit di PostgreSQL 16, browser smoke test Chromium (landing/FAQ),
-dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
+CI terdiri dari dua workflow:
+
+- `.github/workflows/test.yml` — **kanonis**. Empat job pada setiap push/PR ke `main`:
+  PHPUnit di SQLite, PHPUnit di PostgreSQL 16, browser smoke test Chromium (landing/FAQ),
+  dan E2E Playwright terautentikasi (CBT/Tryout/TKA).
+- `.github/workflows/ci.yml` — smoke test produksi: `composer install --no-dev`,
+  generasi `config/route/view/event` cache (memastikan `php artisan route:cache`
+  tetap bisa dijalankan), plus audit Composer/NPM yang bersifat *advisory*.
+  Dependabot (`.github/dependabot.yml`) membuka PR pembaruan mingguan/bulanan.
 
 ---
 
@@ -123,8 +129,8 @@ Laporkan celah keamanan secara pribadi ke pengelola proyek — jangan lewat issu
 
 ```
 app/
-  Http/Controllers/   127 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Pengawas, Cbt, Tka, Tryout, Api, Auth)
-  Models/             103 model Eloquent (termasuk Exam/Tryout/Tka/Elearning/Perangkat)
+  Http/Controllers/   128 controller (Admin, Guru, Siswa, Ortu, Kepsek, Pegawai, Pengawas, Cbt, Tka, Tryout, Api, Auth)
+  Models/             102 model Eloquent (termasuk Exam/Tryout/Tka/Elearning/Perangkat)
   Services/           Dapodik, Nilai, Google Sheets, CBT/Exam engine, Presensi
   Support/            BackupTables (satu sumber kebenaran cakupan backup/restore)
 database/
@@ -132,7 +138,7 @@ database/
   seeders/            DatabaseSeeder, DemoDataSeeder, ApiKeySeeder (+ Support/SeedGuard)
 dapodik-bridge/       Bridge Python yang berjalan di komputer operator sekolah
 docs/                 Audit, rencana perbaikan, desain CBT/Tryout/TKA
-routes/web.php        700 pendaftaran route (+ 9 di routes/api.php)
+routes/web.php        649 definisi route (700 panggilan Route:: termasuk grup) + 7 di routes/api.php
 tools/                Skrip verifikasi statis & pemeriksaan runtime
 ```
 

@@ -58,6 +58,10 @@ jobs:
       - name: Verify production caches (config, route, view, event) and route:list
         env:
           APP_ENV: testing
+          APP_DEBUG: 'false'
+          # Scramble mendaftarkan rute /docs/api berbasis Closure saat dev tools
+          # aktif; route:cache menolak Closure. Di produksi dev tools memang off.
+          SCRAMBLE_DEV_TOOLS: 'false'
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
           CACHE_STORE: array
@@ -69,6 +73,15 @@ jobs:
           php artisan view:cache
           php artisan event:cache
           php artisan route:list
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install NPM dependencies (lockfile only, tanpa script)
+        run: npm ci --ignore-scripts
 
       # Audit keamanan: saat ini advisory (tidak memblokir merge) karena
       # dependensi historis belum diaudit penuh. Setelah baseline bersih,

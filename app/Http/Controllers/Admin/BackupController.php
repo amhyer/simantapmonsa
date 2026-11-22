@@ -269,7 +269,6 @@ class BackupController extends Controller
         $tabelData = BackupTables::dikosongkan();
 
         $dihapus = [];
-        $gagal = [];
         $tenantId = auth()->user()?->tenant_id ?? TenantContext::id();
         $hasTenants = Schema::hasTable('tenants') && Tenant::hasAnyTenant();
         $isMultiTenant = config('simantap.multi_tenant_enabled', false) || $tenantId !== null || $hasTenants;
@@ -333,8 +332,7 @@ class BackupController extends Controller
         if (count($dihapus) === 0) {
             return redirect()->route('admin.backup.index')->with(
                 'error',
-                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.'.
-                (count($gagal) ? ' Gagal pada: '.implode(', ', $gagal).'.' : '')
+                'Tidak ada data yang dihapus. Tabel tidak ditemukan atau koneksi basis data bermasalah.'
             );
         }
 
@@ -354,9 +352,6 @@ class BackupController extends Controller
         }
 
         $pesan = 'Berhasil mengosongkan '.count($dihapus).' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
-        if (count($gagal) > 0) {
-            $pesan .= ' Sebagian gagal: '.implode(', ', $gagal).'.';
-        }
 
         return redirect()->route('admin.backup.index')->with('success', $pesan);
     }

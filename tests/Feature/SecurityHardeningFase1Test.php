@@ -12,6 +12,7 @@ use App\Jobs\TarikSemuaPresensiJob;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -197,6 +198,10 @@ class SecurityHardeningFase1Test extends TestCase
             ->assertSessionHas('success');
 
         Bus::assertDispatched(TarikSemuaPresensiJob::class);
+
+        // Job di-fake, jadi lock yang diambil controller tidak dilepas oleh job.
+        // Bersihkan agar test lain yang memakai cache array tidak ikut terkunci.
+        Cache::flush();
     }
 
     public function test_backup_siswa_menyertakan_nik(): void
@@ -219,6 +224,21 @@ class SecurityHardeningFase1Test extends TestCase
     {
         $source = (string) file_get_contents(base_path('app/Services/TkaStatistikService.php'));
         $this->assertStringNotContainsString('withoutVerifying', $source);
+    }
+
+    public function test_wipe_tidak_memakai_truncate_cascade_dan_berjalan_dalam_transaksi(): void
+    {
+        $source = (string) file_get_contents(base_path('app/Http/Controllers/Admin/BackupController.php'));
+
+        // Komentar boleh menyebut TRUNCATE; yang dilarang adalah perintahnya.
+        $this->assertDoesNotMatchRegularExpression('/TRUNCATE\s+(TABLE\s+)?[`"]?\w/i', $source);
+        $this->assertStringContainsString('DB::transaction', $source);
+        $this->assertStringContainsString('->delete()', $source);
+    }
+
+    public function test_foto_siswa_tidak_publik_secara_default(): void
+    {
+        $this->assertFalse((bool) config('simantap.foto_fallback_public'));
     }
 
     public function test_skrip_setup_api_key_tidak_menyimpan_kunci_polos(): void
