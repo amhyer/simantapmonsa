@@ -45,8 +45,10 @@ return [
     'foto_siswa_per_page' => max(1, (int) env('SIMANTAP_FOTO_SISWA_PER_PAGE', 50)),
 
     // Fallback baca foto siswa lama dari disk `public` (hanya lewat route terautentikasi)
-    // selama jendela migrasi ke disk `local` (private). Set false setelah migrasi selesai.
-    'foto_fallback_public' => (bool) env('SIMANTAP_FOTO_FALLBACK_PUBLIC', true),
+    // selama jendela migrasi ke disk `local` (private). Default false (private-by-default):
+    // file di disk `public` bisa diakses langsung tanpa auth via /storage/.
+    // Set true hanya sementara selama migrasi, lalu kembalikan ke false.
+    'foto_fallback_public' => (bool) env('SIMANTAP_FOTO_FALLBACK_PUBLIC', false),
 
     // Batas keamanan arsip ZIP pada unggah massal foto siswa.
     'foto_zip_max_entries' => max(1, (int) env('SIMANTAP_FOTO_ZIP_MAX_ENTRIES', 200)),

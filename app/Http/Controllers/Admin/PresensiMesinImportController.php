@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImportPresensiMesinRequest;
+use App\Jobs\TarikSemuaPresensiJob;
 use App\Models\PresensiMesinSyncLog;
 use App\Models\SekolahSettings;
 use App\Models\User;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -265,51 +267,19 @@ class PresensiMesinImportController extends Controller
             ->with('warning', 'Tombol "Tarik Semua Data (1 Klik)" ada di halaman Import Presensi Mesin. Klik tombol tersebut untuk memulai penarikan.');
     }
 
-    public function tarikSemua(AttendanceDatabaseReader $reader, PresensiMesinService $presensi): RedirectResponse
+    public function tarikSemua(): RedirectResponse
     {
-        // Tarik seluruh riwayat bisa memakan waktu lebih dari batas eksekusi
-        // bawaan PHP (30 detik), terutama saat membaca database Access.
-        @set_time_limit(600);
-        @ignore_user_abort(true);
-
-        try {
-            $rentang = $reader->rentang();
-        } catch (\Throwable $e) {
-            report($e);
-
-            return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
+        // Tarik seluruh riwayat berjalan di queue worker (bukan request web),
+        // dengan lock agar tidak bisa dikirim ganda. Hasilnya tercatat di
+        // Aktivitas + tandaiTerakhirTarik oleh TarikSemuaPresensiJob.
+        $lock = Cache::lock('presensi-tarik-semua', 600);
+        if (! $lock->acquire()) {
+            return back()->withErrors(['mesin' => 'Tarik semua data sedang berjalan. Tunggu hingga selesai, lalu muat ulang halaman.']);
         }
 
-        $dari = $rentang['min'];
-        $sampai = $rentang['maks'];
+        TarikSemuaPresensiJob::dispatch(auth()->id());
 
-        if ($dari === null || $sampai === null) {
-            $this->pull->tandaiTerakhirTarik();
-
-            return back()->with('success', 'Database mesin berhasil dibaca, tetapi tidak ada scan pada database.');
-        }
-
-        try {
-            $hasil = $this->pull->tarikSemuaRentang($reader, $presensi, $dari, $sampai, auth()->id());
-        } catch (\Throwable $e) {
-            report($e);
-
-            return back()->withErrors(['mesin' => 'Gagal membaca database mesin: '.$e->getMessage()]);
-        }
-
-        $this->pull->tandaiTerakhirTarik();
-
-        AktivitasService::log(
-            'tambah',
-            'Tarik presensi dari database mesin',
-            "Tarik data mesin {$dari->toDateString()} s/d {$sampai->toDateString()}: {$hasil['scans']} scan, {$hasil['dibuat']} data dibuat, {$hasil['diperbarui']} diperbarui, {$hasil['tetap']} tetap, {$hasil['dilindungi']} dilindungi, {$hasil['nik_tidak_dikenal']} NIK tidak dikenal.",
-            'presensi_pegawai',
-            null,
-            null,
-            $hasil,
-        );
-
-        return back()->with('success', $this->pull->pesanHasil($hasil, 'Tarik semua data mesin selesai'));
+        return back()->with('success', 'Tarik semua data mesin dimulai di latar belakang. Data akan muncul setelah proses selesai — muat ulang halaman dalam beberapa saat.');
     }
 
     /**

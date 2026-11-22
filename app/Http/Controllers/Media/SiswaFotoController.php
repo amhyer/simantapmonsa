@@ -31,7 +31,7 @@ class SiswaFotoController extends Controller
         $bytes = null;
         if (Storage::disk('local')->exists($path)) {
             $bytes = Storage::disk('local')->get($path);
-        } elseif (config('simantap.foto_fallback_public', true) && Storage::disk('public')->exists($path)) {
+        } elseif (config('simantap.foto_fallback_public', false) && Storage::disk('public')->exists($path)) {
             $bytes = Storage::disk('public')->get($path);
         }
 

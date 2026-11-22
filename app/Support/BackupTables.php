@@ -111,7 +111,10 @@ class BackupTables
             'mata_pelajaran' => ['class' => MataPelajaran::class, 'except' => []],
 
             // ── Peserta didik & relasinya ───────────────────────────────
-            'siswa' => ['class' => Siswa::class, 'except' => ['rekaman', 'foto', 'nik', 'no_kk']],
+            // NIK/no_kk SENGAJA ikut dibackup: tanpa keduanya, restore merusak
+            // pencocokan scan presensi mesin (yang memakai NIK sebagai kunci).
+            // File backup hanya tersimpan di disk lokal admin, bukan publik.
+            'siswa' => ['class' => Siswa::class, 'except' => ['rekaman', 'foto']],
             'orang_tua_siswa' => ['class' => OrangTuaSiswa::class, 'except' => []],
             'ekstrakurikuler' => ['class' => Ekstrakurikuler::class, 'except' => []],
 

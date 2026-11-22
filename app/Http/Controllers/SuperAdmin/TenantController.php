@@ -12,6 +12,7 @@ use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -497,7 +498,7 @@ class TenantController extends Controller
         return back()->with('success', "Akun '{$user->nama_lengkap}' berhasil ditautkan kembali ke sekolah {$tenant->nama_sekolah}.");
     }
 
-    public function impersonate(Tenant $tenant)
+    public function impersonate(Request $request, Tenant $tenant)
     {
         $admin = User::where('tenant_id', $tenant->id)
             ->where('peran', 'admin')
@@ -507,6 +508,10 @@ class TenantController extends Controller
             return back()->with('error', "Gagal: Sekolah '{$tenant->nama_sekolah}' belum memiliki akun administrator.");
         }
 
+        if (! $admin->aktif || $admin->archived_at !== null) {
+            return back()->with('error', "Gagal: Akun administrator sekolah '{$tenant->nama_sekolah}' sedang nonaktif.");
+        }
+
         $superAdminId = auth()->id();
         session([
             'impersonator_id' => $superAdminId,
@@ -514,12 +519,22 @@ class TenantController extends Controller
         ]);
 
         auth()->login($admin);
+        // Perpindahan hak akses wajib meregenerasi sesi (anti session fixation),
+        // sama seperti login normal di LoginController.
+        $request->session()->regenerate();
+
+        Log::info('Super admin impersonate admin sekolah', [
+            'super_admin_id' => $superAdminId,
+            'target_admin_id' => $admin->id,
+            'tenant_id' => $tenant->id,
+            'ip' => $request->ip(),
+        ]);
 
         return redirect()->route('admin.dashboard')
             ->with('success', "Berhasil masuk ke dasbor sekolah '{$tenant->nama_sekolah}'. Anda sedang dalam mode supervisi.");
     }
 
-    public function leaveImpersonate()
+    public function leaveImpersonate(Request $request)
     {
         $superAdminId = session('impersonator_id');
         $tenantUuid = session('impersonator_tenant_uuid');
@@ -528,7 +543,7 @@ class TenantController extends Controller
             return redirect()->route('home');
         }
 
-        $superAdmin = User::find($superAdminId);
+        $superAdmin = User::withoutGlobalScopes()->find($superAdminId);
         if (! $superAdmin || $superAdmin->peran !== 'super_admin') {
             session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
             auth()->logout();
@@ -538,6 +553,12 @@ class TenantController extends Controller
 
         session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
         auth()->login($superAdmin);
+        $request->session()->regenerate();
+
+        Log::info('Super admin keluar dari mode impersonate', [
+            'super_admin_id' => $superAdmin->id,
+            'ip' => $request->ip(),
+        ]);
 
         if ($tenantUuid) {
             return redirect()->route('superadmin.tenants.show', $tenantUuid)

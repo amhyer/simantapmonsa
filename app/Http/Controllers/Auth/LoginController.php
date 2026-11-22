@@ -25,19 +25,25 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
-        $throttleKey = 'login:'.$request->ip();
-
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            throw ValidationException::withMessages([
-                'nama_pengguna' => "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik.",
-            ]);
-        }
-
         $credentials = $request->validate([
             'nama_pengguna' => 'required|string',
             'kata_sandi' => 'required|string',
         ]);
+
+        // Dua lapis throttle: per-IP (5x) DAN per-akun (10x). Per-IP saja
+        // mudah dilewati credential-stuffing terdistribusi; per-akun saja
+        // membuat satu IP proxy bersama mengunci seluruh sekolah.
+        $throttleKey = 'login:'.$request->ip();
+        $accountKey = 'login-account:'.mb_strtolower(trim((string) $credentials['nama_pengguna']));
+
+        foreach ([[$throttleKey, 5], [$accountKey, 10]] as [$key, $maxAttempts]) {
+            if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+                $seconds = RateLimiter::availableIn($key);
+                throw ValidationException::withMessages([
+                    'nama_pengguna' => "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik.",
+                ]);
+            }
+        }
 
         $attemptSuccess = false;
         if (TenantContext::check()) {
@@ -77,6 +83,7 @@ class LoginController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 RateLimiter::hit($throttleKey, 300);
+                RateLimiter::hit($accountKey, 300);
 
                 return back()->withErrors([
                     'nama_pengguna' => 'Akun Anda dinonaktifkan. Hubungi administrator sekolah.',
@@ -94,6 +101,7 @@ class LoginController extends Controller
             }
 
             RateLimiter::clear($throttleKey);
+            RateLimiter::clear($accountKey);
             $request->session()->regenerate();
 
             return match ($user->peran) {
@@ -110,6 +118,7 @@ class LoginController extends Controller
         }
 
         RateLimiter::hit($throttleKey, 300);
+        RateLimiter::hit($accountKey, 300);
 
         return back()->withErrors([
             'nama_pengguna' => 'Nama pengguna atau kata sandi salah.',

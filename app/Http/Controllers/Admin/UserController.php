@@ -14,6 +14,7 @@ use App\Services\Admin\MassPasswordResetService;
 use App\Services\Admin\UserAccountService;
 use App\Services\Admin\UserBulkGeneratorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -242,11 +243,11 @@ class UserController extends Controller
         return back()->with('success', "Data pelengkap siswa {$siswa->nama_peserta_didik} berhasil disimpan.");
     }
 
-    public function impersonateGuru(User $user)
+    public function impersonateGuru(Request $request, User $user)
     {
         $admin = auth()->user();
         abort_unless($admin && in_array($admin->peran, ['admin', 'super_admin'], true), 403);
-        abort_unless($user->peran === 'guru' && $user->aktif, 403, 'Hanya akun Guru aktif yang dapat diakses.');
+        abort_unless($user->peran === 'guru' && $user->aktif && $user->archived_at === null, 403, 'Hanya akun Guru aktif yang dapat diakses.');
 
         if (TenantContext::check() && (int) $user->tenant_id !== (int) TenantContext::id()) {
             abort(403, 'Lintas sekolah tidak diizinkan.');
@@ -254,12 +255,20 @@ class UserController extends Controller
 
         session(['admin_impersonator_id' => $admin->id]);
         auth()->login($user);
+        // Perpindahan hak akses wajib meregenerasi sesi (anti session fixation).
+        $request->session()->regenerate();
+
+        Log::info('Admin impersonate guru', [
+            'admin_id' => $admin->id,
+            'target_guru_id' => $user->id,
+            'ip' => $request->ip(),
+        ]);
 
         return redirect()->route('guru.dashboard')
             ->with('success', "Berhasil masuk sebagai Guru '{$user->nama_lengkap}'.");
     }
 
-    public function leaveGuruImpersonate()
+    public function leaveGuruImpersonate(Request $request)
     {
         $adminId = session('admin_impersonator_id');
         if (! $adminId) {
@@ -276,6 +285,12 @@ class UserController extends Controller
         }
 
         auth()->login($admin);
+        $request->session()->regenerate();
+
+        Log::info('Admin keluar dari mode impersonate guru', [
+            'admin_id' => $admin->id,
+            'ip' => $request->ip(),
+        ]);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Kembali ke sesi Administrator.');
