@@ -3,10 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Aktivitas;
-use App\Models\MataPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\PresensiMesinSyncLog;
-use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -496,7 +494,7 @@ class AuditRemediationNov2026Test extends TestCase
             'tenant_id' => $tenant->id,
             'guru_id' => $guruA->id,
             'nama_guru' => $guruA->nama_lengkap,
-            'jenis' => 'input_nilai',
+            'jenis' => 'nilai',
             'judul' => 'Simpan Nilai Matematika 6A',
             'deskripsi' => '28 siswa diperbarui',
         ]));
