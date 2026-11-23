@@ -232,7 +232,10 @@ class PengawasAnalyticsService
             $siswaIds = ($siswaByTingkat->get($t) ?? collect())->pluck('id')->all();
             $rataNilai = 0.0;
             if (! empty($siswaIds)) {
-                $avgErapor = NilaiErapot::query()->whereIn('siswa_id', $siswaIds)->avg('nilai_rapor');
+                // Kolom yang benar adalah `nilai_akhir`; `nilai_rapor` tidak pernah ada.
+                // SQLite diam-diam memperlakukan identifier tak dikenal sebagai string,
+                // PostgreSQL melempar SQLSTATE 42703 (undefined column).
+                $avgErapor = NilaiErapot::query()->whereIn('siswa_id', $siswaIds)->avg('nilai_akhir');
                 if ($avgErapor !== null) {
                     $rataNilai = round((float) $avgErapor, 1);
                 } else {

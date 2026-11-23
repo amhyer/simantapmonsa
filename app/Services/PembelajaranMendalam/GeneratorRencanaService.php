@@ -60,9 +60,12 @@ class GeneratorRencanaService
             if ($mapelKey === '' || $iso === null) {
                 continue;
             }
-            $jam = trim((string) $row->jam_mulai);
-            if ($jam !== '' && ! empty($row->jam_selesai)) {
-                $jam .= '-'.trim((string) $row->jam_selesai);
+            // PostgreSQL mengembalikan kolom time sebagai "07:30:00", SQLite
+            // sebagai "07:30". Normalisasi ke H:i agar label jam konsisten.
+            $jam = $this->formatJam($row->jam_mulai);
+            $jamSelesai = $this->formatJam($row->jam_selesai);
+            if ($jam !== '' && $jamSelesai !== '') {
+                $jam .= '-'.$jamSelesai;
             }
             $map[$mapelKey][$iso] = [
                 'iso' => $iso,
@@ -77,6 +80,21 @@ class GeneratorRencanaService
         }
 
         return $map;
+    }
+
+    /** Normalisasi nilai kolom time (SQLite "07:30" / PostgreSQL "07:30:00") ke H:i. */
+    private function formatJam(mixed $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            return Carbon::parse($value)->format('H:i');
+        } catch (\Throwable) {
+            return $value;
+        }
     }
 
     /**

@@ -191,7 +191,7 @@ class UserControllerTenantSecurityTest extends TestCase
             'mata_pelajaran' => 'Matematika',
             'judul_penilaian' => 'UH 1',
             'kelas' => '6A',
-            'jenis' => 'sumatif',
+            'jenis' => 'PAS',
             'nilai' => 88,
             'tanggal' => '2026-10-19',
         ]));
@@ -203,7 +203,7 @@ class UserControllerTenantSecurityTest extends TestCase
             'mata_pelajaran' => 'Matematika',
             'judul_penilaian' => 'UH 1',
             'kelas' => '6A',
-            'jenis' => 'sumatif',
+            'jenis' => 'PAS',
             'nilai' => 92,
             'tanggal' => '2026-10-19',
         ]));
