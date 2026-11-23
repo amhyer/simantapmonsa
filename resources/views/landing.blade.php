@@ -403,6 +403,9 @@
                     <button type="submit" class="btn-nav btn-nav-outline" style="cursor:pointer">Keluar</button>
                 </form>
             @else
+                @if(config('simantap.school_registration_enabled', true))
+                    <a href="{{ route('sekolah.register') }}" class="btn-nav btn-nav-outline">Daftarkan Sekolah</a>
+                @endif
                 <a href="{{ route('login') }}" class="btn-nav btn-nav-primary">Login</a>
             @endauth
             <button class="hamburger" id="hamburger" aria-label="Menu">
@@ -428,6 +431,9 @@
                     </form>
                 @else
                     <a href="{{ route('login') }}" class="btn-hero btn-hero-primary"><i class="fas fa-sign-in-alt"></i> Masuk ke Aplikasi</a>
+                    @if(config('simantap.school_registration_enabled', true))
+                        <a href="{{ route('sekolah.register') }}" class="btn-hero btn-hero-secondary"><i class="fas fa-school" aria-hidden="true"></i> Daftarkan Sekolah</a>
+                    @endif
                 @endauth
                 <a href="#features" class="btn-hero btn-hero-secondary"><i class="fas fa-star" aria-hidden="true"></i> Lihat Fitur</a>
                 @if(config('simantap.landing.show_demo_video'))
@@ -1205,9 +1211,9 @@
                 ['Apa itu SIMANTAP_MONSA?', 'SIMANTAP_MONSA adalah aplikasi pembelajaran yang menggabungkan Tes Kemampuan Akademik (TKA), Pembelajaran Mendalam, serta manajemen kelas seperti nilai, kehadiran, materi, kuis, dan catatan. Merupakan karya inovasi spektakuler hasil tindak lanjut Bimtek BBGTK yang dikembangkan oleh UPTD SD Negeri Unggulan Mongisidi 1 untuk kemajuan pendidikan di Sulawesi Selatan. Integrasi Google Sheet bersifat opsional dan bergantung pada konfigurasi sekolah.'],
                 ['Berapa biaya menggunakan SIMANTAP_MONSA?', 'Biaya hosting, database, dan layanan eksternal bergantung pada cara sekolah memasang dan mengoperasikan aplikasi. Tanyakan kepada administrator tentang biaya instalasi sekolah Anda.'],
                 ['Bagaimana cara menyimpan data?', 'Data inti disimpan pada database instalasi aplikasi. Integrasi Google Sheet dapat digunakan jika dikonfigurasi oleh administrator sekolah.'],
-                ['Siapa saja yang bisa menggunakan SIMANTAP_MONSA?', 'SIMANTAP_MONSA dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Akun dibuat dan dikelola oleh administrator sekolah; tidak ada pendaftaran mandiri.'],
+                ['Siapa saja yang bisa menggunakan SIMANTAP_MONSA?', 'SIMANTAP_MONSA dirancang untuk guru, siswa, orang tua, kepala sekolah, dan administrator. Pendaftaran publik hanya dibuka untuk Akun Sekolah (Operator/Administrator Sekolah); pendaftaran mandiri guru, siswa, dan orang tua ditiadakan karena akun dibuat oleh administrator sekolah atau disinkronkan dari Dapodik.'],
                 ['Bagaimana data dikelola?', 'Akses aplikasi dibatasi berdasarkan peran. Integrasi dapat mengirim data ke layanan eksternal seperti Google Sheet jika diaktifkan. Administrator sekolah bertanggung jawab mengatur izin dan kebijakan privasi instalasinya.'],
-                ['Bagaimana cara memulai?', 'Hubungi administrator sekolah untuk pembuatan akun. Setelah akun aktif, administrator dapat menghubungkan akun siswa dan orang tua dengan data yang sesuai.'],
+                ['Bagaimana cara memulai?', 'Instansi sekolah dapat mendaftarkan Akun Sekolah melalui halaman Pendaftaran Sekolah. Untuk guru, siswa, dan orang tua, hubungi administrator sekolah agar akun dibuat dan dihubungkan dengan data sekolah.'],
             ] as $i => $faq)
                 <div class="faq-item" data-aos="fade-up" data-aos-delay="{{ $i * 100 }}">
                     <button type="button" class="question" id="faq-question-{{ $i }}" aria-expanded="false" aria-controls="faq-answer-{{ $i }}">{{ $faq[0] }}<span class="icon" aria-hidden="true">▼</span></button>
@@ -1240,7 +1246,13 @@
                 <p>Situs Mandiri Terintegrasi Aplikasi Pembelajaran — Sebuah karya spektakuler hasil inspirasi Bimtek BBGTK yang dikembangkan oleh UPTD SD Negeri Unggulan Mongisidi 1 sebagai solusi bagi Pendidik dan Tenaga Kependidikan di Sulawesi Selatan.</p>
             </div>
             <div class="footer-col"><h4>Tentang</h4><a href="#features">Fitur</a><a href="#modules">Modul</a><a href="#dedikasi">Dedikasi & Harapan</a><a href="#testimonials">Testimoni</a><a href="#faq">FAQ</a></div>
-            <div class="footer-col"><h4>Untuk</h4><a href="{{ route('login') }}">Login</a></div>
+            <div class="footer-col">
+                <h4>Untuk</h4>
+                <a href="{{ route('login') }}">Login</a>
+                @if(config('simantap.school_registration_enabled', true))
+                    <a href="{{ route('sekolah.register') }}">Pendaftaran Akun Sekolah</a>
+                @endif
+            </div>
             <div class="footer-col"><h4>Bantuan</h4><a href="#how-it-works">Panduan Memulai</a><a href="#faq">Pertanyaan Umum</a><a href="https://github.com/amhyer/simantapmonsa" target="_blank" rel="noopener noreferrer">Repositori GitHub</a></div>
         </div>
         <div class="footer-bottom">

@@ -286,10 +286,11 @@ class AuditHalamanRegressionTest extends TestCase
             ->assertDontSee('Siswa · Login')
             ->assertDontSee('Orang Tua · Login')
             ->assertDontSee('Kepala Sekolah · Login')
+            ->assertSee('Daftarkan Sekolah')
             ->assertSee('Siapkan Akun');
 
         $this->get(route('register'))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('sekolah.register'));
     }
 
     public function test_method_spoofing_pada_form_sesuai_verb_route(): void

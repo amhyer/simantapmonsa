@@ -195,7 +195,11 @@
                 <img src="{{ asset('images/logo-128.png') }}" alt="Logo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1.5px solid var(--gold)">
                 <span>SIMANTAP_MONSA</span>
             </a>
-            <p>Pendaftaran Akun Sekolah Baru (Multi-Tenant Platform)</p>
+            <p>Pendaftaran Akun Sekolah Baru</p>
+        </div>
+
+        <div style="background:#EEF4FF;border:1px solid #B2DDFF;color:#1849A9;padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.55;margin-bottom:20px">
+            <b>Khusus Pendaftaran Akun Sekolah:</b> Formulir ini hanya untuk mendaftarkan instansi sekolah oleh Operator / Kepala Sekolah. Pendaftaran mandiri untuk <b>Guru, Siswa, dan Orang Tua</b> ditiadakan — akun warga sekolah dibuat otomatis melalui sinkronisasi Dapodik atau menu Kelola Pengguna setelah akun sekolah aktif.
         </div>
 
         @if($errors->any())

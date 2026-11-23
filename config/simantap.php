@@ -33,6 +33,11 @@ return [
     // kolom `tenant_id`). Default false untuk instalasi sekolah tunggal.
     'multi_tenant_enabled' => env('SIMANTAP_MULTI_TENANT', false),
 
+    // Pendaftaran mandiri Akun Sekolah Baru (/daftar-sekolah).
+    // Pendaftaran mandiri guru, siswa, dan orang tua tidak disediakan;
+    // publik hanya dapat mendaftarkan Akun Sekolah (Operator/Administrator).
+    'school_registration_enabled' => (bool) env('SIMANTAP_SCHOOL_REGISTRATION', true),
+
     // Wajib ganti kata sandi pada login pertama untuk akun siswa baru
     // (hasil sinkronisasi Dapodik / generate massal). Guru/PTK selalu wajib.
     'force_change_siswa' => env('SIMANTAP_FORCE_CHANGE_SISWA', true),

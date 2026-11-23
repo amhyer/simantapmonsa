@@ -141,10 +141,11 @@ Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
-    // Pendaftaran mandiri ditutup: akun guru, siswa, dan orang tua hanya
-    // dibuat oleh administrator sekolah melalui panel Kelola Pengguna.
-    Route::get('/register', fn () => redirect()->route('login')
-        ->with('status', 'Pendaftaran mandiri ditutup. Akun dibuat oleh administrator sekolah.'))
+    // Tidak ada registrasi untuk guru, siswa, maupun orang tua.
+    // Akses /register langsung diarahkan ke Pendaftaran Akun Sekolah (jika diaktifkan).
+    Route::get('/register', fn () => config('simantap.school_registration_enabled', true)
+        ? redirect()->route('sekolah.register')
+        : redirect()->route('login')->with('status', 'Pendaftaran mandiri ditutup.'))
         ->name('register');
 
     // Reset sandi mandiri. Pengguna yang belum punya email tetap diarahkan ke admin.

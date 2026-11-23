@@ -9,8 +9,13 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_halaman_pendaftaran_dialihkan_ke_login(): void
+    public function test_halaman_pendaftaran_umum_diarahkan_ke_pendaftaran_akun_sekolah(): void
     {
+        $this->get('/register')
+            ->assertRedirect(route('sekolah.register'));
+
+        config(['simantap.school_registration_enabled' => false]);
+
         $this->get('/register')
             ->assertRedirect(route('login'))
             ->assertSessionHas('status');
@@ -25,11 +30,43 @@ class RegistrationTest extends TestCase
                 'nama_lengkap' => 'Calon '.ucfirst($peran),
                 'nama_pengguna' => $namaPengguna,
                 'peran' => $peran,
-                'kata_sandi' => 'password123',
-                'kata_sandi_confirmation' => 'password123',
+                'kata_sandi' => 'Password123!',
+                'kata_sandi_confirmation' => 'Password123!',
             ])->assertStatus(405);
 
             $this->assertDatabaseMissing('users', ['nama_pengguna' => $namaPengguna]);
+        }
+    }
+
+    public function test_pendaftaran_sekolah_mengabaikan_injeksi_peran_guru_siswa_atau_ortu(): void
+    {
+        foreach (['guru' => '40310001', 'siswa' => '40310002', 'ortu' => '40310003'] as $peran => $npsn) {
+            if (auth()->check()) {
+                $this->post('/logout');
+            }
+
+            $this->post(route('sekolah.register.store'), [
+                'nama_sekolah' => 'SD Negeri Uji '.$peran,
+                'npsn' => $npsn,
+                'jenjang' => 'SD',
+                'kepala_sekolah' => 'Kepala Uji',
+                'subdomain' => 'sdnuji-'.$peran,
+                'nama_lengkap' => 'Operator '.$peran,
+                'nama_pengguna' => 'op_sekolah_'.$peran,
+                'email' => "op.{$peran}@sekolah.sch.id",
+                'peran' => $peran,
+                'kata_sandi' => 'PasswordSuper123!',
+                'kata_sandi_confirmation' => 'PasswordSuper123!',
+            ])->assertRedirect(route('admin.dashboard'));
+
+            $this->assertDatabaseMissing('users', [
+                'nama_pengguna' => 'op_sekolah_'.$peran,
+                'peran' => $peran,
+            ]);
+            $this->assertDatabaseHas('users', [
+                'nama_pengguna' => 'op_sekolah_'.$peran,
+                'peran' => 'admin',
+            ]);
         }
     }
 

@@ -58,22 +58,6 @@ class DapodikService
                     ]);
                 }
 
-                $user->forceFill([
-                    'rekaman' => array_merge($user->rekaman ?? [], [
-                        'gtk_id' => $gtk['gtk_id'] ?? null,
-                        'nip' => $gtk['nip'] ?? null,
-                        'nuptk' => $gtk['nuptk'] ?? null,
-                        'nik' => $gtk['nik'] ?? null,
-                        'jenis_ptk' => $gtk['jenis_ptk'] ?? null,
-                        'status_kepegawaian' => $gtk['status_kepegawaian'] ?? null,
-                        'pendidikan_terakhir' => $gtk['pendidikan_terakhir'] ?? null,
-                        'bidang_studi' => $gtk['bidang_studi'] ?? null,
-                        'sertifikasi' => $gtk['sertifikasi'] ?? null,
-                        'tmt' => $gtk['tmt'] ?? null,
-                        'jam_mengajar' => $gtk['jam_mengajar'] ?? null,
-                    ]),
-                ])->save();
-
                 $berhasil++;
             } catch (\Exception $e) {
                 $gagal++;
