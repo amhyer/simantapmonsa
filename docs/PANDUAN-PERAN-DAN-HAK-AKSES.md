@@ -38,16 +38,23 @@ flowchart TD
 
 ## 2. Ringkasan Matriks 8 Peran Utama (`users.peran`)
 
-| No | Kode `peran` | Nama Peran | Rute Dasbor Utama (`DashboardRedirectController`) | Prefix Rute Utama | Lingkup Data (*Tenant Scope*) |
-|---:|---|---|---|---|---|
-| **1** | `super_admin` | **Super Admin Platform** | `superadmin.dashboard` (`/superadmin/dashboard`) | `/superadmin/*` | **Global Lintas Tenant** (`tenant_id = null`, `withoutGlobalScopes()`) |
-| **2** | `admin` | **Administrator / Operator Sekolah** | `admin.dashboard` (`/admin/dashboard`) | `/admin/*` | **1 Sekolah Aktif** (`tenant_id` sekolah, `school.context`) |
-| **3** | `kepsek` | **Kepala Sekolah** | `kepsek.dashboard` (`/kepsek/dashboard`) | `/kepsek/*`, `/presensi/pegawai/*` | **1 Sekolah Aktif** (`tenant_id` sekolah, `school.context`) |
-| **4** | `pengawas` | **Pengawas Sekolah** | `pengawas.dashboard` (`/pengawas/dashboard`) | `/pengawas/*` | **Multi-Sekolah Binaan** (`tenant_id` utama + array `terhubung_dengan` ID tenant binaan) |
-| **5** | `guru` | **Guru (Wali Kelas / Guru Mapel)** | `guru.dashboard` (`/guru/dashboard`) | `/guru/*`, `/cbt/*`, `/tryout/*`, `/tka/*`, `/presensi/pegawai/*` | **1 Sekolah Aktif + Kelas/Mapel Ampu** (`tenant_id` + isolasi kelas/rombel/jadwal) |
-| **6** | `tendik` | **Tenaga Kependidikan (Staf/TU)** | `presensi.pegawai.index` (`/presensi/pegawai`) | `/presensi/pegawai/*` | **Diri Sendiri di Sekolah Aktif** (`user_id = auth()->id()`) |
-| **7** | `siswa` | **Peserta Didik (Siswa)** | `siswa.dashboard` (`/siswa/dashboard`) | `/siswa/*`, `/cbt/student/*`, `/tryout/student/*` | **Diri Sendiri & Kelasnya** (`Siswa` tertaut via `terhubung_dengan` / `nis` / `nisn`) |
-| **8** | `ortu` | **Orang Tua / Wali Siswa** | `ortu.dashboard` (`/ortu/dashboard`) | `/ortu/*`, `/tka/parent/*` | **Anak Kandung/Perwalian** (array `users.terhubung_dengan` berisi `siswa.id` di sekolah yang sama) |
+| No | Kode `peran` | Nama Peran | Akun & Kata Sandi (Seeder Lokal / Mekanisme Produksi) | Rute Dasbor Utama (`DashboardRedirectController`) | Prefix Rute Utama | Lingkup Data (*Tenant Scope*) |
+|---:|---|---|---|---|---|---|
+| **1** | `super_admin` | **Super Admin Platform** | **CLI**: `php artisan superadmin:create`<br>Default prompt lokal: `superadmin` / `SuperAdmin123!` *(wajib sandi kuat di produksi)* | `superadmin.dashboard` (`/superadmin/dashboard`) | `/superadmin/*` | **Global Lintas Tenant** (`tenant_id = null`, `withoutGlobalScopes()`) |
+| **2** | `admin` | **Administrator / Operator Sekolah** | **Seeder lokal** (`DatabaseSeeder`): `admin` / `admin123`<br>**E2E CI** (`E2eSeeder`): `e2e_admin` / `e2e-sandi-aman`<br>**Produksi**: diset saat `/superadmin/tenants` atau `/daftar-sekolah` | `admin.dashboard` (`/admin/dashboard`) | `/admin/*` | **1 Sekolah Aktif** (`tenant_id` sekolah, `school.context`) |
+| **3** | `kepsek` | **Kepala Sekolah** | **Seeder lokal** (`DatabaseSeeder`): `kepsek` / `kepsek123`<br>**Produksi**: sinkronisasi PTK Dapodik (`NIP`/`NUPTK`) atau `/admin/users` + sandi acak `InitialPassword` (12 karakter) | `kepsek.dashboard` (`/kepsek/dashboard`) | `/kepsek/*`, `/presensi/pegawai/*` | **1 Sekolah Aktif** (`tenant_id` sekolah, `school.context`) |
+| **4** | `pengawas` | **Pengawas Sekolah** | **Tidak di-seed otomatis**.<br>Dibuat oleh Admin via `/admin/users` (pilih peran `Pengawas Sekolah`, sandi min. 8 karakter) atau oleh Super Admin | `pengawas.dashboard` (`/pengawas/dashboard`) | `/pengawas/*` | **Multi-Sekolah Binaan** (`tenant_id` utama + array `terhubung_dengan` ID tenant binaan) |
+| **5** | `guru` | **Guru (Wali Kelas / Guru Mapel)** | **Seeder lokal** (`DatabaseSeeder` / `DemoDataSeeder`): `guru` / `guru123`<br>**Produksi**: sinkronisasi PTK Dapodik (`NIP`/`NUPTK`/`NIK`) atau `/admin/users` + sandi acak 12 karakter (`InitialPassword`) | `guru.dashboard` (`/guru/dashboard`) | `/guru/*`, `/cbt/*`, `/tryout/*`, `/tka/*`, `/presensi/pegawai/*` | **1 Sekolah Aktif + Kelas/Mapel Ampu** (`tenant_id` + isolasi kelas/rombel/jadwal) |
+| **6** | `tendik` | **Tenaga Kependidikan (Staf/TU)** | **Tidak di-seed otomatis**.<br>Dibuat via sinkronisasi PTK Dapodik (jenis PTK Tendik/TU) atau manual di `/admin/users` + sandi acak 12 karakter (`InitialPassword`) | `presensi.pegawai.index` (`/presensi/pegawai`) | `/presensi/pegawai/*` | **Diri Sendiri di Sekolah Aktif** (`user_id = auth()->id()`) |
+| **7** | `siswa` | **Peserta Didik (Siswa)** | **Seeder lokal** (`DatabaseSeeder`): `siswa2026001` s.d. `siswa2026020` / sandi `2026001` s.d. `2026020`<br>**E2E CI**: `e2e_siswa` / `e2e-sandi-aman`<br>**Produksi**: generate massal `/admin/users` (`NIS`/`NISN`) + sandi acak 12 karakter (unduh di `/admin/kode-akses`) | `siswa.dashboard` (`/siswa/dashboard`) | `/siswa/*`, `/cbt/student/*`, `/tryout/student/*` | **Diri Sendiri & Kelasnya** (`Siswa` tertaut via `terhubung_dengan` / `nis` / `nisn`) |
+| **8** | `ortu` | **Orang Tua / Wali Siswa** | **Seeder lokal** (`DatabaseSeeder`): `ortu2026001` s.d. `ortu2026020` / sandi `2026001` s.d. `2026020`<br>**Produksi**: generate massal `/admin/users` (`ortu<NIS>`) + sandi acak 12 karakter (unduh di `/admin/kode-akses`) | `ortu.dashboard` (`/ortu/dashboard`) | `/ortu/*`, `/tka/parent/*` | **Anak Kandung/Perwalian** (array `users.terhubung_dengan` berisi `siswa.id` di sekolah yang sama) |
+
+> [!CAUTION]
+> **Keamanan Kredensial Produksi**:
+> 1. Kredensial contoh di atas (`admin123`, `guru123`, `kepsek123`, `2026001`) **hanya berlaku pada lingkungan lokal/pengujian** (`DatabaseSeeder` & `DemoDataSeeder` otomatis diblokir di `APP_ENV=production` oleh `SeedGuard`).
+> 2. Pada server produksi, seluruh akun hasil sinkronisasi Dapodik maupun *generate* massal otomatis menerima kata sandi acak 12 karakter dari [InitialPassword.php](file:///e:/Project/simantap/app/Support/InitialPassword.php) dengan status `force_password_change = true` (wajib ganti sandi saat login pertama).
+> 3. Untuk melihat daftar sandi awal akun baru di sekolah, Admin menggunakan menu **Cetak Kode Akses Login** (`/admin/kode-akses`) atau tombol **Reset Sandi** di `/admin/users`.
+> 4. Seluruh 8 peran dapat mengganti kata sandi dan email pemulihan secara mandiri kapan saja melalui menu dropdown profil kanan atas → **Profil & Ubah Sandi** (`/akun/profil`, `/admin/profile`, atau `/siswa/profil`).
 
 ---
 
