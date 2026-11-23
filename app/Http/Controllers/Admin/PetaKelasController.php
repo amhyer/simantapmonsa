@@ -198,7 +198,7 @@ class PetaKelasController extends Controller
         $sekolah->update(['pengaturan' => $pengaturan]);
 
         Rombel::query()->update(['kunci_input_rapor' => $targetKunci]);
-        Cache::forget('admin-dashboard:single:v3');
+        Cache::forget('admin-dashboard:'.tenantCacheScope().':v3');
 
         $status = $targetKunci ? 'dikunci (ditutup)' : 'dibuka kembali';
 

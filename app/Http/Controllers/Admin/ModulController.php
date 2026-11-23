@@ -33,19 +33,14 @@ class ModulController extends Controller
             'modul.*' => 'boolean',
         ]);
 
-        $sekolahSettings = SekolahSettings::first();
+        $sekolahSettings = SekolahSettings::firstOrCreate(
+            [],
+            ['nama_sekolah' => config('app.name', 'SIMANTAP'), 'pengaturan' => []]
+        );
 
-        if (! $sekolahSettings) {
-            $sekolahSettings = SekolahSettings::create([
-                'guru_id' => auth()->id(),
-                'nama_sekolah' => 'SIMANTAP',
-                'pengaturan' => ['modul' => $validated['modul']],
-            ]);
-        } else {
-            $currentSettings = $sekolahSettings->pengaturan ?? [];
-            $currentSettings['modul'] = $validated['modul'];
-            $sekolahSettings->update(['pengaturan' => $currentSettings]);
-        }
+        $currentSettings = is_array($sekolahSettings->pengaturan) ? $sekolahSettings->pengaturan : [];
+        $currentSettings['modul'] = $validated['modul'];
+        $sekolahSettings->update(['pengaturan' => $currentSettings]);
 
         return redirect()->route('admin.modul.index')
             ->with('success', 'Pengaturan modul berhasil diperbarui.');

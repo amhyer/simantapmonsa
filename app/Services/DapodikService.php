@@ -20,10 +20,10 @@ class DapodikService
             try {
                 $user = null;
                 if (! empty($gtk['nip'])) {
-                    $user = User::where('nama_pengguna', $gtk['nip'])->first();
+                    $user = User::forSchool()->where('nama_pengguna', $gtk['nip'])->first();
                 }
                 if (! $user && ! empty($gtk['nuptk'])) {
-                    $user = User::where('nama_pengguna', $gtk['nuptk'])->first();
+                    $user = User::forSchool()->where('nama_pengguna', $gtk['nuptk'])->first();
                 }
 
                 if (! $user) {
@@ -58,7 +58,7 @@ class DapodikService
                     ]);
                 }
 
-                $user->update([
+                $user->forceFill([
                     'rekaman' => array_merge($user->rekaman ?? [], [
                         'gtk_id' => $gtk['gtk_id'] ?? null,
                         'nip' => $gtk['nip'] ?? null,
@@ -72,7 +72,7 @@ class DapodikService
                         'tmt' => $gtk['tmt'] ?? null,
                         'jam_mengajar' => $gtk['jam_mengajar'] ?? null,
                     ]),
-                ]);
+                ])->save();
 
                 $berhasil++;
             } catch (\Exception $e) {

@@ -377,8 +377,6 @@ class DataReferensiController extends Controller
 
     public function updateMapelMeta(Request $request)
     {
-        \Log::info('Mapel meta update request', ['data' => $request->all()]);
-
         $validated = $request->validate([
             'mapel' => 'required|array',
             'mapel.*.kelompok' => 'nullable|string|max:50',
@@ -386,7 +384,7 @@ class DataReferensiController extends Controller
             'mapel.*.masuk_transkrip' => 'nullable|boolean',
         ]);
 
-        \Log::info('Mapel meta validated', ['validated' => $validated]);
+        \Log::info('Mapel meta diperbarui', ['jumlah_mapel' => count($validated['mapel'])]);
 
         foreach ($validated['mapel'] as $id => $row) {
             MataPelajaran::where('id', $id)->update([

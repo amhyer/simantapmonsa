@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Semester;
 use App\Models\Tka\AssessmentItem;
 use App\Models\Tka\Dimension;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class TkaDimensionController extends Controller
 {
@@ -33,9 +35,13 @@ class TkaDimensionController extends Controller
 
     public function store(Request $request)
     {
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where(fn ($q) => TenantContext::check()
+            ? $q->where('tenant_id', TenantContext::id())
+            : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'semester_id' => 'required|exists:semesters,id',
-            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi',
+            'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
@@ -78,9 +84,15 @@ class TkaDimensionController extends Controller
 
     public function update(Request $request, Dimension $dimension)
     {
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')
+            ->ignore($dimension->id)
+            ->where(fn ($q) => TenantContext::check()
+                ? $q->where('tenant_id', TenantContext::id())
+                : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'semester_id' => 'required|exists:semesters,id',
-            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi,'.$dimension->id,
+            'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',

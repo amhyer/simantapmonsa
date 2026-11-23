@@ -25,6 +25,13 @@ class TarikSemuaPresensiJob implements ShouldQueue
 
     public const TTL_LOCK = 600;
 
+    public static function lockKey(?int $tenantId = null): string
+    {
+        $scope = tenantCacheScope($tenantId);
+
+        return $scope === 'single' ? self::KUNCI_LOCK : self::KUNCI_LOCK.':'.$scope;
+    }
+
     protected ?int $userId;
 
     // Null default aman untuk job lama yang sudah terserialisasi.
@@ -61,7 +68,7 @@ class TarikSemuaPresensiJob implements ShouldQueue
         } finally {
             // Lock dilepas di sini, bukan menunggu TTL 10 menit, agar admin bisa
             // mengulang penarikan segera setelah proses ini selesai/gagal.
-            Cache::lock(self::KUNCI_LOCK)->forceRelease();
+            Cache::lock(self::lockKey($this->tenantId))->forceRelease();
         }
     }
 

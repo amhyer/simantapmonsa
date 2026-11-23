@@ -22,19 +22,23 @@ if (! function_exists('tenantCacheScope')) {
 if (! function_exists('setting')) {
     function setting(string|array|null $key = null, mixed $default = null): mixed
     {
-        $path = storage_path('app/settings.json');
-        $cacheKey = 'app_settings:'.tenantCacheScope();
+        $scope = tenantCacheScope();
+        $path = $scope === 'single'
+            ? storage_path('app/settings.json')
+            : storage_path('app/settings-'.preg_replace('/[^a-zA-Z0-9_-]/', '_', $scope).'.json');
+        $cacheKey = 'app_settings:'.$scope;
 
         $settings = Cache::remember($cacheKey, 300, function () use ($path) {
             return file_exists($path) ? json_decode(file_get_contents($path), true) ?? [] : [];
         });
 
         if (is_array($key)) {
-            $settings = array_merge($settings, $key);
-            if (auth()->check() && in_array(auth()->user()->peran, ['admin', 'guru'])) {
-                file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                Cache::forget($cacheKey);
+            if (! auth()->check() || ! in_array(auth()->user()->peran, ['admin', 'super_admin'], true)) {
+                return false;
             }
+            $settings = array_merge($settings, $key);
+            file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            Cache::forget($cacheKey);
 
             return true;
         }

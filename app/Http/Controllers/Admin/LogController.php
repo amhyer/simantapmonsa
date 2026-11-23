@@ -14,7 +14,7 @@ class LogController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
-        $users = User::orderBy('nama_lengkap')->get();
+        $users = User::forSchool()->orderBy('nama_lengkap')->get();
 
         return view('admin.log.index', compact('logs', 'users'));
     }

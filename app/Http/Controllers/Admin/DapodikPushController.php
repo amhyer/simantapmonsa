@@ -31,10 +31,10 @@ class DapodikPushController extends Controller
         $counts = [
             'sekolah' => SekolahSettings::exists() ? 1 : 0,
             'peserta_didik' => Siswa::where('aktif', true)->whereNull('archived_at')->count(),
-            'gtk' => User::where('peran', 'guru')
+            'gtk' => User::forSchool()
+                ->where('peran', 'guru')
                 ->where('aktif', true)
                 ->whereNotNull('dapodik_id')
-                ->when(TenantContext::check(), fn ($q) => $q->where('tenant_id', TenantContext::id()))
                 ->count(),
             'rombel' => Rombel::whereNotNull('dapodik_id')->count(),
             'jadwal' => JadwalPelajaran::whereNotNull('dapodik_id')->count(),

@@ -28,29 +28,18 @@ class SheetController extends Controller
             'spreadsheet_url' => 'required|url|max:500',
         ]);
 
-        $sekolahSettings = SekolahSettings::first();
+        $sekolahSettings = SekolahSettings::firstOrCreate(
+            [],
+            ['nama_sekolah' => config('app.name', 'SIMANTAP'), 'pengaturan' => []]
+        );
 
-        if (! $sekolahSettings) {
-            $sekolahSettings = SekolahSettings::create([
-                'guru_id' => auth()->id(),
-                'nama_sekolah' => 'SIMANTAP',
-                'pengaturan' => [
-                    'google_sheet' => [
-                        'terhubung' => true,
-                        'spreadsheet_id' => $validated['spreadsheet_id'],
-                        'spreadsheet_url' => $validated['spreadsheet_url'],
-                    ],
-                ],
-            ]);
-        } else {
-            $currentSettings = $sekolahSettings->pengaturan ?? [];
-            $currentSettings['google_sheet'] = [
-                'terhubung' => true,
-                'spreadsheet_id' => $validated['spreadsheet_id'],
-                'spreadsheet_url' => $validated['spreadsheet_url'],
-            ];
-            $sekolahSettings->update(['pengaturan' => $currentSettings]);
-        }
+        $currentSettings = is_array($sekolahSettings->pengaturan) ? $sekolahSettings->pengaturan : [];
+        $currentSettings['google_sheet'] = [
+            'terhubung' => true,
+            'spreadsheet_id' => $validated['spreadsheet_id'],
+            'spreadsheet_url' => $validated['spreadsheet_url'],
+        ];
+        $sekolahSettings->update(['pengaturan' => $currentSettings]);
 
         return redirect()->route('admin.sheet.index')
             ->with('success', 'Google Sheet berhasil terhubung.');

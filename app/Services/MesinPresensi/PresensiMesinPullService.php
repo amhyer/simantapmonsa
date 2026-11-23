@@ -14,6 +14,13 @@ class PresensiMesinPullService
 
     public const MAKS_HARI_TARIK = 31;
 
+    public static function kunciSinkronTerakhir(?int $tenantId = null): string
+    {
+        $scope = tenantCacheScope($tenantId);
+
+        return $scope === 'single' ? self::KUNCI_SINKRON_TERAKHIR : self::KUNCI_SINKRON_TERAKHIR.':'.$scope;
+    }
+
     public function tarikLangsungDinonaktifkan(): bool
     {
         return TenantMode::isMultiSchool()
@@ -26,14 +33,14 @@ class PresensiMesinPullService
             return null;
         }
 
-        $val = Cache::get(self::KUNCI_SINKRON_TERAKHIR);
+        $val = Cache::get(self::kunciSinkronTerakhir());
 
         return $val !== null ? (string) $val : null;
     }
 
     public function tandaiTerakhirTarik(): void
     {
-        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+        Cache::forever(self::kunciSinkronTerakhir(), now()->toDateTimeString());
     }
 
     /**
