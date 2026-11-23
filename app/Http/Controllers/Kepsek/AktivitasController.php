@@ -63,10 +63,17 @@ class AktivitasController extends Controller
         $chartSiswaData = $this->getChartPerRole('siswa', 7);
         $chartAdminData = $this->getChartPerRole('admin', 7);
 
-        $chartDistribusiData = User::forSchool()->select('peran', DB::raw('count(*) as jumlah'))
+        $distribusiPerPeran = User::forSchool()->select('peran', DB::raw('count(*) as jumlah'))
             ->groupBy('peran')
-            ->pluck('jumlah', 'peran')
-            ->toArray();
+            ->pluck('jumlah', 'peran');
+
+        $chartDistribusiData = [
+            (int) ($distribusiPerPeran['guru'] ?? 0),
+            (int) ($distribusiPerPeran['siswa'] ?? 0),
+            (int) ($distribusiPerPeran['admin'] ?? 0),
+            (int) ($distribusiPerPeran['ortu'] ?? 0),
+            (int) ($distribusiPerPeran['kepsek'] ?? 0),
+        ];
 
         $siswaAktif = User::forSchool()->where('peran', 'siswa')
             ->whereNotNull('terakhir_masuk')

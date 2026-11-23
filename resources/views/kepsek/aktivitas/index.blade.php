@@ -100,7 +100,10 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span style="font-size:13px">{{ $log->jenis ?? '—' }}</span>
+                                            <div style="font-size:13px;font-weight:600;color:var(--text)">{{ $log->judul ?? $log->jenis ?? '—' }}</div>
+                                            @if(!empty($log->deskripsi))
+                                                <div style="font-size:11.5px;color:var(--muted)">{{ $log->deskripsi }}</div>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -281,7 +284,7 @@
                 data: {
                     labels: ['Guru', 'Siswa', 'Admin', 'Orang Tua', 'Kepsek'],
                     datasets: [{
-                        data: {!! json_encode($chartDistribusiData ?? [35, 40, 5, 15, 5], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
+                        data: {!! json_encode(array_values($chartDistribusiData ?? [35, 40, 5, 15, 5]), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                         backgroundColor: ['#1F3864', '#B8860B', '#12805C', '#2B4A80', '#D4A017'],
                         borderWidth: 2,
                         borderColor: '#fff'

@@ -87,11 +87,11 @@
                 <div style="padding:32px;text-align:center;color:#667085">Belum ada data guru yang sesuai filter.</div>
             @else
                 <div class="table-wrapper">
-                    <table class="table">
+                    <table class="table table-compact">
                         <thead>
                             <tr>
-                                <th style="width:42px">No</th>
-                                <th style="min-width:190px">Nama Guru</th>
+                                <th style="width:36px">No</th>
+                                <th style="min-width:160px">Nama Guru</th>
                                 <th style="text-align:center">CP</th>
                                 <th style="text-align:center">TP</th>
                                 <th style="text-align:center">ATP</th>
@@ -101,9 +101,9 @@
                                 <th style="text-align:center">RPM</th>
                                 <th style="text-align:center">Jurnal</th>
                                 <th style="text-align:center">Koku</th>
-                                <th style="text-align:center;width:72px">Skor</th>
-                                <th style="width:140px">Status</th>
-                                <th style="text-align:right;width:130px">Aksi</th>
+                                <th style="text-align:center;width:60px">Skor</th>
+                                <th style="white-space:nowrap">Status</th>
+                                <th style="text-align:right;white-space:nowrap">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -114,25 +114,25 @@
                                     <td>
                                         <div style="font-weight:600;color:#101828">{{ $row['guru']->nama_lengkap }}</div>
                                         @if($row['guru']->kelas_mata_pelajaran)
-                                            <div style="font-size:11px;color:#667085">{{ $row['guru']->kelas_mata_pelajaran }}</div>
+                                            <div style="font-size:11px;color:#475467">{{ $row['guru']->kelas_mata_pelajaran }}</div>
                                         @endif
                                     </td>
                                     @foreach(['cp','tp','atp','kktp','prota','prosem','rpm','jurnal','kokurikuler'] as $k)
-                                        <td style="text-align:center;font-size:12px">
+                                        <td style="text-align:center;font-size:12px;white-space:nowrap">
                                             @if($c[$k] > 0)
                                                 <span style="color:#027A48;font-weight:700" title="{{ $c[$k] }} dokumen">✓ {{ $c[$k] }}</span>
                                             @else
-                                                <span style="color:var(--bad);opacity:.65">—</span>
+                                                <span style="color:#667085;font-weight:600">0</span>
                                             @endif
                                         </td>
                                     @endforeach
-                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
+                                    <td style="text-align:center;font-weight:700;white-space:nowrap;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
                                         {{ $row['persen'] }}%
                                     </td>
-                                    <td>
-                                        <span class="badge {{ $row['status_badge'] }}" style="white-space:nowrap">{{ $row['status_label'] }}</span>
+                                    <td style="white-space:nowrap">
+                                        <span class="badge {{ $row['status_badge'] }}">{{ $row['status_label'] }}</span>
                                     </td>
-                                    <td style="text-align:right">
+                                    <td style="text-align:right;white-space:nowrap">
                                         <a href="{{ route('kepsek.supervisi-pm.show', ['guru' => $row['guru'], 'tahun_ajaran' => $tahunAjaran, 'semester' => $semester]) }}"
                                            class="btn btn-sm btn-ghost">
                                             <i class="fas fa-clipboard-check"></i> Periksa

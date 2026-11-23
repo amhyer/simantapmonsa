@@ -97,7 +97,29 @@
     </div>
     <div class="card">
         <div class="card-header"><h3>🎯 Distribusi Predikat</h3></div>
-        <div class="card-body"><div style="height:280px"><canvas id="chartPredikat"></canvas></div></div>
+        <div class="card-body">
+            @php
+                $totalPredikat = ($distribusiPredikat['A'] ?? 0) + ($distribusiPredikat['B'] ?? 0) + ($distribusiPredikat['C'] ?? 0) + ($distribusiPredikat['D'] ?? 0);
+            @endphp
+            @if($totalPredikat > 0)
+                <div style="height:280px"><canvas id="chartPredikat"></canvas></div>
+            @else
+                <div style="height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);gap:10px">
+                    <canvas id="chartPredikat" style="display:none"></canvas>
+                    <div style="width:52px;height:52px;border-radius:50%;background:#F2F4F7;display:flex;align-items:center;justify-content:center;font-size:22px">🎯</div>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;color:var(--text)">Belum Ada Nilai e-Rapor</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:2px">Distribusi predikat A, B, C, dan D akan tampil otomatis setelah guru menginput nilai akhir.</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+                        <span class="tag tag-ok">A · Sangat Baik: 0</span>
+                        <span class="tag tag-primary">B · Baik: 0</span>
+                        <span class="tag tag-gold">C · Cukup: 0</span>
+                        <span class="tag tag-bad">D · Perlu Bimbingan: 0</span>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 

@@ -84,10 +84,10 @@
                                         </div>
                                     </td>
                                     <td style="text-align:right"><b>{{ $t->jumlah_siswa ?? 0 }}</b></td>
-                                    @foreach($daftarKebiasaan ?? [] as $kb)
+                                    @foreach($daftarKebiasaan ?? [] as $key => $kb)
                                         <td style="text-align:center">
                                             @php
-                                                $nilai = $t->kebiasaan[$kb] ?? 0;
+                                                $nilai = $t->kebiasaan[$key] ?? $t->kebiasaan[$kb] ?? 0;
                                             @endphp
                                             <span class="tag {{ $nilai >= 80 ? 'tag-ok' : ($nilai >= 60 ? 'tag-warn' : 'tag-bad') }}">{{ number_format($nilai, 1) }}%</span>
                                         </td>

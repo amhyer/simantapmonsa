@@ -33,6 +33,14 @@
     </style>
     @endif
     <style>
+        .badge { white-space: nowrap; }
+        .badge-success { background: #E6F5F0; color: var(--ok); }
+        .badge-warning { background: #FEF3E2; color: var(--warn); }
+        .badge-danger { background: #FEE9E7; color: var(--bad); }
+        .badge-info { background: #EEF2F9; color: var(--navy); }
+        .badge-secondary { background: #F2F4F7; color: var(--muted); }
+        .table-wrapper table.table-compact th,
+        .table-wrapper table.table-compact td { padding: 8px 8px; }
         @media (max-width: 768px) {
             .topbar { padding: 0 12px; gap: 8px; }
             .topbar-left { min-width: 0; flex: 1; overflow: hidden; }
@@ -41,6 +49,8 @@
             .topbar-academic-pill { display: none !important; }
             .topbar-right { gap: 6px; flex-shrink: 0; }
             .header-actions .btn { padding: 5px 8px; font-size: 11.5px; }
+            .page-content { padding-bottom: 84px !important; }
+            #toTop { bottom: 76px !important; right: 16px !important; }
         }
     </style>
     @stack('styles')

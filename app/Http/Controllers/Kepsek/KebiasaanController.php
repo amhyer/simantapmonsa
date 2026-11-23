@@ -59,12 +59,13 @@ class KebiasaanController extends Controller
                 $fieldTotals[$field] += $rk['rata_rata'][$field] ?? 0;
             }
         }
-        $fieldTotals = $fieldTotals->map(fn ($v) => $totalSiswa > 0 ? round($v / $totalSiswa, 2) : 0);
-        $kebiasaanTerbaik = $fieldTotals->keys()->first() ?? '—';
         $daftarKebiasaan = [
             'bangun_pagi' => 'Bangun Pagi', 'beribadah' => 'Beribadah', 'berolahraga' => 'Berolahraga',
             'makan_sehat' => 'Makan Sehat', 'gemar_belajar' => 'Gemar Belajar', 'bermasyarakat' => 'Bermasyarakat', 'tidur_cepat' => 'Tidur Cepat',
         ];
+        $fieldTotals = $fieldTotals->map(fn ($v) => $totalSiswa > 0 ? round($v / $totalSiswa, 2) : 0);
+        $bestKey = $fieldTotals->max() > 0 ? $fieldTotals->sortDesc()->keys()->first() : $fieldTotals->keys()->first();
+        $kebiasaanTerbaik = $bestKey !== null ? ($daftarKebiasaan[$bestKey] ?? ucwords(str_replace('_', ' ', (string) $bestKey))) : '—';
 
         $chartKebiasaanLabels = array_values($daftarKebiasaan);
         $chartKebiasaanData = $fieldTotals->values()->toArray();

@@ -126,16 +126,16 @@
                                             <div style="font-size:11px;color:#667085">{{ $row['guru']->kelas_mata_pelajaran }}</div>
                                         @endif
                                     </td>
-                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
+                                    <td style="text-align:center;font-weight:700;white-space:nowrap;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
                                         {{ $row['persen'] }}% ({{ $row['terisi'] }}/9)
                                     </td>
-                                    <td><span class="badge {{ $row['status_badge'] }}">{{ $row['status_label'] }}</span></td>
-                                    <td>
+                                    <td style="white-space:nowrap"><span class="badge {{ $row['status_badge'] }}">{{ $row['status_label'] }}</span></td>
+                                    <td style="white-space:nowrap">
                                         <span class="badge {{ $sup ? $sup->statusPengawasBadge() : 'badge-warning' }}">
                                             {{ $sup ? $sup->statusPengawasLabel() : 'Menunggu Verifikasi Pengawas' }}
                                         </span>
                                     </td>
-                                    <td style="text-align:right">
+                                    <td style="text-align:right;white-space:nowrap">
                                         <a href="{{ route('pengawas.supervisi.show', ['guru' => $row['guru']->uuid, 'tahun_ajaran' => $tahunAjaran, 'semester' => $semester]) }}"
                                            class="btn btn-sm btn-ghost">
                                             <i class="fas fa-search"></i> Verifikasi

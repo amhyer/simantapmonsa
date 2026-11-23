@@ -399,5 +399,12 @@ table.filtering tbody tr:not(.table-empty) { animation: rowIn .18s ease; }
     .main-content {
         padding-bottom: 70px !important;
     }
+    .page-content {
+        padding-bottom: 84px !important;
+    }
+    #toTop {
+        bottom: 76px;
+        right: 16px;
+    }
 }
 

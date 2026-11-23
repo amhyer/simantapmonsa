@@ -193,27 +193,35 @@ class DashboardController extends Controller
 
     public function pantau(Request $request)
     {
-        $guru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->get();
+        $guru = User::forSchool()->where('peran', 'guru')->where('aktif', true)->orderBy('nama_lengkap')->get();
         $filterGuru = $request->get('guru_id');
         $filterTanggal = $request->get('tanggal');
 
-        $query = Aktivitas::query();
+        $query = Aktivitas::with('guru');
         if ($filterGuru) {
             $query->where('guru_id', $filterGuru);
         }
         if ($filterTanggal) {
             $query->whereDate('created_at', $filterTanggal);
         }
-        $aktivitas = $query->orderBy('created_at', 'desc')->paginate(50);
+        $aktivitas = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
 
-        $guruIds = $guru->pluck('id');
-        $aktivitasPerGuru = Aktivitas::whereIn('guru_id', $guruIds)->get()->groupBy('guru_id');
+        $guruUntukStatistik = $filterGuru
+            ? $guru->where('id', (int) $filterGuru)->values()
+            : $guru;
+
+        $guruIds = $guruUntukStatistik->pluck('id');
+        $aktivitasQuery = Aktivitas::whereIn('guru_id', $guruIds);
+        if ($filterTanggal) {
+            $aktivitasQuery->whereDate('created_at', $filterTanggal);
+        }
+        $aktivitasPerGuru = $aktivitasQuery->get()->groupBy('guru_id');
         $nilaiPerGuru = NilaiErapot::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $materiPerGuru = Materi::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $kuisPerGuru = Kuis::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
         $siswaPerGuru = Siswa::whereIn('guru_id', $guruIds)->selectRaw('guru_id, count(*) as jumlah')->groupBy('guru_id')->get()->pluck('jumlah', 'guru_id');
 
-        $statistikGuru = $guru->map(function ($g) use ($aktivitasPerGuru, $nilaiPerGuru, $materiPerGuru, $kuisPerGuru, $siswaPerGuru) {
+        $statistikGuru = $guruUntukStatistik->map(function ($g) use ($aktivitasPerGuru, $nilaiPerGuru, $materiPerGuru, $kuisPerGuru, $siswaPerGuru) {
             $aktivitasGuru = $aktivitasPerGuru->get($g->id, collect());
 
             return [

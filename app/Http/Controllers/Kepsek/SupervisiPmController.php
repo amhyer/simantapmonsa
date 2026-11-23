@@ -167,10 +167,15 @@ class SupervisiPmController extends Controller
 
         $sekolah = $this->ctx->sekolah($tenantId);
         if (! $sekolah) {
+            $namaSekolahDefault = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::query()->whereKey($tenantId)->value('nama_sekolah') : null)
+                ?: (SekolahSettings::withoutGlobalScopes()
+                    ->whereNotNull('nama_sekolah')
+                    ->whereNotIn('nama_sekolah', ['SDN SIMANTAP', 'Sekolah Dasar'])
+                    ->value('nama_sekolah') ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1');
             $sekolah = SekolahSettings::create([
                 'tenant_id' => $tenantId,
                 'guru_id' => $kepsek->id,
-                'nama_sekolah' => 'Sekolah Dasar',
+                'nama_sekolah' => $namaSekolahDefault,
                 'kepala_sekolah' => $kepsek->nama_lengkap,
                 'pengaturan' => [],
             ]);

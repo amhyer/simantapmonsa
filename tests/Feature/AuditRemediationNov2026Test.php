@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Aktivitas;
 use App\Models\MataPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\PresensiMesinSyncLog;
@@ -477,5 +478,55 @@ class AuditRemediationNov2026Test extends TestCase
             'user_agent' => 'SIMANTAP-Bridge/1.0',
         ]);
         $this->assertSame('SIMANTAP-Bridge/1.0', $log->fresh()->user_agent);
+    }
+
+    public function test_browser_walkthrough_kepsek_dan_pengawas_perbaikan_5_temuan(): void
+    {
+        $tenant = $this->buatSekolah('40307563');
+        $tenant->update(['nama_sekolah' => 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1']);
+
+        $kepsek = User::factory()->kepsek()->create(['tenant_id' => $tenant->id]);
+        $pengawas = User::factory()->pengawas()->create(['tenant_id' => $tenant->id]);
+        $guruA = User::factory()->guru()->create(['tenant_id' => $tenant->id, 'nama_lengkap' => 'Guru Pantau Alpha']);
+        $guruB = User::factory()->guru()->create(['tenant_id' => $tenant->id, 'nama_lengkap' => 'Guru Pantau Beta']);
+
+        TenantContext::run($tenant->id, fn () => Aktivitas::create([
+            'tenant_id' => $tenant->id,
+            'guru_id' => $guruA->id,
+            'nama_guru' => $guruA->nama_lengkap,
+            'jenis' => 'input_nilai',
+            'judul' => 'Simpan Nilai Matematika 6A',
+            'deskripsi' => '28 siswa diperbarui',
+        ]));
+
+        // 1. /kepsek/pantau: filter guru_id memfilter tabel statistikGuru & merender judul/nama_guru
+        $pantauRes = $this->actingAs($kepsek)->get(route('kepsek.pantau.index', ['guru_id' => $guruA->id]));
+        $pantauRes->assertOk()
+            ->assertSee('Guru Pantau Alpha')
+            ->assertSee('Simpan Nilai Matematika 6A')
+            ->assertSee('28 siswa diperbarui');
+        $this->assertCount(1, $pantauRes->viewData('statistikGuru'));
+
+        // 2. /kepsek/aktivitas: chartDistribusiData wajib array numerik terindeks (0..4) agar Chart.js v4 tidak error axis
+        $aktRes = $this->actingAs($kepsek)->get(route('kepsek.aktivitas.index'));
+        $aktRes->assertOk();
+        $distData = $aktRes->viewData('chartDistribusiData');
+        $this->assertIsArray($distData);
+        $this->assertSame([0, 1, 2, 3, 4], array_keys($distData));
+
+        // 3. /kepsek/kebiasaan: kebiasaanTerbaik tampil sebagai label manusiawi ("Bangun Pagi"), bukan "bangun_pagi"
+        $kebRes = $this->actingAs($kepsek)->get(route('kepsek.kebiasaan.index'));
+        $kebRes->assertOk()
+            ->assertDontSee('>bangun_pagi<', false);
+        $this->assertSame('Bangun Pagi', $kebRes->viewData('kebiasaanTerbaik'));
+
+        // 4. /pengawas/tanda-tangan: menyimpan TTD tidak menimpa nama_sekolah menjadi 'SDN SIMANTAP'
+        $this->actingAs($pengawas)->post(route('pengawas.ttd.store'), [
+            'nama_pengawas' => 'Drs. H. Pengawas Uji, M.Pd.',
+            'nip_pengawas' => '197001011995031001',
+        ])->assertRedirect();
+
+        $sekolah = SekolahSettings::withoutGlobalScopes()->where('tenant_id', $tenant->id)->firstOrFail();
+        $this->assertSame('UPT SPF SD NEGERI UNGGULAN MONGISIDI 1', $sekolah->nama_sekolah);
     }
 }

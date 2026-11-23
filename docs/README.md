@@ -47,6 +47,7 @@ Dokumen historis, scratchpad investigasi agen, dan laporan audit Sept–Okt 2026
 | Desain Perangkat Ajar & penataan menu | [`DESAIN-PERANGKAT-AJAR-DAN-MENU.md`](DESAIN-PERANGKAT-AJAR-DAN-MENU.md) |
 | Prompt acuan E-Learning, perangkat & menu | [`PROMPT-ELEARNING-PERANGKAT-MENU.md`](PROMPT-ELEARNING-PERANGKAT-MENU.md) |
 | Matriks & audit menu lintas 7 peran | [`AUDIT-MENU-MATRIKS-2026-11-08.md`](AUDIT-MENU-MATRIKS-2026-11-08.md) · [`AUDIT-MENU-PER-ROLE-2026-11-08.md`](AUDIT-MENU-PER-ROLE-2026-11-08.md) |
+| Panduan lengkap seluruh peran & hak akses aktif | [`PANDUAN-PERAN-DAN-HAK-AKSES.md`](PANDUAN-PERAN-DAN-HAK-AKSES.md) |
 
 ---
 

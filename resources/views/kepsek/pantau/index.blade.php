@@ -30,6 +30,9 @@
                 <input id="fld-kepsek-pantau-tanggal" type="date" name="tanggal" value="{{ $filterTanggal }}" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">🔍 Filter</button>
+            @if($filterGuru || $filterTanggal)
+                <a href="{{ route('kepsek.pantau.index') }}" class="btn btn-sm btn-ghost">Reset</a>
+            @endif
         </form>
     </div>
 </div>
@@ -84,16 +87,41 @@
         <div class="card-body tight">
             @if($aktivitas->count())
                 @foreach($aktivitas->take(15) as $a)
+                    @php
+                        $namaPelaku = $a->guru?->nama_lengkap ?? $a->nama_guru ?? $a->nama_pengguna ?? 'Sistem';
+                        $judulKegiatan = $a->judul ?? $a->kegiatan ?? $a->jenis ?? 'Aktivitas Sistem';
+                        $rincianKegiatan = $a->deskripsi ?? $a->rincian ?? $a->tabel_terkait ?? '-';
+                        $waktuKegiatan = $a->created_at ?? ($a->waktu ? \Carbon\Carbon::parse($a->waktu) : null);
+                    @endphp
                     <div style="padding:10px 12px;border-bottom:1px solid #F2F4F7;display:flex;gap:10px;align-items:start">
                         <div style="width:8px;height:8px;border-radius:50%;background:#1F3864;margin-top:6px;flex-shrink:0"></div>
-                        <div>
-                            <div style="font-weight:600;font-size:13px">{{ $a->nama_pengguna ?? 'Sistem' }}</div>
-                            <div style="font-size:12px;color:#667085">{{ $a->kegiatan }} — {{ $a->rincian ?? '-' }}</div>
-                            <div style="font-size:11px;color:#888;margin-top:2px">{{ $a->waktu ? \Carbon\Carbon::parse($a->waktu)->diffForHumans() : '-' }}</div>
+                        <div style="min-width:0;flex:1">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                                <span style="font-weight:600;font-size:13px;color:#101828">{{ $namaPelaku }}</span>
+                                @if(!empty($a->jenis))
+                                    <span class="tag tag-primary" style="font-size:10.5px">{{ str_replace('_', ' ', ucfirst($a->jenis)) }}</span>
+                                @endif
+                            </div>
+                            <div style="font-size:12px;color:#344054;margin-top:2px">
+                                {{ $judulKegiatan }}@if($rincianKegiatan && $rincianKegiatan !== '-' && $rincianKegiatan !== $judulKegiatan) — <span style="color:#667085">{{ $rincianKegiatan }}</span>@endif
+                            </div>
+                            <div style="font-size:11px;color:#667085;margin-top:2px">{{ $waktuKegiatan ? $waktuKegiatan->locale('id')->diffForHumans() . ' · ' . $waktuKegiatan->format('d/m/Y H:i') : '-' }}</div>
                         </div>
                     </div>
                 @endforeach
-                <div style="padding:10px;text-align:center">{{ $aktivitas->links() }}</div>
+                <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:#667085;border-top:1px solid #F2F4F7">
+                    <span>Menampilkan {{ $aktivitas->firstItem() ?? 0 }}–{{ min(($aktivitas->firstItem() ?? 1) + min($aktivitas->count(), 15) - 1, $aktivitas->total()) }} dari {{ $aktivitas->total() }} aktivitas</span>
+                    @if($aktivitas->hasPages())
+                        <div style="display:flex;gap:6px">
+                            @if(!$aktivitas->onFirstPage())
+                                <a href="{{ $aktivitas->previousPageUrl() }}" class="btn btn-sm btn-ghost">&laquo; Sebelumnya</a>
+                            @endif
+                            @if($aktivitas->hasMorePages())
+                                <a href="{{ $aktivitas->nextPageUrl() }}" class="btn btn-sm btn-ghost">Berikutnya &raquo;</a>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             @else
                 <div style="text-align:center;padding:30px;color:#888">Belum ada aktivitas</div>
             @endif

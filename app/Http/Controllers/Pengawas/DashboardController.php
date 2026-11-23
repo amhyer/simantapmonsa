@@ -388,10 +388,19 @@ class DashboardController extends Controller
             'ttd_pengawas_canvas' => ['nullable', 'string'],
         ]);
 
+        $namaSekolahDefault = ($tenantId !== null ? Tenant::query()->whereKey($tenantId)->value('nama_sekolah') : null)
+            ?: (SekolahSettings::withoutGlobalScopes()
+                ->whereNotNull('nama_sekolah')
+                ->whereNotIn('nama_sekolah', ['SDN SIMANTAP', 'Sekolah Dasar'])
+                ->value('nama_sekolah') ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1');
+
         $sekolah = SekolahSettings::firstOrCreate(
             ['tenant_id' => $tenantId],
-            ['guru_id' => $pengawas->id, 'nama_sekolah' => 'SDN SIMANTAP']
+            ['guru_id' => $pengawas->id, 'nama_sekolah' => $namaSekolahDefault]
         );
+        if (in_array($sekolah->nama_sekolah, ['SDN SIMANTAP', 'Sekolah Dasar'], true)) {
+            $sekolah->nama_sekolah = $namaSekolahDefault;
+        }
 
         $cfgSekolah = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
         $cfgSekolah['nama_pengawas'] = $data['nama_pengawas'];
@@ -410,7 +419,10 @@ class DashboardController extends Controller
             }
         }
 
-        $sekolah->update(['pengaturan' => $cfgSekolah]);
+        $sekolah->update([
+            'nama_sekolah' => $sekolah->nama_sekolah,
+            'pengaturan' => $cfgSekolah,
+        ]);
 
         return back()->with('success', 'Identitas & Tanda Tangan Digital Pengawas Sekolah berhasil disimpan.');
     }
