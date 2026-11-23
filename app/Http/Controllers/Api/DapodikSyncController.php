@@ -202,7 +202,7 @@ class DapodikSyncController extends Controller
 
     private function syncSekolah(array $data): array
     {
-        $currentUserId = auth()->id() ?? 1;
+        $currentUserId = auth()->id();
         $tenant = TenantContext::check() ? Tenant::find(TenantContext::id()) : null;
 
         return $this->processInBatches(
@@ -238,19 +238,25 @@ class DapodikSyncController extends Controller
                     'status' => 'aktif',
                 ];
 
-                // Query otomatis dibatasi tenant aktif (TenantScope).
-                $existing = SekolahSettings::where(function ($q) use ($s, $currentUserId, $tenant) {
-                    $q->where('npsn', $s['npsn'] ?? null);
-                    if (! $tenant) {
-                        $q->orWhere('guru_id', $currentUserId);
-                    }
-                })->first();
+                // Query otomatis dibatasi tenant aktif (TenantScope). Satu sekolah hanya memiliki
+                // satu baris pengaturan identitas, jadi fallback ke baris pertama bila NPSN belum terisi.
+                $existing = SekolahSettings::where('npsn', $s['npsn'] ?? null)->first()
+                    ?? SekolahSettings::first();
                 if ($existing) {
-                    $existing->update($mapped);
+                    $updateData = $mapped;
+                    unset($updateData['guru_id']);
+                    if ($existing->guru_id === null && $currentUserId !== null
+                        && ! SekolahSettings::withoutGlobalScopes()->where('guru_id', $currentUserId)->exists()) {
+                        $updateData['guru_id'] = $currentUserId;
+                    }
+                    $existing->update($updateData);
 
                     return 'diperbarui';
                 }
 
+                if ($currentUserId !== null && SekolahSettings::withoutGlobalScopes()->where('guru_id', $currentUserId)->exists()) {
+                    $mapped['guru_id'] = null;
+                }
                 SekolahSettings::create($mapped);
 
                 return 'berhasil';

@@ -84,8 +84,18 @@ class AktivitasController extends Controller
         $statistikAktivitas = $statistikAktivitas->map(function ($item) use ($totalForPercent) {
             $item->persentase = round(($item->jumlah / $totalForPercent) * 100, 1);
             $item->ikon = match ($item->jenis) {
-                'login' => '🔑', 'logout' => '🚪', 'input_nilai' => '📝',
-                'input_kehadiran' => '📋', 'lihat_laporan' => '📊',
+                'login' => '🔑',
+                'nilai', 'input_nilai' => '📝',
+                'kehadiran', 'input_kehadiran' => '📋',
+                'materi' => '📚',
+                'kuis' => '🧪',
+                'catatan' => '🗒️',
+                'dimensi', 'kebiasaan' => '🌱',
+                'pengaturan' => '⚙️',
+                'lihat', 'lihat_laporan' => '📊',
+                'tambah' => '➕',
+                'ubah' => '✏️',
+                'hapus' => '🗑️',
                 default => '📋',
             };
 

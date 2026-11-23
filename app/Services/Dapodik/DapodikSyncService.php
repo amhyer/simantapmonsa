@@ -286,7 +286,8 @@ class DapodikSyncService
                     continue;
                 }
 
-                $existing = SekolahSettings::where('npsn', $npsn)->first();
+                $existing = SekolahSettings::where('npsn', $npsn)->first()
+                    ?? SekolahSettings::first();
 
                 $data = [
                     'npsn' => $npsn,
@@ -1191,7 +1192,7 @@ class DapodikSyncService
         try {
             $username = $nis ?: ($siswa->nis ?: ($siswa->nisn ?: 'siswa'.$siswa->id));
 
-            $user = User::forSchool()->where('peran', 'siswa')
+            $user = User::forSchool()->withTrashed()->where('peran', 'siswa')
                 ->where(function ($q) use ($siswa, $username) {
                     $q->whereJsonContains('terhubung_dengan', $siswa->id)
                         ->orWhere('nama_pengguna', $username)
@@ -1200,6 +1201,9 @@ class DapodikSyncService
                 ->first();
 
             if ($user) {
+                if ($user->trashed()) {
+                    $user->restore();
+                }
                 $terhubung = (array) ($user->terhubung_dengan ?? []);
                 if (! in_array($siswa->id, $terhubung, true)) {
                     $terhubung[] = $siswa->id;
@@ -1208,13 +1212,25 @@ class DapodikSyncService
                     'nama_lengkap' => $siswa->nama_peserta_didik,
                     'kelas_mata_pelajaran' => $siswa->kelas,
                     'aktif' => $isActive,
+                    'archived_at' => $isActive ? null : ($user->archived_at ?? now()),
                     'terhubung_dengan' => array_values(array_unique($terhubung)),
                 ]);
             } else {
+                $finalUsername = $username;
+                if (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
+                    $finalUsername = 'siswa'.$username;
+                }
+                $base = $finalUsername;
+                $counter = 1;
+                while (User::forSchool()->withTrashed()->where('nama_pengguna', $finalUsername)->exists()) {
+                    $finalUsername = $base.'.'.$counter;
+                    $counter++;
+                }
+
                 User::create([
                     'uuid' => (string) Str::uuid(),
                     'nama_lengkap' => $siswa->nama_peserta_didik,
-                    'nama_pengguna' => $username,
+                    'nama_pengguna' => $finalUsername,
                     'kata_sandi' => Hash::make(InitialPassword::generate()),
                     'peran' => 'siswa',
                     'terhubung_dengan' => [$siswa->id],

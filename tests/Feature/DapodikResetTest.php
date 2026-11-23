@@ -284,9 +284,18 @@ class DapodikResetTest extends TestCase
         $this->assertStringNotContainsString('Kirim Nilai Ke Dapodik', $sidebarKosong);
         $this->assertStringNotContainsString('E-Rapor', $tabsKosong);
 
-        // 2. Tarik modul Sekolah -> Profil Sekolah & Semester muncul
+        // 2. Tarik modul Sekolah (termasuk saat baris SekolahSettings awal sudah ada tanpa NPSN) -> Profil Sekolah & Semester muncul tanpa baris ganda
+        TenantContext::set($tenant->id);
+        SekolahSettings::create([
+            'tenant_id' => $tenant->id,
+            'guru_id' => $admin->id,
+            'nama_sekolah' => 'Draft Sekolah',
+            'npsn' => null,
+        ]);
         $pushDapodik('sekolah', [['npsn' => '33333333', 'nama' => 'SD Negeri Dinamis']]);
         TenantContext::set($tenant->id);
+        $this->assertSame(1, SekolahSettings::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count());
+        $this->assertSame('SD Negeri Dinamis', SekolahSettings::withoutGlobalScopes()->where('tenant_id', $tenant->id)->value('nama_sekolah'));
         $sidebarSekolah = $extractSidebar($this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->getContent());
         $this->assertStringContainsString('Profil Sekolah', $sidebarSekolah);
         $this->assertStringContainsString('Data Semester &amp; Tahun Ajaran', $sidebarSekolah);

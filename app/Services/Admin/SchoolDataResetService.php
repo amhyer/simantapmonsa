@@ -185,6 +185,18 @@ class SchoolDataResetService
                         DB::table($actualTable)->whereIn('created_by', $allSchoolUserIds)->delete();
                         $touched = true;
                     }
+                    if ($allSchoolUserIds->isNotEmpty() && Schema::hasColumn($actualTable, 'koordinator_id')) {
+                        DB::table($actualTable)->whereIn('koordinator_id', $allSchoolUserIds)->delete();
+                        $touched = true;
+                    }
+                    if ($allSchoolUserIds->isNotEmpty() && Schema::hasColumn($actualTable, 'orang_tua_id')) {
+                        DB::table($actualTable)->whereIn('orang_tua_id', $allSchoolUserIds)->delete();
+                        $touched = true;
+                    }
+                    if ($allSchoolUserIds->isNotEmpty() && Schema::hasColumn($actualTable, 'dibuat_oleh')) {
+                        DB::table($actualTable)->whereIn('dibuat_oleh', $allSchoolUserIds)->delete();
+                        $touched = true;
+                    }
 
                     if ($touched) {
                         $cleanedTables[] = $actualTable;
@@ -386,6 +398,14 @@ class SchoolDataResetService
                         DB::table($childTbl)->whereIn('attempt_id', $attemptIds)->delete();
                     }
                 }
+            }
+        }
+
+        // ── Projek P5 ──
+        if (isset($tables['p5_projek']) && $allSchoolUserIds->isNotEmpty() && Schema::hasColumn('p5_projek', 'koordinator_id')) {
+            $projekIds = DB::table('p5_projek')->whereIn('koordinator_id', $allSchoolUserIds)->pluck('id');
+            if ($projekIds->isNotEmpty() && isset($tables['p5_siswa']) && Schema::hasColumn('p5_siswa', 'projek_id')) {
+                DB::table('p5_siswa')->whereIn('projek_id', $projekIds)->delete();
             }
         }
     }
