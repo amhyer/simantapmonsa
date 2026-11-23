@@ -280,6 +280,8 @@ class AuditRemediationNov2026Test extends TestCase
 
     public function test_p1_8_siswa_dengan_prefix_siswa_nis_dapat_mengakses_tryout(): void
     {
+        config(['simantap.cbt_enabled' => true]);
+
         $guru = User::factory()->guru()->create();
         $siswa = Siswa::create([
             'guru_id' => $guru->id,

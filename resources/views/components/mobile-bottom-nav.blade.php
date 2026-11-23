@@ -45,13 +45,24 @@
             ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
         ];
     } elseif ($role === 'admin') {
+        $adminAvail = \App\Services\Navigation\SchoolDataAvailabilityService::status();
         $tabs = [
             ['title' => 'Dasbor', 'route' => route('admin.dashboard'), 'active' => $isActive('admin.dashboard'), 'icon' => 'fas fa-tachometer-alt'],
-            ['title' => 'Presensi', 'route' => route('admin.presensi.index'), 'active' => $isActive('admin.presensi.*'), 'icon' => 'fas fa-map-marker-alt'],
-            ['title' => 'Siswa', 'route' => route('admin.users.siswa'), 'active' => $isActive('admin.users.siswa'), 'icon' => 'fas fa-user-graduate'],
-            ['title' => 'CBT', 'route' => route(modulAsesmenAktif() ? 'admin.cbt.sessions.index' : 'admin.cbt.banks.index'), 'active' => $isActive('admin.cbt.*'), 'icon' => 'fas fa-laptop-code'],
-            ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
         ];
+        if (!($adminAvail['has_presensi'] ?? false) || !($adminAvail['has_siswa'] ?? false)) {
+            $tabs[] = ['title' => 'Dapodik', 'route' => route('admin.dapodik.index'), 'active' => $isActive('admin.dapodik.*'), 'icon' => 'fas fa-sync-alt'];
+        }
+        if ($adminAvail['has_presensi'] ?? false) {
+            $tabs[] = ['title' => 'Presensi', 'route' => route('admin.presensi.index'), 'active' => $isActive('admin.presensi.*'), 'icon' => 'fas fa-map-marker-alt'];
+        }
+        if ($adminAvail['has_siswa'] ?? false) {
+            $tabs[] = ['title' => 'Siswa', 'route' => route('admin.users.siswa'), 'active' => $isActive('admin.users.siswa'), 'icon' => 'fas fa-user-graduate'];
+        }
+        if ($adminAvail['has_cbt'] ?? false) {
+            $tabs[] = ['title' => 'CBT', 'route' => route(modulAsesmenAktif() ? 'admin.cbt.sessions.index' : 'admin.cbt.banks.index'), 'active' => $isActive('admin.cbt.*'), 'icon' => 'fas fa-laptop-code'];
+        }
+        $tabs = array_slice($tabs, 0, 4);
+        $tabs[] = ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'];
     }
 @endphp
 

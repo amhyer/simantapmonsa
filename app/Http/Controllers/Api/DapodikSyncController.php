@@ -16,6 +16,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\Navigation\SchoolDataAvailabilityService;
 use App\Support\InitialPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -96,6 +97,8 @@ class DapodikSyncController extends Controller
             'started_at' => now(),
             'finished_at' => now(),
         ]);
+
+        SchoolDataAvailabilityService::forget(TenantContext::id());
 
         return response()->json([
             'success' => true,

@@ -9,6 +9,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\Navigation\SchoolDataAvailabilityService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -128,6 +129,8 @@ class ImportDapodikJob implements ShouldQueue
                 Log::warning('Gagal update log import dapodik: '.$e->getMessage());
             }
         }
+
+        SchoolDataAvailabilityService::forget($this->tenantId ?? TenantContext::id());
 
         try {
             if (TenantContext::check()) {

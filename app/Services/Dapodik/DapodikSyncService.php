@@ -10,6 +10,8 @@ use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Services\Navigation\SchoolDataAvailabilityService;
 use App\Support\InitialPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -243,6 +245,8 @@ class DapodikSyncService
             'last_sync_at' => $finishedAt,
             'last_sync_by' => auth()->user()->nama_lengkap ?? 'System',
         ]);
+
+        SchoolDataAvailabilityService::forget(TenantContext::id());
 
         return [
             'mode' => 'commit',

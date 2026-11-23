@@ -16,6 +16,9 @@
         ],
     ];
 
+    $activeTab = activeAdminTab();
+    $dataAvail = \App\Services\Navigation\SchoolDataAvailabilityService::status();
+
     // Tab modul asesmen disembunyikan selama `simantap.cbt_enabled` mati:
     // seluruh route di baliknya dijawab 404 oleh middleware `module.asesmen`,
     // sehingga tab yang tetap tampil hanya akan menipu pengguna.
@@ -23,7 +26,13 @@
         $tabs = array_filter($tabs, fn (array $tab) => empty($tab['asesmen']));
     }
 
-    $activeTab = activeAdminTab();
+    // Sembunyikan tab yang datanya masih kosong (muncul otomatis saat data ditarik dari Dapodik).
+    $tabs = array_filter(
+        $tabs,
+        fn (array $tab, string $tabKey) => $activeTab === $tabKey
+            || \App\Services\Navigation\SchoolDataAvailabilityService::canShowAdminTab($tabKey, $dataAvail),
+        ARRAY_FILTER_USE_BOTH
+    );
 @endphp
 
 <div class="admin-tabs" role="navigation" aria-label="Tab Modul Admin">

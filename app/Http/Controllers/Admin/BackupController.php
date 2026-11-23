@@ -8,6 +8,7 @@ use App\Models\Aktivitas;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use App\Services\Backup\BackupJsonStreamReader;
+use App\Services\Navigation\SchoolDataAvailabilityService;
 use App\Services\NilaiErapotAuditService;
 use App\Support\BackupTables;
 use Illuminate\Database\Eloquent\Model;
@@ -141,6 +142,8 @@ class BackupController extends Controller
         } finally {
             $this->closeSpools($spools);
         }
+
+        SchoolDataAvailabilityService::forget(auth()->user()?->tenant_id ?? TenantContext::id());
 
         return redirect()->route('admin.backup.index')
             ->with('success', 'Data berhasil dipulihkan dari backup.');
@@ -350,6 +353,8 @@ class BackupController extends Controller
         } catch (\Exception $e) {
             Log::warning('Gagal catat aktivitas hapus data: '.$e->getMessage());
         }
+
+        SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);
 
         $pesan = 'Berhasil mengosongkan '.count($dihapus).' tabel data. Akun pengguna, semester, identitas sekolah, dan API key dipertahankan.';
 

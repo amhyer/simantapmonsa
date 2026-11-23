@@ -41,14 +41,24 @@ class Gelombang7MenuAndValidationTest extends TestCase
     {
         $service = app(CommandPaletteService::class);
 
+        $admin = User::factory()->admin()->create();
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        // Saat data sekolah benar-benar kosong (hanya akun Admin), hanya menu inti yang muncul di Ctrl+K
+        $adminKosongRoutes = collect($service->itemsFor($admin))->pluck('route')->all();
+        $this->assertContains('admin.dashboard', $adminKosongRoutes);
+        $this->assertContains('admin.dapodik.index', $adminKosongRoutes);
+        $this->assertNotContains('admin.validasi-data.index', $adminKosongRoutes);
+        $this->assertNotContains('admin.users.siswa', $adminKosongRoutes);
+        $this->assertNotContains('admin.cetak.nilai', $adminKosongRoutes);
+        $this->assertNotContains('superadmin.tenants.index', $adminKosongRoutes);
+
         $guruMapel = User::factory()->guru()->create(['is_wali_kelas' => false]);
         $guruWalas = User::factory()->guru()->create(['is_wali_kelas' => true]);
         $siswa = User::factory()->siswa()->create();
         $kepsek = User::factory()->kepsek()->create();
         $ortu = User::factory()->ortu()->create();
         $tendik = User::factory()->tendik()->create();
-        $admin = User::factory()->admin()->create();
-        $superAdmin = User::factory()->superAdmin()->create();
 
         // Guru mapel non-wali: ada Perangkat Ajar (CP/TP/ATP) & Jurnal, TIDAK ada menu wali kelas
         $mapelRoutes = collect($service->itemsFor($guruMapel))->pluck('route')->all();
@@ -64,9 +74,28 @@ class Gelombang7MenuAndValidationTest extends TestCase
         $this->assertContains('guru.walas.ekskul', $walasRoutes);
         $this->assertContains('guru.walas.leger', $walasRoutes);
 
-        // Admin mendapatkan Validasi Kelengkapan Data
+        // Begitu guru tersedia namun siswa belum ada, Validasi & Guru muncul tetapi Siswa/Cetak Rapor belum muncul
+        $adminHanyaGuruRoutes = collect($service->itemsFor($admin))->pluck('route')->all();
+        $this->assertContains('admin.validasi-data.index', $adminHanyaGuruRoutes);
+        $this->assertContains('admin.referensi.guru', $adminHanyaGuruRoutes);
+        $this->assertNotContains('admin.users.siswa', $adminHanyaGuruRoutes);
+        $this->assertNotContains('admin.cetak.nilai', $adminHanyaGuruRoutes);
+
+        // Begitu data siswa tersedia, menu Siswa dan e-Rapor ikut muncul di Ctrl+K
+        Siswa::create([
+            'uuid' => (string) Str::uuid(),
+            'guru_id' => $guruMapel->id,
+            'nama_guru' => $guruMapel->nama_lengkap,
+            'nis' => 'CP001',
+            'nama_peserta_didik' => 'Siswa Command Palette',
+            'kelas' => '6A',
+            'jenis_kelamin' => 'L',
+            'aktif' => true,
+        ]);
         $adminRoutes = collect($service->itemsFor($admin))->pluck('route')->all();
         $this->assertContains('admin.validasi-data.index', $adminRoutes);
+        $this->assertContains('admin.users.siswa', $adminRoutes);
+        $this->assertContains('admin.cetak.nilai', $adminRoutes);
         $this->assertNotContains('superadmin.tenants.index', $adminRoutes);
 
         // Siswa hanya rute siswa, tidak ada rute admin/guru
