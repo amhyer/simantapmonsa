@@ -50,7 +50,7 @@
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:end">
         <div>
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Filter Tanggal</label>
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px" for="filterTanggal">Filter Tanggal</label>
             <input type="date" id="filterTanggal" value="{{ $tanggalFilter }}" max="{{ date('Y-m-d') }}" onchange="window.location.href='?tanggal='+this.value" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px">
         </div>
     </div>

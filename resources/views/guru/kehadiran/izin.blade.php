@@ -25,8 +25,8 @@
                                 <form method="POST" action="{{ route('guru.kehadiran.izin.review', $item->id) }}" style="display:grid;gap:5px;min-width:190px">
                                     @csrf
                                     <label>Catatan <input name="catatan" maxlength="500" placeholder="Wajib jika ditolak"></label>
-                                    <div><button class="btn btn-sm" name="keputusan" value="setujui">Setujui</button>
-                                    <button class="btn btn-ghost btn-sm" name="keputusan" value="tolak">Tolak</button></div>
+                                    <div><button class="btn btn-sm" name="keputusan" value="setujui" type="submit">Setujui</button>
+                                    <button class="btn btn-ghost btn-sm" name="keputusan" value="tolak" type="submit">Tolak</button></div>
                                 </form>
                             @else
                                 Sudah diproses

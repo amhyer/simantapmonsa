@@ -62,7 +62,7 @@
             </div>
             <label style="margin-top:8px;display:block">Alasan perubahan (dicatat di log audit)
                 <input type="text" name="alasan" class="form-control" maxlength="500" placeholder="mis. Penyesuaian rapat dewan guru semester genap"></label>
-            <button class="btn btn-primary btn-sm" style="margin-top:10px">Simpan aturan</button>
+            <button class="btn btn-primary btn-sm" style="margin-top:10px" type="submit">Simpan aturan</button>
         </form>
     </div>
 
@@ -80,7 +80,7 @@
                 </select></label>
             <label>Alasan pemetaan (opsional)
                 <input type="text" name="alasan" class="form-control" maxlength="500" placeholder="mis. Mapel muatan lokal numerasi"></label>
-            <button class="btn btn-primary btn-sm" style="margin-top:8px">Tambah / perbarui pemetaan</button>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px" type="submit">Tambah / perbarui pemetaan</button>
         </form>
 
         <div class="table-wrapper"><table class="table">
@@ -93,7 +93,7 @@
                     <td>
                         <form method="POST" action="{{ route('admin.tka-kesiapan.pemetaan.hapus', $m->id) }}">
                             @csrf @method('DELETE')
-                            <button class="btn btn-ghost btn-sm">Hapus</button>
+                            <button class="btn btn-ghost btn-sm" type="submit">Hapus</button>
                         </form>
                     </td>
                 </tr>

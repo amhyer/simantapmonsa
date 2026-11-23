@@ -81,7 +81,7 @@
                         <option value="{{ strtolower($kls) }}">{{ $kls }}</option>
                     @endforeach
                 </select>
-                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px" for="siswaPageSize">
                     Show
                     <select id="siswaPageSize" onchange="applySiswaFilter()" style="padding:4px 8px;border:1px solid #E4E7EC;border-radius:6px;font-size:12px">
                         <option value="15">15</option>
@@ -230,24 +230,24 @@
                 </div>
                 <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label class="form-label">Nama Siswa</label>
+                        <label class="form-label" for="es_nama">Nama Siswa</label>
                         <input type="text" id="es_nama" class="form-control" readonly style="background:#F8FAFC">
                     </div>
                     <div>
-                        <label class="form-label">Agama</label>
+                        <label class="form-label" for="es_agama">Agama</label>
                         <input type="text" name="agama" id="es_agama" class="form-control" placeholder="Islam / Kristen / Katolik / Hindu / Buddha">
                     </div>
                     <div>
-                        <label class="form-label">Tempat Lahir</label>
+                        <label class="form-label" for="es_tempat_lahir">Tempat Lahir</label>
                         <input type="text" name="tempat_lahir" id="es_tempat_lahir" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Tanggal Lahir</label>
+                        <label class="form-label" for="es_tanggal_lahir">Tanggal Lahir</label>
                         <input type="date" name="tanggal_lahir" id="es_tanggal_lahir" class="form-control">
                     </div>
                 </div>
                 <div style="margin-bottom:16px">
-                    <label class="form-label">Alamat Siswa</label>
+                    <label class="form-label" for="es_alamat">Alamat Siswa</label>
                     <textarea name="alamat" id="es_alamat" rows="2" class="form-control" placeholder="Alamat lengkap peserta didik"></textarea>
                 </div>
 
@@ -256,59 +256,59 @@
                 </div>
                 <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label class="form-label">Status dalam Keluarga</label>
+                        <label class="form-label" for="es_status_keluarga">Status dalam Keluarga</label>
                         <input type="text" name="status_dalam_keluarga" id="es_status_keluarga" class="form-control" placeholder="Anak Kandung">
                     </div>
                     <div>
-                        <label class="form-label">Anak ke-</label>
+                        <label class="form-label" for="es_anak_ke">Anak ke-</label>
                         <input type="number" name="anak_ke" id="es_anak_ke" class="form-control" min="1" max="30">
                     </div>
                     <div>
-                        <label class="form-label">Asal Sekolah (TK / PAUD / SD)</label>
+                        <label class="form-label" for="es_asal_sekolah">Asal Sekolah (TK / PAUD / SD)</label>
                         <input type="text" name="asal_sekolah" id="es_asal_sekolah" class="form-control" placeholder="Nama TK / Sekolah asal">
                     </div>
                     <div>
-                        <label class="form-label">Diterima di Kelas</label>
+                        <label class="form-label" for="es_diterima_kelas">Diterima di Kelas</label>
                         <input type="text" name="diterima_di_kelas" id="es_diterima_kelas" class="form-control" placeholder="Contoh: Kelas 1.A">
                     </div>
                     <div>
-                        <label class="form-label">Nama Ayah</label>
+                        <label class="form-label" for="es_nama_ayah">Nama Ayah</label>
                         <input type="text" name="nama_ayah" id="es_nama_ayah" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Pekerjaan Ayah</label>
+                        <label class="form-label" for="es_pekerjaan_ayah">Pekerjaan Ayah</label>
                         <input type="text" name="pekerjaan_ayah" id="es_pekerjaan_ayah" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Nama Ibu</label>
+                        <label class="form-label" for="es_nama_ibu">Nama Ibu</label>
                         <input type="text" name="nama_ibu" id="es_nama_ibu" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Pekerjaan Ibu</label>
+                        <label class="form-label" for="es_pekerjaan_ibu">Pekerjaan Ibu</label>
                         <input type="text" name="pekerjaan_ibu" id="es_pekerjaan_ibu" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Alamat Orang Tua</label>
+                        <label class="form-label" for="es_alamat_ortu">Alamat Orang Tua</label>
                         <input type="text" name="alamat_ortu" id="es_alamat_ortu" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Telepon Orang Tua</label>
+                        <label class="form-label" for="es_telepon_ortu">Telepon Orang Tua</label>
                         <input type="text" name="telepon_ortu" id="es_telepon_ortu" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Nama Wali</label>
+                        <label class="form-label" for="es_nama_wali">Nama Wali</label>
                         <input type="text" name="nama_wali" id="es_nama_wali" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Pekerjaan Wali</label>
+                        <label class="form-label" for="es_pekerjaan_wali">Pekerjaan Wali</label>
                         <input type="text" name="pekerjaan_wali" id="es_pekerjaan_wali" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Alamat Wali</label>
+                        <label class="form-label" for="es_alamat_wali">Alamat Wali</label>
                         <input type="text" name="alamat_wali" id="es_alamat_wali" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Telepon Wali</label>
+                        <label class="form-label" for="es_telepon_wali">Telepon Wali</label>
                         <input type="text" name="telepon_wali" id="es_telepon_wali" class="form-control">
                     </div>
                 </div>

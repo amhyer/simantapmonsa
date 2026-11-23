@@ -93,12 +93,12 @@
                                 @if($activeId != $s->id)
                                     <form action="{{ route('admin.semester.activate', $s->id) }}" method="POST" style="display:inline">
                                         @csrf
-                                        <button class="btn btn-ghost btn-sm" style="color:#059669"><i class="fas fa-check-circle"></i> Aktifkan</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:#059669" type="submit"><i class="fas fa-check-circle"></i> Aktifkan</button>
                                     </form>
                                 @endif
                                 <form action="{{ route('admin.semester.destroy', $s->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus semester ini?')">
                                     @csrf @method('DELETE')
-                                    <button class="btn btn-ghost btn-sm" style="color:#DC2626"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                 </form>
                             </td>
                         </tr>

@@ -26,7 +26,7 @@
 
         <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px">
             <div style="flex:1">
-                <label style="font-size:12px;color:#667085;display:block;margin-bottom:4px">Pilih Kelas</label>
+                <label style="font-size:12px;color:#667085;display:block;margin-bottom:4px" for="kelasSelect">Pilih Kelas</label>
                 <select id="kelasSelect" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                     <option value="">-- Pilih Kelas --</option>
                     @foreach($kelasList as $k)

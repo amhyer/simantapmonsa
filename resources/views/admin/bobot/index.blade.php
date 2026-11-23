@@ -74,24 +74,24 @@
             <form id="bobotForm" method="POST">
                 @csrf
                 <div style="margin-bottom:14px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">KKM (0-100) *</label>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputKkm">KKM (0-100) *</label>
                     <input type="number" name="kkm" id="inputKkm" min="0" max="100" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Bobot Tugas (%)</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputTugas">Bobot Tugas (%)</label>
                         <input type="number" name="bobot_tugas" id="inputTugas" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Bobot UH (%)</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputUh">Bobot UH (%)</label>
                         <input type="number" name="bobot_uh" id="inputUh" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Bobot UTS (%)</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputUts">Bobot UTS (%)</label>
                         <input type="number" name="bobot_uts" id="inputUts" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Bobot UAS (%)</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputUas">Bobot UAS (%)</label>
                         <input type="number" name="bobot_uas" id="inputUas" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
@@ -99,15 +99,15 @@
                     <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Bobot e-Rapor (Formatif/Sumatif/Sumatif Akhir)</h4>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Formatif (%)</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputFormatif">Formatif (%)</label>
                             <input type="number" name="bobot_formatif" id="inputFormatif" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         </div>
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Sumatif (%)</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputSumatif">Sumatif (%)</label>
                             <input type="number" name="bobot_sumatif" id="inputSumatif" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         </div>
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Sumatif Akhir (%)</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="inputSumatifAkhir">Sumatif Akhir (%)</label>
                             <input type="number" name="bobot_sumatif_akhir" id="inputSumatifAkhir" min="0" max="100" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         </div>
                     </div>

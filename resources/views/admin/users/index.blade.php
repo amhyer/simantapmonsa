@@ -108,7 +108,7 @@
                 </button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;font-weight:500">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;font-weight:500" for="pageSizeSelect">
                     Tampilkan
                     <select id="pageSizeSelect" onchange="onChangePageSize()" style="padding:5px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--text);background:#fff;cursor:pointer">
                         <option value="10" selected>10</option>
@@ -297,7 +297,7 @@
             <form method="POST" action="{{ route('admin.users.store') }}" style="padding:20px">
                 @csrf
                 <div class="form-group" style="margin-bottom:12px">
-                    <label class="form-label">Level Pengguna</label>
+                    <label class="form-label" for="modal_level">Level Pengguna</label>
                     <select name="peran" id="modal_level" class="form-control" onchange="onChangeLevelModal(this.value)" required>
                         <option value="">-- Pilih Level Pengguna --</option>
                         <option value="admin">Administrator</option>
@@ -311,7 +311,7 @@
 
                 {{-- Pilih Guru dari Data PTK --}}
                 <div id="wrap_pilih_guru" style="display:none;margin-bottom:12px">
-                    <label class="form-label">Pilih Guru (Data PTK)</label>
+                    <label class="form-label" for="select_guru_modal">Pilih Guru (Data PTK)</label>
                     <select id="select_guru_modal" class="form-control" onchange="onSelectGuruModal(this)">
                         <option value="">-- Pilih Guru --</option>
                         @foreach($ptkData as $ptk)
@@ -328,7 +328,7 @@
 
                 {{-- Pilih Siswa dari Data Siswa --}}
                 <div id="wrap_pilih_siswa" style="display:none;margin-bottom:12px">
-                    <label class="form-label">Pilih Peserta Didik</label>
+                    <label class="form-label" for="select_siswa_modal">Pilih Peserta Didik</label>
                     <select id="select_siswa_modal" class="form-control" onchange="onSelectSiswaModal(this)">
                         <option value="">-- Pilih Siswa --</option>
                         @foreach($siswa as $s)
@@ -342,22 +342,22 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:12px">
-                    <label class="form-label">Username</label>
+                    <label class="form-label" for="modal_username">Username</label>
                     <input type="text" name="nama_pengguna" id="modal_username" class="form-control" placeholder="NIP / NISN / Username" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom:12px">
-                    <label class="form-label">Password (Min. 8 karakter)</label>
+                    <label class="form-label" for="modal_password">Password (Min. 8 karakter)</label>
                     <input type="password" name="kata_sandi" id="modal_password" class="form-control" minlength="8" placeholder="Minimal 8 karakter" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom:12px">
-                    <label class="form-label">Nama Lengkap</label>
+                    <label class="form-label" for="modal_nama">Nama Lengkap</label>
                     <input type="text" name="nama_lengkap" id="modal_nama" class="form-control" placeholder="Nama lengkap pengguna" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom:16px">
-                    <label class="form-label">e-mail (Opsional)</label>
+                    <label class="form-label" for="modal_email">e-mail (Opsional)</label>
                     <input type="email" name="email" id="modal_email" class="form-control" placeholder="contoh@simantap.sch.id">
                 </div>
 
@@ -441,7 +441,7 @@
                     </div>
                 </div>
                 <div style="margin-bottom:12px">
-                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Filter Kelas (opsional, khusus siswa)</label>
+                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px" for="rm_kelas">Filter Kelas (opsional, khusus siswa)</label>
                     <input type="text" name="kelas" id="rm_kelas" class="form-control" placeholder="Contoh: 1A atau biarkan kosong untuk semua">
                 </div>
                 <div style="margin-bottom:10px;font-size:13px">

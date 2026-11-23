@@ -232,7 +232,7 @@
                                                       onsubmit="return confirm('Hapus hari libur ini?');" style="display:inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20"><i class="fas fa-trash"></i></button>
+                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                                 </form>
                                             </td>
                                         @endif

@@ -148,7 +148,7 @@
                                               onsubmit="return confirm('Hapus catatan visitasi ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

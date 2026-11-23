@@ -97,7 +97,7 @@
                                     <a href="{{ route('guru.nilai.edit', $n->id) }}" class="btn btn-ghost btn-sm">✏️</a>
                                     <form action="{{ route('guru.nilai.destroy', $n->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626">🗑</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
                                     </form>
                                 </td>
                             </tr>

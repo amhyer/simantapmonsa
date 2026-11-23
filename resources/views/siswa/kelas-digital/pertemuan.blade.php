@@ -109,8 +109,8 @@
                     <p style="font-size:.84rem;color:#92400e;margin:0">Kerjakan kuis untuk mengukur pemahamanmu pada pertemuan ini.</p>
                 @endif
             </div>
-            @if(\Illuminate\Support\Facades\Route::has('siswa.kuis.kerjakan') && $pertemuan->kuis->aktif)
-                <a href="{{ route('siswa.kuis.kerjakan', $pertemuan->kuis->id) }}" class="btn btn-primary btn-sm">
+            @if($pertemuan->kuis->aktif)
+                <a href="{{ route('siswa.kuis.show', $pertemuan->kuis->id) }}" class="btn btn-primary btn-sm">
                     {{ $hasilKuis ? 'Lihat / Kerjakan Kuis' : 'Kerjakan Kuis Sekarang' }}
                 </a>
             @endif

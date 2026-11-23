@@ -239,7 +239,7 @@
                                         <form method="POST" action="{{ route('guru.perangkat.jurnal.destroy', $j) }}" onsubmit="return confirm('Hapus jurnal ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#D92D20"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>

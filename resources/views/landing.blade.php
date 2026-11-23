@@ -870,7 +870,7 @@
             {{-- Filter Bar --}}
             <div class="tka-filter-bar" data-aos="fade-up">
                 <div>
-                    <label>Provinsi</label><br>
+                    <label for="tkaFilterProp">Provinsi</label><br>
                     <select id="tkaFilterProp" onchange="tkaFilterChanged()">
                         <option value="all">Semua Provinsi (Nasional)</option>
                         @foreach($provinsiList as $p)
@@ -879,7 +879,7 @@
                     </select>
                 </div>
                 <div>
-                    <label>Jenjang</label><br>
+                    <label for="tkaFilterJenjang">Jenjang</label><br>
                     <select id="tkaFilterJenjang" onchange="tkaFilterChanged()">
                         <option value="all">Semua Jenjang</option>
                         <option value="SD/MI">SD/MI</option>

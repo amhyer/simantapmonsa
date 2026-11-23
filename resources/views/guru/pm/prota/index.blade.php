@@ -160,7 +160,7 @@
                                                style="width:100%;padding:6px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
                                     </td>
                                     <td style="text-align:center">
-                                        <button type="button" class="btn btn-sm btn-ghost" style="color:#D92D20" onclick="this.closest('tr').remove()">
+                                        <button type="button" class="btn btn-sm btn-ghost" style="color:#D92D20" onclick="this.closest('tr').remove()" aria-label="Hapus baris">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </td>
@@ -236,7 +236,7 @@
                 <td><input type="text" name="rows[${idx}][materi]" required style="width:100%;padding:6px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:13px"></td>
                 <td><input type="number" min="0" max="200" name="rows[${idx}][alokasi_jp]" value="6" style="width:68px;padding:6px;border:1px solid #D0D5DD;border-radius:6px;text-align:center"></td>
                 <td><input type="text" name="rows[${idx}][keterangan]" style="width:100%;padding:6px 8px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px"></td>
-                <td style="text-align:center"><button type="button" class="btn btn-sm btn-ghost" style="color:#D92D20" onclick="this.closest('tr').remove()"><i class="fas fa-times"></i></button></td>
+                <td style="text-align:center"><button type="button" class="btn btn-sm btn-ghost" style="color:#D92D20" onclick="this.closest('tr').remove()" aria-label="Hapus baris"><i class="fas fa-times"></i></button></td>
             `;
             tbody.appendChild(tr);
         }

@@ -79,7 +79,7 @@
     <div class="main-content">
         <header class="topbar">
             <div class="topbar-left">
-                <button class="topbar-toggle" onclick="toggleSidebar()">
+                <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Buka atau tutup menu navigasi">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="topbar-title">

@@ -165,7 +165,7 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:14px">
-                    <label class="form-label">Tanggal Kedaluwarsa Langganan</label>
+                    <label class="form-label" for="inputTglKedaluwarsa">Tanggal Kedaluwarsa Langganan</label>
                     <input type="date" name="tgl_kedaluwarsa" id="inputTglKedaluwarsa" class="form-control" value="{{ old('tgl_kedaluwarsa', $tenant->tgl_kedaluwarsa ? $tenant->tgl_kedaluwarsa->toDateString() : '') }}">
                     <div style="display:flex;gap:8px;margin-top:6px">
                         <button type="button" class="btn btn-xs btn-ghost" onclick="setPerpanjang(6)">+ 6 Bulan</button>

@@ -115,7 +115,7 @@
                 <label>Catatan guru <textarea name="catatan_guru" rows="2" class="form-control" maxlength="1000">{{ $tl->catatan_guru }}</textarea></label>
                 <label>Alasan peninjauan/perubahan (opsional, untuk audit)
                     <input type="text" name="alasan" class="form-control" maxlength="500" placeholder="mis. disesuaikan setelah observasi kelas"></label>
-                <button class="btn btn-primary btn-sm" style="margin-top:6px">Simpan tindak lanjut</button>
+                <button class="btn btn-primary btn-sm" style="margin-top:6px" type="submit">Simpan tindak lanjut</button>
                 @if($tl->bukti_ref)
                     <details style="margin-top:6px"><summary>Bukti yang mendasari saran ({{ count($tl->bukti_ref) }})</summary>
                         <ul>@foreach($tl->bukti_ref as $b)<li>{{ $b['judul'] }} — {{ $b['tanggal'] }}, nilai {{ $b['nilai_asli'] ?? $b['skor'] }} ({{ $b['sumber'] }}, skala {{ $b['skala'] }})</li>@endforeach</ul></details>
@@ -132,7 +132,7 @@
 
 <form method="POST" action="{{ route('guru.tka-kesiapan.susun', array_merge(['uuid' => $siswa->uuid], $filter->keQuery())) }}" style="margin-bottom:20px">
     @csrf
-    <button class="btn btn-outline btn-sm">Susun saran tindak lanjut dari bukti ({{ $periode['tahun_ajaran'] }} {{ $periode['semester'] }})</button>
+    <button class="btn btn-outline btn-sm" type="submit">Susun saran tindak lanjut dari bukti ({{ $periode['tahun_ajaran'] }} {{ $periode['semester'] }})</button>
     <span style="font-size:.8rem">Saran hanya dibuat untuk indikator dengan bukti cukup yang memerlukan dukungan/perhatian tren; nilai sumber tidak pernah diubah.</span>
 </form>
 

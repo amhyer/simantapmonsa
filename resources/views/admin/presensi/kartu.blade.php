@@ -137,7 +137,7 @@
                                 @if($person->qr_token_hash)
                                     <form method="POST" action="{{ route('admin.presensi.kartu.pegawai.reset', $person) }}" style="display:inline" onsubmit="return confirm('Lepaskan QR kartu {{ addslashes($person->nama_lengkap) }}?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#B42318">Lepaskan</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:#B42318" type="submit">Lepaskan</button>
                                     </form>
                                 @endif
                             </td>
@@ -252,7 +252,7 @@
                                 @if($student->qr_token_hash)
                                     <form method="POST" action="{{ route('admin.presensi.kartu.reset', $student) }}" style="display:inline" onsubmit="return confirm('Lepaskan QR kartu {{ addslashes($student->nama_peserta_didik) }}? Kartu tidak dapat dipindai sampai diterbitkan atau dihubungkan lagi.')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#B42318">Lepaskan</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:#B42318" type="submit">Lepaskan</button>
                                     </form>
                                 @endif
                             </td>

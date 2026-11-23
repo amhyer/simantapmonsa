@@ -46,7 +46,7 @@
                             <span class="siswa-nama">{{ $s->nama_peserta_didik }}</span>
                             <span class="siswa-nis">NIS: {{ $s->nis }}</span>
                         </div>
-                        <button class="btn-icon" onclick="openModal({{ $s->id }}, '{{ addslashes($s->nama_peserta_didik) }}')">📦</button>
+                        <button class="btn-icon" aria-label="Pindahkan siswa ke kelas lain" onclick="openModal({{ $s->id }}, '{{ addslashes($s->nama_peserta_didik) }}')">📦</button>
                     </div>
                 @empty
                     <div class="empty-msg">✅ Semua siswa sudah ditugaskan</div>
@@ -72,7 +72,7 @@
                                     <span class="siswa-nis">NIS: {{ $s->nis }}</span>
                                     <span class="siswa-kelas">{{ $s->kelas }}</span>
                                 </div>
-                                <button class="btn-icon btn-danger" onclick="keluarkan({{ $s->id }}, '{{ addslashes($s->nama_peserta_didik) }}')">✕</button>
+                                <button class="btn-icon btn-danger" aria-label="Keluarkan siswa dari kelas" onclick="keluarkan({{ $s->id }}, '{{ addslashes($s->nama_peserta_didik) }}')">✕</button>
                             </div>
                         @endforeach
                         <div class="drop-hint">Seret siswa ke sini</div>
@@ -92,7 +92,7 @@
                 <p id="modalNama" class="modal-nama"></p>
                 <input type="hidden" id="modalSiswaId">
                 <div class="form-group">
-                    <label>Guru</label>
+                    <label for="modalGuru">Guru</label>
                     <select id="modalGuru" onchange="loadKelas()">
                         <option value="">Pilih Guru</option>
                         @foreach($guru as $g)
@@ -101,11 +101,11 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Kelas</label>
+                    <label for="modalKelas">Kelas</label>
                     <select id="modalKelas"><option value="">Pilih Kelas</option></select>
                 </div>
                 <div class="form-group" id="newKelasGroup" style="display:none">
-                    <label>Kelas Baru</label>
+                    <label for="modalKelasBaru">Kelas Baru</label>
                     <input type="text" id="modalKelasBaru" placeholder="Contoh: 7A">
                 </div>
             </div>

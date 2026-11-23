@@ -64,7 +64,7 @@
             <form id="kodeForm" method="POST">
                 @csrf
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kode Akses</label>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="kodeInput">Kode Akses</label>
                     <input type="text" name="kode_akses" id="kodeInput" placeholder="Masukkan kode akses" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end">

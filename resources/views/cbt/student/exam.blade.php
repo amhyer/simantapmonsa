@@ -751,7 +751,7 @@
                                 <button type="button"
                                         id="palette-btn-{{ $qNum }}"
                                         class="anbk-p-item {{ $qNum === 1 ? 'current' : '' }} {{ $isAnswered ? 'answered' : '' }}"
-                                        onclick="goToQuestion({{ $qNum }}); closeDaftarSoal();">
+                                        onclick="goToQuestion({{ $qNum }}); closeDaftarSoal();" aria-label="Simpan">
                                     <span>{{ $qNum }}</span>
                                     <span class="anbk-p-check" aria-hidden="true"><i class="fas fa-check"></i></span>
                                 </button>

@@ -66,8 +66,8 @@
                                             <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;{{ $key->active ? 'background:#D1FAE5;color:#065F46' : 'background:#F3F4F6;color:#6B7280' }}">{{ $key->active ? 'Aktif' : 'Nonaktif' }}</span>
                                         </td>
                                         <td style="padding:10px 14px;text-align:center">
-                                            <form action="{{ route('admin.api-keys.toggle', $key) }}" method="POST" style="display:inline">@csrf<button class="btn btn-ghost btn-sm" title="Toggle">{{ $key->active ? '⏸' : '▶️' }}</button></form>
-                                            <form action="{{ route('admin.api-keys.destroy', $key) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">@csrf @method('DELETE')<button class="btn btn-ghost btn-sm" style="color:#B42318">🗑</button></form>
+                                            <form action="{{ route('admin.api-keys.toggle', $key) }}" method="POST" style="display:inline">@csrf<button class="btn btn-ghost btn-sm" title="Toggle" type="submit">{{ $key->active ? '⏸' : '▶️' }}</button></form>
+                                            <form action="{{ route('admin.api-keys.destroy', $key) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">@csrf @method('DELETE')<button class="btn btn-ghost btn-sm" style="color:#B42318" type="submit" aria-label="Hapus">🗑</button></form>
                                         </td>
                                     </tr>
                                 @endforeach
