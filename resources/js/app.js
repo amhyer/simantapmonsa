@@ -459,6 +459,12 @@ window.konfirmasiKetik = function (form, frasa, keterangan) {
  * agar menggunakan dialog modal aksesibel SIMANTAP alih-alih `confirm()` bawaan browser.
  */
 (function initSimantapConfirmForms() {
+    // Ruang ujian siswa (CBT & Tryout) memakai alur layar penuh & dialog native sendiri.
+    const path = window.location.pathname || '';
+    if (path.startsWith('/cbt/student') || path.startsWith('/tryout/student')) {
+        return;
+    }
+
     const upgradeForms = () => {
         document.querySelectorAll('form[onsubmit]').forEach((form) => {
             const raw = (form.getAttribute('onsubmit') || '').trim();

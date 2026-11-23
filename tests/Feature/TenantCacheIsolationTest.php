@@ -36,21 +36,27 @@ class TenantCacheIsolationTest extends TestCase
         $tenantA = $this->createTenant('cache-a', 'SD Cache A');
         $tenantB = $this->createTenant('cache-b', 'SD Cache B');
 
-        $semester = Semester::query()->create([
+        $semesterA = TenantContext::run($tenantA->id, fn () => Semester::query()->create([
             'semester_id' => '20241',
             'tahun_ajaran' => '2024/2025',
             'nama_semester' => 'ganjil',
-        ]);
+        ]));
 
         TenantContext::set($tenantA->id);
         $this->assertSame('2024/2025 (ganjil)', semesterAktifLabel());
 
-        // Simulasikan data berbeda untuk tenant B tanpa menghapus cache tenant A.
-        $semester->update([
+        // Ubah baris semester tenant A di DB tanpa menghapus cache tenant A,
+        // serta siapkan semester berbeda untuk tenant B.
+        $semesterA->update([
+            'semester_id' => '20242',
+            'tahun_ajaran' => '2024/2025',
+            'nama_semester' => 'genap',
+        ]);
+        TenantContext::run($tenantB->id, fn () => Semester::query()->create([
             'semester_id' => '20252',
             'tahun_ajaran' => '2025/2026',
             'nama_semester' => 'genap',
-        ]);
+        ]));
 
         TenantContext::set($tenantB->id);
         $this->assertSame(
@@ -59,7 +65,7 @@ class TenantCacheIsolationTest extends TestCase
             'Cache semesterAktifLabel tenant A tidak boleh bocor ke tenant B.'
         );
 
-        // Tenant A tetap memakai cache terisolasi miliknya sendiri.
+        // Tenant A tetap memakai cache terisolasi miliknya sendiri ('2024/2025 (ganjil)').
         TenantContext::set($tenantA->id);
         $this->assertSame('2024/2025 (ganjil)', semesterAktifLabel());
 
