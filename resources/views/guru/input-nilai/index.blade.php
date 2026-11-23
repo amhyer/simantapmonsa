@@ -28,7 +28,7 @@
         <div class="card-body">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jenis Penilaian</label>
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="jenisNilai">Jenis Penilaian</label>
                     <select id="jenisNilai" onchange="loadNilai()" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="Ulangan Harian">Ulangan Harian</option>
                         <option value="Tugas">Tugas</option>
@@ -38,11 +38,11 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Judul / Nomor</label>
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="judulPenilaian">Judul / Nomor</label>
                     <input type="text" id="judulPenilaian" placeholder="Contoh: UH 1, Tugas Bab 1" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">KKM</label>
+                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="kkm">KKM</label>
                     <input type="number" id="kkm" value="70" style="width:80px;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>

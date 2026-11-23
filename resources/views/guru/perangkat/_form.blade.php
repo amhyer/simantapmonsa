@@ -34,7 +34,7 @@
     <div class="card-body">
         <div class="grid grid-2" style="gap:14px;margin-bottom:14px">
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Jenis Perangkat *</label>
+                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="jenisPerangkatSelect">Jenis Perangkat *</label>
                 <select name="jenis" id="jenisPerangkatSelect" required
                         style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px"
                         onchange="toggleSectionByJenis(this.value)">

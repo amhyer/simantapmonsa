@@ -189,7 +189,7 @@
                                               onsubmit="return confirm('Hapus kegiatan ini?');" style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -207,7 +207,7 @@
         <div class="card" style="width:100%;max-width:600px;max-height:90vh;overflow:auto">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                 <strong>Edit Kegiatan Kokurikuler</strong>
-                <button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('modalEditKoku').style.display='none'">×</button>
+                <button type="button" class="btn btn-sm btn-ghost" aria-label="Tutup" onclick="document.getElementById('modalEditKoku').style.display='none'">×</button>
             </div>
             <div class="card-body">
                 <form id="formEditKoku" method="POST" style="display:grid;gap:10px">
@@ -215,47 +215,47 @@
                     @method('PUT')
                     <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tema / Judul *</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuTema">Tema / Judul *</label>
                             <input type="text" id="editKokuTema" name="tema_judul" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Kelas *</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuTingkat">Kelas *</label>
                             <select id="editKokuTingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @for($t = 1; $t <= 6; $t++)<option value="{{ $t }}">Kelas {{ $t }}</option>@endfor
                             </select>
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
+                        <label style="font-size:12px;font-weight:600" for="editKokuBentuk">Bentuk Kegiatan *</label>
                         <select id="editKokuBentuk" name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($bentukLabels as $kode => $label)<option value="{{ $kode }}">{{ $label }}</option>@endforeach
                         </select>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Mulai</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuMulai">Tanggal Mulai</label>
                             <input type="date" id="editKokuMulai" name="tanggal_mulai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Selesai</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuSelesai">Tanggal Selesai</label>
                             <input type="date" id="editKokuSelesai" name="tanggal_selesai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Tujuan</label>
+                        <label style="font-size:12px;font-weight:600" for="editKokuTujuan">Tujuan</label>
                         <textarea id="editKokuTujuan" name="tujuan" rows="2" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Rangkaian Kegiatan</label>
+                        <label style="font-size:12px;font-weight:600" for="editKokuRangkaian">Rangkaian Kegiatan</label>
                         <textarea id="editKokuRangkaian" name="rangkaian_kegiatan" rows="3" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mitra</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuMitra">Mitra</label>
                             <input type="text" id="editKokuMitra" name="mitra" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Refleksi &amp; Hasil</label>
+                            <label style="font-size:12px;font-weight:600" for="editKokuRefleksi">Refleksi &amp; Hasil</label>
                             <input type="text" id="editKokuRefleksi" name="refleksi_hasil" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>

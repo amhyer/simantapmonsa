@@ -102,7 +102,7 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:16px">
-                    <label style="font-weight:700">Pilih Modul Pengaturan</label>
+                    <label style="font-weight:700" for="select_menu_pengaturan">Pilih Modul Pengaturan</label>
                     <select id="select_menu_pengaturan" class="form-control">
                         <option value="menu_pengaturan_tulisan_rapor">1. Pengaturan Tulisan Rapor</option>
                         <option value="menu_pengaturan_warna_rapor">2. Pengaturan Warna Rapor</option>
@@ -115,7 +115,7 @@
                 {{-- Modul 1: Tulisan Rapor --}}
                 <div id="menu_pengaturan_tulisan_rapor" class="modif-panel active">
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Jenis Tulisan Rapor</label>
+                        <label for="font_family_rapor">Jenis Tulisan Rapor</label>
                         <select name="font_family" id="font_family_rapor" class="form-control live-input">
                             @foreach(['Arial', 'Calibri', 'Helvetica', 'Tahoma', 'Times New Roman', 'Verdana', 'Bookman Old Style'] as $font)
                                 <option value="{{ $font }}" {{ $tampilan['font_family'] === $font ? 'selected' : '' }}>{{ $font }}</option>
@@ -124,15 +124,15 @@
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
                         <div class="form-group">
-                            <label>Judul Rapor (px)</label>
+                            <label for="size_judul_rapor">Judul Rapor (px)</label>
                             <input type="number" step="0.5" min="10" max="36" name="size_judul_rapor" id="size_judul_rapor" class="form-control live-input" value="{{ $tampilan['size_judul_rapor'] }}">
                         </div>
                         <div class="form-group">
-                            <label>Judul Tabel (px)</label>
+                            <label for="size_judul_tabel">Judul Tabel (px)</label>
                             <input type="number" step="0.5" min="8" max="24" name="size_judul_tabel" id="size_judul_tabel" class="form-control live-input" value="{{ $tampilan['size_judul_tabel'] }}">
                         </div>
                         <div class="form-group">
-                            <label>Isi Tabel (px)</label>
+                            <label for="size_isi_tabel">Isi Tabel (px)</label>
                             <input type="number" step="0.5" min="8" max="22" name="size_isi_tabel" id="size_isi_tabel" class="form-control live-input" value="{{ $tampilan['size_isi_tabel'] }}">
                         </div>
                     </div>
@@ -141,7 +141,7 @@
                 {{-- Modul 2: Warna Rapor --}}
                 <div id="menu_pengaturan_warna_rapor" class="modif-panel">
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Pilih Set Template Warna</label>
+                        <label for="select_template">Pilih Set Template Warna</label>
                         <select name="warna_template" id="select_template" class="form-control">
                             <option value="custom" {{ $tampilan['warna_template'] === 'custom' ? 'selected' : '' }}>Kustom</option>
                             <option value="default" {{ $tampilan['warna_template'] === 'default' ? 'selected' : '' }}>Setelan Awal (Abu-abu Netral)</option>
@@ -152,28 +152,28 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                         <div class="form-group">
-                            <label>Latar Kepala Tabel</label>
+                            <label for="warna_bg_table_header">Latar Kepala Tabel</label>
                             <input type="color" name="warna_bg_header" id="warna_bg_table_header" class="form-control live-input" style="height:38px;padding:2px" value="{{ $tampilan['warna_bg_header'] }}">
                         </div>
                         <div class="form-group">
-                            <label>Latar Badan Tabel</label>
+                            <label for="warna_bg_table_cell">Latar Badan Tabel</label>
                             <input type="color" name="warna_bg_cell" id="warna_bg_table_cell" class="form-control live-input" style="height:38px;padding:2px" value="{{ $tampilan['warna_bg_cell'] }}">
                         </div>
                         <div class="form-group">
-                            <label>Teks Kepala Tabel</label>
+                            <label for="warna_text_table_header">Teks Kepala Tabel</label>
                             <input type="color" name="warna_text_header" id="warna_text_table_header" class="form-control live-input" style="height:38px;padding:2px" value="{{ $tampilan['warna_text_header'] }}">
                         </div>
                         <div class="form-group">
-                            <label>Teks Badan Tabel</label>
+                            <label for="warna_text_table_cell">Teks Badan Tabel</label>
                             <input type="color" name="warna_text_cell" id="warna_text_table_cell" class="form-control live-input" style="height:38px;padding:2px" value="{{ $tampilan['warna_text_cell'] }}">
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Warna Garis (Border) Tabel</label>
+                        <label for="warna_border_table">Warna Garis (Border) Tabel</label>
                         <input type="color" name="warna_border" id="warna_border_table" class="form-control live-input" style="height:38px;padding:2px;width:120px" value="{{ $tampilan['warna_border'] }}">
                     </div>
                     <div class="form-group">
-                        <label>Transparansi Tabel: <strong id="tableOpacityLabel">{{ $tampilan['table_opacity'] }}%</strong></label>
+                        <label for="table_opacity">Transparansi Tabel: <strong id="tableOpacityLabel">{{ $tampilan['table_opacity'] }}%</strong></label>
                         <input type="range" name="table_opacity" id="table_opacity" min="0" max="100" value="{{ $tampilan['table_opacity'] }}" class="live-input" style="width:100%">
                     </div>
                 </div>
@@ -181,7 +181,7 @@
                 {{-- Modul 3: Watermark Rapor --}}
                 <div id="menu_pengaturan_watermark_rapor" class="modif-panel">
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Tampilkan Gambar Watermark</label>
+                        <label for="show_watermark">Tampilkan Gambar Watermark</label>
                         <select name="show_watermark" id="show_watermark" class="form-control live-input">
                             <option value="0" {{ !$tampilan['show_watermark'] ? 'selected' : '' }}>Tidak</option>
                             <option value="1" {{ $tampilan['show_watermark'] ? 'selected' : '' }}>Ya</option>
@@ -190,21 +190,21 @@
                     @if(!empty($tampilan['watermark_data_uri']))
                         <div style="margin-bottom:10px;padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;align-items:center;gap:12px">
                             <img src="{{ $tampilan['watermark_data_uri'] }}" alt="Watermark" style="max-height:54px;max-width:54px;object-fit:contain">
-                            <label style="font-size:12.5px;color:#B42318;cursor:pointer">
+                            <label style="font-size:12.5px;color:#B42318;cursor:pointer" for="hapus_watermark">
                                 <input type="checkbox" name="hapus_watermark" id="hapus_watermark" value="1" class="live-input"> Hapus watermark tersimpan
                             </label>
                         </div>
                     @endif
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Upload Gambar Watermark (PNG/JPG, maks 1 MB)</label>
+                        <label for="file_watermark">Upload Gambar Watermark (PNG/JPG, maks 1 MB)</label>
                         <input type="file" name="file_watermark" id="file_watermark" accept="image/png,image/jpeg,image/webp" class="form-control">
                     </div>
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Transparansi Gambar: <strong id="watermarkOpacityLabel">{{ $tampilan['watermark_opacity'] }}%</strong></label>
+                        <label for="watermark_opacity">Transparansi Gambar: <strong id="watermarkOpacityLabel">{{ $tampilan['watermark_opacity'] }}%</strong></label>
                         <input type="range" name="watermark_opacity" id="watermark_opacity" min="0" max="100" value="{{ $tampilan['watermark_opacity'] }}" class="live-input" style="width:100%">
                     </div>
                     <div class="form-group">
-                        <label>Ukuran Watermark (%)</label>
+                        <label for="watermark_size">Ukuran Watermark (%)</label>
                         <input type="number" step="0.5" min="10" max="150" name="watermark_size" id="watermark_size" class="form-control live-input" value="{{ $tampilan['watermark_size'] }}">
                     </div>
                 </div>
@@ -212,7 +212,7 @@
                 {{-- Modul 4: Kop Surat --}}
                 <div id="menu_pengaturan_kop_surat" class="modif-panel">
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Set Tampilan Kop Surat</label>
+                        <label for="kop_preset">Set Tampilan Kop Surat</label>
                         <select name="kop_preset" id="kop_preset" class="form-control live-input">
                             <option value="tanpa_kop" {{ $tampilan['kop_preset'] === 'tanpa_kop' ? 'selected' : '' }}>Tanpa Kop</option>
                             <option value="set_1" {{ $tampilan['kop_preset'] === 'set_1' ? 'selected' : '' }}>Set Tampilan 1 (Logo Kanan &amp; Kiri)</option>
@@ -248,21 +248,21 @@
                         @endfor
                     </div>
                     <div class="form-group" style="margin-bottom:10px">
-                        <label>Penilaian Formatif Masuk ke Rapor Tengah Semester</label>
+                        <label for="pts_formatif_masuk">Penilaian Formatif Masuk ke Rapor Tengah Semester</label>
                         <select name="pts_formatif_masuk" id="pts_formatif_masuk" class="form-control live-input">
                             <option value="0" {{ !$tampilan['pts_formatif_masuk'] ? 'selected' : '' }}>Tidak</option>
                             <option value="1" {{ $tampilan['pts_formatif_masuk'] ? 'selected' : '' }}>Ya</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:10px">
-                        <label>Tanda Tangan Kepsek Pada Rapor Tengah Semester</label>
+                        <label for="pts_ttd_kepsek">Tanda Tangan Kepsek Pada Rapor Tengah Semester</label>
                         <select name="pts_ttd_kepsek" id="pts_ttd_kepsek" class="form-control live-input">
                             <option value="1" {{ $tampilan['pts_ttd_kepsek'] ? 'selected' : '' }}>Ya</option>
                             <option value="0" {{ !$tampilan['pts_ttd_kepsek'] ? 'selected' : '' }}>Tidak</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Tabel Ekskul Pada Rapor Tengah Semester</label>
+                        <label for="pts_tabel_ekskul">Tabel Ekskul Pada Rapor Tengah Semester</label>
                         <select name="pts_tabel_ekskul" id="pts_tabel_ekskul" class="form-control live-input">
                             <option value="1" {{ $tampilan['pts_tabel_ekskul'] ? 'selected' : '' }}>Ya</option>
                             <option value="0" {{ !$tampilan['pts_tabel_ekskul'] ? 'selected' : '' }}>Tidak</option>

@@ -21,13 +21,13 @@
             <form action="{{ route('admin.sekolah.update') }}" method="POST" id="sekolahForm">
                 @csrf
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Sekolah *</label>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="nama_sekolah">Nama Sekolah *</label>
                     <input type="text" name="nama_sekolah" id="nama_sekolah" value="{{ old('nama_sekolah', $sekolahSettings->nama_sekolah ?? '') }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
 
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">NPSN</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="npsn">NPSN</label>
                         <div style="display:flex;gap:8px">
                             <input type="text" name="npsn" id="npsn" value="{{ old('npsn', $sekolahSettings->npsn ?? '') }}" maxlength="8" placeholder="8 digit angka" style="flex:1;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <button type="button" id="btnLookup" onclick="lookupNpsn()" style="padding:10px 16px;background:#1F3864;color:#fff;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;font-size:13px">
@@ -37,7 +37,7 @@
                         <div id="lookupStatus" style="margin-top:6px;font-size:12px;display:none"></div>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Jenis Sekolah</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="jenis_sekolah">Jenis Sekolah</label>
                         <select name="jenis_sekolah" id="jenis_sekolah" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">-- Pilih --</option>
                             <option value="Negeri" {{ ($sekolahSettings->jenis_sekolah ?? '') === 'Negeri' ? 'selected' : '' }}>Negeri</option>
@@ -48,7 +48,7 @@
 
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Jenjang</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="jenjang">Jenjang</label>
                         <select name="jenjang" id="jenjang" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">-- Pilih --</option>
                             @foreach(['SD', 'SMP', 'SMA', 'SMK'] as $j)
@@ -57,7 +57,7 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Akreditasi</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="akreditasi">Akreditasi</label>
                         <select name="akreditasi" id="akreditasi" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">-- Pilih --</option>
                             @foreach(['A', 'B', 'C', 'D'] as $ak)
@@ -69,49 +69,49 @@
 
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kepala Sekolah</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="kepala_sekolah">Kepala Sekolah</label>
                         <input type="text" name="kepala_sekolah" id="kepala_sekolah" value="{{ old('kepala_sekolah', $sekolahSettings->kepala_sekolah ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div></div>
                 </div>
 
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Alamat</label>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="alamat">Alamat</label>
                     <textarea name="alamat" id="alamat" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;resize:vertical">{{ old('alamat', $sekolahSettings->alamat ?? '') }}</textarea>
                 </div>
 
                 <div class="grid grid-3" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kecamatan</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="kecamatan">Kecamatan</label>
                         <input type="text" name="kecamatan" id="kecamatan" value="{{ old('kecamatan', $sekolahSettings->kecamatan ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kota/Kabupaten</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="kota">Kota/Kabupaten</label>
                         <input type="text" name="kota" id="kota" value="{{ old('kota', $sekolahSettings->kota ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Provinsi</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="provinsi">Provinsi</label>
                         <input type="text" name="provinsi" id="provinsi" value="{{ old('provinsi', $sekolahSettings->provinsi ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
                 <div class="grid grid-3" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kode Pos</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="kode_pos">Kode Pos</label>
                         <input type="text" name="kode_pos" id="kode_pos" value="{{ old('kode_pos', $sekolahSettings->kode_pos ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Telepon</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="telepon">Telepon</label>
                         <input type="text" name="telepon" id="telepon" value="{{ old('telepon', $sekolahSettings->telepon ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email</label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="email">Email</label>
                         <input type="email" name="email" id="email" value="{{ old('email', $sekolahSettings->email ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Website</label>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="website">Website</label>
                     <input type="url" name="website" id="website" value="{{ old('website', $sekolahSettings->website ?? '') }}" placeholder="https://" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
 

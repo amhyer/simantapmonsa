@@ -413,11 +413,11 @@
                     <input name="nama" required maxlength="100" placeholder="Contoh: Gedung Sekolah" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Latitude *</label>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="new-latitude">Latitude *</label>
                     <input id="new-latitude" name="latitude" required type="number" step="any" min="-90" max="90" placeholder="-5.1476" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Longitude *</label>
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="new-longitude">Longitude *</label>
                     <input id="new-longitude" name="longitude" required type="number" step="any" min="-180" max="180" placeholder="119.4327" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
@@ -482,7 +482,7 @@
                                 <td style="padding:12px 14px;text-align:right">
                                     <form action="{{ route('admin.presensi.lokasi.destroy', $zone) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Hapus titik lokasi {{ addslashes($zone->nama) }}?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px">
+                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px" type="submit">
                                             <i class="fas fa-trash-alt"></i> Hapus
                                         </button>
                                     </form>

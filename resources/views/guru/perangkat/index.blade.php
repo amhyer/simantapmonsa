@@ -45,7 +45,7 @@
                 @endif
                 <input type="text" name="q" value="{{ $cari }}" placeholder="Cari judul, mapel, kelas..."
                        style="padding:7px 10px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px;min-width:190px">
-                <button type="submit" class="btn btn-sm btn-ghost"><i class="fas fa-search"></i></button>
+                <button type="submit" class="btn btn-sm btn-ghost" aria-label="Cari"><i class="fas fa-search"></i></button>
             </form>
         </div>
     </div>

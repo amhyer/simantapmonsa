@@ -67,7 +67,7 @@
                 </button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px" for="ptkPageSize">
                     Show
                     <select id="ptkPageSize" onchange="applyPtkFilter()" style="padding:4px 8px;border:1px solid #E4E7EC;border-radius:6px;font-size:12px">
                         <option value="15">15</option>
@@ -284,7 +284,7 @@
                     </div>
 
                     <div style="background:#F9FAFB;border:1px solid #EAECF0;border-radius:8px;padding:12px;margin-bottom:8px">
-                        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;color:#1F3864;cursor:pointer">
+                        <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;color:#1F3864;cursor:pointer" for="checkBuatAkun">
                             <input type="checkbox" name="buat_akun" value="1" id="checkBuatAkun" {{ old('buat_akun', '1') ? 'checked' : '' }} onchange="toggleAkunFields(this.checked)">
                             Buat akun login pengguna sekaligus
                         </label>

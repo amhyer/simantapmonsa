@@ -55,7 +55,7 @@
         </div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm">Terapkan filter</button>
+        <button class="btn btn-primary btn-sm" type="submit">Terapkan filter</button>
         <a href="{{ url()->current() }}" class="btn btn-ghost btn-sm">Reset</a>
     </div>
 </form>

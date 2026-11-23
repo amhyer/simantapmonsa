@@ -48,7 +48,7 @@
             </div>
             <div style="margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                    <label style="font-weight:600;font-size:12px;margin:0">Catatan</label>
+                    <label style="font-weight:600;font-size:12px;margin:0" for="catatanTextarea">Catatan</label>
                     <small id="catatanCounter" style="font-size:11.5px;color:#667085;font-weight:600">0 / 1000 karakter</small>
                 </div>
                 <textarea id="catatanTextarea" name="catatan" rows="3" maxlength="1000" required placeholder="Tuliskan catatan tentang siswa..." style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;resize:vertical"></textarea>
@@ -77,7 +77,7 @@
                     </div>
                     <form action="{{ route('guru.catatan.destroy', $c->id) }}" method="POST" onsubmit="return confirm('Hapus?')">
                         @csrf @method('DELETE')
-                        <button class="btn btn-ghost btn-sm" style="color:#DC2626">🗑</button>
+                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
                     </form>
                 </div>
             @endforeach

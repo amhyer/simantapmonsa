@@ -38,7 +38,7 @@
                 <div style="flex:1;min-width:200px">
                     <form method="GET" style="display:flex;gap:8px">
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau kode..." class="form-control" style="flex:1">
-                        <button type="submit" class="btn btn-sm btn-ghost"><i class="fas fa-search"></i></button>
+                        <button type="submit" class="btn btn-sm btn-ghost" aria-label="Cari"><i class="fas fa-search"></i></button>
                     </form>
                 </div>
                 <select onchange="window.location.href='{{ route('admin.mapel.index') }}?status='+this.value+'&search={{ request('search') }}'" class="form-control" style="width:auto;min-width:120px">

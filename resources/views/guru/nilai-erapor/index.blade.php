@@ -28,7 +28,7 @@
     <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Kelas</label>
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="filterKelas">Kelas</label>
                 <select id="filterKelas" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px" onchange="loadData()">
                     @foreach(['I A','II A','III A','IV A','V A','VI A'] as $k)
                         <option value="{{ $k }}" {{ $kelas == $k ? 'selected' : '' }}>{{ $k }}</option>
@@ -36,7 +36,7 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Mata Pelajaran</label>
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="filterMapel">Mata Pelajaran</label>
                 <select id="filterMapel" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px" onchange="loadData()">
                     @foreach(['Matematika','Bahasa Indonesia','IPA','IPS','PKn'] as $m)
                         <option value="{{ $m }}" {{ $mapel == $m ? 'selected' : '' }}>{{ $m }}</option>
@@ -44,14 +44,14 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Semester</label>
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="filterSemester">Semester</label>
                 <select id="filterSemester" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px" onchange="loadData()">
                     <option value="Ganjil" {{ $semester == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
                     <option value="Genap" {{ $semester == 'Genap' ? 'selected' : '' }}>Genap</option>
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Tahun Ajaran</label>
+                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px" for="filterTahun">Tahun Ajaran</label>
                 <select id="filterTahun" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px" onchange="loadData()">
                     <option value="2025/2026" {{ $tahunAjaran == '2025/2026' ? 'selected' : '' }}>2025/2026</option>
                     <option value="2026/2027" {{ $tahunAjaran == '2026/2027' ? 'selected' : '' }}>2026/2027</option>

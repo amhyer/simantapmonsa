@@ -88,7 +88,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Foto Profil <span style="color:#888;font-weight:400;font-size:12px">(opsional, max 2MB)</span></label>
+                            <label class="form-label" for="fotoInput">Foto Profil <span style="color:#888;font-weight:400;font-size:12px">(opsional, max 2MB)</span></label>
                             <input type="file" name="foto" id="fotoInput" class="form-control @error('foto') is-invalid @enderror" accept="image/jpeg,image/jpg,image/png">
                             @error('foto')
                                 <div class="invalid-feedback">{{ $message }}</div>

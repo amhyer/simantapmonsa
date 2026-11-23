@@ -232,7 +232,7 @@
                                               onsubmit="return confirm('Hapus TP ini?');" style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -252,7 +252,7 @@
         <div class="card" style="width:100%;max-width:560px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                 <strong>Edit Tujuan Pembelajaran</strong>
-                <button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('modalEditTp').style.display='none'">×</button>
+                <button type="button" class="btn btn-sm btn-ghost" aria-label="Tutup" onclick="document.getElementById('modalEditTp').style.display='none'">×</button>
             </div>
             <div class="card-body">
                 <form id="formEditTp" method="POST" style="display:grid;gap:10px">
@@ -260,11 +260,11 @@
                     @method('PUT')
                     <div style="display:grid;grid-template-columns:1fr 120px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
+                            <label style="font-size:12px;font-weight:600" for="editTpMapel">Mata Pelajaran *</label>
                             <input type="text" id="editTpMapel" name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Fase *</label>
+                            <label style="font-size:12px;font-weight:600" for="editTpFase">Fase *</label>
                             <select id="editTpFase" name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($faseLabels as $kode => $label)
                                     <option value="{{ $kode }}">Fase {{ $kode }}</option>
@@ -274,20 +274,20 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 110px 80px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Elemen</label>
+                            <label style="font-size:12px;font-weight:600" for="editTpElemen">Elemen</label>
                             <input type="text" id="editTpElemen" name="elemen" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Kode TP</label>
+                            <label style="font-size:12px;font-weight:600" for="editTpKode">Kode TP</label>
                             <input type="text" id="editTpKode" name="kode_tp" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Urutan</label>
+                            <label style="font-size:12px;font-weight:600" for="editTpUrutan">Urutan</label>
                             <input type="number" id="editTpUrutan" name="urutan" min="1" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Rumusan Tujuan Pembelajaran *</label>
+                        <label style="font-size:12px;font-weight:600" for="editTpDesk">Rumusan Tujuan Pembelajaran *</label>
                         <textarea id="editTpDesk" name="deskripsi" rows="4" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:flex;justify-content:flex-end;gap:8px">

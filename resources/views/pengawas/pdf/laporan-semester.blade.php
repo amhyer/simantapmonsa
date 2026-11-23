@@ -115,7 +115,7 @@
                 <div>Kepala {{ $sekolah->nama_sekolah ?? 'Sekolah' }}</div>
                 <div style="height:55px;margin:4px 0">
                     @if(!empty($ttd['ttd_kepsek_uri']))
-                        <img src="{{ $ttd['ttd_kepsek_uri'] }}" style="max-height:50px">
+                        <img src="{{ $ttd['ttd_kepsek_uri'] }}" alt="Tanda tangan Kepala Sekolah" style="max-height:50px">
                     @endif
                 </div>
                 <div style="font-weight:bold;text-decoration:underline">{{ $ttd['nama_kepsek'] ?: '....................................' }}</div>
@@ -126,7 +126,7 @@
                 <div>Pengawas Sekolah Pembina,</div>
                 <div style="height:55px;margin:4px 0">
                     @if(!empty($ttd['ttd_pengawas_uri']))
-                        <img src="{{ $ttd['ttd_pengawas_uri'] }}" style="max-height:50px">
+                        <img src="{{ $ttd['ttd_pengawas_uri'] }}" alt="Tanda tangan Pengawas Sekolah" style="max-height:50px">
                     @endif
                 </div>
                 <div style="font-weight:bold;text-decoration:underline">{{ $namaPengawas }}</div>

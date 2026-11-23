@@ -96,7 +96,7 @@
                                         <form method="POST" action="{{ route('guru.tp.destroy', $tp['id']) }}" onsubmit="return confirm('Hapus butir TP ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

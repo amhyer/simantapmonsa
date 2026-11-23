@@ -193,17 +193,17 @@
             <div class="card-body">
                 <form id="configForm" onsubmit="return saveConfig(event)">
                     <div style="margin-bottom:14px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">NPSN <span style="color:#DC2626">*</span></label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgNpsn">NPSN <span style="color:#DC2626">*</span></label>
                         <input type="text" id="cfgNpsn" placeholder="8 digit NPSN sekolah" maxlength="8" required
                             style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                     </div>
                     <div style="margin-bottom:14px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Token Dapodik <span style="color:#DC2626">*</span></label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgToken">Token Dapodik <span style="color:#DC2626">*</span></label>
                         <div style="position:relative">
                             <input type="password" id="cfgToken" placeholder="Token dari aplikasi Dapodik" required
                                 style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px;padding-right:40px">
                             <button type="button" onclick="toggleToken()" id="btnToggleToken"
-                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#667085;font-size:14px;padding:4px">
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#667085;font-size:14px;padding:4px" aria-label="Tampilkan atau sembunyikan token">
                                 <i class="fas fa-eye" id="tokenEyeIcon"></i>
                             </button>
                         </div>
@@ -211,17 +211,17 @@
                     </div>
                     <div class="grid grid-3" style="margin-bottom:14px">
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Host</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgHost">Host</label>
                             <input type="text" id="cfgHost" value="localhost"
                                 style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Port</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgPort">Port</label>
                             <input type="text" id="cfgPort" value="5774"
                                 style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Protokol</label>
+                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgProtocol">Protokol</label>
                             <select id="cfgProtocol"
                                 style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                                 <option value="http" selected>http://</option>
@@ -230,7 +230,7 @@
                         </div>
                     </div>
                     <div style="margin-bottom:16px">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600" for="cfgArchiveUnlisted">
                             <input type="checkbox" id="cfgArchiveUnlisted" checked
                                 style="width:16px;height:16px;accent-color:var(--navy);cursor:pointer">
                             Arsipkan siswa yang tidak terdaftar di Dapodik
@@ -329,10 +329,10 @@
                                     <td style="padding:8px 12px;text-align:center"><span class="tag tag-gold">{{ $log->diperbarui }}</span></td>
                                     <td style="padding:8px 12px;text-align:center"><span class="tag {{ $log->gagal > 0 ? 'tag-bad' : 'tag-mut' }}">{{ $log->gagal }}</span></td>
                                     <td style="padding:8px 12px;text-align:center">
-                                        <a href="{{ route('admin.dapodik.log-detail', $log->id) }}" class="btn btn-ghost btn-sm"><i class="fas fa-eye"></i></a>
+                                        <a href="{{ route('admin.dapodik.log-detail', $log->id) }}" class="btn btn-ghost btn-sm" aria-label="Lihat detail"><i class="fas fa-eye"></i></a>
                                         <form action="{{ route('admin.dapodik.log-destroy', $log->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus log ini?')">
                                             @csrf @method('DELETE')
-                                            <button class="btn btn-ghost btn-sm" style="color:#DC2626"><i class="fas fa-trash"></i></button>
+                                            <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>

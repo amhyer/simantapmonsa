@@ -94,7 +94,7 @@
                                 <td style="padding:8px 12px;text-align:center">
                                     <form action="{{ route('guru.dimensi.destroy', $d->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626">🗑</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
                                     </form>
                                 </td>
                             </tr>
