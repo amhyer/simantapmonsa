@@ -100,7 +100,7 @@ class TryoutStudentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tryout sudah diselesaikan'], 409);
         }
 
-        if (! $result->session->isOngoing()) {
+        if (! $result->session?->isOngoing()) {
             return response()->json(['success' => false, 'message' => 'Sesi tryout sudah berakhir'], 409);
         }
 
@@ -248,6 +248,26 @@ class TryoutStudentController extends Controller
 
     private function siswaSaya(): ?Siswa
     {
-        return Siswa::where('nis', auth()->user()->nama_pengguna)->first();
+        $user = auth()->user();
+        if (! $user) {
+            return null;
+        }
+
+        $siswa = null;
+        $ids = array_map('intval', (array) ($user->terhubung_dengan ?? []));
+        if ($ids !== []) {
+            $siswa = Siswa::whereIn('id', $ids)->first();
+        }
+
+        if (! $siswa) {
+            $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+        }
+
+        if (! $siswa) {
+            $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
+            $siswa = Siswa::where(fn ($q) => $q->where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna))->first();
+        }
+
+        return $siswa;
     }
 }

@@ -15,7 +15,7 @@ class TryoutResultPolicy
     public function view(User $user, Result $result): bool
     {
         return $user->peran === 'admin'
-            || (int) $result->session->guru_id === (int) $user->id
+            || (int) $result->session?->guru_id === (int) $user->id
             || $this->owner($user, $result);
     }
 
@@ -31,13 +31,19 @@ class TryoutResultPolicy
 
     private function owner(User $user, Result $result): bool
     {
-        $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+        $siswa = null;
+        $terhubung = $user->terhubung_dengan;
+        if (is_array($terhubung) && $terhubung !== []) {
+            $siswa = Siswa::whereIn('id', array_map('intval', $terhubung))->first();
+        }
 
         if (! $siswa) {
-            $terhubung = $user->terhubung_dengan;
-            if (is_array($terhubung) && $terhubung !== []) {
-                $siswa = Siswa::whereIn('id', $terhubung)->first();
-            }
+            $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+        }
+
+        if (! $siswa) {
+            $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
+            $siswa = Siswa::where(fn ($q) => $q->where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna))->first();
         }
 
         return $siswa && (int) $result->siswa_id === (int) $siswa->id;
