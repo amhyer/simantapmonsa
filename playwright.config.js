@@ -48,6 +48,15 @@ const parsedEnvUrl = process.env.E2E_BASE_URL ? new URL(process.env.E2E_BASE_URL
 const serverPort = resolvePort(process.env.E2E_PORT || parsedEnvUrl?.port || '8000');
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${serverPort}`;
 
+// Bagian "Akses/Demo" dan newsletter di landing hanya dirender bila flag ini
+// aktif (default produksi: mati, lihat config/simantap.php & LandingPageFlagsTest).
+// Spec landing menguji varian "CTA jujur", jadi server E2E dijalankan dengan
+// flag aktif — tanpa ini link "Akses"/"#demo" tidak pernah ada di DOM.
+const landingEnv = {
+    SIMANTAP_LANDING_DEMO_VIDEO: 'true',
+    SIMANTAP_LANDING_NEWSLETTER: 'true',
+};
+
 export default defineConfig({
     testDir: './tests/e2e',
     outputDir: './test-results',
@@ -74,5 +83,6 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        env: landingEnv,
     },
 });
