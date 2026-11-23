@@ -435,7 +435,7 @@ class TkaInnovationsTest extends TestCase
             'nama_guru' => $guruB->nama_lengkap,
             'nis' => 'LAIN999',
             'nama_peserta_didik' => 'Siswa Rahasia Sekolah B',
-            'kelas' => '6Z',
+            'kelas' => '6-SEKOLAH-B',
             'jenis_kelamin' => 'L',
             'aktif' => true,
         ]);
@@ -446,7 +446,7 @@ class TkaInnovationsTest extends TestCase
         $adminHeatmap->assertOk();
         $adminHeatmap->assertSee('6A');
         $adminHeatmap->assertSee('-25.0'); // kesenjangan 45 - 70 = -25.0
-        $adminHeatmap->assertDontSee('6Z');
+        $adminHeatmap->assertDontSee('6-SEKOLAH-B');
         $adminHeatmap->assertDontSee('Siswa Rahasia Sekolah B');
 
         // Kepsek Sekolah A melihat Heatmap & mengunduh CSV
@@ -454,14 +454,14 @@ class TkaInnovationsTest extends TestCase
             ->get(route('kepsek.tka-laporan.index'));
         $kepsekHeatmap->assertOk();
         $kepsekHeatmap->assertSee('6A');
-        $kepsekHeatmap->assertDontSee('6Z');
+        $kepsekHeatmap->assertDontSee('6-SEKOLAH-B');
 
         $csv = $this->actingAs($this->kepsekA)
             ->get(route('kepsek.tka-laporan.export'));
         $csv->assertOk();
         $this->assertStringContainsString('text/csv', (string) $csv->headers->get('Content-Type'));
         $this->assertStringContainsString('6A', $csv->streamedContent());
-        $this->assertStringNotContainsString('6Z', $csv->streamedContent());
+        $this->assertStringNotContainsString('6-SEKOLAH-B', $csv->streamedContent());
 
         // Admin Sekolah A tidak dapat mengakses profil kognitif siswa Sekolah B
         $this->actingAs($this->adminA)
