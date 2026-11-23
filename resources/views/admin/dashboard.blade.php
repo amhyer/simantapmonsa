@@ -6,8 +6,29 @@
 @section('page_subtitle', $sekolahSettings ? $sekolahSettings->nama_sekolah : 'Kelola seluruh sistem')
 
 @section('content')
+    @php
+        $kunciGlobal = $kunciRaporGlobal ?? false;
+        $dashAvail = \App\Services\Navigation\SchoolDataAvailabilityService::status();
+    @endphp
+
+    @if(!($dashAvail['has_any_data'] ?? false))
+        <div class="card" style="margin-bottom:20px;border:1.5px solid #C7D7FE;background:linear-gradient(135deg,#EEF4FF,#F8FAFF)">
+            <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;min-width:240px">
+                    <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:4px">
+                        <i class="fas fa-database" style="margin-right:6px;color:var(--gold)"></i>Data Sekolah Masih Kosong
+                    </div>
+                    <div style="font-size:13px;color:#475467;line-height:1.5">
+                        Saat ini hanya akun Administrator yang aktif dan menu-menu tanpa data disembunyikan agar tampilan tetap ringkas. Silakan tarik atau impor data dari Dapodik — seluruh menu akademik, kelas, presensi, dan rapor akan muncul otomatis sesuai data yang terisi.
+                    </div>
+                </div>
+                <a href="{{ route('admin.dapodik.index') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-sync-alt"></i> Tarik Data Dapodik
+                </a>
+            </div>
+        </div>
+    @else
     {{-- Banner Kontrol Akses Input Nilai Semester (ala e-Rapor SD 2025.1) --}}
-    @php $kunciGlobal = $kunciRaporGlobal ?? false; @endphp
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-radius:12px;margin-bottom:20px;flex-wrap:wrap;background:{{ $kunciGlobal ? 'var(--bad)' : 'linear-gradient(135deg,#065F46,#059669)' }};color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
         <div style="display:flex;align-items:center;gap:14px">
             <div style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
@@ -31,6 +52,7 @@
             </button>
         </form>
     </div>
+    @endif
 
     {{-- Top Stats --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px">

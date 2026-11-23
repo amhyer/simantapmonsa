@@ -38,6 +38,9 @@ class CommandPaletteService
         $asesmenAktif = modulAsesmenAktif();
         $tkaAktif = kesiapanTkaAktif();
         $multiSchool = TenantMode::isMultiSchool();
+        $adminAvail = $user->peran === 'admin'
+            ? SchoolDataAvailabilityService::status($user->tenant_id !== null ? (int) $user->tenant_id : null)
+            : null;
         $seenRoutes = [];
         $result = [];
 
@@ -53,6 +56,9 @@ class CommandPaletteService
                 continue;
             }
             if (($item['single_school_only'] ?? false) && $multiSchool) {
+                continue;
+            }
+            if ($adminAvail !== null && ! SchoolDataAvailabilityService::canShowAdminRoute($routeName, $adminAvail)) {
                 continue;
             }
             if (! Route::has($routeName)) {

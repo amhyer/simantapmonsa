@@ -2,9 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\MataPelajaran;
+use App\Models\Ptk;
+use App\Models\Rombel;
+use App\Models\SekolahSettings;
+use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AdminMenuTest extends TestCase
@@ -72,6 +79,25 @@ class AdminMenuTest extends TestCase
         $this->actingAs($guru)->get('/admin/dapodik/push')->assertForbidden();
     }
 
+    public function test_sidebar_menyembunyikan_menu_tanpa_data_saat_kosong(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $htmlSetup = $this->actingAs($admin)->get('/admin/dashboard')
+            ->assertOk()
+            ->getContent();
+
+        preg_match('/<nav class="sidebar-nav">(.*?)<\/nav>/s', $htmlSetup, $mSetup);
+        $this->assertNotEmpty($mSetup, 'Blok sidebar-nav tab Setup tidak ditemukan.');
+        $sidebarSetup = $mSetup[1];
+
+        $this->assertStringContainsString('Dasbor', $sidebarSetup);
+        $this->assertStringContainsString('Dapodik &amp; Impor Data', $sidebarSetup);
+        $this->assertStringNotContainsString('Pendidik &amp; Peserta Didik', $sidebarSetup);
+        $this->assertStringNotContainsString('Kelas &amp; Pembelajaran', $sidebarSetup);
+        $this->assertStringNotContainsString('Data Sekolah &amp; Periode', $sidebarSetup);
+    }
+
     /**
      * Sidebar admin: setiap grup lipat hanya memunculkan labelnya SATU kali
      * (header ringkasan saja, tanpa duplikat di dalam subitem) dan semua
@@ -80,6 +106,40 @@ class AdminMenuTest extends TestCase
     public function test_sidebar_tanpa_label_ganda_dan_submenu_tertutup_default(): void
     {
         $admin = User::factory()->admin()->create();
+        $sem = Semester::create([
+            'semester_id' => '20261',
+            'tahun_ajaran' => '2026/2027',
+            'nama_semester' => 'ganjil',
+        ]);
+        SekolahSettings::create([
+            'npsn' => '40404040',
+            'nama_sekolah' => 'SD Negeri Uji Sidebar',
+        ]);
+        Ptk::create([
+            'semester_id' => $sem->id,
+            'nama' => 'Guru Uji Sidebar',
+            'jenis_ptk' => 'Guru Kelas',
+        ]);
+        $rombel = Rombel::create([
+            'semester_id' => $sem->id,
+            'nama_rombel' => 'Kelas 1.A',
+            'tingkat' => '1',
+        ]);
+        MataPelajaran::create([
+            'kode' => 'MTK',
+            'nama' => 'Matematika',
+            'aktif' => true,
+        ]);
+        Siswa::create([
+            'uuid' => (string) Str::uuid(),
+            'semester_id' => $sem->id,
+            'rombel_id' => $rombel->id,
+            'nis' => 'SB001',
+            'nama_peserta_didik' => 'Siswa Uji Sidebar',
+            'kelas' => 'Kelas 1.A',
+            'jenis_kelamin' => 'L',
+            'aktif' => true,
+        ]);
 
         // Tab e-Rapor (diakses melalui admin.profile — item top-level UTAMA).
         $htmlErapor = $this->actingAs($admin)->get('/admin/profile')

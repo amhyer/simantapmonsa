@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SekolahSettings;
 use App\Modules\Tenant\Contexts\TenantContext;
+use App\Services\Navigation\SchoolDataAvailabilityService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
 class SekolahController extends Controller
@@ -129,10 +129,7 @@ class SekolahController extends Controller
             $sekolahSettings->update($validated);
         }
 
-        if ($tenantId !== null) {
-            Cache::forget('tenant-nama-'.$tenantId);
-        }
-        Cache::forget('root-sekolah-nama');
+        SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);
 
         return redirect()->route('admin.sekolah.index')
             ->with('success', 'Identitas sekolah berhasil diperbarui.');
@@ -147,10 +144,7 @@ class SekolahController extends Controller
         }
         $query->delete();
 
-        if ($tenantId !== null) {
-            Cache::forget('tenant-nama-'.$tenantId);
-        }
-        Cache::forget('root-sekolah-nama');
+        SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);
 
         return redirect()->route('admin.sekolah.index')
             ->with('success', 'Identitas sekolah telah dikosongkan.');

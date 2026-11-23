@@ -978,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <form action="{{ route('admin.dapodik.reset') }}" method="POST" style="padding:24px">
             @csrf
             <p style="font-size:13px;color:#475467;margin-top:0;margin-bottom:16px;line-height:1.5">
-                Tindakan ini akan <strong>mengosongkan seluruh data yang diambil dari Dapodik</strong> (siswa, rombel, PTK, akun pengguna Dapodik, dan jadwal) milik sekolah ini di basis data. Akun admin Anda tetap aman. Anda dapat melakukan penarikan data baru dari Dapodik secara bersih kapan saja.
+                Tindakan ini akan <strong>mengosongkan seluruh data sekolah</strong> (siswa, PTK, rombel, jadwal, mata pelajaran, kehadiran, nilai, rapor, ujian, profil pengaturan, serta seluruh akun pengguna non-admin) dan <strong>hanya menyisakan akun Administrator</strong>. Seluruh menu yang belum terisi data akan disembunyikan otomatis dan muncul kembali sesuai data yang ditarik dari Dapodik.
             </p>
             <div style="margin-bottom:16px">
                 <label for="fld-admin-dapodik-konfirmasi" style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Ketik persis konfirmasi: <code style="color:var(--bad);background:#FEE9E7;padding:2px 6px;border-radius:4px">KOSONGKAN DATA DAPODIK</code></label>

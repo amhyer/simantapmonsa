@@ -148,27 +148,55 @@
         ],
     ];
 
-    // Sembunyikan fitur data global yang belum aman untuk tenant.
-    if ($multiSchoolMode || !kesiapanTkaAktif()) {
-        foreach ($menuAdmin as &$groups) {
-            foreach ($groups as &$group) {
-                if (isset($group['children'])) {
-                    $group['children'] = array_values(array_filter($group['children'], function ($item) use ($multiSchoolMode) {
-                        if ($multiSchoolMode && in_array($item['route'] ?? '', ['admin.backup.index', 'admin.log.index'], true)) {
-                            return false;
-                        }
-                        if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
-                            return false;
-                        }
+    // Sembunyikan fitur data global yang belum aman untuk tenant, modul yang
+    // dimatikan, serta menu yang tabel/datanya belum terisi di sekolah ini.
+    $dataAvail = \App\Services\Navigation\SchoolDataAvailabilityService::status();
+    foreach ($menuAdmin as &$groups) {
+        $filteredGroups = [];
+        foreach ($groups as $group) {
+            if (isset($group['children'])) {
+                $group['children'] = array_values(array_filter($group['children'], function ($item) use ($multiSchoolMode, $dataAvail, $isActive) {
+                    $route = $item['route'] ?? '';
+                    if ($multiSchoolMode && in_array($route, ['admin.backup.index', 'admin.log.index'], true)) {
+                        return false;
+                    }
+                    if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
+                        return false;
+                    }
+                    if ($route !== '' && !$isActive($route) && !\App\Services\Navigation\SchoolDataAvailabilityService::canShowAdminRoute($route, $dataAvail)) {
+                        return false;
+                    }
 
-                        return true;
-                    }));
+                    return true;
+                }));
+
+                if ($group['children'] !== []) {
+                    $filteredGroups[] = $group;
+                }
+            } elseif (isset($group['items'])) {
+                $group['items'] = array_values(array_filter($group['items'], function ($item) use ($multiSchoolMode, $dataAvail, $isActive) {
+                    $route = $item['route'] ?? '';
+                    if ($multiSchoolMode && in_array($route, ['admin.backup.index', 'admin.log.index'], true)) {
+                        return false;
+                    }
+                    if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
+                        return false;
+                    }
+                    if ($route !== '' && !$isActive($route) && !\App\Services\Navigation\SchoolDataAvailabilityService::canShowAdminRoute($route, $dataAvail)) {
+                        return false;
+                    }
+
+                    return true;
+                }));
+
+                if ($group['items'] !== []) {
+                    $filteredGroups[] = $group;
                 }
             }
-            unset($group);
         }
-        unset($groups);
+        $groups = $filteredGroups;
     }
+    unset($groups);
 
     $tabSekarang = $tab ?? 'setup';
     $grupMenu = $menuAdmin[$tabSekarang] ?? $menuAdmin['setup'];
