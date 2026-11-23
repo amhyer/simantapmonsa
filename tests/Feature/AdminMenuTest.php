@@ -121,6 +121,7 @@ class AdminMenuTest extends TestCase
             'jenis_ptk' => 'Guru Kelas',
         ]);
         $rombel = Rombel::create([
+            'dapodik_id' => (string) Str::uuid(),
             'semester_id' => $sem->id,
             'nama_rombel' => 'Kelas 1.A',
             'tingkat' => '1',

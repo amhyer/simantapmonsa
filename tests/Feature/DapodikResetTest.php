@@ -151,7 +151,8 @@ class DapodikResetTest extends TestCase
             'judul' => 'Materi Matematika',
             'mata_pelajaran' => 'Matematika',
             'kelas' => 'Kelas 1.A',
-            'isi' => 'Konten materi',
+            'tujuan_pembelajaran' => 'Memahami penjumlahan dasar',
+            'materi_pokok' => 'Konten materi penjumlahan',
             'tanggal' => now()->toDateString(),
         ]);
         $bankA = CbtQuestionBank::create([
@@ -159,7 +160,6 @@ class DapodikResetTest extends TestCase
             'guru_id' => $guruManualA->id,
             'title' => 'Bank Soal A',
             'subject' => 'Matematika',
-            'grade_level' => '1',
         ]);
 
         // Data Sekolah B
