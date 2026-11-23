@@ -111,8 +111,9 @@ class KepsekDashboardAgregasiTest extends TestCase
             ]);
         }
 
-        // Kolom dimensi.skor bertipe integer; ambang "siap" masih 2.5 seperti
-        // perilaku dashboard sebelumnya.
+        // Kolom dimensi.skor bertipe INTEGER (1..4). Ambang "siap" lama 2.5
+        // di SQL setara `skor >= 3`; memakai 2.5 sebagai parameter membuat
+        // PostgreSQL menolak query (22P02: invalid input syntax for integer).
         foreach ([4, 2, 3] as $i => $skor) {
             Dimensi::create([
                 'uuid' => (string) Str::uuid(),

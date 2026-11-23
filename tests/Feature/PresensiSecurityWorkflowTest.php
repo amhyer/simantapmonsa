@@ -112,12 +112,10 @@ class PresensiSecurityWorkflowTest extends TestCase
                 'terakhir_scan' => '2026-10-18 14:00:00',
             ]);
             $mock->shouldReceive('engineTerpilih')->once()->andReturn('powershell');
-            $mock->shouldReceive('rentang')->once()->andReturn([
-                'min' => Carbon::parse('2026-10-01'),
-                'maks' => Carbon::parse('2026-10-02'),
-            ]);
+            // `rentang`/`baca` tidak diharapkan lagi: penarikan data kini
+            // dijalankan TarikSemuaPresensiJob (di-fake di bawah), bukan sinkron
+            // di dalam request. Halaman index hanya memakai status/engine.
             $mock->shouldReceive('engine')->andReturn('powershell');
-            $mock->shouldReceive('baca')->once()->andReturn([]);
         });
 
         $this->actingAs($admin)

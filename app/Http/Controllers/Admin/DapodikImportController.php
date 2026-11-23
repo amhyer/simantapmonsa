@@ -402,7 +402,10 @@ class DapodikImportController extends Controller
             return $privatePath;
         }
 
-        if (app()->environment('local')) {
+        // Artefak build hasil `npm run build:bridge` (atau fixture test) hanya
+        // dipakai di mesin pengembang/CI. Dulu gate-nya `local` saja sehingga
+        // test di env `testing` selalu melihat bridge "tidak tersedia".
+        if (app()->environment(['local', 'testing'])) {
             foreach ([
                 public_path('bridge/SIMANTAP-Bridge.exe'),
                 base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe'),

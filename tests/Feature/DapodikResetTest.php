@@ -150,11 +150,8 @@ class DapodikResetTest extends TestCase
 
         $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
 
-        $resIndex = $this->actingAs($admin)->get(route('admin.dapodik.index'));
-        $resIndex->assertOk();
-        $resIndex->assertSee('Aplikasi Desktop SIMANTAP Bridge');
-        $resIndex->assertSee(route('admin.dapodik.download-bridge'));
-
+        // Tombol unduh hanya dirender bila artefak bridge tersedia, jadi fixture
+        // harus dibuat SEBELUM halaman index diminta.
         $bridgePath = public_path('bridge/SIMANTAP-Bridge.exe');
         $created = ! is_file($bridgePath);
         if ($created) {
@@ -163,6 +160,11 @@ class DapodikResetTest extends TestCase
         }
 
         try {
+            $resIndex = $this->actingAs($admin)->get(route('admin.dapodik.index'));
+            $resIndex->assertOk();
+            $resIndex->assertSee('Aplikasi Desktop SIMANTAP Bridge');
+            $resIndex->assertSee(route('admin.dapodik.download-bridge'));
+
             $resDownload = $this->actingAs($admin)->get(route('admin.dapodik.download-bridge'));
             $resDownload->assertOk();
             $this->assertStringContainsString('SIMANTAP-Bridge.exe', $resDownload->headers->get('content-disposition', ''));
