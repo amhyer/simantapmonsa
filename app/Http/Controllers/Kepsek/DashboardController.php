@@ -161,7 +161,11 @@ class DashboardController extends Controller
         // Agregat di SQL — dulu pluck() seluruh skor lalu dihitung di PHP.
         $tkaTotal = Dimensi::count();
         $tkaRata = $tkaTotal > 0 ? round((float) (Dimensi::avg('skor') ?? 0), 2) : 0;
-        $tkaSiap = Dimensi::where('skor', '>=', 2.5)->count();
+        // Kolom `dimensi.skor` bertipe INTEGER (1..4). Ambang 2.5 yang dikirim
+        // sebagai parameter string membuat PostgreSQL menolak query
+        // (SQLSTATE 22P02: invalid input syntax for type integer: "2.5").
+        // Untuk nilai integer, `skor >= 2.5` identik dengan `skor >= 3`.
+        $tkaSiap = Dimensi::where('skor', '>=', 3)->count();
         $tkaSekolah = [
             'total' => $tkaTotal,
             'rata_rata' => $tkaRata,

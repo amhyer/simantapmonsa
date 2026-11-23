@@ -77,6 +77,21 @@ class VisitasiPengawas extends Model
         return 'uuid';
     }
 
+    /**
+     * Kolom `uuid` bertipe UUID di PostgreSQL. Tanpa guard ini, nilai seperti
+     * `/pengawas/visitasi/1/pdf` dikirim apa adanya ke query dan PostgreSQL
+     * melempar SQLSTATE 22P02 (invalid input syntax for type uuid) — 500,
+     * bukan 404. Pola sama dengan model User/Siswa/Tenant.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if (($field ?? $this->getRouteKeyName()) === 'uuid' && ! Str::isUuid((string) $value)) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
+    }
+
     public function pengawas(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pengawas_id');

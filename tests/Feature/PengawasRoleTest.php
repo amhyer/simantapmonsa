@@ -200,6 +200,20 @@ class PengawasRoleTest extends TestCase
         $this->assertDatabaseCount('pm_visitasi_pengawas', 0);
     }
 
+    public function test_segmen_visitasi_bukan_uuid_ditolak_404_bukan_500(): void
+    {
+        // Kolom `pm_visitasi_pengawas.uuid` bertipe UUID di PostgreSQL. Tanpa
+        // guard Str::isUuid(), nilai "1" dikirim ke query dan PostgreSQL
+        // melempar SQLSTATE 22P02 (500) alih-alih 404.
+        $this->actingAs($this->pengawas)
+            ->get('/pengawas/visitasi/1/pdf')
+            ->assertNotFound();
+
+        $this->actingAs($this->pengawas)
+            ->delete('/pengawas/visitasi/1')
+            ->assertNotFound();
+    }
+
     public function test_audit_keselarasan_kurikulum_ttd_pengawas_dan_laporan_semester_pdf(): void
     {
         Storage::fake('local');

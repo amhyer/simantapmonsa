@@ -223,17 +223,37 @@ class SecurityHardeningFase1Test extends TestCase
     public function test_tka_statistik_tidak_mematikan_verifikasi_tls(): void
     {
         $source = (string) file_get_contents(base_path('app/Services/TkaStatistikService.php'));
-        $this->assertStringNotContainsString('withoutVerifying', $source);
+
+        // Nilai pemanggilan method, bukan kata di komentar: dokumentasi kode
+        // boleh menyebut "jangan withoutVerifying()" tanpa menggagalkan test.
+        $this->assertDoesNotMatchRegularExpression('/->withoutVerifying\s*\(/', $source);
+        $this->assertDoesNotMatchRegularExpression('/Http::withoutVerifying\s*\(/', $source);
     }
 
     public function test_wipe_tidak_memakai_truncate_cascade_dan_berjalan_dalam_transaksi(): void
     {
         $source = (string) file_get_contents(base_path('app/Http/Controllers/Admin/BackupController.php'));
 
-        // Komentar boleh menyebut TRUNCATE; yang dilarang adalah perintahnya.
-        $this->assertDoesNotMatchRegularExpression('/TRUNCATE\s+(TABLE\s+)?[`"]?\w/i', $source);
-        $this->assertStringContainsString('DB::transaction', $source);
-        $this->assertStringContainsString('->delete()', $source);
+        // Komentar memang menyebut TRUNCATE (menjelaskan larangannya), jadi
+        // komentar dibuang lebih dulu — yang dinilai hanya kode.
+        $kode = $this->kodeTanpaKomentar($source);
+
+        $this->assertDoesNotMatchRegularExpression('/TRUNCATE/i', $kode);
+        $this->assertStringContainsString('DB::transaction', $kode);
+        $this->assertStringContainsString('->delete()', $kode);
+    }
+
+    /** Buang komentar blok dan komentar penuh-baris agar assertion menilai kode saja. */
+    private function kodeTanpaKomentar(string $source): string
+    {
+        $tanpaBlok = preg_replace('~/\*.*?\*/~s', '', $source) ?? $source;
+
+        $baris = array_filter(
+            preg_split('/\R/', $tanpaBlok) ?: [],
+            fn (string $isi): bool => preg_match('~^\s*(//|\*)~', $isi) !== 1
+        );
+
+        return implode("\n", $baris);
     }
 
     public function test_foto_siswa_tidak_publik_secara_default(): void
@@ -245,6 +265,7 @@ class SecurityHardeningFase1Test extends TestCase
     {
         $source = (string) file_get_contents(base_path('tools/setup_api_key.php'));
         $this->assertStringContainsString("'key' => null", $source);
-        $this->assertStringNotContainsString("'key' => $apiKey", $source);
+        // String berkutip ganda akan menginterpolasi $apiKey — harus di-escape.
+        $this->assertStringNotContainsString("'key' => \$apiKey", $source);
     }
 }
