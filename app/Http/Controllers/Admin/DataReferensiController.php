@@ -483,7 +483,6 @@ class DataReferensiController extends Controller
                     'nip' => $ptkModel->nip,
                     'nama_lengkap' => $ptkModel->nama_gelar ?: $ptkModel->nama,
                     'peran' => $peranSync,
-                    'jabatan' => $ptkModel->jabatan,
                 ]);
             }
         }
@@ -683,7 +682,7 @@ class DataReferensiController extends Controller
                     }
 
                     $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
-                    $siswa = Siswa::where('nisn', $kunci)->orWhere('nis', $kunci)->first();
+                    $siswa = Siswa::where(fn ($q) => $q->where('nisn', $kunci)->orWhere('nis', $kunci))->first();
                     if (! $siswa) {
                         $tidakCocok[] = basename($entryName);
 
@@ -753,7 +752,7 @@ class DataReferensiController extends Controller
         if ($request->hasFile('foto')) {
             foreach ($request->file('foto') as $file) {
                 $kunci = trim(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-                $siswa = Siswa::where('nis', $kunci)->orWhere('nisn', $kunci)->first();
+                $siswa = Siswa::where(fn ($q) => $q->where('nis', $kunci)->orWhere('nisn', $kunci))->first();
 
                 if (! $siswa) {
                     $tidakCocok[] = $file->getClientOriginalName();

@@ -58,8 +58,7 @@ class ResetPasswordController extends Controller
         }
 
         $pesan = match ($status) {
-            Password::INVALID_TOKEN => 'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.',
-            Password::INVALID_USER => 'Email tidak terdaftar pada akun mana pun.',
+            Password::INVALID_TOKEN, Password::INVALID_USER => 'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.',
             Password::RESET_THROTTLED => 'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
             default => 'Kata sandi gagal diubah. Minta tautan reset baru.',
         };

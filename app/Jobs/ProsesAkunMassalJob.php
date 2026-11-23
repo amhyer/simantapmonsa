@@ -38,7 +38,7 @@ class ProsesAkunMassalJob implements ShouldQueue
         foreach ($siswa as $s) {
             if ($this->requestData['buat_ortu'] ?? false) {
                 $username = 'ortu'.$s->nis;
-                if (! User::where('nama_pengguna', $username)->exists()) {
+                if (! User::withTrashed()->where('nama_pengguna', $username)->exists()) {
                     $usersToInsert[] = [
                         'uuid' => (string) Str::uuid(),
                         'nama_lengkap' => 'Orang Tua '.$s->nama_peserta_didik,
@@ -58,7 +58,7 @@ class ProsesAkunMassalJob implements ShouldQueue
 
             if ($this->requestData['buat_siswa'] ?? true) {
                 $username = 'siswa'.$s->nis;
-                if (! User::where('nama_pengguna', $username)->exists()) {
+                if (! User::withTrashed()->where('nama_pengguna', $username)->exists()) {
                     $usersToInsert[] = [
                         'uuid' => (string) Str::uuid(),
                         'nama_lengkap' => $s->nama_peserta_didik,

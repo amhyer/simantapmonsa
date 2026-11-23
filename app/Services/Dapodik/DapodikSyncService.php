@@ -361,7 +361,7 @@ class DapodikSyncService
                 $waliPtkId = $row['ptk_id'] ?? $row['guru_id'] ?? $row['wali_kelas_ptk_id'] ?? null;
                 $guruId = null;
                 if ($waliPtkId) {
-                    $waliUser = User::where('dapodik_id', $waliPtkId)
+                    $waliUser = User::forSchool()->where('dapodik_id', $waliPtkId)
                         ->where('peran', 'guru')
                         ->first();
                     $guruId = $waliUser?->id;
@@ -451,13 +451,13 @@ class DapodikSyncService
                 // Match by dapodik_id first, then by nama_pengguna (nip)
                 $existing = null;
                 if ($dapodikId) {
-                    $existing = User::where('dapodik_id', $dapodikId)->first();
+                    $existing = User::forSchool()->where('dapodik_id', $dapodikId)->first();
                 }
                 if (! $existing && $nip) {
-                    $existing = User::where('nama_pengguna', $nip)->first();
+                    $existing = User::forSchool()->where('nama_pengguna', $nip)->first();
                 }
                 if (! $existing && $nuptk) {
-                    $existing = User::where('nama_pengguna', $nuptk)->first();
+                    $existing = User::forSchool()->where('nama_pengguna', $nuptk)->first();
                 }
 
                 // Determine username: prefer NIP, fallback NUPTK/NIK/dapodikId
@@ -466,7 +466,7 @@ class DapodikSyncService
                     // Ensure unique username
                     $base = $username;
                     $counter = 1;
-                    while (User::where('nama_pengguna', $username)->where('id', '!=', $existing->id)->exists()) {
+                    while (User::forSchool()->withTrashed()->where('nama_pengguna', $username)->where('id', '!=', $existing->id)->exists()) {
                         $username = $base.'.'.$counter;
                         $counter++;
                     }
@@ -474,7 +474,7 @@ class DapodikSyncService
                     $base = $username;
                     $username = $base;
                     $counter = 1;
-                    while (User::where('nama_pengguna', $username)->exists()) {
+                    while (User::forSchool()->withTrashed()->where('nama_pengguna', $username)->exists()) {
                         $username = $base.'.'.$counter;
                         $counter++;
                     }
@@ -838,7 +838,7 @@ class DapodikSyncService
 
             // ── Archive GTK: batch 500 ──
             // Guru without NUPTK & NIP should NOT be archived
-            $gtkQuery = User::where('aktif', true)
+            $gtkQuery = User::forSchool()->where('aktif', true)
                 ->whereNotNull('dapodik_id')
                 ->whereNull('archived_at');
 
@@ -852,7 +852,7 @@ class DapodikSyncService
                     DB::beginTransaction();
                     try {
                         // Only archive GTK that have NUPTK or NIP (non-empty nama_pengguna)
-                        $usersToArchive = User::whereIn('dapodik_id', $chunk)
+                        $usersToArchive = User::forSchool()->whereIn('dapodik_id', $chunk)
                             ->whereNull('archived_at')
                             ->where(function ($q) {
                                 $q->whereNotNull('nama_pengguna')
@@ -985,16 +985,16 @@ class DapodikSyncService
 
             $existing = null;
             if ($dapodikId) {
-                $existing = User::where('dapodik_id', $dapodikId)->first();
+                $existing = User::forSchool()->where('dapodik_id', $dapodikId)->first();
             }
             if (! $existing && $nip) {
-                $existing = User::where('nama_pengguna', $nip)->first();
+                $existing = User::forSchool()->where('nama_pengguna', $nip)->first();
             }
             if (! $existing && $nuptk) {
-                $existing = User::where('nama_pengguna', $nuptk)->first();
+                $existing = User::forSchool()->where('nama_pengguna', $nuptk)->first();
             }
             if (! $existing && $nik) {
-                $existing = User::where('nama_pengguna', $nik)->first();
+                $existing = User::forSchool()->where('nama_pengguna', $nik)->first();
             }
 
             if ($existing) {
@@ -1095,7 +1095,7 @@ class DapodikSyncService
             ->filter(fn ($id) => ! isset($siswaDapodikIdSet[$id]))
             ->count();
 
-        $gtkToArchive = User::where('aktif', true)
+        $gtkToArchive = User::forSchool()->where('aktif', true)
             ->whereNotNull('dapodik_id')
             ->whereNull('archived_at')
             ->where(function ($q) {
@@ -1191,7 +1191,7 @@ class DapodikSyncService
         try {
             $username = $nis ?: ($siswa->nis ?: ($siswa->nisn ?: 'siswa'.$siswa->id));
 
-            $user = User::where('peran', 'siswa')
+            $user = User::forSchool()->where('peran', 'siswa')
                 ->where(function ($q) use ($siswa, $username) {
                     $q->whereJsonContains('terhubung_dengan', $siswa->id)
                         ->orWhere('nama_pengguna', $username)

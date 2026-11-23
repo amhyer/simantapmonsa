@@ -36,6 +36,9 @@ class TkaParentController extends Controller
         // Authorization check
         $user = auth()->user();
         $siswa = $report->siswa;
+        if (! $siswa) {
+            abort(404);
+        }
 
         $terhubung = $user->terhubung_dengan;
         $linkedStudentIds = is_array($terhubung) ? array_map('intval', $terhubung) : [];

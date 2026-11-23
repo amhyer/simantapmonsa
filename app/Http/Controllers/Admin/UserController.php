@@ -251,7 +251,7 @@ class UserController extends Controller
         abort_unless($admin && in_array($admin->peran, ['admin', 'super_admin'], true), 403);
         abort_unless($user->peran === 'guru' && $user->aktif && $user->archived_at === null, 403, 'Hanya akun Guru aktif yang dapat diakses.');
 
-        if (TenantContext::check() && (int) $user->tenant_id !== (int) TenantContext::id()) {
+        if (! User::forSchool()->whereKey($user->id)->exists()) {
             abort(403, 'Lintas sekolah tidak diizinkan.');
         }
 
@@ -280,7 +280,7 @@ class UserController extends Controller
         $admin = User::withoutGlobalScopes()->find($adminId);
         session()->forget('admin_impersonator_id');
 
-        if (! $admin || ! in_array($admin->peran, ['admin', 'super_admin'], true)) {
+        if (! $admin || ! $admin->aktif || $admin->archived_at !== null || ! in_array($admin->peran, ['admin', 'super_admin'], true)) {
             auth()->logout();
 
             return redirect()->route('login');

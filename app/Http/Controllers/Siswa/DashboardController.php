@@ -119,7 +119,7 @@ class DashboardController extends Controller
         $waliUser = $rombelRow?->guru ?? ($siswa->guru_id ? User::find($siswa->guru_id) : null);
         $namaWali = $waliUser?->nama_lengkap ?? $siswa->nama_guru ?? '-';
         $ptkWali = $waliUser
-            ? Ptk::where('nama', $waliUser->nama_lengkap)->orWhere('nip', $waliUser->nama_pengguna)->first()
+            ? Ptk::where(fn ($q) => $q->where('nama', $waliUser->nama_lengkap)->orWhere('nip', $waliUser->nama_pengguna))->first()
             : null;
         $nipWali = $ptkWali?->nip ?? ($waliUser && preg_match('/^\d{8,}$/', (string) $waliUser->nama_pengguna) ? $waliUser->nama_pengguna : '-');
 

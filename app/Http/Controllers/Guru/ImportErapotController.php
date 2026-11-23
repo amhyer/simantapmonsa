@@ -70,6 +70,13 @@ class ImportErapotController extends Controller
             'tahun_ajaran' => 'required|string',
         ]);
 
+        if (\App\Models\Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.",
+            ], 423);
+        }
+
         $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
         $kkm = $pengaturan->kkm ?? 70;
@@ -105,6 +112,14 @@ class ImportErapotController extends Controller
                     continue;
                 }
 
+                if ($siswa->kelas && \App\Models\Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
+                    $errors[] = 'Baris '.($index + 2).": Kelas {$siswa->kelas} sedang dikunci.";
+
+                    continue;
+                }
+
+                $clamp = fn ($val): float => is_numeric($val) ? max(0.0, min(100.0, floatval($val))) : 0.0;
+
                 $nilai = NilaiErapot::updateOrCreate(
                     [
                         'siswa_id' => $siswa->id,
@@ -114,10 +129,10 @@ class ImportErapotController extends Controller
                     ],
                     [
                         'guru_id' => $guru->id,
-                        'kelas' => $request->kelas,
-                        'nilai_formatif' => is_numeric($row[3] ?? null) ? floatval($row[3]) : 0,
-                        'nilai_sumatif' => is_numeric($row[4] ?? null) ? floatval($row[4]) : 0,
-                        'nilai_sumatif_akhir' => is_numeric($row[5] ?? null) ? floatval($row[5]) : 0,
+                        'kelas' => $siswa->kelas ?: $request->kelas,
+                        'nilai_formatif' => $clamp($row[3] ?? null),
+                        'nilai_sumatif' => $clamp($row[4] ?? null),
+                        'nilai_sumatif_akhir' => $clamp($row[5] ?? null),
                     ]
                 );
 

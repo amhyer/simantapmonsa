@@ -698,27 +698,30 @@ class DapodikSyncController extends Controller
                     );
                 }
 
-                // Lookup guru jika ada PTK ID atau nama guru
+                // Lookup guru jika ada PTK ID atau nama guru (terbatas sekolah aktif)
                 $guruId = null;
                 if (! empty($j['ptk_id'])) {
                     $ptk = Ptk::where('dapodik_id', $j['ptk_id'])->first();
-                    if ($ptk && $ptk->user_id) {
-                        $guruId = $ptk->user_id;
-                    }
+                    $guruId = User::forSchool()->where(function ($q) use ($j, $ptk) {
+                        $q->where('dapodik_id', $j['ptk_id']);
+                        if ($ptk?->nip) {
+                            $q->orWhere('nama_pengguna', $ptk->nip);
+                        }
+                        if ($ptk?->nuptk) {
+                            $q->orWhere('nama_pengguna', $ptk->nuptk);
+                        }
+                    })->value('id');
                 }
                 $rawGuru = $j['ptk_id_str'] ?? $j['nama_guru'] ?? $j['nama_ptk'] ?? null;
                 if (! $guruId && ! empty($rawGuru)) {
                     $namaGuru = trim((string) $rawGuru);
-                    $guruUser = User::whereRaw('LOWER(nama_lengkap) = ?', [strtolower($namaGuru)])->first();
-                    if ($guruUser) {
-                        $guruId = $guruUser->id;
-                    }
+                    $guruId = User::forSchool()->whereRaw('LOWER(nama_lengkap) = ?', [strtolower($namaGuru)])->value('id');
                 }
                 if (! $guruId && ! empty($j['guru_id'])) {
-                    $guruId = $j['guru_id'];
+                    $guruId = User::forSchool()->whereKey($j['guru_id'])->value('id');
                 }
                 if (! $guruId) {
-                    $guruId = auth()->id() ?? User::where('peran', 'admin')->first()?->id ?? User::first()?->id;
+                    $guruId = auth()->id() ?? User::forSchool()->where('peran', 'admin')->value('id') ?? User::forSchool()->value('id');
                 }
 
                 $hari = trim($j['hari'] ?? '');

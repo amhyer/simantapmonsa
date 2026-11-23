@@ -73,14 +73,14 @@ class DapodikService
 
     public function autoAssignKelas(string $guruId, ?string $kelas = null): int
     {
-        $siswa = Siswa::whereNull('guru_id')->orWhere('guru_id', 0)->get();
+        $siswa = Siswa::where(fn ($q) => $q->whereNull('guru_id')->orWhere('guru_id', 0))->get();
         $count = 0;
 
         foreach ($siswa as $s) {
             if ($kelas && $s->kelas !== $kelas) {
                 continue;
             }
-            $guru = User::find($guruId);
+            $guru = User::forSchool()->find($guruId);
             if (! $guru) {
                 continue;
             }
@@ -96,7 +96,7 @@ class DapodikService
         return [
             'total_siswa' => Siswa::count(),
             'siswa_dapodik' => Siswa::where('nis', 'like', 'DAPODIK-%')->count(),
-            'siswa_tanpa_kelas' => Siswa::whereNull('guru_id')->orWhere('guru_id', 0)->count(),
+            'siswa_tanpa_kelas' => Siswa::where(fn ($q) => $q->whereNull('guru_id')->orWhere('guru_id', 0))->count(),
             'siswa_dengan_orang_tua' => Siswa::whereHas('orangTua')->count(),
             'siswa_penerima_kip' => Siswa::where('penerima_kip', true)->count(),
             'siswa_dengan_foto' => Siswa::whereNotNull('foto')->count(),

@@ -320,14 +320,15 @@ class ImportDapodikJob implements ShouldQueue
                 'terhubung_dengan' => array_values(array_unique($terhubung)),
             ]);
         } else {
-            // Username unik secara global. Jangan mengubah akun sekolah lain.
-            if (User::withTrashed()->where('nama_pengguna', $username)->exists()) {
+            // Username unik per sekolah (tenant_id). Jangan mengubah akun sekolah lain.
+            if (User::withTrashed()->where('tenant_id', TenantContext::id())->where('nama_pengguna', $username)->exists()) {
                 Log::warning("Akun siswa tidak dibuat: username sudah digunakan ({$username}).");
 
                 return;
             }
             User::create([
                 'uuid' => (string) Str::uuid(),
+                'tenant_id' => TenantContext::id(),
                 'nama_lengkap' => $siswa->nama_peserta_didik,
                 'nama_pengguna' => $username,
                 // Akun baru harus diaktifkan melalui reset sandi oleh admin.

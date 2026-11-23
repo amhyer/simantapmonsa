@@ -48,16 +48,14 @@ class WaliKelasController extends Controller
             ->sort()
             ->values();
 
-        if ($gabung->isEmpty()) {
-            $gabung = Siswa::where('aktif', true)->whereNotNull('kelas')->distinct()->orderBy('kelas')->pluck('kelas');
-        }
-
         return $gabung;
     }
 
     private function siswaKelas(?string $kelas)
     {
-        if (! $kelas) {
+        $kelasSah = $this->daftarKelasGuru();
+
+        if (! $kelas || ! $kelasSah->contains($kelas)) {
             return Siswa::where('guru_id', auth()->id())
                 ->where('aktif', true)
                 ->orderBy('nama_peserta_didik')
@@ -77,6 +75,15 @@ class WaliKelasController extends Controller
         }
 
         return $rows;
+    }
+
+    private function pastikanSiswaPerwalian(Siswa $siswa): void
+    {
+        $guruId = (int) auth()->id();
+        $milikLangsung = (int) $siswa->guru_id === $guruId;
+        $dalamKelasAmpu = $siswa->kelas !== null && $this->daftarKelasGuru()->contains($siswa->kelas);
+
+        abort_unless($milikLangsung || $dalamKelasAmpu, 403, 'Siswa ini bukan anggota kelas perwalian Anda.');
     }
 
     // ==================== 1. TUJUAN PEMBELAJARAN (TP) ====================
@@ -525,6 +532,8 @@ class WaliKelasController extends Controller
 
     public function raporP5(Request $request, Siswa $siswa)
     {
+        $this->pastikanSiswaPerwalian($siswa);
+
         $semester = $request->query('semester', 'Ganjil');
         $tahunAjaran = $request->query('tahun_ajaran', $this->tahunDefault());
         $sekolah = SekolahSettings::first();
@@ -567,6 +576,8 @@ class WaliKelasController extends Controller
 
     public function transkripSimpan(Request $request, Siswa $siswa)
     {
+        $this->pastikanSiswaPerwalian($siswa);
+
         $validated = $request->validate([
             'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,'.$siswa->id,
             'nilai' => 'nullable|array',
@@ -604,6 +615,8 @@ class WaliKelasController extends Controller
 
     public function transkripCetak(Siswa $siswa)
     {
+        $this->pastikanSiswaPerwalian($siswa);
+
         $nilai = TranskripNilai::where('siswa_id', $siswa->id)
             ->with('mapel')
             ->get()

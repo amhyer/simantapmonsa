@@ -83,7 +83,6 @@ class RegisterSekolahController extends Controller
                 'nama_lengkap' => $validated['nama_lengkap'],
                 'nama_pengguna' => $validated['nama_pengguna'],
                 'email' => $validated['email'],
-                'telepon' => $validated['telepon'] ?? null,
                 'kata_sandi' => $validated['kata_sandi'],
                 'peran' => 'admin',
                 'tenant_id' => $tenant->id,

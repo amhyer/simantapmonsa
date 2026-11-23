@@ -110,7 +110,7 @@ $script:config = Get-Config
 $cfg = $script:config
 
 if ([string]::IsNullOrWhiteSpace([string]$cfg.log_file)) {
-    $script:log_file = Join-Path -Path $script:root -ChildPath 'presinsi-bridge.log'
+    $script:log_file = Join-Path -Path $script:root -ChildPath 'presensi-bridge.log'
 } else {
     $script:log_file = [string]$cfg.log_file
 }
@@ -155,8 +155,12 @@ if ($data.scans) {
         }
 
         $bagian = ([string]$waktuTeks -split ' ', 2)
-        $waktuBersih = ([string]$bagian[0]) -replace '(\d{1,2})\.(\d{2})\.(\d{2})', '$1:$2:$3'
-        $waktuIso = if ($bagian.Count -gt 1) { $waktuBersih + 'T' + [string]$bagian[1] } else { $waktuBersih }
+        if ($bagian.Count -gt 1) {
+            $jamBersih = ([string]$bagian[1]) -replace '(\d{1,2})\.(\d{2})\.(\d{2})', '$1:$2:$3'
+            $waktuIso = ([string]$bagian[0]) + 'T' + $jamBersih
+        } else {
+            $waktuIso = ([string]$bagian[0]) -replace '(\d{1,2})\.(\d{2})\.(\d{2})', '$1:$2:$3'
+        }
 
         $scans += [pscustomobject]@{
             nik   = $nik

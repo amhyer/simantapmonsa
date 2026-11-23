@@ -71,28 +71,45 @@ class NilaiErapotController extends Controller
             $guru->id, $request->mapel, $request->kelas, $request->semester, $request->tahun_ajaran
         );
 
+        $siswaMap = Siswa::whereIn('id', collect($request->nilai)->pluck('siswa_id')->map(fn ($id) => (int) $id))->get()->keyBy('id');
+
         DB::beginTransaction();
         try {
             $berhasil = 0;
             foreach ($request->nilai as $item) {
-                if (empty($item['formatif']) && empty($item['sumatif']) && empty($item['sumatif_akhir'])) {
+                $adaFormatif = isset($item['formatif']) && $item['formatif'] !== '';
+                $adaSumatif = isset($item['sumatif']) && $item['sumatif'] !== '';
+                $adaSumatifAkhir = isset($item['sumatif_akhir']) && $item['sumatif_akhir'] !== '';
+
+                if (! $adaFormatif && ! $adaSumatif && ! $adaSumatifAkhir) {
                     continue;
+                }
+
+                $siswa = $siswaMap->get((int) $item['siswa_id']);
+                if (! $siswa) {
+                    continue;
+                }
+
+                if ($siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
+                    DB::rollBack();
+
+                    return back()->with('error', "Input nilai rapor untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
                 }
 
                 $nilai = NilaiErapot::updateOrCreate(
                     [
-                        'siswa_id' => $item['siswa_id'],
+                        'siswa_id' => $siswa->id,
                         'mata_pelajaran' => $request->mapel,
                         'semester' => $request->semester,
                         'tahun_ajaran' => $request->tahun_ajaran,
                     ],
                     [
                         'guru_id' => $guru->id,
-                        'kelas' => $request->kelas,
+                        'kelas' => $siswa->kelas ?: $request->kelas,
                         'jadwal_pelajaran_id' => $jadwalId,
-                        'nilai_formatif' => $item['formatif'] ?? 0,
-                        'nilai_sumatif' => $item['sumatif'] ?? 0,
-                        'nilai_sumatif_akhir' => $item['sumatif_akhir'] ?? 0,
+                        'nilai_formatif' => $adaFormatif ? (float) $item['formatif'] : 0,
+                        'nilai_sumatif' => $adaSumatif ? (float) $item['sumatif'] : 0,
+                        'nilai_sumatif_akhir' => $adaSumatifAkhir ? (float) $item['sumatif_akhir'] : 0,
                     ]
                 );
 
@@ -120,19 +137,28 @@ class NilaiErapotController extends Controller
     public function autoSave(Request $request)
     {
         $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
+            'siswa_id' => 'required|integer',
             'field' => 'required|in:formatif,sumatif,sumatif_akhir',
             'value' => 'nullable|numeric|min:0|max:100',
             'kelas' => 'required|string',
             'mapel' => 'required|string',
-            'semester' => 'required|string',
+            'semester' => 'required|in:Ganjil,Genap',
             'tahun_ajaran' => 'required|string',
         ]);
 
-        if (Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+        $siswa = Siswa::find($request->siswa_id);
+        if (! $siswa) {
             return response()->json([
                 'success' => false,
-                'message' => "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.",
+                'message' => 'Data siswa tidak ditemukan di sekolah Anda.',
+            ], 404);
+        }
+
+        $kelasAsli = (string) ($siswa->kelas ?: $request->kelas);
+        if (Rombel::apakahTerkunciUntukKelas($request->kelas) || Rombel::apakahTerkunciUntukKelas($kelasAsli)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Input nilai rapor untuk kelas {$kelasAsli} sedang dikunci oleh Admin Sekolah.",
             ], 423);
         }
 
@@ -142,15 +168,14 @@ class NilaiErapotController extends Controller
         $bobot = ($pengaturan->pengaturan ?? [])['bobot_erapor'] ?? ['formatif' => 0.30, 'sumatif' => 0.40, 'sumatif_akhir' => 0.30];
 
         $nilai = NilaiErapot::firstOrNew([
-            'siswa_id' => $request->siswa_id,
+            'siswa_id' => $siswa->id,
             'mata_pelajaran' => $request->mapel,
             'semester' => $request->semester,
             'tahun_ajaran' => $request->tahun_ajaran,
-            'guru_id' => $guru->id,
         ]);
 
         $nilai->guru_id = $guru->id;
-        $nilai->kelas = $request->kelas;
+        $nilai->kelas = $kelasAsli;
         $nilai->jadwal_pelajaran_id = app(JadwalPelajaranResolver::class)->resolve(
             $guru->id, $request->mapel, $request->kelas, $request->semester, $request->tahun_ajaran
         );

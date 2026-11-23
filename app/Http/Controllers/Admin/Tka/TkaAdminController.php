@@ -32,16 +32,18 @@ class TkaAdminController extends Controller
                 ->groupBy('status_kesiapan')
                 ->pluck('count', 'status_kesiapan'),
             'early_warnings' => [
-                'total' => EarlyWarning::count(),
-                'pending' => EarlyWarning::where('status', 'pending')->count(),
-                'sedang_diproses' => EarlyWarning::where('status', 'sedang_diproses')->count(),
-                'selesai' => EarlyWarning::where('status', 'selesai')->count(),
+                'total' => EarlyWarning::whereHas('siswa')->count(),
+                'pending' => EarlyWarning::whereHas('siswa')->where('status', 'pending')->count(),
+                'sedang_diproses' => EarlyWarning::whereHas('siswa')->where('status', 'sedang_diproses')->count(),
+                'selesai' => EarlyWarning::whereHas('siswa')->where('status', 'selesai')->count(),
             ],
             'recent_assessments' => StudentAssessment::with(['siswa', 'semester'])
+                ->whereHas('siswa')
                 ->latest('tanggal_penilaian')
                 ->take(5)
                 ->get(),
             'critical_warnings' => EarlyWarning::with(['siswa', 'dimension'])
+                ->whereHas('siswa')
                 ->where('tingkat_peringatan', 'kritis')
                 ->where('status', 'pending')
                 ->latest()
@@ -111,15 +113,37 @@ class TkaAdminController extends Controller
     public function storeDimension(Request $request)
     {
         $validated = $request->validate([
-            'kode_dimensi' => 'required|string|max:20|unique:tka_dimensions,kode_dimensi',
+            'semester_id' => 'nullable|exists:semesters,id',
+            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi',
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'kategori' => 'required|in:akhlak_beragama,kebinekaan_global,berkebhinekaan,mandiri,bernalar_kritis,kreatif',
+            'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
+            'bobot' => 'nullable|numeric|min:0|max:10',
+            'threshold_siap' => 'nullable|numeric|min:1|max:4',
+            'rubrik_penilaian' => 'nullable|array',
         ]);
 
-        $validated['aktif'] = true;
+        $semesterId = $validated['semester_id'] ?? Semester::orderByDesc('tahun_ajaran')->orderByDesc('id')->value('id');
+        if (! $semesterId) {
+            return back()->withErrors(['semester_id' => 'Semester aktif belum tersedia.'])->withInput();
+        }
 
-        Dimension::create($validated);
+        Dimension::create([
+            'semester_id' => $semesterId,
+            'kode_dimensi' => $validated['kode_dimensi'],
+            'nama_dimensi' => $validated['nama_dimensi'],
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'kategori' => $validated['kategori'],
+            'bobot' => $validated['bobot'] ?? 1.0,
+            'threshold_siap' => $validated['threshold_siap'] ?? 3.0,
+            'rubrik_penilaian' => $validated['rubrik_penilaian'] ?? [
+                1 => 'Perlu Bimbingan',
+                2 => 'Cukup',
+                3 => 'Baik',
+                4 => 'Sangat Baik',
+            ],
+            'aktif' => true,
+        ]);
 
         return redirect()->route('admin.tka.dimensions.index')
             ->with('success', 'Dimensi berhasil dibuat');
@@ -151,13 +175,17 @@ class TkaAdminController extends Controller
     public function updateDimension(Request $request, Dimension $dimension)
     {
         $validated = $request->validate([
-            'kode_dimensi' => 'required|string|max:20|unique:tka_dimensions,kode_dimensi,'.$dimension->id,
+            'semester_id' => 'nullable|exists:semesters,id',
+            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi,'.$dimension->id,
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'kategori' => 'required|in:akhlak_beragama,kebinekaan_global,berkebhinekaan,mandiri,bernalar_kritis,kreatif',
+            'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
+            'bobot' => 'nullable|numeric|min:0|max:10',
+            'threshold_siap' => 'nullable|numeric|min:1|max:4',
+            'rubrik_penilaian' => 'nullable|array',
         ]);
 
-        $dimension->update($validated);
+        $dimension->update(array_filter($validated, fn ($v) => $v !== null));
 
         return redirect()->route('admin.tka.dimensions.index')
             ->with('success', 'Dimensi berhasil diperbarui');
@@ -236,7 +264,8 @@ class TkaAdminController extends Controller
             'search' => 'nullable|string|max:150',
         ]);
 
-        $query = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler']);
+        $query = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler'])
+            ->whereHas('siswa');
 
         // Filter by status
         if ($request->filled('status')) {
@@ -275,11 +304,13 @@ class TkaAdminController extends Controller
 
         $dimensions = Dimension::where('aktif', true)->orderBy('nama_dimensi')->get();
         $statusCounts = EarlyWarning::query()
+            ->whereHas('siswa')
             ->select('status')
             ->selectRaw('COUNT(*) AS total')
             ->groupBy('status')
             ->pluck('total', 'status');
         $levelCounts = EarlyWarning::query()
+            ->whereHas('siswa')
             ->select('tingkat_peringatan')
             ->selectRaw('COUNT(*) AS total')
             ->groupBy('tingkat_peringatan')
@@ -294,6 +325,7 @@ class TkaAdminController extends Controller
     public function showWarning(EarlyWarning $warning)
     {
         $warning->load(['siswa', 'dimension', 'handler']);
+        abort_if($warning->siswa === null, 404);
 
         return view('admin.tka.warnings.show', compact('warning'));
     }
@@ -303,6 +335,9 @@ class TkaAdminController extends Controller
      */
     public function updateWarningStatus(Request $request, EarlyWarning $warning)
     {
+        $warning->load('siswa');
+        abort_if($warning->siswa === null, 404);
+
         $validated = $request->validate([
             'status' => 'required|in:pending,sedang_diproses,selesai',
             'ditangani_oleh' => 'nullable|exists:users,id',
@@ -489,6 +524,7 @@ class TkaAdminController extends Controller
 
         if ($type === 'warnings') {
             $warnings = EarlyWarning::with(['siswa', 'semester', 'dimension', 'handler'])
+                ->whereHas('siswa')
                 ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId))
                 ->latest('created_at')
                 ->get();

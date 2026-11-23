@@ -67,10 +67,38 @@ class LoginController extends Controller
                 }
             }
         } else {
-            $attemptSuccess = Auth::attempt([
-                'nama_pengguna' => $credentials['nama_pengguna'],
-                'password' => $credentials['kata_sandi'],
-            ]);
+            $kandidatAktif = User::query()
+                ->where('nama_pengguna', $credentials['nama_pengguna'])
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->get();
+
+            if ($kandidatAktif->pluck('tenant_id')->filter()->unique()->count() > 1) {
+                $cocokSandi = $kandidatAktif->filter(
+                    fn (User $u) => Hash::check($credentials['kata_sandi'], $u->kata_sandi)
+                );
+
+                if ($cocokSandi->count() > 1) {
+                    RateLimiter::hit($throttleKey, 300);
+                    RateLimiter::hit($accountKey, 300);
+
+                    return back()->withErrors([
+                        'nama_pengguna' => 'Nama pengguna terdaftar di lebih dari satu sekolah. Silakan masuk melalui alamat portal/subdomain sekolah Anda.',
+                    ])->onlyInput('nama_pengguna');
+                }
+
+                if ($cocokSandi->count() === 1) {
+                    Auth::login($cocokSandi->first());
+                    $attemptSuccess = true;
+                } else {
+                    $attemptSuccess = false;
+                }
+            } else {
+                $attemptSuccess = Auth::attempt([
+                    'nama_pengguna' => $credentials['nama_pengguna'],
+                    'password' => $credentials['kata_sandi'],
+                ]);
+            }
         }
 
         if ($attemptSuccess) {

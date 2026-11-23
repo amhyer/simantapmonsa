@@ -40,7 +40,7 @@ class KualitasAntarmukaBladeTest extends TestCase
                 continue;
             }
 
-            $relatif = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $relatif = str_replace('\\', '/', str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname()));
 
             // View bawaan paket pihak ketiga bukan tanggung jawab kita.
             if (str_contains($relatif, 'resources/views/vendor/')) {

@@ -343,7 +343,7 @@ class TenantController extends Controller
                 ? strtolower(trim($validated['admin_email']))
                 : strtolower(trim($validated['admin_user'])).'@simantap.sch.id';
 
-            User::create([
+            $adminUser = User::create([
                 'uuid' => (string) Str::uuid(),
                 'nama_lengkap' => $validated['admin_nama'],
                 'nama_pengguna' => $validated['admin_user'],
@@ -356,19 +356,21 @@ class TenantController extends Controller
             ]);
 
             // Auto-provision pengaturan dasar sekolah agar siap pakai saat login pertama
-            if (Schema::hasTable('pengaturan')) {
-                $defaultSettings = [
-                    'nama_sekolah' => $validated['nama_sekolah'],
-                    'npsn' => $validated['npsn'],
-                    'tahun_ajaran' => '2025/2026',
-                    'semester' => '2',
-                ];
-                foreach ($defaultSettings as $kunci => $nilai) {
-                    DB::table('pengaturan')->updateOrInsert(
-                        ['tenant_id' => $tenant->id, 'kunci' => $kunci],
-                        ['nilai' => $nilai, 'created_at' => now(), 'updated_at' => now()]
-                    );
-                }
+            if (Schema::hasTable('sekolah_settings')) {
+                \App\Models\SekolahSettings::withoutGlobalScopes()->firstOrCreate(
+                    ['tenant_id' => $tenant->id],
+                    [
+                        'guru_id' => $adminUser->id,
+                        'nama_sekolah' => $validated['nama_sekolah'],
+                        'npsn' => $validated['npsn'],
+                        'jenjang' => $validated['jenjang'] ?? 'SD',
+                        'kepala_sekolah' => $validated['kepala_sekolah'] ?? null,
+                        'alamat' => $validated['alamat'] ?? null,
+                        'kota' => $validated['kota'] ?? null,
+                        'email' => $adminEmail,
+                        'telepon' => $validated['telepon'] ?? null,
+                    ]
+                );
             }
         });
 

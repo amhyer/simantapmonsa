@@ -180,7 +180,7 @@ class CetakController extends Controller
             ->get();
         $sekolah = SekolahSettings::first();
         $tanggalRapor = TanggalRapor::where('tahun_ajaran', $tahunAjaran)
-            ->where('semester', $semester)
+            ->whereRaw('LOWER(semester) = ?', [strtolower($semester)])
             ->first();
         $hadir = $this->rekapKehadiran($siswa->id);
         $catatan = Catatan::where('siswa_id', $siswa->id)->latest('tanggal')->first(['catatan']);
@@ -295,7 +295,7 @@ class CetakController extends Controller
         $sekolah = SekolahSettings::first();
         $raporConfig = self::ambilConfigRapor($sekolah);
         $ttdWaliMap = ($sekolah?->pengaturan ?? [])['ttd_wali_kelas'] ?? [];
-        $waliKelasList = User::where('peran', 'guru')
+        $waliKelasList = User::forSchool()->where('peran', 'guru')
             ->where('aktif', true)
             ->orderBy('nama_lengkap')
             ->get(['id', 'nama_lengkap', 'nama_pengguna']);

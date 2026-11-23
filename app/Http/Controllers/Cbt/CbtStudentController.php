@@ -33,7 +33,7 @@ class CbtStudentController extends Controller
 
         if (! $siswa) {
             $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
-            $siswa = Siswa::where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna)->first();
+            $siswa = Siswa::where(fn ($q) => $q->where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna))->first();
         }
 
         abort_unless($siswa && $siswa->aktif && ! $siswa->archived_at, 403, 'Data siswa aktif tidak ditemukan untuk akun ini.');

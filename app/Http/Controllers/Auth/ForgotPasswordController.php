@@ -31,7 +31,7 @@ class ForgotPasswordController extends Controller
 
         $login = trim((string) $request->input('login'));
 
-        $user = User::query()
+        $user = User::forSchool()
             ->where('aktif', true)
             ->where(function ($query) use ($login) {
                 $query->where('nama_pengguna', $login)

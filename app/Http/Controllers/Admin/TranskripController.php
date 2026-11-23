@@ -69,9 +69,10 @@ class TranskripController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $siswa = Siswa::query()
-            ->when($q !== '', fn ($query) => $query->where('nama_peserta_didik', 'like', "%{$q}%")
+            ->when($q !== '', fn ($query) => $query->where(fn ($sub) => $sub
+                ->where('nama_peserta_didik', 'like', "%{$q}%")
                 ->orWhere('nisn', 'like', "%{$q}%")
-                ->orWhere('nis', 'like', "%{$q}%"))
+                ->orWhere('nis', 'like', "%{$q}%")))
             ->orderBy('nama_peserta_didik')
             ->paginate(25)
             ->withQueryString();
@@ -136,8 +137,9 @@ class TranskripController extends Controller
         $q = trim((string) $request->query('q', ''));
         $siswa = Siswa::query()
             ->withCount('transkripNilai')
-            ->when($q !== '', fn ($query) => $query->where('nama_peserta_didik', 'like', "%{$q}%")
-                ->orWhere('nisn', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where(fn ($sub) => $sub
+                ->where('nama_peserta_didik', 'like', "%{$q}%")
+                ->orWhere('nisn', 'like', "%{$q}%")))
             ->orderBy('nama_peserta_didik')
             ->paginate(25)
             ->withQueryString();
@@ -268,8 +270,9 @@ class TranskripController extends Controller
         $q = trim((string) $request->query('q', ''));
         $siswa = Siswa::query()
             ->withCount('transkripNilai')
-            ->when($q !== '', fn ($query) => $query->where('nama_peserta_didik', 'like', "%{$q}%")
-                ->orWhere('nisn', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where(fn ($sub) => $sub
+                ->where('nama_peserta_didik', 'like', "%{$q}%")
+                ->orWhere('nisn', 'like', "%{$q}%")))
             ->orderBy('nama_peserta_didik')
             ->paginate(25)
             ->withQueryString();

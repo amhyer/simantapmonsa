@@ -102,7 +102,7 @@ class RaporController extends Controller
 
         $sekolah = SekolahSettings::first();
         $tanggalRapor = TanggalRapor::where('tahun_ajaran', $tahunAjaran)
-            ->where('semester', $semester)
+            ->whereRaw('LOWER(semester) = ?', [strtolower($semester)])
             ->first();
 
         $counts = Kehadiran::where('siswa_id', $siswa->id)
