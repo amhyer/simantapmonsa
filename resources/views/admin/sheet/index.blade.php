@@ -29,7 +29,7 @@
                         <i class="fas fa-check-circle"></i> Google Sheet sudah terhubung. Data akan otomatis tersinkronisasi.
                     </div>
                     <div style="margin-bottom:16px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">URL Spreadsheet</label>
+                        <div style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">URL Spreadsheet</div>
                         <a href="{{ $sheet['spreadsheet_url'] ?? '#' }}" target="_blank" style="color:var(--navy);font-size:13px;word-break:break-all">
                             {{ $sheet['spreadsheet_url'] ?? '-' }}
                         </a>
@@ -47,13 +47,13 @@
                     <form action="{{ route('admin.sheet.connect') }}" method="POST">
                         @csrf
                         <div style="margin-bottom:14px">
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Spreadsheet ID *</label>
-                            <input type="text" name="spreadsheet_id" required placeholder="Contoh: 1AbCdEfGhIjKlMnOpQrStUvWxYz" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                            <label for="fld-admin-sheet-spreadsheet-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Spreadsheet ID *</label>
+                            <input id="fld-admin-sheet-spreadsheet-id" type="text" name="spreadsheet_id" required placeholder="Contoh: 1AbCdEfGhIjKlMnOpQrStUvWxYz" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <small style="color:var(--muted);font-size:12px">ID dari URL Google Sheet Anda</small>
                         </div>
                         <div style="margin-bottom:14px">
-                            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">URL Spreadsheet *</label>
-                            <input type="url" name="spreadsheet_url" required placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                            <label for="fld-admin-sheet-spreadsheet-url" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">URL Spreadsheet *</label>
+                            <input id="fld-admin-sheet-spreadsheet-url" type="url" name="spreadsheet_url" required placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         </div>
                         <button type="submit" class="btn"><i class="fas fa-link"></i> Hubungkan</button>
                     </form>

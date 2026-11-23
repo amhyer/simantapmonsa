@@ -79,16 +79,16 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 140px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
-                            <select name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-cp-nama-mapel" style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
+                            <select id="fld-pm-cp-nama-mapel" name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($mapelList as $m)
                                     <option value="{{ $m->nama }}" {{ $mapelFilter === $m->nama ? 'selected' : '' }}>{{ $m->nama }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Fase *</label>
-                            <select name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-cp-fase" style="font-size:12px;font-weight:600">Fase *</label>
+                            <select id="fld-pm-cp-fase" name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($faseLabels as $kode => $label)
                                     <option value="{{ $kode }}" {{ $faseFilter === $kode ? 'selected' : '' }}>Fase {{ $kode }}</option>
                                 @endforeach
@@ -97,19 +97,19 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 90px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Elemen</label>
-                            <input type="text" name="elemen" placeholder="Misal: Bilangan / Membaca dan Memirsa"
+                            <label for="fld-pm-cp-elemen" style="font-size:12px;font-weight:600">Elemen</label>
+                            <input id="fld-pm-cp-elemen" type="text" name="elemen" placeholder="Misal: Bilangan / Membaca dan Memirsa"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Urutan</label>
-                            <input type="number" name="urutan" value="1" min="1"
+                            <label for="fld-pm-cp-urutan" style="font-size:12px;font-weight:600">Urutan</label>
+                            <input id="fld-pm-cp-urutan" type="number" name="urutan" value="1" min="1"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Rumusan Capaian Pembelajaran *</label>
-                        <textarea name="deskripsi" rows="3" required placeholder="Tuliskan rumusan CP sesuai dokumen BSKAP..."
+                        <label for="fld-pm-cp-deskripsi" style="font-size:12px;font-weight:600">Rumusan Capaian Pembelajaran *</label>
+                        <textarea id="fld-pm-cp-deskripsi" name="deskripsi" rows="3" required placeholder="Tuliskan rumusan CP sesuai dokumen BSKAP..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div>
@@ -126,16 +126,16 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 140px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
-                            <select name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-cp-nama-mapel-2" style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
+                            <select id="fld-pm-cp-nama-mapel-2" name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($mapelList as $m)
                                     <option value="{{ $m->nama }}" {{ $mapelFilter === $m->nama ? 'selected' : '' }}>{{ $m->nama }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Fase *</label>
-                            <select name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-cp-fase-2" style="font-size:12px;font-weight:600">Fase *</label>
+                            <select id="fld-pm-cp-fase-2" name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($faseLabels as $kode => $label)
                                     <option value="{{ $kode }}" {{ $faseFilter === $kode ? 'selected' : '' }}>Fase {{ $kode }}</option>
                                 @endforeach
@@ -143,8 +143,8 @@
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Catatan untuk AI (opsional)</label>
-                        <textarea name="catatan" rows="3" placeholder="Misal: Fokuskan elemen literasi numerasi dan konteks lingkungan sekolah..."
+                        <label for="fld-pm-cp-catatan" style="font-size:12px;font-weight:600">Catatan untuk AI (opsional)</label>
+                        <textarea id="fld-pm-cp-catatan" name="catatan" rows="3" placeholder="Misal: Fokuskan elemen literasi numerasi dan konteks lingkungan sekolah..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -205,7 +205,7 @@
                                               onsubmit="return confirm('Hapus CP ini?');" style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

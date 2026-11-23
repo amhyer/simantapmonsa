@@ -57,7 +57,7 @@
                             <td style="padding:8px 12px;text-align:center;font-weight:600;font-size:12px">{{ $nilai ? number_format($nilai->nilai_akhir, 1) : '-' }}</td>
                             <td style="padding:8px 12px;text-align:center">
                                 @if($nilai && $nilai->predikat)
-                                    @php $pc = match($nilai->predikat){'A'=>'#D1FAE5,#065F46','B'=>'#DBEAFE,#1E40AF','C'=>'#FEF3C7,#92400E','D'=>'#FEE2E2,#991B1B',default=>'#F3F4F6,#6B7280'}; @endphp
+                                    @php $pc = match($nilai->predikat){'A'=>'#D1FAE5,#065F46','B'=>'#DBEAFE,#1E40AF','C'=>'#FEF3C7,#92400E','D'=>'#FEE2E2,var(--bad)',default=>'#F3F4F6,#6B7280'}; @endphp
                                     @php [$bg, $fg] = explode(',', $pc); @endphp
                                     <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;font-weight:700;font-size:11px;background:{{ $bg }};color:{{ $fg }}">{{ $nilai->predikat }}</span>
                                 @else

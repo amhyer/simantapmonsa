@@ -160,33 +160,33 @@
                     @csrf
                     <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
                     <div>
-                        <label style="font-size:12px;font-weight:600">Nama Hari Libur / Kegiatan *</label>
-                        <input type="text" name="nama" required placeholder="Misal: Libur Semester 1 / Hari Kemerdekaan RI"
+                        <label for="fld-pm-kalender-nama" style="font-size:12px;font-weight:600">Nama Hari Libur / Kegiatan *</label>
+                        <input id="fld-pm-kalender-nama" type="text" name="nama" required placeholder="Misal: Libur Semester 1 / Hari Kemerdekaan RI"
                                style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Mulai *</label>
-                            <input type="date" name="tanggal_mulai" required
+                            <label for="fld-pm-kalender-tanggal-mulai" style="font-size:12px;font-weight:600">Tanggal Mulai *</label>
+                            <input id="fld-pm-kalender-tanggal-mulai" type="date" name="tanggal_mulai" required
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Selesai</label>
-                            <input type="date" name="tanggal_selesai"
+                            <label for="fld-pm-kalender-tanggal-selesai" style="font-size:12px;font-weight:600">Tanggal Selesai</label>
+                            <input id="fld-pm-kalender-tanggal-selesai" type="date" name="tanggal_selesai"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Jenis *</label>
-                        <select name="jenis" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pm-kalender-jenis" style="font-size:12px;font-weight:600">Jenis *</label>
+                        <select id="fld-pm-kalender-jenis" name="jenis" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($jenisLiburLabels as $kode => $label)
                                 <option value="{{ $kode }}">{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Keterangan (opsional)</label>
-                        <input type="text" name="keterangan"
+                        <label for="fld-pm-kalender-keterangan" style="font-size:12px;font-weight:600">Keterangan (opsional)</label>
+                        <input id="fld-pm-kalender-keterangan" type="text" name="keterangan"
                                style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div>
@@ -232,7 +232,7 @@
                                                       onsubmit="return confirm('Hapus hari libur ini?');" style="display:inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                                 </form>
                                             </td>
                                         @endif

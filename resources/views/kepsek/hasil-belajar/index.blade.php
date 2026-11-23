@@ -184,7 +184,8 @@
 
             const ctx2 = document.getElementById('chartTren').getContext('2d');
             const trenDatasets = {!! json_encode($chartTrenDatasets ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!};
-            const warna = ['#1F3864', '#B8860B', '#12805C', '#B42318', '#667085', '#2B4A80'];
+            const warnaBad = getComputedStyle(document.documentElement).getPropertyValue('--bad').trim();
+            const warna = ['#1F3864', '#B8860B', '#12805C', warnaBad, '#667085', '#2B4A80'];
             const datasets = trenDatasets.map(function(item, i) {
                 return {
                     label: item[0],
@@ -222,7 +223,7 @@
                         { label: 'A', data: {!! json_encode($chartPredikatA ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#12805C', borderRadius: 4 },
                         { label: 'B', data: {!! json_encode($chartPredikatB ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#1F3864', borderRadius: 4 },
                         { label: 'C', data: {!! json_encode($chartPredikatC ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B8860B', borderRadius: 4 },
-                        { label: 'D', data: {!! json_encode($chartPredikatD ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: '#B42318', borderRadius: 4 }
+                        { label: 'D', data: {!! json_encode($chartPredikatD ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}, backgroundColor: warnaBad, borderRadius: 4 }
                     ]
                 },
                 options: {

@@ -118,7 +118,7 @@
         border-radius: 6px; font-size: 13px; font-weight: 600;
     }
     .input-nilai:focus { border-color: #B8860B; outline: none; box-shadow: 0 0 0 2px rgba(184,134,11,.15); }
-    .input-nilai.below-kkm { border-color: #B42318; background: #FEF2F2; }
+    .input-nilai.below-kkm { border-color: var(--bad); background: #FEF2F2; }
     .predikat-badge {
         display: inline-block; width: 28px; height: 28px; line-height: 28px;
         text-align: center; border-radius: 50%; font-weight: 700; font-size: 12px;
@@ -126,9 +126,9 @@
     .predikat-A { background: #D1FAE5; color: #065F46; }
     .predikat-B { background: #DBEAFE; color: #1E40AF; }
     .predikat-C { background: #FEF3C7; color: #92400E; }
-    .predikat-D { background: #FEE2E2; color: #991B1B; }
+    .predikat-D { background: #FEE2E2; color: var(--bad); }
     .status-tuntas { color: #059669; font-weight: 600; }
-    .status-remidi { color: #B42318; font-weight: 600; }
+    .status-remidi { color: var(--bad); font-weight: 600; }
     </style>
 
     <script>
@@ -313,7 +313,7 @@
         t.textContent = msg;
         t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;color:#fff;z-index:9999;font-size:13px';
         if (type === 'success') t.style.background = '#22c55e';
-        if (type === 'error') t.style.background = '#ef4444';
+        if (type === 'error') t.style.background = 'var(--bad)';
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3000);
     }

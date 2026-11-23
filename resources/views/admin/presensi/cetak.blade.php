@@ -7,6 +7,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
     <style>
+        :root { --bad: #B42318; }
         @page {
             size: landscape;
             margin: 8mm 10mm;
@@ -369,7 +370,7 @@
 
         .status-alpa {
             font-weight: bold;
-            color: #b91c1c;
+            color: var(--bad);
         }
 
         tr.baris-total td {

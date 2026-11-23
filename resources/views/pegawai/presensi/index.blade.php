@@ -102,7 +102,7 @@
                     <div style="font-size:12.5px;font-weight:600;color:#475467;margin-bottom:8px">📍 Alternatif Presensi Berbasis Titik GPS Sekolah</div>
                     @if(!$bisaGps)
                         @if(config('presensi.wajib_gps_scan_qr_pegawai'))
-                            <p style="font-size:12px;color:#b42318;margin:0 0 8px">GPS wajib, tetapi titik sekolah belum diatur. Hubungi admin sebelum presensi QR atau GPS.</p>
+                            <p style="font-size:12px;color:var(--bad);margin:0 0 8px">GPS wajib, tetapi titik sekolah belum diatur. Hubungi admin sebelum presensi QR atau GPS.</p>
                         @else
                             <p style="font-size:12px;color:#667085;margin:0 0 8px">Titik GPS belum diatur; kebijakan saat ini mengizinkan QR tanpa GPS.</p>
                         @endif

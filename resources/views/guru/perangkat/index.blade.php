@@ -141,7 +141,7 @@
                                               onsubmit="return confirm('Hapus perangkat ajar ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#D92D20" title="Hapus">
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--bad)" title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

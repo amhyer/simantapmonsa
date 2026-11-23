@@ -46,7 +46,7 @@
     </div>
 
     @if($terakhir)
-        <div class="card" style="margin-bottom:16px;border-left:4px solid {{ $terakhir->status === 'berhasil' ? '#12805C' : '#B42318' }}">
+        <div class="card" style="margin-bottom:16px;border-left:4px solid {{ $terakhir->status === 'berhasil' ? '#12805C' : 'var(--bad)' }}">
             <div class="card-header" style="gap:12px;flex-wrap:wrap">
                 <h3 style="margin-right:auto">Hasil Sinkron Terakhir</h3>
                 <span class="badge {{ $terakhir->status === 'berhasil' ? 'badge-success' : 'badge-danger' }}">
@@ -61,7 +61,7 @@
             </div>
             <div class="card-body">
                 @if($terakhir->status === 'gagal' && filled($terakhir->pesan_error))
-                    <div style="background:#FEF3E2;border:1px solid #F5C27A;color:#B42318;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px">
+                    <div style="background:#FEF3E2;border:1px solid #F5C27A;color:var(--bad);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px">
                         <strong>Pesan error:</strong> {{ $terakhir->pesan_error }}
                     </div>
                 @endif

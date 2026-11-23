@@ -57,7 +57,7 @@
                                 @foreach($fields as $f)
                                     <td style="padding:8px 12px;text-align:center">
                                         @if($k->$f)
-                                            <span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-weight:700;font-size:11px;background:{{ $k->$f >= 3 ? '#D1FAE5;color:#065F46' : ($k->$f >= 2 ? '#FEF3C7;color:#92400E' : '#FEE2E2;color:#991B1B') }}">{{ $k->$f }}</span>
+                                            <span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-weight:700;font-size:11px;background:{{ $k->$f >= 3 ? '#D1FAE5;color:#065F46' : ($k->$f >= 2 ? '#FEF3C7;color:#92400E' : '#FEE2E2;color:var(--bad)') }}">{{ $k->$f }}</span>
                                         @else
                                             <span style="color:#888">-</span>
                                         @endif

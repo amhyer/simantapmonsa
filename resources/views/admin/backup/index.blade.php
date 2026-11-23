@@ -38,8 +38,8 @@
                 <form action="{{ route('admin.backup.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
                     @csrf
                     <div style="margin-bottom:14px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File Backup (JSON, maks 10MB)</label>
-                        <input type="file" name="backup_file" accept=".json" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px" onchange="previewFile(this)">
+                        <label for="fld-admin-backup-backup-file" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File Backup (JSON, maks 10MB)</label>
+                        <input id="fld-admin-backup-backup-file" type="file" name="backup_file" accept=".json" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px" onchange="previewFile(this)">
                     </div>
                     <div id="filePreview" style="display:none;margin-bottom:14px;padding:10px;background:#EEF2F9;border-radius:8px;font-size:13px">
                         <i class="fas fa-file-code" style="color:var(--navy)"></i> <span id="fileName"></span>
@@ -92,9 +92,9 @@
         </div>
     </div>
 
-    <div class="card" style="margin-top:20px;border:2px solid #B42318">
+    <div class="card" style="margin-top:20px;border:2px solid var(--bad)">
         <div class="card-header" style="background:#FEE9E7">
-            <h3 style="color:#991B1B"><i class="fas fa-exclamation-triangle"></i> Zona Berbahaya — Hapus Semua Data</h3>
+            <h3 style="color:var(--bad)"><i class="fas fa-exclamation-triangle"></i> Zona Berbahaya — Hapus Semua Data</h3>
         </div>
         <div class="card-body">
             @if($errors->any())
@@ -117,14 +117,14 @@
             <form action="{{ route('admin.backup.wipe') }}" method="POST" onsubmit="return confirm('YAKIN menghapus SEMUA data? Tindakan ini permanen!')">
                 @csrf
                 <div style="margin-bottom:12px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Ketik persis: <code>HAPUS SEMUA DATA</code></label>
-                    <input type="text" name="konfirmasi" required autocomplete="off" placeholder="HAPUS SEMUA DATA" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-admin-backup-konfirmasi" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Ketik persis: <code>HAPUS SEMUA DATA</code></label>
+                    <input id="fld-admin-backup-konfirmasi" type="text" name="konfirmasi" required autocomplete="off" placeholder="HAPUS SEMUA DATA" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="margin-bottom:14px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata sandi Anda (konfirmasi identitas)</label>
-                    <input type="password" name="password" required autocomplete="current-password" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-admin-backup-password" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata sandi Anda (konfirmasi identitas)</label>
+                    <input id="fld-admin-backup-password" type="password" name="password" required autocomplete="current-password" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
-                <button type="submit" class="btn btn-block" style="background:#B42318;color:#fff">
+                <button type="submit" class="btn btn-block" style="background:var(--bad);color:#fff">
                     <i class="fas fa-trash"></i> Hapus Semua Data Sekarang
                 </button>
             </form>

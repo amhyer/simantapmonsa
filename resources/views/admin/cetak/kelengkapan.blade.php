@@ -13,8 +13,8 @@
         <div class="card-body">
             <form method="GET" action="{{ route('admin.cetak.kelengkapan') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
                 <div style="min-width:260px;flex:1">
-                    <label class="form-label" style="font-size:12px;font-weight:600">Pilih Kelas / Rombel</label>
-                    <select name="kelas" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-cetak-kelengkapan-kelas" class="form-label" style="font-size:12px;font-weight:600">Pilih Kelas / Rombel</label>
+                    <select id="fld-cetak-kelengkapan-kelas" name="kelas" class="form-control" onchange="this.form.submit()">
                         @foreach($kelasList as $k)
                             @php $st = $kelasStats[$k] ?? ['persen' => 0, 'terkunci' => false]; @endphp
                             <option value="{{ $k }}" @selected($kelas === $k)>
@@ -25,16 +25,16 @@
                 </div>
 
                 <div>
-                    <label class="form-label" style="font-size:12px;font-weight:600">Semester</label>
-                    <select name="semester" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-cetak-kelengkapan-semester" class="form-label" style="font-size:12px;font-weight:600">Semester</label>
+                    <select id="fld-cetak-kelengkapan-semester" name="semester" class="form-control" onchange="this.form.submit()">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="form-label" style="font-size:12px;font-weight:600">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" class="form-control" style="width:120px" maxlength="9">
+                    <label for="fld-cetak-kelengkapan-tahun-ajaran" class="form-label" style="font-size:12px;font-weight:600">Tahun Ajaran</label>
+                    <input id="fld-cetak-kelengkapan-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" class="form-control" style="width:120px" maxlength="9">
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-sm">
@@ -132,7 +132,7 @@
                                                 @if($ok)
                                                     <span title="Nilai lengkap" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#ECFDF5;color:#059669;font-weight:700">✓</span>
                                                 @else
-                                                    <span title="Belum ada nilai" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#FEF2F2;color:#DC2626;font-weight:700">✕</span>
+                                                    <span title="Belum ada nilai" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#FEF2F2;color:var(--bad);font-weight:700">✕</span>
                                                 @endif
                                             </td>
                                         @endforeach

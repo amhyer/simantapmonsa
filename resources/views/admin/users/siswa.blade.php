@@ -6,7 +6,7 @@
 @section('page_subtitle', 'Data peserta didik, biodata pelengkap rapor, serta status akunnya')
 
 @section('header_actions')
-    <a href="{{ route('admin.users.index') }}" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
+    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-secondary">
         <i class="fas fa-users"></i> Data Pengguna
     </a>
     <a href="{{ route('admin.users.akun-massal') }}" class="btn btn-sm">Akun Massal</a>
@@ -61,16 +61,16 @@
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <h3 style="margin:0;margin-right:8px">DATA SISWA</h3>
-                <button type="button" onclick="copySiswaTable()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="copySiswaTable()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button type="button" onclick="exportSiswaCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportSiswaCsv()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-excel"></i> Excel
                 </button>
-                <button type="button" onclick="exportSiswaPdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportSiswaPdf()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-pdf"></i> Pdf
                 </button>
-                <button type="button" onclick="window.print()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-print"></i> Print
                 </button>
             </div>

@@ -14,15 +14,15 @@
             <form action="{{ route('admin.transkrip.nomor.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 @csrf
                 <div>
-                    <label class="form-label">File CSV (header: nisn,nomor_ijazah)</label>
-                    <input type="file" name="file" accept=".csv,.txt" required class="form-control">
+                    <label for="fld-transkrip-nomor-file" class="form-label">File CSV (header: nisn,nomor_ijazah)</label>
+                    <input id="fld-transkrip-nomor-file" type="file" name="file" accept=".csv,.txt" required class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Import</button>
                 </div>
             </form>
             @error('file')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
         </div>
     </div>
@@ -59,7 +59,7 @@
                                         <button type="submit" class="btn btn-sm">Simpan</button>
                                     </form>
                                     @error('nomor_ijazah')
-                                        <div style="color:#B42318;font-size:12px;margin-top:4px">{{ $message }}</div>
+                                        <div style="color:var(--bad);font-size:12px;margin-top:4px">{{ $message }}</div>
                                     @enderror
                                 </td>
                                 <td></td>

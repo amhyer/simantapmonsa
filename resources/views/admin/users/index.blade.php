@@ -6,11 +6,11 @@
 @section('page_subtitle', 'Kelola akun Administrator, Guru, Siswa, Orang Tua, Kepala Sekolah, dan Tendik')
 
 @section('header_actions')
-    <button type="button" onclick="bukaModalTambah()" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
+    <button type="button" onclick="bukaModalTambah()" class="btn btn-sm btn-primary">
         <i class="fas fa-user"></i> Tambah Pengguna
     </button>
     <span style="color:var(--muted);font-weight:700">||</span>
-    <button type="button" onclick="generateSemuaPengguna()" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
+    <button type="button" onclick="generateSemuaPengguna()" class="btn btn-sm btn-secondary">
         <i class="fas fa-user-plus"></i> Generate Semua Pengguna
     </button>
     <button type="button" onclick="document.getElementById('modalResetMassal').style.display='flex'" class="btn btn-sm btn-secondary">
@@ -80,13 +80,13 @@
         <button onclick="switchTab('tanpa-akun')" id="tab-tanpa-akun" class="btn btn-sm btn-ghost tab-btn" style="border:1px dashed #B8860B;color:#B8860B">Belum Punya Akun ({{ $siswaWithoutUser->count() }})</button>
 
         @if($guruUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
-            <button onclick="hapusSemua('guru', {{ $guruUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318;margin-left:auto">Hapus Semua Guru</button>
+            <button onclick="hapusSemua('guru', {{ $guruUsers->count() }})" class="btn btn-sm btn-ghost" style="color:var(--bad);border:1px solid var(--bad);margin-left:auto">Hapus Semua Guru</button>
         @endif
         @if($siswaUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
-            <button onclick="hapusSemua('siswa', {{ $siswaUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318">Hapus Semua Siswa</button>
+            <button onclick="hapusSemua('siswa', {{ $siswaUsers->count() }})" class="btn btn-sm btn-ghost" style="color:var(--bad);border:1px solid var(--bad)">Hapus Semua Siswa</button>
         @endif
         @if($ortuUsers->count() && !\App\Modules\Tenant\Contexts\TenantContext::check())
-            <button onclick="hapusSemua('ortu', {{ $ortuUsers->count() }})" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #B42318">Hapus Semua Orang Tua</button>
+            <button onclick="hapusSemua('ortu', {{ $ortuUsers->count() }})" class="btn btn-sm btn-ghost" style="color:var(--bad);border:1px solid var(--bad)">Hapus Semua Orang Tua</button>
         @endif
     </div>
 
@@ -94,16 +94,16 @@
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <h3 id="tableTitle" style="margin:0;margin-right:8px">Semua Akun</h3>
-                <button type="button" onclick="copyTableData()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="copyTableData()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button type="button" onclick="exportTableCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportTableCsv()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-excel"></i> Excel
                 </button>
-                <button type="button" onclick="exportTablePdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportTablePdf()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-pdf"></i> Pdf
                 </button>
-                <button type="button" onclick="printTableData()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="printTableData()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-print"></i> Print
                 </button>
             </div>
@@ -198,7 +198,7 @@
                                             @if($u->nama_pengguna !== 'admin' && $u->id !== auth()->id())
                                                 <button type="button" onclick="toggleAktifPengguna('{{ $u->id }}', @js($u->nama_lengkap), {{ $u->aktif ? 'true' : 'false' }})" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;font-size:12.5px;cursor:pointer;color:var(--text)">
                                                     @if($u->aktif)
-                                                        <i class="fas fa-ban" style="width:14px;color:#DC2626"></i> Non Aktifkan
+                                                        <i class="fas fa-ban" style="width:14px;color:var(--bad)"></i> Non Aktifkan
                                                     @else
                                                         <i class="fas fa-check" style="width:14px;color:#059669"></i> Aktifkan
                                                     @endif
@@ -217,7 +217,7 @@
                                             </a>
                                             @if($u->nama_pengguna !== 'admin')
                                                 <div style="border-top:1px solid #F2F4F7"></div>
-                                                <button type="button" onclick="hapusUser('{{ $u->id }}', @js($u->nama_lengkap))" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;font-size:12.5px;cursor:pointer;color:#B42318">
+                                                <button type="button" onclick="hapusUser('{{ $u->id }}', @js($u->nama_lengkap))" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;font-size:12.5px;cursor:pointer;color:var(--bad)">
                                                     <i class="fas fa-trash" style="width:14px"></i> Hapus Pengguna
                                                 </button>
                                             @endif
@@ -365,7 +365,7 @@
                 <input type="hidden" name="aktif" value="1">
 
                 <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #E4E7EC;padding-top:14px">
-                    <button type="button" onclick="tutupModalTambah()" class="btn btn-sm" style="background:#DC2626;color:#fff;border:none">
+                    <button type="button" onclick="tutupModalTambah()" class="btn btn-sm btn-secondary">
                         <i class="fas fa-times"></i> Batal
                     </button>
                     <button type="submit" class="btn btn-sm btn-primary">
@@ -410,7 +410,7 @@
                 <button type="button" id="btn_ya_generate" onclick="eksekusiGenerateSemua()" class="btn btn-primary" style="min-width:120px;justify-content:center">
                     <i class="fas fa-check"></i> Ya, Buat!
                 </button>
-                <button type="button" id="btn_batal_generate" onclick="tutupModalGenerate(true)" class="btn" style="background:#DC2626;color:#fff;border:none;min-width:110px;justify-content:center">
+                <button type="button" id="btn_batal_generate" onclick="tutupModalGenerate(true)" class="btn btn-secondary" style="min-width:110px;justify-content:center">
                     <i class="fas fa-times"></i> Batal!
                 </button>
             </div>
@@ -431,8 +431,8 @@
             <form method="POST" action="{{ route('admin.users.reset-massal') }}" id="formResetMassal">
                 @csrf
                 <div style="margin-bottom:12px">
-                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px">Peran Target</label>
-                    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                    <div id="lbl-peran-target" style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px">Peran Target</div>
+                    <div role="group" aria-labelledby="lbl-peran-target" style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
                         <label><input type="checkbox" name="peran[]" value="siswa" checked> Siswa</label>
                         <label><input type="checkbox" name="peran[]" value="ortu"> Orang Tua</label>
                         <label><input type="checkbox" name="peran[]" value="guru"> Guru</label>
@@ -454,8 +454,8 @@
                 </div>
                 <div id="rm_preview_box" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;font-size:12.5px;color:#1E3A8A"></div>
                 <div style="margin-bottom:12px">
-                    <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Konfirmasi Kata Sandi Administrator <span style="color:#DC2626">*</span></label>
-                    <input type="password" name="password_admin" class="form-control" required placeholder="Masukkan kata sandi Anda">
+                    <label for="fld-admin-users-password-admin" style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Konfirmasi Kata Sandi Administrator <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-admin-users-password-admin" type="password" name="password_admin" class="form-control" required placeholder="Masukkan kata sandi Anda">
                 </div>
                 <div style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#FEF3C7;border:1px solid #F59E0B;font-size:12px;color:#92400E">
                     Password tidak dapat dilihat lagi; unduh dan bagikan dengan aman. Jika unduhan gagal, jalankan reset ulang untuk akun yang sama dengan opsi sertakan.

@@ -32,8 +32,8 @@
                 </div>
                 <div class="card-body">
                     <div style="margin-bottom:16px">
-                        <label class="form-label">Pilih Siswa <span style="color:var(--bad)">*</span></label>
-                        <select name="siswa_id" class="form-control" required style="width:100%">
+                        <label for="fld-assessments-create-siswa-id" class="form-label">Pilih Siswa <span style="color:var(--bad)">*</span></label>
+                        <select id="fld-assessments-create-siswa-id" name="siswa_id" class="form-control" required style="width:100%">
                             <option value="">— Pilih Siswa —</option>
                             @foreach($siswas as $siswa)
                                 <option value="{{ $siswa->id }}" @selected(old('siswa_id') == $siswa->id)>
@@ -44,8 +44,8 @@
                     </div>
 
                     <div style="margin-bottom:16px">
-                        <label class="form-label">Semester Penilaian <span style="color:var(--bad)">*</span></label>
-                        <select name="semester_id" class="form-control" required style="width:100%">
+                        <label for="fld-assessments-create-semester-id" class="form-label">Semester Penilaian <span style="color:var(--bad)">*</span></label>
+                        <select id="fld-assessments-create-semester-id" name="semester_id" class="form-control" required style="width:100%">
                             <option value="">— Pilih Semester —</option>
                             @foreach($semesters as $semester)
                                 <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id)>
@@ -56,8 +56,8 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Tanggal Pengamatan <span style="color:var(--bad)">*</span></label>
-                        <input type="date" name="tanggal_penilaian" class="form-control" value="{{ old('tanggal_penilaian', date('Y-m-d')) }}" required>
+                        <label for="fld-assessments-create-tanggal-penilaian" class="form-label">Tanggal Pengamatan <span style="color:var(--bad)">*</span></label>
+                        <input id="fld-assessments-create-tanggal-penilaian" type="date" name="tanggal_penilaian" class="form-control" value="{{ old('tanggal_penilaian', date('Y-m-d')) }}" required>
                     </div>
                 </div>
             </div>

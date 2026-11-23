@@ -24,15 +24,15 @@
             <form action="{{ route('admin.transkrip.import.store') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 @csrf
                 <div>
-                    <label class="form-label">File CSV (maks 2MB)</label>
-                    <input type="file" name="file" accept=".csv,.txt" required class="form-control">
+                    <label for="fld-transkrip-import-file" class="form-label">File CSV (maks 2MB)</label>
+                    <input id="fld-transkrip-import-file" type="file" name="file" accept=".csv,.txt" required class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Import</button>
                 </div>
             </form>
             @error('file')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
         </div>
     </div>

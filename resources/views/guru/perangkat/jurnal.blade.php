@@ -29,18 +29,18 @@
                 @csrf
                 <div class="grid grid-4" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tanggal *</label>
-                        <input type="date" name="tanggal" value="{{ old('tanggal', today()->format('Y-m-d')) }}" required
+                        <label for="fld-perangkat-jurnal-tanggal" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tanggal *</label>
+                        <input id="fld-perangkat-jurnal-tanggal" type="date" name="tanggal" value="{{ old('tanggal', today()->format('Y-m-d')) }}" required
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Jam Ke-</label>
-                        <input type="text" name="jam_ke" value="{{ old('jam_ke') }}" placeholder="Mis. 1-2"
+                        <label for="fld-perangkat-jurnal-jam-ke" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Jam Ke-</label>
+                        <input id="fld-perangkat-jurnal-jam-ke" type="text" name="jam_ke" value="{{ old('jam_ke') }}" placeholder="Mis. 1-2"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rombel</label>
-                        <select name="rombel_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-perangkat-jurnal-rombel-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rombel</label>
+                        <select id="fld-perangkat-jurnal-rombel-id" name="rombel_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">— Pilih Rombel —</option>
                             @foreach($rombelList as $r)
                                 <option value="{{ $r->id }}" {{ (string) old('rombel_id') === (string) $r->id ? 'selected' : '' }}>{{ $r->nama_rombel }}</option>
@@ -48,26 +48,26 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Label Kelas</label>
-                        <input type="text" name="kelas" value="{{ old('kelas') }}" placeholder="Mis. 6A"
+                        <label for="fld-perangkat-jurnal-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Label Kelas</label>
+                        <input id="fld-perangkat-jurnal-kelas" type="text" name="kelas" value="{{ old('kelas') }}" placeholder="Mis. 6A"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
                 <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Mata Pelajaran *</label>
-                        <input type="text" name="mata_pelajaran" value="{{ old('mata_pelajaran') }}" required placeholder="Contoh: Matematika"
+                        <label for="fld-perangkat-jurnal-mata-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Mata Pelajaran *</label>
+                        <input id="fld-perangkat-jurnal-mata-pelajaran" type="text" name="mata_pelajaran" value="{{ old('mata_pelajaran') }}" required placeholder="Contoh: Matematika"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Topik / Materi Pokok *</label>
-                        <input type="text" name="topik" value="{{ old('topik') }}" required placeholder="Contoh: Operasi Hitung Pecahan"
+                        <label for="fld-perangkat-jurnal-topik" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Topik / Materi Pokok *</label>
+                        <input id="fld-perangkat-jurnal-topik" type="text" name="topik" value="{{ old('topik') }}" required placeholder="Contoh: Operasi Hitung Pecahan"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rujukan Perangkat Ajar</label>
-                        <select name="perangkat_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-perangkat-jurnal-perangkat-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rujukan Perangkat Ajar</label>
+                        <select id="fld-perangkat-jurnal-perangkat-id" name="perangkat_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">— Opsional —</option>
                             @foreach($perangkatOptions as $p)
                                 <option value="{{ $p->id }}">[{{ strtoupper($p->jenis) }}] {{ $p->judul }}</option>
@@ -78,26 +78,26 @@
 
                 <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pertemuan Ke-</label>
-                        <input type="number" min="1" name="pertemuan_ke" value="{{ old('pertemuan_ke') }}"
+                        <label for="fld-perangkat-jurnal-pertemuan-ke" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pertemuan Ke-</label>
+                        <input id="fld-perangkat-jurnal-pertemuan-ke" type="number" min="1" name="pertemuan_ke" value="{{ old('pertemuan_ke') }}"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Siswa Hadir</label>
-                        <input type="number" min="0" name="jumlah_hadir" value="{{ old('jumlah_hadir') }}"
+                        <label for="fld-perangkat-jurnal-jumlah-hadir" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Siswa Hadir</label>
+                        <input id="fld-perangkat-jurnal-jumlah-hadir" type="number" min="0" name="jumlah_hadir" value="{{ old('jumlah_hadir') }}"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tidak Hadir</label>
-                        <input type="number" min="0" name="jumlah_tidak_hadir" value="{{ old('jumlah_tidak_hadir', 0) }}"
+                        <label for="fld-perangkat-jurnal-jumlah-tidak-hadir" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tidak Hadir</label>
+                        <input id="fld-perangkat-jurnal-jumlah-tidak-hadir" type="number" min="0" name="jumlah_tidak_hadir" value="{{ old('jumlah_tidak_hadir', 0) }}"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
                 <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tujuan Pembelajaran (Bank TP)</label>
-                        <select name="tp_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                        <label for="fld-perangkat-jurnal-tp-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tujuan Pembelajaran (Bank TP)</label>
+                        <select id="fld-perangkat-jurnal-tp-id" name="tp_id" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                             <option value="">— Opsional: Pilih dari Bank TP —</option>
                             @foreach($tpOptions ?? [] as $tp)
                                 <option value="{{ $tp->id }}">
@@ -107,8 +107,8 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Praktik Pedagogis</label>
-                        <select name="praktik_pedagogis" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                        <label for="fld-perangkat-jurnal-praktik-pedagogis" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Praktik Pedagogis</label>
+                        <select id="fld-perangkat-jurnal-praktik-pedagogis" name="praktik_pedagogis" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                             <option value="">— Pilih Praktik Pedagogis —</option>
                             @foreach($modelList ?? [] as $mdl)
                                 <option value="{{ $mdl }}" {{ old('praktik_pedagogis') === $mdl ? 'selected' : '' }}>{{ $mdl }}</option>
@@ -116,16 +116,16 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Asesmen</label>
-                        <input type="text" name="asesmen" value="{{ old('asesmen') }}" placeholder="Mis. Observasi, LKPD, kuis singkat"
+                        <label for="fld-perangkat-jurnal-asesmen" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Asesmen</label>
+                        <input id="fld-perangkat-jurnal-asesmen" type="text" name="asesmen" value="{{ old('asesmen') }}" placeholder="Mis. Observasi, LKPD, kuis singkat"
                                style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:12px;padding:10px 12px;background:#F9FAFB;border:1px solid #EAECF0;border-radius:8px">
                     <div>
-                        <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Prinsip Pembelajaran Mendalam</label>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                        <div id="lbl-jurnal-pm" style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Prinsip Pembelajaran Mendalam</div>
+                        <div role="group" aria-labelledby="lbl-jurnal-pm" style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
                             @foreach(['Berkesadaran (Mindful)', 'Bermakna (Meaningful)', 'Menggembirakan (Joyful)'] as $prinsip)
                                 <label style="display:flex;align-items:center;gap:5px">
                                     <input type="checkbox" name="prinsip_pm[]" value="{{ $prinsip }}"> {{ $prinsip }}
@@ -134,8 +134,8 @@
                         </div>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Pengalaman Belajar</label>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
+                        <div id="lbl-jurnal-pengalaman" style="font-weight:600;font-size:12px;display:block;margin-bottom:6px;color:#344054">Pengalaman Belajar</div>
+                        <div role="group" aria-labelledby="lbl-jurnal-pengalaman" style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">
                             @foreach(['Memahami', 'Mengaplikasi', 'Merefleksi'] as $peng)
                                 <label style="display:flex;align-items:center;gap:5px">
                                     <input type="checkbox" name="pengalaman_belajar[]" value="{{ $peng }}"> {{ $peng }}
@@ -146,19 +146,19 @@
                 </div>
 
                 <div style="margin-bottom:12px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Ringkasan Kegiatan Pembelajaran *</label>
-                    <textarea name="kegiatan" rows="3" required placeholder="Uraikan pelaksanaan pembelajaran hari ini..."
+                    <label for="fld-perangkat-jurnal-kegiatan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Ringkasan Kegiatan Pembelajaran *</label>
+                    <textarea id="fld-perangkat-jurnal-kegiatan" name="kegiatan" rows="3" required placeholder="Uraikan pelaksanaan pembelajaran hari ini..."
                               style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">{{ old('kegiatan') }}</textarea>
                 </div>
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan / Kendala Kelas</label>
-                        <input type="text" name="catatan" value="{{ old('catatan') }}" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-perangkat-jurnal-catatan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan / Kendala Kelas</label>
+                        <input id="fld-perangkat-jurnal-catatan" type="text" name="catatan" value="{{ old('catatan') }}" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tindak Lanjut / Remedial</label>
-                        <input type="text" name="tindak_lanjut" value="{{ old('tindak_lanjut') }}" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-perangkat-jurnal-tindak-lanjut" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tindak Lanjut / Remedial</label>
+                        <input id="fld-perangkat-jurnal-tindak-lanjut" type="text" name="tindak_lanjut" value="{{ old('tindak_lanjut') }}" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
 
@@ -239,7 +239,7 @@
                                         <form method="POST" action="{{ route('guru.perangkat.jurnal.destroy', $j) }}" onsubmit="return confirm('Hapus jurnal ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--bad)" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>

@@ -26,8 +26,8 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-2">
-                    <label class="form-label">Status Kelulusan</label>
-                    <select name="lulus" class="form-select">
+                    <label for="fld-tryout-results-lulus" class="form-label">Status Kelulusan</label>
+                    <select id="fld-tryout-results-lulus" name="lulus" class="form-select">
                         <option value="">Semua Status</option>
                         <option value="true" {{ request('lulus') === 'true' ? 'selected' : '' }}>Lulus</option>
                         <option value="false" {{ request('lulus') === 'false' ? 'selected' : '' }}>Tidak Lulus</option>
@@ -35,8 +35,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Paket Tryout</label>
-                    <select name="package_id" class="form-select">
+                    <label for="fld-tryout-results-package-id" class="form-label">Paket Tryout</label>
+                    <select id="fld-tryout-results-package-id" name="package_id" class="form-select">
                         <option value="">Semua Paket</option>
                         @foreach($packages as $package)
                         <option value="{{ $package->id }}" {{ request('package_id') == $package->id ? 'selected' : '' }}>
@@ -47,8 +47,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Sesi</label>
-                    <select name="session_id" class="form-select">
+                    <label for="fld-tryout-results-session-id" class="form-label">Sesi</label>
+                    <select id="fld-tryout-results-session-id" name="session_id" class="form-select">
                         <option value="">Semua Sesi</option>
                         @foreach($sessions as $session)
                         <option value="{{ $session->id }}" {{ request('session_id') == $session->id ? 'selected' : '' }}>
@@ -59,18 +59,18 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Dari Tanggal</label>
-                    <input type="date" name="tanggal_from" class="form-control" value="{{ request('tanggal_from') }}">
+                    <label for="fld-tryout-results-tanggal-from" class="form-label">Dari Tanggal</label>
+                    <input id="fld-tryout-results-tanggal-from" type="date" name="tanggal_from" class="form-control" value="{{ request('tanggal_from') }}">
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Sampai Tanggal</label>
-                    <input type="date" name="tanggal_to" class="form-control" value="{{ request('tanggal_to') }}">
+                    <label for="fld-tryout-results-tanggal-to" class="form-label">Sampai Tanggal</label>
+                    <input id="fld-tryout-results-tanggal-to" type="date" name="tanggal_to" class="form-control" value="{{ request('tanggal_to') }}">
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Cari Siswa</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nama siswa" value="{{ request('search') }}">
+                    <label for="fld-tryout-results-search" class="form-label">Cari Siswa</label>
+                    <input id="fld-tryout-results-search" type="text" name="search" class="form-control" placeholder="Nama siswa" value="{{ request('search') }}">
                 </div>
                 
                 <div class="col-12">

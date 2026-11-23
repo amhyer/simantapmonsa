@@ -17,8 +17,8 @@
     <div class="card-body">
         <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Guru</label>
-                <select name="guru_id" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;min-width:200px">
+                <label for="fld-kepsek-pantau-guru-id" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Guru</label>
+                <select id="fld-kepsek-pantau-guru-id" name="guru_id" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;min-width:200px">
                     <option value="">Semua Guru</option>
                     @foreach($guru as $g)
                         <option value="{{ $g->id }}" {{ $filterGuru == $g->id ? 'selected' : '' }}>{{ $g->nama_lengkap }}</option>
@@ -26,8 +26,8 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Tanggal</label>
-                <input type="date" name="tanggal" value="{{ $filterTanggal }}" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-kepsek-pantau-tanggal" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Tanggal</label>
+                <input id="fld-kepsek-pantau-tanggal" type="date" name="tanggal" value="{{ $filterTanggal }}" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">🔍 Filter</button>
         </form>

@@ -105,8 +105,8 @@
         <form method="POST" action="{{ route('ortu.tka-riwayat.konfirmasi', $simulation) }}">
             @csrf
             <div style="margin-bottom:12px">
-                <label style="display:block;font-size:13px;font-weight:700;margin-bottom:6px">Catatan / Apresiasi Pendampingan di Rumah (Opsional)</label>
-                <textarea name="catatan_ortu" rows="2" class="form-control" placeholder="Contoh: Alhamdulillah ananda sudah berlatih rutin 20 menit malam ini...">{{ old('catatan_ortu', $simulation->catatan_ortu) }}</textarea>
+                <label for="fld-tka-show-catatan-ortu" style="display:block;font-size:13px;font-weight:700;margin-bottom:6px">Catatan / Apresiasi Pendampingan di Rumah (Opsional)</label>
+                <textarea id="fld-tka-show-catatan-ortu" name="catatan_ortu" rows="2" class="form-control" placeholder="Contoh: Alhamdulillah ananda sudah berlatih rutin 20 menit malam ini...">{{ old('catatan_ortu', $simulation->catatan_ortu) }}</textarea>
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-check-circle"></i> Tandai Sudah Dibaca & Simpan Catatan Wali

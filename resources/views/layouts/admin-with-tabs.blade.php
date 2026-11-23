@@ -112,7 +112,7 @@
                     <button class="topbar-btn" title="Notifikasi & Tugas" onclick="document.getElementById('notifPanel').classList.toggle('show')" style="position:relative">
                         <i class="fas fa-bell"></i>
                         @if(count($notifs) > 0)
-                            <span style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:#DC2626;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">{{ count($notifs) }}</span>
+                            <span style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">{{ count($notifs) }}</span>
                         @endif
                     </button>
                     <div class="notif-panel" id="notifPanel">

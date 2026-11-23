@@ -98,7 +98,7 @@
                                             @if($c[$k] > 0)
                                                 <span style="color:#027A48;font-weight:700">✓ {{ $c[$k] }}</span>
                                             @else
-                                                <span style="color:#D92D20;opacity:.65">—</span>
+                                                <span style="color:var(--bad);opacity:.65">—</span>
                                             @endif
                                         </td>
                                     @endforeach

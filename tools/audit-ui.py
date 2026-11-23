@@ -305,6 +305,13 @@ def main() -> int:
                     continue
                 add("tabel-tanpa-wrapper", rel, line_of(m.start()), "")
 
+            raw_no_comments = re.sub(r"\{\{--.*?--\}\}|<!--.*?-->", "", reads(path), flags=re.S)
+            root_spans = [(m.start(), m.end()) for m in re.finditer(r":root\s*\{[^}]*\}", raw_no_comments, flags=re.S)]
+            for m in re.finditer(r"#(?:B42318|991B1B|DC2626|D92D20|EF4444|DC3545|B91C1C)\b", raw_no_comments, re.I):
+                if any(a <= m.start() <= b for a, b in root_spans):
+                    continue
+                add("warna-destruktif-hardcoded", rel, raw_no_comments.count("\n", 0, m.start()) + 1, m.group(0))
+
         # directive balance
         for name, op, cl in (
             ("if", r"@if\b", r"@endif\b"),
@@ -321,6 +328,7 @@ def main() -> int:
         metrics["style_inline"] += len(re.findall(r"style\s*=", text))
         metrics["important"] += len(re.findall(r"!important", text))
         metrics["hex_color"] += len(re.findall(r"#[0-9a-fA-F]{6}\b", text))
+        metrics["token_bad"] += len(re.findall(r"var\(--bad\)|getComputedStyle\([^)]*\)\.getPropertyValue\('--bad'\)", reads(path)))
         metrics["aria_label"] += len(re.findall(r"aria-label", text))
         metrics["label"] += len(re.findall(r"<label\b", text))
         metrics["input"] += len(re.findall(r"<(input|select|textarea)\b", text))

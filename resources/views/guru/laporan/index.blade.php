@@ -21,8 +21,8 @@
         <div class="card">
             <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
                 <div style="flex:1;min-width:150px">
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Kelas</label>
-                    <select name="kelas" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                    <label for="fld-guru-laporan-kelas" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Kelas</label>
+                    <select id="fld-guru-laporan-kelas" name="kelas" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                         <option value="">Semua Kelas</option>
                         @foreach($allKelas as $k)
                             <option value="{{ $k }}" {{ $kelasFilter == $k ? 'selected' : '' }}>{{ $k }}</option>
@@ -30,8 +30,8 @@
                     </select>
                 </div>
                 <div style="flex:1;min-width:150px">
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Semester</label>
-                    <select name="semester_id" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                    <label for="fld-guru-laporan-semester-id" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Semester</label>
+                    <select id="fld-guru-laporan-semester-id" name="semester_id" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                         <option value="">Semua Semester</option>
                         @foreach($allSemesters as $s)
                             <option value="{{ $s->id }}" {{ $semesterId == $s->id ? 'selected' : '' }}>{{ $s->nama_semester ?? $s->id }}</option>
@@ -39,8 +39,8 @@
                     </select>
                 </div>
                 <div style="flex:1;min-width:150px">
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Mata Pelajaran</label>
-                    <select name="mata_pelajaran" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
+                    <label for="fld-guru-laporan-mata-pelajaran" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px;color:#667085">Mata Pelajaran</label>
+                    <select id="fld-guru-laporan-mata-pelajaran" name="mata_pelajaran" onchange="this.form.submit()" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                         <option value="">Semua Mapel</option>
                         @foreach($allMapel as $m)
                             <option value="{{ $m }}" {{ $mapelFilter == $m ? 'selected' : '' }}>{{ $m }}</option>
@@ -300,7 +300,7 @@
                             label: 'Rata-rata',
                             data: mapelValues,
                             backgroundColor: mapelValues.map(v => v >= 70 ? 'rgba(18,128,92,0.75)' : 'rgba(180,35,24,0.75)'),
-                            borderColor: mapelValues.map(v => v >= 70 ? '#12805C' : '#B42318'),
+                            borderColor: mapelValues.map(v => v >= 70 ? '#12805C' : getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()),
                             borderWidth: 1.5,
                             borderRadius: 6
                         }, {

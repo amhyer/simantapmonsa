@@ -21,8 +21,8 @@
         <div class="card" style="margin-bottom:16px">
             <div class="card-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
                 <div style="flex:1;min-width:240px">
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Kepala Sekolah (tampil di cetakan PDF)</label>
-                    <input type="text" name="nip_kepsek" value="{{ old('nip_kepsek', $pengaturan['nip_kepsek'] ?? '') }}"
+                    <label for="fld-referensi-logo-ttd-nip-kepsek" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Kepala Sekolah (tampil di cetakan PDF)</label>
+                    <input id="fld-referensi-logo-ttd-nip-kepsek" type="text" name="nip_kepsek" value="{{ old('nip_kepsek', $pengaturan['nip_kepsek'] ?? '') }}"
                            placeholder="Misal: 19750101 200003 1 001"
                            style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                 </div>

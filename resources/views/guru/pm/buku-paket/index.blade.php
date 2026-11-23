@@ -60,32 +60,32 @@
                     <input type="hidden" name="tingkat" value="{{ $tingkat }}">
 
                     <div>
-                        <label style="font-size:12px;font-weight:600">Judul Buku *</label>
-                        <input type="text" name="judul" required
+                        <label for="fld-pm-buku-paket-judul" style="font-size:12px;font-weight:600">Judul Buku *</label>
+                        <input id="fld-pm-buku-paket-judul" type="text" name="judul" required
                                value="{{ old('judul', $bukuAktif?->judul) }}"
                                placeholder="Misal: Matematika untuk SD/MI Kelas {{ $tingkat }}"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600">Penulis / Penerbit</label>
-                        <input type="text" name="penulis"
+                        <label for="fld-pm-buku-paket-penulis" style="font-size:12px;font-weight:600">Penulis / Penerbit</label>
+                        <input id="fld-pm-buku-paket-penulis" type="text" name="penulis"
                                value="{{ old('penulis', $bukuAktif?->penulis) }}"
                                placeholder="Misal: Kemendikdasmen / Pusat Perbukuan"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600">Tautan Buku di SIBI</label>
-                        <input type="url" name="tautan_sibi"
+                        <label for="fld-pm-buku-paket-tautan-sibi" style="font-size:12px;font-weight:600">Tautan Buku di SIBI</label>
+                        <input id="fld-pm-buku-paket-tautan-sibi" type="url" name="tautan_sibi"
                                value="{{ old('tautan_sibi', $bukuAktif?->tautan_sibi) }}"
                                placeholder="https://buku.kemendikdasmen.go.id/katalog/..."
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600">Daftar Isi (satu bab per baris)</label>
-                        <textarea name="daftar_isi" rows="8"
+                        <label for="fld-pm-buku-paket-daftar-isi" style="font-size:12px;font-weight:600">Daftar Isi (satu bab per baris)</label>
+                        <textarea id="fld-pm-buku-paket-daftar-isi" name="daftar_isi" rows="8"
                                   placeholder="Bab 1: Bilangan Cacah sampai 10&#10;Bab 2: Penjumlahan dan Pengurangan&#10;..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px;line-height:1.5">{{ old('daftar_isi', $bukuAktif?->daftar_isi) }}</textarea>
                     </div>

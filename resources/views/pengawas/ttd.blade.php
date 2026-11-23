@@ -23,21 +23,21 @@
                 @csrf
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nama Lengkap &amp; Gelar Pengawas *</label>
-                        <input type="text" name="nama_pengawas" value="{{ old('nama_pengawas', $pengSekolah['nama_pengawas'] ?? $pengawas->nama_lengkap) }}" required
+                        <label for="fld-pengawas-ttd-nama-pengawas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nama Lengkap &amp; Gelar Pengawas *</label>
+                        <input id="fld-pengawas-ttd-nama-pengawas" type="text" name="nama_pengawas" value="{{ old('nama_pengawas', $pengSekolah['nama_pengawas'] ?? $pengawas->nama_lengkap) }}" required
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Pengawas Pembina</label>
-                        <input type="text" name="nip_pengawas" value="{{ old('nip_pengawas', $pengSekolah['nip_pengawas'] ?? $pengawas->nip) }}"
+                        <label for="fld-pengawas-ttd-nip-pengawas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Pengawas Pembina</label>
+                        <input id="fld-pengawas-ttd-nip-pengawas" type="text" name="nip_pengawas" value="{{ old('nip_pengawas', $pengSekolah['nip_pengawas'] ?? $pengawas->nip) }}"
                                placeholder="197501012000031001"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                 </div>
 
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Unggah Berkas Gambar Tanda Tangan (PNG transparan disarankan, maks 1 MB)</label>
-                    <input type="file" name="ttd_pengawas" accept="image/png,image/jpeg,image/webp"
+                    <label for="fld-pengawas-ttd-ttd-pengawas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Unggah Berkas Gambar Tanda Tangan (PNG transparan disarankan, maks 1 MB)</label>
+                    <input id="fld-pengawas-ttd-ttd-pengawas" type="file" name="ttd_pengawas" accept="image/png,image/jpeg,image/webp"
                            style="width:100%;padding:8px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                 </div>
 
@@ -60,7 +60,7 @@
                       onsubmit="return confirm('Hapus tanda tangan digital Pengawas?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">
+                    <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">
                         <i class="fas fa-trash"></i> Hapus Tanda Tangan
                     </button>
                 </form>

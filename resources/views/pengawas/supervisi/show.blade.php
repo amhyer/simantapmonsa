@@ -51,21 +51,21 @@
                 <input type="hidden" name="semester" value="{{ $semester }}">
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status Verifikasi Pengawas *</label>
-                        <select name="status_pengawas" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-supervisi-show-status-pengawas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status Verifikasi Pengawas *</label>
+                        <select id="fld-supervisi-show-status-pengawas" name="status_pengawas" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($statusPengawasLabels as $kode => $label)
                                 <option value="{{ $kode }}" {{ ($supervisi?->status_pengawas ?? 'menunggu') === $kode ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Catatan Pembinaan Pengawas</label>
-                        <textarea name="catatan_pengawas" rows="2" placeholder="Tuliskan umpan balik kualitas CP/TP/ATP/KKTP/RPM/Jurnal..."
+                        <label for="fld-supervisi-show-catatan-pengawas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Catatan Pembinaan Pengawas</label>
+                        <textarea id="fld-supervisi-show-catatan-pengawas" name="catatan_pengawas" rows="2" placeholder="Tuliskan umpan balik kualitas CP/TP/ATP/KKTP/RPM/Jurnal..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('catatan_pengawas', $supervisi?->catatan_pengawas) }}</textarea>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rekomendasi Tindak Lanjut (RTL)</label>
-                        <textarea name="rekomendasi_rtl" rows="2" placeholder="Rencana pendampingan atau tindak lanjut bagi Guru & Kepala Sekolah..."
+                        <label for="fld-supervisi-show-rekomendasi-rtl" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rekomendasi Tindak Lanjut (RTL)</label>
+                        <textarea id="fld-supervisi-show-rekomendasi-rtl" name="rekomendasi_rtl" rows="2" placeholder="Rencana pendampingan atau tindak lanjut bagi Guru & Kepala Sekolah..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('rekomendasi_rtl', $supervisi?->rekomendasi_rtl) }}</textarea>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
             <div class="card">
                 <div class="card-body" style="padding:10px;text-align:center">
                     <div style="font-size:11px;color:#667085;font-weight:600">{{ $lbl }}</div>
-                    <div style="font-size:18px;font-weight:700;color:{{ $counts[$k] > 0 ? '#027A48' : '#B42318' }}">{{ $counts[$k] }}</div>
+                    <div style="font-size:18px;font-weight:700;color:{{ $counts[$k] > 0 ? '#027A48' : 'var(--bad)' }}">{{ $counts[$k] }}</div>
                 </div>
             </div>
         @endforeach

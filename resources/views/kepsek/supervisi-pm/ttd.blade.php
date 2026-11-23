@@ -26,14 +26,14 @@
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">File Tanda Tangan (PNG Transparan disarankan)</label>
-                        <input type="file" name="ttd_kepsek" accept=".png,.jpg,.jpeg"
+                        <label for="fld-supervisi-pm-ttd-ttd-kepsek" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">File Tanda Tangan (PNG Transparan disarankan)</label>
+                        <input id="fld-supervisi-pm-ttd-ttd-kepsek" type="file" name="ttd_kepsek" accept=".png,.jpg,.jpeg"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Kepala Sekolah</label>
-                        <input type="text" name="nip_kepsek" value="{{ old('nip_kepsek', $preview['nip_kepsek']) }}"
+                        <label for="fld-supervisi-pm-ttd-nip-kepsek" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP Kepala Sekolah</label>
+                        <input id="fld-supervisi-pm-ttd-nip-kepsek" type="text" name="nip_kepsek" value="{{ old('nip_kepsek', $preview['nip_kepsek']) }}"
                                placeholder="Misal: 19750101 200003 1 001"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
@@ -48,7 +48,7 @@
                           onsubmit="return confirm('Hapus gambar tanda tangan digital Kepala Sekolah?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20">
+                        <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">
                             <i class="fas fa-trash"></i> Hapus Gambar Tanda Tangan
                         </button>
                     </form>

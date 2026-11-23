@@ -32,23 +32,23 @@
             </div>
             <div class="grid grid-4" style="gap:16px;margin-bottom:16px">
                 <div class="form-group">
-                    <label class="form-label">NPSN Resmi <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="npsn" class="form-control @error('npsn') is-invalid @enderror" value="{{ old('npsn') }}" required placeholder="Contoh: 40307000">
+                    <label for="fld-superadmin-tenants-npsn" class="form-label">NPSN Resmi <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-npsn" type="text" name="npsn" class="form-control @error('npsn') is-invalid @enderror" value="{{ old('npsn') }}" required placeholder="Contoh: 40307000">
                     @error('npsn') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nama Sekolah <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="nama_sekolah" class="form-control @error('nama_sekolah') is-invalid @enderror" value="{{ old('nama_sekolah') }}" required placeholder="Contoh: SMP Negeri 1 Makassar">
+                    <label for="fld-superadmin-tenants-nama-sekolah" class="form-label">Nama Sekolah <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-nama-sekolah" type="text" name="nama_sekolah" class="form-control @error('nama_sekolah') is-invalid @enderror" value="{{ old('nama_sekolah') }}" required placeholder="Contoh: SMP Negeri 1 Makassar">
                     @error('nama_sekolah') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Wilayah / Kecamatan</label>
-                    <input type="text" name="wilayah" class="form-control @error('wilayah') is-invalid @enderror" value="{{ old('wilayah') }}" placeholder="Contoh: Kec. Makasar">
+                    <label for="fld-superadmin-tenants-wilayah" class="form-label">Wilayah / Kecamatan</label>
+                    <input id="fld-superadmin-tenants-wilayah" type="text" name="wilayah" class="form-control @error('wilayah') is-invalid @enderror" value="{{ old('wilayah') }}" placeholder="Contoh: Kec. Makasar">
                     @error('wilayah') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Subdomain Bawaan <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="subdomain" class="form-control @error('subdomain') is-invalid @enderror" value="{{ old('subdomain') }}" required placeholder="Contoh: smpn1makassar">
+                    <label for="fld-superadmin-tenants-subdomain" class="form-label">Subdomain Bawaan <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-subdomain" type="text" name="subdomain" class="form-control @error('subdomain') is-invalid @enderror" value="{{ old('subdomain') }}" required placeholder="Contoh: smpn1makassar">
                     <small style="color:var(--muted)">Akan diakses di <code>subdomain.domain.com</code></small>
                     @error('subdomain') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
@@ -59,27 +59,27 @@
             </div>
             <div class="grid grid-4" style="gap:16px;margin-bottom:16px">
                 <div class="form-group">
-                    <label class="form-label">Tingkat Paket SaaS <span style="color:var(--bad)">*</span></label>
-                    <select name="paket" class="form-control">
+                    <label for="fld-superadmin-tenants-paket" class="form-label">Tingkat Paket SaaS <span style="color:var(--bad)">*</span></label>
+                    <select id="fld-superadmin-tenants-paket" name="paket" class="form-control">
                         <option value="standar" {{ old('paket', 'standar') === 'standar' ? 'selected' : '' }}>Standar (Shared Cloud)</option>
                         <option value="pro" {{ old('paket') === 'pro' ? 'selected' : '' }}>Pro (Custom Domain Sendiri)</option>
                         <option value="enterprise" {{ old('paket') === 'enterprise' ? 'selected' : '' }}>Enterprise (Dedicated Hosting/DB)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Domain Kustom Sekolah</label>
-                    <input type="text" name="domain_kustom" class="form-control @error('domain_kustom') is-invalid @enderror" value="{{ old('domain_kustom') }}" placeholder="Contoh: ujian.smpn1.sch.id">
+                    <label for="fld-superadmin-tenants-domain-kustom" class="form-label">Domain Kustom Sekolah</label>
+                    <input id="fld-superadmin-tenants-domain-kustom" type="text" name="domain_kustom" class="form-control @error('domain_kustom') is-invalid @enderror" value="{{ old('domain_kustom') }}" placeholder="Contoh: ujian.smpn1.sch.id">
                     <small style="color:var(--muted)">Opsional (bila sekolah punya domain sendiri)</small>
                     @error('domain_kustom') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Batas Kuota Siswa (Akun)</label>
-                    <input type="number" name="kuota_siswa" class="form-control" value="{{ old('kuota_siswa', 500) }}" min="10" max="100000">
+                    <label for="fld-superadmin-tenants-kuota-siswa" class="form-label">Batas Kuota Siswa (Akun)</label>
+                    <input id="fld-superadmin-tenants-kuota-siswa" type="number" name="kuota_siswa" class="form-control" value="{{ old('kuota_siswa', 500) }}" min="10" max="100000">
                     <small style="color:var(--muted)">Kapasitas maksimal siswa aktif</small>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Jatuh Tempo / Kedaluwarsa</label>
-                    <input type="date" name="tgl_kedaluwarsa" class="form-control" value="{{ old('tgl_kedaluwarsa') }}">
+                    <label for="fld-superadmin-tenants-tgl-kedaluwarsa" class="form-label">Jatuh Tempo / Kedaluwarsa</label>
+                    <input id="fld-superadmin-tenants-tgl-kedaluwarsa" type="date" name="tgl_kedaluwarsa" class="form-control" value="{{ old('tgl_kedaluwarsa') }}">
                     <small style="color:var(--muted)">Kosongkan untuk tanpa batas waktu</small>
                 </div>
             </div>
@@ -89,23 +89,23 @@
             </div>
             <div class="grid grid-4" style="gap:16px;margin-bottom:16px">
                 <div class="form-group">
-                    <label class="form-label">Nama Lengkap Admin <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="admin_nama" class="form-control @error('admin_nama') is-invalid @enderror" value="{{ old('admin_nama') }}" required placeholder="Contoh: Operator Sekolah">
+                    <label for="fld-superadmin-tenants-admin-nama" class="form-label">Nama Lengkap Admin <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-admin-nama" type="text" name="admin_nama" class="form-control @error('admin_nama') is-invalid @enderror" value="{{ old('admin_nama') }}" required placeholder="Contoh: Operator Sekolah">
                     @error('admin_nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nama Pengguna (Username) <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="admin_user" class="form-control @error('admin_user') is-invalid @enderror" value="{{ old('admin_user') }}" required placeholder="admin_smpn1">
+                    <label for="fld-superadmin-tenants-admin-user" class="form-label">Nama Pengguna (Username) <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-admin-user" type="text" name="admin_user" class="form-control @error('admin_user') is-invalid @enderror" value="{{ old('admin_user') }}" required placeholder="admin_smpn1">
                     @error('admin_user') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Email Admin</label>
-                    <input type="email" name="admin_email" class="form-control @error('admin_email') is-invalid @enderror" value="{{ old('admin_email') }}" placeholder="Otomatis: username@simantap.sch.id">
+                    <label for="fld-superadmin-tenants-admin-email" class="form-label">Email Admin</label>
+                    <input id="fld-superadmin-tenants-admin-email" type="email" name="admin_email" class="form-control @error('admin_email') is-invalid @enderror" value="{{ old('admin_email') }}" placeholder="Otomatis: username@simantap.sch.id">
                     @error('admin_email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Kata Sandi Awal <span style="color:var(--bad)">*</span></label>
-                    <input type="password" name="admin_password" class="form-control @error('admin_password') is-invalid @enderror" required placeholder="Minimal 8 karakter">
+                    <label for="fld-superadmin-tenants-admin-password" class="form-label">Kata Sandi Awal <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-superadmin-tenants-admin-password" type="password" name="admin_password" class="form-control @error('admin_password') is-invalid @enderror" required placeholder="Minimal 8 karakter">
                     @error('admin_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -258,7 +258,7 @@
                                         {{ $siswaCount }} <span style="font-weight:400;color:var(--muted)">/ {{ $kuotaSiswa }}</span>
                                     </div>
                                     <div style="width:70px;background:#E4E7EC;border-radius:4px;height:5px;margin:4px auto 0;overflow:hidden">
-                                        <div style="background:{{ $persenKuota > 90 ? '#EF4444' : ($persenKuota > 75 ? '#F59E0B' : '#4338CA') }};width:{{ min(100, $persenKuota) }}%;height:100%"></div>
+                                        <div style="background:{{ $persenKuota > 90 ? 'var(--bad)' : ($persenKuota > 75 ? '#F59E0B' : '#4338CA') }};width:{{ min(100, $persenKuota) }}%;height:100%"></div>
                                     </div>
                                 </td>
                                 <td style="padding:11px 14px;text-align:center">

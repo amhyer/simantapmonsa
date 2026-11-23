@@ -8,7 +8,7 @@
 @section('content')
     {{-- Banner Kontrol Akses Input Nilai Semester (ala e-Rapor SD 2025.1) --}}
     @php $kunciGlobal = $kunciRaporGlobal ?? false; @endphp
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-radius:12px;margin-bottom:20px;flex-wrap:wrap;background:{{ $kunciGlobal ? 'linear-gradient(135deg,#991B1B,#DC2626)' : 'linear-gradient(135deg,#065F46,#059669)' }};color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-radius:12px;margin-bottom:20px;flex-wrap:wrap;background:{{ $kunciGlobal ? 'var(--bad)' : 'linear-gradient(135deg,#065F46,#059669)' }};color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
         <div style="display:flex;align-items:center;gap:14px">
             <div style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
                 <i class="fas {{ $kunciGlobal ? 'fa-lock' : 'fa-lock-open' }}"></i>
@@ -25,7 +25,7 @@
         </div>
         <form method="POST" action="{{ route('admin.peta-kelas.toggle-kunci-semua') }}" style="margin:0">
             @csrf
-            <button type="submit" class="btn btn-sm" style="background:#fff;color:{{ $kunciGlobal ? '#991B1B' : '#065F46' }};font-weight:700;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
+            <button type="submit" class="btn btn-sm" style="background:#fff;color:{{ $kunciGlobal ? 'var(--bad)' : '#065F46' }};font-weight:700;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
                 <i class="fas {{ $kunciGlobal ? 'fa-unlock' : 'fa-lock' }}" style="margin-right:6px"></i>
                 {{ $kunciGlobal ? 'Buka Input Nilai' : 'Tutup Input Nilai' }}
             </button>
@@ -440,8 +440,8 @@
                         <div style="font-size:11px;color:var(--muted)">{{ $lastSync ? 'Terakhir: '.$lastSync->created_at->diffForHumans() : 'Belum sync' }}</div>
                     </div>
                 </a>
-                <a href="{{ route('admin.sekolah.index') }}" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#FEE9E7;border-radius:10px;border:1px solid transparent;text-decoration:none;color:#991B1B;transition:all .15s" onmouseover="this.style.borderColor='#DC2626';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='transparent';this.style.transform='none'">
-                    <span style="width:36px;height:36px;background:#DC2626;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-building-columns"></i></span>
+                <a href="{{ route('admin.sekolah.index') }}" style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#FEE9E7;border-radius:10px;border:1px solid transparent;text-decoration:none;color:var(--bad);transition:all .15s" onmouseover="this.style.borderColor='var(--bad)';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='transparent';this.style.transform='none'">
+                    <span style="width:36px;height:36px;background:var(--bad);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-building-columns"></i></span>
                     <div>
                         <div style="font-weight:600;font-size:13px">Identitas Sekolah</div>
                         <div style="font-size:11px;color:var(--muted)">{{ $sekolahSettings->npsn ?? 'Belum diatur' }}</div>
@@ -475,7 +475,7 @@
         @php
             $alignmentStats = app(App\Services\JadwalPelajaranResolver::class)->alignmentStats();
             $alignmentPersen = $alignmentStats['persen'] ?? 0;
-            $alignmentColor = $alignmentPersen >= 90 ? '#059669' : ($alignmentPersen >= 70 ? '#D97706' : '#DC2626');
+            $alignmentColor = $alignmentPersen >= 90 ? '#059669' : ($alignmentPersen >= 70 ? '#D97706' : 'var(--bad)');
         @endphp
         <div class="grid grid-4" style="margin-bottom:16px">
             <div class="stat" style="text-align:center">
@@ -487,7 +487,7 @@
                 <div class="label" style="font-size:11px">Terpetakan</div>
             </div>
             <div class="stat" style="text-align:center">
-                <div class="value" style="font-size:24px;color:#DC2626">{{ $alignmentStats['unmatched'] ?? 0 }}</div>
+                <div class="value" style="font-size:24px;color:var(--bad)">{{ $alignmentStats['unmatched'] ?? 0 }}</div>
                 <div class="label" style="font-size:11px">Belum Terpetakan</div>
             </div>
             <div class="stat" style="text-align:center">

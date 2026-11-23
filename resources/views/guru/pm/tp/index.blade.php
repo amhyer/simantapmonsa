@@ -81,16 +81,16 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 120px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
-                            <select name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-tp-nama-mapel" style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
+                            <select id="fld-pm-tp-nama-mapel" name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($mapelList as $m)
                                     <option value="{{ $m->nama }}" {{ $mapelFilter === $m->nama ? 'selected' : '' }}>{{ $m->nama }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Fase *</label>
-                            <select name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-tp-fase" style="font-size:12px;font-weight:600">Fase *</label>
+                            <select id="fld-pm-tp-fase" name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($faseLabels as $kode => $label)
                                     <option value="{{ $kode }}" {{ $faseFilter === $kode ? 'selected' : '' }}>Fase {{ $kode }}</option>
                                 @endforeach
@@ -99,24 +99,24 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 110px 80px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Elemen</label>
-                            <input type="text" name="elemen" placeholder="Misal: Bilangan"
+                            <label for="fld-pm-tp-elemen" style="font-size:12px;font-weight:600">Elemen</label>
+                            <input id="fld-pm-tp-elemen" type="text" name="elemen" placeholder="Misal: Bilangan"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Kode TP</label>
-                            <input type="text" name="kode_tp" placeholder="TP.1"
+                            <label for="fld-pm-tp-kode-tp" style="font-size:12px;font-weight:600">Kode TP</label>
+                            <input id="fld-pm-tp-kode-tp" type="text" name="kode_tp" placeholder="TP.1"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Urutan</label>
-                            <input type="number" name="urutan" value="1" min="1"
+                            <label for="fld-pm-tp-urutan" style="font-size:12px;font-weight:600">Urutan</label>
+                            <input id="fld-pm-tp-urutan" type="number" name="urutan" value="1" min="1"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Rumusan Tujuan Pembelajaran *</label>
-                        <textarea name="deskripsi" rows="3" required placeholder="Murid mampu..."
+                        <label for="fld-pm-tp-deskripsi" style="font-size:12px;font-weight:600">Rumusan Tujuan Pembelajaran *</label>
+                        <textarea id="fld-pm-tp-deskripsi" name="deskripsi" rows="3" required placeholder="Murid mampu..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div>
@@ -133,35 +133,35 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 110px 90px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
-                            <select name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-tp-nama-mapel-2" style="font-size:12px;font-weight:600">Mata Pelajaran *</label>
+                            <select id="fld-pm-tp-nama-mapel-2" name="nama_mapel" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($mapelList as $m)
                                     <option value="{{ $m->nama }}" {{ $mapelFilter === $m->nama ? 'selected' : '' }}>{{ $m->nama }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Fase *</label>
-                            <select name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-tp-fase-2" style="font-size:12px;font-weight:600">Fase *</label>
+                            <select id="fld-pm-tp-fase-2" name="fase" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($faseLabels as $kode => $label)
                                     <option value="{{ $kode }}" {{ $faseFilter === $kode ? 'selected' : '' }}>Fase {{ $kode }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Jumlah TP</label>
-                            <input type="number" name="jumlah" value="6" min="1" max="15"
+                            <label for="fld-pm-tp-jumlah" style="font-size:12px;font-weight:600">Jumlah TP</label>
+                            <input id="fld-pm-tp-jumlah" type="number" name="jumlah" value="6" min="1" max="15"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Elemen (opsional)</label>
-                        <input type="text" name="elemen" placeholder="Kosongkan untuk semua elemen"
+                        <label for="fld-pm-tp-elemen-2" style="font-size:12px;font-weight:600">Elemen (opsional)</label>
+                        <input id="fld-pm-tp-elemen-2" type="text" name="elemen" placeholder="Kosongkan untuk semua elemen"
                                style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Catatan untuk AI (opsional)</label>
-                        <textarea name="catatan" rows="2" placeholder="Otomatis mengacu pada CP yang sudah tersimpan..."
+                        <label for="fld-pm-tp-catatan" style="font-size:12px;font-weight:600">Catatan untuk AI (opsional)</label>
+                        <textarea id="fld-pm-tp-catatan" name="catatan" rows="2" placeholder="Otomatis mengacu pada CP yang sudah tersimpan..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -232,7 +232,7 @@
                                               onsubmit="return confirm('Hapus TP ini?');" style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

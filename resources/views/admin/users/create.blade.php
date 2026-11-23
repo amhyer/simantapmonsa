@@ -16,31 +16,31 @@
                 @csrf
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
-                        <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-nama-lengkap" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
+                        <input id="fld-users-create-nama-lengkap" type="text" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('nama_lengkap') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Username *</label>
-                        <input type="text" name="nama_pengguna" value="{{ old('nama_pengguna') }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-nama-pengguna" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Username *</label>
+                        <input id="fld-users-create-nama-pengguna" type="text" name="nama_pengguna" value="{{ old('nama_pengguna') }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('nama_pengguna') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email (opsional, untuk reset sandi mandiri)</label>
-                    <input type="email" name="email" value="{{ old('email') }}" placeholder="nama@sekolah.sch.id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-users-create-email" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email (opsional, untuk reset sandi mandiri)</label>
+                    <input id="fld-users-create-email" type="email" name="email" value="{{ old('email') }}" placeholder="nama@sekolah.sch.id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     @error('email') <span class="field-error">{{ $message }}</span> @enderror
                     <small style="display:block;color:#667085;font-size:12px;margin-top:6px">Tanpa email, sandi hanya dapat direset oleh admin. Email tidak dipakai untuk login.</small>
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi *</label>
-                        <input type="password" name="kata_sandi" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-kata-sandi" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi *</label>
+                        <input id="fld-users-create-kata-sandi" type="password" name="kata_sandi" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('kata_sandi') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
-                        <select name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-peran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
+                        <select id="fld-users-create-peran" name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="guru">Guru</option>
                             <option value="siswa">Siswa</option>
                             <option value="ortu">Orang Tua</option>
@@ -53,12 +53,12 @@
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
-                        <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-kelas-mata-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
+                        <input id="fld-users-create-kelas-mata-pelajaran" type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status Wali Kelas (khusus Guru)</label>
-                        <select name="is_wali_kelas" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-create-is-wali-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status Wali Kelas (khusus Guru)</label>
+                        <select id="fld-users-create-is-wali-kelas" name="is_wali_kelas" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="" {{ old('is_wali_kelas') === null || old('is_wali_kelas') === '' ? 'selected' : '' }}>Otomatis (mengikuti penetapan Rombel)</option>
                             <option value="1" {{ old('is_wali_kelas') === '1' ? 'selected' : '' }}>Ya — Wali Kelas (tampilkan menu Wali Kelas)</option>
                             <option value="0" {{ old('is_wali_kelas') === '0' ? 'selected' : '' }}>Bukan Wali Kelas (Guru Mapel / Ekskul)</option>

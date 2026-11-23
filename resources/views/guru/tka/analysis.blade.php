@@ -31,8 +31,8 @@
                 <div style="font-size:24px;font-weight:700;color:#92400E">{{ collect($analisis)->where('level_kognitif', 'Cukup')->count() }}</div>
             </div>
             <div style="background:#FEE2E2;border-radius:8px;padding:12px 20px;text-align:center">
-                <div style="font-size:11px;color:#991B1B;text-transform:uppercase;font-weight:600">Perlu Bimbingan</div>
-                <div style="font-size:24px;font-weight:700;color:#991B1B">{{ collect($analisis)->where('level_kognitif', 'Perlu Bimbingan')->count() }}</div>
+                <div style="font-size:11px;color:var(--bad);text-transform:uppercase;font-weight:600">Perlu Bimbingan</div>
+                <div style="font-size:24px;font-weight:700;color:var(--bad)">{{ collect($analisis)->where('level_kognitif', 'Perlu Bimbingan')->count() }}</div>
             </div>
         </div>
     </div>
@@ -56,7 +56,7 @@
                     </thead>
                     <tbody>
                         @foreach($analisis as $i => $a)
-                            @php $levelColor = match($a['level_kognitif']){'Sangat Baik'=>'#D1FAE5,#065F46','Baik'=>'#DBEAFE,#1E40AF','Cukup'=>'#FEF3C7,#92400E',default=>'#FEE2E2,#991B1B'}; @endphp
+                            @php $levelColor = match($a['level_kognitif']){'Sangat Baik'=>'#D1FAE5,#065F46','Baik'=>'#DBEAFE,#1E40AF','Cukup'=>'#FEF3C7,#92400E',default=>'#FEE2E2,var(--bad)'}; @endphp
                             @php [$bg,$fg] = explode(',', $levelColor); @endphp
                             <tr style="border-bottom:1px solid #F2F4F7">
                                 <td style="padding:8px 12px;font-size:12px;color:#888">{{ $i + 1 }}</td>

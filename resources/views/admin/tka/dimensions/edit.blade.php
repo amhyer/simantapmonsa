@@ -17,19 +17,19 @@
                 @method('PUT')
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Dimensi</label>
-                        <input type="text" name="kode_dimensi" value="{{ old('kode_dimensi', $dimension->kode_dimensi) }}" maxlength="20" required class="form-control">
+                        <label for="fld-dimensions-edit-kode-dimensi" class="form-label">Kode Dimensi</label>
+                        <input id="fld-dimensions-edit-kode-dimensi" type="text" name="kode_dimensi" value="{{ old('kode_dimensi', $dimension->kode_dimensi) }}" maxlength="20" required class="form-control">
                         @error('kode_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Dimensi</label>
-                        <input type="text" name="nama_dimensi" value="{{ old('nama_dimensi', $dimension->nama_dimensi) }}" maxlength="255" required class="form-control">
+                        <label for="fld-dimensions-edit-nama-dimensi" class="form-label">Nama Dimensi</label>
+                        <input id="fld-dimensions-edit-nama-dimensi" type="text" name="nama_dimensi" value="{{ old('nama_dimensi', $dimension->nama_dimensi) }}" maxlength="255" required class="form-control">
                         @error('nama_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Kategori</label>
-                    <select name="kategori" required class="form-control">
+                    <label for="fld-dimensions-edit-kategori" class="form-label">Kategori</label>
+                    <select id="fld-dimensions-edit-kategori" name="kategori" required class="form-control">
                         @foreach(['akhlak_beragama' => 'Akhlak Beragama', 'kebinekaan_global' => 'Kebinekaan Global', 'berkebhinekaan' => 'Berkebinekaan', 'mandiri' => 'Mandiri', 'bernalar_kritis' => 'Bernalar Kritis', 'kreatif' => 'Kreatif'] as $val => $label)
                             <option value="{{ $val }}" @selected(old('kategori', $dimension->kategori) === $val)>{{ $label }}</option>
                         @endforeach
@@ -37,8 +37,8 @@
                     @error('kategori')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="3" class="form-control">{{ old('deskripsi', $dimension->deskripsi) }}</textarea>
+                    <label for="fld-dimensions-edit-deskripsi" class="form-label">Deskripsi</label>
+                    <textarea id="fld-dimensions-edit-deskripsi" name="deskripsi" rows="3" class="form-control">{{ old('deskripsi', $dimension->deskripsi) }}</textarea>
                     @error('deskripsi')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>

@@ -72,23 +72,23 @@
             @csrf
             <div style="display:grid;grid-template-columns:1fr 120px;gap:.75rem">
                 <div class="form-group">
-                    <label class="form-label">Judul Modul / Bab <span style="color:#dc2626">*</span></label>
-                    <input type="text" name="judul" class="form-input" placeholder="Contoh: Bab 1 — Pecahan dan Desimal" required>
+                    <label for="fld-kelas-digital-show-judul" class="form-label">Judul Modul / Bab <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-kelas-digital-show-judul" type="text" name="judul" class="form-input" placeholder="Contoh: Bab 1 — Pecahan dan Desimal" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Urutan</label>
-                    <input type="number" name="urutan" min="1" class="form-input" value="{{ $kelasDigital->modul->count() + 1 }}">
+                    <label for="fld-kelas-digital-show-urutan" class="form-label">Urutan</label>
+                    <input id="fld-kelas-digital-show-urutan" type="number" name="urutan" min="1" class="form-input" value="{{ $kelasDigital->modul->count() + 1 }}">
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Tujuan Pembelajaran (TP)</label>
-                <textarea name="tujuan_pembelajaran" rows="2" class="form-textarea" placeholder="Peserta didik mampu..."></textarea>
+                <label for="fld-kelas-digital-show-tujuan-pembelajaran" class="form-label">Tujuan Pembelajaran (TP)</label>
+                <textarea id="fld-kelas-digital-show-tujuan-pembelajaran" name="tujuan_pembelajaran" rows="2" class="form-textarea" placeholder="Peserta didik mampu..."></textarea>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Prinsip Pembelajaran Mendalam</label>
-                <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem">
+                <div id="lbl-kd-pm" class="form-label">Prinsip Pembelajaran Mendalam</div>
+                <div role="group" aria-labelledby="lbl-kd-pm" style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem">
                     <label style="display:flex;align-items:center;gap:.35rem"><input type="checkbox" name="pm[]" value="berkesadaran"> Berkesadaran</label>
                     <label style="display:flex;align-items:center;gap:.35rem"><input type="checkbox" name="pm[]" value="bermakna"> Bermakna</label>
                     <label style="display:flex;align-items:center;gap:.35rem"><input type="checkbox" name="pm[]" value="menggembirakan"> Menggembirakan</label>
@@ -96,8 +96,8 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">8 Dimensi Profil Lulusan</label>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.4rem;font-size:.82rem">
+                <div id="lbl-kd-dimensi" class="form-label">8 Dimensi Profil Lulusan</div>
+                <div role="group" aria-labelledby="lbl-kd-dimensi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.4rem;font-size:.82rem">
                     @foreach($dimensiLabels as $idx => $labelDim)
                         <label style="display:flex;align-items:center;gap:.35rem">
                             <input type="checkbox" name="dimensi[]" value="{{ $idx }}"> {{ $labelDim }}
@@ -108,16 +108,16 @@
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem">
                 <div class="form-group">
-                    <label class="form-label">Pengalaman: Memahami</label>
-                    <input type="text" name="pengalaman_memahami" class="form-input" placeholder="Aktivitas membangun konsep...">
+                    <label for="fld-kelas-digital-show-pengalaman-memahami" class="form-label">Pengalaman: Memahami</label>
+                    <input id="fld-kelas-digital-show-pengalaman-memahami" type="text" name="pengalaman_memahami" class="form-input" placeholder="Aktivitas membangun konsep...">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Pengalaman: Mengaplikasi</label>
-                    <input type="text" name="pengalaman_mengaplikasi" class="form-input" placeholder="Penerapan kontekstual...">
+                    <label for="fld-kelas-digital-show-pengalaman-mengaplikasi" class="form-label">Pengalaman: Mengaplikasi</label>
+                    <input id="fld-kelas-digital-show-pengalaman-mengaplikasi" type="text" name="pengalaman_mengaplikasi" class="form-input" placeholder="Penerapan kontekstual...">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Pengalaman: Merefleksi</label>
-                    <input type="text" name="pengalaman_merefleksi" class="form-input" placeholder="Refleksi diri siswa...">
+                    <label for="fld-kelas-digital-show-pengalaman-merefleksi" class="form-label">Pengalaman: Merefleksi</label>
+                    <input id="fld-kelas-digital-show-pengalaman-merefleksi" type="text" name="pengalaman_merefleksi" class="form-input" placeholder="Refleksi diri siswa...">
                 </div>
             </div>
 
@@ -155,7 +155,7 @@
             </div>
             <form method="POST" action="{{ route('guru.kelas-digital.modul.destroy', [$kelasDigital, $modul]) }}" onsubmit="return confirm('Hapus modul beserta pertemuan di dalamnya?')">
                 @csrf @method('DELETE')
-                <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626">Hapus Modul</button>
+                <button type="submit" class="btn btn-outline btn-sm" style="color:var(--bad)">Hapus Modul</button>
             </form>
         </div>
 
@@ -183,7 +183,7 @@
                         </div>
                         <form method="POST" action="{{ route('guru.kelas-digital.pertemuan.destroy', [$kelasDigital, $pertemuan]) }}" onsubmit="return confirm('Hapus pertemuan ini?')">
                             @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626">Hapus</button>
+                            <button type="submit" class="btn btn-outline btn-sm" style="color:var(--bad)">Hapus</button>
                         </form>
                     </div>
 
@@ -233,7 +233,7 @@
                                             <a href="{{ route('guru.kelas-digital.tugas.pengumpulan', [$kelasDigital, $tugas]) }}" class="btn btn-primary btn-sm">Periksa &amp; Nilai</a>
                                             <form method="POST" action="{{ route('guru.kelas-digital.tugas.destroy', [$kelasDigital, $tugas]) }}" onsubmit="return confirm('Hapus tugas ini?')">
                                                 @csrf @method('DELETE')
-                                                <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626">Hapus</button>
+                                                <button type="submit" class="btn btn-outline btn-sm" style="color:var(--bad)">Hapus</button>
                                             </form>
                                         </div>
                                     </div>
@@ -290,12 +290,12 @@
                                     <input type="number" name="nilai_maksimal" min="1" max="100" value="100" class="form-input" placeholder="Nilai maks">
                                 </div>
                                 <div class="form-group" style="margin-bottom:.5rem">
-                                    <label class="form-label" style="font-size:.75rem">Batas Waktu (opsional)</label>
-                                    <input type="datetime-local" name="batas_waktu" class="form-input">
+                                    <label class="form-label" for="pertemuan_{{ $pertemuan->id }}_batas_waktu" style="font-size:.75rem">Batas Waktu (opsional)</label>
+                                    <input type="datetime-local" id="pertemuan_{{ $pertemuan->id }}_batas_waktu" name="batas_waktu" class="form-input">
                                 </div>
                                 <div class="form-group" style="margin-bottom:.5rem">
-                                    <label class="form-label" style="font-size:.75rem">Lampiran Soal (opsional)</label>
-                                    <input type="file" name="lampiran" class="form-input">
+                                    <label class="form-label" for="pertemuan_{{ $pertemuan->id }}_lampiran" style="font-size:.75rem">Lampiran Soal (opsional)</label>
+                                    <input type="file" id="pertemuan_{{ $pertemuan->id }}_lampiran" name="lampiran" class="form-input">
                                 </div>
                                 <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
                                     <label style="font-size:.78rem;display:flex;align-items:center;gap:.35rem">
@@ -319,28 +319,28 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 160px 100px;gap:.65rem">
                         <div class="form-group">
-                            <label class="form-label">Judul Pertemuan <span style="color:#dc2626">*</span></label>
-                            <input type="text" name="judul" class="form-input" placeholder="Contoh: Pertemuan 1 — Mengenal Pecahan Senilai" required>
+                            <label class="form-label" for="modul_{{ $modul->id }}_judul">Judul Pertemuan <span style="color:var(--bad)">*</span></label>
+                            <input type="text" id="modul_{{ $modul->id }}_judul" name="judul" class="form-input" placeholder="Contoh: Pertemuan 1 — Mengenal Pecahan Senilai" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Tanggal</label>
-                            <input type="date" name="tanggal" class="form-input" value="{{ date('Y-m-d') }}">
+                            <label class="form-label" for="modul_{{ $modul->id }}_tanggal">Tanggal</label>
+                            <input type="date" id="modul_{{ $modul->id }}_tanggal" name="tanggal" class="form-input" value="{{ date('Y-m-d') }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Urutan</label>
-                            <input type="number" name="urutan" min="1" class="form-input" value="{{ $modul->pertemuan->count() + 1 }}">
+                            <label class="form-label" for="modul_{{ $modul->id }}_urutan">Urutan</label>
+                            <input type="number" id="modul_{{ $modul->id }}_urutan" name="urutan" min="1" class="form-input" value="{{ $modul->pertemuan->count() + 1 }}">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Ringkasan Pertemuan</label>
-                        <textarea name="deskripsi" rows="2" class="form-textarea" placeholder="Arahan kegiatan belajar pertemuan ini..."></textarea>
+                        <label class="form-label" for="modul_{{ $modul->id }}_deskripsi">Ringkasan Pertemuan</label>
+                        <textarea id="modul_{{ $modul->id }}_deskripsi" name="deskripsi" rows="2" class="form-textarea" placeholder="Arahan kegiatan belajar pertemuan ini..."></textarea>
                     </div>
 
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.65rem">
                         <div class="form-group">
-                            <label class="form-label">Tautkan Materi Ajar Eksisting (opsional)</label>
-                            <select name="materi_id" class="form-select">
+                            <label class="form-label" for="modul_{{ $modul->id }}_materi_id">Tautkan Materi Ajar Eksisting (opsional)</label>
+                            <select id="modul_{{ $modul->id }}_materi_id" name="materi_id" class="form-select">
                                 <option value="">-- Tidak ditautkan --</option>
                                 @foreach($materiOptions as $mOpt)
                                     <option value="{{ $mOpt->id }}">{{ $mOpt->judul }} ({{ $mOpt->mata_pelajaran }} · {{ $mOpt->kelas }})</option>
@@ -348,8 +348,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Tautkan Kuis Eksisting (opsional)</label>
-                            <select name="kuis_id" class="form-select">
+                            <label class="form-label" for="modul_{{ $modul->id }}_kuis_id">Tautkan Kuis Eksisting (opsional)</label>
+                            <select id="modul_{{ $modul->id }}_kuis_id" name="kuis_id" class="form-select">
                                 <option value="">-- Tidak ditautkan --</option>
                                 @foreach($kuisOptions as $kOpt)
                                     <option value="{{ $kOpt->id }}">{{ $kOpt->judul }} ({{ $kOpt->mata_pelajaran }})</option>

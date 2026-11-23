@@ -35,8 +35,8 @@
         </div>
         @if(isset($kelasList) && count($kelasList) > 0)
             <form method="GET" action="{{ route('guru.siswa.index') }}" style="display:flex;align-items:center;gap:8px;margin:0">
-                <label style="font-size:12px;font-weight:600;color:#166534;white-space:nowrap">Pilih Kelas:</label>
-                <select name="kelas" onchange="this.form.submit()" style="padding:5px 10px;border-radius:6px;border:1px solid #86EFAC;font-size:12px;background:#fff;font-weight:600;color:#166534">
+                <label for="fld-guru-siswa-kelas" style="font-size:12px;font-weight:600;color:#166534;white-space:nowrap">Pilih Kelas:</label>
+                <select id="fld-guru-siswa-kelas" name="kelas" onchange="this.form.submit()" style="padding:5px 10px;border-radius:6px;border:1px solid #86EFAC;font-size:12px;background:#fff;font-weight:600;color:#166534">
                     @foreach($kelasList as $k)
                         <option value="{{ $k }}" @selected(isset($selectedKelas) && $selectedKelas === $k)>{{ str_starts_with($k, 'Kelas ') ? $k : 'Kelas ' . $k }}</option>
                     @endforeach
@@ -51,8 +51,8 @@
                 <form action="{{ route('guru.siswa.impor') }}" method="POST">
                     @csrf
                     <div style="margin-bottom:12px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tempel data CSV</label>
-                        <textarea name="csv" rows="6" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;font-family:monospace;font-size:13px"
+                        <label for="fld-guru-siswa-csv" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tempel data CSV</label>
+                        <textarea id="fld-guru-siswa-csv" name="csv" rows="6" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;font-family:monospace;font-size:13px"
                             placeholder="Nama,NIS,L/P,Kelas&#10;Andi Nurul,2401001,P,V A&#10;Muh. Rizky,2401002,L,V A"></textarea>
                         <div style="font-size:12px;color:#667085;margin-top:6px">Format: Nama, NIS, L/P (opsional), Kelas (opsional). Header akan diabaikan.</div>
                     </div>
@@ -128,7 +128,7 @@
                                     </td>
                                     <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:right;white-space:nowrap">
                                         <a href="{{ route('guru.siswa.edit', $s) }}" class="btn btn-ghost btn-sm">Ubah</a>
-                                        <button onclick="hapusSiswa('{{ $s->id }}', '{{ $s->nama_peserta_didik }}')" class="btn btn-ghost btn-sm" style="color:#B42318">Hapus</button>
+                                        <button onclick="hapusSiswa('{{ $s->id }}', '{{ $s->nama_peserta_didik }}')" class="btn btn-ghost btn-sm" style="color:var(--bad)">Hapus</button>
                                     </td>
                                 </tr>
                             @endforeach

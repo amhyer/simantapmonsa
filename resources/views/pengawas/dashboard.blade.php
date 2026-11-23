@@ -126,7 +126,7 @@
                                             <div style="font-size:11px;color:#667085">{{ $row['guru']->kelas_mata_pelajaran }}</div>
                                         @endif
                                     </td>
-                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : '#B42318') }}">
+                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
                                         {{ $row['persen'] }}% ({{ $row['terisi'] }}/9)
                                     </td>
                                     <td><span class="badge {{ $row['status_badge'] }}">{{ $row['status_label'] }}</span></td>

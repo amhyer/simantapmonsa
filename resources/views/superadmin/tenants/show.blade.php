@@ -88,7 +88,7 @@
 
 {{-- Alert Peringatan Jika Langganan Habis --}}
 @if($tenant->isExpired())
-    <div class="alert alert-danger" style="margin-bottom:20px;background:#FEF2F2;border:1px solid #F87171;color:#991B1B;padding:14px 18px;border-radius:8px">
+    <div class="alert alert-danger" style="margin-bottom:20px;background:#FEF2F2;border:1px solid #F87171;color:var(--bad);padding:14px 18px;border-radius:8px">
         <div style="display:flex;align-items:center;gap:12px">
             <i class="fas fa-exclamation-triangle" style="font-size:22px"></i>
             <div>
@@ -122,27 +122,27 @@
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
                     <div class="form-group">
-                        <label class="form-label">Nama Sekolah Resmi <span style="color:var(--bad)">*</span></label>
-                        <input type="text" name="nama_sekolah" class="form-control" value="{{ old('nama_sekolah', $tenant->nama_sekolah) }}" required>
+                        <label for="fld-tenants-show-nama-sekolah" class="form-label">Nama Sekolah Resmi <span style="color:var(--bad)">*</span></label>
+                        <input id="fld-tenants-show-nama-sekolah" type="text" name="nama_sekolah" class="form-control" value="{{ old('nama_sekolah', $tenant->nama_sekolah) }}" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Wilayah / Kecamatan</label>
-                        <input type="text" name="wilayah" class="form-control" value="{{ old('wilayah', $tenant->wilayah) }}" placeholder="Contoh: Kec. Makasar / Wilayah 1">
+                        <label for="fld-tenants-show-wilayah" class="form-label">Wilayah / Kecamatan</label>
+                        <input id="fld-tenants-show-wilayah" type="text" name="wilayah" class="form-control" value="{{ old('wilayah', $tenant->wilayah) }}" placeholder="Contoh: Kec. Makasar / Wilayah 1">
                     </div>
                 </div>
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
                     <div class="form-group">
-                        <label class="form-label">Tingkat Paket SaaS <span style="color:var(--bad)">*</span></label>
-                        <select name="paket" class="form-control">
+                        <label for="fld-tenants-show-paket" class="form-label">Tingkat Paket SaaS <span style="color:var(--bad)">*</span></label>
+                        <select id="fld-tenants-show-paket" name="paket" class="form-control">
                             <option value="standar" {{ old('paket', $tenant->paket) === 'standar' ? 'selected' : '' }}>Standar (Shared Cloud)</option>
                             <option value="pro" {{ old('paket', $tenant->paket) === 'pro' ? 'selected' : '' }}>Pro (Custom Domain Sendiri)</option>
                             <option value="enterprise" {{ old('paket', $tenant->paket) === 'enterprise' ? 'selected' : '' }}>Enterprise (Dedicated Hosting/DB)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Domain Kustom Sekolah</label>
-                        <input type="text" name="domain_kustom" class="form-control @error('domain_kustom') is-invalid @enderror" value="{{ old('domain_kustom', $tenant->domain_kustom) }}" placeholder="cbt.smpn1.sch.id">
+                        <label for="fld-tenants-show-domain-kustom" class="form-label">Domain Kustom Sekolah</label>
+                        <input id="fld-tenants-show-domain-kustom" type="text" name="domain_kustom" class="form-control @error('domain_kustom') is-invalid @enderror" value="{{ old('domain_kustom', $tenant->domain_kustom) }}" placeholder="cbt.smpn1.sch.id">
                         @error('domain_kustom') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
@@ -155,12 +155,12 @@
 
                 <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
                     <div class="form-group">
-                        <label class="form-label">Batas Kuota Siswa (Akun)</label>
-                        <input type="number" name="kuota_siswa" class="form-control" value="{{ old('kuota_siswa', $tenant->kuota_siswa ?: 500) }}" min="10" max="100000" required>
+                        <label for="fld-tenants-show-kuota-siswa" class="form-label">Batas Kuota Siswa (Akun)</label>
+                        <input id="fld-tenants-show-kuota-siswa" type="number" name="kuota_siswa" class="form-control" value="{{ old('kuota_siswa', $tenant->kuota_siswa ?: 500) }}" min="10" max="100000" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Batas Kuota File/Storage (MB)</label>
-                        <input type="number" name="kuota_storage_mb" class="form-control" value="{{ old('kuota_storage_mb', $tenant->kuota_storage_mb ?: 2048) }}" min="100" max="1048576" required>
+                        <label for="fld-tenants-show-kuota-storage-mb" class="form-label">Batas Kuota File/Storage (MB)</label>
+                        <input id="fld-tenants-show-kuota-storage-mb" type="number" name="kuota_storage_mb" class="form-control" value="{{ old('kuota_storage_mb', $tenant->kuota_storage_mb ?: 2048) }}" min="100" max="1048576" required>
                     </div>
                 </div>
 
@@ -175,8 +175,8 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom:16px">
-                    <label class="form-label">Catatan Langganan &amp; Pembayaran Hosting</label>
-                    <textarea name="catatan_langganan" class="form-control" rows="2" placeholder="Contoh: Pembayaran hosting tahun 2026 lunas via transfer Bank BPD">{{ old('catatan_langganan', $tenant->catatan_langganan) }}</textarea>
+                    <label for="fld-tenants-show-catatan-langganan" class="form-label">Catatan Langganan &amp; Pembayaran Hosting</label>
+                    <textarea id="fld-tenants-show-catatan-langganan" name="catatan_langganan" class="form-control" rows="2" placeholder="Contoh: Pembayaran hosting tahun 2026 lunas via transfer Bank BPD">{{ old('catatan_langganan', $tenant->catatan_langganan) }}</textarea>
                 </div>
 
                 <div style="display:flex;justify-content:flex-end">
@@ -352,13 +352,13 @@
 {{-- Zona Bahaya: Hapus Sekolah & Tarik Data ke Pusat --}}
 <div class="card" style="margin-top:20px;border:1px solid #FECACA">
     <div class="card-header" style="background:#FEF2F2;justify-content:space-between">
-        <h3 style="color:#991B1B"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Tindakan Khusus: Hapus / Lepas Sekolah</h3>
+        <h3 style="color:var(--bad)"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Tindakan Khusus: Hapus / Lepas Sekolah</h3>
         <span class="tag tag-bad">Zona Bahaya</span>
     </div>
     <div class="card-body">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
             <div style="max-width:700px">
-                <div style="font-weight:700;font-size:14px;color:#991B1B;margin-bottom:4px">
+                <div style="font-weight:700;font-size:14px;color:var(--bad);margin-bottom:4px">
                     Hapus Pendaftaran Sekolah "{{ $tenant->nama_sekolah }}" dari Sistem
                 </div>
                 <div style="font-size:12.5px;color:#4B5563;line-height:1.5">

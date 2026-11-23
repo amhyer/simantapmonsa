@@ -43,13 +43,13 @@
                     </div>
                     <div style="display:grid;gap:12px;margin-bottom:16px">
                         <div>
-                            <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Spreadsheet ID</label>
+                            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Spreadsheet ID</div>
                             <div style="padding:10px 14px;background:var(--bg);border-radius:8px;font-family:monospace;font-size:13px;margin-top:4px;word-break:break-all">
                                 {{ $spreadsheetId ?? '—' }}
                             </div>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">URL Spreadsheet</label>
+                            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">URL Spreadsheet</div>
                             <div style="margin-top:4px">
                                 <a href="{{ $spreadsheetUrl ?? '#' }}" target="_blank" style="color:var(--navy);font-weight:600;font-size:13px;text-decoration:none">
                                     {{ $spreadsheetUrl ?? '—' }}
@@ -81,8 +81,8 @@
                         @csrf
                         <div style="display:grid;gap:12px;margin-bottom:16px">
                             <div>
-                                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Google Spreadsheet URL atau ID</label>
-                                <input type="text" name="spreadsheet_url" required
+                                <label for="fld-guru-integrasi-spreadsheet-url" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Google Spreadsheet URL atau ID</label>
+                                <input id="fld-guru-integrasi-spreadsheet-url" type="text" name="spreadsheet_url" required
                                        placeholder="https://docs.google.com/spreadsheets/d/... atau Spreadsheet ID"
                                        value="{{ old('spreadsheet_url') }}"
                                        style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px">
@@ -91,8 +91,8 @@
                                 @enderror
                             </div>
                             <div>
-                                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Nama Sheet di Spreadsheet</label>
-                                <input type="text" name="sheet_name" required
+                                <label for="fld-guru-integrasi-sheet-name" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Nama Sheet di Spreadsheet</label>
+                                <input id="fld-guru-integrasi-sheet-name" type="text" name="sheet_name" required
                                        placeholder="Contoh: Sheet1, Nilai, Data"
                                        value="{{ old('sheet_name', 'Sheet1') }}"
                                        style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px">

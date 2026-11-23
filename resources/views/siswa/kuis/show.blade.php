@@ -161,7 +161,7 @@
                 <div class="card-body p-0">
                     <div class="d-flex justify-content-between align-items-center px-3 py-2">
                         <span>Waktu Tersisa</span>
-                        <div style="font-size:18px;font-weight:bold;color:#dc2626" id="timerDisplay">
+                        <div style="font-size:18px;font-weight:bold;color:var(--bad)" id="timerDisplay">
                             @if($kuis->batas_waktu)
                                 {{ \Carbon\Carbon::parse($kuis->batas_waktu)->diffInSeconds(now()) }} detik
                             @else

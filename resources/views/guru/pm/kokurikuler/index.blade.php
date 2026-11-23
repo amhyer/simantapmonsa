@@ -30,13 +30,13 @@
                     <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
                     <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tema / Judul Kegiatan *</label>
-                            <input type="text" name="tema_judul" required placeholder="Misal: Kebun Sayur Sekolahku"
+                            <label for="fld-pm-kokurikuler-tema-judul" style="font-size:12px;font-weight:600">Tema / Judul Kegiatan *</label>
+                            <input id="fld-pm-kokurikuler-tema-judul" type="text" name="tema_judul" required placeholder="Misal: Kebun Sayur Sekolahku"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Kelas *</label>
-                            <select name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-kokurikuler-tingkat" style="font-size:12px;font-weight:600">Kelas *</label>
+                            <select id="fld-pm-kokurikuler-tingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @for($t = 1; $t <= 6; $t++)
                                     <option value="{{ $t }}">Kelas {{ $t }}</option>
                                 @endfor
@@ -44,16 +44,16 @@
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
-                        <select name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pm-kokurikuler-bentuk-kegiatan" style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
+                        <select id="fld-pm-kokurikuler-bentuk-kegiatan" name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($bentukLabels as $kode => $label)
                                 <option value="{{ $kode }}">{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Dimensi Profil Lulusan (8 Dimensi)</label>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px">
+                        <div id="lbl-koku-dimensi" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Dimensi Profil Lulusan (8 Dimensi)</div>
+                        <div role="group" aria-labelledby="lbl-koku-dimensi" style="display:flex;flex-wrap:wrap;gap:6px">
                             @foreach($dimensiList as $dim)
                                 <label style="font-size:12px;display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid #E4E7EC;border-radius:6px">
                                     <input type="checkbox" name="dimensi_profil[]" value="{{ $dim }}">
@@ -64,30 +64,30 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Mulai</label>
-                            <input type="date" name="tanggal_mulai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-kokurikuler-tanggal-mulai" style="font-size:12px;font-weight:600">Tanggal Mulai</label>
+                            <input id="fld-pm-kokurikuler-tanggal-mulai" type="date" name="tanggal_mulai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Tanggal Selesai</label>
-                            <input type="date" name="tanggal_selesai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-kokurikuler-tanggal-selesai" style="font-size:12px;font-weight:600">Tanggal Selesai</label>
+                            <input id="fld-pm-kokurikuler-tanggal-selesai" type="date" name="tanggal_selesai" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Tujuan & Rangkaian Kegiatan</label>
-                        <textarea name="tujuan" rows="2" placeholder="Tujuan kegiatan..."
+                        <label for="fld-koku-tujuan" style="font-size:12px;font-weight:600">Tujuan & Rangkaian Kegiatan</label>
+                        <textarea id="fld-koku-tujuan" name="tujuan" rows="2" placeholder="Tujuan kegiatan..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px;margin-bottom:6px"></textarea>
-                        <textarea name="rangkaian_kegiatan" rows="2" placeholder="Rangkaian tahapan kegiatan..."
+                        <textarea id="fld-koku-rangkaian" name="rangkaian_kegiatan" aria-label="Rangkaian tahapan kegiatan" rows="2" placeholder="Rangkaian tahapan kegiatan..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Mitra / Kolaborator</label>
-                            <input type="text" name="mitra" placeholder="Orang tua, puskesmas, dll."
+                            <label for="fld-pm-kokurikuler-mitra" style="font-size:12px;font-weight:600">Mitra / Kolaborator</label>
+                            <input id="fld-pm-kokurikuler-mitra" type="text" name="mitra" placeholder="Orang tua, puskesmas, dll."
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Refleksi & Hasil</label>
-                            <input type="text" name="refleksi_hasil" placeholder="Ringkasan capaian..."
+                            <label for="fld-pm-kokurikuler-refleksi-hasil" style="font-size:12px;font-weight:600">Refleksi & Hasil</label>
+                            <input id="fld-pm-kokurikuler-refleksi-hasil" type="text" name="refleksi_hasil" placeholder="Ringkasan capaian..."
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
@@ -105,24 +105,24 @@
                     @csrf
                     <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
                     <div>
-                        <label style="font-size:12px;font-weight:600">Kelas *</label>
-                        <select name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pm-kokurikuler-tingkat-2" style="font-size:12px;font-weight:600">Kelas *</label>
+                        <select id="fld-pm-kokurikuler-tingkat-2" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @for($t = 1; $t <= 6; $t++)
                                 <option value="{{ $t }}">Kelas {{ $t }}</option>
                             @endfor
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
-                        <select name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pm-kokurikuler-bentuk-kegiatan-2" style="font-size:12px;font-weight:600">Bentuk Kegiatan *</label>
+                        <select id="fld-pm-kokurikuler-bentuk-kegiatan-2" name="bentuk_kegiatan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($bentukLabels as $kode => $label)
                                 <option value="{{ $kode }}">{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600">Tema / Ide Kegiatan *</label>
-                        <textarea name="tema_ide" rows="4" required placeholder="Misal: Pengelolaan sampah plastik menjadi ekobrik di lingkungan sekolah bersama orang tua..."
+                        <label for="fld-pm-kokurikuler-tema-ide" style="font-size:12px;font-weight:600">Tema / Ide Kegiatan *</label>
+                        <textarea id="fld-pm-kokurikuler-tema-ide" name="tema_ide" rows="4" required placeholder="Misal: Pengelolaan sampah plastik menjadi ekobrik di lingkungan sekolah bersama orang tua..."
                                   style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px"></textarea>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -189,7 +189,7 @@
                                               onsubmit="return confirm('Hapus kegiatan ini?');" style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>

@@ -113,14 +113,14 @@
                             </td>
                             <td style="padding:8px 12px;text-align:center" data-siswa="{{ $s->id }}" class="col-akhir">
                                 @if($n && $n->nilai_akhir > 0)
-                                    <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;{{ $n->nilai_akhir >= ($pengaturan->kkm ?? 70) ? 'background:#D1FAE5;color:#065F46' : 'background:#FEE2E2;color:#991B1B' }}">{{ number_format($n->nilai_akhir, 1) }}</span>
+                                    <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;{{ $n->nilai_akhir >= ($pengaturan->kkm ?? 70) ? 'background:#D1FAE5;color:#065F46' : 'background:#FEE2E2;color:var(--bad)' }}">{{ number_format($n->nilai_akhir, 1) }}</span>
                                 @else
                                     <span style="color:#888">—</span>
                                 @endif
                             </td>
                             <td style="padding:8px 12px;text-align:center" data-siswa="{{ $s->id }}" class="col-predikat">
                                 @if($n && $n->predikat)
-                                    @php $pc = match($n->predikat){'A'=>'#D1FAE5,#065F46','B'=>'#DBEAFE,#1E40AF','C'=>'#FEF3C7,#92400E','D'=>'#FEE2E2,#991B1B',default=>'#F3F4F6,#6B7280'}; @endphp
+                                    @php $pc = match($n->predikat){'A'=>'#D1FAE5,#065F46','B'=>'#DBEAFE,#1E40AF','C'=>'#FEF3C7,#92400E','D'=>'#FEE2E2,var(--bad)',default=>'#F3F4F6,#6B7280'}; @endphp
                                     @php [$bg, $fg] = explode(',', $pc); @endphp
                                     <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;font-weight:700;font-size:11px;background:{{ $bg }};color:{{ $fg }}">{{ $n->predikat }}</span>
                                 @else
@@ -162,8 +162,8 @@
                     <b>💡 Cara:</b> Download template → Isi nilai → Upload kembali → Import
                 </div>
                 <div style="margin-bottom:14px">
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">File Excel (.xlsx)</label>
-                    <input type="file" name="file" accept=".xlsx,.xls" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-nilai-erapor-file" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">File Excel (.xlsx)</label>
+                    <input id="fld-guru-nilai-erapor-file" type="file" name="file" accept=".xlsx,.xls" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
             </div>
             <div class="modal-footer">
@@ -214,11 +214,11 @@ async function autoSave(input) {
             const predEl = document.querySelector(`.col-predikat[data-siswa="${sid}"]`);
             if (akhirEl && d.nilai_akhir > 0) {
                 const bg = d.nilai_akhir >= kkm ? '#D1FAE5' : '#FEE2E2';
-                const fg = d.nilai_akhir >= kkm ? '#065F46' : '#991B1B';
+                const fg = d.nilai_akhir >= kkm ? '#065F46' : 'var(--bad)';
                 akhirEl.innerHTML = `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${bg};color:${fg}">${d.nilai_akhir.toFixed(1)}</span>`;
             }
             if (predEl && d.predikat) {
-                const colors = {A:['#D1FAE5','#065F46'],B:['#DBEAFE','#1E40AF'],C:['#FEF3C7','#92400E'],D:['#FEE2E2','#991B1B']};
+                const colors = {A:['#D1FAE5','#065F46'],B:['#DBEAFE','#1E40AF'],C:['#FEF3C7','#92400E'],D:['#FEE2E2','var(--bad)']};
                 const [bg,fg] = colors[d.predikat] || ['#F3F4F6','#6B7280'];
                 predEl.innerHTML = `<span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;font-weight:700;font-size:11px;background:${bg};color:${fg}">${d.predikat}</span>`;
             }
@@ -288,7 +288,7 @@ async function lihatDeskripsi(sid, nama) {
         const r = await fetch(`/guru/nilai-erapor/deskripsi/${sid}?mapel=${m}&semester=${s}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
         const d = await r.json();
         if (d.success) {
-            const colors = {A:'#065F46',B:'#1E40AF',C:'#92400E',D:'#991B1B'};
+            const colors = {A:'#065F46',B:'#1E40AF',C:'#92400E',D:'var(--bad)'};
             document.getElementById('deskripsiBody').innerHTML = `
                 <div style="margin-bottom:12px"><b>${d.nama}</b> <span style="color:${colors[d.predikat]||'#666'};font-weight:700">${d.predikat} (${d.nilai_akhir})</span></div>
                 <div style="background:#F9FAFB;border:1px solid #E4E7EC;border-radius:8px;padding:14px;font-size:13.5px;line-height:1.7">${d.deskripsi}</div>`;
@@ -327,7 +327,7 @@ async function simpanSemua() {
 
 function toast(msg, type) {
     const t = document.createElement('div');
-    t.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;color:#fff;z-index:9999;font-size:13px;background:${type==='success'?'#22c55e':'#ef4444'}`;
+    t.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;color:#fff;z-index:9999;font-size:13px;background:${type==='success'?'#22c55e':'var(--bad)'}`;
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(()=>t.remove(),3000);

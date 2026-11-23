@@ -13,6 +13,7 @@
             --navy: #1F3864;
             --navy-light: #2B4A80;
             --gold: #B8860B;
+            --bad: #B42318;
             --bg: #F5F7FB;
             --border: #E4E7EC;
             --text-dark: #1D2939;
@@ -190,8 +191,8 @@
         }
         .error {
             background: #FEE9E7;
-            border-left: 3px solid #D92D20;
-            color: #B42318;
+            border-left: 3px solid var(--bad);
+            color: var(--bad);
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 13px;

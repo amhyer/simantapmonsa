@@ -85,7 +85,7 @@
     @php
         $bgSup = match ($pmSupervisi->status) {
             'disetujui' => '#ECFDF3;border-color:#A6F4C5;color:#027A48',
-            'revisi' => '#FEF3F2;border-color:#FECDCA;color:#B42318',
+            'revisi' => '#FEF3F2;border-color:#FECDCA;color:var(--bad)',
             default => '#EFF8FF;border-color:#B2DDFF;color:#175CD3',
         };
     @endphp

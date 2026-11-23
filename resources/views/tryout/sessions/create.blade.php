@@ -23,8 +23,8 @@
                     @csrf
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <div>
-                            <label class="form-label">Paket</label>
-                            <select name="package_id" required class="form-control">
+                            <label for="fld-sessions-create-package-id-2" class="form-label">Paket</label>
+                            <select id="fld-sessions-create-package-id-2" name="package_id" required class="form-control">
                                 <option value="">— Pilih —</option>
                                 @foreach($packages as $p)
                                     <option value="{{ $p->id }}" @selected(old('package_id') == $p->id)>{{ $p->nama_paket }}</option>
@@ -33,8 +33,8 @@
                             @error('package_id')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
                         <div>
-                            <label class="form-label">Semester</label>
-                            <select name="semester_id" required class="form-control">
+                            <label for="fld-sessions-create-semester-id-2" class="form-label">Semester</label>
+                            <select id="fld-sessions-create-semester-id-2" name="semester_id" required class="form-control">
                                 <option value="">— Pilih —</option>
                                 @foreach($semesters as $s)
                                     <option value="{{ $s->id }}" @selected(old('semester_id') == $s->id)>{{ $s->label }}</option>
@@ -45,18 +45,18 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                         <div>
-                            <label class="form-label">Kelas</label>
-                            <input type="text" name="kelas" value="{{ old('kelas') }}" maxlength="50" placeholder="6.A" class="form-control">
+                            <label for="fld-sessions-create-kelas" class="form-label">Kelas</label>
+                            <input id="fld-sessions-create-kelas" type="text" name="kelas" value="{{ old('kelas') }}" maxlength="50" placeholder="6.A" class="form-control">
                         </div>
                         <div>
-                            <label class="form-label">Nama Sesi</label>
-                            <input type="text" name="nama_sesi" value="{{ old('nama_sesi') }}" maxlength="255" required class="form-control">
+                            <label for="fld-sessions-create-nama-sesi-2" class="form-label">Nama Sesi</label>
+                            <input id="fld-sessions-create-nama-sesi-2" type="text" name="nama_sesi" value="{{ old('nama_sesi') }}" maxlength="255" required class="form-control">
                             @error('nama_sesi')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Rombel</label>
-                        <select name="rombel_id" class="form-control">
+                        <label for="fld-sessions-create-rombel-id" class="form-label">Rombel</label>
+                        <select id="fld-sessions-create-rombel-id" name="rombel_id" class="form-control">
                             <option value="">— Umum —</option>
                             @foreach($rombels as $r)
                                 <option value="{{ $r->id }}" @selected(old('rombel_id') == $r->id)>{{ $r->nama_rombel }}</option>
@@ -65,13 +65,13 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <div>
-                            <label class="form-label">Mulai</label>
-                            <input type="datetime-local" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" required class="form-control">
+                            <label for="fld-sessions-create-tanggal-mulai-2" class="form-label">Mulai</label>
+                            <input id="fld-sessions-create-tanggal-mulai-2" type="datetime-local" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" required class="form-control">
                             @error('tanggal_mulai')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
                         <div>
-                            <label class="form-label">Selesai</label>
-                            <input type="datetime-local" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" required class="form-control">
+                            <label for="fld-sessions-create-tanggal-selesai-2" class="form-label">Selesai</label>
+                            <input id="fld-sessions-create-tanggal-selesai-2" type="datetime-local" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" required class="form-control">
                             @error('tanggal_selesai')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
                     </div>

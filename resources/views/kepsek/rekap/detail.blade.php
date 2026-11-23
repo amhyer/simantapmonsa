@@ -63,7 +63,7 @@
                     <tbody>
                         @foreach($dataSiswa as $i => $ds)
                             @php $kkm = $ringkasan->kkm ?? 70; @endphp
-                            @php $pc = match($ds['predikat'] ?? null){'A'=>['#D1FAE5','#065F46'],'B'=>['#DBEAFE','#1E40AF'],'C'=>['#FEF3C7','#92400E'],'D'=>['#FEE2E2','#991B1B'],default=>['#F3F4F6','#6B7280']}; @endphp
+                            @php $pc = match($ds['predikat'] ?? null){'A'=>['#D1FAE5','#065F46'],'B'=>['#DBEAFE','#1E40AF'],'C'=>['#FEF3C7','#92400E'],'D'=>['#FEE2E2','var(--bad)'],default=>['#F3F4F6','#6B7280']}; @endphp
                             @php [$bg,$fg] = $pc; @endphp
                             <tr style="border-bottom:1px solid #F2F4F7">
                                 <td style="padding:8px 12px;font-size:12px;color:#888">{{ $i + 1 }}</td>
@@ -71,7 +71,7 @@
                                 <td style="padding:8px 12px;font-size:12px;color:#667085">{{ $ds['siswa']->nis }}</td>
                                 <td style="padding:8px 12px;font-size:12px">{{ $ds['siswa']->kelas }}</td>
                                 <td style="padding:8px 12px;text-align:center">
-                                    <span style="background:{{ ($ds['nilai'] ?? 0) >= $kkm ? '#D1FAE5' : '#FEE2E2' }};color:{{ ($ds['nilai'] ?? 0) >= $kkm ? '#065F46' : '#991B1B' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ number_format($ds['nilai'] ?? 0, 1) }}</span>
+                                    <span style="background:{{ ($ds['nilai'] ?? 0) >= $kkm ? '#D1FAE5' : '#FEE2E2' }};color:{{ ($ds['nilai'] ?? 0) >= $kkm ? '#065F46' : 'var(--bad)' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ number_format($ds['nilai'] ?? 0, 1) }}</span>
                                 </td>
                                 <td style="padding:8px 12px;text-align:center">
                                     @if($ds['predikat'])

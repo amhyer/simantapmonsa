@@ -14,23 +14,23 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div>
-                    <label class="form-label">Kelas Binaan</label>
-                    <select name="kelas" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-walas-naik-kelas-kelas" class="form-label">Kelas Binaan</label>
+                    <select id="fld-walas-naik-kelas-kelas" name="kelas" class="form-control" onchange="this.form.submit()">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-walas-naik-kelas-semester" class="form-label">Semester</label>
+                    <select id="fld-walas-naik-kelas-semester" name="semester" class="form-control" onchange="this.form.submit()">
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
+                    <label for="fld-walas-naik-kelas-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                    <input id="fld-walas-naik-kelas-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
                 </div>
                 <button type="submit" class="btn btn-sm btn-primary">Tampilkan</button>
             </form>
@@ -74,7 +74,7 @@
                                         <label style="margin-right:12px;cursor:pointer;font-weight:600;color:#059669">
                                             <input type="radio" name="keputusan[{{ $s->id }}][naik_kelas]" value="1" @checked($naik)> Naik Kelas / Lulus
                                         </label>
-                                        <label style="cursor:pointer;font-weight:600;color:#DC2626">
+                                        <label style="cursor:pointer;font-weight:600;color:var(--bad)">
                                             <input type="radio" name="keputusan[{{ $s->id }}][naik_kelas]" value="0" @checked(!$naik)> Tinggal Kelas
                                         </label>
                                     </td>

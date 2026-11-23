@@ -33,16 +33,16 @@
                 <input type="hidden" name="semester" value="{{ $semester }}">
                 <div style="display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:start">
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status Supervisi *</label>
-                        <select name="status" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-supervisi-pm-show-status" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status Supervisi *</label>
+                        <select id="fld-supervisi-pm-show-status" name="status" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($statusLabels as $kode => $label)
                                 <option value="{{ $kode }}" {{ ($supervisi?->status ?? 'menunggu') === $kode ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Catatan / Rekomendasi Kepala Sekolah</label>
-                        <textarea name="catatan_kepsek" rows="2" placeholder="Tuliskan apresiasi atau poin perbaikan untuk guru..."
+                        <label for="fld-supervisi-pm-show-catatan-kepsek" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Catatan / Rekomendasi Kepala Sekolah</label>
+                        <textarea id="fld-supervisi-pm-show-catatan-kepsek" name="catatan_kepsek" rows="2" placeholder="Tuliskan apresiasi atau poin perbaikan untuk guru..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('catatan_kepsek', $supervisi?->catatan_kepsek) }}</textarea>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
             <div class="card">
                 <div class="card-body" style="padding:10px;text-align:center">
                     <div style="font-size:11px;color:#667085;font-weight:600">{{ $lbl }}</div>
-                    <div style="font-size:18px;font-weight:700;color:{{ $counts[$k] > 0 ? '#027A48' : '#B42318' }}">{{ $counts[$k] }}</div>
+                    <div style="font-size:18px;font-weight:700;color:{{ $counts[$k] > 0 ? '#027A48' : 'var(--bad)' }}">{{ $counts[$k] }}</div>
                 </div>
             </div>
         @endforeach

@@ -16,8 +16,8 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end">
                 <div>
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas" class="form-control">
+                    <label for="fld-cetak-pelengkap-kelas" class="form-label">Kelas</label>
+                    <select id="fld-cetak-pelengkap-kelas" name="kelas" class="form-control">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach

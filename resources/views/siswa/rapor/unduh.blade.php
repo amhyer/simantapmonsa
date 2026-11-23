@@ -19,15 +19,15 @@
             <div class="card-body">
                 <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                     <div>
-                        <label class="form-label">Semester Rapor</label>
-                        <select name="semester" class="form-control">
+                        <label for="fld-rapor-unduh-semester" class="form-label">Semester Rapor</label>
+                        <select id="fld-rapor-unduh-semester" name="semester" class="form-control">
                             <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                             <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Tahun Ajaran</label>
-                        <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:130px">
+                        <label for="fld-rapor-unduh-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                        <input id="fld-rapor-unduh-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:130px">
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">Terapkan Periode</button>
                 </form>

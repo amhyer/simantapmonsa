@@ -78,7 +78,7 @@
                 </div>
                 <div style="font-size:5.2pt;color:#027A48;font-weight:700;margin-top:0.8mm;line-height:1">RFID / KARTU AKTIF</div>
             @else
-                <div style="width:22.5mm;height:22.5mm;padding:1mm;background:#FEF3F2;border:0.8px dashed #FECDCA;border-radius:1.8mm;display:flex;align-items:center;justify-content:center;font-size:5.2pt;color:#B42318;text-align:center;box-sizing:border-box">
+                <div style="width:22.5mm;height:22.5mm;padding:1mm;background:#FEF3F2;border:0.8px dashed #FECDCA;border-radius:1.8mm;display:flex;align-items:center;justify-content:center;font-size:5.2pt;color:var(--bad);text-align:center;box-sizing:border-box">
                     {{ !empty($card['qr_revoked']) ? 'Dicabut — hubungi admin' : (!empty($card['qr_aktif']) ? 'QR tidak cocok — hubungi admin' : 'Belum Terbit') }}
                 </div>
             @endif

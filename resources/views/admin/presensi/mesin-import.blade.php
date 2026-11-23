@@ -82,12 +82,12 @@
             <form action="{{ route('admin.presensi.mesin.tarik') }}" method="POST" id="form-tarik" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 @csrf
                 <div>
-                    <label class="form-label">Dari tanggal</label>
-                    <input type="date" name="dari" value="{{ old('dari', now()->subDays(6)->toDateString()) }}" max="{{ now()->toDateString() }}" required class="form-control">
+                    <label for="fld-presensi-mesin-import-dari" class="form-label">Dari tanggal</label>
+                    <input id="fld-presensi-mesin-import-dari" type="date" name="dari" value="{{ old('dari', now()->subDays(6)->toDateString()) }}" max="{{ now()->toDateString() }}" required class="form-control">
                 </div>
                 <div>
-                    <label class="form-label">Sampai tanggal</label>
-                    <input type="date" name="sampai" value="{{ old('sampai', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="form-control">
+                    <label for="fld-presensi-mesin-import-sampai" class="form-label">Sampai tanggal</label>
+                    <input id="fld-presensi-mesin-import-sampai" type="date" name="sampai" value="{{ old('sampai', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="form-control">
                 </div>
                 <div>
                     <button type="button" id="btn-tes" class="btn btn-sm">Tes Koneksi</button>
@@ -112,8 +112,8 @@
                 @csrf
                 <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                     <div>
-                        <label class="form-label">Pembaca mesin (engine)</label>
-                        <select name="mesin_engine" class="form-control">
+                        <label for="fld-presensi-mesin-import-mesin-engine" class="form-label">Pembaca mesin (engine)</label>
+                        <select id="fld-presensi-mesin-import-mesin-engine" name="mesin_engine" class="form-control">
                             @foreach(['auto' => 'Auto (Default)', 'tcp' => 'TCP Langsung (ZKTeco)', 'powershell' => 'Database (PowerShell)', 'odbc' => 'Database (ODBC)'] as $nilai => $label)
                                 <option value="{{ $nilai }}" {{ (old('mesin_engine', $mesinEngineTerpilih ?? 'auto')) === $nilai ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -127,19 +127,19 @@
             </form>
 
             @error('mesin_engine')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
 
             <div id="hasil-tes" style="font-size:13px;margin-top:10px;color:#475467"></div>
 
             @error('mesin')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
             @error('dari')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
             @error('sampai')
-                <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
             @enderror
         </div>
     </div>
@@ -157,8 +157,8 @@
                 <form action="{{ route('admin.presensi.mesin.karyawan.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                     @csrf
                     <div style="flex:1;min-width:220px">
-                        <label class="form-label">File data karyawan (maks 10MB)</label>
-                        <input type="file" name="file" accept=".xls,.xlsx,.csv,.txt" required class="form-control">
+                        <label for="fld-presensi-mesin-import-file" class="form-label">File data karyawan (maks 10MB)</label>
+                        <input id="fld-presensi-mesin-import-file" type="file" name="file" accept=".xls,.xlsx,.csv,.txt" required class="form-control">
                     </div>
                     <div>
                         <button type="submit" class="btn btn-sm">Import NIK</button>
@@ -172,12 +172,12 @@
                         <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">Tarik NIK dari Database Mesin</button>
                     </form>
                     @error('mesin')
-                        <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                        <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
                     @enderror
                 </div>
                 @endunless
                 @error('file')
-                    <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                    <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
                 @enderror
             </div>
         </div>
@@ -192,15 +192,15 @@
                 <form action="{{ route('admin.presensi.mesin.log.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                     @csrf
                     <div style="flex:1;min-width:220px">
-                        <label class="form-label">File log mesin (maks 10MB)</label>
-                        <input type="file" name="file" accept=".xls,.xlsx,.csv,.txt" required class="form-control">
+                        <label for="fld-presensi-mesin-import-file-2" class="form-label">File log mesin (maks 10MB)</label>
+                        <input id="fld-presensi-mesin-import-file-2" type="file" name="file" accept=".xls,.xlsx,.csv,.txt" required class="form-control">
                     </div>
                     <div>
                         <button type="submit" class="btn btn-sm">Import Log</button>
                     </div>
                 </form>
                 @error('file')
-                    <div style="color:#B42318;font-size:13px;margin-top:8px">{{ $message }}</div>
+                    <div style="color:var(--bad);font-size:13px;margin-top:8px">{{ $message }}</div>
                 @enderror
             </div>
         </div>
@@ -231,7 +231,7 @@
                     });
 
                     const data = await res.json();
-                    kotakHasil.style.color = data.ok ? '#12805C' : '#B42318';
+                    kotakHasil.style.color = data.ok ? '#12805C' : 'var(--bad)';
 
                     let teks = data.pesan || '';
                     if (data.ok) {
@@ -245,7 +245,7 @@
                     }
                     kotakHasil.textContent = teks;
                 } catch (e) {
-                    kotakHasil.style.color = '#B42318';
+                    kotakHasil.style.color = 'var(--bad)';
                     kotakHasil.textContent = 'Gagal menghubungi server: ' + e.message;
                 } finally {
                     tombolTes.disabled = false;
@@ -293,11 +293,11 @@
                         const daftar = (data.scans ?? []).map((s) => (s.waktu ?? '-') + ' | NIK ' + (s.nik ?? '-') + ' | ' + (s.jenis ?? '')).join('\n');
                         kotakLive.textContent = 'Mesin OK. Scan terkini:\n' + (daftar || 'Belum ada scan.');
                     } else {
-                        kotakLive.style.color = '#B42318';
+                        kotakLive.style.color = 'var(--bad)';
                         kotakLive.textContent = 'Gagal: ' + (data.pesan || 'Tidak ada data');
                     }
                 } catch (e) {
-                    kotakLive.style.color = '#B42318';
+                    kotakLive.style.color = 'var(--bad)';
                     kotakLive.textContent = 'Gagal menghubungi server: ' + e.message;
                 } finally {
                     tombolLive.disabled = false;

@@ -10,8 +10,8 @@
         <div class="card-body">
             <form action="{{ route('admin.penilaian.statistik') }}" method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div style="flex:1;min-width:200px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pilih Kelas</label>
-                    <select name="kelas" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-penilaian-statistik-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pilih Kelas</label>
+                    <select id="fld-penilaian-statistik-kelas" name="kelas" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">Semua Kelas</option>
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" {{ $kelasFilter === $k ? 'selected' : '' }}>{{ $k }}</option>
@@ -40,7 +40,7 @@
             <h3>Sebaran Predikat</h3>
         </div>
         <div class="card-body">
-            @foreach(['A' => 'var(--ok)', 'B' => 'var(--navy)', 'C' => '#B8860B', 'D' => '#B42318'] as $p => $warna)
+            @foreach(['A' => 'var(--ok)', 'B' => 'var(--navy)', 'C' => '#B8860B', 'D' => 'var(--bad)'] as $p => $warna)
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
                     <b style="width:20px">{{ $p }}</b>
                     <div style="flex:1;background:#EEF2F6;border-radius:6px;height:18px">

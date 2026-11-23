@@ -55,18 +55,18 @@
                 <input type="hidden" name="nama_mapel" value="{{ $mapelAktif }}">
                 <input type="hidden" name="tingkat" value="{{ $tingkat }}">
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block">Batas Bawah (Layak)</label>
-                    <input type="number" name="batas_bawah" min="1" max="90" value="{{ $interval->batas_bawah }}"
+                    <label for="fld-pm-kktp-batas-bawah" style="font-size:12px;font-weight:600;display:block">Batas Bawah (Layak)</label>
+                    <input id="fld-pm-kktp-batas-bawah" type="number" name="batas_bawah" min="1" max="90" value="{{ $interval->batas_bawah }}"
                            style="width:110px;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block">Nilai KKTP (Cakap)</label>
-                    <input type="number" name="nilai_kktp" min="2" max="95" value="{{ $interval->nilai_kktp }}"
+                    <label for="fld-pm-kktp-nilai-kktp" style="font-size:12px;font-weight:600;display:block">Nilai KKTP (Cakap)</label>
+                    <input id="fld-pm-kktp-nilai-kktp" type="number" name="nilai_kktp" min="2" max="95" value="{{ $interval->nilai_kktp }}"
                            style="width:110px;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block">Batas Atas (Mahir)</label>
-                    <input type="number" name="batas_atas" min="3" max="99" value="{{ $interval->batas_atas }}"
+                    <label for="fld-pm-kktp-batas-atas" style="font-size:12px;font-weight:600;display:block">Batas Atas (Mahir)</label>
+                    <input id="fld-pm-kktp-batas-atas" type="number" name="batas_atas" min="3" max="99" value="{{ $interval->batas_atas }}"
                            style="width:110px;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                 </div>
                 <button type="submit" class="btn btn-sm"><i class="fas fa-save"></i> Simpan Interval</button>

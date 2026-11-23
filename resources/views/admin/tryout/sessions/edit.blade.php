@@ -17,20 +17,20 @@
                 @method('PUT')
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Sesi</label>
-                        <input type="text" name="kode_sesi" value="{{ old('kode_sesi', $session->kode_sesi) }}" maxlength="50" required class="form-control">
+                        <label for="fld-sessions-edit-kode-sesi" class="form-label">Kode Sesi</label>
+                        <input id="fld-sessions-edit-kode-sesi" type="text" name="kode_sesi" value="{{ old('kode_sesi', $session->kode_sesi) }}" maxlength="50" required class="form-control">
                         @error('kode_sesi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Sesi</label>
-                        <input type="text" name="nama_sesi" value="{{ old('nama_sesi', $session->nama_sesi) }}" maxlength="255" required class="form-control">
+                        <label for="fld-sessions-edit-nama-sesi" class="form-label">Nama Sesi</label>
+                        <input id="fld-sessions-edit-nama-sesi" type="text" name="nama_sesi" value="{{ old('nama_sesi', $session->nama_sesi) }}" maxlength="255" required class="form-control">
                         @error('nama_sesi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Paket</label>
-                        <select name="package_id" required class="form-control">
+                        <label for="fld-sessions-edit-package-id" class="form-label">Paket</label>
+                        <select id="fld-sessions-edit-package-id" name="package_id" required class="form-control">
                             <option value="">— Pilih —</option>
                             @foreach($packages as $p)
                                 <option value="{{ $p->id }}" @selected(old('package_id', $session->package_id) == $p->id)>{{ $p->nama_paket }}</option>
@@ -39,8 +39,8 @@
                         @error('package_id')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Semester</label>
-                        <select name="semester_id" class="form-control">
+                        <label for="fld-sessions-edit-semester-id" class="form-label">Semester</label>
+                        <select id="fld-sessions-edit-semester-id" name="semester_id" class="form-control">
                             <option value="">— Umum —</option>
                             @foreach($semesters as $s)
                                 <option value="{{ $s->id }}" @selected(old('semester_id', $session->semester_id) == $s->id)>{{ $s->label }}</option>
@@ -51,24 +51,24 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Mulai</label>
-                        <input type="datetime-local" name="tanggal_mulai" value="{{ old('tanggal_mulai', $session->tanggal_mulai?->format('Y-m-d\TH:i')) }}" required class="form-control">
+                        <label for="fld-sessions-edit-tanggal-mulai" class="form-label">Mulai</label>
+                        <input id="fld-sessions-edit-tanggal-mulai" type="datetime-local" name="tanggal_mulai" value="{{ old('tanggal_mulai', $session->tanggal_mulai?->format('Y-m-d\TH:i')) }}" required class="form-control">
                         @error('tanggal_mulai')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Selesai</label>
-                        <input type="datetime-local" name="tanggal_selesai" value="{{ old('tanggal_selesai', $session->tanggal_selesai?->format('Y-m-d\TH:i')) }}" required class="form-control">
+                        <label for="fld-sessions-edit-tanggal-selesai" class="form-label">Selesai</label>
+                        <input id="fld-sessions-edit-tanggal-selesai" type="datetime-local" name="tanggal_selesai" value="{{ old('tanggal_selesai', $session->tanggal_selesai?->format('Y-m-d\TH:i')) }}" required class="form-control">
                         @error('tanggal_selesai')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Durasi (menit)</label>
-                        <input type="number" name="durasi_menit" value="{{ old('durasi_menit', $session->durasi_menit ?? 120) }}" min="1" required class="form-control">
+                        <label for="fld-sessions-edit-durasi-menit" class="form-label">Durasi (menit)</label>
+                        <input id="fld-sessions-edit-durasi-menit" type="number" name="durasi_menit" value="{{ old('durasi_menit', $session->durasi_menit ?? 120) }}" min="1" required class="form-control">
                         @error('durasi_menit')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Instruksi</label>
-                    <textarea name="instruksi" rows="3" class="form-control">{{ old('instruksi', $session->instruksi) }}</textarea>
+                    <label for="fld-sessions-edit-instruksi" class="form-label">Instruksi</label>
+                    <textarea id="fld-sessions-edit-instruksi" name="instruksi" rows="3" class="form-control">{{ old('instruksi', $session->instruksi) }}</textarea>
                     @error('instruksi')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>

@@ -77,7 +77,7 @@
             <div class="stat-value" style="font-size:28px">
                 @php
                     $predikat = $rataRata > 0 ? (app(\App\Services\NilaiService::class)->getPredikat($rataRata, $kkm)['huruf'] ?? '-') : '-';
-                    $predikatColor = ['A' => 'var(--violet)', 'B' => '#1F3864', 'C' => '#B8860B', 'D' => '#B42318'];
+                    $predikatColor = ['A' => 'var(--violet)', 'B' => '#1F3864', 'C' => '#B8860B', 'D' => 'var(--bad)'];
                 @endphp
                 <span style="color:{{ $predikatColor[$predikat] ?? '#667085' }}">{{ $predikat }}</span>
             </div>
@@ -177,7 +177,7 @@
                                     @php
                                         $avg = $mapel['rata_rata'];
                                         $p = app(\App\Services\NilaiService::class)->getPredikat($avg, $kkm)['huruf'] ?? 'D';
-                                        $barColor = in_array($p, ['A', 'B']) ? 'var(--violet)' : ($p === 'C' ? '#B8860B' : '#B42318');
+                                        $barColor = in_array($p, ['A', 'B']) ? 'var(--violet)' : ($p === 'C' ? '#B8860B' : 'var(--bad)');
                                     @endphp
                                     <tr style="border-bottom:1px solid #F2F4F7">
                                         <td style="padding:8px;font-weight:600">{{ $mapel['nama'] }}</td>
@@ -194,7 +194,7 @@
                                             @elseif($p === 'C')
                                                 <span style="color:#B8860B;font-size:12px"><i class="fas fa-exclamation"></i> Cukup</span>
                                             @else
-                                                <span style="color:#B42318;font-size:12px"><i class="fas fa-times"></i> Perlu Ditingkatkan</span>
+                                                <span style="color:var(--bad);font-size:12px"><i class="fas fa-times"></i> Perlu Ditingkatkan</span>
                                             @endif
                                         </td>
                                     </tr>

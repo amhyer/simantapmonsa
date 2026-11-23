@@ -31,7 +31,7 @@
                 </div>
                 <div style="text-align:right">
                     <div style="font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#667085">Persentase Hadir</div>
-                    <div style="font-size:34px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $persentase >= 90 ? '#12805C' : ($persentase >= 75 ? '#B8860B' : '#B42318') }}">{{ $total ? $persentase . '%' : '—' }}</div>
+                    <div style="font-size:34px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $persentase >= 90 ? '#12805C' : ($persentase >= 75 ? '#B8860B' : 'var(--bad)') }}">{{ $total ? $persentase . '%' : '—' }}</div>
                 </div>
             </div>
         </div>
@@ -182,7 +182,7 @@
                         labels: ['Hadir', 'Sakit', 'Izin', 'Alpha'],
                         datasets: [{
                             data: [{{ $totalHadir }}, {{ $totalSakit }}, {{ $totalIzin }}, {{ $totalAlpha }}],
-                            backgroundColor: ['#12805C', '#B8860B', '#1F3864', '#B42318'],
+                            backgroundColor: ['#12805C', '#B8860B', '#1F3864', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()],
                             borderWidth: 2,
                             borderColor: '#fff'
                         }]
@@ -221,7 +221,7 @@
                                 label: '% Hadir',
                                 data: bulanValues,
                                 backgroundColor: bulanValues.map(v => v >= 90 ? 'rgba(18,128,92,0.75)' : (v >= 75 ? 'rgba(184,134,11,0.75)' : 'rgba(180,35,24,0.75)')),
-                                borderColor: bulanValues.map(v => v >= 90 ? '#12805C' : (v >= 75 ? '#B8860B' : '#B42318')),
+                                borderColor: bulanValues.map(v => v >= 90 ? '#12805C' : (v >= 75 ? '#B8860B' : getComputedStyle(document.documentElement).getPropertyValue('--bad').trim())),
                                 borderWidth: 1.5,
                                 borderRadius: 6
                             }]

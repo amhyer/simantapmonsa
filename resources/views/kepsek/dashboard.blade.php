@@ -104,7 +104,7 @@
 <div class="card" style="margin-bottom:16px">
     <div class="card-header"><h3>👨‍👩‍👧 Partisipasi Orang Tua</h3><span class="tag tag-{{ $partisipasiOrtu >= 70 ? 'ok' : ($partisipasiOrtu >= 40 ? 'warn' : 'bad') }}">{{ $partisipasiOrtu }}%</span></div>
     <div class="card-body">
-        <div style="background:#F2F4F7;border-radius:8px;height:14px;overflow:hidden"><div style="height:100%;background:{{ $partisipasiOrtu >= 70 ? '#059669' : ($partisipasiOrtu >= 40 ? '#D97706' : '#DC2626') }};width:{{ $partisipasiOrtu }}%;border-radius:8px"></div></div>
+        <div style="background:#F2F4F7;border-radius:8px;height:14px;overflow:hidden"><div style="height:100%;background:{{ $partisipasiOrtu >= 70 ? '#059669' : ($partisipasiOrtu >= 40 ? '#D97706' : 'var(--bad)') }};width:{{ $partisipasiOrtu }}%;border-radius:8px"></div></div>
         <div style="margin-top:12px;display:flex;justify-content:space-between;font-size:13px">
             <span><b>{{ $stats['total_orang_tua'] }}</b> akun orang tua</span>
             <span><b>{{ round($stats['total_siswa'] * $partisipasiOrtu / 100) }}</b> dari {{ $stats['total_siswa'] }} siswa dilaporkan</span>
@@ -151,9 +151,9 @@
                                 <tr style="border-bottom:1px solid #F2F4F7">
                                     <td style="padding:8px 12px;font-weight:600">{{ $k['kelas'] }}</td>
                                     <td style="padding:8px 12px;text-align:center">{{ $k['jumlah'] }}</td>
-                                    <td style="padding:8px 12px;text-align:center"><span style="background:{{ $k['rata_nilai'] >= 80 ? '#D1FAE5' : ($k['rata_nilai'] >= 70 ? '#FEF3C7' : '#FEE2E2') }};color:{{ $k['rata_nilai'] >= 80 ? '#065F46' : ($k['rata_nilai'] >= 70 ? '#92400E' : '#991B1B') }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $k['rata_nilai'] }}</span></td>
+                                    <td style="padding:8px 12px;text-align:center"><span style="background:{{ $k['rata_nilai'] >= 80 ? '#D1FAE5' : ($k['rata_nilai'] >= 70 ? '#FEF3C7' : '#FEE2E2') }};color:{{ $k['rata_nilai'] >= 80 ? '#065F46' : ($k['rata_nilai'] >= 70 ? '#92400E' : 'var(--bad)') }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $k['rata_nilai'] }}</span></td>
                                     <td style="padding:8px 12px;text-align:center">{{ $k['persen_hadir'] }}%</td>
-                                    <td style="padding:8px 12px;text-align:center"><span style="background:{{ $k['partisipasi_ortu'] >= 70 ? '#D1FAE5' : ($k['partisipasi_ortu'] >= 40 ? '#FEF3C7' : '#FEE2E2') }};color:{{ $k['partisipasi_ortu'] >= 70 ? '#065F46' : ($k['partisipasi_ortu'] >= 40 ? '#92400E' : '#991B1B') }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $k['partisipasi_ortu'] }}%</span></td>
+                                    <td style="padding:8px 12px;text-align:center"><span style="background:{{ $k['partisipasi_ortu'] >= 70 ? '#D1FAE5' : ($k['partisipasi_ortu'] >= 40 ? '#FEF3C7' : '#FEE2E2') }};color:{{ $k['partisipasi_ortu'] >= 70 ? '#065F46' : ($k['partisipasi_ortu'] >= 40 ? '#92400E' : 'var(--bad)') }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $k['partisipasi_ortu'] }}%</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         type: 'doughnut',
         data: {
             labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
-            datasets: [{ data: [{{ $distribusiPredikat['A'] }}, {{ $distribusiPredikat['B'] }}, {{ $distribusiPredikat['C'] }}, {{ $distribusiPredikat['D'] }}], backgroundColor: ['#059669', '#1F3864', '#B8860B', '#DC2626'], borderWidth: 2, borderColor: '#fff' }]
+            datasets: [{ data: [{{ $distribusiPredikat['A'] }}, {{ $distribusiPredikat['B'] }}, {{ $distribusiPredikat['C'] }}, {{ $distribusiPredikat['D'] }}], backgroundColor: ['#059669', '#1F3864', '#B8860B', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()], borderWidth: 2, borderColor: '#fff' }]
         },
         options: { responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } } }
     });

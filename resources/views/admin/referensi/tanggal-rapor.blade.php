@@ -14,27 +14,27 @@
             <form action="{{ route('admin.referensi.tanggal-rapor.store') }}" method="POST" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ old('tahun_ajaran') }}" placeholder="2025/2026" maxlength="20" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-tanggal-rapor-tahun-ajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Ajaran</label>
+                    <input id="fld-referensi-tanggal-rapor-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ old('tahun_ajaran') }}" placeholder="2025/2026" maxlength="20" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
-                    <select name="semester" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-tanggal-rapor-semester" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
+                    <select id="fld-referensi-tanggal-rapor-semester" name="semester" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="ganjil" {{ old('semester') === 'ganjil' ? 'selected' : '' }}>Ganjil</option>
                         <option value="genap" {{ old('semester') === 'genap' ? 'selected' : '' }}>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Pembagian</label>
-                    <input type="date" name="tanggal" value="{{ old('tanggal') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-tanggal-rapor-tanggal" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Pembagian</label>
+                    <input id="fld-referensi-tanggal-rapor-tanggal" type="date" name="tanggal" value="{{ old('tanggal') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tempat</label>
-                    <input type="text" name="tempat" value="{{ old('tempat') }}" placeholder="Aula sekolah" maxlength="255" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-tanggal-rapor-tempat" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tempat</label>
+                    <input id="fld-referensi-tanggal-rapor-tempat" type="text" name="tempat" value="{{ old('tempat') }}" placeholder="Aula sekolah" maxlength="255" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="grid-column:1/-1">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Keterangan</label>
-                    <input type="text" name="keterangan" value="{{ old('keterangan') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-tanggal-rapor-keterangan" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Keterangan</label>
+                    <input id="fld-referensi-tanggal-rapor-keterangan" type="text" name="keterangan" value="{{ old('keterangan') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="grid-column:1/-1">
                     <button type="submit" class="btn btn-sm">Simpan Tanggal Rapor</button>
@@ -73,7 +73,7 @@
                                         <form action="{{ route('admin.referensi.tanggal-rapor.destroy', $d) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus tanggal rapor ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">Hapus</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>

@@ -16,19 +16,19 @@
                 @csrf
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Dimensi</label>
-                        <input type="text" name="kode_dimensi" value="{{ old('kode_dimensi') }}" maxlength="20" required class="form-control">
+                        <label for="fld-dimensions-create-kode-dimensi" class="form-label">Kode Dimensi</label>
+                        <input id="fld-dimensions-create-kode-dimensi" type="text" name="kode_dimensi" value="{{ old('kode_dimensi') }}" maxlength="20" required class="form-control">
                         @error('kode_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Dimensi</label>
-                        <input type="text" name="nama_dimensi" value="{{ old('nama_dimensi') }}" maxlength="255" required class="form-control">
+                        <label for="fld-dimensions-create-nama-dimensi" class="form-label">Nama Dimensi</label>
+                        <input id="fld-dimensions-create-nama-dimensi" type="text" name="nama_dimensi" value="{{ old('nama_dimensi') }}" maxlength="255" required class="form-control">
                         @error('nama_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Kategori</label>
-                    <select name="kategori" required class="form-control">
+                    <label for="fld-dimensions-create-kategori" class="form-label">Kategori</label>
+                    <select id="fld-dimensions-create-kategori" name="kategori" required class="form-control">
                         @foreach(['akhlak_beragama' => 'Akhlak Beragama', 'kebinekaan_global' => 'Kebinekaan Global', 'berkebhinekaan' => 'Berkebinekaan', 'mandiri' => 'Mandiri', 'bernalar_kritis' => 'Bernalar Kritis', 'kreatif' => 'Kreatif'] as $val => $label)
                             <option value="{{ $val }}" @selected(old('kategori') === $val)>{{ $label }}</option>
                         @endforeach
@@ -36,8 +36,8 @@
                     @error('kategori')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="3" class="form-control">{{ old('deskripsi') }}</textarea>
+                    <label for="fld-dimensions-create-deskripsi" class="form-label">Deskripsi</label>
+                    <textarea id="fld-dimensions-create-deskripsi" name="deskripsi" rows="3" class="form-control">{{ old('deskripsi') }}</textarea>
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Simpan Dimensi</button>

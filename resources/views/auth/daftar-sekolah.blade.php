@@ -13,6 +13,7 @@
             --navy: #1F3864;
             --navy-light: #2B4A80;
             --gold: #B8860B;
+            --bad: #B42318;
             --bg: #F5F7FB;
             --border: #E4E7EC;
             --text-dark: #1D2939;
@@ -98,7 +99,7 @@
             margin-bottom: 6px;
         }
         .form-group label span.req {
-            color: #D92D20;
+            color: var(--bad);
         }
         .form-control {
             width: 100%;
@@ -161,8 +162,8 @@
         }
         .alert-error {
             background: #FEE9E7;
-            color: #B42318;
-            border-left: 4px solid #D92D20;
+            color: var(--bad);
+            border-left: 4px solid var(--bad);
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 13px;
@@ -345,7 +346,7 @@
             if (npsn.length !== 8 || !/^\d+$/.test(npsn)) {
                 statusEl.style.display = 'block';
                 statusEl.style.background = '#FEE9E7';
-                statusEl.style.color = '#B42318';
+                statusEl.style.color = 'var(--bad)';
                 statusEl.style.border = '1px solid #FDA29B';
                 statusEl.innerHTML = '⚠️ Masukkan 8 digit angka NPSN yang valid terlebih dahulu.';
                 npsnInput.focus();

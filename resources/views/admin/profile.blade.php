@@ -53,22 +53,22 @@
                     @csrf
                     @method('PUT')
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Password Saat Ini</label>
-                        <input type="password" name="kata_sandi_saat_ini" required
+                        <label for="fld-admin-profile-kata-sandi-saat-ini" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Password Saat Ini</label>
+                        <input id="fld-admin-profile-kata-sandi-saat-ini" type="password" name="kata_sandi_saat_ini" required
                                style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px"
                                placeholder="Masukkan password saat ini">
                         @error('kata_sandi_saat_ini')<div style="color:var(--bad);font-size:12px;margin-top:4px">{{ $message }}</div>@enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Password Baru (min. 8 karakter)</label>
-                        <input type="password" name="password" required
+                        <label for="fld-admin-profile-password" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Password Baru (min. 8 karakter)</label>
+                        <input id="fld-admin-profile-password" type="password" name="password" required
                                style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px"
                                placeholder="Password baru">
                         @error('password')<div style="color:var(--bad);font-size:12px;margin-top:4px">{{ $message }}</div>@enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Konfirmasi Password Baru</label>
-                        <input type="password" name="password_confirmation" required
+                        <label for="fld-admin-profile-password-confirmation" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Konfirmasi Password Baru</label>
+                        <input id="fld-admin-profile-password-confirmation" type="password" name="password_confirmation" required
                                style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px"
                                placeholder="Ulangi password baru">
                     </div>

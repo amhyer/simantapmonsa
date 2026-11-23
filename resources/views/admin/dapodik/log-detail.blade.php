@@ -52,7 +52,7 @@
         <div class="card-body">
             <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px">
                 @foreach($log->errors as $err)
-                    <div style="font-size:13px;color:#991B1B;padding:4px 0;border-bottom:1px solid #FECACA">• {{ $err }}</div>
+                    <div style="font-size:13px;color:var(--bad);padding:4px 0;border-bottom:1px solid #FECACA">• {{ $err }}</div>
                 @endforeach
             </div>
         </div>

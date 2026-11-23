@@ -450,12 +450,12 @@
         .stat.gold::after { background: var(--gold); }
         .stat.ok::after { background: var(--ok); }
         .stat.warn::after { background: var(--warn, #f59e0b); }
-        .stat.bad::after { background: var(--bad, #ef4444); }
+        .stat.bad::after { background: var(--bad); }
         .stat.info::after { background: #3b82f6; }
         .stat.violet::after { background: var(--violet, #8b5cf6); }
         .stat.ok .value { color: var(--ok); }
         .stat.warn .value { color: var(--warn, #d97706); }
-        .stat.bad .value { color: var(--bad, #dc2626); }
+        .stat.bad .value { color: var(--bad); }
         .stat.info .value { color: #2563eb; }
         .stat.gold .value { color: var(--gold); }
         .stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
@@ -503,7 +503,7 @@
         .btn-outline-info:hover { background: var(--navy-light); color: #fff; }
         .btn-outline-secondary { background: transparent; color: var(--muted); border-color: var(--line); }
         .btn-outline-secondary:hover { background: var(--bg); color: var(--text); }
-        .btn-outline-danger { background: #FEF3F2; color: #B42318; border-color: #FDA29B; }
+        .btn-outline-danger { background: #FEF3F2; color: var(--bad); border-color: #FDA29B; }
         .btn-outline-danger:hover { background: #FEE4E2; color: #912018; border-color: #FECDCA; }
         .header-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .text-muted { color: var(--muted) !important; }

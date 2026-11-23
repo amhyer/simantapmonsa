@@ -44,44 +44,44 @@
                         @method('PUT')
 
                         <div class="form-group">
-                            <label class="form-label">Nama Lengkap</label>
-                            <input type="text" class="form-control" value="{{ $siswa->nama_peserta_didik }}" disabled style="background:#F2F4F7">
+                            <label for="fld-profil-edit-nama-lengkap" class="form-label">Nama Lengkap</label>
+                            <input id="fld-profil-edit-nama-lengkap" type="text" class="form-control" value="{{ $siswa->nama_peserta_didik }}" disabled style="background:#F2F4F7">
                             <small style="color:#888">Data dari Dapodik, tidak dapat diubah</small>
                         </div>
 
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                             <div class="form-group">
-                                <label class="form-label">NIS</label>
-                                <input type="text" class="form-control" value="{{ $siswa->nis }}" disabled style="background:#F2F4F7">
+                                <label for="fld-profil-edit-nis" class="form-label">NIS</label>
+                                <input id="fld-profil-edit-nis" type="text" class="form-control" value="{{ $siswa->nis }}" disabled style="background:#F2F4F7">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">NISN</label>
-                                <input type="text" class="form-control" value="{{ $siswa->nisn }}" disabled style="background:#F2F4F7">
+                                <label for="fld-profil-edit-nisn" class="form-label">NISN</label>
+                                <input id="fld-profil-edit-nisn" type="text" class="form-control" value="{{ $siswa->nisn }}" disabled style="background:#F2F4F7">
                             </div>
                         </div>
 
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                             <div class="form-group">
-                                <label class="form-label">Kelas</label>
-                                <input type="text" class="form-control" value="{{ $siswa->kelas }}" disabled style="background:#F2F4F7">
+                                <label for="fld-profil-edit-kelas" class="form-label">Kelas</label>
+                                <input id="fld-profil-edit-kelas" type="text" class="form-control" value="{{ $siswa->kelas }}" disabled style="background:#F2F4F7">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Jenis Kelamin</label>
-                                <input type="text" class="form-control" value="{{ $siswa->jenis_kelamin }}" disabled style="background:#F2F4F7">
+                                <label for="fld-profil-edit-jenis-kelamin" class="form-label">Jenis Kelamin</label>
+                                <input id="fld-profil-edit-jenis-kelamin" type="text" class="form-control" value="{{ $siswa->jenis_kelamin }}" disabled style="background:#F2F4F7">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">No. HP <span style="color:#888;font-weight:400;font-size:12px">(bisa diubah)</span></label>
-                            <input type="text" name="telepon" class="form-control @error('telepon') is-invalid @enderror" value="{{ old('telepon', $siswa->telepon) }}" placeholder="08xxxxxxxxxx">
+                            <label for="fld-profil-edit-telepon" class="form-label">No. HP <span style="color:#888;font-weight:400;font-size:12px">(bisa diubah)</span></label>
+                            <input id="fld-profil-edit-telepon" type="text" name="telepon" class="form-control @error('telepon') is-invalid @enderror" value="{{ old('telepon', $siswa->telepon) }}" placeholder="08xxxxxxxxxx">
                             @error('telepon')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Alamat <span style="color:#888;font-weight:400;font-size:12px">(bisa diubah)</span></label>
-                            <textarea name="alamat" class="form-control @error('alamat') is-invalid @enderror" rows="3" placeholder="Alamat lengkap Anda">{{ old('alamat', $siswa->alamat) }}</textarea>
+                            <label for="fld-profil-edit-alamat" class="form-label">Alamat <span style="color:#888;font-weight:400;font-size:12px">(bisa diubah)</span></label>
+                            <textarea id="fld-profil-edit-alamat" name="alamat" class="form-control @error('alamat') is-invalid @enderror" rows="3" placeholder="Alamat lengkap Anda">{{ old('alamat', $siswa->alamat) }}</textarea>
                             @error('alamat')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

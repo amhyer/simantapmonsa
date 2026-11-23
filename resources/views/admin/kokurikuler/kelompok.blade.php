@@ -14,8 +14,8 @@
             <form action="{{ route('admin.kokurikuler.kelompok.store') }}" method="POST" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kegiatan</label>
-                    <select name="kegiatan_id" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kelompok-kegiatan-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kegiatan</label>
+                    <select id="fld-kokurikuler-kelompok-kegiatan-id" name="kegiatan_id" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">— Pilih kegiatan —</option>
                         @foreach($kegiatan as $k)
                             <option value="{{ $k->id }}" {{ old('kegiatan_id') == $k->id ? 'selected' : '' }}>{{ $k->nama }}</option>
@@ -23,12 +23,12 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kelompok</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Kelompok 1" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kelompok-nama" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kelompok</label>
+                    <input id="fld-kokurikuler-kelompok-nama" type="text" name="nama" value="{{ old('nama') }}" placeholder="Kelompok 1" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Keterangan</label>
-                    <input type="text" name="keterangan" value="{{ old('keterangan') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kelompok-keterangan" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Keterangan</label>
+                    <input id="fld-kokurikuler-kelompok-keterangan" type="text" name="keterangan" value="{{ old('keterangan') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="grid-column:1/-1">
                     <button type="submit" class="btn btn-sm">Tambah Kelompok</button>
@@ -65,7 +65,7 @@
                                         <form action="{{ route('admin.kokurikuler.kelompok.destroy', $k) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus kelompok ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">Hapus</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>

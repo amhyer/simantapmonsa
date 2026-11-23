@@ -56,7 +56,7 @@
         <div class="stat-change">
             <span style="color:#027A48;font-weight:600">{{ $activeTenants }} aktif</span>
             @if(($inactiveTenants ?? 0) > 0)
-                &bull; <span style="color:#B42318">{{ $inactiveTenants }} nonaktif</span>
+                &bull; <span style="color:var(--bad)">{{ $inactiveTenants }} nonaktif</span>
             @endif
             &bull; {{ number_format($totalRombel ?? 0) }} rombel
         </div>
@@ -115,7 +115,7 @@
                 </div>
                 <div style="padding:12px 14px;border-radius:10px;background:#F8FAFC;border:1px solid #E2E8F0">
                     <div style="font-size:11.5px;color:#64748B;margin-bottom:4px">Status Langganan Sekolah</div>
-                    <div style="font-weight:700;font-size:13.5px;color:{{ ($expiredTenants ?? 0) > 0 ? '#B42318' : '#027A48' }}">
+                    <div style="font-weight:700;font-size:13.5px;color:{{ ($expiredTenants ?? 0) > 0 ? 'var(--bad)' : '#027A48' }}">
                         {{ ($expiredTenants ?? 0) > 0 ? $expiredTenants . ' Sekolah Kedaluwarsa' : 'Semua Langganan Aktif' }}
                     </div>
                 </div>
@@ -228,7 +228,7 @@
                                         {{ $item['total_siswa'] }} <span style="font-weight:400;color:var(--muted)">/ {{ $kuotaSiswa }}</span>
                                     </div>
                                     <div style="width:72px;background:#E4E7EC;border-radius:4px;height:5px;margin:4px auto 0;overflow:hidden">
-                                        <div style="background:{{ $persenKuota > 90 ? '#EF4444' : ($persenKuota > 75 ? '#F59E0B' : '#4338CA') }};width:{{ min(100, $persenKuota) }}%;height:100%"></div>
+                                        <div style="background:{{ $persenKuota > 90 ? 'var(--bad)' : ($persenKuota > 75 ? '#F59E0B' : '#4338CA') }};width:{{ min(100, $persenKuota) }}%;height:100%"></div>
                                     </div>
                                 </td>
                                 <td style="padding:10px 14px;text-align:center">

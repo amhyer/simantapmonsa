@@ -21,20 +21,20 @@
 </div>
 
 <div style="margin-bottom:18px">
-    <label class="form-label" style="margin-bottom:10px">
+    <div id="options-label-{{ $formKey }}" class="form-label" style="margin-bottom:10px">
         Pilihan Jawaban & Kunci Jawaban <span style="color:var(--bad)">*</span>
-    </label>
+    </div>
     
-    <div style="display:flex;flex-direction:column;gap:10px">
+    <div role="group" aria-labelledby="options-label-{{ $formKey }}" style="display:flex;flex-direction:column;gap:10px">
         @foreach(['A','B','C','D'] as $opt)
             @php
                 $optVal = $sameForm ? old('options.'.$opt, $question?->options[$opt] ?? '') : ($question?->options[$opt] ?? '');
                 $isCorrect = $currentCorrect === $opt;
             @endphp
             <div style="display:flex;align-items:center;gap:10px">
-                <div style="width:36px;height:36px;border-radius:8px;background:{{ $isCorrect ? 'var(--ok)' : '#EEF2F9' }};color:{{ $isCorrect ? '#fff' : 'var(--navy)' }};font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <label for="option-{{ $formKey }}-{{ $opt }}" style="width:36px;height:36px;border-radius:8px;background:{{ $isCorrect ? 'var(--ok)' : '#EEF2F9' }};color:{{ $isCorrect ? '#fff' : 'var(--navy)' }};font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer">
                     {{ $opt }}
-                </div>
+                </label>
                 <input id="option-{{ $formKey }}-{{ $opt }}" 
                        type="text" 
                        name="options[{{ $opt }}]" 

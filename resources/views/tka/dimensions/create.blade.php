@@ -19,8 +19,8 @@
             <form action="{{ route('tka.dimensions.store') }}" method="POST" style="display:grid;gap:12px;max-width:640px">
                 @csrf
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester_id" required class="form-control">
+                    <label for="fld-dimensions-create-semester-id" class="form-label">Semester</label>
+                    <select id="fld-dimensions-create-semester-id" name="semester_id" required class="form-control">
                         <option value="">— Pilih —</option>
                         @foreach($semesters as $s)
                             <option value="{{ $s->id }}" @selected(old('semester_id') == $s->id)>{{ $s->label }}</option>
@@ -30,41 +30,41 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Dimensi</label>
-                        <input type="text" name="kode_dimensi" value="{{ old('kode_dimensi') }}" maxlength="50" required class="form-control">
+                        <label for="fld-dimensions-create-kode-dimensi-2" class="form-label">Kode Dimensi</label>
+                        <input id="fld-dimensions-create-kode-dimensi-2" type="text" name="kode_dimensi" value="{{ old('kode_dimensi') }}" maxlength="50" required class="form-control">
                         @error('kode_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Dimensi</label>
-                        <input type="text" name="nama_dimensi" value="{{ old('nama_dimensi') }}" maxlength="255" required class="form-control">
+                        <label for="fld-dimensions-create-nama-dimensi-2" class="form-label">Nama Dimensi</label>
+                        <input id="fld-dimensions-create-nama-dimensi-2" type="text" name="nama_dimensi" value="{{ old('nama_dimensi') }}" maxlength="255" required class="form-control">
                         @error('nama_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Kategori</label>
-                        <select name="kategori" required class="form-control">
+                        <label for="fld-dimensions-create-kategori-2" class="form-label">Kategori</label>
+                        <select id="fld-dimensions-create-kategori-2" name="kategori" required class="form-control">
                             @foreach(['religius' => 'Religius', 'nasionalis' => 'Nasionalis', 'mandiri' => 'Mandiri', 'gotong_royong' => 'Gotong Royong', 'integritas' => 'Integritas', 'kreatif' => 'Kreatif', 'berdaya_saing' => 'Berdaya Saing'] as $val => $label)
                                 <option value="{{ $val }}" @selected(old('kategori') === $val)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Bobot (0-10)</label>
-                        <input type="number" name="bobot" value="{{ old('bobot', 5) }}" min="0" max="10" step="0.1" required class="form-control">
+                        <label for="fld-dimensions-create-bobot" class="form-label">Bobot (0-10)</label>
+                        <input id="fld-dimensions-create-bobot" type="number" name="bobot" value="{{ old('bobot', 5) }}" min="0" max="10" step="0.1" required class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Threshold Siap (1-4)</label>
-                        <input type="number" name="threshold_siap" value="{{ old('threshold_siap', 3) }}" min="1" max="4" step="0.1" required class="form-control">
+                        <label for="fld-dimensions-create-threshold-siap" class="form-label">Threshold Siap (1-4)</label>
+                        <input id="fld-dimensions-create-threshold-siap" type="number" name="threshold_siap" value="{{ old('threshold_siap', 3) }}" min="1" max="4" step="0.1" required class="form-control">
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="2" class="form-control">{{ old('deskripsi') }}</textarea>
+                    <label for="fld-dimensions-create-deskripsi-2" class="form-label">Deskripsi</label>
+                    <textarea id="fld-dimensions-create-deskripsi-2" name="deskripsi" rows="2" class="form-control">{{ old('deskripsi') }}</textarea>
                 </div>
                 <div>
-                    <label class="form-label">Rubrik Penilaian (minimal 1 baris)</label>
-                    <div id="rubrikRows" style="display:grid;gap:8px">
+                    <div id="lbl-rubrik-create" class="form-label">Rubrik Penilaian (minimal 1 baris)</div>
+                    <div id="rubrikRows" role="group" aria-labelledby="lbl-rubrik-create" style="display:grid;gap:8px">
                         <div class="rubrik-row" style="display:grid;grid-template-columns:1fr 2fr auto;gap:8px;align-items:end">
                             <div><input type="text" name="rubrik_penilaian[0][level]" placeholder="Level, mis. 4" required class="form-control"></div>
                             <div><input type="text" name="rubrik_penilaian[0][deskripsi]" placeholder="Deskripsi capaian" required class="form-control"></div>
