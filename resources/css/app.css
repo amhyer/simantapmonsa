@@ -45,6 +45,75 @@ html { scroll-behavior: smooth; }
     border-radius: 6px;
 }
 
+/* --- Skip link aksesibilitas keyboard --- */
+.skip-link {
+    position: fixed;
+    top: -100px;
+    left: 12px;
+    z-index: 100000;
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+    border: 2px solid var(--gold);
+    transition: top .15s ease;
+}
+.skip-link:focus {
+    top: 12px;
+}
+
+/* --- Modal konfirmasi seragam SIMANTAP --- */
+.simantap-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(2px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.simantap-modal-backdrop[hidden] { display: none !important; }
+.simantap-modal {
+    background: #fff;
+    width: 100%;
+    max-width: 440px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, .25);
+    overflow: hidden;
+}
+.simantap-modal-head {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+.simantap-modal-body {
+    padding: 4px 20px 18px;
+    font-size: 14px;
+    color: #344054;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+.simantap-modal-foot {
+    padding: 12px 20px;
+    background: #FAFBFD;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.simantap-modal-foot .btn { min-height: 38px; padding: 8px 16px; font-size: 13px; }
+
 /* --- Reveal on scroll --- */
 .js .reveal {
     opacity: 0;
@@ -363,7 +432,7 @@ table.filtering tbody tr:not(.table-empty) { animation: rowIn .18s ease; }
         bottom: 0;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 64px;
         background: #FFFFFF;
         border-top: 1px solid var(--line, #E2E8F0);
         box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
@@ -380,7 +449,7 @@ table.filtering tbody tr:not(.table-empty) { animation: rowIn .18s ease; }
         justify-content: center;
         text-decoration: none;
         color: #64748B;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 500;
         padding: 6px 0;
         transition: color .15s ease;

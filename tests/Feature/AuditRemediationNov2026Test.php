@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Aktivitas;
+use App\Models\MataPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\PresensiMesinSyncLog;
 use App\Models\SekolahSettings;
@@ -210,11 +211,11 @@ class AuditRemediationNov2026Test extends TestCase
         $guruA = User::factory()->guru()->create(['tenant_id' => $a->id]);
         $adminB = User::factory()->admin()->create(['tenant_id' => $b->id]);
 
-        $semester = Semester::create([
+        $semester = TenantContext::run($a->id, fn () => Semester::create([
             'semester_id' => '20261',
             'tahun_ajaran' => '2026/2027',
             'nama_semester' => 'ganjil',
-        ]);
+        ]));
 
         TenantContext::run($a->id, fn () => Siswa::create([
             'guru_id' => $guruA->id,
@@ -227,10 +228,10 @@ class AuditRemediationNov2026Test extends TestCase
             'aktif' => true,
         ]));
 
+        // Admin sekolah lain (B) langsung ditolak 404 oleh TenantScope pada model Semester.
         $this->actingAs($adminB)
             ->delete(route('admin.semester.destroy', $semester))
-            ->assertRedirect(route('admin.semester.index'))
-            ->assertSessionHas('error');
+            ->assertNotFound();
 
         $this->assertDatabaseHas('semesters', ['id' => $semester->id]);
     }
@@ -469,7 +470,7 @@ class AuditRemediationNov2026Test extends TestCase
 
         $this->assertStringContainsString('toast.textContent =', $appLayout);
         $this->assertStringNotContainsString('toast.innerHTML =', $appLayout);
-        $this->assertStringContainsString('toast.textContent =', $adminLayout);
+        $this->assertStringContainsString("@extends('layouts.app')", $adminLayout);
         $this->assertStringNotContainsString('toast.innerHTML =', $adminLayout);
 
         $log = PresensiMesinSyncLog::create([
@@ -583,5 +584,71 @@ class AuditRemediationNov2026Test extends TestCase
             ->assertOk()
             ->assertJson(['success' => true])
             ->assertJsonMissingPath('version');
+    }
+
+    public function test_isolasi_mapel_semester_dan_profil_mandiri_semua_peran(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $a = $this->buatSekolah('40388001');
+        $b = $this->buatSekolah('40388002');
+
+        $adminA = User::factory()->admin()->create(['tenant_id' => $a->id]);
+        $adminB = User::factory()->admin()->create(['tenant_id' => $b->id]);
+
+        // Kedua sekolah dapat memiliki nama mapel & kode semester sama tanpa bentrok lintas tenant
+        $mapelA = TenantContext::run($a->id, fn () => MataPelajaran::create([
+            'nama' => 'Matematika', 'kode' => 'MTK', 'jenjang' => 'SD', 'aktif' => true,
+        ]));
+        $mapelB = TenantContext::run($b->id, fn () => MataPelajaran::create([
+            'nama' => 'Matematika', 'kode' => 'MTK', 'jenjang' => 'SD', 'aktif' => true,
+        ]));
+
+        $semA = TenantContext::run($a->id, fn () => Semester::create([
+            'semester_id' => '20261', 'tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil',
+        ]));
+        $semB = TenantContext::run($b->id, fn () => Semester::create([
+            'semester_id' => '20261', 'tahun_ajaran' => '2026/2027', 'nama_semester' => 'ganjil',
+        ]));
+        $this->assertNotSame($semA->id, $semB->id);
+
+        // Admin B memanggil destroySelected dengan ID mapel milik Sekolah A + input non-numerik -> mapel A tetap utuh
+        $this->actingAs($adminB)->delete(route('admin.mapel.destroy-selected'), [
+            'ids' => 'abc,'.$mapelA->id,
+        ])->assertRedirect(route('admin.mapel.index'));
+        $this->assertDatabaseHas('mata_pelajaran', ['id' => $mapelA->id]);
+
+        // Admin B memanggil destroyAll -> hanya mapel B terhapus, mapel A tetap utuh
+        $this->actingAs($adminB)->delete(route('admin.mapel.destroy-all'), [
+            'konfirmasi' => 'HAPUS SEMUA',
+        ])->assertRedirect(route('admin.mapel.index'));
+        $this->assertDatabaseMissing('mata_pelajaran', ['id' => $mapelB->id]);
+        $this->assertDatabaseHas('mata_pelajaran', ['id' => $mapelA->id]);
+
+        // Semua peran non-admin/non-siswa (Guru, Ortu, Kepsek, Pengawas, Tendik) dapat membuka & mengubah sandi mandiri
+        foreach (['guru', 'ortu', 'kepsek', 'pengawas', 'tendik'] as $role) {
+            $user = User::factory()->create([
+                'tenant_id' => $a->id,
+                'peran' => $role,
+                'kata_sandi' => Hash::make('SandiLama123'),
+                'aktif' => true,
+                'force_password_change' => false,
+            ]);
+
+            $this->actingAs($user)
+                ->get(route('account.profile.show'))
+                ->assertOk()
+                ->assertSee(labelPeran($role));
+
+            $this->actingAs($user)
+                ->put(route('account.profile.password'), [
+                    'kata_sandi_saat_ini' => 'SandiLama123',
+                    'password' => 'SandiBaru456',
+                    'password_confirmation' => 'SandiBaru456',
+                ])
+                ->assertRedirect()
+                ->assertSessionHas('success');
+
+            $this->assertTrue(Hash::check('SandiBaru456', (string) $user->fresh()->kata_sandi));
+        }
     }
 }

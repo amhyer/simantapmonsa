@@ -149,12 +149,7 @@ class SchoolDataResetService
             // 4. Bersihkan seluruh tabel data operasional sekolah
             $cleanedTables = [];
             foreach ($tables as $lowerName => $actualTable) {
-                if (in_array($lowerName, self::PROTECTED_TABLES, true)) {
-                    continue;
-                }
-
-                // Pada mode multi-sekolah, tabel semesters dipakai lintas sekolah.
-                if ($lowerName === 'semesters' && $isMultiSchool) {
+                if (in_array($lowerName, self::PROTECTED_TABLES, true) || $lowerName === 'semesters') {
                     continue;
                 }
 
@@ -204,6 +199,18 @@ class SchoolDataResetService
                 } else {
                     DB::table($actualTable)->delete();
                     $cleanedTables[] = $actualTable;
+                }
+            }
+
+            // Hapus `semesters` paling akhir setelah seluruh tabel anak (`siswa`, `ptk`, `rombel`, `tryout_*`, `tka_*`)
+            // dibersihkan agar tidak melanggar FK constraint (terutama pada transaksi SQLite).
+            if (isset($tables['semesters'])) {
+                if ($isMultiSchool && Schema::hasColumn('semesters', 'tenant_id')) {
+                    DB::table('semesters')->where('tenant_id', $tenantId)->delete();
+                    $cleanedTables[] = $tables['semesters'];
+                } elseif (! $isMultiSchool) {
+                    DB::table('semesters')->delete();
+                    $cleanedTables[] = $tables['semesters'];
                 }
             }
 

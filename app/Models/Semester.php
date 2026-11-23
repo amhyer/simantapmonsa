@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class Semester extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'semesters';
 
-    protected $fillable = ['semester_id', 'tahun_ajaran', 'nama_semester'];
+    protected $fillable = ['tenant_id', 'semester_id', 'tahun_ajaran', 'nama_semester'];
 
     public function siswa()
     {

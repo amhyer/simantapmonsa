@@ -431,7 +431,11 @@ window.konfirmasiKetik = function (form, frasa, keterangan) {
     }
 
     if (String(jawab).trim().toUpperCase() !== frasa) {
-        window.alert('Teks konfirmasi tidak cocok. Tidak ada data yang dihapus.');
+        if (typeof window.showToast === 'function') {
+            window.showToast('Teks konfirmasi tidak cocok. Tidak ada data yang dihapus.', 'warning');
+        } else {
+            window.alert('Teks konfirmasi tidak cocok. Tidak ada data yang dihapus.');
+        }
         return false;
     }
 
@@ -448,3 +452,43 @@ window.konfirmasiKetik = function (form, frasa, keterangan) {
 
     return true;
 };
+
+/*
+ * Peningkatan progresif modal konfirmasi seragam:
+ * Mengubah semua form `onsubmit="return confirm('...')"` atau `data-confirm="..."`
+ * agar menggunakan dialog modal aksesibel SIMANTAP alih-alih `confirm()` bawaan browser.
+ */
+(function initSimantapConfirmForms() {
+    const upgradeForms = () => {
+        document.querySelectorAll('form[onsubmit]').forEach((form) => {
+            const raw = (form.getAttribute('onsubmit') || '').trim();
+            const match = raw.match(/^return\s+confirm\(\s*(['"])([\s\S]*)\1\s*\)\s*;?$/);
+            if (!match) return;
+            const msg = match[2].replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/\\"/g, '"');
+            form.dataset.confirm = msg;
+            form.removeAttribute('onsubmit');
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', upgradeForms);
+    } else {
+        upgradeForms();
+    }
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.dataset.confirm || form.dataset.confirmAccepted === '1') {
+            return;
+        }
+        if (typeof window.simantapConfirm !== 'function') {
+            return;
+        }
+        event.preventDefault();
+        window.simantapConfirm(form.dataset.confirm).then((ok) => {
+            if (!ok) return;
+            form.dataset.confirmAccepted = '1';
+            form.requestSubmit ? form.requestSubmit() : form.submit();
+        });
+    });
+})();

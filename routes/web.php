@@ -183,6 +183,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/force-password-change', [ForcePasswordChangeController::class, 'update'])->middleware('throttle:10,1')->name('force-password-change.update');
 });
 
+// Profil & Ubah Kata Sandi Mandiri (semua peran terautentikasi)
+Route::middleware(['auth', 'force.password.change'])->prefix('akun')->name('account.')->group(function () {
+    Route::get('/profil', [\App\Http\Controllers\AccountProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profil', [\App\Http\Controllers\AccountProfileController::class, 'updateProfile'])->middleware('throttle:10,1')->name('profile.update');
+    Route::put('/profil/password', [\App\Http\Controllers\AccountProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
+});
+
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
 Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', 'school.context', 'menu.telemetry'])
     ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {

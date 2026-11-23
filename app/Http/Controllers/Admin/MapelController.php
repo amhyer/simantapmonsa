@@ -88,11 +88,15 @@ class MapelController extends Controller
 
     public function edit(MataPelajaran $mapel)
     {
+        abort_if($mapel->jenjang !== $this->getJenjangSekolah(), 403);
+
         return view('admin.mapel.edit', compact('mapel'));
     }
 
     public function update(Request $request, MataPelajaran $mapel)
     {
+        abort_if($mapel->jenjang !== $this->getJenjangSekolah(), 403);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:150',
             'kode' => 'nullable|string|max:20',
@@ -126,6 +130,8 @@ class MapelController extends Controller
 
     public function destroy(MataPelajaran $mapel)
     {
+        abort_if($mapel->jenjang !== $this->getJenjangSekolah(), 403);
+
         $nama = $mapel->nama;
         $mapel->delete();
 
@@ -158,18 +164,24 @@ class MapelController extends Controller
 
     public function destroySelected(Request $request)
     {
-        $ids = $request->input('ids', '');
-        $idArray = array_filter(explode(',', $ids));
+        $jenjangSekolah = $this->getJenjangSekolah();
+        $rawIds = $request->input('ids', '');
+        $idArray = array_values(array_unique(array_filter(
+            array_map('intval', is_array($rawIds) ? $rawIds : explode(',', (string) $rawIds)),
+            fn (int $id) => $id > 0
+        )));
 
         if (empty($idArray)) {
             return redirect()->route('admin.mapel.index')
                 ->with('error', 'Tidak ada mata pelajaran yang dipilih.');
         }
 
-        MataPelajaran::whereIn('id', $idArray)->delete();
+        $deleted = MataPelajaran::where('jenjang', $jenjangSekolah)
+            ->whereIn('id', $idArray)
+            ->delete();
 
         return redirect()->route('admin.mapel.index')
-            ->with('success', count($idArray).' mata pelajaran berhasil dihapus.');
+            ->with('success', $deleted.' mata pelajaran berhasil dihapus.');
     }
 
     public function importDapodik()

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name', 'SIMANTAP_MONSA'))</title>
+    <title>@yield('title', config('app.name', 'SIMANTAP'))</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
@@ -48,23 +48,24 @@
             .topbar-title h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .topbar-academic-pill { display: none !important; }
             .topbar-right { gap: 6px; flex-shrink: 0; }
-            .header-actions .btn { padding: 5px 8px; font-size: 11.5px; }
-            .page-content { padding-bottom: 84px !important; }
-            #toTop { bottom: 76px !important; right: 16px !important; }
+            .header-actions .btn { padding: 6px 10px; font-size: 12.5px; }
+            .page-content { padding-bottom: 88px !important; }
+            #toTop { bottom: 80px !important; right: 16px !important; }
         }
     </style>
     @stack('styles')
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-                <img src="{{ asset('images/logo-128.png') }}" alt="Logo SIMANTAP_MONSA" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid #B8860B;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+                <img src="{{ asset('images/logo-128.png') }}" alt="Logo {{ config('app.name', 'SIMANTAP') }}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;border:1.5px solid #B8860B;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
                 <div>
-                    <div class="brand-text">SIMANTAP_MONSA</div>
-                    <div class="brand-sub" title="{{ $layoutNamaSekolah ?? 'UPTD SDN Unggulan Mongisidi 1' }}">{{ $layoutNamaSekolah ?? 'UPTD SDN Unggulan Mongisidi 1' }}</div>
+                    <div class="brand-text">{{ config('app.name', 'SIMANTAP') }}</div>
+                    <div class="brand-sub" title="{{ $layoutNamaSekolah ?: 'Satuan Pendidikan' }}">{{ $layoutNamaSekolah ?: 'Satuan Pendidikan' }}</div>
                 </div>
             </a>
         </div>
@@ -83,7 +84,7 @@
             @endif
             <div class="user-info">
                 <div class="user-name">{{ $currentUser ? $currentUser->nama_lengkap : 'Guest' }}</div>
-                <div class="user-role">{{ $currentUser ? $currentUser->peran : '' }}</div>
+                <div class="user-role">{{ $currentUser ? labelPeran($currentUser->peran) : '' }}</div>
             </div>
         </div>
         
@@ -217,6 +218,7 @@
                             <a href="{{ route('superadmin.dashboard') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-tachometer-alt" style="width:16px;color:#4338CA"></i> Dasbor Multi-Sekolah</a>
                             <a href="{{ route('superadmin.tenants.index') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-school" style="width:16px;color:#4338CA"></i> Katalog Sekolah</a>
                             <a href="{{ route('superadmin.users.index') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-users" style="width:16px;color:#4338CA"></i> Semua Pengguna</a>
+                            <a href="{{ route('account.profile.show') }}" style="display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user-cog" style="width:16px;color:#4338CA"></i> Profil &amp; Ubah Sandi</a>
                         @elseif($currentUser && $currentUser->peran === 'admin')
                             <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
                             <a href="{{ route('admin.profile') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user-shield" style="width:16px"></i> Profil Admin</a>
@@ -225,6 +227,9 @@
                             <a href="{{ route('siswa.profil.show') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user" style="width:16px"></i> Profil Saya</a>
                         @else
                             <a href="{{ route('home') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-home" style="width:16px"></i> Beranda</a>
+                            @if($currentUser)
+                                <a href="{{ route('account.profile.show') }}" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:var(--text);text-decoration:none"><i class="fas fa-user-cog" style="width:16px"></i> Profil &amp; Ubah Sandi</a>
+                            @endif
                         @endif
                         <div style="border-top:1px solid var(--line)"></div>
                         <form method="POST" action="{{ route('logout') }}">
@@ -235,8 +240,9 @@
                 </div>
             </div>
         </header>
+        @yield('after_topbar')
         
-        <main class="page-content">
+        <main class="page-content" id="main-content" tabindex="-1">
             @if(session('warning'))
                 <div class="alert alert-warning" role="alert">{{ session('warning') }}</div>
             @endif
@@ -264,6 +270,20 @@
         </main>
     </div>
     
+    <div class="simantap-modal-backdrop" id="simantapConfirmModal" role="dialog" aria-modal="true" aria-labelledby="simantapConfirmTitle" hidden>
+        <div class="simantap-modal">
+            <div class="simantap-modal-head">
+                <i class="fas fa-exclamation-triangle" style="color:var(--warn)" aria-hidden="true"></i>
+                <span id="simantapConfirmTitle">Konfirmasi Tindakan</span>
+            </div>
+            <div class="simantap-modal-body" id="simantapConfirmMessage"></div>
+            <div class="simantap-modal-foot">
+                <button type="button" class="btn btn-secondary" id="simantapConfirmCancel">Batal</button>
+                <button type="button" class="btn btn-danger" id="simantapConfirmOk">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
     
     <script>
@@ -298,6 +318,38 @@
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
+        window.simantapConfirm = function(message, options = {}) {
+            const backdrop = document.getElementById('simantapConfirmModal');
+            if (!backdrop) return Promise.resolve(window.confirm(message));
+            const titleEl = document.getElementById('simantapConfirmTitle');
+            const msgEl = document.getElementById('simantapConfirmMessage');
+            const okBtn = document.getElementById('simantapConfirmOk');
+            const cancelBtn = document.getElementById('simantapConfirmCancel');
+            titleEl.textContent = options.title || 'Konfirmasi Tindakan';
+            msgEl.textContent = String(message || 'Lanjutkan tindakan ini?');
+            okBtn.textContent = options.confirmText || 'Ya, Lanjutkan';
+            okBtn.className = options.danger === false ? 'btn btn-primary' : 'btn btn-danger';
+            backdrop.hidden = false;
+            okBtn.focus();
+            return new Promise((resolve) => {
+                const cleanup = (result) => {
+                    backdrop.hidden = true;
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    backdrop.removeEventListener('click', onBackdrop);
+                    document.removeEventListener('keydown', onKey);
+                    resolve(result);
+                };
+                const onOk = () => cleanup(true);
+                const onCancel = () => cleanup(false);
+                const onBackdrop = (ev) => { if (ev.target === backdrop) cleanup(false); };
+                const onKey = (ev) => { if (ev.key === 'Escape') cleanup(false); };
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                backdrop.addEventListener('click', onBackdrop);
+                document.addEventListener('keydown', onKey);
+            });
+        };
     </script>
     <x-command-palette />
     <x-mobile-bottom-nav />

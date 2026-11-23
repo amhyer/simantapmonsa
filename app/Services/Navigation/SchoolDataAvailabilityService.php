@@ -416,8 +416,7 @@ class SchoolDataAvailabilityService
         $hasCoreDapodikData = $hasSekolah || $hasSiswa || $hasPtk || $hasRombel || $hasMapelRows || $hasJadwal || $hasSyncLog;
 
         $hasSemester = self::hasTable($tables, 'semesters')
-            && DB::table('semesters')->exists()
-            && (! $isMultiSchool || $hasCoreDapodikData);
+            && self::scopedQuery('semesters', $tenantId, $isMultiSchool)->exists();
 
         $hasNilaiErapor = self::hasTable($tables, 'nilai_erapor')
             && self::scopedQuery('nilai_erapor', $tenantId, $isMultiSchool)->exists();

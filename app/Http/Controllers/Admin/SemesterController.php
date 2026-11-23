@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Semester;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SemesterController extends Controller
 {
@@ -18,8 +20,12 @@ class SemesterController extends Controller
 
     public function store(Request $request)
     {
+        $semesterRule = Rule::unique('semesters', 'semester_id')->where(fn ($q) => TenantContext::check()
+            ? $q->where('tenant_id', TenantContext::id())
+            : $q->whereNull('tenant_id'));
+
         $request->validate([
-            'semester_id' => 'required|string|unique:semesters,semester_id',
+            'semester_id' => ['required', 'string', $semesterRule],
             'tahun_ajaran' => 'required|string|max:20',
             'nama_semester' => 'required|in:ganjil,genap',
         ]);

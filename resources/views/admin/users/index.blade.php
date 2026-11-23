@@ -728,13 +728,14 @@
             btnYa.disabled = false;
             btnBatal.disabled = false;
             btnYa.innerHTML = '<i class="fas fa-check"></i> Ya, Buat!';
-            alert('Gagal generate pengguna: ' + err.message);
+            showToast('Gagal generate pengguna: ' + err.message, 'error');
         });
     }
 
     // Reset Password Instan
-    function resetPassPengguna(id, nama) {
-        if (!confirm('Reset password untuk pengguna ' + nama + '?')) return;
+    async function resetPassPengguna(id, nama) {
+        const ok = await window.simantapConfirm('Reset password untuk pengguna ' + nama + '?', { title: 'Reset Kata Sandi', confirmText: 'Ya, Reset' });
+        if (!ok) return;
         fetch('/admin/users/' + id + '/reset-password', {
             method: 'POST',
             headers: {
@@ -746,25 +747,26 @@
                 document.getElementById('reset_pass_text').textContent = d.message;
                 document.getElementById('reset_pass_code').textContent = d.password_baru;
                 document.getElementById('modal_reset_pass').style.display = 'flex';
-                if (typeof showToast === 'function') showToast('Password Baru : ' + d.password_baru, 'success');
+                showToast('Password Baru : ' + d.password_baru, 'success');
             } else {
-                alert(d.message || 'Gagal mereset password.');
+                showToast(d.message || 'Gagal mereset password.', 'error');
             }
-        }).catch(err => alert('Terjadi kesalahan: ' + err.message));
+        }).catch(err => showToast('Terjadi kesalahan: ' + err.message, 'error'));
     }
 
     function salinPasswordBaru() {
         const code = document.getElementById('reset_pass_code').textContent;
         if (navigator.clipboard && code) {
             navigator.clipboard.writeText(code);
-            if (typeof showToast === 'function') showToast('Password disalin: ' + code, 'success');
+            showToast('Password disalin: ' + code, 'success');
         }
     }
 
     // Toggle Aktif / Non-Aktifkan (Blokir)
-    function toggleAktifPengguna(id, nama, isAktif) {
+    async function toggleAktifPengguna(id, nama, isAktif) {
         const aksi = isAktif ? 'Non-aktifkan (Blokir)' : 'Aktifkan kembali';
-        if (!confirm(aksi + ' pengguna ' + nama + '?')) return;
+        const ok = await window.simantapConfirm(aksi + ' pengguna ' + nama + '?', { title: 'Ubah Status Akun', confirmText: 'Ya, Lanjutkan', danger: isAktif });
+        if (!ok) return;
         fetch('/admin/users/' + id + '/toggle-aktif', {
             method: 'POST',
             headers: {
@@ -772,9 +774,9 @@
                 'Accept': 'application/json'
             }
         }).then(r => r.json()).then(d => {
-            alert(d.message || 'Status diperbarui.');
-            if (d.success) location.reload();
-        }).catch(err => alert('Terjadi kesalahan: ' + err.message));
+            showToast(d.message || 'Status diperbarui.', d.success ? 'success' : 'error');
+            if (d.success) setTimeout(() => location.reload(), 600);
+        }).catch(err => showToast('Terjadi kesalahan: ' + err.message, 'error'));
     }
 
     // Copy, Export Excel (CSV), dan Print
@@ -844,22 +846,25 @@
         window.print();
     }
 
-    function hapusUser(id, nama) {
-        if (confirm('Apakah yakin ingin menghapus data pengguna ' + nama + '?')) {
+    async function hapusUser(id, nama) {
+        const ok = await window.simantapConfirm('Apakah yakin ingin menghapus data pengguna ' + nama + '?', { title: 'Hapus Pengguna', confirmText: 'Ya, Hapus' });
+        if (ok) {
             fetch('/admin/users/' + id, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 }
-            }).then(r => { if (r.ok) location.reload(); });
+            }).then(r => { if (r.ok) location.reload(); else showToast('Gagal menghapus pengguna.', 'error'); })
+              .catch(err => showToast('Terjadi kesalahan: ' + err.message, 'error'));
         }
     }
 
-    function hapusSemua(peran, jumlah) {
+    async function hapusSemua(peran, jumlah) {
         var labels = { guru: 'Guru', siswa: 'Siswa', ortu: 'Orang Tua' };
         var label = labels[peran] || peran;
-        if (!confirm('Hapus SEMUA akun ' + label + ' (' + jumlah + ' akun)?\n\nTindakan ini tidak dapat dibatalkan.')) return;
+        const ok = await window.simantapConfirm('Hapus SEMUA akun ' + label + ' (' + jumlah + ' akun)?\n\nTindakan ini tidak dapat dibatalkan.', { title: 'Hapus Massal Akun', confirmText: 'Lanjutkan' });
+        if (!ok) return;
 
         var frasa = 'HAPUS ' + String(peran).toUpperCase();
         var ketikan = prompt('Ketik persis: ' + frasa + '\nuntuk menghapus ' + jumlah + ' akun ' + label + '.');
@@ -867,7 +872,7 @@
         if (ketikan === null) return;
 
         if (String(ketikan).trim().toUpperCase() !== frasa) {
-            alert('Teks konfirmasi tidak cocok. Tidak ada akun yang dihapus.');
+            showToast('Teks konfirmasi tidak cocok. Tidak ada akun yang dihapus.', 'warning');
             return;
         }
 
@@ -886,13 +891,13 @@
             });
         }).then(function(d) {
             if (d.success) {
-                alert(d.message);
-                location.reload();
+                showToast(d.message, 'success');
+                setTimeout(() => location.reload(), 600);
             } else {
-                alert(d.message || 'Gagal menghapus');
+                showToast(d.message || 'Gagal menghapus', 'error');
             }
         }).catch(function(err) {
-            alert('Terjadi kesalahan: ' + err.message);
+            showToast('Terjadi kesalahan: ' + err.message, 'error');
         });
     }
 

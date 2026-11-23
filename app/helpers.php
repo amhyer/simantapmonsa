@@ -319,3 +319,23 @@ if (! function_exists('semesterAktifLabel')) {
         });
     }
 }
+
+if (! function_exists('labelPeran')) {
+    /**
+     * Terjemahkan kode peran internal menjadi label bahasa Indonesia yang ramah pengguna.
+     */
+    function labelPeran(?string $peran): string
+    {
+        return match ($peran) {
+            'super_admin' => 'Super Admin',
+            'admin' => 'Administrator',
+            'kepsek' => 'Kepala Sekolah',
+            'pengawas' => 'Pengawas Sekolah',
+            'guru' => 'Guru',
+            'tendik' => 'Tenaga Kependidikan',
+            'siswa' => 'Peserta Didik',
+            'ortu' => 'Orang Tua / Wali',
+            default => $peran ? ucwords(str_replace('_', ' ', $peran)) : '',
+        };
+    }
+}

@@ -15,7 +15,7 @@
                 <h3 style="font-size:20px;font-weight:700">{{ $user->nama_lengkap }}</h3>
                 <div style="color:var(--muted);font-size:13px;margin-top:4px">
                     Username: {{ $user->nama_pengguna }}<br>
-                    Level: <span class="tag tag-primary">{{ ucfirst($user->peran) }}</span>
+                    Level: <span class="tag tag-primary">{{ labelPeran($user->peran) }}</span>
                 </div>
             </div>
         </div>
@@ -30,7 +30,7 @@
                         <tbody>
                             <tr><td style="font-weight:600;width:40%">Nama Lengkap</td><td>: {{ $user->nama_lengkap }}</td></tr>
                             <tr><td style="font-weight:600">Username</td><td>: {{ $user->nama_pengguna }}</td></tr>
-                            <tr><td style="font-weight:600">Level</td><td>: {{ ucfirst($user->peran) }}</td></tr>
+                            <tr><td style="font-weight:600">Level</td><td>: {{ labelPeran($user->peran) }}</td></tr>
                             <tr><td style="font-weight:600">Status</td><td>: {!! $user->aktif ? '<span class="tag tag-ok">Aktif</span>' : '<span class="tag tag-bad">Nonaktif</span>' !!}</td></tr>
                             <tr><td style="font-weight:600">Terdaftar Sejak</td><td>: {{ $user->created_at?->translatedFormat('d F Y H:i') ?? '-' }}</td></tr>
                             @if($user->kelas_mata_pelajaran)
@@ -46,7 +46,7 @@
     <div class="grid grid-2" style="margin-top:16px;align-items:start">
         <div class="card">
             <div class="card-header">
-                <h3><x-lucide-lock class="w-5 h-5" /> Ubah Password</h3>
+                <h3><i class="fas fa-lock" style="margin-right:8px;color:var(--navy)"></i>Ubah Password</h3>
             </div>
             <div class="card-body">
                 <form action="{{ route('admin.profile.password') }}" method="POST" style="display:grid;gap:12px;max-width:420px">
@@ -74,7 +74,7 @@
                     </div>
                     <div>
                         <button type="submit" class="btn">
-                            <x-lucide-key-round class="w-4 h-4" /> Simpan Password
+                            <i class="fas fa-key"></i> Simpan Password
                         </button>
                     </div>
                 </form>
@@ -83,7 +83,7 @@
 
         <div class="card">
             <div class="card-header">
-                <h3><x-lucide-history class="w-5 h-5" /> Aktivitas Terakhir Saya</h3>
+                <h3><i class="fas fa-history" style="margin-right:8px;color:var(--gold)"></i>Aktivitas Terakhir Saya</h3>
             </div>
             <div class="card-body tight">
                 @if($aktivitasTerakhir->count())
