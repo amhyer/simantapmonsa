@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class DataReferensiController extends Controller
 {
@@ -61,7 +62,7 @@ class DataReferensiController extends Controller
             'gelar_belakang' => 'nullable|string|max:100',
             'buat_akun' => 'nullable|boolean',
             'nama_pengguna' => 'nullable|string|max:100',
-            'kata_sandi' => 'nullable|string|min:6',
+            'kata_sandi' => ['nullable', 'string', Password::defaults()],
         ]);
 
         $semester = Semester::orderByDesc('semester_id')->first()
@@ -90,7 +91,7 @@ class DataReferensiController extends Controller
 
             if (! $username) {
                 $base = Str::slug($validated['nama'], '');
-                $username = ! empty($base) ? $base : 'guru'.rand(100, 999);
+                $username = ! empty($base) ? $base : 'guru'.random_int(100, 999);
             }
 
             $finalUsername = $username;
@@ -660,6 +661,18 @@ class DataReferensiController extends Controller
         $maxZipEntries = max(1, (int) config('simantap.foto_zip_max_entries', 200));
         $maxZipBytes = max(1, (int) config('simantap.foto_zip_max_uncompressed_bytes', 100 * 1024 * 1024));
 
+        // Batch-load seluruh kandidat siswa sekali saja (mencegah N+1 query di dalam loop ZIP/multi-file).
+        $siswaByKey = [];
+        $allSiswa = Siswa::query()->get(['id', 'tenant_id', 'nisn', 'nis', 'foto']);
+        foreach ($allSiswa as $s) {
+            if (! empty($s->nisn)) {
+                $siswaByKey[(string) $s->nisn] = $s;
+            }
+            if (! empty($s->nis)) {
+                $siswaByKey[(string) $s->nis] = $s;
+            }
+        }
+
         // 1. Proses ekstraksi file .zip jika diunggah (ala `#modal_masal` e-Rapor SD)
         if ($request->hasFile('file_zip') && class_exists(\ZipArchive::class)) {
             $zipFile = $request->file('file_zip');
@@ -682,7 +695,7 @@ class DataReferensiController extends Controller
                     }
 
                     $kunci = trim(pathinfo($entryName, PATHINFO_FILENAME));
-                    $siswa = Siswa::where(fn ($q) => $q->where('nisn', $kunci)->orWhere('nis', $kunci))->first();
+                    $siswa = $siswaByKey[$kunci] ?? null;
                     if (! $siswa) {
                         $tidakCocok[] = basename($entryName);
 
@@ -752,7 +765,7 @@ class DataReferensiController extends Controller
         if ($request->hasFile('foto')) {
             foreach ($request->file('foto') as $file) {
                 $kunci = trim(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-                $siswa = Siswa::where(fn ($q) => $q->where('nis', $kunci)->orWhere('nisn', $kunci))->first();
+                $siswa = $siswaByKey[$kunci] ?? null;
 
                 if (! $siswa) {
                     $tidakCocok[] = $file->getClientOriginalName();

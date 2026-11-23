@@ -144,17 +144,31 @@ class ErapotGeneratorController extends Controller
         $sheet->getStyle('A5:L5')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle('A5:L5')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F3864');
 
-        $row = 6;
-        foreach ($siswa as $i => $s) {
-            $nilai = NilaiErapot::where('siswa_id', $s->id)
+        $siswaIds = $siswa->pluck('id');
+        $nilaiBySiswa = $siswaIds->isNotEmpty()
+            ? NilaiErapot::whereIn('siswa_id', $siswaIds)
                 ->where('guru_id', $guru->id)
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunPelajaran)
-                ->first();
+                ->get()
+                ->keyBy('siswa_id')
+            : collect();
 
-            $kehadiran = Kehadiran::where('siswa_id', $s->id)->get();
-            $persenHadir = $kehadiran->count() > 0
-                ? round($kehadiran->where('status', 'H')->count() / $kehadiran->count() * 100, 1)
+        $kehadiranBySiswa = $siswaIds->isNotEmpty()
+            ? Kehadiran::whereIn('siswa_id', $siswaIds)
+                ->selectRaw('siswa_id, count(*) as total, sum(case when status = ? then 1 else 0 end) as hadir', ['H'])
+                ->groupBy('siswa_id')
+                ->get()
+                ->keyBy('siswa_id')
+            : collect();
+
+        $row = 6;
+        foreach ($siswa as $i => $s) {
+            $nilai = $nilaiBySiswa->get($s->id);
+            $rekapHadir = $kehadiranBySiswa->get($s->id);
+            $totalHadir = (int) ($rekapHadir->total ?? 0);
+            $persenHadir = $totalHadir > 0
+                ? round(((int) ($rekapHadir->hadir ?? 0)) / $totalHadir * 100, 1)
                 : 0;
 
             $sheet->setCellValue('A'.$row, $i + 1);

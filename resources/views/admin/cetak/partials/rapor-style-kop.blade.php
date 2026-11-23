@@ -24,7 +24,10 @@
     $textHeaderCss = $applyTampilan ? (string) ($t['warna_text_header'] ?? '#000000') : '#000000';
     $textCellCss = $applyTampilan ? (string) ($t['warna_text_cell'] ?? '#000000') : '#000000';
     $borderCss = $applyTampilan ? (string) ($t['warna_border'] ?? '#000000') : '#000000';
-    $fontCss = $applyTampilan ? ('"' . ($t['font_family'] ?? 'Times New Roman') . '", Arial, sans-serif') : '"Times New Roman", Times, serif';
+    $allowedFonts = ['Times New Roman', 'Arial', 'Calibri', 'Cambria', 'Georgia', 'Tahoma', 'Verdana', 'Helvetica', 'DejaVu Sans', 'DejaVu Serif'];
+    $rawFont = trim((string) ($t['font_family'] ?? 'Times New Roman'));
+    $fontFamilySafe = in_array($rawFont, $allowedFonts, true) ? $rawFont : 'Times New Roman';
+    $fontFallback = $applyTampilan ? 'Arial, sans-serif' : 'Times, serif';
     $sizeJudulRapor = $applyTampilan ? (float) ($t['size_judul_rapor'] ?? 17) : 17;
     $sizeJudulTabel = $applyTampilan ? (float) ($t['size_judul_tabel'] ?? 13) : 13;
     $sizeIsiTabel = $applyTampilan ? (float) ($t['size_isi_tabel'] ?? 13) : 13;
@@ -36,7 +39,7 @@
 @endphp
 
 <style>
-    body { font-family: {!! $fontCss !!}; position: relative; }
+    body { font-family: "{{ $fontFamilySafe }}", {{ $fontFallback }}; position: relative; }
     .judul h3 { font-size: {{ $sizeJudulRapor }}px; }
     table.nilai th {
         background: {{ $bgHeaderCss }} !important;

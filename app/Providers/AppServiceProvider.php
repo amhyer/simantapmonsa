@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -69,6 +70,14 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }
+
+        Password::defaults(function () {
+            $rule = Password::min(8);
+
+            return $this->app->isProduction()
+                ? $rule->letters()->numbers()
+                : $rule;
+        });
 
         RateLimiter::for('admin-reset-massal', function (Request $request): Limit {
             return Limit::perMinute(5)->by('admin-reset-massal:'.($request->user()?->id ?: $request->ip()));

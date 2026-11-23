@@ -69,11 +69,13 @@ class ApiKeyMiddleware
             ], 403);
         }
 
-        $key->update(['last_used_at' => now()]);
-
-        if ($user) {
-            auth()->login($user);
+        // Hindari 1 write DB di setiap request API: perbarui `last_used_at` maksimal tiap 5 menit.
+        if ($key->last_used_at === null || $key->last_used_at->lt(now()->subMinutes(5))) {
+            $key->forceFill(['last_used_at' => now()])->saveQuietly();
         }
+
+        // Autentikasi stateless khusus request ini tanpa menulis cookie/sesi login web.
+        auth()->setUser($user);
         $request->merge(['_api_key' => $key]);
 
         return $next($request);

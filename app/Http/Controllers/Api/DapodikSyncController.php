@@ -453,7 +453,7 @@ class DapodikSyncController extends Controller
                     }
                 }
 
-                $username = $nip ?: ($nuptk ?: ($nik ?: ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
+                $username = $nip ?: ($nuptk ?: ($nik ?: ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : Str::lower(Str::random(8))))));
                 $isActive = strtolower($p['status_aktif'] ?? $p['status'] ?? 'aktif') === 'aktif';
 
                 $existingUser = null;

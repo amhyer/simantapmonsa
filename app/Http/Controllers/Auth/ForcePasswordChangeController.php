@@ -18,7 +18,7 @@ class ForcePasswordChangeController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ], [
             'password.required' => 'Password baru wajib diisi.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',

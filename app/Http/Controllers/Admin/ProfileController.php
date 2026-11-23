@@ -33,7 +33,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'kata_sandi_saat_ini' => ['required'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ], [
             'kata_sandi_saat_ini.required' => 'Password saat ini wajib diisi.',
             'password.required' => 'Password baru wajib diisi.',

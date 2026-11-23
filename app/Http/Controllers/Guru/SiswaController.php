@@ -76,11 +76,7 @@ class SiswaController extends Controller
         ]);
 
         $guru = auth()->user();
-
-        $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-        while (Siswa::where('nama_orang_tua', $kodeOrtu)->exists()) {
-            $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-        }
+        $namaOrangTua = trim((string) ($validated['nama_orang_tua'] ?? ''));
 
         $siswa = Siswa::create([
             'uuid' => Str::uuid(),
@@ -90,7 +86,7 @@ class SiswaController extends Controller
             'nis' => $validated['nis'],
             'jenis_kelamin' => $validated['jenis_kelamin'],
             'kelas' => $validated['kelas'],
-            'nama_orang_tua' => $validated['nama_orang_tua'] ?? $kodeOrtu,
+            'nama_orang_tua' => $namaOrangTua !== '' ? $namaOrangTua : null,
             'aktif' => $validated['aktif'] ?? true,
         ]);
 

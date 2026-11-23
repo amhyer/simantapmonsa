@@ -356,7 +356,6 @@ class DapodikController extends Controller
             'success' => true,
             'message' => 'SIMANTAP API siap menerima data.',
             'timestamp' => now()->toIso8601String(),
-            'version' => '2.0',
         ]);
     }
 }

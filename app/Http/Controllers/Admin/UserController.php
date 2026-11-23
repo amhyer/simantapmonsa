@@ -15,6 +15,7 @@ use App\Services\Admin\UserAccountService;
 use App\Services\Admin\UserBulkGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -65,7 +66,7 @@ class UserController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'kata_sandi' => 'required|string|min:8',
+            'kata_sandi' => ['required', 'string', Password::defaults()],
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik,pengawas',
             'terhubung_dengan' => 'nullable|array',
             'terhubung_dengan.*' => 'integer|distinct',
@@ -96,7 +97,7 @@ class UserController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,'.$user->id,
             'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
-            'kata_sandi' => 'nullable|string|min:8',
+            'kata_sandi' => ['nullable', 'string', Password::defaults()],
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik,pengawas',
             'terhubung_dengan' => 'nullable|array',
             'terhubung_dengan.*' => 'integer|distinct',

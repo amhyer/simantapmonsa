@@ -27,10 +27,23 @@ class DapodikService
                 }
 
                 if (! $user) {
+                    $username = $gtk['nip'] ?? $gtk['nuptk'] ?? ('gtk_'.Str::lower(Str::random(8)));
+                    $baseUsername = $username;
+                    $attempts = 0;
+                    while (User::forSchool()->withTrashed()->where('nama_pengguna', $username)->exists()) {
+                        $attempts++;
+                        $username = $attempts <= 10
+                            ? $baseUsername.'.'.$attempts
+                            : 'gtk_'.Str::lower(Str::random(10));
+                        if ($attempts > 25) {
+                            throw new \RuntimeException('Gagal menghasilkan nama pengguna GTK yang unik.');
+                        }
+                    }
+
                     $user = User::create([
                         'uuid' => Str::uuid(),
                         'nama_lengkap' => $gtk['nama'],
-                        'nama_pengguna' => $gtk['nip'] ?? $gtk['nuptk'] ?? 'gtk'.rand(1000, 9999),
+                        'nama_pengguna' => $username,
                         'kata_sandi' => Hash::make(InitialPassword::generate()),
                         'peran' => 'guru',
                         'aktif' => true,

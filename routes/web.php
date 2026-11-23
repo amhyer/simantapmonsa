@@ -134,7 +134,7 @@ Route::get('/demo', [LandingController::class, 'demo'])->name('demo');
 Route::get('/tka-statistik', [TkaStatsController::class, 'index'])->name('tka.statistik');
 Route::get('/api/tka-statistik', [TkaStatsController::class, 'api'])->name('tka.api');
 Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
-    ->middleware(['auth', 'throttle:10,1'])
+    ->middleware(['auth', 'role:admin,super_admin', 'throttle:10,1'])
     ->name('tka.refresh');
 
 // Auth Routes

@@ -190,7 +190,7 @@ class ImportDapodikJob implements ShouldQueue
             'agama' => $s['agama'] ?? null,
             'tempat_lahir' => $s['tempat_lahir'] ?? null,
             'tanggal_lahir' => $s['tanggal_lahir'] ?? null,
-            'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? 'ORT'.rand(1000, 9999),
+            'nama_orang_tua' => $s['nama_ayah'] ?? $s['nama_ibu'] ?? $s['nama_wali'] ?? null,
             'anak_ke' => $s['anak_ke'] ?? null,
             'jumlah_saudara' => $s['jumlah_saudara'] ?? null,
             'tinggi_badan' => $s['tinggi_badan'] ?? null,

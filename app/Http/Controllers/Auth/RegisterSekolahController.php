@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterSekolahController extends Controller
 {
@@ -44,7 +45,7 @@ class RegisterSekolahController extends Controller
             'nama_pengguna' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_\-\.]+$/|unique:users,nama_pengguna',
             'email' => 'required|email|max:255|unique:users,email',
             'telepon' => 'nullable|string|max:20',
-            'kata_sandi' => 'required|string|min:8|confirmed',
+            'kata_sandi' => ['required', 'string', 'confirmed', Password::defaults()],
         ], [
             'npsn.digits' => 'NPSN harus terdiri dari 8 digit angka.',
             'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP_MONSA.',

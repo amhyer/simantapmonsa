@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class TenantController extends Controller
 {
@@ -315,7 +316,7 @@ class TenantController extends Controller
             'admin_nama' => 'required|string|max:255',
             'admin_user' => 'required|string|max:64|unique:users,nama_pengguna',
             'admin_email' => 'nullable|email|max:255|unique:users,email',
-            'admin_password' => 'required|string|min:8',
+            'admin_password' => ['required', 'string', Password::defaults()],
         ], [
             'npsn.unique' => 'NPSN ini sudah terdaftar.',
             'subdomain.unique' => 'Subdomain ini sudah digunakan.',
@@ -582,7 +583,7 @@ class TenantController extends Controller
         }
 
         $validated = $request->validate([
-            'password_baru' => 'required|string|min:8',
+            'password_baru' => ['required', 'string', Password::defaults()],
         ]);
 
         $admin->kata_sandi = Hash::make($validated['password_baru']);

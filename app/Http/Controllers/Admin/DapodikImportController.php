@@ -128,19 +128,25 @@ class DapodikImportController extends Controller
         }
 
         $data = $validator->validated();
+        $nisns = collect($data['siswa'])
+            ->pluck('nisn')
+            ->filter(fn ($v) => ! empty($v))
+            ->unique()
+            ->values();
+        $existingByNisn = $nisns->isNotEmpty()
+            ? Siswa::whereIn('nisn', $nisns)->pluck('id', 'nisn')
+            : collect();
+
         $preview = [];
 
         foreach ($data['siswa'] as $s) {
-            $existing = null;
-            if (! empty($s['nisn'])) {
-                $existing = Siswa::where('nisn', $s['nisn'])->first();
-            }
+            $existingId = ! empty($s['nisn']) ? $existingByNisn->get($s['nisn']) : null;
             $preview[] = [
                 'nama' => $s['nama'],
                 'nisn' => $s['nisn'] ?? '-',
                 'kelas' => $s['kelas'],
-                'status' => $existing ? 'update' : 'baru',
-                'existing_id' => $existing?->id,
+                'status' => $existingId ? 'update' : 'baru',
+                'existing_id' => $existingId,
             ];
         }
 

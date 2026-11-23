@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    private const DUMMY_HASH = '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+
     public function showLoginForm()
     {
         if (auth()->check()) {
@@ -30,13 +32,15 @@ class LoginController extends Controller
             'kata_sandi' => 'required|string',
         ]);
 
-        // Dua lapis throttle: per-IP (5x) DAN per-akun (10x). Per-IP saja
-        // mudah dilewati credential-stuffing terdistribusi; per-akun saja
-        // membuat satu IP proxy bersama mengunci seluruh sekolah.
+        // Tiga lapis throttle: per-IP (5x), pasangan IP+akun (5x), dan per-akun (20x).
+        // Ambang per-akun lebih longgar agar pelaku tidak mudah mengunci akun orang lain
+        // secara sengaja, sambil tetap memblokir credential-stuffing terdistribusi.
+        $normalizedUsername = mb_strtolower(trim((string) $credentials['nama_pengguna']));
         $throttleKey = 'login:'.$request->ip();
-        $accountKey = 'login-account:'.mb_strtolower(trim((string) $credentials['nama_pengguna']));
+        $pairKey = 'login-pair:'.$request->ip().'|'.$normalizedUsername;
+        $accountKey = 'login-account:'.$normalizedUsername;
 
-        foreach ([[$throttleKey, 5], [$accountKey, 10]] as [$key, $maxAttempts]) {
+        foreach ([[$throttleKey, 5], [$pairKey, 5], [$accountKey, 20]] as [$key, $maxAttempts]) {
             if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
                 $seconds = RateLimiter::availableIn($key);
                 throw ValidationException::withMessages([
@@ -53,7 +57,8 @@ class LoginController extends Controller
                 'tenant_id' => TenantContext::id(),
             ]);
 
-            // Izinkan Super Admin login dari portal mana saja (tanpa terhalang TenantScope karena super_admin memiliki tenant_id = null)
+            // Izinkan Super Admin login dari portal mana saja (tanpa terhalang TenantScope karena super_admin memiliki tenant_id = null).
+            // Selalu jalankan Hash::check (dengan dummy hash bila tidak ditemukan) untuk mencegah timing-oracle username.
             if (! $attemptSuccess) {
                 $superAdminUser = User::withoutGlobalScopes()
                     ->whereNull('deleted_at')
@@ -61,7 +66,12 @@ class LoginController extends Controller
                     ->where('peran', 'super_admin')
                     ->first();
 
-                if ($superAdminUser && Hash::check($credentials['kata_sandi'], $superAdminUser->kata_sandi)) {
+                $passwordValid = Hash::check(
+                    $credentials['kata_sandi'],
+                    $superAdminUser ? (string) $superAdminUser->kata_sandi : self::DUMMY_HASH
+                );
+
+                if ($superAdminUser && $passwordValid) {
                     Auth::login($superAdminUser);
                     $attemptSuccess = true;
                 }
@@ -80,6 +90,7 @@ class LoginController extends Controller
 
                 if ($cocokSandi->count() > 1) {
                     RateLimiter::hit($throttleKey, 300);
+                    RateLimiter::hit($pairKey, 300);
                     RateLimiter::hit($accountKey, 300);
 
                     return back()->withErrors([
@@ -104,17 +115,18 @@ class LoginController extends Controller
         if ($attemptSuccess) {
             $user = auth()->user();
 
-            // PERBAIKAN: kolom `aktif`/`archived_at` sebelumnya tidak pernah
-            // diperiksa — akun yang dinonaktifkan admin tetap bisa login.
+            // Tolak akun nonaktif/terarsip dengan pesan generik yang sama agar
+            // penyerang tidak dapat memastikan validitas kata sandi akun nonaktif.
             if (! $user->aktif || $user->archived_at !== null) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 RateLimiter::hit($throttleKey, 300);
+                RateLimiter::hit($pairKey, 300);
                 RateLimiter::hit($accountKey, 300);
 
                 return back()->withErrors([
-                    'nama_pengguna' => 'Akun Anda dinonaktifkan. Hubungi administrator sekolah.',
+                    'nama_pengguna' => 'Nama pengguna atau kata sandi salah.',
                 ])->onlyInput('nama_pengguna');
             }
 
@@ -129,6 +141,7 @@ class LoginController extends Controller
             }
 
             RateLimiter::clear($throttleKey);
+            RateLimiter::clear($pairKey);
             RateLimiter::clear($accountKey);
             $request->session()->regenerate();
 
@@ -146,6 +159,7 @@ class LoginController extends Controller
         }
 
         RateLimiter::hit($throttleKey, 300);
+        RateLimiter::hit($pairKey, 300);
         RateLimiter::hit($accountKey, 300);
 
         return back()->withErrors([

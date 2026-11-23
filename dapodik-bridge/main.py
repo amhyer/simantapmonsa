@@ -166,9 +166,12 @@ def dapodik_fetch_all(protocol, host, port, token, npsn):
 # ─── SIMANTAP SERVER ─────────────────────────────────────────────
 
 def is_local_url(url: str) -> bool:
-    """Cek apakah URL mengarah ke loopback/localhost lokal."""
-    lower = (url or "").lower()
-    return "localhost" in lower or "127.0.0.1" in lower or "::1" in lower or lower.startswith("http://192.168.") or lower.startswith("http://10.")
+    """Cek apakah hostname URL benar-benar loopback lokal (localhost / 127.0.0.1 / ::1)."""
+    from urllib.parse import urlparse
+
+    parsed = urlparse((url or "").strip())
+    host = (parsed.hostname or "").lower()
+    return host in ("localhost", "127.0.0.1", "::1")
 
 
 def validate_server_security(url: str) -> tuple:

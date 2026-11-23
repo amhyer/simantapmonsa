@@ -298,7 +298,12 @@ class TkaSimulasiController extends Controller
         abort_unless(isset($paketList[$id]), 404, 'Paket simulasi TKA tidak ditemukan.');
 
         $paket = $paketList[$id];
-        $token = 'TKA-'.strtoupper(substr(md5($id.auth()->id().date('Ymd')), 0, 5));
+        $tokenSessionKey = 'tka_simulasi_token_'.$id;
+        $token = session($tokenSessionKey);
+        if (! is_string($token) || $token === '') {
+            $token = 'TKA-'.strtoupper(bin2hex(random_bytes(4)));
+            session([$tokenSessionKey => $token]);
+        }
 
         return view('siswa.tka.confirm', compact('siswa', 'paket', 'token'));
     }
@@ -311,12 +316,15 @@ class TkaSimulasiController extends Controller
         $paketList = $this->getPaketList();
         abort_unless(isset($paketList[$id]), 404);
 
-        $tokenExpected = 'TKA-'.strtoupper(substr(md5($id.auth()->id().date('Ymd')), 0, 5));
-        $tokenInput = trim((string) $request->input('token'));
+        $tokenSessionKey = 'tka_simulasi_token_'.$id;
+        $tokenExpected = (string) session($tokenSessionKey, '');
+        $tokenInput = strtoupper(trim((string) $request->input('token')));
 
-        if (strtoupper($tokenInput) !== $tokenExpected && $tokenInput !== 'SIMANTAP') {
+        if ($tokenExpected === '' || ! hash_equals($tokenExpected, $tokenInput)) {
             return back()->with('error', 'Token ujian tidak valid. Pastikan Anda memasukkan kode token yang tertera.');
         }
+
+        session()->forget($tokenSessionKey);
 
         // Inisialisasi sesi di memori pengerjaan
         $sessionKey = 'tka_simulasi_'.$id;

@@ -63,19 +63,33 @@ class TkaSimulasiMandiriTest extends TestCase
         $response->assertSee('Token Ujian Simulasi');
     }
 
-    public function test_gagal_mulai_jika_token_salah(): void
+    public function test_gagal_mulai_jika_token_salah_atau_bypass_simantap(): void
     {
-        $response = $this->actingAs($this->studentAccount)
+        $this->actingAs($this->studentAccount)
+            ->get(route('siswa.tka-simulasi.confirm', 'literasi'))
+            ->assertOk();
+
+        $this->actingAs($this->studentAccount)
             ->post(route('siswa.tka-simulasi.start', 'literasi'), [
                 'token' => 'SALAH123',
-            ]);
+            ])
+            ->assertSessionHas('error');
 
-        $response->assertSessionHas('error');
+        $this->actingAs($this->studentAccount)
+            ->post(route('siswa.tka-simulasi.start', 'literasi'), [
+                'token' => 'SIMANTAP',
+            ])
+            ->assertSessionHas('error');
     }
 
     public function test_berhasil_mulai_ujian_dengan_token_dan_autosave(): void
     {
-        $token = 'TKA-'.strtoupper(substr(md5('literasi'.$this->studentAccount->id.date('Ymd')), 0, 5));
+        $confirm = $this->actingAs($this->studentAccount)
+            ->get(route('siswa.tka-simulasi.confirm', 'literasi'));
+        $confirm->assertOk();
+
+        $token = (string) session('tka_simulasi_token_literasi');
+        $this->assertMatchesRegularExpression('/^TKA-[A-F0-9]{8}$/', $token);
 
         $start = $this->actingAs($this->studentAccount)
             ->post(route('siswa.tka-simulasi.start', 'literasi'), [

@@ -529,4 +529,59 @@ class AuditRemediationNov2026Test extends TestCase
         $sekolah = SekolahSettings::withoutGlobalScopes()->where('tenant_id', $tenant->id)->firstOrFail();
         $this->assertSame('UPT SPF SD NEGERI UNGGULAN MONGISIDI 1', $sekolah->nama_sekolah);
     }
+
+    public function test_audit_sedang_rendah_login_refresh_password_siswa_dan_ping_hardening(): void
+    {
+        // 1. Login akun nonaktif memakai pesan generik yang sama (tidak membocorkan validitas sandi)
+        $nonaktif = User::factory()->guru()->create([
+            'nama_pengguna' => 'guru_nonaktif_uji',
+            'kata_sandi' => Hash::make('SandiBenar123'),
+            'aktif' => false,
+        ]);
+
+        $resNonaktif = $this->post('/login', [
+            'nama_pengguna' => $nonaktif->nama_pengguna,
+            'kata_sandi' => 'SandiBenar123',
+        ]);
+        $resNonaktif->assertSessionHasErrors([
+            'nama_pengguna' => 'Nama pengguna atau kata sandi salah.',
+        ]);
+        $this->assertGuest();
+
+        // 2. POST /tka-statistik/refresh ditolak 403 untuk siswa & ortu
+        $siswaUser = User::factory()->siswa()->create();
+        $ortuUser = User::factory()->ortu()->create();
+        $this->actingAs($siswaUser)->post(route('tka.refresh'))->assertForbidden();
+        $this->actingAs($ortuUser)->post(route('tka.refresh'))->assertForbidden();
+
+        // 3. DataReferensiController::storeGuru menolak kata sandi < 8 karakter (konsisten Password::defaults())
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->post(route('admin.referensi.guru.store'), [
+            'nama' => 'Guru Sandi Pendek',
+            'jenis_ptk' => 'Guru Kelas',
+            'buat_akun' => true,
+            'kata_sandi' => '123456',
+        ])->assertSessionHasErrors('kata_sandi');
+
+        // 4. Guru\SiswaController::store tidak menulis kode ORT acak ke kolom nama_orang_tua
+        $guru = User::factory()->guru()->create();
+        $this->actingAs($guru)->post(route('guru.siswa.store'), [
+            'nama' => 'Siswa Tanpa Ortu',
+            'nis' => 'NIS-NO-ORTU-01',
+            'jenis_kelamin' => 'L',
+            'kelas' => '6A',
+            'nama_orang_tua' => '',
+        ])->assertRedirect(route('guru.siswa.index'));
+
+        $this->assertDatabaseHas('siswa', [
+            'nis' => 'NIS-NO-ORTU-01',
+            'nama_orang_tua' => null,
+        ]);
+
+        // 5. /api/dapodik/ping tidak mengekspos nomor versi
+        $this->postJson('/api/dapodik/ping')
+            ->assertOk()
+            ->assertJson(['success' => true])
+            ->assertJsonMissingPath('version');
+    }
 }
