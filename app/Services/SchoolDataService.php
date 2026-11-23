@@ -149,7 +149,7 @@ class SchoolDataService
                 Log::info('Kemendikdasmen Open Data fallback gagal: '.$e->getMessage());
             }
 
-            // 4. Fallback database lokal (jika sekolah pernah tersimpan)
+            // 4. Fallback database lokal (hanya identitas publik sekolah, tanpa kontak internal)
             $local = SekolahSettings::where('npsn', $npsn)->first();
             if ($local) {
                 return [
@@ -163,9 +163,9 @@ class SchoolDataService
                     'provinsi' => $local->provinsi ?? '',
                     'akreditasi' => $local->akreditasi ?? '',
                     'kepala_sekolah' => $local->kepala_sekolah ?? '',
-                    'operator' => $local->guru?->nama_lengkap ?? '',
-                    'email' => $local->email ?? '',
-                    'telepon' => $local->telepon ?? '',
+                    'operator' => '',
+                    'email' => '',
+                    'telepon' => '',
                     'source' => 'Database Lokal',
                 ];
             }

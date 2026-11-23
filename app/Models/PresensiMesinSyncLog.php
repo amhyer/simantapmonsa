@@ -19,7 +19,7 @@ class PresensiMesinSyncLog extends Model
         'uuid', 'tenant_id', 'user_id', 'source', 'status',
         'jumlah_scan', 'dibuat', 'diperbarui', 'tetap', 'dilindungi',
         'nik_tidak_dikenal', 'contoh_nik_tidak_dikenal', 'pesan_error',
-        'ip_address', 'started_at', 'finished_at', 'duration_seconds',
+        'ip_address', 'user_agent', 'started_at', 'finished_at', 'duration_seconds',
     ];
 
     protected $casts = [

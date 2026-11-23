@@ -284,7 +284,7 @@
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             const icons = { success: '✅', error: '❌', warning: '⚠️' };
-            toast.innerHTML = `${icons[type] || '📢'} ${message}`;
+            toast.textContent = `${icons[type] || '📢'} ${message}`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
