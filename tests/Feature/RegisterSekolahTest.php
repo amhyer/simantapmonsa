@@ -13,16 +13,24 @@ class RegisterSekolahTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_pendaftaran_sekolah_aktif_secara_default_tanpa_registrasi_perorangan(): void
     {
-        parent::setUp();
+        $this->assertTrue((bool) config('simantap.school_registration_enabled'));
 
-        config(['simantap.multi_tenant_enabled' => true]);
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee(route('sekolah.register'))
+            ->assertSee('Akun Guru, Siswa, dan Orang Tua dibuat oleh Administrator Sekolah');
+
+        $this->get(route('sekolah.register'))
+            ->assertOk()
+            ->assertSee('Pendaftaran Akun Sekolah Baru')
+            ->assertSee('Pendaftaran mandiri untuk');
     }
 
-    public function test_pendaftaran_sekolah_ditutup_dengan_404_saat_mode_satu_sekolah(): void
+    public function test_pendaftaran_sekolah_ditutup_dengan_404_saat_dinonaktifkan(): void
     {
-        config(['simantap.multi_tenant_enabled' => false]);
+        config(['simantap.school_registration_enabled' => false]);
 
         $this->get(route('sekolah.register'))->assertNotFound();
 

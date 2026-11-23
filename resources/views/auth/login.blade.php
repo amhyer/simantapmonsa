@@ -306,9 +306,14 @@
 
             <div class="auth-footer-links">
                 <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
-                @if(config('simantap.multi_tenant_enabled', false))
-                    <a href="{{ route('sekolah.register') }}">Daftar Sekolah &rarr;</a>
+                @if(config('simantap.school_registration_enabled', true))
+                    <a href="{{ route('sekolah.register') }}">Daftarkan Akun Sekolah &rarr;</a>
                 @endif
+            </div>
+
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid #EAECF0;font-size:12px;color:#667085;text-align:center;line-height:1.5">
+                Pendaftaran mandiri hanya tersedia untuk <b>Akun Sekolah</b>.<br>
+                Akun Guru, Siswa, dan Orang Tua dibuat oleh Administrator Sekolah.
             </div>
 
             @if(app()->environment('local'))

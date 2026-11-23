@@ -17,7 +17,7 @@ class RegisterSekolahController extends Controller
 {
     public function create()
     {
-        abort_unless(config('simantap.multi_tenant_enabled', false), 404);
+        abort_unless(config('simantap.school_registration_enabled', true), 404);
 
         if (Auth::check()) {
             return redirect()->route('home');
@@ -28,7 +28,7 @@ class RegisterSekolahController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless(config('simantap.multi_tenant_enabled', false), 404);
+        abort_unless(config('simantap.school_registration_enabled', true), 404);
 
         $validated = $request->validate([
             // Identitas Sekolah
@@ -78,7 +78,7 @@ class RegisterSekolahController extends Controller
                 ],
             ]);
 
-            // 2. Buat Akun Administrator Sekolah
+            // 2. Buat Akun Administrator Sekolah (hanya akun sekolah; bukan guru/siswa/ortu)
             $admin = User::create([
                 'uuid' => (string) Str::uuid(),
                 'nama_lengkap' => $validated['nama_lengkap'],
@@ -87,6 +87,7 @@ class RegisterSekolahController extends Controller
                 'kata_sandi' => $validated['kata_sandi'],
                 'peran' => 'admin',
                 'tenant_id' => $tenant->id,
+                'tenant_owned' => true,
                 'aktif' => true,
                 'force_password_change' => false,
             ]);
