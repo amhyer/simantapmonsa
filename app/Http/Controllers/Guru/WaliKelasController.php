@@ -16,10 +16,12 @@ use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\TemaKokurikuler;
 use App\Models\TranskripNilai;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class WaliKelasController extends Controller
 {
@@ -578,8 +580,14 @@ class WaliKelasController extends Controller
     {
         $this->pastikanSiswaPerwalian($siswa);
 
+        $ijazahRule = Rule::unique('siswa', 'nomor_ijazah')
+            ->ignore($siswa->id)
+            ->where(fn ($q) => TenantContext::check()
+                ? $q->where('tenant_id', TenantContext::id())
+                : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
-            'nomor_ijazah' => 'nullable|string|max:100|unique:siswa,nomor_ijazah,'.$siswa->id,
+            'nomor_ijazah' => ['nullable', 'string', 'max:100', $ijazahRule],
             'nilai' => 'nullable|array',
             'nilai.*' => 'nullable|numeric|min:0|max:100',
         ]);

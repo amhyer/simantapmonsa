@@ -3,6 +3,7 @@
 namespace App\Models\Tka;
 
 use App\Models\Semester;
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,12 +12,12 @@ use Illuminate\Support\Str;
 
 class Dimension extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'tka_dimensions_enhanced';
 
     protected $fillable = [
-        'uuid', 'semester_id', 'kode_dimensi', 'nama_dimensi',
+        'tenant_id', 'uuid', 'semester_id', 'kode_dimensi', 'nama_dimensi',
         'deskripsi', 'kategori', 'bobot', 'rubrik_penilaian',
         'threshold_siap', 'aktif',
     ];

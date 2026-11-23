@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DapodikConfig;
+use App\Models\JadwalPelajaran;
 use App\Models\MataPelajaran;
 use App\Models\SekolahSettings;
 use App\Services\AktivitasService;
@@ -190,7 +191,7 @@ class MapelController extends Controller
         $config = DapodikConfig::getInstance();
 
         if (empty($config->npsn) || empty($config->token)) {
-            $hasLocalJadwal = DB::table('jadwal_pelajaran')->whereNotNull('mata_pelajaran')->where('mata_pelajaran', '!=', '')->exists();
+            $hasLocalJadwal = JadwalPelajaran::query()->whereNotNull('mata_pelajaran')->where('mata_pelajaran', '!=', '')->exists();
             $hint = $hasLocalJadwal
                 ? ' Anda dapat mengklik tombol "Import dari Data Lokal" untuk mengimpor mata pelajaran yang telah ditarik melalui SIMANTAP Bridge.'
                 : ' Jalankan tombol "Tarik & Sinkron" pada aplikasi SIMANTAP Bridge di komputer sekolah, atau atur token di menu Pengaturan Dapodik.';

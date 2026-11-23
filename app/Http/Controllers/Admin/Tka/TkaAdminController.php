@@ -9,10 +9,12 @@ use App\Models\Tka\Dimension;
 use App\Models\Tka\EarlyWarning;
 use App\Models\Tka\HistoricalTracking;
 use App\Models\Tka\StudentAssessment;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\ExcelExportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class TkaAdminController extends Controller
 {
@@ -112,9 +114,13 @@ class TkaAdminController extends Controller
      */
     public function storeDimension(Request $request)
     {
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where(fn ($q) => TenantContext::check()
+            ? $q->where('tenant_id', TenantContext::id())
+            : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'semester_id' => 'nullable|exists:semesters,id',
-            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi',
+            'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
@@ -174,9 +180,15 @@ class TkaAdminController extends Controller
      */
     public function updateDimension(Request $request, Dimension $dimension)
     {
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')
+            ->ignore($dimension->id)
+            ->where(fn ($q) => TenantContext::check()
+                ? $q->where('tenant_id', TenantContext::id())
+                : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'semester_id' => 'nullable|exists:semesters,id',
-            'kode_dimensi' => 'required|string|max:50|unique:tka_dimensions_enhanced,kode_dimensi,'.$dimension->id,
+            'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori' => 'required|in:religius,nasionalis,mandiri,gotong_royong,integritas,kreatif,berdaya_saing',
@@ -338,9 +350,13 @@ class TkaAdminController extends Controller
         $warning->load('siswa');
         abort_if($warning->siswa === null, 404);
 
+        $handlerRule = Rule::exists('users', 'id')->where(fn ($q) => TenantContext::check()
+            ? $q->where('tenant_id', TenantContext::id())
+            : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'status' => 'required|in:pending,sedang_diproses,selesai',
-            'ditangani_oleh' => 'nullable|exists:users,id',
+            'ditangani_oleh' => ['nullable', 'integer', $handlerRule],
         ]);
 
         $warning->update([

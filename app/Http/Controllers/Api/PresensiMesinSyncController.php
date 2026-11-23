@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PresensiMesinSyncLog;
 use App\Services\AktivitasService;
 use App\Services\MesinPresensi\PresensiMesinKaryawanService;
+use App\Services\MesinPresensi\PresensiMesinPullService;
 use App\Services\PresensiMesinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,7 +110,7 @@ class PresensiMesinSyncController extends Controller
             throw $e;
         }
 
-        Cache::forever(self::KUNCI_SINKRON_TERAKHIR, now()->toDateTimeString());
+        Cache::forever(PresensiMesinPullService::kunciSinkronTerakhir(), now()->toDateTimeString());
 
         PresensiMesinSyncLog::create([
             'uuid' => (string) Str::uuid(),

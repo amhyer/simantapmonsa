@@ -2,6 +2,7 @@
 
 namespace App\Models\Tka;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,10 +10,12 @@ use Illuminate\Support\Str;
 
 class AssessmentItem extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'tka_assessment_items';
 
     protected $fillable = [
-        'uuid', 'dimension_id', 'urutan', 'indikator',
+        'tenant_id', 'uuid', 'dimension_id', 'urutan', 'indikator',
         'pertanyaan_penilaian', 'tipe_jawaban', 'bobot_item',
     ];
 

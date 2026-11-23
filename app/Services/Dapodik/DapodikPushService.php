@@ -238,10 +238,10 @@ class DapodikPushService
         $gagal = 0;
         $errors = [];
 
-        $gtkList = User::where('peran', 'guru')
+        $gtkList = User::forSchool()
+            ->where('peran', 'guru')
             ->where('aktif', true)
             ->whereNotNull('dapodik_id')
-            ->when(TenantContext::check(), fn ($q) => $q->where('tenant_id', TenantContext::id()))
             ->get();
 
         if ($gtkList->isEmpty()) {
@@ -259,8 +259,6 @@ class DapodikPushService
                     'jenis_ptk_id' => $gtk->peran === 'admin' ? '3' : '1',
                     'jabatan' => $gtk->kelas_mata_pelajaran,
                     'bidang_studi' => $gtk->kelas_mata_pelajaran,
-                    'nip' => $gtk->nama_pengguna,
-                    'nuptk' => $gtk->nuptk,
                     'nik' => $gtk->nik ?? null,
                     'tempat_lahir' => '',
                     'tanggal_lahir' => null,

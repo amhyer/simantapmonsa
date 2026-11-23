@@ -15,6 +15,7 @@ use App\Services\Admin\UserAccountService;
 use App\Services\Admin\UserBulkGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -62,9 +63,13 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $this->accounts->accountsQuery();
+        $usernameRule = Rule::unique('users', 'nama_pengguna')->where(fn ($q) => TenantContext::check()
+            ? $q->where('tenant_id', TenantContext::id())
+            : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nama_pengguna' => 'required|string|max:100|unique:users',
+            'nama_pengguna' => ['required', 'string', 'max:100', $usernameRule],
             'email' => 'nullable|email|max:255|unique:users,email',
             'kata_sandi' => ['required', 'string', Password::defaults()],
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik,pengawas',
@@ -93,9 +98,15 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $this->accounts->ensureAccountAccessible($user);
+        $usernameRule = Rule::unique('users', 'nama_pengguna')
+            ->ignore($user->id)
+            ->where(fn ($q) => TenantContext::check()
+                ? $q->where('tenant_id', TenantContext::id())
+                : $q->whereNull('tenant_id'));
+
         $validated = $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nama_pengguna' => 'required|string|max:100|unique:users,nama_pengguna,'.$user->id,
+            'nama_pengguna' => ['required', 'string', 'max:100', $usernameRule],
             'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
             'kata_sandi' => ['nullable', 'string', Password::defaults()],
             'peran' => 'required|in:admin,guru,siswa,ortu,kepsek,tendik,pengawas',

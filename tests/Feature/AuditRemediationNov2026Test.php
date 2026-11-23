@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Aktivitas;
+use App\Models\CbtQuestion;
+use App\Models\CbtQuestionBank;
+use App\Models\CbtResult;
+use App\Models\CbtTestSession;
 use App\Models\MataPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\PresensiMesinSyncLog;
@@ -10,6 +14,11 @@ use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TanggalRapor;
+use App\Models\TemaKokurikuler;
+use App\Jobs\TarikSemuaPresensiJob;
+use App\Policies\CbtQuestionPolicy;
+use App\Policies\CbtResultPolicy;
+use App\Services\MesinPresensi\PresensiMesinPullService;
 use App\Models\Tka\Dimension;
 use App\Models\Tka\EarlyWarning;
 use App\Models\Tka\ParentReport;
@@ -650,5 +659,100 @@ class AuditRemediationNov2026Test extends TestCase
 
             $this->assertTrue(Hash::check('SandiBaru456', (string) $user->fresh()->kata_sandi));
         }
+    }
+
+    public function test_isolasi_multi_tenant_p0_sampai_p3_batch_nov_2026(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $a = $this->buatSekolah('40399001');
+        $b = $this->buatSekolah('40399002');
+
+        $adminA = User::factory()->admin()->create(['tenant_id' => $a->id]);
+        $adminB = User::factory()->admin()->create(['tenant_id' => $b->id]);
+        $guruA = User::factory()->guru()->create(['tenant_id' => $a->id]);
+        $guruB = User::factory()->guru()->create(['tenant_id' => $b->id]);
+
+        // #1 TanggalRapor & TemaKokurikuler terisolasi per tenant
+        $tglA = TenantContext::run($a->id, fn () => TanggalRapor::create([
+            'tahun_ajaran' => '2026/2027', 'semester' => 'Ganjil', 'tempat' => 'Makassar A',
+        ]));
+        $tglB = TenantContext::run($b->id, fn () => TanggalRapor::create([
+            'tahun_ajaran' => '2026/2027', 'semester' => 'Ganjil', 'tempat' => 'Makassar B',
+        ]));
+        $this->assertNotSame($tglA->id, $tglB->id);
+        $this->assertSame('Makassar A', TanggalRapor::withoutGlobalScopes()->find($tglA->id)?->tempat);
+
+        $temaA = TenantContext::run($a->id, fn () => TemaKokurikuler::create(['nama' => 'Tema Sekolah A', 'aktif' => true]));
+        $this->actingAs($adminB)->delete(route('admin.kokurikuler.tema.destroy', $temaA))->assertNotFound();
+        $this->assertDatabaseHas('tema_kokurikuler', ['id' => $temaA->id]);
+
+        // #2 setting() terpisah file per tenant dan guru tidak boleh menulis
+        $fileA = storage_path('app/settings-t'.$a->id.'.json');
+        $fileB = storage_path('app/settings-t'.$b->id.'.json');
+        @unlink($fileA);
+        @unlink($fileB);
+        try {
+            $this->actingAs($adminA);
+            TenantContext::run($a->id, fn () => setting(['active_semester_id' => 111]));
+            $this->actingAs($adminB);
+            TenantContext::run($b->id, fn () => setting(['active_semester_id' => 222]));
+            $this->actingAs($guruA);
+            $guruWrite = TenantContext::run($a->id, fn () => setting(['active_semester_id' => 999]));
+            $this->assertFalse($guruWrite);
+            $this->assertSame(111, TenantContext::run($a->id, fn () => setting('active_semester_id')));
+            $this->assertSame(222, TenantContext::run($b->id, fn () => setting('active_semester_id')));
+        } finally {
+            @unlink($fileA);
+            @unlink($fileB);
+        }
+
+        // #3 & #7 CbtResultPolicy mengenali prefix siswa{NIS} & CbtQuestionPolicy/CbtResultPolicy null-safe (tidak 500)
+        $siswaA = TenantContext::run($a->id, fn () => Siswa::create([
+            'guru_id' => $guruA->id, 'nama_guru' => $guruA->nama_lengkap,
+            'nis' => '77123', 'nama_peserta_didik' => 'Siswa CBT Prefix',
+            'kelas' => '6A', 'jenis_kelamin' => 'L', 'aktif' => true,
+        ]));
+        $akunSiswaA = User::factory()->siswa()->create([
+            'tenant_id' => $a->id, 'nama_pengguna' => 'siswa77123', 'terhubung_dengan' => [],
+        ]);
+        $bankA = TenantContext::run($a->id, fn () => CbtQuestionBank::create([
+            'guru_id' => $guruA->id, 'title' => 'Bank A', 'subject' => 'MTK', 'grade_level' => '6',
+        ]));
+        $questionA = CbtQuestion::create([
+            'bank_id' => $bankA->id, 'prompt' => '1+1?', 'options' => ['A' => '1', 'B' => '2'], 'correct_answer' => 'B',
+        ]);
+        $sessionA = TenantContext::run($a->id, fn () => CbtTestSession::create([
+            'guru_id' => $guruA->id, 'bank_id' => $bankA->id, 'title' => 'Ujian A',
+            'kelas' => '6A', 'duration_minutes' => 30, 'status' => 'published',
+            'opens_at' => now()->subMinutes(5), 'closes_at' => now()->addMinutes(30),
+            'participant_ids' => [$siswaA->id],
+        ]));
+        $resultA = TenantContext::run($a->id, fn () => CbtResult::create([
+            'session_id' => $sessionA->id, 'user_id' => $akunSiswaA->id, 'siswa_id' => $siswaA->id,
+            'started_at' => now(), 'deadline_at' => now()->addMinutes(30), 'answers' => [],
+        ]));
+
+        // Siswa prefix siswa77123 diizinkan menjawab
+        $this->assertTrue(TenantContext::run($a->id, fn () => (new CbtResultPolicy)->answer($akunSiswaA, $resultA)));
+
+        // Guru B mengakses question/result milik Sekolah A -> false (403), BUKAN TypeError/500
+        $this->assertFalse(TenantContext::run($b->id, fn () => (new CbtQuestionPolicy)->view($guruB, $questionA->fresh())));
+        $this->assertFalse(TenantContext::run($b->id, fn () => (new CbtResultPolicy)->view($guruB, $resultA->fresh())));
+
+        // #4 UserController mengizinkan nama_pengguna sama di sekolah berbeda
+        User::factory()->guru()->create(['tenant_id' => $a->id, 'nama_pengguna' => 'guru_sama_nis']);
+        $this->actingAs($adminB)->post(route('admin.users.store'), [
+            'nama_lengkap' => 'Guru Sekolah B',
+            'nama_pengguna' => 'guru_sama_nis',
+            'kata_sandi' => 'SandiAman123',
+            'peran' => 'guru',
+            'aktif' => true,
+        ])->assertRedirect(route('admin.users.index'));
+        $this->assertDatabaseHas('users', ['tenant_id' => $b->id, 'nama_pengguna' => 'guru_sama_nis']);
+
+        // #9 Lock & sync cache key presensi terisolasi per tenant
+        $this->assertSame('presensi-tarik-semua:t'.$a->id, TarikSemuaPresensiJob::lockKey($a->id));
+        $this->assertSame('presensi-tarik-semua:t'.$b->id, TarikSemuaPresensiJob::lockKey($b->id));
+        $this->assertSame('presensi.mesin.terakhir_tarik:t'.$a->id, PresensiMesinPullService::kunciSinkronTerakhir($a->id));
     }
 }

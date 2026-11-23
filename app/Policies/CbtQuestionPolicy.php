@@ -12,7 +12,7 @@ class CbtQuestionPolicy
 {
     public function view(User $user, CbtQuestion $question): bool
     {
-        return (int) $question->bank->guru_id === (int) $user->id;
+        return $question->bank !== null && (int) $question->bank->guru_id === (int) $user->id;
     }
 
     public function update(User $user, CbtQuestion $question): bool

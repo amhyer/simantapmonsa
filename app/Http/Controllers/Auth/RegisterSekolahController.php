@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterSekolahController extends Controller
@@ -42,7 +43,7 @@ class RegisterSekolahController extends Controller
 
             // Akun Operator Sekolah (Administrator)
             'nama_lengkap' => 'required|string|max:255',
-            'nama_pengguna' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_\-\.]+$/|unique:users,nama_pengguna',
+            'nama_pengguna' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_\-\.]+$/', Rule::unique('users', 'nama_pengguna')->whereNull('tenant_id')],
             'email' => 'required|email|max:255|unique:users,email',
             'telepon' => 'nullable|string|max:20',
             'kata_sandi' => ['required', 'string', 'confirmed', Password::defaults()],

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class TenantController extends Controller
@@ -314,7 +315,7 @@ class TenantController extends Controller
             'tgl_kedaluwarsa' => 'nullable|date',
             'catatan_langganan' => 'nullable|string|max:1000',
             'admin_nama' => 'required|string|max:255',
-            'admin_user' => 'required|string|max:64|unique:users,nama_pengguna',
+            'admin_user' => ['required', 'string', 'max:64', Rule::unique('users', 'nama_pengguna')->whereNull('tenant_id')],
             'admin_email' => 'nullable|email|max:255|unique:users,email',
             'admin_password' => ['required', 'string', Password::defaults()],
         ], [

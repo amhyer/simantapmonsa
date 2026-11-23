@@ -19,12 +19,12 @@ class CbtResultPolicy
             return true;
         }
 
-        return (int) $result->session->guru_id === (int) $user->id;
+        return $result->session !== null && (int) $result->session->guru_id === (int) $user->id;
     }
 
     public function answer(User $user, CbtResult $result): bool
     {
-        if ((int) $result->user_id !== (int) $user->id) {
+        if ((int) $result->user_id !== (int) $user->id || $result->session === null) {
             return false;
         }
 
@@ -44,22 +44,32 @@ class CbtResultPolicy
 
     public function viewViolations(User $user, CbtResult $result): bool
     {
-        return (int) $result->session->guru_id === (int) $user->id;
+        return $result->session !== null && (int) $result->session->guru_id === (int) $user->id;
     }
 
     private function siswa(User $user): ?Siswa
     {
-        $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+        $terhubung = $user->terhubung_dengan;
+        if (is_array($terhubung) && $terhubung !== []) {
+            $kandidat = Siswa::whereIn('id', $terhubung)->limit(2)->get();
+            if ($kandidat->count() === 1) {
+                return $kandidat->first();
+            }
+        }
 
+        $username = trim((string) $user->nama_pengguna);
+        if ($username === '') {
+            return null;
+        }
+
+        $siswa = Siswa::where(fn ($q) => $q->where('nis', $username)->orWhere('nisn', $username))->first();
         if ($siswa) {
             return $siswa;
         }
 
-        $terhubung = $user->terhubung_dengan;
-        if (is_array($terhubung) && $terhubung !== []) {
-            $kandidat = Siswa::whereIn('id', $terhubung)->limit(2)->get();
-
-            return $kandidat->count() === 1 ? $kandidat->first() : null;
+        $tanpaPrefix = trim((string) preg_replace('/^siswa/i', '', $username));
+        if ($tanpaPrefix !== '' && $tanpaPrefix !== $username) {
+            return Siswa::where(fn ($q) => $q->where('nis', $tanpaPrefix)->orWhere('nisn', $tanpaPrefix))->first();
         }
 
         return null;

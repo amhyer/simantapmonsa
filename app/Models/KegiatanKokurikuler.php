@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class KegiatanKokurikuler extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'kegiatan_kokurikuler';
 
     protected $fillable = [
-        'tema_id', 'nama', 'kelas', 'koordinator',
+        'tenant_id', 'tema_id', 'nama', 'kelas', 'koordinator',
         'tanggal_mulai', 'tanggal_selesai', 'deskripsi', 'aktif',
     ];
 
