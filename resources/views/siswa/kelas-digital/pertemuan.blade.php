@@ -184,15 +184,15 @@
                     @csrf
                     @if(in_array($tugas->tipe_pengumpulan, ['teks', 'keduanya'], true))
                         <div class="form-group">
-                            <label class="form-label">Jawaban Teks</label>
-                            <textarea name="jawaban_teks" rows="3" class="form-textarea" placeholder="Tulis jawabanmu di sini...">{{ old('jawaban_teks', $sub?->jawaban_teks) }}</textarea>
+                            <label class="form-label" for="tugas_{{ $tugas->id }}_jawaban_teks">Jawaban Teks</label>
+                            <textarea id="tugas_{{ $tugas->id }}_jawaban_teks" name="jawaban_teks" rows="3" class="form-textarea" placeholder="Tulis jawabanmu di sini...">{{ old('jawaban_teks', $sub?->jawaban_teks) }}</textarea>
                         </div>
                     @endif
 
                     @if(in_array($tugas->tipe_pengumpulan, ['file', 'keduanya'], true))
                         <div class="form-group">
-                            <label class="form-label">Unggah Berkas Jawaban (Maks 5 MB: PDF, Dokumen, Gambar, Audio/Video)</label>
-                            <input type="file" name="file" class="form-input">
+                            <label class="form-label" for="tugas_{{ $tugas->id }}_file">Unggah Berkas Jawaban (Maks 5 MB: PDF, Dokumen, Gambar, Audio/Video)</label>
+                            <input type="file" id="tugas_{{ $tugas->id }}_file" name="file" class="form-input">
                         </div>
                     @endif
 

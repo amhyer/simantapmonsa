@@ -27,8 +27,8 @@
                 @csrf
                 @method('PUT')
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester_id" required class="form-control">
+                    <label for="fld-dimensions-edit-semester-id" class="form-label">Semester</label>
+                    <select id="fld-dimensions-edit-semester-id" name="semester_id" required class="form-control">
                         <option value="">— Pilih —</option>
                         @foreach($semesters as $s)
                             <option value="{{ $s->id }}" @selected(old('semester_id', $dimension->semester_id) == $s->id)>{{ $s->label }}</option>
@@ -38,20 +38,20 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Dimensi</label>
-                        <input type="text" name="kode_dimensi" value="{{ old('kode_dimensi', $dimension->kode_dimensi) }}" maxlength="50" required class="form-control">
+                        <label for="fld-dimensions-edit-kode-dimensi-2" class="form-label">Kode Dimensi</label>
+                        <input id="fld-dimensions-edit-kode-dimensi-2" type="text" name="kode_dimensi" value="{{ old('kode_dimensi', $dimension->kode_dimensi) }}" maxlength="50" required class="form-control">
                         @error('kode_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Dimensi</label>
-                        <input type="text" name="nama_dimensi" value="{{ old('nama_dimensi', $dimension->nama_dimensi) }}" maxlength="255" required class="form-control">
+                        <label for="fld-dimensions-edit-nama-dimensi-2" class="form-label">Nama Dimensi</label>
+                        <input id="fld-dimensions-edit-nama-dimensi-2" type="text" name="nama_dimensi" value="{{ old('nama_dimensi', $dimension->nama_dimensi) }}" maxlength="255" required class="form-control">
                         @error('nama_dimensi')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Kategori</label>
-                        <select name="kategori" required class="form-control">
+                        <label for="fld-dimensions-edit-kategori-2" class="form-label">Kategori</label>
+                        <select id="fld-dimensions-edit-kategori-2" name="kategori" required class="form-control">
                             @foreach(['religius' => 'Religius', 'nasionalis' => 'Nasionalis', 'mandiri' => 'Mandiri', 'gotong_royong' => 'Gotong Royong', 'integritas' => 'Integritas', 'kreatif' => 'Kreatif', 'berdaya_saing' => 'Berdaya Saing'] as $val => $label)
                                 <option value="{{ $val }}" @selected(old('kategori', $dimension->kategori) === $val)>{{ $label }}</option>
                             @endforeach
@@ -59,24 +59,24 @@
                         @error('kategori')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Bobot (0-10)</label>
-                        <input type="number" name="bobot" value="{{ old('bobot', $dimension->bobot) }}" min="0" max="10" step="0.1" required class="form-control">
+                        <label for="fld-dimensions-edit-bobot" class="form-label">Bobot (0-10)</label>
+                        <input id="fld-dimensions-edit-bobot" type="number" name="bobot" value="{{ old('bobot', $dimension->bobot) }}" min="0" max="10" step="0.1" required class="form-control">
                         @error('bobot')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Threshold Siap (1-4)</label>
-                        <input type="number" name="threshold_siap" value="{{ old('threshold_siap', $dimension->threshold_siap) }}" min="1" max="4" step="0.1" required class="form-control">
+                        <label for="fld-dimensions-edit-threshold-siap" class="form-label">Threshold Siap (1-4)</label>
+                        <input id="fld-dimensions-edit-threshold-siap" type="number" name="threshold_siap" value="{{ old('threshold_siap', $dimension->threshold_siap) }}" min="1" max="4" step="0.1" required class="form-control">
                         @error('threshold_siap')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="2" class="form-control">{{ old('deskripsi', $dimension->deskripsi) }}</textarea>
+                    <label for="fld-dimensions-edit-deskripsi-2" class="form-label">Deskripsi</label>
+                    <textarea id="fld-dimensions-edit-deskripsi-2" name="deskripsi" rows="2" class="form-control">{{ old('deskripsi', $dimension->deskripsi) }}</textarea>
                     @error('deskripsi')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>
-                    <label class="form-label">Rubrik Penilaian (minimal 1 baris)</label>
-                    <div id="rubrikRows" style="display:grid;gap:8px">
+                    <div id="lbl-rubrik-penilaian" class="form-label">Rubrik Penilaian (minimal 1 baris)</div>
+                    <div id="rubrikRows" role="group" aria-labelledby="lbl-rubrik-penilaian" style="display:grid;gap:8px">
                         @foreach($rubrik as $i => $baris)
                             <div class="rubrik-row" style="display:grid;grid-template-columns:1fr 2fr auto;gap:8px;align-items:end">
                                 <div>

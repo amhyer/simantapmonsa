@@ -21,14 +21,14 @@
             @method('PUT')
 
             <div class="form-group">
-                <label class="form-label" for="nama_kelas">Nama Kelas Digital <span style="color:#dc2626">*</span></label>
+                <label class="form-label" for="nama_kelas">Nama Kelas Digital <span style="color:var(--bad)">*</span></label>
                 <input id="nama_kelas" type="text" name="nama_kelas" class="form-input" value="{{ old('nama_kelas', $kelasDigital->nama_kelas) }}" required>
-                @error('nama_kelas') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                @error('nama_kelas') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
                 <div class="form-group">
-                    <label class="form-label" for="mata_pelajaran">Mata Pelajaran <span style="color:#dc2626">*</span></label>
+                    <label class="form-label" for="mata_pelajaran">Mata Pelajaran <span style="color:var(--bad)">*</span></label>
                     <input id="mata_pelajaran" list="daftar-mapel-kd" type="text" name="mata_pelajaran" class="form-input" value="{{ old('mata_pelajaran', $kelasDigital->mata_pelajaran) }}" required>
                     <datalist id="daftar-mapel-kd">
                         @foreach($mapelOptions as $mapel)

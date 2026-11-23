@@ -8,8 +8,8 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div>
-                    <label class="form-label">Pilih Kelas</label>
-                    <select name="kelas" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-rapor-siswa-belajar-kelas" class="form-label">Pilih Kelas</label>
+                    <select id="fld-rapor-siswa-belajar-kelas" name="kelas" class="form-control" onchange="this.form.submit()">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach

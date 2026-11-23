@@ -51,16 +51,16 @@
             <form method="POST" action="{{ route('guru.tka.rekomendasi.update', $rekomendasi) }}" class="grid grid-3" style="align-items:end;gap:14px">
                 @csrf
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Status Tindak Lanjut</label>
-                    <select name="status_tindak_lanjut" class="form-control">
+                    <label for="fld-tka-kognitif-show-status-tindak-lanjut" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Status Tindak Lanjut</label>
+                    <select id="fld-tka-kognitif-show-status-tindak-lanjut" name="status_tindak_lanjut" class="form-control">
                         <option value="direkomendasikan" @selected($rekomendasi->status_tindak_lanjut === 'direkomendasikan')>Direkomendasikan</option>
                         <option value="berjalan" @selected($rekomendasi->status_tindak_lanjut === 'berjalan')>Sedang Berjalan</option>
                         <option value="tuntas" @selected($rekomendasi->status_tindak_lanjut === 'tuntas')>Tuntas Dilaksanakan</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Catatan Pendampingan Guru</label>
-                    <input type="text" name="catatan_guru" value="{{ old('catatan_guru', $rekomendasi->catatan_guru) }}" class="form-control" placeholder="Catatan progres latihan siswa...">
+                    <label for="fld-tka-kognitif-show-catatan-guru" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Catatan Pendampingan Guru</label>
+                    <input id="fld-tka-kognitif-show-catatan-guru" type="text" name="catatan_guru" value="{{ old('catatan_guru', $rekomendasi->catatan_guru) }}" class="form-control" placeholder="Catatan progres latihan siswa...">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Pemantauan</button>

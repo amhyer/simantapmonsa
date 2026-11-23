@@ -19,12 +19,12 @@
                 <form method="POST" action="{{ route('guru.tp.store') }}">
                     @csrf
                     <div class="form-group" style="margin-bottom:12px">
-                        <label class="form-label">Kode TP</label>
-                        <input type="text" name="kode" class="form-control" placeholder="Misal: TP.1.1" maxlength="30" required>
+                        <label for="fld-guru-tp-kode" class="form-label">Kode TP</label>
+                        <input id="fld-guru-tp-kode" type="text" name="kode" class="form-control" placeholder="Misal: TP.1.1" maxlength="30" required>
                     </div>
                     <div class="form-group" style="margin-bottom:12px">
-                        <label class="form-label">Mata Pelajaran</label>
-                        <select name="mata_pelajaran" class="form-control" required>
+                        <label for="fld-guru-tp-mata-pelajaran" class="form-label">Mata Pelajaran</label>
+                        <select id="fld-guru-tp-mata-pelajaran" name="mata_pelajaran" class="form-control" required>
                             @foreach($mapelOptions as $m)
                                 <option value="{{ $m }}" @selected($m === ($pengaturan->mata_pelajaran ?? ''))>{{ $m }}</option>
                             @endforeach
@@ -32,24 +32,24 @@
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                         <div>
-                            <label class="form-label">Fase</label>
-                            <select name="fase" class="form-control" required>
+                            <label for="fld-guru-tp-fase" class="form-label">Fase</label>
+                            <select id="fld-guru-tp-fase" name="fase" class="form-control" required>
                                 <option value="Fase A">Fase A (Kelas 1-2)</option>
                                 <option value="Fase B">Fase B (Kelas 3-4)</option>
                                 <option value="Fase C">Fase C (Kelas 5-6)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">Semester</label>
-                            <select name="semester" class="form-control" required>
+                            <label for="fld-guru-tp-semester" class="form-label">Semester</label>
+                            <select id="fld-guru-tp-semester" name="semester" class="form-control" required>
                                 <option value="Ganjil" @selected(($pengaturan->semester ?? 'Ganjil') === 'Ganjil')>Ganjil</option>
                                 <option value="Genap" @selected(($pengaturan->semester ?? '') === 'Genap')>Genap</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:14px">
-                        <label class="form-label">Deskripsi Ringkas TP (Maks. 300 karakter)</label>
-                        <textarea name="deskripsi" rows="3" maxlength="300" class="form-control" placeholder="Contoh: memahami konsep penjumlahan dan pengurangan bilangan cacah sampai 100" required></textarea>
+                        <label for="fld-guru-tp-deskripsi" class="form-label">Deskripsi Ringkas TP (Maks. 300 karakter)</label>
+                        <textarea id="fld-guru-tp-deskripsi" name="deskripsi" rows="3" maxlength="300" class="form-control" placeholder="Contoh: memahami konsep penjumlahan dan pengurangan bilangan cacah sampai 100" required></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width:100%">
                         <i class="fas fa-save"></i> Simpan Tujuan Pembelajaran

@@ -62,7 +62,7 @@
                                 <td>Fase {{ $pk['fase'] }}</td>
                                 <td style="text-align:center">{{ $pk['jumlah_siswa'] }} Siswa</td>
                                 <td style="text-align:center;font-weight:600">{{ $pk['kktp_rata'] }}</td>
-                                <td style="text-align:center;font-weight:700;color:{{ $pk['rata_nilai'] >= $pk['kktp_rata'] ? '#027A48' : ($pk['rata_nilai'] > 0 ? '#B42318' : '#667085') }}">
+                                <td style="text-align:center;font-weight:700;color:{{ $pk['rata_nilai'] >= $pk['kktp_rata'] ? '#027A48' : ($pk['rata_nilai'] > 0 ? 'var(--bad)' : '#667085') }}">
                                     {{ $pk['rata_nilai'] > 0 ? $pk['rata_nilai'] : '—' }}
                                 </td>
                                 <td>
@@ -112,7 +112,7 @@
                                         @endif
                                     </td>
                                     <td style="text-align:center;font-weight:700">{{ $row['tp_pm'] }} TP</td>
-                                    <td style="text-align:center;font-weight:700;color:{{ $row['sinkron_tp'] ? '#027A48' : '#B42318' }}">
+                                    <td style="text-align:center;font-weight:700;color:{{ $row['sinkron_tp'] ? '#027A48' : 'var(--bad)' }}">
                                         {{ $row['tp_erapor'] }} TP
                                     </td>
                                     <td style="text-align:center">
@@ -125,7 +125,7 @@
                                         @if(empty($row['temuan']))
                                             <span style="color:#027A48;font-weight:600">✓ Kurikulum, KKTP &amp; e-Rapor Selaras</span>
                                         @else
-                                            <ul style="margin:0;padding-left:16px;color:#B42318">
+                                            <ul style="margin:0;padding-left:16px;color:var(--bad)">
                                                 @foreach($row['temuan'] as $t)
                                                     <li>{{ $t }}</li>
                                                 @endforeach

@@ -8,39 +8,39 @@
         <div class="card-body">
             <form method="GET" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end">
                 <div>
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas" class="form-control">
+                    <label for="fld-rapor-p5-index-kelas" class="form-label">Kelas</label>
+                    <select id="fld-rapor-p5-index-kelas" name="kelas" class="form-control">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tema P5BK</label>
-                    <select name="tema" class="form-control">
+                    <label for="fld-rapor-p5-index-tema" class="form-label">Tema P5BK</label>
+                    <select id="fld-rapor-p5-index-tema" name="tema" class="form-control">
                         @foreach($temaList as $t)
                             <option value="{{ $t }}" @selected($t === $tema)>{{ $t }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Dimensi</label>
-                    <select name="dimensi" class="form-control">
+                    <label for="fld-rapor-p5-index-dimensi" class="form-label">Dimensi</label>
+                    <select id="fld-rapor-p5-index-dimensi" name="dimensi" class="form-control">
                         @foreach($dimensiList as $d)
                             <option value="{{ $d }}" @selected($d === $dimensi)>{{ $d }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester" class="form-control">
+                    <label for="fld-rapor-p5-index-semester" class="form-label">Semester</label>
+                    <select id="fld-rapor-p5-index-semester" name="semester" class="form-control">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control">
+                    <label for="fld-rapor-p5-index-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                    <input id="fld-rapor-p5-index-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary btn-sm">Tampilkan</button>

@@ -21,10 +21,10 @@
 
                 <div class="grid grid-2" style="margin-bottom:20px">
                     <div>
-                        <label class="form-label">
+                        <label for="fld-sessions-create-guru-id" class="form-label">
                             Guru Penyelenggara <span style="color:var(--bad)">*</span>
                         </label>
-                        <select name="guru_id" class="form-control" required style="width:100%">
+                        <select id="fld-sessions-create-guru-id" name="guru_id" class="form-control" required style="width:100%">
                             <option value="">— Pilih Guru —</option>
                             @foreach($gurus as $guru)
                                 <option value="{{ $guru->id }}" @selected(old('guru_id') == $guru->id)>
@@ -35,10 +35,10 @@
                     </div>
 
                     <div>
-                        <label class="form-label">
+                        <label for="fld-sessions-create-bank-id" class="form-label">
                             Bank Soal Terkait <span style="color:var(--bad)">*</span>
                         </label>
-                        <select name="bank_id" class="form-control" required style="width:100%">
+                        <select id="fld-sessions-create-bank-id" name="bank_id" class="form-control" required style="width:100%">
                             <option value="">— Pilih Bank Soal —</option>
                             @foreach($banks as $bank)
                                 <option value="{{ $bank->id }}" @selected(old('bank_id') == $bank->id)>
@@ -51,10 +51,10 @@
 
                 <div class="grid grid-2" style="margin-bottom:20px">
                     <div>
-                        <label class="form-label">
+                        <label for="fld-sessions-create-title" class="form-label">
                             Judul Sesi Ujian <span style="color:var(--bad)">*</span>
                         </label>
-                        <input type="text" 
+                        <input id="fld-sessions-create-title" type="text" 
                                name="title" 
                                class="form-control" 
                                maxlength="200" 
@@ -64,18 +64,19 @@
                     </div>
 
                     <div>
-                        <label class="form-label">
+                        <label class="form-label" for="fld-cbt-session-kelas">
                             Target Kelas / Rombel (Dapodik) <span style="color:var(--bad)">*</span>
                         </label>
                         @if(isset($classes) && count($classes) > 0)
-                            <select name="kelas" class="form-control" required style="width:100%">
+                            <select id="fld-cbt-session-kelas" name="kelas" class="form-control" required style="width:100%">
                                 <option value="">— Pilih Kelas Peserta —</option>
                                 @foreach($classes as $c)
                                     <option value="{{ $c }}" @selected(old('kelas') === $c)>Kelas {{ $c }}</option>
                                 @endforeach
                             </select>
                         @else
-                            <input type="text" 
+                            <input id="fld-cbt-session-kelas"
+                                   type="text" 
                                    name="kelas" 
                                    class="form-control" 
                                    placeholder="Contoh: 7A, 8B, IX-1" 
@@ -87,10 +88,10 @@
 
                 <div class="grid grid-2" style="margin-bottom:20px">
                     <div>
-                        <label class="form-label">
+                        <label for="fld-sessions-create-opens-at" class="form-label">
                             Jadwal Buka Sesi <span style="color:var(--bad)">*</span>
                         </label>
-                        <input type="datetime-local" 
+                        <input id="fld-sessions-create-opens-at" type="datetime-local" 
                                name="opens_at" 
                                class="form-control" 
                                value="{{ old('opens_at') }}" 
@@ -98,10 +99,10 @@
                     </div>
 
                     <div>
-                        <label class="form-label">
+                        <label for="fld-sessions-create-closes-at" class="form-label">
                             Jadwal Tutup Sesi <span style="color:var(--bad)">*</span>
                         </label>
-                        <input type="datetime-local" 
+                        <input id="fld-sessions-create-closes-at" type="datetime-local" 
                                name="closes_at" 
                                class="form-control" 
                                value="{{ old('closes_at') }}" 
@@ -110,11 +111,11 @@
                 </div>
 
                 <div style="margin-bottom:24px">
-                    <label class="form-label">
+                    <label for="fld-sessions-create-duration-minutes" class="form-label">
                         Durasi Pengerjaan per Siswa (Menit) <span style="color:var(--bad)">*</span>
                     </label>
                     <div style="display:flex;align-items:center;gap:10px">
-                        <input type="number" 
+                        <input id="fld-sessions-create-duration-minutes" type="number" 
                                name="duration_minutes" 
                                class="form-control" 
                                min="1" 

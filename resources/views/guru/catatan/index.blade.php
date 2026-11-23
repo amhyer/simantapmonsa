@@ -25,8 +25,8 @@
             @csrf
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Siswa</label>
-                    <select name="siswa_id" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-catatan-siswa-id" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Siswa</label>
+                    <select id="fld-guru-catatan-siswa-id" name="siswa_id" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">Pilih Siswa</option>
                         @foreach($siswa as $s)
                             <option value="{{ $s->id }}">{{ $s->nama_peserta_didik }}</option>
@@ -34,12 +34,12 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Tanggal</label>
-                    <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-catatan-tanggal" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Tanggal</label>
+                    <input id="fld-guru-catatan-tanggal" type="date" name="tanggal" value="{{ date('Y-m-d') }}" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jenis</label>
-                    <select name="jenis" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-catatan-jenis" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jenis</label>
+                    <select id="fld-guru-catatan-jenis" name="jenis" style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="apresiasi">Apresiasi</option>
                         <option value="perhatian">Perlu Perhatian</option>
                         <option value="umum">Umum</option>
@@ -63,7 +63,7 @@
     <div class="card-body tight">
         @if($catatan->count())
             @foreach($catatan->take(30) as $c)
-                @php $jenisColor = match($c->jenis){'apresiasi'=>'#D1FAE5,#065F46','perhatian'=>'#FEE2E2,#991B1B',default=>'#F3F4F6,#6B7280'}; @endphp
+                @php $jenisColor = match($c->jenis){'apresiasi'=>'#D1FAE5,#065F46','perhatian'=>'#FEE2E2,var(--bad)',default=>'#F3F4F6,#6B7280'}; @endphp
                 @php [$bg,$fg] = explode(',', $jenisColor); @endphp
                 <div style="padding:12px 16px;border-bottom:1px solid #F2F4F7;display:flex;gap:12px;align-items:start">
                     <div style="width:8px;height:8px;border-radius:50%;background:{{ $bg }};margin-top:6px;flex-shrink:0"></div>
@@ -77,7 +77,7 @@
                     </div>
                     <form action="{{ route('guru.catatan.destroy', $c->id) }}" method="POST" onsubmit="return confirm('Hapus?')">
                         @csrf @method('DELETE')
-                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
+                        <button class="btn btn-ghost btn-sm" style="color:var(--bad)" type="submit" aria-label="Hapus">🗑</button>
                     </form>
                 </div>
             @endforeach
@@ -98,7 +98,7 @@ if (catatanTextarea && catatanCounter) {
     const syncCounter = () => {
         const len = catatanTextarea.value.length;
         catatanCounter.textContent = `${len} / 1000 karakter`;
-        catatanCounter.style.color = len >= 980 ? '#B42318' : (len >= 850 ? '#B54708' : '#667085');
+        catatanCounter.style.color = len >= 980 ? 'var(--bad)' : (len >= 850 ? '#B54708' : '#667085');
     };
     catatanTextarea.addEventListener('input', syncCounter);
     syncCounter();

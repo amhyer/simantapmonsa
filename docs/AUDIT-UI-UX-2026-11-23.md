@@ -2,8 +2,8 @@
 
 **Tanggal:** 23 November 2026
 **Ruang lingkup:** 335 berkas Blade, 691 nama route, 616 `<button>`, 357 `<form>`, 335 `<table>`, 1.194 elemen input
-**Alat ukur:** `python3 tools/audit-ui.py` + guard regresi `tests/Unit/KualitasAntarmukaBladeTest.php`
-**Status:** 1 bug fungsional + 4 kelas cacat aksesibilitas/struktur diperbaiki; sisa temuan dipetakan jadi backlog terprioritas
+**Alat ukur:** `python3 tools/audit-ui.py` + guard regresi `tests/Unit/KualitasAntarmukaBladeTest.php` (10 invarian)
+**Status:** 1 bug fungsional + seluruh backlog P1 (`label for` & penyatuan token `--bad`) diperbaiki; sisa temuan P2–P3 dipetakan jadi backlog terprioritas
 
 ---
 
@@ -15,14 +15,16 @@
 | `<button>` di dalam form tanpa `type` eksplisit | 20 | 0 | Risiko submit tak sengaja saat form ditambah tombol baru |
 | Tombol ikon tanpa nama aksesibel (`aria-label`/`title`) | 20 | 0 | Pembaca layar hanya membacakan "tombol" |
 | `<img>` tanpa `alt` | 4 | 0 | Blok tanda tangan PDF tidak terbaca pembaca layar |
-| `<label>` tanpa `for` (tidak membungkus field) | 706 | 591 | Klik label tidak memfokuskan field — 121 label ditautkan |
-| `aria-label` total di seluruh view | 31 | 63 | +32 nama aksesibel baru |
+| `<label>` tanpa `for` (tidak membungkus field) | 706 | 0 | Seluruh label terhubung ke field; judul grup radio/checkbox/tabel memakai `role="group"` + `aria-labelledby` |
+| `label for="..."` tanpa pasangan `id` | 0 | 0 | Setiap `for` statis menunjuk `id` unik yang ada di berkas yang sama |
+| Varian warna merah aksi destruktif / status negatif | 5+ | 1 (`--bad`) | Seluruh aksi destruktif/error memakai `var(--bad)`; tombol non-destruktif (Copy/Excel/Print/Batal) tidak lagi berwarna merah |
+| `aria-label` total di seluruh view | 31 | 84 | +53 nama aksesibel baru |
 | `href="#"` / `javascript:void(0)` | 0 | 0 | Tidak ada tautan mati |
 | Form POST tanpa `@csrf` | 0 | 0 | Tidak ada |
 | `@push` tanpa `@stack` | 0 | 0 | Tidak ada |
 | Kolom `<th>` vs `<td>` tak konsisten | 0 | 0 | Tidak ada tabel yang bergeser |
 
-**Kesimpulan:** struktur tabel dan form secara fungsional sehat (tidak ada tautan mati, tidak ada CSRF bocor, kolom tabel konsisten). Masalah nyata terkonsentrasi pada **aksesibilitas tombol/label** dan **konsistensi visual** (lihat §4), dengan satu bug fungsional yang membuat fitur kuis tidak bisa diakses dari halaman pertemuan.
+**Kesimpulan:** struktur tabel, form, tautan label-ke-kontrol, dan semantik warna aksi destruktif kini bersih dan dijaga 10 invarian regresi otomatis. Sisa utang UI/UX terkonsentrasi pada **utilitas tata letak/inline style** (P2–P3, lihat §4–§5).
 
 ---
 
@@ -67,26 +69,36 @@ Sebelumnya hanya 31 `aria-label` untuk 616 tombol. Ditambahkan 32 label kontekst
 
 4 `<img>` pada `pengawas/pdf/laporan-semester.blade.php` dan `pengawas/pdf/visitasi.blade.php` tidak punya `alt`; kini `alt="Tanda tangan Kepala Sekolah"` / `alt="Tanda tangan Pengawas Sekolah"`.
 
-### 3.5 Label tidak terhubung ke field (121 label ditautkan)
+### 3.5 Label tidak terhubung ke field (706 → 0)
 
-Label tanpa `for` tidak memfokuskan field saat diklik — terasa terutama pada form panjang dan pengguna layar sentuh. 121 label yang field-nya sudah punya `id` ditautkan otomatis dan diverifikasi per berkas (mis. `admin/users/index.blade.php`, `admin/dapodik/index.blade.php`, `auth/login.blade.php`).
+Label tanpa `for` tidak memfokuskan field saat diklik — terasa terutama pada form panjang dan pengguna layar sentuh:
 
-Sisa 591 tidak dapat ditautkan aman tanpa menambah `id` baru pada field (berisiko `id` duplikat karena beberapa form memakai `name` yang sama dalam satu halaman) — lihat backlog P2.
+- Tahap 1: 121 label yang field-nya sudah punya `id` ditautkan ke `id` eksisting.
+- Tahap 2 (P1 tuntas): sisa 591 `<label>` diselesaikan seluruhnya:
+  - **570 label kontrol tunggal** diberi pasangan `for` + `id` unik per berkas/perulangan (termasuk `id` dinamis di dalam `@for`/`@foreach`/`@forelse` pada `guru/kelas-digital/show.blade.php`, `siswa/kelas-digital/pertemuan.blade.php`, `pengawas/visitasi/index.blade.php`, dan `admin/cetak/modifikasi-tampilan.blade.php`).
+  - **21 elemen `<label>` yang sebenarnya judul grup** (grup radio/checkbox, tabel dinamis multi-baris, atau nilai baca-saja seperti URL Spreadsheet) diubah ke elemen blok semantik dengan `id` + `role="group"` / `aria-labelledby`.
+
+### 3.6 Penyatuan varian warna aksi destruktif ke token `--bad` (P1 tuntas)
+
+Sebelumnya lima varian merah dipakai bergantian untuk satu makna risiko/error (`#B42318`, `var(--bad)`, `#991B1B`, `#DC2626`, `#D92D20`, ditambah sisa `#EF4444`/`#DC3545`/`#B91C1C`):
+
+- Seluruh aksi destruktif, zona berbahaya, pesan galat, dan indikator negatif disatukan ke `var(--bad)` (serta pembacaan `getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()` pada grafik Canvas/Chart.js; halaman mandiri tanpa `layout.css` mendeklarasikan `--bad: #B42318` di `:root`).
+- Tombol **non-destruktif** yang sebelumnya ikut diwarnai merah marun/merah terang (`Copy`, `Excel`, `Pdf`, `Print`, `Batal` modal, `Tambah Pengguna`, `Edit Gelar Guru`, `Data Pengguna`, `Pratinjau PDF`) dikembalikan ke varian netral/utama (`btn-ghost`, `btn-secondary`, `btn-primary`) agar warna `--bad` eksklusif menandakan risiko.
 
 ---
 
-## 4. Metrik konsistensi desain (belum diperbaiki)
+## 4. Metrik konsistensi desain
 
-Angka diukur dengan `tools/audit-ui.py` pada commit ini.
+Angka diukur dengan `tools/audit-ui.py` setelah penyelesaian P1.
 
 | Metrik | Nilai | Interpretasi |
 |---|---:|---|
-| Atribut `style="..."` inline | 8.378 | Hampir seluruh tata letak diatur inline; tidak ada satu sumber kebenaran untuk spacing |
-| Warna hex hardcoded | 3.824 | Melampaui design token di `layout.css` |
+| Atribut `style="..."` inline | 8.356 | Hampir seluruh tata letak diatur inline; tidak ada satu sumber kebenaran untuk spacing |
+| Warna hex hardcoded | 3.579 | Turun dari 3.824 setelah penyatuan ke `--bad`; warna non-merah masih melampaui token `layout.css` |
+| Pemakaian token `--bad` | 336 | Satu sumber kebenaran untuk aksi destruktif & status negatif (0 merah hardcoded di luar `:root`/PDF) |
 | `!important` | 77 | Tanda perang spesifisitas CSS |
-| Varian merah untuk aksi destruktif | **5** — `#B42318` (100), `var(--bad)` (100), `#991B1B` (72), `#DC2626` (38), `#D92D20` (16) | Satu makna, lima warna |
 | Skala padding inline | 6+ nilai dominan: `10px` (505), `11px` (368), `8px` (261), `12px` (132), `7px` (125), `6px` (102) | Tidak ada skala 4/8px; garis tabel tidak sejajar antar halaman |
-| Kelas tombol | `btn-ghost` 370, `btn-primary` 187, `btn-secondary` 108, `btn-outline` 48, `btn-danger` 18 | Aksi destruktif kadang `btn-danger`, kadang `btn-ghost` + merah inline |
+| Kelas tombol | `btn-ghost` 386, `btn-primary` 189, `btn-secondary` 113, `btn-outline` 48, `btn-danger` 18 | Warna aksi destruktif kini seragam memakai `--bad` |
 | Elemen input memakai `.form-control` | 405 dari 1.194 (34%) | 66% field memakai padding/border inline → tinggi field tidak seragam satu halaman dengan halaman lain |
 | Sistem wrapper tabel | `.table-wrapper` 264 vs `.table-responsive` 4 | Dua sistem; `.table-responsive` tidak punya style padding sel |
 | Ikon | FontAwesome 1.333 vs Lucide 5 | Dua bahasa ikon (solid vs stroke) |
@@ -99,11 +111,11 @@ Catatan penting: `body { overflow-x: hidden }` (`layout.css:34`) menyembunyikan 
 
 ## 5. Backlog terprioritas
 
-| Prioritas | Pekerjaan | Cakupan terukur | Alasan |
+| Prioritas | Pekerjaan | Cakupan terukur | Status / Alasan |
 |---|---|---|---|
-| P1 | Selesaikan `label for` sisa 591 | 591 label | Klik label tidak memfokuskan field; butuh penambahan `id` unik per form |
-| P1 | Satukan token warna aksi destruktif | 5 varian → 1 (`--bad`) | Kesalahan persepsi risiko: tombol hapus terlihat berbeda antar halaman |
-| P2 | Ganti 8.378 inline style dengan utilitas `.form-control`, `.card`, `.table-wrapper` | 1.194 field, 335 tabel | Menjamin tinggi field, padding sel, dan jarak antar kartu konsisten; prasyarat perbaikan responsif |
+| ~~P1~~ | ~~Selesaikan `label for` sisa 591~~ | ~~591 → 0~~ | **Selesai** — dijaga guard `test_label_terhubung_ke_kontrol_form` & `test_atribut_for_pada_label_menunjuk_id_yang_ada` |
+| ~~P1~~ | ~~Satukan token warna aksi destruktif~~ | ~~5 varian → 1 (`--bad`)~~ | **Selesai** — dijaga guard `test_warna_destruktif_memakai_token_bad` |
+| P2 | Ganti 8.356 inline style dengan utilitas `.form-control`, `.card`, `.table-wrapper` | 1.194 field, 335 tabel | Menjamin tinggi field, padding sel, dan jarak antar kartu konsisten; prasyarat perbaikan responsif |
 | P2 | Skala spacing 4/8px | 6 nilai padding dominan | Merapikan garis tabel dan kartu antar halaman |
 | P2 | Ganti 76 `confirm()` dengan modal konfirmasi bawaan aplikasi | 76 titik | Konsisten di mobile, bisa menampilkan detail aksi (nama data) |
 | P2 | Standarkan tombol ikon baru wajib `aria-label` | 616 tombol (guard sudah ada) | Mencegah regresi aksesibilitas |
@@ -116,7 +128,7 @@ Catatan penting: `body { overflow-x: hidden }` (`layout.css:34`) menyembunyikan 
 
 | Kandidat | Jumlah | Alasan bukan bug |
 |---|---:|---|
-| `id` duplikat (`fotoPreview`, `previewLogoKiri/Kanan`) | 3 | Berada di cabang `@if/@else` — hanya satu yang dirender; JS `fotoPreview` sudah menangani kedua bentuk (ganti `img`/`div`) |
+| `id` duplikat (`fotoPreview`, `previewLogoKiri/Kanan`, `fld-cbt-session-kelas`) | 4 | Berada di cabang `@if/@else` — hanya satu yang dirender; JS `fotoPreview` sudah menangani kedua bentuk (ganti `img`/`div`) |
 | Tombol tanpa handler (`hamburger`, `darkToggle`, `scrollTop`) | 3 | Diikat lewat `addEventListener` di `resources/js/halaman-publik.js` |
 | `field-tanpa-name` (input dalam form) | 20 | Panel konfigurasi Dapodik & filter yang dibaca JS, bukan dikirim; input read-only profil |
 | `form action="{{ route('login') }}"` | 1 | `route('login')` bernama untuk GET, tetapi URI `/login` juga punya route POST — submit tetap cocok |
@@ -128,7 +140,8 @@ Catatan penting: `body { overflow-x: hidden }` (`layout.css:34`) menyembunyikan 
 
 ## 7. Berkas yang diubah
 
-- `resources/views/siswa/kelas-digital/pertemuan.blade.php` — perbaikan route kuis
-- 48 berkas Blade lain — atribut `type`, `aria-label`, `for`, dan `alt` (tanpa perubahan teks/markup); total 49 berkas Blade tersentuh
-- `tests/Unit/KualitasAntarmukaBladeTest.php` — guard 7 invarian
+- `resources/views/siswa/kelas-digital/pertemuan.blade.php` — perbaikan route kuis + tautan `label for` dinamis
+- >170 berkas Blade — kelengkapan atribut `type`, `aria-label`, `alt`, penautan seluruh `label for` + `id` unik, serta penyatuan warna destruktif ke `var(--bad)`
+- `resources/css/layout.css` — penghapusan fallback merah hardcoded yang berbeda dari `--bad`
+- `tests/Unit/KualitasAntarmukaBladeTest.php` — guard 10 invarian
 - `tools/audit-ui.py` — alat ukur

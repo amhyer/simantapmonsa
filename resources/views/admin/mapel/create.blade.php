@@ -20,8 +20,8 @@
             <form action="{{ route('admin.mapel.store') }}" method="POST">
                 @csrf
                 <div class="form-group">
-                    <label class="form-label">Nama Mata Pelajaran <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
+                    <label for="fld-mapel-create-nama" class="form-label">Nama Mata Pelajaran <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-mapel-create-nama" type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
                            value="{{ old('nama') }}" placeholder="Contoh: Bahasa Indonesia" required autofocus>
                     @error('nama')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -29,8 +29,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Kode</label>
-                    <input type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
+                    <label for="fld-mapel-create-kode" class="form-label">Kode</label>
+                    <input id="fld-mapel-create-kode" type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
                            value="{{ old('kode') }}" placeholder="Contoh: BIND (opsional)">
                     @error('kode')
                         <div class="invalid-feedback">{{ $message }}</div>

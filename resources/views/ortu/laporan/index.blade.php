@@ -36,7 +36,7 @@
                 </div>
                 <div style="text-align:right">
                     <div style="font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#667085">Nilai Akhir</div>
-                    <div style="font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $laporan['nilai_akhir'] >= 70 ? '#12805C' : ($laporan['nilai_akhir'] > 0 ? '#B42318' : '#667085') }}">
+                    <div style="font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:{{ $laporan['nilai_akhir'] >= 70 ? '#12805C' : ($laporan['nilai_akhir'] > 0 ? 'var(--bad)' : '#667085') }}">
                         {{ $laporan['nilai_akhir'] > 0 ? number_format($laporan['nilai_akhir'], 1) : '—' }}
                     </div>
                     @if(isset($laporan['predikat']) && $laporan['predikat'])
@@ -182,7 +182,7 @@
                                 label: 'Rata-rata Nilai',
                                 data: jenisValues,
                                 backgroundColor: jenisValues.map(v => v >= 70 ? 'rgba(18,128,92,0.75)' : 'rgba(180,35,24,0.75)'),
-                                borderColor: jenisValues.map(v => v >= 70 ? '#12805C' : '#B42318'),
+                                borderColor: jenisValues.map(v => v >= 70 ? '#12805C' : getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()),
                                 borderWidth: 1.5,
                                 borderRadius: 6
                             }, {

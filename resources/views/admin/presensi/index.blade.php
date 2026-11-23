@@ -409,8 +409,8 @@
             <form action="{{ route('admin.presensi.lokasi.store') }}" method="POST" class="form-grid-responsive">
                 @csrf
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nama titik *</label>
-                    <input name="nama" required maxlength="100" placeholder="Contoh: Gedung Sekolah" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                    <label for="fld-admin-presensi-nama" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nama titik *</label>
+                    <input id="fld-admin-presensi-nama" name="nama" required maxlength="100" placeholder="Contoh: Gedung Sekolah" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
                     <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="new-latitude">Latitude *</label>
@@ -421,12 +421,12 @@
                     <input id="new-longitude" name="longitude" required type="number" step="any" min="-180" max="180" placeholder="119.4327" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Radius (meter) *</label>
-                    <input name="radius_meter" required type="number" min="20" max="5000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                    <label for="fld-admin-presensi-radius-meter" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Radius (meter) *</label>
+                    <input id="fld-admin-presensi-radius-meter" name="radius_meter" required type="number" min="20" max="5000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Akurasi GPS maks. (m)</label>
-                    <input name="akurasi_maksimal_meter" required type="number" min="10" max="1000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
+                    <label for="fld-admin-presensi-akurasi-maksimal-meter" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Akurasi GPS maks. (m)</label>
+                    <input id="fld-admin-presensi-akurasi-maksimal-meter" name="akurasi_maksimal_meter" required type="number" min="10" max="1000" value="150" style="width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:6px">
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;padding-bottom:8px">
                     <input type="checkbox" name="aktif" id="titik-aktif" value="1" checked style="width:18px;height:18px">
@@ -482,7 +482,7 @@
                                 <td style="padding:12px 14px;text-align:right">
                                     <form action="{{ route('admin.presensi.lokasi.destroy', $zone) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Hapus titik lokasi {{ addslashes($zone->nama) }}?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px" type="submit">
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--bad);padding:4px 8px" type="submit">
                                             <i class="fas fa-trash-alt"></i> Hapus
                                         </button>
                                     </form>

@@ -21,33 +21,33 @@
                 @method('PUT')
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
-                        <input type="text" name="nama" value="{{ old('nama', $siswa->nama_peserta_didik) }}" required
+                        <label for="fld-siswa-edit-nama" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
+                        <input id="fld-siswa-edit-nama" type="text" name="nama" value="{{ old('nama', $siswa->nama_peserta_didik) }}" required
                             style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">NIS *</label>
-                        <input type="text" name="nis" value="{{ old('nis', $siswa->nis) }}" required
+                        <label for="fld-siswa-edit-nis" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">NIS *</label>
+                        <input id="fld-siswa-edit-nis" type="text" name="nis" value="{{ old('nis', $siswa->nis) }}" required
                             style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Jenis Kelamin *</label>
-                        <select name="jenis_kelamin" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-siswa-edit-jenis-kelamin" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Jenis Kelamin *</label>
+                        <select id="fld-siswa-edit-jenis-kelamin" name="jenis_kelamin" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="L" {{ $siswa->jenis_kelamin === 'L' ? 'selected' : '' }}>Laki-laki</option>
                             <option value="P" {{ $siswa->jenis_kelamin === 'P' ? 'selected' : '' }}>Perempuan</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas *</label>
-                        <input type="text" name="kelas" value="{{ old('kelas', $siswa->kelas) }}" required
+                        <label for="fld-siswa-edit-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas *</label>
+                        <input id="fld-siswa-edit-kelas" type="text" name="kelas" value="{{ old('kelas', $siswa->kelas) }}" required
                             style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Orang Tua</label>
-                    <input type="text" name="nama_orang_tua" value="{{ old('nama_orang_tua', $siswa->nama_orang_tua) }}"
+                    <label for="fld-siswa-edit-nama-orang-tua" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Orang Tua</label>
+                    <input id="fld-siswa-edit-nama-orang-tua" type="text" name="nama_orang_tua" value="{{ old('nama_orang_tua', $siswa->nama_orang_tua) }}"
                         style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="display:flex;gap:10px">

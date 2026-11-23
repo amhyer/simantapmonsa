@@ -20,8 +20,8 @@
 <div class="filter-bar">
     <form method="GET" action="{{ route('admin.tka.warnings.index') }}" style="display:contents">
         <div class="filter-group">
-            <label class="form-label">Status Tindak Lanjut</label>
-            <select name="status" class="form-control">
+            <label for="fld-tka-warnings-status" class="form-label">Status Tindak Lanjut</label>
+            <select id="fld-tka-warnings-status" name="status" class="form-control">
                 <option value="">— Semua Status —</option>
                 <option value="pending" @selected(request('status') === 'pending')>Pending (Menunggu)</option>
                 <option value="sedang_diproses" @selected(request('status') === 'sedang_diproses')>Sedang Diproses</option>
@@ -30,8 +30,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Tingkat Peringatan</label>
-            <select name="tingkat_peringatan" class="form-control">
+            <label for="fld-tka-warnings-tingkat-peringatan" class="form-label">Tingkat Peringatan</label>
+            <select id="fld-tka-warnings-tingkat-peringatan" name="tingkat_peringatan" class="form-control">
                 <option value="">— Semua Tingkat —</option>
                 <option value="kritis" @selected(request('tingkat_peringatan') === 'kritis')>Kritis (Sangat Mendesak)</option>
                 <option value="tinggi" @selected(request('tingkat_peringatan') === 'tinggi')>Tinggi</option>
@@ -41,8 +41,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Dimensi P5</label>
-            <select name="dimension_id" class="form-control">
+            <label for="fld-tka-warnings-dimension-id" class="form-label">Dimensi P5</label>
+            <select id="fld-tka-warnings-dimension-id" name="dimension_id" class="form-control">
                 <option value="">— Semua Dimensi —</option>
                 @foreach($dimensions as $dim)
                     <option value="{{ $dim->id }}" @selected(request('dimension_id') == $dim->id)>
@@ -53,8 +53,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Cari Nama Siswa</label>
-            <input type="text" name="search" class="form-control" placeholder="Nama siswa..." value="{{ request('search') }}">
+            <label for="fld-tka-warnings-search" class="form-label">Cari Nama Siswa</label>
+            <input id="fld-tka-warnings-search" type="text" name="search" class="form-control" placeholder="Nama siswa..." value="{{ request('search') }}">
         </div>
 
         <div style="display:flex;align-items:center;gap:8px">

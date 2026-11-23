@@ -25,10 +25,10 @@
                 @method('PUT')
 
                 <div style="margin-bottom:20px">
-                    <label class="form-label">
+                    <label for="fld-banks-edit-title" class="form-label">
                         Judul Bank Soal <span style="color:var(--bad)">*</span>
                     </label>
-                    <input type="text" 
+                    <input id="fld-banks-edit-title" type="text" 
                            name="title" 
                            class="form-control" 
                            maxlength="200" 
@@ -37,10 +37,10 @@
                 </div>
 
                 <div style="margin-bottom:20px">
-                    <label class="form-label">
+                    <label for="fld-banks-edit-subject" class="form-label">
                         Mata Pelajaran <span style="color:var(--bad)">*</span>
                     </label>
-                    <input type="text" 
+                    <input id="fld-banks-edit-subject" type="text" 
                            name="subject" 
                            class="form-control" 
                            maxlength="100" 
@@ -49,10 +49,10 @@
                 </div>
 
                 <div style="margin-bottom:24px">
-                    <label class="form-label">
+                    <label for="fld-banks-edit-guru-id" class="form-label">
                         Guru Pemilik / Pengampu <span style="color:var(--bad)">*</span>
                     </label>
-                    <select name="guru_id" class="form-control" required style="width:100%">
+                    <select id="fld-banks-edit-guru-id" name="guru_id" class="form-control" required style="width:100%">
                         @foreach($gurus as $guru)
                             <option value="{{ $guru->id }}" @selected(old('guru_id', $bank->guru_id) == $guru->id)>
                                 {{ $guru->nama_lengkap }} (NIP: {{ $guru->nip ?? '-' }})

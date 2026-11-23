@@ -176,7 +176,7 @@
                     'Tugas': '#B8860B',
                     'Ulangan Harian': '#12805C',
                     'Praktik': '#B54708',
-                    'PTS': '#B42318',
+                    'PTS': getComputedStyle(document.documentElement).getPropertyValue('--bad').trim(),
                     'PAS': '#667085',
                 };
 

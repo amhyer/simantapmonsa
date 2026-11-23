@@ -14,12 +14,12 @@
             <form action="{{ route('admin.referensi.ekstrakurikuler.store') }}" method="POST" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kegiatan</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Pramuka" maxlength="100" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-ekstrakurikuler-nama" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kegiatan</label>
+                    <input id="fld-referensi-ekstrakurikuler-nama" type="text" name="nama" value="{{ old('nama') }}" placeholder="Pramuka" maxlength="100" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pembina</label>
-                    <select name="pembina_id" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-ekstrakurikuler-pembina-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Pembina</label>
+                    <select id="fld-referensi-ekstrakurikuler-pembina-id" name="pembina_id" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">— Tanpa pembina —</option>
                         @foreach($guru as $g)
                             <option value="{{ $g->id }}" {{ old('pembina_id') == $g->id ? 'selected' : '' }}>{{ $g->nama_lengkap }}</option>
@@ -27,8 +27,8 @@
                     </select>
                 </div>
                 <div style="grid-column:1/-1">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Deskripsi</label>
-                    <input type="text" name="deskripsi" value="{{ old('deskripsi') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-referensi-ekstrakurikuler-deskripsi" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Deskripsi</label>
+                    <input id="fld-referensi-ekstrakurikuler-deskripsi" type="text" name="deskripsi" value="{{ old('deskripsi') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="grid-column:1/-1">
                     <button type="submit" class="btn btn-sm">Tambah Ekstrakurikuler</button>
@@ -62,7 +62,7 @@
                                         <form action="{{ route('admin.referensi.ekstrakurikuler.destroy', $e) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus ekstrakurikuler ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">Hapus</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>

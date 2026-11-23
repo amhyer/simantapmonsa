@@ -26,8 +26,8 @@
             <form action="{{ route('admin.mapel.update', $mapel) }}" method="POST">
                 @csrf @method('PUT')
                 <div class="form-group">
-                    <label class="form-label">Nama Mata Pelajaran <span style="color:var(--bad)">*</span></label>
-                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
+                    <label for="fld-mapel-edit-nama" class="form-label">Nama Mata Pelajaran <span style="color:var(--bad)">*</span></label>
+                    <input id="fld-mapel-edit-nama" type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
                            value="{{ old('nama', $mapel->nama) }}" required>
                     @error('nama')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -35,8 +35,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Kode</label>
-                    <input type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
+                    <label for="fld-mapel-edit-kode" class="form-label">Kode</label>
+                    <input id="fld-mapel-edit-kode" type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
                            value="{{ old('kode', $mapel->kode) }}">
                     @error('kode')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -48,8 +48,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <div style="display:flex;gap:16px;padding:12px 16px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
+                    <div id="lbl-status-mapel" class="form-label">Status</div>
+                    <div role="group" aria-labelledby="lbl-status-mapel" style="display:flex;gap:16px;padding:12px 16px;background:#FAFBFD;border:1px solid #E4E7EC;border-radius:8px">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
                             <input type="radio" name="aktif" value="1" {{ old('aktif', $mapel->aktif) ? 'checked' : '' }}> Aktif
                         </label>

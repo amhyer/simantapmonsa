@@ -3,7 +3,7 @@
         'unggul' => ['bg' => '#DCFCE7', 'border' => '#86EFAC', 'text' => '#166534', 'label' => 'Unggul'],
         'memadai' => ['bg' => '#E0F2FE', 'border' => '#7DD3FC', 'text' => '#075985', 'label' => 'Memadai'],
         'waspada' => ['bg' => '#FEF3C7', 'border' => '#FCD34D', 'text' => '#92400E', 'label' => 'Waspada'],
-        'kritis' => ['bg' => '#FEE2E2', 'border' => '#FCA5A5', 'text' => '#991B1B', 'label' => 'Kritis'],
+        'kritis' => ['bg' => '#FEE2E2', 'border' => '#FCA5A5', 'text' => 'var(--bad)', 'label' => 'Kritis'],
         'kosong' => ['bg' => '#F8FAFC', 'border' => '#E2E8F0', 'text' => '#64748B', 'label' => 'Belum Diuji'],
     ];
 @endphp
@@ -42,8 +42,8 @@
         <form method="GET" action="{{ route($filterRoute) }}" style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px">
             <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px">
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Filter Tingkat / Jenjang</label>
-                    <select name="jenjang" class="form-control" style="min-width:170px">
+                    <label for="fld-partials-heatmap-matrix-jenjang" style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Filter Tingkat / Jenjang</label>
+                    <select id="fld-partials-heatmap-matrix-jenjang" name="jenjang" class="form-control" style="min-width:170px">
                         <option value="">Semua Jenjang Kelas</option>
                         @foreach($heatmap['jenjang_options'] as $j)
                             <option value="{{ $j }}" @selected(($heatmap['jenjang_filter'] ?? '') === $j)>{{ $j }}</option>
@@ -51,8 +51,8 @@
                     </select>
                 </div>
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Target Skor Kesiapan</label>
-                    <input type="number" name="target" min="40" max="95" step="1" value="{{ (int) $heatmap['target_skor'] }}" class="form-control" style="width:120px">
+                    <label for="fld-partials-heatmap-matrix-target" style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Target Skor Kesiapan</label>
+                    <input id="fld-partials-heatmap-matrix-target" type="number" name="target" min="40" max="95" step="1" value="{{ (int) $heatmap['target_skor'] }}" class="form-control" style="width:120px">
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="fas fa-filter"></i> Terapkan
@@ -118,7 +118,7 @@
                                 <td style="text-align:center">
                                     @if($row['rata_skor'] !== null)
                                         <div style="font-weight:800;font-size:14px">{{ number_format($row['rata_skor'], 1) }}</div>
-                                        <small style="color:{{ $row['kesenjangan_umum'] >= 0 ? '#166534' : '#991B1B' }};font-weight:700">
+                                        <small style="color:{{ $row['kesenjangan_umum'] >= 0 ? '#166534' : 'var(--bad)' }};font-weight:700">
                                             {{ $row['kesenjangan_umum'] >= 0 ? '+' : '' }}{{ number_format($row['kesenjangan_umum'], 1) }}
                                         </small>
                                     @else
@@ -202,7 +202,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-bullseye" style="color:#B91C1C;margin-right:8px"></i>Prioritas Penutupan Kesenjangan Indikator</h3>
+            <h3><i class="fas fa-bullseye" style="color:var(--bad);margin-right:8px"></i>Prioritas Penutupan Kesenjangan Indikator</h3>
         </div>
         <div class="card-body" style="padding:0">
             @if(empty($heatmap['priority_gaps']))

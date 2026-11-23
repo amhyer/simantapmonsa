@@ -214,7 +214,7 @@
                         label: 'Rata-rata Kelas',
                         data: rataData,
                         backgroundColor: rataData.map(v => v >= 70 ? 'rgba(18,128,92,0.75)' : 'rgba(180,35,24,0.75)'),
-                        borderColor: rataData.map(v => v >= 70 ? '#12805C' : '#B42318'),
+                        borderColor: rataData.map(v => v >= 70 ? '#12805C' : getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()),
                         borderWidth: 1.5,
                         borderRadius: 6
                     }, {
@@ -246,7 +246,7 @@
                     labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
                     datasets: [{
                         data: {!! json_encode($predikatCount ?? [0, 0, 0, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                        backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
+                        backgroundColor: ['#12805C', '#1F3864', '#B8860B', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()],
                         borderWidth: 2,
                         borderColor: '#fff'
                     }]

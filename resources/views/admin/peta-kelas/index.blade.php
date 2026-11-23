@@ -162,7 +162,7 @@
     }
     .btn-icon { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; opacity:.5; transition:all .15s; }
     .btn-icon:hover { opacity:1; }
-    .btn-danger:hover { color:#B42318; }
+    .btn-danger:hover { color:var(--bad); }
     .drop-zone { border:2px dashed transparent; transition:all .15s; }
     .drop-zone.drag-over { border-color:var(--gold); background:rgba(184,134,11,.03); }
     .drop-hint { text-align:center; color:#bbb; font-size:11px; padding:12px; }
@@ -301,7 +301,7 @@
         t.textContent=msg;
         t.style.cssText='position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;color:#fff;z-index:9999;font-size:13px;animation:slideUp .3s';
         if(type==='success')t.style.background='#22c55e';
-        if(type==='error')t.style.background='#ef4444';
+        if(type==='error')t.style.background='var(--bad)';
         document.body.appendChild(t);
         setTimeout(()=>t.remove(),3000);
     }

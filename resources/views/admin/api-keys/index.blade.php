@@ -67,7 +67,7 @@
                                         </td>
                                         <td style="padding:10px 14px;text-align:center">
                                             <form action="{{ route('admin.api-keys.toggle', $key) }}" method="POST" style="display:inline">@csrf<button class="btn btn-ghost btn-sm" title="Toggle" type="submit">{{ $key->active ? '⏸' : '▶️' }}</button></form>
-                                            <form action="{{ route('admin.api-keys.destroy', $key) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">@csrf @method('DELETE')<button class="btn btn-ghost btn-sm" style="color:#B42318" type="submit" aria-label="Hapus">🗑</button></form>
+                                            <form action="{{ route('admin.api-keys.destroy', $key) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">@csrf @method('DELETE')<button class="btn btn-ghost btn-sm" style="color:var(--bad)" type="submit" aria-label="Hapus">🗑</button></form>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -106,7 +106,7 @@
                                         <td style="padding:10px 14px">{{ $log->nama_sekolah ?? '-' }}</td>
                                         <td style="padding:10px 14px;text-align:center">{{ $log->total_data }}</td>
                                         <td style="padding:10px 14px;text-align:center"><span style="color:#059669;font-weight:600">{{ $log->berhasil }}</span></td>
-                                        <td style="padding:10px 14px;text-align:center"><span style="color:{{ $log->gagal > 0 ? '#B42318' : '#888' }};font-weight:600">{{ $log->gagal }}</span></td>
+                                        <td style="padding:10px 14px;text-align:center"><span style="color:{{ $log->gagal > 0 ? 'var(--bad)' : '#888' }};font-weight:600">{{ $log->gagal }}</span></td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -129,12 +129,12 @@
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Nama Aplikasi</label>
-                        <input type="text" name="name" required placeholder="Contoh: Dapodik Bridge" value="Dapodik Bridge" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-admin-api-keys-name">Nama Aplikasi</label>
+                        <input id="fld-admin-api-keys-name" type="text" name="name" required placeholder="Contoh: Dapodik Bridge" value="Dapodik Bridge" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div class="form-group">
-                        <label>Akses API Key</label>
-                        <select name="akses" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-admin-api-keys-akses">Akses API Key</label>
+                        <select id="fld-admin-api-keys-akses" name="akses" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="dapodik:import" @selected(old('akses', 'dapodik:import') === 'dapodik:import')>Dapodik (import data)</option>
                             <option value="presensi:import" @selected(old('akses', 'dapodik:import') === 'presensi:import')>Presensi Mesin (sync fingerprint)</option>
                             <option value="dapodik:import,presensi:import" @selected(old('akses', 'dapodik:import') === 'dapodik:import,presensi:import')>Semua (Dapodik + Presensi Mesin)</option>

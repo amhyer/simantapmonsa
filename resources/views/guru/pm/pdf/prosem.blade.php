@@ -11,7 +11,7 @@
         th, td { border: 1px solid #374151; padding: 3px 4px; }
         th { background: #F3F4F6; text-align: center; }
         .center { text-align: center; }
-        .libur { background: #FEE2E2; color: #991B1B; }
+        .libur { background: #FEE2E2; color: #B42318; }
         .isi { background: #DCFCE7; color: #166534; font-weight: bold; }
     </style>
 </head>

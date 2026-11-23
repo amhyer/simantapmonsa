@@ -14,8 +14,10 @@ use Tests\TestCase;
  * Audit 2026-11-23 menemukan beberapa kelas cacat yang berulang di 335 berkas
  * Blade: tombol di dalam form tanpa `type` (bisa memicu submit tak sengaja),
  * tombol ikon tanpa nama aksesibel, gambar tanpa `alt`, form POST tanpa
- * `@csrf`, tautan mati, dan `route()` yang menunjuk nama route tak terdaftar
- * (memicu RouteNotFoundException/500 saat halaman dirender).
+ * `@csrf`, tautan mati, `<label>` tidak terhubung ke kontrol form, lima varian
+ * merah hardcoded untuk aksi destruktif/status negatif, dan `route()` yang
+ * menunjuk nama route tak terdaftar (memicu RouteNotFoundException/500 saat
+ * halaman dirender).
  *
  * Semua pelanggaran yang ditemukan pada audit sudah diperbaiki, jadi test ini
  * menjaga agar tidak kembali. Jika test gagal, perbaiki berkas Blade yang
@@ -283,5 +285,113 @@ class KualitasAntarmukaBladeTest extends TestCase
         }
 
         $this->laporkan($pelanggaran, 'Setiap @push wajib punya pasangan @stack di layout.');
+    }
+
+    public function test_label_terhubung_ke_kontrol_form(): void
+    {
+        $pelanggaran = [];
+
+        foreach ($this->berkasBlade() as $berkas => $isi) {
+            $bersih = $this->tanpaKomentar($isi);
+
+            if (! preg_match_all('~<label\b('.self::ATTR.')>(.*?)</label>~is', $bersih, $cocok, PREG_OFFSET_CAPTURE)) {
+                continue;
+            }
+
+            foreach ($cocok[1] as $i => [$atribut, $posisi]) {
+                if (preg_match('~\bfor\s*=~i', $atribut)) {
+                    continue;
+                }
+
+                $badan = $cocok[2][$i][0];
+                if (preg_match('~<(input|select|textarea)\b~i', $badan)) {
+                    continue;
+                }
+
+                $pelanggaran[] = "{$berkas}:{$this->nomorBaris($bersih, $posisi)} <label> tanpa atribut for dan tidak membungkus field";
+            }
+        }
+
+        $this->laporkan($pelanggaran, 'Setiap <label> wajib memiliki atribut for atau membungkus kontrol form secara langsung.');
+    }
+
+    public function test_atribut_for_pada_label_menunjuk_id_yang_ada(): void
+    {
+        $pelanggaran = [];
+
+        foreach ($this->berkasBlade() as $berkas => $isi) {
+            $bersih = $this->tanpaKomentar($isi);
+
+            $daftarId = [];
+            if (preg_match_all('~\bid\s*=\s*"([A-Za-z0-9_\-:.]+)"~', $bersih, $cocokId)) {
+                foreach ($cocokId[1] as $id) {
+                    $daftarId[$id] = true;
+                }
+            }
+
+            if (! preg_match_all('~<label\b'.self::ATTR.'\bfor\s*=\s*"([A-Za-z0-9_\-:.]+)"~i', $bersih, $cocokFor, PREG_OFFSET_CAPTURE)) {
+                continue;
+            }
+
+            foreach ($cocokFor[1] as [$target, $posisi]) {
+                if (isset($daftarId[$target])) {
+                    continue;
+                }
+
+                $pelanggaran[] = "{$berkas}:{$this->nomorBaris($bersih, $posisi)} for=\"{$target}\" tidak memiliki pasangan id=\"{$target}\"";
+            }
+        }
+
+        $this->laporkan($pelanggaran, 'Setiap nilai statis for="..." pada <label> wajib menunjuk id="..." yang ada di berkas yang sama.');
+    }
+
+    public function test_warna_destruktif_memakai_token_bad(): void
+    {
+        $pelanggaran = [];
+
+        foreach ($this->berkasBlade() as $berkas => $isi) {
+            $namaBerkas = basename($berkas);
+            $adalahPdf = str_contains($berkas, '/pdf/')
+                || in_array($namaBerkas, ['pdf.blade.php', 'pdf-bulk.blade.php'], true)
+                || str_starts_with($namaBerkas, 'pdf-')
+                || str_contains($namaBerkas, '-pdf-')
+                || str_ends_with($namaBerkas, '-pdf.blade.php');
+
+            // DomPDF tidak mendukung CSS custom properties (var(--bad)).
+            if ($adalahPdf) {
+                continue;
+            }
+
+            $tanpaKomentarHtml = (string) preg_replace('~\{\{--.*?--\}\}|<!--.*?-->~s', '', $isi);
+
+            $rentangRoot = [];
+            if (preg_match_all('~:root\s*\{[^}]*\}~s', $tanpaKomentarHtml, $cocokRoot, PREG_OFFSET_CAPTURE)) {
+                foreach ($cocokRoot[0] as [$blok, $awal]) {
+                    $rentangRoot[] = [$awal, $awal + strlen($blok)];
+                }
+            }
+
+            if (! preg_match_all('~#(?:B42318|991B1B|DC2626|D92D20|EF4444|DC3545|B91C1C)\b~i', $tanpaKomentarHtml, $cocokWarna, PREG_OFFSET_CAPTURE)) {
+                continue;
+            }
+
+            foreach ($cocokWarna[0] as [$hex, $posisi]) {
+                $diDalamRoot = false;
+                foreach ($rentangRoot as [$awal, $akhir]) {
+                    if ($posisi >= $awal && $posisi <= $akhir) {
+                        $diDalamRoot = true;
+                        break;
+                    }
+                }
+
+                if ($diDalamRoot) {
+                    continue;
+                }
+
+                $pelanggaran[] = "{$berkas}:{$this->nomorBaris($tanpaKomentarHtml, $posisi)} warna merah hardcoded {$hex} (gunakan var(--bad))";
+            }
+        }
+
+        $this->laporkan($pelanggaran, 'Aksi destruktif dan status negatif wajib memakai token var(--bad), bukan warna merah hardcoded.');
     }
 }

@@ -49,8 +49,8 @@
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
             @include('ortu.partials.pilih-anak', ['route' => 'ortu.kebiasaan.index', 'terpilih' => $siswa, 'anakList' => $anakList, 'query' => ['tanggal' => $tanggal]])
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tanggal</label>
-                <input type="date" value="{{ $tanggal }}" max="{{ date('Y-m-d') }}" onchange="window.location.href='{{ route('ortu.kebiasaan.index') }}?siswa_id={{ $siswa->id }}&tanggal='+this.value" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-ortu-kebiasaan-tanggal" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tanggal</label>
+                <input id="fld-ortu-kebiasaan-tanggal" type="date" value="{{ $tanggal }}" max="{{ date('Y-m-d') }}" onchange="window.location.href='{{ route('ortu.kebiasaan.index') }}?siswa_id={{ $siswa->id }}&tanggal='+this.value" style="padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
         </div>
 
@@ -70,7 +70,7 @@
                     ['tidur_cepat', '🌙', 'Tidur Cepat', 'Tidur tepat waktu dan tidak begadang.'],
                 ];
                 $skala = [
-                    1 => ['label' => 'Belum', 'color' => '#B42318'],
+                    1 => ['label' => 'Belum', 'color' => 'var(--bad)'],
                     2 => ['label' => 'Kadang', 'color' => '#B54708'],
                     3 => ['label' => 'Sering', 'color' => '#175CD3'],
                     4 => ['label' => 'Selalu', 'color' => '#12805C'],

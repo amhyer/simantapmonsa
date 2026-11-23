@@ -31,22 +31,22 @@
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Unggah Gambar Tanda Tangan (PNG Transparan disarankan)</label>
-                        <input type="file" name="ttd_guru" accept=".png,.jpg,.jpeg"
+                        <label for="fld-pm-ttd-ttd-guru" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Unggah Gambar Tanda Tangan (PNG Transparan disarankan)</label>
+                        <input id="fld-pm-ttd-ttd-guru" type="file" name="ttd_guru" accept=".png,.jpg,.jpeg"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Jabatan pada Cetakan PDF</label>
-                        <input type="text" name="jabatan_guru"
+                        <label for="fld-pm-ttd-jabatan-guru" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Jabatan pada Cetakan PDF</label>
+                        <input id="fld-pm-ttd-jabatan-guru" type="text" name="jabatan_guru"
                                value="{{ old('jabatan_guru', $pengGuru['jabatan_guru'] ?? 'Guru Kelas / Mata Pelajaran') }}"
                                placeholder="Misal: Guru Kelas 1A / Guru Matematika"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP / NUPTK (opsional)</label>
-                        <input type="text" name="nip_guru"
+                        <label for="fld-pm-ttd-nip-guru" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">NIP / NUPTK (opsional)</label>
+                        <input id="fld-pm-ttd-nip-guru" type="text" name="nip_guru"
                                value="{{ old('nip_guru', $pengGuru['nip_guru'] ?? '') }}"
                                placeholder="Misal: 19880512 201503 2 004"
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
@@ -62,7 +62,7 @@
                           onsubmit="return confirm('Hapus gambar tanda tangan digital Anda?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20">
+                        <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">
                             <i class="fas fa-trash"></i> Hapus Gambar Tanda Tangan
                         </button>
                     </form>

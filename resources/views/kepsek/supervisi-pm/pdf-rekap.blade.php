@@ -12,7 +12,7 @@
         table.data th { background: #F3F4F6; text-align: center; }
         .center { text-align: center; }
         .ok { color: #065F46; font-weight: bold; }
-        .miss { color: #991B1B; }
+        .miss { color: #B42318; }
     </style>
 </head>
 <body>

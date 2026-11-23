@@ -6,7 +6,7 @@
 @section('page_subtitle', 'Data pendidik dan tenaga kependidikan dari Dapodik dan penambahan manual')
 
 @section('header_actions')
-    <button type="button" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B" onclick="fokusEditGelar()">
+    <button type="button" class="btn btn-sm btn-secondary" onclick="fokusEditGelar()">
         <i class="fas fa-edit"></i> Edit Gelar Guru
     </button>
     <button type="button" class="btn btn-sm btn-primary" onclick="openTambahGuruModal()">
@@ -53,16 +53,16 @@
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <h3 style="margin:0;margin-right:8px">Daftar PTK & Tenaga Kependidikan</h3>
-                <button type="button" onclick="copyPtkData()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="copyPtkData()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button type="button" onclick="exportPtkCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportPtkCsv()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-excel"></i> Excel
                 </button>
-                <button type="button" onclick="exportPtkPdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportPtkPdf()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-pdf"></i> Pdf
                 </button>
-                <button type="button" onclick="window.print()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-print"></i> Print
                 </button>
             </div>
@@ -113,7 +113,7 @@
                                                     @if($p->dapodik_id)
                                                         <span style="display:inline-block;background:#EEF2F9;color:var(--navy);font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle" title="Data dari Dapodik">DAPODIK</span>
                                                     @else
-                                                        <span style="display:inline-block;background:#FEF3F2;color:#B42318;border:1px solid #FECDCA;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle" title="Data non-Dapodik">NON-DAPODIK</span>
+                                                        <span style="display:inline-block;background:#FEF3F2;color:var(--bad);border:1px solid #FECDCA;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle" title="Data non-Dapodik">NON-DAPODIK</span>
                                                     @endif
                                                     <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
                                                         @if($p->isGpk())
@@ -173,7 +173,7 @@
                                         </td>
                                         <td style="padding:11px 14px;border-bottom:1px solid #E4E7EC;text-align:center">
                                             @if(!$p->dapodik_id)
-                                                <button type="submit" form="form-delete-ptk-{{ $p->id }}" class="btn btn-xs btn-ghost" style="color:#B42318;padding:4px 8px;font-size:11.5px;border:1px solid #FECDCA;border-radius:6px" title="Hapus data PTK non-Dapodik ini">
+                                                <button type="submit" form="form-delete-ptk-{{ $p->id }}" class="btn btn-xs btn-ghost" style="color:var(--bad);padding:4px 8px;font-size:11.5px;border:1px solid #FECDCA;border-radius:6px" title="Hapus data PTK non-Dapodik ini">
                                                     <i class="fas fa-trash-alt"></i> Hapus
                                                 </button>
                                             @else
@@ -227,44 +227,44 @@
                 @csrf
                 <div class="modal-body" style="max-height:calc(85vh - 120px);overflow-y:auto">
                     <div class="form-group" style="margin-bottom:12px">
-                        <label>Nama Lengkap (tanpa gelar) <span style="color:#B42318">*</span></label>
-                        <input type="text" name="nama" value="{{ old('nama') }}" required placeholder="Contoh: Ahmad Fauzi" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-referensi-guru-nama">Nama Lengkap (tanpa gelar) <span style="color:var(--bad)">*</span></label>
+                        <input id="fld-referensi-guru-nama" type="text" name="nama" value="{{ old('nama') }}" required placeholder="Contoh: Ahmad Fauzi" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                         <div class="form-group" style="margin-bottom:0">
-                            <label>Gelar Depan</label>
-                            <input type="text" name="gelar_depan" value="{{ old('gelar_depan') }}" maxlength="50" placeholder="Contoh: Drs., H." style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-referensi-guru-gelar-depan">Gelar Depan</label>
+                            <input id="fld-referensi-guru-gelar-depan" type="text" name="gelar_depan" value="{{ old('gelar_depan') }}" maxlength="50" placeholder="Contoh: Drs., H." style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div class="form-group" style="margin-bottom:0">
-                            <label>Gelar Belakang</label>
-                            <input type="text" name="gelar_belakang" value="{{ old('gelar_belakang') }}" maxlength="100" placeholder="Contoh: S.Pd, M.Pd" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                        </div>
-                    </div>
-
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-                        <div class="form-group" style="margin-bottom:0">
-                            <label>NIP (opsional)</label>
-                            <input type="text" name="nip" value="{{ old('nip') }}" maxlength="50" placeholder="18 digit NIP jika ada" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0">
-                            <label>NUPTK (opsional)</label>
-                            <input type="text" name="nuptk" value="{{ old('nuptk') }}" maxlength="50" placeholder="16 digit NUPTK jika ada" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-referensi-guru-gelar-belakang">Gelar Belakang</label>
+                            <input id="fld-referensi-guru-gelar-belakang" type="text" name="gelar_belakang" value="{{ old('gelar_belakang') }}" maxlength="100" placeholder="Contoh: S.Pd, M.Pd" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                         <div class="form-group" style="margin-bottom:0">
-                            <label>Jenis Kelamin</label>
-                            <select name="jk" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-referensi-guru-nip">NIP (opsional)</label>
+                            <input id="fld-referensi-guru-nip" type="text" name="nip" value="{{ old('nip') }}" maxlength="50" placeholder="18 digit NIP jika ada" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0">
+                            <label for="fld-referensi-guru-nuptk">NUPTK (opsional)</label>
+                            <input id="fld-referensi-guru-nuptk" type="text" name="nuptk" value="{{ old('nuptk') }}" maxlength="50" placeholder="16 digit NUPTK jika ada" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div class="form-group" style="margin-bottom:0">
+                            <label for="fld-referensi-guru-jk">Jenis Kelamin</label>
+                            <select id="fld-referensi-guru-jk" name="jk" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 <option value="">— Pilih Jenis Kelamin —</option>
                                 <option value="L" {{ old('jk') === 'L' ? 'selected' : '' }}>Laki-laki (L)</option>
                                 <option value="P" {{ old('jk') === 'P' ? 'selected' : '' }}>Perempuan (P)</option>
                             </select>
                         </div>
                         <div class="form-group" style="margin-bottom:0">
-                            <label>Jenis PTK <span style="color:#B42318">*</span></label>
-                            <select name="jenis_ptk" required style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-referensi-guru-jenis-ptk">Jenis PTK <span style="color:var(--bad)">*</span></label>
+                            <select id="fld-referensi-guru-jenis-ptk" name="jenis_ptk" required style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 <option value="Guru GPK" {{ old('jenis_ptk') === 'Guru GPK' ? 'selected' : '' }}>Guru GPK (Pembimbing Khusus)</option>
                                 <option value="Guru Kelas" {{ old('jenis_ptk', 'Guru Kelas') === 'Guru Kelas' ? 'selected' : '' }}>Guru Kelas</option>
                                 <option value="Guru Mapel" {{ old('jenis_ptk') === 'Guru Mapel' ? 'selected' : '' }}>Guru Mapel</option>
@@ -279,8 +279,8 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom:14px">
-                        <label>Jabatan / Penugasan (opsional)</label>
-                        <input type="text" name="jabatan" value="{{ old('jabatan') }}" placeholder="Contoh: Guru Kelas 1A, Guru PJOK, Operator" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-referensi-guru-jabatan">Jabatan / Penugasan (opsional)</label>
+                        <input id="fld-referensi-guru-jabatan" type="text" name="jabatan" value="{{ old('jabatan') }}" placeholder="Contoh: Guru Kelas 1A, Guru PJOK, Operator" style="width:100%;padding:8px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
 
                     <div style="background:#F9FAFB;border:1px solid #EAECF0;border-radius:8px;padding:12px;margin-bottom:8px">
@@ -294,12 +294,12 @@
 
                         <div id="akunFields" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
                             <div>
-                                <label style="font-weight:500;font-size:12px;display:block;margin-bottom:4px;color:#475467">Username (opsional)</label>
-                                <input type="text" name="nama_pengguna" value="{{ old('nama_pengguna') }}" placeholder="Otomatis NIP/nama jika kosong" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
+                                <label for="fld-referensi-guru-nama-pengguna" style="font-weight:500;font-size:12px;display:block;margin-bottom:4px;color:#475467">Username (opsional)</label>
+                                <input id="fld-referensi-guru-nama-pengguna" type="text" name="nama_pengguna" value="{{ old('nama_pengguna') }}" placeholder="Otomatis NIP/nama jika kosong" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
                             </div>
                             <div>
-                                <label style="font-weight:500;font-size:12px;display:block;margin-bottom:4px;color:#475467">Password Awal (opsional)</label>
-                                <input type="text" name="kata_sandi" placeholder="Default: guru123" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
+                                <label for="fld-referensi-guru-kata-sandi" style="font-weight:500;font-size:12px;display:block;margin-bottom:4px;color:#475467">Password Awal (opsional)</label>
+                                <input id="fld-referensi-guru-kata-sandi" type="text" name="kata_sandi" placeholder="Default: guru123" style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:6px;font-size:12px">
                             </div>
                         </div>
                     </div>

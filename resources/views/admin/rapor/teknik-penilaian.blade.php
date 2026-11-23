@@ -18,7 +18,7 @@
                     @foreach($teknik as $idx => $nama)
                         <div class="teknik-row" style="display:flex;gap:8px;align-items:center">
                             <input type="text" name="teknik[]" value="{{ $nama }}" class="form-control" maxlength="80" required placeholder="Nama teknik penilaian...">
-                            <button type="button" class="btn btn-sm btn-ghost" style="color:#B42318" onclick="this.closest('.teknik-row').remove()" title="Hapus">
+                            <button type="button" class="btn btn-sm btn-ghost" style="color:var(--bad)" onclick="this.closest('.teknik-row').remove()" title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -40,7 +40,7 @@
         row.style.cssText = 'display:flex;gap:8px;align-items:center';
         row.innerHTML = `
             <input type="text" name="teknik[]" class="form-control" maxlength="80" required placeholder="Nama teknik penilaian baru...">
-            <button type="button" class="btn btn-sm btn-ghost" style="color:#B42318" onclick="this.closest('.teknik-row').remove()" title="Hapus">
+            <button type="button" class="btn btn-sm btn-ghost" style="color:var(--bad)" onclick="this.closest('.teknik-row').remove()" title="Hapus">
                 <i class="fas fa-trash"></i>
             </button>
         `;

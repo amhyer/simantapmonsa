@@ -14,12 +14,12 @@
             <form action="{{ route('admin.kokurikuler.tema.store') }}" method="POST" style="display:grid;grid-template-columns:1fr 2fr auto;gap:12px;align-items:end">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Tema</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Gaya Hidup Berkelanjutan" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-tema-nama" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Tema</label>
+                    <input id="fld-kokurikuler-tema-nama" type="text" name="nama" value="{{ old('nama') }}" placeholder="Gaya Hidup Berkelanjutan" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Deskripsi</label>
-                    <input type="text" name="deskripsi" value="{{ old('deskripsi') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-tema-deskripsi" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Deskripsi</label>
+                    <input id="fld-kokurikuler-tema-deskripsi" type="text" name="deskripsi" value="{{ old('deskripsi') }}" maxlength="500" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Tambah</button>
@@ -53,7 +53,7 @@
                                         <form action="{{ route('admin.kokurikuler.tema.destroy', $t) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus tema beserta kegiatannya?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">Hapus</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>

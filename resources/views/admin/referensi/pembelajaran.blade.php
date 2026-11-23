@@ -25,28 +25,28 @@
             <form action="{{ route('admin.referensi.pembelajaran.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Hari</label>
-                    <select name="hari" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                    <label for="fld-referensi-pembelajaran-hari" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Hari</label>
+                    <select id="fld-referensi-pembelajaran-hari" name="hari" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                         @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'] as $h)
                             <option value="{{ $h }}">{{ $h }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Mata Pelajaran</label>
-                    <select name="mata_pelajaran" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                    <label for="fld-referensi-pembelajaran-mata-pelajaran" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Mata Pelajaran</label>
+                    <select id="fld-referensi-pembelajaran-mata-pelajaran" name="mata_pelajaran" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                         @foreach($daftarMapel as $m)
                             <option value="{{ $m->nama }}">{{ $m->nama }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Kelas</label>
-                    <input type="text" name="kelas" required placeholder="cth: Kelas 1.A" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                    <label for="fld-referensi-pembelajaran-kelas" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Kelas</label>
+                    <input id="fld-referensi-pembelajaran-kelas" type="text" name="kelas" required placeholder="cth: Kelas 1.A" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Guru</label>
-                    <select name="guru_id" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                    <label for="fld-referensi-pembelajaran-guru-id" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Guru</label>
+                    <select id="fld-referensi-pembelajaran-guru-id" name="guru_id" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                         <option value="">— Pilih guru —</option>
                         @foreach($daftarGuru as $g)
                             <option value="{{ $g->id }}">{{ $g->nama_lengkap }}</option>
@@ -54,16 +54,16 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jam</label>
+                    <label for="fld-pembelajaran-jam-mulai" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Jam</label>
                     <div style="display:flex;gap:6px;align-items:center">
-                        <input type="time" name="jam_mulai" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                        <input type="time" id="fld-pembelajaran-jam-mulai" name="jam_mulai" aria-label="Jam mulai" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                         <span style="color:var(--muted)">–</span>
-                        <input type="time" name="jam_selesai" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                        <input type="time" id="fld-pembelajaran-jam-selesai" name="jam_selesai" aria-label="Jam selesai" required style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                     </div>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Ruangan</label>
-                    <input type="text" name="ruangan" placeholder="cth: R-01" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+                    <label for="fld-referensi-pembelajaran-ruangan" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Ruangan</label>
+                    <input id="fld-referensi-pembelajaran-ruangan" type="text" name="ruangan" placeholder="cth: R-01" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Tambah</button>

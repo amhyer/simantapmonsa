@@ -96,7 +96,7 @@
         @if(session()->has('impersonator_id'))
             <div style="background:linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 3px 12px rgba(67,56,202,0.3);position:sticky;top:0;z-index:999">
                 <div style="display:flex;align-items:center;gap:12px;font-size:13px">
-                    <span style="background:#EF4444;color:#fff;font-weight:800;padding:3px 10px;border-radius:999px;font-size:11px;letter-spacing:0.5px">SUPER ADMIN CONNECT</span>
+                    <span style="background:var(--bad);color:#fff;font-weight:800;padding:3px 10px;border-radius:999px;font-size:11px;letter-spacing:0.5px">SUPER ADMIN CONNECT</span>
                     <span>Anda terhubung masuk sebagai <b>{{ auth()->user()->nama_lengkap }}</b> ({{ auth()->user()->nama_pengguna }}). Sedang mengelola data sekolah ini.</span>
                 </div>
                 <form method="POST" action="{{ route('superadmin.impersonate.leave') }}" style="margin:0">
@@ -160,7 +160,7 @@
                     <button class="topbar-btn" title="Notifikasi & Tugas" onclick="document.getElementById('notifPanel').classList.toggle('show')" style="position:relative">
                         <i class="fas fa-bell"></i>
                         @if(count($notifs) > 0)
-                            <span style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:#DC2626;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">{{ count($notifs) }}</span>
+                            <span style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">{{ count($notifs) }}</span>
                         @endif
                     </button>
                     <div class="notif-panel" id="notifPanel">

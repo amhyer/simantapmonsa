@@ -39,7 +39,7 @@
         <div class="card">
             <div class="card-body" style="padding:14px">
                 <div style="font-size:12px;color:#667085;font-weight:600">Perlu Revisi</div>
-                <div style="font-size:22px;font-weight:700;color:#B42318;margin-top:4px">{{ $kpi['revisi'] }}</div>
+                <div style="font-size:22px;font-weight:700;color:var(--bad);margin-top:4px">{{ $kpi['revisi'] }}</div>
             </div>
         </div>
         <div class="card">
@@ -122,11 +122,11 @@
                                             @if($c[$k] > 0)
                                                 <span style="color:#027A48;font-weight:700" title="{{ $c[$k] }} dokumen">✓ {{ $c[$k] }}</span>
                                             @else
-                                                <span style="color:#D92D20;opacity:.65">—</span>
+                                                <span style="color:var(--bad);opacity:.65">—</span>
                                             @endif
                                         </td>
                                     @endforeach
-                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : '#B42318') }}">
+                                    <td style="text-align:center;font-weight:700;color:{{ $row['persen'] >= 80 ? '#027A48' : ($row['persen'] >= 50 ? '#B54708' : 'var(--bad)') }}">
                                         {{ $row['persen'] }}%
                                     </td>
                                     <td>

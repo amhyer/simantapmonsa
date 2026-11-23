@@ -19,33 +19,33 @@
                 @csrf
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun Ajaran *</label>
-                        <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" required
+                        <label for="fld-pengawas-visitasi-tahun-ajaran" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun Ajaran *</label>
+                        <input id="fld-pengawas-visitasi-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" required
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Semester *</label>
-                        <select name="semester" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pengawas-visitasi-semester" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Semester *</label>
+                        <select id="fld-pengawas-visitasi-semester" name="semester" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             <option value="1" {{ $semester === 1 ? 'selected' : '' }}>Semester 1 (Ganjil)</option>
                             <option value="2" {{ $semester === 2 ? 'selected' : '' }}>Semester 2 (Genap)</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal Visitasi *</label>
-                        <input type="date" name="tanggal_visitasi" value="{{ old('tanggal_visitasi', now()->toDateString()) }}" required
+                        <label for="fld-pengawas-visitasi-tanggal-visitasi" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal Visitasi *</label>
+                        <input id="fld-pengawas-visitasi-tanggal-visitasi" type="date" name="tanggal_visitasi" value="{{ old('tanggal_visitasi', now()->toDateString()) }}" required
                                style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Jenis Pendampingan *</label>
-                        <select name="jenis_pendampingan" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pengawas-visitasi-jenis-pendampingan" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Jenis Pendampingan *</label>
+                        <select id="fld-pengawas-visitasi-jenis-pendampingan" name="jenis_pendampingan" required style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             @foreach($jenisLabels as $kode => $lbl)
                                 <option value="{{ $kode }}">{{ $lbl }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Guru Diobservasi (Opsional)</label>
-                        <select name="guru_id" style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                        <label for="fld-pengawas-visitasi-guru-id" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Guru Diobservasi (Opsional)</label>
+                        <select id="fld-pengawas-visitasi-guru-id" name="guru_id" style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             <option value="">— Seluruh Satuan Pendidikan (Manajerial) —</option>
                             @foreach($guruList as $g)
                                 <option value="{{ $g->id }}">{{ $g->nama_lengkap }} {{ $g->kelas_mata_pelajaran ? '(' . $g->kelas_mata_pelajaran . ')' : '' }}</option>
@@ -69,8 +69,8 @@
                             'skor_merefleksi' => '6. Pengalaman Belajar: Merefleksi',
                         ] as $field => $judul)
                             <div>
-                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">{{ $judul }}</label>
-                                <select name="{{ $field }}" required style="width:100%;padding:7px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:12.5px">
+                                <label for="visitasi_{{ $field }}" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">{{ $judul }}</label>
+                                <select id="visitasi_{{ $field }}" name="{{ $field }}" required style="width:100%;padding:7px 10px;border:1px solid #CBD5E1;border-radius:8px;font-size:12.5px">
                                     @foreach($skalaRubrik as $nilai => $ket)
                                         <option value="{{ $nilai }}" {{ $nilai === 3 ? 'selected' : '' }}>{{ $ket }}</option>
                                     @endforeach
@@ -82,18 +82,18 @@
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Temuan Lapangan / Praktik Baik *</label>
-                        <textarea name="temuan" rows="3" required placeholder="Catat hasil pengamatan kelas, keterlibatan murid, atau tata kelola sekolah..."
+                        <label for="fld-pengawas-visitasi-temuan" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Temuan Lapangan / Praktik Baik *</label>
+                        <textarea id="fld-pengawas-visitasi-temuan" name="temuan" rows="3" required placeholder="Catat hasil pengamatan kelas, keterlibatan murid, atau tata kelola sekolah..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('temuan') }}</textarea>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rekomendasi Pembinaan Pengawas *</label>
-                        <textarea name="rekomendasi" rows="3" required placeholder="Saran penguatan strategi pembelajaran mendalam atau asesmen..."
+                        <label for="fld-pengawas-visitasi-rekomendasi" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rekomendasi Pembinaan Pengawas *</label>
+                        <textarea id="fld-pengawas-visitasi-rekomendasi" name="rekomendasi" rows="3" required placeholder="Saran penguatan strategi pembelajaran mendalam atau asesmen..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('rekomendasi') }}</textarea>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rencana Tindak Lanjut (RTL)</label>
-                        <textarea name="tindak_lanjut" rows="3" placeholder="Kesepakatan tindak lanjut bersama Guru & Kepala Sekolah..."
+                        <label for="fld-pengawas-visitasi-tindak-lanjut" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rencana Tindak Lanjut (RTL)</label>
+                        <textarea id="fld-pengawas-visitasi-tindak-lanjut" name="tindak_lanjut" rows="3" placeholder="Kesepakatan tindak lanjut bersama Guru & Kepala Sekolah..."
                                   style="width:100%;padding:8px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">{{ old('tindak_lanjut') }}</textarea>
                     </div>
                 </div>
@@ -148,7 +148,7 @@
                                               onsubmit="return confirm('Hapus catatan visitasi ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318" aria-label="Hapus">
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

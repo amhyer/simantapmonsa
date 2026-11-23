@@ -17,22 +17,22 @@
                 @csrf
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Mata Pelajaran</label>
-                        <input type="text" name="mata_pelajaran" value="{{ old('mata_pelajaran', $pengaturan->mata_pelajaran ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-mata-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Mata Pelajaran</label>
+                        <input id="fld-guru-pengaturan-mata-pelajaran" type="text" name="mata_pelajaran" value="{{ old('mata_pelajaran', $pengaturan->mata_pelajaran ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas</label>
-                        <input type="text" name="kelas" value="{{ old('kelas', $pengaturan->kelas ?? auth()->user()->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas</label>
+                        <input id="fld-guru-pengaturan-kelas" type="text" name="kelas" value="{{ old('kelas', $pengaturan->kelas ?? auth()->user()->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">KKM</label>
-                        <input type="number" name="kkm" value="{{ old('kkm', $pengaturan->kkm ?? 70) }}" min="0" max="100" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-kkm" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">KKM</label>
+                        <input id="fld-guru-pengaturan-kkm" type="number" name="kkm" value="{{ old('kkm', $pengaturan->kkm ?? 70) }}" min="0" max="100" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
-                        <select name="semester" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-semester" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
+                        <select id="fld-guru-pengaturan-semester" name="semester" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="Ganjil" {{ ($pengaturan->semester ?? '') === 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
                             <option value="Genap" {{ ($pengaturan->semester ?? '') === 'Genap' ? 'selected' : '' }}>Genap</option>
                         </select>
@@ -40,12 +40,12 @@
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Pelajaran</label>
-                        <input type="text" name="tahun_pelajaran" value="{{ old('tahun_pelajaran', $pengaturan->tahun_pelajaran ?? date('Y') . '/' . (date('Y') + 1)) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-tahun-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Pelajaran</label>
+                        <input id="fld-guru-pengaturan-tahun-pelajaran" type="text" name="tahun_pelajaran" value="{{ old('tahun_pelajaran', $pengaturan->tahun_pelajaran ?? date('Y') . '/' . (date('Y') + 1)) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Fase</label>
-                        <input type="text" name="fase" value="{{ old('fase', $pengaturan->fase ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-guru-pengaturan-fase" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Fase</label>
+                        <input id="fld-guru-pengaturan-fase" type="text" name="fase" value="{{ old('fase', $pengaturan->fase ?? '') }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                 </div>
                 <button type="submit" class="btn">💾 Simpan Pengaturan</button>

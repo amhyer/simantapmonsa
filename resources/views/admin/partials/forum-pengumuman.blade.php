@@ -32,7 +32,7 @@
                 <form method="POST" action="{{ route('admin.forum.hapus', $post['id'] ?? '0') }}" onsubmit="return confirm('Hapus pengumuman ini?')" style="margin:0">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318" title="Hapus"><i class="fas fa-trash"></i></button>
+                    <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" title="Hapus"><i class="fas fa-trash"></i></button>
                 </form>
             </div>
         @empty

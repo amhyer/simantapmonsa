@@ -14,8 +14,8 @@
             <form action="{{ route('admin.kokurikuler.kegiatan.store') }}" method="POST" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                 @csrf
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tema</label>
-                    <select name="tema_id" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-tema-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tema</label>
+                    <select id="fld-kokurikuler-kegiatan-tema-id" name="tema_id" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">— Pilih tema —</option>
                         @foreach($tema as $t)
                             <option value="{{ $t->id }}" {{ old('tema_id') == $t->id ? 'selected' : '' }}>{{ $t->nama }}</option>
@@ -23,24 +23,24 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kegiatan</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-nama" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Kegiatan</label>
+                    <input id="fld-kokurikuler-kegiatan-nama" type="text" name="nama" value="{{ old('nama') }}" maxlength="255" required style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas</label>
-                    <input type="text" name="kelas" value="{{ old('kelas') }}" maxlength="50" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas</label>
+                    <input id="fld-kokurikuler-kegiatan-kelas" type="text" name="kelas" value="{{ old('kelas') }}" maxlength="50" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Koordinator</label>
-                    <input type="text" name="koordinator" value="{{ old('koordinator') }}" maxlength="255" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-koordinator" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Koordinator</label>
+                    <input id="fld-kokurikuler-kegiatan-koordinator" type="text" name="koordinator" value="{{ old('koordinator') }}" maxlength="255" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Mulai</label>
-                    <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-tanggal-mulai" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Mulai</label>
+                    <input id="fld-kokurikuler-kegiatan-tanggal-mulai" type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Selesai</label>
-                    <input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-kokurikuler-kegiatan-tanggal-selesai" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tanggal Selesai</label>
+                    <input id="fld-kokurikuler-kegiatan-tanggal-selesai" type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" style="width:100%;padding:8px 12px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div style="grid-column:1/-1">
                     <button type="submit" class="btn btn-sm">Tambah Kegiatan</button>
@@ -78,7 +78,7 @@
                                         <form action="{{ route('admin.kokurikuler.kegiatan.destroy', $k) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus kegiatan beserta kelompoknya?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318">Hapus</button>
+                                            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>

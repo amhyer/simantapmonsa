@@ -13,23 +13,23 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div>
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas" class="form-control">
+                    <label for="fld-cetak-nilai-kelas" class="form-label">Kelas</label>
+                    <select id="fld-cetak-nilai-kelas" name="kelas" class="form-control">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester" class="form-control">
+                    <label for="fld-cetak-nilai-semester" class="form-label">Semester</label>
+                    <select id="fld-cetak-nilai-semester" name="semester" class="form-control">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
+                    <label for="fld-cetak-nilai-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                    <input id="fld-cetak-nilai-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-sm">Tampilkan</button>

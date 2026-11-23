@@ -111,7 +111,7 @@
                                 @php $libur = is_array($kal->minggu_libur) ? array_map('intval', $kal->minggu_libur) : []; @endphp
                                 @for($m = 1; $m <= $kal->jumlah_minggu; $m++)
                                     @php $isLibur = in_array($m, $libur, true); @endphp
-                                    <th style="text-align:center;font-size:11px;padding:4px 6px;border-left:1px solid #EAECF0;{{ $isLibur ? 'background:#FEE4E2;color:#B42318' : '' }}"
+                                    <th style="text-align:center;font-size:11px;padding:4px 6px;border-left:1px solid #EAECF0;{{ $isLibur ? 'background:#FEE4E2;color:var(--bad)' : '' }}"
                                         title="{{ $isLibur ? ($kal->keterangan ?: 'Minggu tidak efektif') : 'Minggu efektif' }}">
                                         {{ $m }}
                                     </th>
@@ -134,7 +134,7 @@
                                             $isLibur = in_array($m, $libur, true);
                                             $val = $row['sel'][$kal->bulan.'_'.$m] ?? null;
                                         @endphp
-                                        <td style="text-align:center;font-size:12px;border-left:1px solid #EAECF0;padding:4px;{{ $isLibur ? 'background:#FEF3F2;color:#B42318' : ($val ? 'background:#ECFDF3;color:#027A48;font-weight:700' : '') }}">
+                                        <td style="text-align:center;font-size:12px;border-left:1px solid #EAECF0;padding:4px;{{ $isLibur ? 'background:#FEF3F2;color:var(--bad)' : ($val ? 'background:#ECFDF3;color:#027A48;font-weight:700' : '') }}">
                                             {{ $isLibur ? '×' : ($val ?? '') }}
                                         </td>
                                     @endfor
@@ -166,33 +166,33 @@
                     <input type="hidden" name="semester" value="{{ $semester }}">
                     <div style="display:grid;grid-template-columns:100px 1fr;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Bab</label>
-                            <input type="text" name="bab" placeholder="Bab 1"
+                            <label for="fld-pm-prosem-bab" style="font-size:12px;font-weight:600">Bab</label>
+                            <input id="fld-pm-prosem-bab" type="text" name="bab" placeholder="Bab 1"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Materi / Topik *</label>
-                            <input type="text" name="materi" required placeholder="Nama topik pertemuan..."
+                            <label for="fld-pm-prosem-materi" style="font-size:12px;font-weight:600">Materi / Topik *</label>
+                            <input id="fld-pm-prosem-materi" type="text" name="materi" required placeholder="Nama topik pertemuan..."
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 95px 85px;gap:8px">
                         <div>
-                            <label style="font-size:12px;font-weight:600">Bulan *</label>
-                            <select name="bulan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                            <label for="fld-pm-prosem-bulan" style="font-size:12px;font-weight:600">Bulan *</label>
+                            <select id="fld-pm-prosem-bulan" name="bulan" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                                 @foreach($ringkasan['rows'] as $kal)
                                     <option value="{{ $kal->bulan }}">{{ $kal->namaBulan() }} {{ $kal->tahun }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">Minggu Ke *</label>
-                            <input type="number" name="minggu_ke" min="1" max="5" value="1" required
+                            <label for="fld-pm-prosem-minggu-ke" style="font-size:12px;font-weight:600">Minggu Ke *</label>
+                            <input id="fld-pm-prosem-minggu-ke" type="number" name="minggu_ke" min="1" max="5" value="1" required
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                         <div>
-                            <label style="font-size:12px;font-weight:600">JP *</label>
-                            <input type="number" name="alokasi_jp" min="1" max="40" value="{{ $jpPerMinggu }}" required
+                            <label for="fld-pm-prosem-alokasi-jp" style="font-size:12px;font-weight:600">JP *</label>
+                            <input id="fld-pm-prosem-alokasi-jp" type="number" name="alokasi_jp" min="1" max="40" value="{{ $jpPerMinggu }}" required
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
                     </div>
@@ -230,7 +230,7 @@
                                                   onsubmit="return confirm('Hapus slot ini?');" style="display:inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-ghost" style="color:#D92D20" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+                                                <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad)" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                             </form>
                                         </td>
                                     </tr>

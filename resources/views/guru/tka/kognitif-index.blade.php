@@ -50,8 +50,8 @@
     <div class="card-body" style="padding:16px 20px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px">
         <form method="GET" action="{{ route('guru.tka.kognitif.index') }}" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px">
             <div>
-                <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kelas</label>
-                <select name="kelas" class="form-control" style="min-width:140px">
+                <label for="fld-tka-kognitif-index-kelas-2" style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kelas</label>
+                <select id="fld-tka-kognitif-index-kelas-2" name="kelas" class="form-control" style="min-width:140px">
                     <option value="">Semua Kelas</option>
                     @foreach($daftarKelas as $kls)
                         <option value="{{ $kls }}" @selected($kelasFilter === $kls)>{{ $kls }}</option>
@@ -59,8 +59,8 @@
                 </select>
             </div>
             <div>
-                <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Zona Kemampuan</label>
-                <select name="zona" class="form-control" style="min-width:180px">
+                <label for="fld-tka-kognitif-index-zona-2" style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Zona Kemampuan</label>
+                <select id="fld-tka-kognitif-index-zona-2" name="zona" class="form-control" style="min-width:180px">
                     <option value="">Semua Zona</option>
                     <option value="di_atas_rata_rata" @selected($zonaFilter === 'di_atas_rata_rata')>Di Atas Rata-rata</option>
                     <option value="rata_rata" @selected($zonaFilter === 'rata_rata')>Rata-rata</option>

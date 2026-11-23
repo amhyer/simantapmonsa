@@ -69,8 +69,8 @@
             <form method="POST" action="{{ route('admin.cbt.sessions.update-status', $session) }}">
                 @csrf
                 <div style="margin-bottom:12px">
-                    <label class="form-label">Status Operasional</label>
-                    <select name="status" class="form-control" style="width:100%">
+                    <label for="fld-sessions-show-status" class="form-label">Status Operasional</label>
+                    <select id="fld-sessions-show-status" name="status" class="form-control" style="width:100%">
                         <option value="draft" @selected($session->status === 'draft')>Draf</option>
                         <option value="published" @selected($session->status === 'published')>Dipublikasikan</option>
                         <option value="running" @selected($session->status === 'running')>Sedang Berjalan</option>

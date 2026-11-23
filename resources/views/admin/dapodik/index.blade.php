@@ -17,12 +17,12 @@
 </div>
 @endif
 @if(session('error'))
-<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:#DC2626;margin-bottom:16px;font-weight:600">
+<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:var(--bad);margin-bottom:16px;font-weight:600">
     <i class="fas fa-exclamation-circle" style="margin-right:6px"></i> {{ session('error') }}
 </div>
 @endif
 @if($errors->any())
-<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:#DC2626;margin-bottom:16px;font-weight:600">
+<div role="alert" style="padding:12px 16px;border-radius:8px;background:#FEE9E7;color:var(--bad);margin-bottom:16px;font-weight:600">
     <ul style="margin:0;padding-left:20px">
         @foreach($errors->all() as $err)
             <li>{{ $err }}</li>
@@ -174,9 +174,9 @@
             </div>
             <p style="font-size:11px;color:#667085;margin:0">Lihat pratinjau data</p>
         </div>
-        <div style="padding:14px;background:#FEE9E7;border-radius:10px;border-left:3px solid #DC2626">
+        <div style="padding:14px;background:#FEE9E7;border-radius:10px;border-left:3px solid var(--bad)">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                <div style="width:24px;height:24px;background:#DC2626;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">4</div>
+                <div style="width:24px;height:24px;background:var(--bad);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">4</div>
                 <b style="font-size:12px">Sinkronisasi</b>
             </div>
             <p style="font-size:11px;color:#667085;margin:0">Mulai sinkron data</p>
@@ -193,12 +193,12 @@
             <div class="card-body">
                 <form id="configForm" onsubmit="return saveConfig(event)">
                     <div style="margin-bottom:14px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgNpsn">NPSN <span style="color:#DC2626">*</span></label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgNpsn">NPSN <span style="color:var(--bad)">*</span></label>
                         <input type="text" id="cfgNpsn" placeholder="8 digit NPSN sekolah" maxlength="8" required
                             style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px">
                     </div>
                     <div style="margin-bottom:14px">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgToken">Token Dapodik <span style="color:#DC2626">*</span></label>
+                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="cfgToken">Token Dapodik <span style="color:var(--bad)">*</span></label>
                         <div style="position:relative">
                             <input type="password" id="cfgToken" placeholder="Token dari aplikasi Dapodik" required
                                 style="width:100%;padding:10px 12px;border:1px solid #E4E7EC;border-radius:8px;font-size:13px;padding-right:40px">
@@ -332,7 +332,7 @@
                                         <a href="{{ route('admin.dapodik.log-detail', $log->id) }}" class="btn btn-ghost btn-sm" aria-label="Lihat detail"><i class="fas fa-eye"></i></a>
                                         <form action="{{ route('admin.dapodik.log-destroy', $log->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus log ini?')">
                                             @csrf @method('DELETE')
-                                            <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+                                            <button class="btn btn-ghost btn-sm" style="color:var(--bad)" type="submit" aria-label="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -659,8 +659,8 @@ async function testConnection() {
             resultBox.style.border = '1px solid #FECACA';
             resultBox.style.borderRadius = '8px';
             resultBox.style.padding = '12px';
-            resultBox.innerHTML = '<div style="color:#991B1B;font-weight:700;font-size:14px"><i class="fas fa-times-circle"></i> Koneksi Gagal</div>' +
-                '<div style="color:#991B1B;font-size:13px;margin-top:4px">' + (data.message || 'Periksa konfigurasi host, port, dan token.') + '</div>';
+            resultBox.innerHTML = '<div style="color:var(--bad);font-weight:700;font-size:14px"><i class="fas fa-times-circle"></i> Koneksi Gagal</div>' +
+                '<div style="color:var(--bad);font-size:13px;margin-top:4px">' + (data.message || 'Periksa konfigurasi host, port, dan token.') + '</div>';
             statusTag.className = 'tag tag-bad';
             statusTag.innerHTML = '<i class="fas fa-times"></i> Gagal';
         }
@@ -670,8 +670,8 @@ async function testConnection() {
         resultBox.style.border = '1px solid #FECACA';
         resultBox.style.borderRadius = '8px';
         resultBox.style.padding = '12px';
-        resultBox.innerHTML = '<div style="color:#991B1B;font-weight:700;font-size:14px"><i class="fas fa-times-circle"></i> Koneksi Gagal</div>' +
-            '<div style="color:#991B1B;font-size:13px;margin-top:4px">Tidak dapat terhubung ke server. Pastikan Dapodik berjalan dan host/port benar.</div>';
+        resultBox.innerHTML = '<div style="color:var(--bad);font-weight:700;font-size:14px"><i class="fas fa-times-circle"></i> Koneksi Gagal</div>' +
+            '<div style="color:var(--bad);font-size:13px;margin-top:4px">Tidak dapat terhubung ke server. Pastikan Dapodik berjalan dan host/port benar.</div>';
         statusTag.className = 'tag tag-bad';
         statusTag.innerHTML = '<i class="fas fa-times"></i> Error';
     } finally {
@@ -710,9 +710,9 @@ async function previewData() {
             html += '<div style="font-size:11px;text-transform:uppercase;color:#667085;font-weight:600">Total GTK</div>';
             html += '<div style="font-size:24px;font-weight:800;color:#059669;margin-top:4px">' + fmtNumber(d.gtk_count) + '</div>';
             html += '</div>';
-            html += '<div style="padding:14px;background:#FEE9E7;border-radius:10px;border-left:3px solid #DC2626">';
+            html += '<div style="padding:14px;background:#FEE9E7;border-radius:10px;border-left:3px solid var(--bad)">';
             html += '<div style="font-size:11px;text-transform:uppercase;color:#667085;font-weight:600">Total Rombel</div>';
-            html += '<div style="font-size:24px;font-weight:800;color:#DC2626;margin-top:4px">' + fmtNumber(d.rombongan_belajar_count) + '</div>';
+            html += '<div style="font-size:24px;font-weight:800;color:var(--bad);margin-top:4px">' + fmtNumber(d.rombongan_belajar_count) + '</div>';
             html += '</div>';
             html += '</div>';
             resultBox.innerHTML = html;
@@ -748,7 +748,7 @@ function setSyncModalStep(steps, currentIdx, status) {
         let icon, iconColor, bg;
         if (i < currentIdx) { icon = 'fa-check-circle'; iconColor = '#059669'; bg = '#E6F5F0'; }
         else if (i === currentIdx) {
-            if (status === 'error') { icon = 'fa-times-circle'; iconColor = '#DC2626'; bg = '#FEF2F2'; }
+            if (status === 'error') { icon = 'fa-times-circle'; iconColor = 'var(--bad)'; bg = '#FEF2F2'; }
             else if (status === 'done') { icon = 'fa-check-circle'; iconColor = '#059669'; bg = '#E6F5F0'; }
             else { icon = 'fa-spinner fa-spin'; iconColor = '#B8860B'; bg = '#FBF4E4'; }
         } else { icon = 'fa-circle'; iconColor = '#D0D5DD'; bg = '#FAFBFD'; }
@@ -802,7 +802,7 @@ function setSyncModalResult(data, isDryRun) {
         if (berhasil > 0) html += '<span><b style="color:#059669">' + fmtNumber(berhasil) + '</b> baru</span>';
         if (diperbarui > 0) html += '<span><b style="color:#B8860B">' + fmtNumber(diperbarui) + '</b> diperbarui</span>';
         if (dilewati > 0) html += '<span><b style="color:#667085">' + fmtNumber(dilewati) + '</b> dilewati</span>';
-        if (gagal > 0) html += '<span><b style="color:#DC2626">' + fmtNumber(gagal) + '</b> gagal</span>';
+        if (gagal > 0) html += '<span><b style="color:var(--bad)">' + fmtNumber(gagal) + '</b> gagal</span>';
         if (archived > 0) html += '<span><b style="color:#667085">' + fmtNumber(archived) + '</b> diarsipkan</span>';
         if (total === 0) html += '<span style="color:#667085">Tidak ada data</span>';
         html += '</div>';
@@ -818,12 +818,12 @@ function setSyncModalResult(data, isDryRun) {
 
     if (data.errors && data.errors.length > 0) {
         html += '<div style="margin-top:12px;padding:12px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px">';
-        html += '<div style="font-size:12px;font-weight:700;color:#991B1B;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Error Detail</div>';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--bad);margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Error Detail</div>';
         for (const err of data.errors.slice(0, 5)) {
-            html += '<div style="font-size:11px;color:#991B1B;padding:2px 0">&bull; ' + err + '</div>';
+            html += '<div style="font-size:11px;color:var(--bad);padding:2px 0">&bull; ' + err + '</div>';
         }
         if (data.errors.length > 5) {
-            html += '<div style="font-size:11px;color:#991B1B;font-style:italic">...dan ' + (data.errors.length - 5) + ' error lainnya</div>';
+            html += '<div style="font-size:11px;color:var(--bad);font-style:italic">...dan ' + (data.errors.length - 5) + ' error lainnya</div>';
         }
         html += '</div>';
     }
@@ -881,15 +881,15 @@ async function runSync(mode) {
                 const title = document.getElementById('syncModalTitle');
                 const badge = document.getElementById('syncModalBadge');
                 const body = document.getElementById('syncModalBody');
-                title.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#DC2626;margin-right:8px"></i>Sinkronisasi Gagal';
+                title.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--bad);margin-right:8px"></i>Sinkronisasi Gagal';
                 badge.className = 'tag tag-bad';
                 badge.innerHTML = 'Error';
                 let errHtml = '<div style="padding:16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px">';
-                errHtml += '<div style="font-size:14px;font-weight:700;color:#991B1B;margin-bottom:8px"><i class="fas fa-times-circle"></i> Gagal mengambil data</div>';
-                errHtml += '<div style="font-size:13px;color:#991B1B;margin-bottom:12px">' + (data.message || 'Terjadi kesalahan yang tidak diketahui.') + '</div>';
+                errHtml += '<div style="font-size:14px;font-weight:700;color:var(--bad);margin-bottom:8px"><i class="fas fa-times-circle"></i> Gagal mengambil data</div>';
+                errHtml += '<div style="font-size:13px;color:var(--bad);margin-bottom:12px">' + (data.message || 'Terjadi kesalahan yang tidak diketahui.') + '</div>';
                 errHtml += '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid #FECACA">';
-                errHtml += '<div style="font-size:12px;font-weight:600;color:#991B1B;margin-bottom:4px"><i class="fas fa-info-circle"></i> Yang perlu diperiksa:</div>';
-                errHtml += '<ul style="font-size:12px;color:#991B1B;margin:0;padding-left:18px">';
+                errHtml += '<div style="font-size:12px;font-weight:600;color:var(--bad);margin-bottom:4px"><i class="fas fa-info-circle"></i> Yang perlu diperiksa:</div>';
+                errHtml += '<ul style="font-size:12px;color:var(--bad);margin:0;padding-left:18px">';
                 errHtml += '<li>Pastikan aplikasi <b>Dapodik</b> berjalan di komputer Anda</li>';
                 errHtml += '<li>Pastikan menu <b>Web Service</b> di Dapodik sudah aktif</li>';
                 errHtml += '<li>Periksa <b>Host</b> dan <b>Port</b> sesuai dengan Dapodik</li>';
@@ -906,12 +906,12 @@ async function runSync(mode) {
             const title = document.getElementById('syncModalTitle');
             const badge = document.getElementById('syncModalBadge');
             const body = document.getElementById('syncModalBody');
-            title.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#DC2626;margin-right:8px"></i>Koneksi Gagal';
+            title.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--bad);margin-right:8px"></i>Koneksi Gagal';
             badge.className = 'tag tag-bad';
             badge.innerHTML = 'Error';
             let errHtml = '<div style="padding:16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px">';
-            errHtml += '<div style="font-size:14px;font-weight:700;color:#991B1B;margin-bottom:8px"><i class="fas fa-times-circle"></i> Tidak dapat terhubung ke server</div>';
-            errHtml += '<div style="font-size:13px;color:#991B1B;margin-bottom:12px">Permintaan sinkronisasi gagal dijangkau. Pastikan server SIMANTAP berjalan dengan benar.</div>';
+            errHtml += '<div style="font-size:14px;font-weight:700;color:var(--bad);margin-bottom:8px"><i class="fas fa-times-circle"></i> Tidak dapat terhubung ke server</div>';
+            errHtml += '<div style="font-size:13px;color:var(--bad);margin-bottom:12px">Permintaan sinkronisasi gagal dijangkau. Pastikan server SIMANTAP berjalan dengan benar.</div>';
             errHtml += '</div>';
             errHtml += '<div style="text-align:center;margin-top:16px"><button onclick="hideSyncModal()" class="btn btn-primary">Tutup</button></div>';
             body.innerHTML = errHtml;
@@ -972,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="resetDapodikModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center">
     <div style="background:#fff;border-radius:16px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden">
         <div style="padding:18px 24px;background:#FEE9E7;border-bottom:1px solid #FECDCA;display:flex;align-items:center;justify-content:space-between">
-            <h3 style="font-size:16px;font-weight:700;color:#DC2626;margin:0"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Kosongkan Data Dapodik Sekolah</h3>
+            <h3 style="font-size:16px;font-weight:700;color:var(--bad);margin:0"><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Kosongkan Data Dapodik Sekolah</h3>
             <button type="button" onclick="document.getElementById('resetDapodikModal').style.display='none'" style="background:none;border:none;font-size:18px;color:#98A2B3;cursor:pointer">&times;</button>
         </div>
         <form action="{{ route('admin.dapodik.reset') }}" method="POST" style="padding:24px">
@@ -981,16 +981,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 Tindakan ini akan <strong>mengosongkan seluruh data yang diambil dari Dapodik</strong> (siswa, rombel, PTK, akun pengguna Dapodik, dan jadwal) milik sekolah ini di basis data. Akun admin Anda tetap aman. Anda dapat melakukan penarikan data baru dari Dapodik secara bersih kapan saja.
             </p>
             <div style="margin-bottom:16px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Ketik persis konfirmasi: <code style="color:#DC2626;background:#FEE9E7;padding:2px 6px;border-radius:4px">KOSONGKAN DATA DAPODIK</code></label>
-                <input type="text" name="konfirmasi" required placeholder="KOSONGKAN DATA DAPODIK" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                <label for="fld-admin-dapodik-konfirmasi" style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Ketik persis konfirmasi: <code style="color:var(--bad);background:#FEE9E7;padding:2px 6px;border-radius:4px">KOSONGKAN DATA DAPODIK</code></label>
+                <input id="fld-admin-dapodik-konfirmasi" type="text" name="konfirmasi" required placeholder="KOSONGKAN DATA DAPODIK" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
             </div>
             <div style="margin-bottom:20px">
-                <label style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Kata Sandi Akun Anda</label>
-                <input type="password" name="password" required placeholder="Masukkan kata sandi login" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
+                <label for="fld-admin-dapodik-password" style="display:block;font-size:12px;font-weight:600;color:#344054;margin-bottom:6px">Kata Sandi Akun Anda</label>
+                <input id="fld-admin-dapodik-password" type="password" name="password" required placeholder="Masukkan kata sandi login" style="width:100%;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
             </div>
             <div style="display:flex;gap:12px;justify-content:flex-end">
                 <button type="button" onclick="document.getElementById('resetDapodikModal').style.display='none'" class="btn btn-ghost">Batal</button>
-                <button type="submit" class="btn btn-danger" style="background:#DC2626;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer"><i class="fas fa-trash-alt"></i> Ya, Kosongkan Data</button>
+                <button type="submit" class="btn btn-danger" style="background:var(--bad);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer"><i class="fas fa-trash-alt"></i> Ya, Kosongkan Data</button>
             </div>
         </form>
     </div>

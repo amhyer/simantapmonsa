@@ -62,7 +62,7 @@
 
                         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
                             <a href="{{ route('guru.materi.edit', $m) }}" class="btn btn-ghost btn-sm">Ubah</a>
-                            <button onclick="hapusMateri('{{ $m->id }}')" class="btn btn-ghost btn-sm" style="color:#B42318">Hapus</button>
+                            <button onclick="hapusMateri('{{ $m->id }}')" class="btn btn-ghost btn-sm" style="color:var(--bad)">Hapus</button>
                         </div>
                     </div>
                 </div>

@@ -167,9 +167,9 @@
             cursor: default;
         }
         .anbk-pill-outline.urgent {
-            background: #dc3545;
+            background: var(--bad);
             color: #fff;
-            border-color: #dc3545;
+            border-color: var(--bad);
             animation: anbkPulse 1.2s infinite;
         }
         @keyframes anbkPulse {
@@ -352,10 +352,10 @@
             cursor: not-allowed;
         }
         .anbk-btn-prev {
-            background: #dc3545;
+            background: var(--bad);
             color: #fff;
         }
-        .anbk-btn-prev:hover:not(:disabled) { background: #bb2d3b; }
+        .anbk-btn-prev:hover:not(:disabled) { background: #8f1a12; }
         .anbk-btn-ragu {
             background: #ffc107;
             color: #212529;
@@ -732,7 +732,7 @@
                 </div>
             @endforeach
 
-            <div id="submit-status" style="font-size:12px;color:#dc3545;text-align:center;margin-top:10px" role="alert"></div>
+            <div id="submit-status" style="font-size:12px;color:var(--bad);text-align:center;margin-top:10px" role="alert"></div>
 
             {{-- Pusmendik "Daftar Soal" Modal --}}
             <div class="anbk-modal-backdrop" id="daftar-soal-modal" onclick="if(event.target === this) closeDaftarSoal()">

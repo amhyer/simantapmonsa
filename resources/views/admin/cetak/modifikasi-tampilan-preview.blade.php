@@ -27,7 +27,7 @@
 </head>
 <body>
     <div class="no-print" style="margin-bottom:14px;display:flex;gap:8px;align-items:center">
-        <button onclick="window.print()" style="padding:8px 16px;cursor:pointer;background:#B42318;color:#fff;border:none;border-radius:6px;font-weight:600">
+        <button type="button" onclick="window.print()" style="padding:8px 16px;cursor:pointer;background:#1F3864;color:#fff;border:none;border-radius:6px;font-weight:600">
             Cetak / Simpan PDF
         </button>
         <a href="{{ route('admin.cetak.modifikasi-tampilan', ['jenis' => $jenis === 'pts' ? 'semester' : 'pts']) }}" style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:6px;text-decoration:none;color:#1E293B">

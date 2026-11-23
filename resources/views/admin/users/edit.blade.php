@@ -17,31 +17,31 @@
                 @method('PUT')
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
-                        <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $user->nama_lengkap) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-edit-nama-lengkap" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Nama Lengkap *</label>
+                        <input id="fld-users-edit-nama-lengkap" type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $user->nama_lengkap) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('nama_lengkap') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Username *</label>
-                        <input type="text" name="nama_pengguna" value="{{ old('nama_pengguna', $user->nama_pengguna) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-edit-nama-pengguna" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Username *</label>
+                        <input id="fld-users-edit-nama-pengguna" type="text" name="nama_pengguna" value="{{ old('nama_pengguna', $user->nama_pengguna) }}" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('nama_pengguna') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <div style="margin-bottom:16px">
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email (opsional, untuk reset sandi mandiri)</label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" placeholder="nama@sekolah.sch.id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-users-edit-email" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Email (opsional, untuk reset sandi mandiri)</label>
+                    <input id="fld-users-edit-email" type="email" name="email" value="{{ old('email', $user->email) }}" placeholder="nama@sekolah.sch.id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     @error('email') <span class="field-error">{{ $message }}</span> @enderror
                     <small style="display:block;color:#667085;font-size:12px;margin-top:6px">Tanpa email, sandi hanya dapat direset oleh admin. Email tidak dipakai untuk login.</small>
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi (kosongkan jika tidak diubah)</label>
-                        <input type="password" name="kata_sandi" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-edit-kata-sandi" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kata Sandi (kosongkan jika tidak diubah)</label>
+                        <input id="fld-users-edit-kata-sandi" type="password" name="kata_sandi" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                         @error('kata_sandi') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
-                        <select name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-edit-peran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Peran *</label>
+                        <select id="fld-users-edit-peran" name="peran" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             @foreach(['admin' => 'Admin', 'guru' => 'Guru', 'siswa' => 'Siswa', 'ortu' => 'Orang Tua', 'kepsek' => 'Kepala Sekolah', 'pengawas' => 'Pengawas Sekolah', 'tendik' => 'Tenaga Kependidikan'] as $val => $label)
                                 <option value="{{ $val }}" {{ $user->peran === $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -51,15 +51,15 @@
                 </div>
                 <div class="grid grid-2" style="margin-bottom:16px">
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
-                        <input type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran', $user->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <label for="fld-users-edit-kelas-mata-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Kelas / Mata Pelajaran</label>
+                        <input id="fld-users-edit-kelas-mata-pelajaran" type="text" name="kelas_mata_pelajaran" value="{{ old('kelas_mata_pelajaran', $user->kelas_mata_pelajaran) }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     </div>
                     <div>
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status Wali Kelas (khusus Guru)</label>
+                        <label for="fld-users-edit-is-wali-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status Wali Kelas (khusus Guru)</label>
                         @php
                             $walasOld = old('is_wali_kelas', $user->is_wali_kelas === null ? '' : ($user->is_wali_kelas ? '1' : '0'));
                         @endphp
-                        <select name="is_wali_kelas" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                        <select id="fld-users-edit-is-wali-kelas" name="is_wali_kelas" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="" {{ $walasOld === '' ? 'selected' : '' }}>Otomatis (mengikuti penetapan Rombel)</option>
                             <option value="1" {{ $walasOld === '1' ? 'selected' : '' }}>Ya — Wali Kelas (tampilkan menu Wali Kelas)</option>
                             <option value="0" {{ $walasOld === '0' ? 'selected' : '' }}>Bukan Wali Kelas (Guru Mapel / Ekskul)</option>

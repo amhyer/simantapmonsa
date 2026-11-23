@@ -23,8 +23,8 @@
 <div class="filter-bar">
     <form method="GET" action="{{ route('admin.cbt.banks.index') }}" style="display:contents">
         <div class="filter-group">
-            <label class="form-label">Filter Guru</label>
-            <select name="guru_id" class="form-control">
+            <label for="fld-cbt-banks-guru-id" class="form-label">Filter Guru</label>
+            <select id="fld-cbt-banks-guru-id" name="guru_id" class="form-control">
                 <option value="">— Semua Guru —</option>
                 @foreach($gurus as $guru)
                     <option value="{{ $guru->id }}" @selected(request('guru_id') == $guru->id)>
@@ -35,8 +35,8 @@
         </div>
 
         <div class="filter-group" style="flex:2">
-            <label class="form-label">Pencarian Judul / Mata Pelajaran</label>
-            <input type="text" name="q" class="form-control" placeholder="Ketik kata kunci..." value="{{ request('q') }}">
+            <label for="fld-cbt-banks-q" class="form-label">Pencarian Judul / Mata Pelajaran</label>
+            <input id="fld-cbt-banks-q" type="text" name="q" class="form-control" placeholder="Ketik kata kunci..." value="{{ request('q') }}">
         </div>
 
         <div style="display:flex;align-items:center;gap:8px">

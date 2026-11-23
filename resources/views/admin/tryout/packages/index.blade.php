@@ -26,8 +26,8 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-2">
-                    <label class="form-label">Jenjang</label>
-                    <select name="jenjang" class="form-select">
+                    <label for="fld-tryout-packages-jenjang" class="form-label">Jenjang</label>
+                    <select id="fld-tryout-packages-jenjang" name="jenjang" class="form-select">
                         <option value="">Semua Jenjang</option>
                         <option value="SD" {{ request('jenjang') == 'SD' ? 'selected' : '' }}>SD</option>
                         <option value="SMP" {{ request('jenjang') == 'SMP' ? 'selected' : '' }}>SMP</option>
@@ -37,8 +37,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Tipe Ujian</label>
-                    <select name="tipe_ujian" class="form-select">
+                    <label for="fld-tryout-packages-tipe-ujian" class="form-label">Tipe Ujian</label>
+                    <select id="fld-tryout-packages-tipe-ujian" name="tipe_ujian" class="form-select">
                         <option value="">Semua Tipe</option>
                         <option value="USBN" {{ request('tipe_ujian') == 'USBN' ? 'selected' : '' }}>USBN</option>
                         <option value="UNBK" {{ request('tipe_ujian') == 'UNBK' ? 'selected' : '' }}>UNBK</option>
@@ -47,8 +47,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <select name="aktif" class="form-select">
+                    <label for="fld-tryout-packages-aktif" class="form-label">Status</label>
+                    <select id="fld-tryout-packages-aktif" name="aktif" class="form-select">
                         <option value="">Semua Status</option>
                         <option value="true" {{ request('aktif') === 'true' ? 'selected' : '' }}>Aktif</option>
                         <option value="false" {{ request('aktif') === 'false' ? 'selected' : '' }}>Non-Aktif</option>
@@ -56,8 +56,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Mata Pelajaran</label>
-                    <select name="mata_pelajaran_id" class="form-select">
+                    <label for="fld-tryout-packages-mata-pelajaran-id" class="form-label">Mata Pelajaran</label>
+                    <select id="fld-tryout-packages-mata-pelajaran-id" name="mata_pelajaran_id" class="form-select">
                         <option value="">Semua Mapel</option>
                         @foreach($mataPelajarans as $mapel)
                         <option value="{{ $mapel->id }}" {{ request('mata_pelajaran_id') == $mapel->id ? 'selected' : '' }}>
@@ -68,8 +68,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Tahun</label>
-                    <select name="tahun" class="form-select">
+                    <label for="fld-tryout-packages-tahun" class="form-label">Tahun</label>
+                    <select id="fld-tryout-packages-tahun" name="tahun" class="form-select">
                         <option value="">Semua Tahun</option>
                         @for($y = date('Y'); $y >= date('Y') - 5; $y--)
                         <option value="{{ $y }}" {{ request('tahun') == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -78,8 +78,8 @@
                 </div>
                 
                 <div class="col-md-2">
-                    <label class="form-label">Cari</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nama/Kode paket" value="{{ request('search') }}">
+                    <label for="fld-tryout-packages-search" class="form-label">Cari</label>
+                    <input id="fld-tryout-packages-search" type="text" name="search" class="form-control" placeholder="Nama/Kode paket" value="{{ request('search') }}">
                 </div>
                 
                 <div class="col-12">

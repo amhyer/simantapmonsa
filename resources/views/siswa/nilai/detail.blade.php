@@ -46,7 +46,7 @@
                                 <td style="padding:8px 12px;font-size:12px">{{ $h->waktu ? \Carbon\Carbon::parse($h->waktu)->format('d/m/Y H:i') : '-' }}</td>
                                 <td style="padding:8px 12px;font-weight:600;font-size:12px">{{ $h->kuis?->judul ?? '-' }}</td>
                                 <td style="padding:8px 12px;text-align:center">
-                                    <span style="background:{{ ($h->skor ?? 0) >= 70 ? '#D1FAE5;color:#065F46' : '#FEE2E2;color:#991B1B' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $h->skor ?? '-' }}</span>
+                                    <span style="background:{{ ($h->skor ?? 0) >= 70 ? '#D1FAE5;color:#065F46' : '#FEE2E2;color:var(--bad)' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $h->skor ?? '-' }}</span>
                                 </td>
                                 <td style="padding:8px 12px;text-align:center;font-size:12px">{{ $h->benar ?? '-' }}/{{ $h->total ?? '-' }}</td>
                             </tr>
@@ -70,7 +70,7 @@
                                 <td style="padding:8px 12px;font-size:12px">{{ \Carbon\Carbon::parse($n->tanggal)->format('d/m/Y') }}</td>
                                 <td style="padding:8px 12px;font-weight:600;font-size:12px">{{ $n->judul_penilaian ?? '-' }}</td>
                                 <td style="padding:8px 12px;text-align:center">
-                                    <span style="background:{{ $n->nilai >= 70 ? '#D1FAE5;color:#065F46' : '#FEE2E2;color:#991B1B' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $n->nilai }}</span>
+                                    <span style="background:{{ $n->nilai >= 70 ? '#D1FAE5;color:#065F46' : '#FEE2E2;color:var(--bad)' }};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">{{ $n->nilai }}</span>
                                 </td>
                             </tr>
                         @endforeach

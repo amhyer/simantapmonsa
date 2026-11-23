@@ -87,7 +87,7 @@
                     </thead>
                     <tbody>
                         @foreach($kehadiranMapel as $km)
-                            @php $statusMap = ['H'=>['Hadir','#D1FAE5','#065F46'],'S'=>['Sakit','#FEF3C7','#92400E'],'I'=>['Izin','#DBEAFE','#1E40AF'],'A'=>['Alpa','#FEE2E2','#991B1B']]; @endphp
+                            @php $statusMap = ['H'=>['Hadir','#D1FAE5','#065F46'],'S'=>['Sakit','#FEF3C7','#92400E'],'I'=>['Izin','#DBEAFE','#1E40AF'],'A'=>['Alpa','#FEE2E2','var(--bad)']]; @endphp
                             @php [$label,$bg,$fg] = $statusMap[$km->status] ?? ['?','#F3F4F6','#6B7280']; @endphp
                             <tr style="border-bottom:1px solid #F2F4F7">
                                 <td style="padding:8px 12px;font-size:12px">{{ \Carbon\Carbon::parse($km->tanggal)->format('d/m/Y') }}</td>
@@ -123,7 +123,7 @@
                     </thead>
                     <tbody>
                         @foreach($kehadiran->take(50) as $k)
-                            @php $statusMap = ['H'=>['Hadir','#D1FAE5','#065F46'],'S'=>['Sakit','#FEF3C7','#92400E'],'I'=>['Izin','#DBEAFE','#1E40AF'],'A'=>['Alpa','#FEE2E2','#991B1B']]; @endphp
+                            @php $statusMap = ['H'=>['Hadir','#D1FAE5','#065F46'],'S'=>['Sakit','#FEF3C7','#92400E'],'I'=>['Izin','#DBEAFE','#1E40AF'],'A'=>['Alpa','#FEE2E2','var(--bad)']]; @endphp
                             @php [$label,$bg,$fg] = $statusMap[$k->status] ?? ['?','#F3F4F6','#6B7280']; @endphp
                             <tr style="border-bottom:1px solid #F2F4F7">
                                 <td style="padding:8px 12px;font-size:12px">{{ \Carbon\Carbon::parse($k->tanggal)->format('d/m/Y') }}</td>
@@ -134,7 +134,7 @@
                                 <td style="padding:8px 12px;text-align:center">
                                     <form action="{{ route('guru.kehadiran.destroy', $k->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--bad)" type="submit" aria-label="Hapus">🗑</button>
                                     </form>
                                 </td>
                             </tr>

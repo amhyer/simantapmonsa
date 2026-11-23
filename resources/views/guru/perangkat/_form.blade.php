@@ -44,8 +44,8 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Judul Dokumen *</label>
-                <input type="text" name="judul" required
+                <label for="fld-perangkat-form-judul" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Judul Dokumen *</label>
+                <input id="fld-perangkat-form-judul" type="text" name="judul" required
                        value="{{ old('judul', $isEdit ? $perangkat->judul : '') }}"
                        placeholder="Contoh: ATP Matematika Fase C Kelas 6 Semester Ganjil"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
@@ -54,15 +54,15 @@
 
         <div class="grid grid-3" style="gap:14px;margin-bottom:14px">
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Mata Pelajaran *</label>
-                <input type="text" name="mata_pelajaran" required
+                <label for="fld-perangkat-form-mata-pelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Mata Pelajaran *</label>
+                <input id="fld-perangkat-form-mata-pelajaran" type="text" name="mata_pelajaran" required
                        value="{{ old('mata_pelajaran', $isEdit ? $perangkat->mata_pelajaran : '') }}"
                        placeholder="Contoh: Matematika / IPAS / Bahasa Indonesia"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Rombel (Opsional)</label>
-                <select name="rombel_id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-perangkat-form-rombel-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Rombel (Opsional)</label>
+                <select id="fld-perangkat-form-rombel-id" name="rombel_id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     <option value="">— Pilih Rombel —</option>
                     @foreach($rombelList as $r)
                         <option value="{{ $r->id }}" {{ (string) old('rombel_id', $isEdit ? $perangkat->rombel_id : '') === (string) $r->id ? 'selected' : '' }}>
@@ -72,8 +72,8 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Label Kelas *</label>
-                <input type="text" name="kelas"
+                <label for="fld-perangkat-form-kelas" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Label Kelas *</label>
+                <input id="fld-perangkat-form-kelas" type="text" name="kelas"
                        value="{{ old('kelas', $isEdit ? $perangkat->kelas : '') }}"
                        placeholder="Contoh: 6A atau Kelas VI"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
@@ -82,8 +82,8 @@
 
         <div class="grid grid-4" style="gap:14px;margin-bottom:14px">
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Fase Kurikulum</label>
-                <select name="fase" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-perangkat-form-fase" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Fase Kurikulum</label>
+                <select id="fld-perangkat-form-fase" name="fase" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     <option value="">— Pilih Fase —</option>
                     @foreach(\App\Models\Perangkat\PerangkatPembelajaran::FASE_VALID as $f)
                         <option value="{{ $f }}" {{ old('fase', $isEdit ? $perangkat->fase : 'C') === $f ? 'selected' : '' }}>Fase {{ $f }}</option>
@@ -91,8 +91,8 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
-                <select name="semester" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-perangkat-form-semester" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Semester</label>
+                <select id="fld-perangkat-form-semester" name="semester" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     @php $defaultSem = isset($semesterAktif) && $semesterAktif?->nama_semester ? ucfirst((string) $semesterAktif->nama_semester) : 'Ganjil'; @endphp
                     @foreach(['Ganjil', 'Genap', 'Tahunan'] as $sm)
                         <option value="{{ $sm }}" {{ old('semester', $isEdit ? $perangkat->semester : $defaultSem) === $sm ? 'selected' : '' }}>{{ $sm }}</option>
@@ -100,15 +100,15 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Ajaran</label>
-                <input type="text" name="tahun_ajaran"
+                <label for="fld-perangkat-form-tahun-ajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tahun Ajaran</label>
+                <input id="fld-perangkat-form-tahun-ajaran" type="text" name="tahun_ajaran"
                        value="{{ old('tahun_ajaran', $isEdit ? $perangkat->tahun_ajaran : ($semesterAktif->tahun_ajaran ?? date('Y').'/'.(date('Y')+1))) }}"
                        placeholder="2026/2027"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Alokasi Waktu</label>
-                <input type="text" name="alokasi_waktu"
+                <label for="fld-perangkat-form-alokasi-waktu" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Alokasi Waktu</label>
+                <input id="fld-perangkat-form-alokasi-waktu" type="text" name="alokasi_waktu"
                        value="{{ old('alokasi_waktu', $isEdit ? $perangkat->alokasi_waktu : '') }}"
                        placeholder="Mis. 4 JP (4 x 35 menit)"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
@@ -117,8 +117,8 @@
 
         <div class="grid grid-2" style="gap:14px;margin-bottom:14px">
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tautkan ke Kelas Digital (Opsional)</label>
-                <select name="kelas_digital_id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                <label for="fld-perangkat-form-kelas-digital-id" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Tautkan ke Kelas Digital (Opsional)</label>
+                <select id="fld-perangkat-form-kelas-digital-id" name="kelas_digital_id" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                     <option value="">— Tidak ditautkan —</option>
                     @foreach($kelasDigitalList as $kd)
                         <option value="{{ $kd->id }}" {{ (string) old('kelas_digital_id', $isEdit ? $perangkat->kelas_digital_id : '') === (string) $kd->id ? 'selected' : '' }}>
@@ -128,9 +128,9 @@
                 </select>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status &amp; Berbagi</label>
+                <label for="fld-perangkat-form-status" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Status &amp; Berbagi</label>
                 <div style="display:flex;gap:14px;align-items:center;padding-top:6px;flex-wrap:wrap">
-                    <select name="status" style="padding:8px 10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <select id="fld-perangkat-form-status" name="status" style="padding:8px 10px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="final" {{ old('status', $isEdit ? $perangkat->status : 'final') === 'final' ? 'selected' : '' }}>Final</option>
                         <option value="draf" {{ old('status', $isEdit ? $perangkat->status : 'final') === 'draf' ? 'selected' : '' }}>Draf</option>
                     </select>
@@ -145,8 +145,8 @@
         </div>
 
         <div>
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Ringkasan / Catatan Umum</label>
-            <textarea name="ringkasan" rows="2" placeholder="Ringkasan singkat tujuan atau ruang lingkup dokumen..."
+            <label for="fld-perangkat-form-ringkasan" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Ringkasan / Catatan Umum</label>
+            <textarea id="fld-perangkat-form-ringkasan" name="ringkasan" rows="2" placeholder="Ringkasan singkat tujuan atau ruang lingkup dokumen..."
                       style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ old('ringkasan', $isEdit ? $perangkat->ringkasan : '') }}</textarea>
         </div>
     </div>
@@ -160,27 +160,27 @@
         {{-- JENIS: CP (Capaian Pembelajaran) --}}
         <div class="jenis-section" data-jenis="cp" style="{{ $selectedJenis === 'cp' ? '' : 'display:none' }}">
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen Capaian Pembelajaran</label>
-                <input type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
+                <label for="fld-perangkat-form-konten-elemen" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen Capaian Pembelajaran</label>
+                <input id="fld-perangkat-form-konten-elemen" type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rumusan Capaian Pembelajaran (CP)</label>
-                <textarea name="konten[capaian_pembelajaran]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['capaian_pembelajaran'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-capaian-pembelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rumusan Capaian Pembelajaran (CP)</label>
+                <textarea id="fld-perangkat-form-konten-capaian-pembelajaran" name="konten[capaian_pembelajaran]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['capaian_pembelajaran'] ?? '' }}</textarea>
             </div>
             <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompetensi Inti / Kata Kerja Operasional</label>
-                    <textarea name="konten[kompetensi_inti]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['kompetensi_inti'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-kompetensi-inti" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompetensi Inti / Kata Kerja Operasional</label>
+                    <textarea id="fld-perangkat-form-konten-kompetensi-inti" name="konten[kompetensi_inti]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['kompetensi_inti'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Konten / Lingkup Materi Esensial</label>
-                    <textarea name="konten[konten_materi]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['konten_materi'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-konten-materi" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Konten / Lingkup Materi Esensial</label>
+                    <textarea id="fld-perangkat-form-konten-konten-materi" name="konten[konten_materi]" rows="4" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['konten_materi'] ?? '' }}</textarea>
                 </div>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Fase / Acuan Regulasi</label>
-                <input type="text" name="konten[catatan_fase]" value="{{ $konten['catatan_fase'] ?? '' }}"
+                <label for="fld-perangkat-form-konten-catatan-fase" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Fase / Acuan Regulasi</label>
+                <input id="fld-perangkat-form-konten-catatan-fase" type="text" name="konten[catatan_fase]" value="{{ $konten['catatan_fase'] ?? '' }}"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
         </div>
@@ -189,19 +189,19 @@
         <div class="jenis-section" data-jenis="tp" style="{{ $selectedJenis === 'tp' ? '' : 'display:none' }}">
             <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen</label>
-                    <input type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
+                    <label for="fld-perangkat-form-konten-elemen-2" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen</label>
+                    <input id="fld-perangkat-form-konten-elemen-2" type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
                            style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rujukan Capaian Pembelajaran (CP)</label>
-                    <input type="text" name="konten[capaian_rujukan]" value="{{ $konten['capaian_rujukan'] ?? '' }}"
+                    <label for="fld-perangkat-form-konten-capaian-rujukan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Rujukan Capaian Pembelajaran (CP)</label>
+                    <input id="fld-perangkat-form-konten-capaian-rujukan" type="text" name="konten[capaian_rujukan]" value="{{ $konten['capaian_rujukan'] ?? '' }}"
                            style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
             </div>
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Daftar Tujuan Pembelajaran (TP)</label>
+            <div id="lbl-daftar-tp" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Daftar Tujuan Pembelajaran (TP)</div>
             <div class="table-wrapper" style="margin-bottom:10px">
-                <table class="table" id="tbl-tp">
+                <table class="table" id="tbl-tp" aria-labelledby="lbl-daftar-tp">
                     <thead>
                         <tr><th>Kode TP</th><th>Rumusan Tujuan Pembelajaran</th><th>Materi Pokok</th><th>JP</th></tr>
                     </thead>
@@ -219,8 +219,8 @@
             </div>
             <button type="button" class="btn btn-ghost btn-sm" onclick="addRow('tbl-tp', 'daftar_tp', ['kode','deskripsi','materi','jp'])" style="margin-bottom:12px">+ Tambah Baris TP</button>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Indikator Ketercapaian</label>
-                <textarea name="konten[indikator_ketercapaian]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['indikator_ketercapaian'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-indikator-ketercapaian" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Indikator Ketercapaian</label>
+                <textarea id="fld-perangkat-form-konten-indikator-ketercapaian" name="konten[indikator_ketercapaian]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['indikator_ketercapaian'] ?? '' }}</textarea>
             </div>
         </div>
 
@@ -228,19 +228,19 @@
         <div class="jenis-section" data-jenis="atp" style="{{ $selectedJenis === 'atp' ? '' : 'display:none' }}">
             <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen / Lingkup ATP</label>
-                    <input type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
+                    <label for="fld-perangkat-form-konten-elemen-3" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Elemen / Lingkup ATP</label>
+                    <input id="fld-perangkat-form-konten-elemen-3" type="text" name="konten[elemen]" value="{{ $konten['elemen'] ?? '' }}"
                            style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompetensi Prasyarat</label>
-                    <input type="text" name="konten[prasyarat]" value="{{ $konten['prasyarat'] ?? '' }}"
+                    <label for="fld-perangkat-form-konten-prasyarat" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompetensi Prasyarat</label>
+                    <input id="fld-perangkat-form-konten-prasyarat" type="text" name="konten[prasyarat]" value="{{ $konten['prasyarat'] ?? '' }}"
                            style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
             </div>
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Matriks Alur Tujuan Pembelajaran (ATP)</label>
+            <div id="lbl-matriks-atp" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Matriks Alur Tujuan Pembelajaran (ATP)</div>
             <div class="table-wrapper" style="margin-bottom:10px">
-                <table class="table" id="tbl-atp">
+                <table class="table" id="tbl-atp" aria-labelledby="lbl-matriks-atp">
                     <thead>
                         <tr><th>No</th><th>Kode TP</th><th>Tujuan Pembelajaran</th><th>Materi Pokok</th><th>JP</th><th>Sem</th><th>Dimensi Profil</th></tr>
                     </thead>
@@ -264,9 +264,9 @@
 
         {{-- JENIS: PROTA --}}
         <div class="jenis-section" data-jenis="prota" style="{{ $selectedJenis === 'prota' ? '' : 'display:none' }}">
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Distribusi Program Tahunan (Prota)</label>
+            <div id="lbl-distribusi-prota" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Distribusi Program Tahunan (Prota)</div>
             <div class="table-wrapper" style="margin-bottom:10px">
-                <table class="table" id="tbl-prota">
+                <table class="table" id="tbl-prota" aria-labelledby="lbl-distribusi-prota">
                     <thead>
                         <tr><th>Semester</th><th>Unit</th><th>Materi / Topik Pokok</th><th>Alokasi JP</th><th>Keterangan / Bulan</th></tr>
                     </thead>
@@ -285,16 +285,16 @@
             </div>
             <button type="button" class="btn btn-ghost btn-sm" onclick="addRow('tbl-prota', 'daftar_unit', ['semester','nomor_unit','materi_topik','alokasi_jp','keterangan'])" style="margin-bottom:12px">+ Tambah Unit Prota</button>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Kalender Tahunan</label>
-                <textarea name="konten[catatan_tahunan]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_tahunan'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-catatan-tahunan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Kalender Tahunan</label>
+                <textarea id="fld-perangkat-form-konten-catatan-tahunan" name="konten[catatan_tahunan]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_tahunan'] ?? '' }}</textarea>
             </div>
         </div>
 
         {{-- JENIS: PROMES --}}
         <div class="jenis-section" data-jenis="promes" style="{{ $selectedJenis === 'promes' ? '' : 'display:none' }}">
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Bulan Efektif Semester</label>
-                <input type="text" name="konten[bulan_efektif]" value="{{ $konten['bulan_efektif'] ?? '' }}"
+                <label for="fld-perangkat-form-konten-bulan-efektif" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Bulan Efektif Semester</label>
+                <input id="fld-perangkat-form-konten-bulan-efektif" type="text" name="konten[bulan_efektif]" value="{{ $konten['bulan_efektif'] ?? '' }}"
                        style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
             </div>
             <div class="table-wrapper" style="margin-bottom:10px">
@@ -317,16 +317,16 @@
             </div>
             <button type="button" class="btn btn-ghost btn-sm" onclick="addRow('tbl-promes', 'daftar_minggu', ['bulan','minggu_ke','materi_topik','alokasi_jp','keterangan'])" style="margin-bottom:12px">+ Tambah Baris Promes</button>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Kalender Semester</label>
-                <textarea name="konten[catatan_kalender]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_kalender'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-catatan-kalender" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Kalender Semester</label>
+                <textarea id="fld-perangkat-form-konten-catatan-kalender" name="konten[catatan_kalender]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_kalender'] ?? '' }}</textarea>
             </div>
         </div>
 
         {{-- JENIS: MODUL AJAR / RPP (Pembelajaran Mendalam) --}}
         <div class="jenis-section" data-jenis="modul_ajar" style="{{ $selectedJenis === 'modul_ajar' ? '' : 'display:none' }}">
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tujuan Pembelajaran</label>
-                <textarea name="konten[tujuan_pembelajaran]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['tujuan_pembelajaran'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-tujuan-pembelajaran" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Tujuan Pembelajaran</label>
+                <textarea id="fld-perangkat-form-konten-tujuan-pembelajaran" name="konten[tujuan_pembelajaran]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['tujuan_pembelajaran'] ?? '' }}</textarea>
             </div>
 
             <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px;margin-bottom:14px">
@@ -354,46 +354,46 @@
 
             <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Memahami</label>
-                    <textarea name="konten[pengalaman][memahami]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['memahami'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-pengalaman-memahami" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Memahami</label>
+                    <textarea id="fld-perangkat-form-konten-pengalaman-memahami" name="konten[pengalaman][memahami]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['memahami'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Mengaplikasi</label>
-                    <textarea name="konten[pengalaman][mengaplikasi]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['mengaplikasi'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-pengalaman-mengaplikasi" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Mengaplikasi</label>
+                    <textarea id="fld-perangkat-form-konten-pengalaman-mengaplikasi" name="konten[pengalaman][mengaplikasi]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['mengaplikasi'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Merefleksi</label>
-                    <textarea name="konten[pengalaman][merefleksi]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['merefleksi'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-pengalaman-merefleksi" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Pengalaman: Merefleksi</label>
+                    <textarea id="fld-perangkat-form-konten-pengalaman-merefleksi" name="konten[pengalaman][merefleksi]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pengalaman']['merefleksi'] ?? '' }}</textarea>
                 </div>
             </div>
 
             <div class="grid grid-3" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Pendahuluan</label>
-                    <textarea name="konten[pendahuluan]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pendahuluan'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-pendahuluan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Pendahuluan</label>
+                    <textarea id="fld-perangkat-form-konten-pendahuluan" name="konten[pendahuluan]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['pendahuluan'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Inti</label>
-                    <textarea name="konten[kegiatan_inti]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['kegiatan_inti'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-kegiatan-inti" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Inti</label>
+                    <textarea id="fld-perangkat-form-konten-kegiatan-inti" name="konten[kegiatan_inti]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['kegiatan_inti'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Penutup</label>
-                    <textarea name="konten[penutup]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['penutup'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-penutup" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kegiatan Penutup</label>
+                    <textarea id="fld-perangkat-form-konten-penutup" name="konten[penutup]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['penutup'] ?? '' }}</textarea>
                 </div>
             </div>
 
             <div class="grid grid-3" style="gap:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Asesmen Formatif &amp; Sumatif</label>
-                    <textarea name="konten[asesmen]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['asesmen'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-asesmen" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Asesmen Formatif &amp; Sumatif</label>
+                    <textarea id="fld-perangkat-form-konten-asesmen" name="konten[asesmen]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['asesmen'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Media &amp; Sumber Belajar</label>
-                    <textarea name="konten[media_sumber]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['media_sumber'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-media-sumber" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Media &amp; Sumber Belajar</label>
+                    <textarea id="fld-perangkat-form-konten-media-sumber" name="konten[media_sumber]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['media_sumber'] ?? '' }}</textarea>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Refleksi Guru</label>
-                    <textarea name="konten[refleksi_guru]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['refleksi_guru'] ?? '' }}</textarea>
+                    <label for="fld-perangkat-form-konten-refleksi-guru" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Refleksi Guru</label>
+                    <textarea id="fld-perangkat-form-konten-refleksi-guru" name="konten[refleksi_guru]" rows="3" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['refleksi_guru'] ?? '' }}</textarea>
                 </div>
             </div>
         </div>
@@ -402,50 +402,50 @@
         <div class="jenis-section" data-jenis="kkm" style="{{ $selectedJenis === 'kkm' ? '' : 'display:none' }}">
             <div class="grid grid-4" style="gap:12px;margin-bottom:14px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompleksitas (0-100)</label>
-                    <input type="number" min="0" max="100" name="konten[kompleksitas]" value="{{ $konten['kompleksitas'] ?? 75 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-kompleksitas" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Kompleksitas (0-100)</label>
+                    <input id="fld-perangkat-form-konten-kompleksitas" type="number" min="0" max="100" name="konten[kompleksitas]" value="{{ $konten['kompleksitas'] ?? 75 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Daya Dukung (0-100)</label>
-                    <input type="number" min="0" max="100" name="konten[daya_dukung]" value="{{ $konten['daya_dukung'] ?? 78 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-daya-dukung" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Daya Dukung (0-100)</label>
+                    <input id="fld-perangkat-form-konten-daya-dukung" type="number" min="0" max="100" name="konten[daya_dukung]" value="{{ $konten['daya_dukung'] ?? 78 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Intake Siswa (0-100)</label>
-                    <input type="number" min="0" max="100" name="konten[intake]" value="{{ $konten['intake'] ?? 75 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-intake" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Intake Siswa (0-100)</label>
+                    <input id="fld-perangkat-form-konten-intake" type="number" min="0" max="100" name="konten[intake]" value="{{ $konten['intake'] ?? 75 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Nilai KKM / KKTP</label>
-                    <input type="number" min="0" max="100" name="konten[nilai_kkm]" value="{{ $konten['nilai_kkm'] ?? 76 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;font-weight:700">
+                    <label for="fld-perangkat-form-konten-nilai-kkm" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Nilai KKM / KKTP</label>
+                    <input id="fld-perangkat-form-konten-nilai-kkm" type="number" min="0" max="100" name="konten[nilai_kkm]" value="{{ $konten['nilai_kkm'] ?? 76 }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px;font-weight:700">
                 </div>
             </div>
             <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Perlu Bimbingan</label>
-                    <input type="text" name="konten[interval_perlu_bimbingan]" value="{{ $konten['interval_perlu_bimbingan'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-interval-perlu-bimbingan" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Perlu Bimbingan</label>
+                    <input id="fld-perangkat-form-konten-interval-perlu-bimbingan" type="text" name="konten[interval_perlu_bimbingan]" value="{{ $konten['interval_perlu_bimbingan'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Cukup</label>
-                    <input type="text" name="konten[interval_cukup]" value="{{ $konten['interval_cukup'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-interval-cukup" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Cukup</label>
+                    <input id="fld-perangkat-form-konten-interval-cukup" type="text" name="konten[interval_cukup]" value="{{ $konten['interval_cukup'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Baik (Tuntas)</label>
-                    <input type="text" name="konten[interval_baik]" value="{{ $konten['interval_baik'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-interval-baik" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Baik (Tuntas)</label>
+                    <input id="fld-perangkat-form-konten-interval-baik" type="text" name="konten[interval_baik]" value="{{ $konten['interval_baik'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Sangat Baik</label>
-                    <input type="text" name="konten[interval_sangat_baik]" value="{{ $konten['interval_sangat_baik'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-perangkat-form-konten-interval-sangat-baik" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Interval Sangat Baik</label>
+                    <input id="fld-perangkat-form-konten-interval-sangat-baik" type="text" name="konten[interval_sangat_baik]" value="{{ $konten['interval_sangat_baik'] ?? '' }}" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
             </div>
             <div>
-                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Penilaian &amp; Tindak Lanjut</label>
-                <textarea name="konten[catatan_penilaian]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_penilaian'] ?? '' }}</textarea>
+                <label for="fld-perangkat-form-konten-catatan-penilaian" style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">Catatan Penilaian &amp; Tindak Lanjut</label>
+                <textarea id="fld-perangkat-form-konten-catatan-penilaian" name="konten[catatan_penilaian]" rows="2" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">{{ $konten['catatan_penilaian'] ?? '' }}</textarea>
             </div>
         </div>
 
         <hr style="border:none;border-top:1px solid #EAECF0;margin:16px 0">
         <div>
-            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Lampiran Dokumen Pendukung (Opsional — PDF/DOCX/XLSX/PPTX/Gambar, maks 10 MB)</label>
-            <input type="file" name="lampiran" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
+            <label for="fld-perangkat-form-lampiran" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">Lampiran Dokumen Pendukung (Opsional — PDF/DOCX/XLSX/PPTX/Gambar, maks 10 MB)</label>
+            <input id="fld-perangkat-form-lampiran" type="file" name="lampiran" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
             @if($isEdit && $perangkat->lampiran_nama)
                 <div style="font-size:12px;color:#667085;margin-top:6px">
                     Lampiran saat ini: <strong>{{ $perangkat->lampiran_nama }}</strong> (unggah berkas baru untuk mengganti)

@@ -25,8 +25,8 @@
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('guru.tka.integrasi-erapor.index') }}" style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label style="font-size:12.5px;font-weight:700;color:var(--muted)">Pilih Rombel:</label>
-            <select name="kelas" onchange="this.form.submit()" class="form-control" style="max-width:180px">
+            <label for="fld-tka-integrasi-erapor-kelas" style="font-size:12.5px;font-weight:700;color:var(--muted)">Pilih Rombel:</label>
+            <select id="fld-tka-integrasi-erapor-kelas" name="kelas" onchange="this.form.submit()" class="form-control" style="max-width:180px">
                 <option value="">Semua Kelas</option>
                 @foreach($daftarKelas as $kls)
                     <option value="{{ $kls }}" @selected($kelasFilter === $kls)>{{ $kls }}</option>
@@ -39,31 +39,31 @@
             <input type="hidden" name="kelas" value="{{ $kelasFilter }}">
             <div class="grid grid-4" style="gap:14px;margin-bottom:14px">
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Mata Pelajaran Tujuan</label>
-                    <select name="mata_pelajaran" class="form-control" required>
+                    <label for="fld-tka-integrasi-erapor-mata-pelajaran" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Mata Pelajaran Tujuan</label>
+                    <select id="fld-tka-integrasi-erapor-mata-pelajaran" name="mata_pelajaran" class="form-control" required>
                         @foreach($mapelList as $mpl)
                             <option value="{{ $mpl }}" @selected($defaultMapel === $mpl)>{{ $mpl }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Komponen Nilai e-Rapor</label>
-                    <select name="komponen_target" class="form-control" required>
+                    <label for="fld-tka-integrasi-erapor-komponen-target" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Komponen Nilai e-Rapor</label>
+                    <select id="fld-tka-integrasi-erapor-komponen-target" name="komponen_target" class="form-control" required>
                         <option value="sumatif">Nilai Sumatif (40%)</option>
                         <option value="formatif">Nilai Formatif (30%)</option>
                         <option value="sumatif_akhir">Sumatif Akhir Semester (30%)</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Semester</label>
-                    <select name="semester" class="form-control" required>
+                    <label for="fld-tka-integrasi-erapor-semester" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Semester</label>
+                    <select id="fld-tka-integrasi-erapor-semester" name="semester" class="form-control" required>
                         <option value="Ganjil" @selected($defaultSemester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($defaultSemester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $defaultTahunAjaran }}" class="form-control" required>
+                    <label for="fld-tka-integrasi-erapor-tahun-ajaran" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">Tahun Ajaran</label>
+                    <input id="fld-tka-integrasi-erapor-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $defaultTahunAjaran }}" class="form-control" required>
                 </div>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">

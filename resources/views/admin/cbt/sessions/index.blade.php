@@ -20,8 +20,8 @@
 <div class="filter-bar">
     <form method="GET" action="{{ route('admin.cbt.sessions.index') }}" style="display:contents">
         <div class="filter-group">
-            <label class="form-label">Status Sesi</label>
-            <select name="status" class="form-control">
+            <label for="fld-cbt-sessions-status" class="form-label">Status Sesi</label>
+            <select id="fld-cbt-sessions-status" name="status" class="form-control">
                 <option value="">— Semua Status —</option>
                 @foreach(['draft' => 'Draf', 'published' => 'Dipublikasikan', 'running' => 'Sedang Berjalan', 'completed' => 'Selesai'] as $key => $lbl)
                     <option value="{{ $key }}" @selected(request('status') === $key)>{{ $lbl }}</option>
@@ -30,8 +30,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Guru Pengampu</label>
-            <select name="guru_id" class="form-control">
+            <label for="fld-cbt-sessions-guru-id" class="form-label">Guru Pengampu</label>
+            <select id="fld-cbt-sessions-guru-id" name="guru_id" class="form-control">
                 <option value="">— Semua Guru —</option>
                 @foreach($gurus as $guru)
                     <option value="{{ $guru->id }}" @selected(request('guru_id') == $guru->id)>

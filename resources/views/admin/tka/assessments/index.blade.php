@@ -20,8 +20,8 @@
 <div class="filter-bar">
     <form method="GET" action="{{ route('admin.tka.assessments.index') }}" style="display:contents">
         <div class="filter-group">
-            <label class="form-label">Status Kesiapan</label>
-            <select name="status_kesiapan" class="form-control">
+            <label for="fld-tka-assessments-status-kesiapan" class="form-label">Status Kesiapan</label>
+            <select id="fld-tka-assessments-status-kesiapan" name="status_kesiapan" class="form-control">
                 <option value="">— Semua Status —</option>
                 <option value="sangat_siap" @selected(request('status_kesiapan') === 'sangat_siap')>Sangat Siap</option>
                 <option value="siap" @selected(request('status_kesiapan') === 'siap')>Siap</option>
@@ -31,8 +31,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Dimensi P5</label>
-            <select name="dimension_id" class="form-control">
+            <label for="fld-tka-assessments-dimension-id" class="form-label">Dimensi P5</label>
+            <select id="fld-tka-assessments-dimension-id" name="dimension_id" class="form-control">
                 <option value="">— Semua Dimensi —</option>
                 @foreach($dimensions ?? [] as $dim)
                     <option value="{{ $dim->id }}" @selected(request('dimension_id') == $dim->id)>
@@ -43,8 +43,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Semester</label>
-            <select name="semester_id" class="form-control">
+            <label for="fld-tka-assessments-semester-id" class="form-label">Semester</label>
+            <select id="fld-tka-assessments-semester-id" name="semester_id" class="form-control">
                 <option value="">— Semua Semester —</option>
                 @foreach($semesters ?? [] as $sem)
                     <option value="{{ $sem->id }}" @selected(request('semester_id') == $sem->id)>
@@ -55,8 +55,8 @@
         </div>
 
         <div class="filter-group">
-            <label class="form-label">Cari Nama Siswa</label>
-            <input type="text" name="search" class="form-control" placeholder="Nama siswa..." value="{{ request('search') }}">
+            <label for="fld-tka-assessments-search" class="form-label">Cari Nama Siswa</label>
+            <input id="fld-tka-assessments-search" type="text" name="search" class="form-control" placeholder="Nama siswa..." value="{{ request('search') }}">
         </div>
 
         <div style="display:flex;align-items:center;gap:8px">

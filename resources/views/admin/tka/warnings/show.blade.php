@@ -85,8 +85,8 @@
             <form action="{{ route('admin.tka.warnings.update-status', $warning) }}" method="POST" style="display:grid;gap:12px;max-width:420px">
                 @csrf
                 <div>
-                    <label class="form-label">Status</label>
-                    <select name="status" required class="form-control">
+                    <label for="fld-warnings-show-status" class="form-label">Status</label>
+                    <select id="fld-warnings-show-status" name="status" required class="form-control">
                         @foreach($statusLabels as $val => $label)
                             <option value="{{ $val }}" @selected(old('status', $warning->status) === $val)>{{ $label }}</option>
                         @endforeach

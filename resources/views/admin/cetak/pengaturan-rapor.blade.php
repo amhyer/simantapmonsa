@@ -73,7 +73,7 @@
                     @if(!empty($raporConfig['ttd_kepsek_data_uri']))
                         <div style="margin-bottom:10px;display:flex;align-items:center;gap:12px">
                             <img src="{{ $raporConfig['ttd_kepsek_data_uri'] }}" alt="TTD Kepsek" style="max-height:56px;border:1px solid #CBD5E1;border-radius:6px;padding:4px;background:#fff">
-                            <label style="font-size:12px;color:#B42318;display:flex;align-items:center;gap:6px;cursor:pointer">
+                            <label style="font-size:12px;color:var(--bad);display:flex;align-items:center;gap:6px;cursor:pointer">
                                 <input type="checkbox" name="hapus_ttd_kepsek" value="1"> Hapus tanda tangan tersimpan
                             </label>
                         </div>
@@ -102,7 +102,7 @@
                                         <td>
                                             @if($wkUri)
                                                 <img src="{{ $wkUri }}" alt="TTD {{ $wk->nama_lengkap }}" style="max-height:36px;border:1px solid #CBD5E1;border-radius:4px;background:#fff;padding:2px">
-                                                <label style="display:block;font-size:11px;color:#B42318;cursor:pointer;margin-top:2px">
+                                                <label style="display:block;font-size:11px;color:var(--bad);cursor:pointer;margin-top:2px">
                                                     <input type="checkbox" name="hapus_ttd_wali[{{ $wk->id }}]" value="1"> Hapus
                                                 </label>
                                             @else

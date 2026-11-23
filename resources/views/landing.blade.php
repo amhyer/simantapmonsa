@@ -32,6 +32,7 @@
         :root {
             --navy: #1F3864; --navy-dark: #152A4A; --navy-light: #2B4A80;
             --gold: #B8860B; --gold-light: #D4A017; --gold-gradient: linear-gradient(135deg, #B8860B, #D4A017);
+            --bad: #B42318;
             --white: #FFFFFF; --bg: #F8FAFC; --text: #101828; --text-muted: #667085;
             --line: #E4E7EC; --shadow: 0 4px 20px rgba(0,0,0,0.08);
             --shadow-lg: 0 20px 60px rgba(0,0,0,0.12); --radius: 16px;
@@ -1078,7 +1079,7 @@
                                         <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:11px;color:var(--text-muted)">
                                             <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10B981;margin-right:3px"></span>Mandiri</span>
                                             <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#F59E0B;margin-right:3px"></span>Menumpang</span>
-                                            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#EF4444;margin-right:3px"></span>Blm Ditetapkan</span>
+                                            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--bad);margin-right:3px"></span>Blm Ditetapkan</span>
                                         </div>
                                     </div>
                                     @endif
@@ -1101,7 +1102,7 @@
                                         <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:11px;color:var(--text-muted)">
                                             <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3B82F6;margin-right:3px"></span>Online</span>
                                             <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#8B5CF6;margin-right:3px"></span>Semi Online</span>
-                                            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#EF4444;margin-right:3px"></span>Blm Ditentukan</span>
+                                            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--bad);margin-right:3px"></span>Blm Ditentukan</span>
                                         </div>
                                     </div>
                                     @endif
@@ -1364,7 +1365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var container = document.getElementById('toastContainer');
         if (!container) { container = document.createElement('div'); container.id = 'toastContainer'; container.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center'; document.body.appendChild(container); }
         var toast = document.createElement('div');
-        var colors = { success: '#12805C', error: '#B42318', warning: '#B54708', info: '#1F3864' };
+        var colors = { success: '#12805C', error: 'var(--bad)', warning: '#B54708', info: '#1F3864' };
         toast.style.cssText = 'background:'+(colors[type]||colors.info)+';color:#fff;padding:12px 24px;border-radius:99px;font-size:14px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,0.2);animation:slideUp 0.3s ease;display:flex;align-items:center;gap:10px';
         toast.innerHTML = message;
         container.appendChild(toast);
@@ -1485,7 +1486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: 'doughnut',
                 data: {
                     labels: ['Mandiri', 'Menumpang', 'Blm Ditetapkan'],
-                    datasets: [{ data: vals, backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], borderWidth: 0 }]
+                    datasets: [{ data: vals, backgroundColor: ['#10B981', '#F59E0B', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()], borderWidth: 0 }]
                 },
                 options: {
                     responsive: true, cutout: '55%',
@@ -1501,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: 'doughnut',
                 data: {
                     labels: ['Online', 'Semi Online', 'Blm Ditentukan'],
-                    datasets: [{ data: vals, backgroundColor: ['#3B82F6', '#8B5CF6', '#EF4444'], borderWidth: 0 }]
+                    datasets: [{ data: vals, backgroundColor: ['#3B82F6', '#8B5CF6', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()], borderWidth: 0 }]
                 },
                 options: {
                     responsive: true, cutout: '55%',

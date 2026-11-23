@@ -19,12 +19,12 @@
         <form id="formMassal">
             @csrf
             <div style="margin-bottom:12px">
-                <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Pilih Siswa (centang yang ingin dibuatkan akun)</label>
+                <div id="lbl-pilih-siswa-massal" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Pilih Siswa (centang yang ingin dibuatkan akun)</div>
                 <div style="display:flex;gap:8px;margin-bottom:8px">
                     <button type="button" class="btn btn-ghost btn-sm" onclick="centangSemua()">Centang Semua</button>
                     <button type="button" class="btn btn-ghost btn-sm" onclick="batalCentang()">Batal Centang</button>
                 </div>
-                <div id="siswaList" style="max-height:400px;overflow-y:auto;border:1px solid #E4E7EC;border-radius:8px">
+                <div id="siswaList" role="group" aria-labelledby="lbl-pilih-siswa-massal" style="max-height:400px;overflow-y:auto;border:1px solid #E4E7EC;border-radius:8px">
                     @forelse($siswa as $s)
                         @php
                             $hasUser = $users->contains(function ($u) use ($s) {
@@ -32,11 +32,11 @@
                             });
                         @endphp
                         <div class="siswa-item" style="padding:8px 12px;border-bottom:1px solid #F2F4F7;display:flex;align-items:center;gap:10px">
-                            <input type="checkbox" class="siswa-check" data-id="{{ $s->id }}" value="{{ $s->id }}" {{ $hasUser ? 'disabled checked' : '' }}>
-                            <div style="flex:1">
+                            <input type="checkbox" id="siswa-check-{{ $s->id }}" class="siswa-check" data-id="{{ $s->id }}" value="{{ $s->id }}" {{ $hasUser ? 'disabled checked' : '' }}>
+                            <label for="siswa-check-{{ $s->id }}" style="flex:1;cursor:pointer">
                                 <div style="font-weight:600;font-size:13px">{{ $s->nama_peserta_didik }}</div>
                                 <div style="font-size:11px;color:#888">NIS: {{ $s->nis }} | NISN: {{ $s->nisn }} | Kelas: {{ $s->kelas }}</div>
-                            </div>
+                            </label>
                             @if($hasUser)
                                 <span style="background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">Sudah punya akun</span>
                             @else

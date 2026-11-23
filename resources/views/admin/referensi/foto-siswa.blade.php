@@ -6,14 +6,14 @@
 @section('page_subtitle', 'Unggah foto siswa satuan maupun massal (.zip / multi-file) berdasarkan NISN atau NIS')
 
 @section('header_actions')
-    <button type="button" onclick="bukaModalMasalFoto()" class="btn btn-sm" style="background:#991B1B;color:#fff;border-color:#991B1B">
+    <button type="button" onclick="bukaModalMasalFoto()" class="btn btn-sm" style="background:var(--bad);color:#fff;border-color:var(--bad)">
         <i class="fas fa-upload"></i> Reset dan Upload Masal Foto Siswa
     </button>
     @if($denganFoto > 0)
         <form action="{{ route('admin.referensi.foto-siswa.reset-semua') }}" method="POST" style="display:inline" onsubmit="return confirm('Reset / hapus seluruh foto siswa ({{ $denganFoto }} foto)?')">
             @csrf
             @method('DELETE')
-            <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #FECDCA">
+            <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad);border:1px solid #FECDCA">
                 <i class="fas fa-trash"></i> Reset Semua Foto
             </button>
         </form>
@@ -40,16 +40,16 @@
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <h3 style="margin:0;margin-right:8px">FOTO SISWA</h3>
-                <button type="button" onclick="copyFotoTable()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="copyFotoTable()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button type="button" onclick="exportFotoCsv()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportFotoCsv()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-excel"></i> Excel
                 </button>
-                <button type="button" onclick="exportFotoPdf()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="exportFotoPdf()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-file-pdf"></i> Pdf
                 </button>
-                <button type="button" onclick="window.print()" class="btn btn-xs" style="background:#991B1B;color:#fff;border:none;padding:5px 10px;border-radius:6px">
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-ghost">
                     <i class="fas fa-print"></i> Print
                 </button>
             </div>
@@ -115,7 +115,7 @@
                                                 <form action="{{ route('admin.referensi.foto-siswa.destroy', $s) }}" method="POST" onsubmit="return confirm('Hapus foto {{ $s->nama_peserta_didik }}?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:#B42318;border:1px solid #FECDCA" title="Hapus Foto">
+                                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--bad);border:1px solid #FECDCA" title="Hapus Foto">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -157,13 +157,13 @@
                 </div>
 
                 <div style="margin-bottom:14px">
-                    <label class="form-label">Opsi 1: Pilih File Arsip (.zip)</label>
-                    <input type="file" name="file_zip" accept=".zip" class="form-control">
+                    <label for="fld-referensi-foto-siswa-file-zip" class="form-label">Opsi 1: Pilih File Arsip (.zip)</label>
+                    <input id="fld-referensi-foto-siswa-file-zip" type="file" name="file_zip" accept=".zip" class="form-control">
                 </div>
 
                 <div style="margin-bottom:14px">
-                    <label class="form-label">Opsi 2: Atau Pilih Banyak File Foto Sekaligus (.jpg / .png)</label>
-                    <input type="file" name="foto[]" accept=".jpeg,.jpg,.png" multiple class="form-control">
+                    <label for="fld-referensi-foto-siswa-foto" class="form-label">Opsi 2: Atau Pilih Banyak File Foto Sekaligus (.jpg / .png)</label>
+                    <input id="fld-referensi-foto-siswa-foto" type="file" name="foto[]" accept=".jpeg,.jpg,.png" multiple class="form-control">
                 </div>
 
                 <div style="margin-bottom:16px">

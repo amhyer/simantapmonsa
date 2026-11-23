@@ -127,23 +127,23 @@
                         </div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
                             <div>
-                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">
+                                <label for="fld-admin-sekolah-gemini-api-key" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">
                                     Gemini API Key
                                     @if($hasGeminiKey)<span class="badge badge-success" style="font-size:10px;margin-left:4px">Tersimpan</span>@endif
                                 </label>
-                                <input type="password" name="gemini_api_key" autocomplete="new-password"
+                                <input id="fld-admin-sekolah-gemini-api-key" type="password" name="gemini_api_key" autocomplete="new-password"
                                        placeholder="{{ $hasGeminiKey ? '•••••••• (kosongkan jika tidak diubah)' : 'AIzaSy...' }}"
                                        style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             </div>
                             <div>
-                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Model Gemini</label>
-                                <input type="text" name="gemini_model"
+                                <label for="fld-admin-sekolah-gemini-model" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Model Gemini</label>
+                                <input id="fld-admin-sekolah-gemini-model" type="text" name="gemini_model"
                                        value="{{ old('gemini_model', $aiCfg['gemini_model'] ?? 'gemini-2.5-flash') }}"
                                        style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             </div>
                             <div>
-                                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Kuota Harian AI (req/hari)</label>
-                                <input type="number" name="gemini_daily_quota" min="1" max="5000"
+                                <label for="fld-admin-sekolah-gemini-daily-quota" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Kuota Harian AI (req/hari)</label>
+                                <input id="fld-admin-sekolah-gemini-daily-quota" type="number" name="gemini_daily_quota" min="1" max="5000"
                                        value="{{ old('gemini_daily_quota', $aiCfg['gemini_daily_quota'] ?? 60) }}"
                                        style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                             </div>
@@ -182,7 +182,7 @@
 
         if (npsn.length < 3 || !/^\d+$/.test(npsn)) {
             statusEl.style.display = 'block';
-            statusEl.style.color = '#dc3545';
+            statusEl.style.color = 'var(--bad)';
             statusEl.textContent = 'NPSN harus minimal 3 digit angka.';
             return;
         }
@@ -221,12 +221,12 @@
                 statusEl.style.color = '#0f766e';
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + ' Silakan periksa dan edit jika perlu.';
             } else {
-                statusEl.style.color = '#dc3545';
+                statusEl.style.color = 'var(--bad)';
                 statusEl.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.message || 'Tidak ditemukan di database sekolah.') +
                     ' <button type="button" class="btn btn-sm" onclick="lookupFromApi(\'' + npsn + '\')" style="margin-left:8px;padding:2px 8px;font-size:11px;background:#1F3864;color:#fff;border-radius:4px;border:none;cursor:pointer"><i class="fas fa-cloud-download-alt"></i> Tarik dari Kemdikbud?</button>';
             }
         } catch (err) {
-            statusEl.style.color = '#dc3545';
+            statusEl.style.color = 'var(--bad)';
             statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <b>Error:</b> ' + err.message;
         } finally {
             btn.disabled = false;
@@ -273,11 +273,11 @@
                 statusEl.style.color = '#0f766e';
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Data berhasil ditarik dari Referensi Kemdikbud. Silakan periksa dan klik "Simpan Identitas".';
             } else {
-                statusEl.style.color = '#dc3545';
+                statusEl.style.color = 'var(--bad)';
                 statusEl.textContent = 'Data sekolah tidak ditemukan di Referensi Kemdikbud.';
             }
         } catch (err) {
-            statusEl.style.color = '#dc3545';
+            statusEl.style.color = 'var(--bad)';
             statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <b>Gagal menarik dari API Kemdikbud:</b> ' + err.message;
         }
     }

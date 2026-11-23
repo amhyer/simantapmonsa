@@ -175,7 +175,7 @@
                         label: 'Rata-rata Skor (maks 4)',
                         data: data,
                         backgroundColor: data.map(v => v >= 3.5 ? 'rgba(18,128,92,0.75)' : (v >= 2.5 ? 'rgba(31,56,100,0.75)' : (v >= 1.5 ? 'rgba(181,71,8,0.75)' : 'rgba(180,35,24,0.75)'))),
-                        borderColor: data.map(v => v >= 3.5 ? '#12805C' : (v >= 2.5 ? '#1F3864' : (v >= 1.5 ? '#B54708' : '#B42318'))),
+                        borderColor: data.map(v => v >= 3.5 ? '#12805C' : (v >= 2.5 ? '#1F3864' : (v >= 1.5 ? '#B54708' : getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()))),
                         borderWidth: 1.5,
                         borderRadius: 6
                     }]

@@ -14,39 +14,39 @@
         <div class="card-body">
             <form method="GET" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end">
                 <div>
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas" class="form-control">
+                    <label for="fld-guru-p5-kelas" class="form-label">Kelas</label>
+                    <select id="fld-guru-p5-kelas" name="kelas" class="form-control">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tema Kokurikuler P5</label>
-                    <select name="tema" class="form-control">
+                    <label for="fld-guru-p5-tema" class="form-label">Tema Kokurikuler P5</label>
+                    <select id="fld-guru-p5-tema" name="tema" class="form-control">
                         @foreach($temaList as $t)
                             <option value="{{ $t }}" @selected($t === $tema)>{{ $t }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Dimensi Profil Pelajar</label>
-                    <select name="dimensi" class="form-control">
+                    <label for="fld-guru-p5-dimensi" class="form-label">Dimensi Profil Pelajar</label>
+                    <select id="fld-guru-p5-dimensi" name="dimensi" class="form-control">
                         @foreach($dimensiList as $d)
                             <option value="{{ $d }}" @selected($d === $dimensi)>{{ $d }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester" class="form-control">
+                    <label for="fld-guru-p5-semester" class="form-label">Semester</label>
+                    <select id="fld-guru-p5-semester" name="semester" class="form-control">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control">
+                    <label for="fld-guru-p5-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                    <input id="fld-guru-p5-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary btn-sm">Tampilkan</button>

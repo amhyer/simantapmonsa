@@ -190,7 +190,7 @@
                     @if(!empty($tampilan['watermark_data_uri']))
                         <div style="margin-bottom:10px;padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;align-items:center;gap:12px">
                             <img src="{{ $tampilan['watermark_data_uri'] }}" alt="Watermark" style="max-height:54px;max-width:54px;object-fit:contain">
-                            <label style="font-size:12.5px;color:#B42318;cursor:pointer" for="hapus_watermark">
+                            <label style="font-size:12.5px;color:var(--bad);cursor:pointer" for="hapus_watermark">
                                 <input type="checkbox" name="hapus_watermark" id="hapus_watermark" value="1" class="live-input"> Hapus watermark tersimpan
                             </label>
                         </div>
@@ -242,8 +242,8 @@
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
                         @for($k = 1; $k <= 6; $k++)
                             <div class="form-group">
-                                <label>Kelas {{ $k }}</label>
-                                <input type="number" min="1" max="12" name="pts_kolom_kelas[{{ $k }}]" class="form-control live-input" value="{{ $tampilan['pts_kolom_kelas'][(string)$k] ?? 5 }}">
+                                <label for="pts_kolom_kelas_{{ $k }}">Kelas {{ $k }}</label>
+                                <input type="number" id="pts_kolom_kelas_{{ $k }}" min="1" max="12" name="pts_kolom_kelas[{{ $k }}]" class="form-control live-input" value="{{ $tampilan['pts_kolom_kelas'][(string)$k] ?? 5 }}">
                             </div>
                         @endfor
                     </div>
@@ -288,7 +288,7 @@
                     <option value="semester">Mode: Akhir Semester</option>
                     <option value="pts">Mode: Tengah Semester (PTS)</option>
                 </select>
-                <a href="{{ route('admin.cetak.modifikasi-tampilan.preview') }}" target="_blank" class="btn btn-sm" style="background:#B42318;color:#fff">
+                <a href="{{ route('admin.cetak.modifikasi-tampilan.preview') }}" target="_blank" class="btn btn-sm btn-primary">
                     <i class="fas fa-file-pdf"></i> Pratinjau PDF
                 </a>
             </div>

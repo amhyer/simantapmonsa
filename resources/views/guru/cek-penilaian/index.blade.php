@@ -14,16 +14,16 @@
         <div class="card-body">
             <form method="GET" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
                 <div>
-                    <label class="form-label">Kelas</label>
-                    <select name="kelas" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-guru-cek-penilaian-kelas" class="form-label">Kelas</label>
+                    <select id="fld-guru-cek-penilaian-kelas" name="kelas" class="form-control" onchange="this.form.submit()">
                         @foreach($kelasList as $k)
                             <option value="{{ $k }}" @selected($k === $kelas)>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Mata Pelajaran</label>
-                    <select name="mapel" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-guru-cek-penilaian-mapel" class="form-label">Mata Pelajaran</label>
+                    <select id="fld-guru-cek-penilaian-mapel" name="mapel" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Mapel</option>
                         @foreach($mapelList as $m)
                             <option value="{{ $m }}" @selected($m === $mapelFilter)>{{ $m }}</option>
@@ -31,15 +31,15 @@
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Semester</label>
-                    <select name="semester" class="form-control" onchange="this.form.submit()">
+                    <label for="fld-guru-cek-penilaian-semester" class="form-label">Semester</label>
+                    <select id="fld-guru-cek-penilaian-semester" name="semester" class="form-control" onchange="this.form.submit()">
                         <option value="Ganjil" @selected($semester === 'Ganjil')>Ganjil</option>
                         <option value="Genap" @selected($semester === 'Genap')>Genap</option>
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Tahun Ajaran</label>
-                    <input type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
+                    <label for="fld-guru-cek-penilaian-tahun-ajaran" class="form-label">Tahun Ajaran</label>
+                    <input id="fld-guru-cek-penilaian-tahun-ajaran" type="text" name="tahun_ajaran" value="{{ $tahunAjaran }}" maxlength="9" class="form-control" style="width:120px">
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm">Filter</button>
             </form>

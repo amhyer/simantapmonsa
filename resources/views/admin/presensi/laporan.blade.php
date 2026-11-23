@@ -119,13 +119,13 @@
 
                 @if($periode === 'harian')
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal</label>
-                        <input type="date" name="tanggal" value="{{ $tanggal }}" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-tanggal" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal</label>
+                        <input id="fld-presensi-laporan-tanggal" type="date" name="tanggal" value="{{ $tanggal }}" class="form-control" style="width:100%">
                     </div>
                 @elseif($periode === 'bulanan')
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Bulan</label>
-                        <select name="bulan" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-bulan" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Bulan</label>
+                        <select id="fld-presensi-laporan-bulan" name="bulan" class="form-control" style="width:100%">
                             @for($m = 1; $m <= 12; $m++)
                                 <option value="{{ $m }}" {{ (int)$bulan === $m ? 'selected' : '' }}>
                                     {{ \Carbon\Carbon::create(2026, $m, 1)->locale('id')->translatedFormat('F') }}
@@ -134,8 +134,8 @@
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun</label>
-                        <select name="tahun" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-tahun" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun</label>
+                        <select id="fld-presensi-laporan-tahun" name="tahun" class="form-control" style="width:100%">
                             @for($y = (int)date('Y') - 3; $y <= (int)date('Y') + 1; $y++)
                                 <option value="{{ $y }}" {{ (int)$tahun === $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
@@ -143,8 +143,8 @@
                     </div>
                 @else
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun</label>
-                        <select name="tahun" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-tahun-2" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tahun</label>
+                        <select id="fld-presensi-laporan-tahun-2" name="tahun" class="form-control" style="width:100%">
                             @for($y = (int)date('Y') - 3; $y <= (int)date('Y') + 1; $y++)
                                 <option value="{{ $y }}" {{ (int)$tahun === $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
@@ -154,8 +154,8 @@
 
                 @if($kategori !== 'siswa')
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pegawai</label>
-                        <select name="user_id" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-user-id" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pegawai</label>
+                        <select id="fld-presensi-laporan-user-id" name="user_id" class="form-control" style="width:100%">
                             <option value="">Semua Pegawai</option>
                             @foreach($pegawaiFilterList as $p)
                                 <option value="{{ $p->id }}" {{ (string)$userId === (string)$p->id ? 'selected' : '' }}>
@@ -166,8 +166,8 @@
                     </div>
                 @else
                     <div>
-                        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rombel / Kelas</label>
-                        <select name="kelas" class="form-control" style="width:100%">
+                        <label for="fld-presensi-laporan-kelas" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Rombel / Kelas</label>
+                        <select id="fld-presensi-laporan-kelas" name="kelas" class="form-control" style="width:100%">
                             <option value="">Semua Kelas</option>
                             @foreach($kelasList as $k)
                                 <option value="{{ $k }}" {{ $kelas === $k ? 'selected' : '' }}>{{ $k }}</option>
@@ -177,13 +177,13 @@
                 @endif
 
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pencarian</label>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="{{ $kategori === 'siswa' ? 'Nama / NISN / NIS' : 'Nama / NIP' }}" class="form-control" style="width:100%">
+                    <label for="fld-presensi-laporan-search" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pencarian</label>
+                    <input id="fld-presensi-laporan-search" type="text" name="search" value="{{ $search }}" placeholder="{{ $kategori === 'siswa' ? 'Nama / NISN / NIS' : 'Nama / NIP' }}" class="form-control" style="width:100%">
                 </div>
 
                 <div>
-                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal Cetak</label>
-                    <input type="date" name="tanggal_cetak" x-model="tanggalCetak" value="{{ $tanggalCetak }}" class="form-control" style="width:100%">
+                    <label for="fld-presensi-laporan-tanggal-cetak" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tanggal Cetak</label>
+                    <input id="fld-presensi-laporan-tanggal-cetak" type="date" name="tanggal_cetak" x-model="tanggalCetak" value="{{ $tanggalCetak }}" class="form-control" style="width:100%">
                 </div>
 
                 <input type="hidden" name="tampilkan_waktu" :value="tampilkanWaktu ? 1 : 0" value="{{ $tampilkanWaktu ? 1 : 0 }}">
@@ -334,7 +334,7 @@
                                     <td style="text-align:center;font-weight:600;color:#059669">{{ $row['hadir_bulan'] }}</td>
                                     <td style="text-align:center;font-weight:600;color:#d97706">{{ $row['terlambat_bulan'] }}</td>
                                     <td style="text-align:center">{{ $row['izin_bulan'] + $row['sakit_bulan'] }}</td>
-                                    <td style="text-align:center;color:#dc2626">{{ $row['alpa_bulan'] }}</td>
+                                    <td style="text-align:center;color:var(--bad)">{{ $row['alpa_bulan'] }}</td>
                                     <td style="text-align:center;font-weight:700;color:#059669;background:#f0fdf4">
                                         {{ $row['durasi_bulan'] }}
                                         <span style="font-size:11px;font-weight:normal;color:#047857;display:block">({{ $row['durasi_bulan_jam'] }} jam)</span>
@@ -347,7 +347,7 @@
                                     <td style="text-align:center;font-weight:600;color:#059669">{{ $row['hadir_tahun'] }}</td>
                                     <td style="text-align:center;font-weight:600;color:#d97706">{{ $row['terlambat_tahun'] }}</td>
                                     <td style="text-align:center">{{ $row['izin_tahun'] + $row['sakit_tahun'] }}</td>
-                                    <td style="text-align:center;color:#dc2626">{{ $row['alpa_tahun'] }}</td>
+                                    <td style="text-align:center;color:var(--bad)">{{ $row['alpa_tahun'] }}</td>
                                     <td style="text-align:center;font-weight:700;color:#059669;background:#f0fdf4">
                                         {{ $row['durasi_tahun'] }}
                                         <span style="font-size:11px;font-weight:normal;color:#047857;display:block">({{ $row['durasi_tahun_jam'] }} jam)</span>
@@ -432,7 +432,7 @@
                                     <td style="text-align:center;font-weight:600;color:#059669">{{ $row['hadir_bulan'] }}</td>
                                     <td style="text-align:center">{{ $row['sakit_bulan'] }}</td>
                                     <td style="text-align:center">{{ $row['izin_bulan'] }}</td>
-                                    <td style="text-align:center;color:#dc2626">{{ $row['alpa_bulan'] }}</td>
+                                    <td style="text-align:center;color:var(--bad)">{{ $row['alpa_bulan'] }}</td>
                                     <td style="text-align:center;font-weight:700;color:#059669;background:#f0fdf4">
                                         {{ $row['persen_bulan'] }}%
                                     </td>
@@ -441,7 +441,7 @@
                                     <td style="text-align:center;font-weight:600;color:#059669">{{ $row['hadir_tahun'] }}</td>
                                     <td style="text-align:center">{{ $row['sakit_tahun'] }}</td>
                                     <td style="text-align:center">{{ $row['izin_tahun'] }}</td>
-                                    <td style="text-align:center;color:#dc2626">{{ $row['alpa_tahun'] }}</td>
+                                    <td style="text-align:center;color:var(--bad)">{{ $row['alpa_tahun'] }}</td>
                                     <td style="text-align:center;font-weight:700;color:#059669;background:#f0fdf4">
                                         {{ $row['persen_tahun'] }}%
                                     </td>

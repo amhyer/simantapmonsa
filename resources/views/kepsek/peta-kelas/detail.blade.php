@@ -287,7 +287,7 @@
                         labels: ['A · Sangat Baik', 'B · Baik', 'C · Cukup', 'D · Perlu Bimbingan'],
                         datasets: [{
                             data: {!! json_encode($chartPredikatData ?? [0, 0, 0, 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
-                            backgroundColor: ['#12805C', '#1F3864', '#B8860B', '#B42318'],
+                            backgroundColor: ['#12805C', '#1F3864', '#B8860B', getComputedStyle(document.documentElement).getPropertyValue('--bad').trim()],
                             borderWidth: 2,
                             borderColor: '#fff'
                         }]

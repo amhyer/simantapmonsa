@@ -20,10 +20,10 @@
                 @csrf
 
                 <div style="margin-bottom:20px">
-                    <label class="form-label">
+                    <label for="fld-banks-create-title" class="form-label">
                         Judul Bank Soal <span style="color:var(--bad)">*</span>
                     </label>
-                    <input type="text" 
+                    <input id="fld-banks-create-title" type="text" 
                            name="title" 
                            class="form-control" 
                            maxlength="200" 
@@ -33,10 +33,10 @@
                 </div>
 
                 <div style="margin-bottom:20px">
-                    <label class="form-label">
+                    <label for="fld-banks-create-subject" class="form-label">
                         Mata Pelajaran <span style="color:var(--bad)">*</span>
                     </label>
-                    <input type="text" 
+                    <input id="fld-banks-create-subject" type="text" 
                            name="subject" 
                            class="form-control" 
                            maxlength="100" 
@@ -46,10 +46,10 @@
                 </div>
 
                 <div style="margin-bottom:24px">
-                    <label class="form-label">
+                    <label for="fld-banks-create-guru-id" class="form-label">
                         Guru Pemilik / Pengampu <span style="color:var(--bad)">*</span>
                     </label>
-                    <select name="guru_id" class="form-control" required style="width:100%">
+                    <select id="fld-banks-create-guru-id" name="guru_id" class="form-control" required style="width:100%">
                         <option value="">— Pilih Guru Pengampu —</option>
                         @foreach($gurus as $guru)
                             <option value="{{ $guru->id }}" @selected(old('guru_id') == $guru->id)>

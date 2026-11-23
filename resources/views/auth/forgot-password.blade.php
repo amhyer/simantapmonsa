@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <style>
-        :root { --navy: #1F3864; --gold: #B8860B; }
+        :root { --navy: #1F3864; --gold: #B8860B; --bad: #B42318; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F5F7FB; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
         .login-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(31,56,100,.12); width: 100%; max-width: 420px; padding: 40px 32px; }
@@ -23,7 +23,7 @@
         .form-group input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31,56,100,.08); }
         .btn { width: 100%; padding: 12px; background: var(--navy); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: .15s; }
         .btn:hover { background: #2B4A80; }
-        .error { background: #FEE9E7; color: #B42318; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .error { background: #FEE9E7; color: var(--bad); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
         .status { background: #E7F6EC; color: #067647; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
         .hint { font-size: 12.5px; color: #667085; line-height: 1.55; margin-bottom: 18px; }
         .back { display: block; text-align: center; margin-top: 18px; font-size: 13px; color: var(--navy); text-decoration: none; font-weight: 600; }

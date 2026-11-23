@@ -27,8 +27,8 @@
             @csrf
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Siswa</label>
-                    <select name="siswa_id" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-dimensi-siswa-id" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Siswa</label>
+                    <select id="fld-guru-dimensi-siswa-id" name="siswa_id" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">Pilih Siswa</option>
                         @foreach($siswa as $s)
                             <option value="{{ $s->id }}">{{ $s->nama_peserta_didik }} ({{ $s->kelas }})</option>
@@ -36,8 +36,8 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">No Dimensi (1-8)</label>
-                    <select name="no_dimensi" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-dimensi-no-dimensi" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">No Dimensi (1-8)</label>
+                    <select id="fld-guru-dimensi-no-dimensi" name="no_dimensi" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">Pilih No</option>
                         @for($i = 1; $i <= 8; $i++)
                             <option value="{{ $i }}">{{ $i }}</option>
@@ -47,8 +47,8 @@
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Dimensi</label>
-                    <select name="dimensi" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-dimensi-dimensi" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Dimensi</label>
+                    <select id="fld-guru-dimensi-dimensi" name="dimensi" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                         <option value="">Pilih Dimensi</option>
                         @foreach(['Beriman & Bertakwa','Mandiri','Bergotong Royong','Bernalar Kritis','Kreatif','Berkebinekaan Global','Bernegara Pancasila','Majemuk'] as $d)
                             <option value="{{ $d }}">{{ $d }}</option>
@@ -56,8 +56,8 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Skor (1-4)</label>
-                    <input type="number" name="skor" min="1" max="4" step="0.1" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
+                    <label for="fld-guru-dimensi-skor" style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Skor (1-4)</label>
+                    <input id="fld-guru-dimensi-skor" type="number" name="skor" min="1" max="4" step="0.1" required style="width:100%;padding:9px;border:1px solid #E4E7EC;border-radius:8px">
                 </div>
             </div>
             <button type="submit" class="btn btn-sm" style="background:#1F3864;color:#fff">💾 Simpan Dimensi</button>
@@ -94,7 +94,7 @@
                                 <td style="padding:8px 12px;text-align:center">
                                     <form action="{{ route('guru.dimensi.destroy', $d->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-ghost btn-sm" style="color:#DC2626" type="submit" aria-label="Hapus">🗑</button>
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--bad)" type="submit" aria-label="Hapus">🗑</button>
                                     </form>
                                 </td>
                             </tr>

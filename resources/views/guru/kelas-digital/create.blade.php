@@ -20,21 +20,21 @@
             @csrf
 
             <div class="form-group">
-                <label class="form-label" for="nama_kelas">Nama Kelas Digital <span style="color:#dc2626">*</span></label>
+                <label class="form-label" for="nama_kelas">Nama Kelas Digital <span style="color:var(--bad)">*</span></label>
                 <input id="nama_kelas" type="text" name="nama_kelas" class="form-input" value="{{ old('nama_kelas') }}" placeholder="Contoh: Matematika Kelas 6A — Semester Ganjil" required>
-                @error('nama_kelas') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                @error('nama_kelas') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
                 <div class="form-group">
-                    <label class="form-label" for="mata_pelajaran">Mata Pelajaran <span style="color:#dc2626">*</span></label>
+                    <label class="form-label" for="mata_pelajaran">Mata Pelajaran <span style="color:var(--bad)">*</span></label>
                     <input id="mata_pelajaran" list="daftar-mapel-kd" type="text" name="mata_pelajaran" class="form-input" value="{{ old('mata_pelajaran') }}" placeholder="Contoh: Matematika" required>
                     <datalist id="daftar-mapel-kd">
                         @foreach($mapelOptions as $mapel)
                             <option value="{{ $mapel }}"></option>
                         @endforeach
                     </datalist>
-                    @error('mata_pelajaran') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                    @error('mata_pelajaran') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="form-group">
@@ -47,20 +47,20 @@
                             </option>
                         @endforeach
                     </select>
-                    @error('rombel_id') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                    @error('rombel_id') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="kelas">Label Kelas (otomatis mengikuti Rombel jika dikosongkan)</label>
                 <input id="kelas" type="text" name="kelas" class="form-input" value="{{ old('kelas') }}" placeholder="Contoh: Kelas 6A">
-                @error('kelas') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                @error('kelas') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="deskripsi">Deskripsi Singkat Kelas</label>
                 <textarea id="deskripsi" name="deskripsi" rows="3" class="form-textarea" placeholder="Gambaran capaian belajar, aturan pengumpulan tugas, atau informasi kelas.">{{ old('deskripsi') }}</textarea>
-                @error('deskripsi') <p style="color:#dc2626;font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
+                @error('deskripsi') <p style="color:var(--bad);font-size:.78rem;margin-top:.25rem">{{ $message }}</p> @enderror
             </div>
 
             <div class="form-group" style="display:flex;align-items:center;gap:.5rem">

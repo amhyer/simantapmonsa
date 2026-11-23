@@ -17,20 +17,20 @@
                 @method('PUT')
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
                     <div>
-                        <label class="form-label">Kode Paket</label>
-                        <input type="text" name="kode_paket" value="{{ old('kode_paket', $package->kode_paket) }}" maxlength="50" required class="form-control">
+                        <label for="fld-packages-edit-kode-paket" class="form-label">Kode Paket</label>
+                        <input id="fld-packages-edit-kode-paket" type="text" name="kode_paket" value="{{ old('kode_paket', $package->kode_paket) }}" maxlength="50" required class="form-control">
                         @error('kode_paket')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Nama Paket</label>
-                        <input type="text" name="nama_paket" value="{{ old('nama_paket', $package->nama_paket) }}" maxlength="255" required class="form-control">
+                        <label for="fld-packages-edit-nama-paket" class="form-label">Nama Paket</label>
+                        <input id="fld-packages-edit-nama-paket" type="text" name="nama_paket" value="{{ old('nama_paket', $package->nama_paket) }}" maxlength="255" required class="form-control">
                         @error('nama_paket')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Jenjang</label>
-                        <select name="jenjang" required class="form-control">
+                        <label for="fld-packages-edit-jenjang" class="form-label">Jenjang</label>
+                        <select id="fld-packages-edit-jenjang" name="jenjang" required class="form-control">
                             @foreach(['SD', 'SMP', 'SMA', 'SMK'] as $j)
                                 <option value="{{ $j }}" @selected(old('jenjang', $package->jenjang) === $j)>{{ $j }}</option>
                             @endforeach
@@ -38,8 +38,8 @@
                         @error('jenjang')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Tipe Ujian</label>
-                        <select name="tipe_ujian" required class="form-control">
+                        <label for="fld-packages-edit-tipe-ujian" class="form-label">Tipe Ujian</label>
+                        <select id="fld-packages-edit-tipe-ujian" name="tipe_ujian" required class="form-control">
                             @foreach(['USBN', 'UNBK', 'AKM'] as $t)
                                 <option value="{{ $t }}" @selected(old('tipe_ujian', $package->tipe_ujian ?? 'USBN') === $t)>{{ $t }}</option>
                             @endforeach
@@ -47,14 +47,14 @@
                         @error('tipe_ujian')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Tahun Paket</label>
-                        <input type="number" name="tahun_paket" value="{{ old('tahun_paket', $package->tahun_paket) }}" min="2020" max="2030" required class="form-control">
+                        <label for="fld-packages-edit-tahun-paket" class="form-label">Tahun Paket</label>
+                        <input id="fld-packages-edit-tahun-paket" type="number" name="tahun_paket" value="{{ old('tahun_paket', $package->tahun_paket) }}" min="2020" max="2030" required class="form-control">
                         @error('tahun_paket')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Mata Pelajaran</label>
-                    <select name="mata_pelajaran_id" class="form-control">
+                    <label for="fld-packages-edit-mata-pelajaran-id" class="form-label">Mata Pelajaran</label>
+                    <select id="fld-packages-edit-mata-pelajaran-id" name="mata_pelajaran_id" class="form-control">
                         <option value="">— Umum —</option>
                         @foreach($mataPelajarans as $m)
                             <option value="{{ $m->id }}" @selected(old('mata_pelajaran_id', $package->mata_pelajaran_id ?? null) == $m->id)>{{ $m->nama }}</option>
@@ -64,24 +64,24 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                     <div>
-                        <label class="form-label">Total Soal</label>
-                        <input type="number" name="total_soal" value="{{ old('total_soal', $package->total_soal ?? 40) }}" min="1" required class="form-control">
+                        <label for="fld-packages-edit-total-soal" class="form-label">Total Soal</label>
+                        <input id="fld-packages-edit-total-soal" type="number" name="total_soal" value="{{ old('total_soal', $package->total_soal ?? 40) }}" min="1" required class="form-control">
                         @error('total_soal')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Waktu (menit)</label>
-                        <input type="number" name="waktu_menit" value="{{ old('waktu_menit', $package->waktu_menit ?? $package->durasi_total_menit) }}" min="1" required class="form-control">
+                        <label for="fld-packages-edit-waktu-menit" class="form-label">Waktu (menit)</label>
+                        <input id="fld-packages-edit-waktu-menit" type="number" name="waktu_menit" value="{{ old('waktu_menit', $package->waktu_menit ?? $package->durasi_total_menit) }}" min="1" required class="form-control">
                         @error('waktu_menit')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                     <div>
-                        <label class="form-label">KKM</label>
-                        <input type="number" name="kkm" value="{{ old('kkm', $package->kkm ?? $package->passing_grade) }}" min="0" max="100" step="0.01" required class="form-control">
+                        <label for="fld-packages-edit-kkm" class="form-label">KKM</label>
+                        <input id="fld-packages-edit-kkm" type="number" name="kkm" value="{{ old('kkm', $package->kkm ?? $package->passing_grade) }}" min="0" max="100" step="0.01" required class="form-control">
                         @error('kkm')<span class="field-error">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="3" class="form-control">{{ old('deskripsi', $package->deskripsi) }}</textarea>
+                    <label for="fld-packages-edit-deskripsi" class="form-label">Deskripsi</label>
+                    <textarea id="fld-packages-edit-deskripsi" name="deskripsi" rows="3" class="form-control">{{ old('deskripsi', $package->deskripsi) }}</textarea>
                     @error('deskripsi')<span class="field-error">{{ $message }}</span>@enderror
                 </div>
                 <div>
