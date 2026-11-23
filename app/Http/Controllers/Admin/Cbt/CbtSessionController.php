@@ -41,14 +41,14 @@ class CbtSessionController extends Controller
         }
 
         $sessions = $query->orderByDesc('id')->paginate(15)->withQueryString();
-        $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
+        $gurus = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
 
         return view('admin.cbt.sessions.index', compact('sessions', 'gurus'));
     }
 
     public function create()
     {
-        $gurus = User::where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
+        $gurus = User::forSchool()->where('peran', 'guru')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap']);
         $banks = CbtQuestionBank::with('guru')->orderBy('title')->get();
         $classes = Siswa::where('aktif', true)->whereNull('archived_at')
             ->distinct()->orderBy('kelas')->pluck('kelas')->filter()->values();

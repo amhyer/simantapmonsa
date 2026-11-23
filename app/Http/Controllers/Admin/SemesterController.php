@@ -31,7 +31,11 @@ class SemesterController extends Controller
 
     public function destroy(Semester $semester)
     {
-        if ($semester->siswa->count() > 0 || $semester->ptk->count() > 0 || $semester->rombel->count() > 0) {
+        $inUse = $semester->siswa()->withoutGlobalScopes()->exists()
+            || $semester->ptk()->withoutGlobalScopes()->exists()
+            || $semester->rombel()->withoutGlobalScopes()->exists();
+
+        if ($inUse) {
             return redirect()->route('admin.semester.index')
                 ->with('error', 'Tidak bisa menghapus semester yang memiliki data siswa, ptk, atau rombel terkait.');
         }

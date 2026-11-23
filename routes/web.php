@@ -940,7 +940,7 @@ if (config('simantap.cbt_enabled', false)) {
     // ==================== CBT ROUTES ====================
     // `force.password.change` wajib ada di sini: tanpa itu guru yang masih memakai
     // sandi awal tetap bisa masuk alur ujian, padahal 7 grup route lain menolaknya.
-    Route::middleware(['auth', 'role:guru', 'force.password.change', CbtAccessMiddleware::class])->prefix('cbt')->name('cbt.')->group(function () {
+    Route::middleware(['auth', 'role:guru', 'school.context', 'force.password.change', CbtAccessMiddleware::class])->prefix('cbt')->name('cbt.')->group(function () {
         // Question Banks
         Route::prefix('question-banks')->name('question-banks.')->group(function () {
             Route::get('/', [CbtQuestionBankController::class, 'index'])->name('index');
@@ -981,7 +981,7 @@ if (config('simantap.cbt_enabled', false)) {
 
     // CBT Student Routes
     // Sama seperti grup guru di atas: sandi awal harus sudah diganti sebelum ujian.
-    Route::middleware(['auth', 'role:siswa', 'force.password.change', CbtAccessMiddleware::class])->prefix('cbt/student')->name('cbt.student.')->group(function () {
+    Route::middleware(['auth', 'role:siswa', 'school.context', 'force.password.change', CbtAccessMiddleware::class])->prefix('cbt/student')->name('cbt.student.')->group(function () {
         Route::get('/', [CbtStudentController::class, 'index'])->name('index');
         Route::get('/{session}/start', [CbtStudentController::class, 'start'])->name('start');
         Route::post('/{session}/start', [CbtStudentController::class, 'begin'])->name('begin');
@@ -993,7 +993,7 @@ if (config('simantap.cbt_enabled', false)) {
 }
 
 // ==================== ADMIN CBT MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'school.context', 'force.password.change', 'menu.telemetry'])->prefix('admin/cbt')->name('admin.cbt.')->group(function () {
     // Question Banks (Bank Soal — dapat disiapkan admin di mode persiapan)
     Route::prefix('banks')->name('banks.')->group(function () {
         Route::get('/', [CbtBankController::class, 'index'])->name('index');
@@ -1022,7 +1022,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== ADMIN TRYOUT MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'school.context', 'force.password.change', 'menu.telemetry'])->prefix('admin/tryout')->name('admin.tryout.')->group(function () {
     Route::get('/statistics', [TryoutPackageAdminController::class, 'statistics'])->name('statistics');
 
     // Packages
@@ -1060,7 +1060,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== ADMIN TKA MANAGEMENT ====================
-Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.change', 'menu.telemetry'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:admin', 'school.context', 'force.password.change', 'menu.telemetry'])->prefix('admin/tka')->name('admin.tka.')->group(function () {
     Route::get('/', [TkaAdminController::class, 'index'])->name('dashboard');
 
     // Dimensions Management
@@ -1097,7 +1097,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:admin', 'force.password.chang
 });
 
 // ==================== TRYOUT ROUTES ====================
-Route::middleware(['module.asesmen', 'auth', 'role:guru,admin', 'force.password.change'])->prefix('tryout')->name('tryout.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru,admin', 'school.context', 'force.password.change'])->prefix('tryout')->name('tryout.')->group(function () {
     // Categories (nonaktif sementara: controller belum ada — milik area Kiro)
     // Route::resource('categories', \App\Http\Controllers\Tryout\TryoutCategoryController::class)->except(['show']);
 
@@ -1119,7 +1119,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:guru,admin', 'force.password.
 });
 
 // Tryout Student Routes
-Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'school.context', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
     Route::get('/', [TryoutStudentController::class, 'index'])->name('index');
     Route::get('/{session}/start', [TryoutStudentController::class, 'start'])->name('start');
     Route::post('/{result}/answer', [TryoutStudentController::class, 'submitAnswer'])->name('answer');
@@ -1128,7 +1128,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'force.password.chang
 });
 
 // ==================== TKA ENHANCED ROUTES ====================
-Route::middleware(['module.asesmen', 'auth', 'role:guru', 'force.password.change'])->prefix('tka')->name('tka.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:guru', 'school.context', 'force.password.change'])->prefix('tka')->name('tka.')->group(function () {
     // Dimensions
     Route::resource('dimensions', TkaDimensionController::class);
     Route::post('/dimensions/{dimension}/item', [TkaDimensionController::class, 'addItem'])->name('dimensions.add-item');
@@ -1150,7 +1150,7 @@ Route::middleware(['module.asesmen', 'auth', 'role:guru', 'force.password.change
 });
 
 // TKA Parent Routes
-Route::middleware(['module.asesmen', 'auth', 'role:ortu', 'force.password.change'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
+Route::middleware(['module.asesmen', 'auth', 'role:ortu', 'school.context', 'force.password.change'])->prefix('tka/parent')->name('tka.parent.')->group(function () {
     Route::get('/', [TkaParentController::class, 'index'])->name('index');
     Route::get('/{report}', [TkaParentController::class, 'show'])->name('show');
 });

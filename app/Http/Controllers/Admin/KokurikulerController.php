@@ -115,10 +115,19 @@ class KokurikulerController extends Controller
     {
         $validated = $request->validate([
             'anggota' => 'nullable|array',
-            'anggota.*' => 'exists:siswa,id',
+            'anggota.*' => 'integer',
         ]);
 
-        $kelompok->anggota()->sync($validated['anggota'] ?? []);
+        // Batasi sinkronisasi hanya pada siswa milik sekolah aktif agar tidak
+        // menautkan atau mencabut anggota sekolah lain.
+        $allowedSiswaIds = Siswa::whereIn('id', $validated['anggota'] ?? [])->pluck('id')->all();
+        $currentSchoolMemberIds = $kelompok->anggota()->pluck('siswa.id')->all();
+        if (! empty($currentSchoolMemberIds)) {
+            $kelompok->anggota()->detach($currentSchoolMemberIds);
+        }
+        if (! empty($allowedSiswaIds)) {
+            $kelompok->anggota()->syncWithoutDetaching($allowedSiswaIds);
+        }
 
         return redirect()->route('admin.kokurikuler.kelompok.show', $kelompok)
             ->with('success', 'Anggota kelompok berhasil diperbarui.');

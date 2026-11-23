@@ -255,10 +255,10 @@ class MapelController extends Controller
             ->toArray();
 
         $sources = [
-            DB::table('jadwal_pelajaran')->distinct()->pluck('mata_pelajaran'),
-            DB::table('materi')->distinct()->pluck('mata_pelajaran'),
-            DB::table('kuis')->distinct()->pluck('mata_pelajaran'),
-            DB::table('nilai')->distinct()->pluck('mata_pelajaran'),
+            \App\Models\JadwalPelajaran::query()->distinct()->pluck('mata_pelajaran'),
+            \App\Models\Materi::query()->distinct()->pluck('mata_pelajaran'),
+            \App\Models\Kuis::query()->distinct()->pluck('mata_pelajaran'),
+            \App\Models\Nilai::query()->distinct()->pluck('mata_pelajaran'),
         ];
 
         $found = collect();

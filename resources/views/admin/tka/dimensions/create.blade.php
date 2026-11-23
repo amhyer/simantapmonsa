@@ -29,7 +29,7 @@
                 <div>
                     <label for="fld-dimensions-create-kategori" class="form-label">Kategori</label>
                     <select id="fld-dimensions-create-kategori" name="kategori" required class="form-control">
-                        @foreach(['akhlak_beragama' => 'Akhlak Beragama', 'kebinekaan_global' => 'Kebinekaan Global', 'berkebhinekaan' => 'Berkebinekaan', 'mandiri' => 'Mandiri', 'bernalar_kritis' => 'Bernalar Kritis', 'kreatif' => 'Kreatif'] as $val => $label)
+                        @foreach(['religius' => 'Religius', 'nasionalis' => 'Nasionalis', 'mandiri' => 'Mandiri', 'gotong_royong' => 'Gotong Royong', 'integritas' => 'Integritas', 'kreatif' => 'Kreatif', 'berdaya_saing' => 'Berdaya Saing'] as $val => $label)
                             <option value="{{ $val }}" @selected(old('kategori') === $val)>{{ $label }}</option>
                         @endforeach
                     </select>
