@@ -39,15 +39,19 @@ class TryoutSessionController extends Controller
     {
         $validated = $request->validated();
 
+        $package = Package::findOrFail($validated['package_id']);
+        $semester = Semester::findOrFail($validated['semester_id']);
+        $rombelId = ! empty($validated['rombel_id']) ? Rombel::findOrFail($validated['rombel_id'])->id : null;
+
         $session = Session::create([
             'uuid' => Str::uuid(),
             'kode_sesi' => 'TRY-'.strtoupper(Str::random(8)),
-            'package_id' => $validated['package_id'],
-            'semester_id' => $validated['semester_id'],
+            'package_id' => $package->id,
+            'semester_id' => $semester->id,
             'guru_id' => auth()->id(),
             'nama_sesi' => $validated['nama_sesi'],
             'kelas' => $validated['kelas'] ?? null,
-            'rombel_id' => $validated['rombel_id'] ?? null,
+            'rombel_id' => $rombelId,
             'tanggal_mulai' => $validated['tanggal_mulai'],
             'tanggal_selesai' => $validated['tanggal_selesai'],
             'status' => 'draft',

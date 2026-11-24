@@ -11,11 +11,14 @@ use App\Models\Tka\Dimension;
 use App\Models\Tka\EarlyWarning;
 use App\Models\Tka\HistoricalTracking;
 use App\Models\Tka\StudentAssessment;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\Tka\TkaCognitiveAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TkaAssessmentController extends Controller
 {
@@ -49,22 +52,41 @@ class TkaAssessmentController extends Controller
 
     public function store(Request $request)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = function ($query) use ($tenantId): void {
+            if ($tenantId !== null) {
+                $query->where('tenant_id', $tenantId);
+            }
+        };
+
         $validated = $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
-            'semester_id' => 'required|exists:semesters,id',
+            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
+            'semester_id' => ['required', Rule::exists('semesters', 'id')->where($tenantScope)],
             'tanggal_penilaian' => 'required|date',
-            'responses' => 'required|array',
-            'responses.*.assessment_item_id' => 'required|exists:tka_assessment_items,id',
+            'responses' => 'required|array|min:1',
+            'responses.*.assessment_item_id' => ['required', Rule::exists('tka_assessment_items', 'id')->where($tenantScope)],
             'responses.*.skor' => 'required|numeric|min:1|max:4',
             'responses.*.catatan_guru' => 'nullable|string',
         ]);
 
         $siswa = Siswa::findOrFail($validated['siswa_id']);
+        $semester = Semester::findOrFail($validated['semester_id']);
         $this->authorize('createForStudent', [new StudentAssessment, $siswa]);
 
+        $itemIds = collect($validated['responses'])->pluck('assessment_item_id')->unique()->values()->all();
+        $items = AssessmentItem::with('dimension')->whereIn('id', $itemIds)->get()->keyBy('id');
+        foreach ($itemIds as $itemId) {
+            $item = $items->get($itemId);
+            if (! $item || ! $item->dimension) {
+                throw ValidationException::withMessages([
+                    'responses' => 'Butir penilaian TKA tidak valid atau tidak terdaftar pada sekolah ini.',
+                ]);
+            }
+        }
+
         // Check if assessment already exists
-        $existing = StudentAssessment::where('siswa_id', $validated['siswa_id'])
-            ->where('semester_id', $validated['semester_id'])
+        $existing = StudentAssessment::where('siswa_id', $siswa->id)
+            ->where('semester_id', $semester->id)
             ->first();
 
         if ($existing) {
@@ -80,7 +102,7 @@ class TkaAssessmentController extends Controller
             $skorPerDimensi = [];
 
             foreach ($validated['responses'] as $response) {
-                $item = AssessmentItem::with('dimension')->find($response['assessment_item_id']);
+                $item = $items->get($response['assessment_item_id']);
                 $bobotItem = (float) $item->bobot_item;
                 $weightedScore = $response['skor'] * $bobotItem;
                 $totalScore += $weightedScore;
@@ -99,7 +121,7 @@ class TkaAssessmentController extends Controller
                     ];
                 }
                 $skorPerDimensi[$dimId]['total_skor'] += $weightedScore;
-                $skorPerDimensi[$dimId]['maksimal'] += 4 * $item->bobot_item;
+                $skorPerDimensi[$dimId]['maksimal'] += 4 * $bobotItem;
             }
 
             $persentase = $maxScore > 0 ? ($totalScore / $maxScore * 100) : 0;

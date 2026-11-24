@@ -148,6 +148,14 @@ class DapodikSyncController extends Controller
                                 $item = $decoded;
                             }
                         }
+                        if (! is_array($item)) {
+                            $stats['gagal']++;
+                            if ($onError !== null) {
+                                $onError($item, new \InvalidArgumentException('Format baris payload bukan array JSON yang valid.'));
+                            }
+
+                            continue;
+                        }
                         $outcome = DB::transaction(fn () => $rowHandler($item));
                         if (isset($stats[$outcome])) {
                             $stats[$outcome]++;
@@ -679,12 +687,13 @@ class DapodikSyncController extends Controller
                 $namaMapel = trim($j['nama_mata_pelajaran'] ?? $j['mata_pelajaran_id_str'] ?? $j['nama_mapel'] ?? $j['mata_pelajaran'] ?? '');
                 $namaRombel = trim($j['nama_rombel'] ?? $j['rombongan_belajar_id_str'] ?? $j['kelas'] ?? '');
 
-                // Jika nama rombel kosong tapi ada rombongan_belajar_id, lookup dari database
-                if ($namaRombel === '' && ! empty($j['rombongan_belajar_id'])) {
+                // Selalu inisialisasi dan resolusi rombel bila rombongan_belajar_id tersedia
+                $rombelObj = null;
+                if (! empty($j['rombongan_belajar_id'])) {
                     $rombelObj = Rombel::where('dapodik_id', $j['rombongan_belajar_id'])
                         ->where('semester_id', $semester->id)
                         ->first();
-                    if ($rombelObj) {
+                    if ($namaRombel === '' && $rombelObj) {
                         $namaRombel = $rombelObj->nama_rombel;
                     }
                 }

@@ -336,15 +336,16 @@ class UserAccountService
         if ($user->peran === 'guru') {
             $user->pengaturanGuru()->delete();
             $user->ringkasanGuru()->delete();
-            $user->siswa()->each(function ($siswa) {
-                $this->deleteSiswaCascade($siswa);
-            });
+            // Lepaskan relasi wali kelas tanpa menghapus data siswa maupun histori akademik (nilai/kehadiran/rapor) satu kelas.
+            Siswa::where('guru_id', $user->id)->update([
+                'guru_id' => null,
+                'nama_guru' => null,
+            ]);
             $user->materi()->delete();
             $user->kuis()->each(function ($kuis) {
                 $kuis->hasilKuis()->delete();
                 $kuis->delete();
             });
-            NilaiErapot::where('guru_id', $user->id)->delete();
         }
 
         if ($user->peran === 'siswa') {

@@ -236,60 +236,101 @@ class TenantController extends Controller
     protected function deleteTenantData(Tenant $tenant): void
     {
         $tenantId = $tenant->id;
+        $tables = [];
+        foreach (Schema::getTableListing() as $entry) {
+            $name = (string) $entry;
+            if (str_contains($name, '.')) {
+                $name = substr($name, strrpos($name, '.') + 1);
+            }
+            $tables[strtolower($name)] = $name;
+        }
+
         Schema::disableForeignKeyConstraints();
         DB::beginTransaction();
         try {
-            // 1. Bersihkan tabel-tabel anak siswa_id
-            if (Schema::hasTable('siswa')) {
-                $siswaIds = DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id');
-                if ($siswaIds->isNotEmpty()) {
-                    foreach (Schema::getTableListing() as $tbl) {
-                        if ($tbl === 'siswa') {
-                            continue;
-                        }
-                        if (Schema::hasColumn($tbl, 'siswa_id')) {
-                            DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
-                        }
-                    }
-                }
-            }
+            $siswaIds = isset($tables['siswa'])
+                ? DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id')->all()
+                : [];
+            $rombelIds = isset($tables['rombel'])
+                ? DB::table('rombel')->where('tenant_id', $tenantId)->pluck('id')->all()
+                : [];
+            $userIds = isset($tables['users'])
+                ? DB::table('users')->where('tenant_id', $tenantId)->pluck('id')->all()
+                : [];
 
-            // 2. Bersihkan tabel-tabel anak rombel_id
-            if (Schema::hasTable('rombel')) {
-                $rombelIds = DB::table('rombel')->where('tenant_id', $tenantId)->pluck('id');
-                if ($rombelIds->isNotEmpty()) {
-                    foreach (['jadwal_pelajaran', 'pembelajaran', 'anggota_rombel', 'penilaian', 'nilai', 'presensi'] as $tbl) {
-                        if (Schema::hasTable($tbl) && Schema::hasColumn($tbl, 'rombel_id')) {
-                            DB::table($tbl)->whereIn('rombel_id', $rombelIds)->delete();
-                        }
-                    }
-                }
-            }
+            // 1. Urutan topologis child-to-parent (wajib agar aman terhadap RESTRICT/NO ACTION di PostgreSQL)
+            $orderedChildTables = [
+                'cbt_violations', 'cbt_student_answers', 'cbt_student_attempts', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
+                'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages',
+                'tka_assessment_responses', 'tka_parent_reports', 'tka_early_warnings', 'tka_historical_tracking', 'tka_student_assessments', 'tka_assessment_items', 'tka_dimensions_enhanced',
+                'exam_answers', 'exam_results', 'exam_violations', 'exam_attempts', 'exam_sessions', 'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks',
+                'presensi_sesi_qr', 'presensi_pegawai', 'pengajuan_izin_presensi',
+                'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler',
+                'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'kehadiran', 'catatan', 'dimensi', 'kebiasaan',
+                'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'semesters',
+            ];
 
-            // 3. Bersihkan presensi pegawai dan aktivitas sebelum hapus users
-            if (Schema::hasTable('users')) {
-                $userIds = DB::table('users')->where('tenant_id', $tenantId)->pluck('id');
-                if ($userIds->isNotEmpty()) {
-                    if (Schema::hasTable('presensi_pegawai')) {
-                        DB::table('presensi_pegawai')->whereIn('user_id', $userIds)->delete();
-                    }
-                    if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
-                        DB::table('aktivitas')->whereIn('guru_id', $userIds)->delete();
-                    }
-                }
-            }
-
-            // 4. Hapus seluruh data ber-tenant_id dari tabel-tabel terdaftar
-            foreach (Schema::getTableListing() as $tbl) {
-                if ($tbl === 'tenants') {
-                    continue;
-                }
+            $deleteScoped = function (string $tbl) use ($tenantId, $siswaIds, $rombelIds, $userIds): void {
                 if (Schema::hasColumn($tbl, 'tenant_id')) {
                     DB::table($tbl)->where('tenant_id', $tenantId)->delete();
                 }
+                if ($siswaIds !== [] && Schema::hasColumn($tbl, 'siswa_id')) {
+                    DB::table($tbl)->whereIn('siswa_id', $siswaIds)->delete();
+                }
+                if ($rombelIds !== [] && Schema::hasColumn($tbl, 'rombel_id')) {
+                    DB::table($tbl)->whereIn('rombel_id', $rombelIds)->delete();
+                }
+                if ($userIds !== []) {
+                    foreach (['guru_id', 'user_id', 'orang_tua_id', 'created_by'] as $col) {
+                        if (Schema::hasColumn($tbl, $col)) {
+                            DB::table($tbl)->whereIn($col, $userIds)->delete();
+                        }
+                    }
+                }
+            };
+
+            // Bersihkan tabel cucu yang tidak memiliki tenant_id/siswa_id/user_id langsung
+            if (isset($tables['cbt_question_banks'], $tables['cbt_questions']) && Schema::hasColumn('cbt_question_banks', 'tenant_id')) {
+                $bankIds = DB::table('cbt_question_banks')->where('tenant_id', $tenantId)->pluck('id')->all();
+                if ($bankIds !== []) {
+                    if (isset($tables['cbt_test_sessions']) && Schema::hasColumn('cbt_test_sessions', 'bank_id')) {
+                        $sessIds = DB::table('cbt_test_sessions')->whereIn('bank_id', $bankIds)->pluck('id')->all();
+                        if ($sessIds !== [] && isset($tables['cbt_results'])) {
+                            $resIds = DB::table('cbt_results')->whereIn('session_id', $sessIds)->pluck('id')->all();
+                            if ($resIds !== [] && isset($tables['cbt_violations'])) {
+                                DB::table('cbt_violations')->whereIn('result_id', $resIds)->delete();
+                            }
+                            DB::table('cbt_results')->whereIn('id', $resIds)->delete();
+                        }
+                        DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
+                    }
+                    DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
+                }
             }
 
-            // 5. Hapus record tenant itu sendiri
+            foreach ($orderedChildTables as $tblKey) {
+                if (isset($tables[$tblKey])) {
+                    $deleteScoped($tables[$tblKey]);
+                }
+            }
+
+            // 2. Hapus sisa tabel ber-tenant_id kecuali `users` dan `tenants`
+            foreach ($tables as $lower => $actual) {
+                if (in_array($lower, ['tenants', 'users', 'migrations'], true)) {
+                    continue;
+                }
+                if (Schema::hasColumn($actual, 'tenant_id')) {
+                    DB::table($actual)->where('tenant_id', $tenantId)->delete();
+                }
+            }
+
+            // 3. Bersihkan sisa referensi user lalu hapus users milik tenant
+            if ($userIds !== []) {
+                $this->detachAndDeleteUserDependents($userIds);
+                DB::table('users')->whereIn('id', $userIds)->delete();
+            }
+
+            // 4. Hapus record tenant itu sendiri
             $tenant->delete();
 
             DB::commit();
@@ -298,6 +339,82 @@ class TenantController extends Controller
             throw $e;
         } finally {
             Schema::enableForeignKeyConstraints();
+        }
+    }
+
+    /**
+     * Bersihkan/lepaskan seluruh referensi FK (termasuk RESTRICT/NO ACTION di PostgreSQL)
+     * sebelum menjalankan `forceDelete()` pada akun pengguna.
+     *
+     * @param  array<int, int>  $userIds
+     */
+    protected function detachAndDeleteUserDependents(array $userIds): void
+    {
+        if ($userIds === []) {
+            return;
+        }
+
+        // Lepaskan relasi nullable agar data akademik siswa/sekolah tetap aman
+        $nullableRefs = [
+            'siswa' => ['guru_id'],
+            'sekolah_settings' => ['guru_id'],
+            'tka_early_warnings' => ['ditangani_oleh'],
+            'visitasi_pengawas' => ['guru_id'],
+            'pm_supervisi' => ['kepsek_id', 'pengawas_id'],
+        ];
+        foreach ($nullableRefs as $tbl => $cols) {
+            if (! Schema::hasTable($tbl)) {
+                continue;
+            }
+            foreach ($cols as $col) {
+                if (Schema::hasColumn($tbl, $col)) {
+                    DB::table($tbl)->whereIn($col, $userIds)->update([$col => null]);
+                }
+            }
+        }
+
+        // Hapus tabel anak ber-FK RESTRICT/NO ACTION dalam urutan child-to-parent
+        if (Schema::hasTable('cbt_question_banks') && Schema::hasColumn('cbt_question_banks', 'guru_id')) {
+            $bankIds = DB::table('cbt_question_banks')->whereIn('guru_id', $userIds)->pluck('id')->all();
+            if ($bankIds !== []) {
+                if (Schema::hasTable('cbt_test_sessions')) {
+                    $sessIds = DB::table('cbt_test_sessions')->whereIn('bank_id', $bankIds)->pluck('id')->all();
+                    if ($sessIds !== [] && Schema::hasTable('cbt_results')) {
+                        $resIds = DB::table('cbt_results')->whereIn('session_id', $sessIds)->pluck('id')->all();
+                        if ($resIds !== [] && Schema::hasTable('cbt_violations')) {
+                            DB::table('cbt_violations')->whereIn('result_id', $resIds)->delete();
+                        }
+                        DB::table('cbt_results')->whereIn('id', $resIds)->delete();
+                    }
+                    DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
+                }
+                if (Schema::hasTable('cbt_questions')) {
+                    DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
+                }
+                DB::table('cbt_question_banks')->whereIn('id', $bankIds)->delete();
+            }
+        }
+
+        $directDeleteRefs = [
+            'cbt_results' => ['user_id'],
+            'cbt_test_sessions' => ['guru_id'],
+            'cbt_student_attempts' => ['user_id'],
+            'presensi_sesi_qr' => ['guru_id'],
+            'pengajuan_izin_presensi' => ['orang_tua_id', 'diproses_oleh'],
+            'presensi_pegawai' => ['user_id'],
+            'aktivitas' => ['guru_id'],
+            'api_keys' => ['user_id'],
+            'sessions' => ['user_id'],
+        ];
+        foreach ($directDeleteRefs as $tbl => $cols) {
+            if (! Schema::hasTable($tbl)) {
+                continue;
+            }
+            foreach ($cols as $col) {
+                if (Schema::hasColumn($tbl, $col)) {
+                    DB::table($tbl)->whereIn($col, $userIds)->delete();
+                }
+            }
         }
     }
 
@@ -325,13 +442,24 @@ class TenantController extends Controller
             'admin_user.unique' => 'Nama pengguna admin sudah dipakai.',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        $subdomain = strtolower($validated['subdomain']);
+        $adminEmail = ! empty($validated['admin_email'])
+            ? strtolower(trim($validated['admin_email']))
+            : strtolower(trim($validated['admin_user'])).'@'.$subdomain.'.simantap.sch.id';
+
+        if (User::withoutGlobalScopes()->where('email', $adminEmail)->exists()) {
+            return back()->withErrors([
+                'admin_email' => 'Email admin sekolah ('.$adminEmail.') sudah digunakan. Masukkan alamat email lain yang unik.',
+            ])->withInput();
+        }
+
+        DB::transaction(function () use ($validated, $subdomain, $adminEmail) {
             $tenant = Tenant::create([
                 'uuid' => (string) Str::uuid(),
                 'npsn' => $validated['npsn'],
                 'nama_sekolah' => $validated['nama_sekolah'],
                 'wilayah' => $validated['wilayah'] ?? null,
-                'subdomain' => strtolower($validated['subdomain']),
+                'subdomain' => $subdomain,
                 'domain_kustom' => ! empty($validated['domain_kustom']) ? strtolower(trim($validated['domain_kustom'])) : null,
                 'paket' => $validated['paket'] ?? 'standar',
                 'kuota_siswa' => $validated['kuota_siswa'] ?? 500,
@@ -340,10 +468,6 @@ class TenantController extends Controller
                 'catatan_langganan' => $validated['catatan_langganan'] ?? null,
                 'aktif' => true,
             ]);
-
-            $adminEmail = ! empty($validated['admin_email'])
-                ? strtolower(trim($validated['admin_email']))
-                : strtolower(trim($validated['admin_user'])).'@simantap.sch.id';
 
             $adminUser = User::create([
                 'uuid' => (string) Str::uuid(),
@@ -607,14 +731,14 @@ class TenantController extends Controller
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
 
         Schema::disableForeignKeyConstraints();
+        DB::beginTransaction();
         try {
-            if (Schema::hasTable('presensi_pegawai')) {
-                DB::table('presensi_pegawai')->where('user_id', $user->id)->delete();
-            }
-            if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
-                DB::table('aktivitas')->where('guru_id', $user->id)->delete();
-            }
+            $this->detachAndDeleteUserDependents([(int) $user->id]);
             $user->forceDelete();
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         } finally {
             Schema::enableForeignKeyConstraints();
         }
@@ -631,24 +755,33 @@ class TenantController extends Controller
             'user_ids.required' => 'Pilih minimal satu akun pengguna yang ingin dihapus.',
         ]);
 
-        $currentId = auth()->id();
-        $targetIds = array_diff($request->input('user_ids', []), [$currentId]);
+        $currentId = (int) auth()->id();
+        $rawIds = array_map('intval', $request->input('user_ids', []));
+
+        // Saring keluar diri sendiri & akun super_admin SEBELUM menghapus relasi presensi/aktivitas
+        $targetIds = User::withoutGlobalScopes()
+            ->whereIn('id', $rawIds)
+            ->where('id', '!=', $currentId)
+            ->where('peran', '!=', 'super_admin')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
         if (empty($targetIds)) {
             return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
         }
 
         Schema::disableForeignKeyConstraints();
+        DB::beginTransaction();
         try {
-            if (Schema::hasTable('presensi_pegawai')) {
-                DB::table('presensi_pegawai')->whereIn('user_id', $targetIds)->delete();
-            }
-            if (Schema::hasTable('aktivitas') && Schema::hasColumn('aktivitas', 'guru_id')) {
-                DB::table('aktivitas')->whereIn('guru_id', $targetIds)->delete();
-            }
-            $count = User::whereIn('id', $targetIds)
-                ->where('peran', '!=', 'super_admin')
+            $this->detachAndDeleteUserDependents($targetIds);
+            $count = User::withoutGlobalScopes()
+                ->whereIn('id', $targetIds)
                 ->forceDelete();
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         } finally {
             Schema::enableForeignKeyConstraints();
         }

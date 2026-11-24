@@ -27,14 +27,14 @@ class KebiasaanController extends Controller
         }
 
         $tanggal = $request->get('tanggal') ?? date('Y-m-d');
-        $kebiasaan = Kebiasaan::where('siswa_id', $siswa->id)->where('tanggal', $tanggal)->first();
+        $kebiasaan = Kebiasaan::where('siswa_id', $siswa->id)->whereDate('tanggal', $tanggal)->first();
         $semuaKebiasaan = Kebiasaan::where('siswa_id', $siswa->id)->get();
         $hari = $semuaKebiasaan->count();
 
         $fields = ['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'];
         $rataKebiasaan = [];
         foreach ($fields as $field) {
-            $values = $semuaKebiasaan->pluck($field)->filter()->values();
+            $values = $semuaKebiasaan->pluck($field)->filter(fn ($value) => $value !== null && $value !== '')->values();
             $rataKebiasaan[$field] = $values->count() ? $values->avg() : 0;
         }
 
@@ -67,12 +67,12 @@ class KebiasaanController extends Controller
         }
 
         $kebiasaan = Kebiasaan::where('siswa_id', $validated['siswa_id'])
-            ->where('tanggal', $validated['tanggal'])->first();
+            ->whereDate('tanggal', $validated['tanggal'])->first();
 
         $fields = ['bangun_pagi', 'beribadah', 'berolahraga', 'makan_sehat', 'gemar_belajar', 'bermasyarakat', 'tidur_cepat'];
         $hasValue = false;
         foreach ($fields as $field) {
-            if (! empty($validated[$field])) {
+            if (array_key_exists($field, $validated) && $validated[$field] !== null && $validated[$field] !== '') {
                 $hasValue = true;
                 break;
             }
@@ -105,7 +105,7 @@ class KebiasaanController extends Controller
                 'bermasyarakat' => $validated['bermasyarakat'] ?? null,
                 'tidur_cepat' => $validated['tidur_cepat'] ?? null,
                 'catatan_orang_tua' => $validated['catatan'] ?? null,
-                'diisi_oleh' => $user->nama_lengkap,
+                'diisi_oleh' => auth()->user()?->nama_lengkap,
                 'waktu_simpan' => now(),
             ]);
             $this->syncToGoogleSheet('kebiasaan', $kebiasaan->fresh('siswa'));

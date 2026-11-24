@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Kuis;
 use App\Models\Materi;
 use App\Models\Siswa;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class KuisController extends Controller
 {
@@ -32,6 +34,14 @@ class KuisController extends Controller
 
     public function store(Request $request)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $materiRule = Rule::exists('materi', 'id')->where(function ($query) use ($tenantId): void {
+            $query->where('guru_id', auth()->id());
+            if ($tenantId !== null) {
+                $query->where('tenant_id', $tenantId);
+            }
+        });
+
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
             'mata_pelajaran' => 'required|string|max:100',
@@ -40,7 +50,7 @@ class KuisController extends Controller
             'mode' => 'required|in:harian,tka',
             'sumber' => 'required|in:lokal,luar',
             'tautan' => 'nullable|url',
-            'materi_id' => 'nullable|exists:materi,id',
+            'materi_id' => ['nullable', 'integer', $materiRule],
             'kkm' => 'required|integer|min:0|max:100',
             // batas_waktu = waktu tutup kuis (timestamp), bukan durasi menit.
             'batas_waktu' => 'nullable|date',
@@ -50,6 +60,10 @@ class KuisController extends Controller
             'cara_nilai' => 'required|in:siswa,guru',
             'soal' => 'nullable|array',
         ]);
+
+        if (! empty($validated['materi_id'])) {
+            Materi::where('guru_id', auth()->id())->findOrFail($validated['materi_id']);
+        }
 
         $guru = auth()->user();
 
@@ -97,6 +111,14 @@ class KuisController extends Controller
             abort(403);
         }
 
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $materiRule = Rule::exists('materi', 'id')->where(function ($query) use ($tenantId): void {
+            $query->where('guru_id', auth()->id());
+            if ($tenantId !== null) {
+                $query->where('tenant_id', $tenantId);
+            }
+        });
+
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
             'mata_pelajaran' => 'required|string|max:100',
@@ -105,7 +127,7 @@ class KuisController extends Controller
             'mode' => 'required|in:harian,tka',
             'sumber' => 'required|in:lokal,luar',
             'tautan' => 'nullable|url',
-            'materi_id' => 'nullable|exists:materi,id',
+            'materi_id' => ['nullable', 'integer', $materiRule],
             'kkm' => 'required|integer|min:0|max:100',
             // batas_waktu = waktu tutup kuis (timestamp), bukan durasi menit.
             'batas_waktu' => 'nullable|date',
@@ -115,6 +137,10 @@ class KuisController extends Controller
             'cara_nilai' => 'required|in:siswa,guru',
             'soal' => 'nullable|array',
         ]);
+
+        if (! empty($validated['materi_id'])) {
+            Materi::where('guru_id', auth()->id())->findOrFail($validated['materi_id']);
+        }
 
         $kuis->update([
             'judul' => $validated['judul'],

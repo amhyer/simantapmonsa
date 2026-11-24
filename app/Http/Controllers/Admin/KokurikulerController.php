@@ -7,7 +7,9 @@ use App\Models\KegiatanKokurikuler;
 use App\Models\KelompokKokurikuler;
 use App\Models\Siswa;
 use App\Models\TemaKokurikuler;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class KokurikulerController extends Controller
 {
@@ -49,8 +51,16 @@ class KokurikulerController extends Controller
 
     public function storeKegiatan(Request $request)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
         $validated = $request->validate([
-            'tema_id' => 'required|exists:tema_kokurikuler,id',
+            'tema_id' => [
+                'required',
+                Rule::exists('tema_kokurikuler', 'id')->where(function ($query) use ($tenantId): void {
+                    if ($tenantId !== null) {
+                        $query->where('tenant_id', $tenantId);
+                    }
+                }),
+            ],
             'nama' => 'required|string|max:255',
             'kelas' => 'nullable|string|max:50',
             'koordinator' => 'nullable|string|max:255',
@@ -58,6 +68,7 @@ class KokurikulerController extends Controller
             'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
         ]);
 
+        TemaKokurikuler::findOrFail($validated['tema_id']);
         KegiatanKokurikuler::create(array_merge($validated, ['aktif' => true]));
 
         return redirect()->route('admin.kokurikuler.kegiatan')
@@ -91,12 +102,21 @@ class KokurikulerController extends Controller
 
     public function storeKelompok(Request $request)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
         $validated = $request->validate([
-            'kegiatan_id' => 'required|exists:kegiatan_kokurikuler,id',
+            'kegiatan_id' => [
+                'required',
+                Rule::exists('kegiatan_kokurikuler', 'id')->where(function ($query) use ($tenantId): void {
+                    if ($tenantId !== null) {
+                        $query->where('tenant_id', $tenantId);
+                    }
+                }),
+            ],
             'nama' => 'required|string|max:255',
             'keterangan' => 'nullable|string|max:500',
         ]);
 
+        KegiatanKokurikuler::findOrFail($validated['kegiatan_id']);
         KelompokKokurikuler::create($validated);
 
         return redirect()->route('admin.kokurikuler.kelompok')

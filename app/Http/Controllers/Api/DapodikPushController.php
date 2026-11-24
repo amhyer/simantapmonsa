@@ -4,13 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DapodikConfig;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\Dapodik\DapodikPushService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DapodikPushController extends Controller
 {
     public function __construct(private DapodikPushService $pushService) {}
+
+    /**
+     * Aturan validasi semester_id yang terisolasi pada tenant aktif.
+     */
+    private function semesterIdRule(Request $request): array
+    {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+
+        return [
+            'required',
+            'string',
+            Rule::exists('semesters', 'semester_id')->where(function ($query) use ($tenantId): void {
+                if ($tenantId !== null) {
+                    $query->where('tenant_id', $tenantId);
+                }
+            }),
+        ];
+    }
 
     /**
      * Push data sekolah ke Dapodik
@@ -32,7 +52,7 @@ class DapodikPushController extends Controller
     public function pushPesertaDidik(Request $request): JsonResponse
     {
         $request->validate([
-            'semester_id' => 'required|string|exists:semesters,semester_id',
+            'semester_id' => $this->semesterIdRule($request),
         ]);
 
         $result = $this->pushService->pushPesertaDidik($request->input('semester_id'));
@@ -92,7 +112,7 @@ class DapodikPushController extends Controller
     public function pushNilaiRapor(Request $request): JsonResponse
     {
         $request->validate([
-            'semester_id' => 'required|string|exists:semesters,semester_id',
+            'semester_id' => $this->semesterIdRule($request),
         ]);
 
         $result = $this->pushService->pushNilaiRapor($request->input('semester_id'));
@@ -110,7 +130,7 @@ class DapodikPushController extends Controller
     public function pushKehadiran(Request $request): JsonResponse
     {
         $request->validate([
-            'semester_id' => 'required|string|exists:semesters,semester_id',
+            'semester_id' => $this->semesterIdRule($request),
         ]);
 
         $result = $this->pushService->pushKehadiran($request->input('semester_id'));

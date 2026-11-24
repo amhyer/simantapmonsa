@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Tryout;
 
 use App\Models\Tryout\Package;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,10 +18,16 @@ class UpdateTryoutPackageRequest extends FormRequest
     {
         $package = $this->route('package');
         $packageId = $package instanceof Package ? $package->id : $package;
+        $tenantId = TenantContext::id() ?? $this->user()?->tenant_id;
+        $tenantScope = function ($q) use ($tenantId): void {
+            if ($tenantId !== null) {
+                $q->where('tenant_id', $tenantId);
+            }
+        };
 
         return [
             'category_id' => ['required', 'exists:tryout_categories,id'],
-            'kode_paket' => ['required', 'string', 'max:50', Rule::unique('tryout_packages', 'kode_paket')->ignore($packageId)],
+            'kode_paket' => ['required', 'string', 'max:50', Rule::unique('tryout_packages', 'kode_paket')->ignore($packageId)->where($tenantScope)],
             'nama_paket' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'jenjang' => ['required', 'in:SD,SMP,SMA,SMK,UMUM'],

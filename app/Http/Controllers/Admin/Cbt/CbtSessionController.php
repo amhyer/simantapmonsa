@@ -64,6 +64,10 @@ class CbtSessionController extends Controller
         $validated = $request->validated();
 
         $session = DB::transaction(function () use ($validated) {
+            User::forSchool()
+                ->where('peran', 'guru')
+                ->whereKey($validated['guru_id'])
+                ->firstOrFail();
             CbtQuestionBank::whereKey($validated['bank_id'])->lockForUpdate()->firstOrFail();
 
             return CbtTestSession::create($validated + ['status' => 'draft']);
