@@ -201,11 +201,8 @@ class PresensiController extends Controller
 
     public function koreksi(Request $request)
     {
-        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
-        $tenantScope = fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
-
         $validated = $request->validate([
-            'user_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('users', 'id')->where($tenantScope)],
+            'user_id' => 'required|integer|exists:users,id',
             'tanggal' => 'required|date',
             'status' => 'required|in:hadir,terlambat,izin,sakit,alpa',
             'jam_masuk' => 'nullable|date_format:H:i',

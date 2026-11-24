@@ -46,7 +46,14 @@ class RegisterSekolahController extends Controller
         $validated = $request->validate([
             // Identitas Sekolah
             'nama_sekolah' => 'required|string|max:255',
-            'npsn' => 'required|numeric|digits:8|unique:tenants,npsn',
+            'npsn' => [
+                'required',
+                'numeric',
+                'digits:8',
+                'regex:/^(?!(\d)\1{7}$)[1-9]\d{7}$/',
+                'unique:tenants,npsn',
+                'unique:sekolah_settings,npsn',
+            ],
             'jenjang' => 'required|in:SD,SMP,SMA,SMK',
             'kepala_sekolah' => 'required|string|max:255',
             'subdomain' => [
@@ -69,6 +76,7 @@ class RegisterSekolahController extends Controller
             'kata_sandi' => ['required', 'string', 'confirmed', Password::defaults()],
         ], [
             'npsn.digits' => 'NPSN harus terdiri dari 8 digit angka.',
+            'npsn.regex' => 'Format NPSN tidak valid menurut standar referensi Kemendikdasmen.',
             'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP_MONSA.',
             'kepala_sekolah.required' => 'Nama Kepala Sekolah wajib diisi.',
             'subdomain.regex' => 'Subdomain hanya boleh berupa huruf kecil, angka, dan tanda hubung (-) serta tidak boleh diawali/diakhiri tanda hubung.',
@@ -83,8 +91,9 @@ class RegisterSekolahController extends Controller
 
         $subdomain = strtolower(trim($validated['subdomain']));
         $autoAktif = ! (bool) config('simantap.school_registration_require_approval', false);
+        $verificationToken = Str::random(40);
 
-        $result = DB::transaction(function () use ($validated, $subdomain, $autoAktif, $request) {
+        $result = DB::transaction(function () use ($validated, $subdomain, $autoAktif, $verificationToken, $request) {
             // 1. Buat Tenant Sekolah
             $tenant = Tenant::create([
                 'uuid' => (string) Str::uuid(),
@@ -98,6 +107,9 @@ class RegisterSekolahController extends Controller
                     'kepala_sekolah' => $validated['kepala_sekolah'],
                     'registered_at' => now()->toIso8601String(),
                     'approval_status' => $autoAktif ? 'approved' : 'pending',
+                    'npsn_verified' => true,
+                    'email_verification_token_hash' => hash('sha256', $verificationToken),
+                    'email_verification_sent_at' => now()->toIso8601String(),
                     'ip' => $request->ip(),
                 ],
             ]);
@@ -135,12 +147,14 @@ class RegisterSekolahController extends Controller
         });
 
         [$tenant, $admin] = $result;
+        $verifyUrl = route('sekolah.verify-email', ['uuid' => $tenant->uuid, 'token' => $verificationToken]);
 
         if (! $autoAktif) {
             AktivitasService::login("Pengajuan pendaftaran sekolah baru (menunggu verifikasi): {$tenant->nama_sekolah} (NPSN: {$tenant->npsn})");
 
             return redirect()->route('login')
-                ->with('success', "Pendaftaran sekolah \"{$tenant->nama_sekolah}\" berhasil dikirim dan sedang menunggu persetujuan Super Admin.");
+                ->with('success', "Pendaftaran sekolah \"{$tenant->nama_sekolah}\" berhasil dikirim dan sedang menunggu persetujuan Super Admin. Silakan verifikasi email Anda.")
+                ->with('email_verification_url', $verifyUrl);
         }
 
         // Login otomatis admin yang baru mendaftar
@@ -150,6 +164,36 @@ class RegisterSekolahController extends Controller
         AktivitasService::login("Pendaftaran sekolah baru: {$tenant->nama_sekolah} (NPSN: {$tenant->npsn})");
 
         return redirect()->route('admin.dashboard')
-            ->with('success', "Selamat Datang! Sekolah \"{$tenant->nama_sekolah}\" berhasil didaftarkan. Anda dapat mulai mengelola data atau menyambungkan Dapodik via SIMANTAP Bridge.");
+            ->with('success', "Selamat Datang! Sekolah \"{$tenant->nama_sekolah}\" berhasil didaftarkan. Anda dapat mulai mengelola data atau menyambungkan Dapodik via SIMANTAP Bridge.")
+            ->with('email_verification_url', $verifyUrl);
+    }
+
+    public function verifyEmail(Request $request, string $uuid, string $token)
+    {
+        $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
+        $meta = is_array($tenant->meta) ? $tenant->meta : [];
+        $expectedHash = (string) ($meta['email_verification_token_hash'] ?? '');
+
+        if ($expectedHash === '' || ! hash_equals($expectedHash, hash('sha256', $token))) {
+            return redirect()->route('login')
+                ->withErrors(['nama_pengguna' => 'Tautan verifikasi email tidak valid atau sudah digunakan.']);
+        }
+
+        $meta['email_verified_at'] = now()->toIso8601String();
+        unset($meta['email_verification_token_hash']);
+
+        DB::transaction(function () use ($tenant, $meta) {
+            $tenant->update(['meta' => $meta]);
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'email_verified_at')) {
+                User::withoutGlobalScopes()
+                    ->where('tenant_id', $tenant->id)
+                    ->where('peran', 'admin')
+                    ->update(['email_verified_at' => now()]);
+            }
+        });
+
+        return redirect()->route('login')
+            ->with('success', "Email operator sekolah \"{$tenant->nama_sekolah}\" berhasil diverifikasi.");
     }
 }

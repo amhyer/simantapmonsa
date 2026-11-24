@@ -241,15 +241,15 @@ class DapodikImportController extends Controller
 
     private function resolveBridgePath(): ?string
     {
-        $privatePath = (string) config('dapodik.bridge_storage_path', storage_path('app/private/bridge/SIMANTAP-Bridge.exe'));
+        $defaultPath = storage_path('app/private/bridge/SIMANTAP-Bridge.exe');
+        $privatePath = (string) config('dapodik.bridge_storage_path', $defaultPath);
         if ($privatePath !== '' && file_exists($privatePath)) {
             return $privatePath;
         }
 
         // Artefak build hasil `npm run build:bridge` (atau fixture test) hanya
-        // dipakai di mesin pengembang/CI. Dulu gate-nya `local` saja sehingga
-        // test di env `testing` selalu melihat bridge "tidak tersedia".
-        if (app()->environment(['local', 'testing'])) {
+        // dipakai di mesin pengembang/CI ketika path storage belum di-override.
+        if ($privatePath === $defaultPath && app()->environment(['local', 'testing'])) {
             foreach ([
                 public_path('bridge/SIMANTAP-Bridge.exe'),
                 base_path('dapodik-bridge/dist/SIMANTAP-Bridge.exe'),

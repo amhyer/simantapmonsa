@@ -63,6 +63,40 @@ class Tenant extends Model
         };
     }
 
+    public function approvalStatus(): string
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+        if (! empty($meta['approval_status'])) {
+            return (string) $meta['approval_status'];
+        }
+
+        return $this->aktif ? 'approved' : 'inactive';
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->approvalStatus() === 'pending';
+    }
+
+    public function isRejectedApproval(): bool
+    {
+        return $this->approvalStatus() === 'rejected';
+    }
+
+    public function isEmailVerified(): bool
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        return ! empty($meta['email_verified_at']);
+    }
+
+    public function isNpsnVerified(): bool
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+
+        return ! empty($meta['npsn_verified']) || preg_match('/^(?!(\d)\1{7}$)[1-9]\d{7}$/', (string) $this->npsn) === 1;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Tenant $tenant): void {

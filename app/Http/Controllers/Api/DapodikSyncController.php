@@ -125,35 +125,22 @@ class DapodikSyncController extends Controller
 
     /**
      * Eksekusi batch sinkronisasi secara atomik per-kelompok (default 50 baris)
-     * menggunakan transaksi luar untuk atomisitas batch dan savepoint per-baris
-     * (`DB::transaction` bersarang) agar 1 baris korup tidak membatalkan baris
-     * valid lain (mencegah error PostgreSQL `25P02` aborted transaction).
+     * menggunakan savepoint per-baris agar 1 baris korup tidak membatalkan baris valid lain (PostgreSQL 25P02).
      *
      * @param  array<int, mixed>  $items
-     * @param  callable(mixed): string  $rowHandler  Mengembalikan 'berhasil'|'diperbarui'|'dilewati'
-     * @param  callable(mixed, \Throwable): void|null  $onError
      * @return array{berhasil: int, gagal: int, diperbarui: int, dilewati: int}
      */
     private function processInBatches(array $items, callable $rowHandler, ?callable $onError = null): array
     {
-        $stats = [
-            'berhasil' => 0,
-            'gagal' => 0,
-            'diperbarui' => 0,
-            'dilewati' => 0,
-        ];
-
+        $stats = ['berhasil' => 0, 'gagal' => 0, 'diperbarui' => 0, 'dilewati' => 0];
         $batchSize = max(1, (int) config('dapodik.batch_size', 50));
 
         foreach (array_chunk($items, $batchSize) as $chunk) {
             DB::transaction(function () use ($chunk, $rowHandler, $onError, &$stats) {
                 foreach ($chunk as $item) {
                     try {
-                        if (is_string($item)) {
-                            $decoded = json_decode($item, true);
-                            if (is_array($decoded)) {
-                                $item = $decoded;
-                            }
+                        if (is_string($item) && is_array($decoded = json_decode($item, true))) {
+                            $item = $decoded;
                         }
                         if (! is_array($item)) {
                             $stats['gagal']++;

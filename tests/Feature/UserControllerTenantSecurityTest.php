@@ -214,10 +214,12 @@ class UserControllerTenantSecurityTest extends TestCase
             'terhubung_dengan' => [$siswaA->id],
         ]);
 
-        // Hapus akun siswa A (cascade ke Siswa A & Nilai A) -> Siswa B & Nilai B harus tetap utuh
+        // Hapus akun login siswa A -> akun login terhapus (soft-delete), sementara
+        // data pokok Siswa A, Nilai A, Siswa B, dan Nilai B tetap utuh (tidak ada kehilangan data akademik)
         $this->actingAs($adminA)->delete(route('admin.users.destroy', $siswaUserA))->assertRedirect();
-        $this->assertSoftDeleted('siswa', ['id' => $siswaA->id]);
-        $this->assertSoftDeleted('nilai', ['id' => $nilaiA->id]);
+        $this->assertSoftDeleted('users', ['id' => $siswaUserA->id]);
+        $this->assertDatabaseHas('siswa', ['id' => $siswaA->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('nilai', ['id' => $nilaiA->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('siswa', ['id' => $siswaB->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('nilai', ['id' => $nilaiB->id, 'deleted_at' => null]);
 

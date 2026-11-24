@@ -38,6 +38,9 @@ return [
     // publik hanya dapat mendaftarkan Akun Sekolah (Operator/Administrator).
     'school_registration_enabled' => (bool) env('SIMANTAP_SCHOOL_REGISTRATION', true),
 
+    // Moderasi pendaftaran sekolah baru oleh Super Admin (status pending hingga disetujui).
+    'school_registration_require_approval' => (bool) env('SIMANTAP_SCHOOL_REGISTRATION_REQUIRE_APPROVAL', false),
+
     // Wajib ganti kata sandi pada login pertama untuk akun siswa baru
     // (hasil sinkronisasi Dapodik / generate massal). Guru/PTK selalu wajib.
     'force_change_siswa' => env('SIMANTAP_FORCE_CHANGE_SISWA', true),

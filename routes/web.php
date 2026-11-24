@@ -157,6 +157,7 @@ Route::middleware('guest')->group(function () {
     // Pendaftaran Sekolah Baru (Multi-Tenant SaaS)
     Route::get('/daftar-sekolah', [RegisterSekolahController::class, 'create'])->name('sekolah.register');
     Route::post('/daftar-sekolah', [RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
+    Route::get('/daftar-sekolah/verifikasi/{uuid}/{token}', [RegisterSekolahController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('sekolah.verify-email');
 });
 Route::post('/csp-report', [CspReportController::class, 'store'])
     ->withoutMiddleware([
@@ -214,6 +215,8 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.te
     Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->middleware('throttle:30,1')->name('tenants.update');
     Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->middleware('throttle:15,1')->name('tenants.destroy');
     Route::post('/tenants/{tenant}/toggle', [TenantController::class, 'toggleActive'])->middleware('throttle:30,1')->name('tenants.toggle');
+    Route::post('/tenants/{tenant}/approve', [TenantController::class, 'approve'])->middleware('throttle:30,1')->name('tenants.approve');
+    Route::post('/tenants/{tenant}/reject', [TenantController::class, 'reject'])->middleware('throttle:30,1')->name('tenants.reject');
     Route::post('/tenants/{tenant}/impersonate', [TenantController::class, 'impersonate'])->middleware('throttle:20,1')->name('tenants.impersonate');
     Route::post('/tenants/{tenant}/reset-admin-password', [TenantController::class, 'resetAdminPassword'])->middleware('throttle:10,1')->name('tenants.reset-admin-password');
     Route::get('/users', [TenantController::class, 'users'])->name('users.index');

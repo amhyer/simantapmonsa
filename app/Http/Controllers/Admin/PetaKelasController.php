@@ -70,9 +70,8 @@ class PetaKelasController extends Controller
 
     public function store(Request $request)
     {
-        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
+            'guru_id' => 'required|exists:users,id',
             'kelas' => 'required|string|max:255',
             'mata_pelajaran' => 'nullable|string|max:255',
         ]);
@@ -118,10 +117,9 @@ class PetaKelasController extends Controller
 
     public function pindahSiswa(Request $request): JsonResponse
     {
-        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
-            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
+            'siswa_id' => 'required|exists:siswa,id',
+            'guru_id' => 'required|exists:users,id',
             'kelas' => 'required|string',
         ]);
 
@@ -154,9 +152,8 @@ class PetaKelasController extends Controller
 
     public function keluarkanSiswa(Request $request): JsonResponse
     {
-        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
+            'siswa_id' => 'required|exists:siswa,id',
         ]);
 
         $siswa = Siswa::findOrFail($validated['siswa_id']);
@@ -175,9 +172,8 @@ class PetaKelasController extends Controller
 
     public function getKelasOptions(Request $request): JsonResponse
     {
-        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
+            'guru_id' => 'required|exists:users,id',
         ]);
 
         $kelasList = PengaturanGuru::forSchool()

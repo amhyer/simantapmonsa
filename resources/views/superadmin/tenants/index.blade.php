@@ -18,6 +18,21 @@
     }
 </style>
 
+@if(($pendingApprovalCount ?? 0) > 0)
+    <div class="alert alert-warning" style="margin-bottom:20px;background:#FFFBEB;border:1px solid #F59E0B;color:#92400E;padding:14px 18px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+            <i class="fas fa-user-check" style="font-size:20px;color:#D97706"></i>
+            <div>
+                <b>{{ $pendingApprovalCount }} Pendaftaran Sekolah Baru Menunggu Persetujuan!</b>
+                <div style="font-size:12.5px">Periksa NPSN serta status verifikasi email sekolah sebelum mengaktifkan akses tenant.</div>
+            </div>
+        </div>
+        <a href="{{ route('superadmin.tenants.index', ['status' => 'pending']) }}" class="btn btn-sm" style="background:#D97706;color:#fff;font-weight:700">
+            <i class="fas fa-filter"></i> Tampilkan Antrean Persetujuan ({{ $pendingApprovalCount }})
+        </a>
+    </div>
+@endif
+
 {{-- Form Tambah Sekolah Baru (Collapsible) --}}
 <details class="card" id="tambah" style="margin-bottom:20px" {{ $errors->any() || request('tambah') === '1' ? 'open' : '' }}>
     <summary class="card-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
@@ -146,6 +161,7 @@
                 <select name="status" class="form-control" onchange="this.form.submit()">
                     <option value="">Semua Akses</option>
                     <option value="1" {{ $status === '1' ? 'selected' : '' }}>Akses Aktif</option>
+                    <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                     <option value="0" {{ $status === '0' ? 'selected' : '' }}>Akses Nonaktif</option>
                 </select>
             </div>
@@ -277,14 +293,35 @@
                                     @endif
                                 </td>
                                 <td style="padding:11px 14px;text-align:center">
-                                    @if($tenant->aktif)
+                                    @if($tenant->isPendingApproval())
+                                        <span class="tag tag-warn">Menunggu Persetujuan</span>
+                                        <div style="font-size:10.5px;color:#64748B;margin-top:3px">
+                                            {{ $tenant->isEmailVerified() ? 'Email Terverifikasi' : 'Email Belum Verifikasi' }}
+                                        </div>
+                                    @elseif($tenant->isRejectedApproval())
+                                        <span class="tag tag-bad">Ditolak</span>
+                                    @elseif($tenant->aktif)
                                         <span class="tag tag-ok">Aktif</span>
                                     @else
                                         <span class="tag tag-bad">Nonaktif</span>
                                     @endif
                                 </td>
                                 <td style="padding:11px 14px;text-align:center">
-                                    <div style="display:flex;gap:6px;justify-content:center;align-items:center">
+                                    <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap">
+                                        @if($tenant->isPendingApproval())
+                                            <form method="POST" action="{{ route('superadmin.tenants.approve', $tenant->uuid) }}" style="display:inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-xs btn-primary" style="background:#059669;color:#fff;font-weight:700" title="Setujui pendaftaran dan aktifkan sekolah">
+                                                    <i class="fas fa-check"></i> Setujui
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('superadmin.tenants.reject', $tenant->uuid) }}" style="display:inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Tolak pendaftaran sekolah">
+                                                    <i class="fas fa-times"></i> Tolak
+                                                </button>
+                                            </form>
+                                        @endif
                                         <form method="POST" action="{{ route('superadmin.tenants.impersonate', $tenant->uuid) }}" style="display:inline">
                                             @csrf
                                             <button type="submit" class="btn btn-xs" style="background:#EEF2FF;color:#4338CA;font-weight:700" title="Masuk langsung ke dasbor sekolah ini">

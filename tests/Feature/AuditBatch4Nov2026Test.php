@@ -447,17 +447,15 @@ class AuditBatch4Nov2026Test extends TestCase
             'tingkat_pendidikan' => 6,
         ]));
 
-        // Admin Sekolah 1 mencoba memakai guru_id milik Sekolah 2 di Peta Kelas & Presensi Koreksi
+        // Admin Sekolah 1 mencoba memakai guru_id milik Sekolah 2 di Peta Kelas & Presensi Koreksi -> ditolak 404 oleh scope forSchool()
         $this->actingAs($admin1)
-            ->from(route('admin.peta-kelas.index'))
             ->post(route('admin.peta-kelas.store'), [
                 'guru_id' => $guru2->id,
                 'kelas' => 'VI A',
             ])
-            ->assertSessionHasErrors('guru_id');
+            ->assertNotFound();
 
         $this->actingAs($admin1)
-            ->from(route('admin.presensi.index'))
             ->post(route('admin.presensi.pegawai.koreksi'), [
                 'user_id' => $guru2->id,
                 'tanggal' => now()->toDateString(),
@@ -465,7 +463,7 @@ class AuditBatch4Nov2026Test extends TestCase
                 'jam_masuk' => '07:00',
                 'alasan_koreksi' => 'Uji lintas tenant',
             ])
-            ->assertSessionHasErrors('user_id');
+            ->assertNotFound();
 
         // Guru Sekolah 1 mencoba memakai rombel_id milik Sekolah 2 di Kelas Digital
         $this->actingAs($guru1)
@@ -721,5 +719,84 @@ class AuditBatch4Nov2026Test extends TestCase
             ->assertSessionHas('success');
 
         $this->assertTrue(Hash::check('SandiBaruTendik99!@#', $tendik->fresh()->kata_sandi));
+
+        // 6. P1-5: Alur Persetujuan Pendaftaran Sekolah (school_registration_require_approval=true), Verifikasi NPSN, Verifikasi Email, & Layar Approve Super Admin
+        auth()->logout();
+        config([
+            'simantap.school_registration_enabled' => true,
+            'simantap.school_registration_require_approval' => true,
+        ]);
+
+        // NPSN palsu (8 digit kembar / diawali 0) harus ditolak
+        \Illuminate\Support\Facades\RateLimiter::clear('register-sekolah:127.0.0.1');
+        $this->from('/daftar-sekolah')->post('/daftar-sekolah', [
+            'nama_sekolah' => 'SDN NPSN Palsu',
+            'npsn' => '11111111',
+            'jenjang' => 'SD',
+            'kepala_sekolah' => 'Kepsek Palsu',
+            'subdomain' => 'sdn-npsn-palsu',
+            'nama_lengkap' => 'Op Palsu',
+            'nama_pengguna' => 'op_palsu',
+            'email' => 'oppalsu@sekolah.sch.id',
+            'kata_sandi' => 'SandiKuat123!@#',
+            'kata_sandi_confirmation' => 'SandiKuat123!@#',
+        ])->assertSessionHasErrors('npsn');
+
+        // Pendaftaran dengan NPSN valid saat require_approval=true -> masuk status pending (aktif = false)
+        \Illuminate\Support\Facades\RateLimiter::clear('register-sekolah:127.0.0.1');
+        $regRes = $this->post('/daftar-sekolah', [
+            'nama_sekolah' => 'SDN Bintang Timur 07',
+            'npsn' => '40398765',
+            'jenjang' => 'SD',
+            'kepala_sekolah' => 'Drs. Kepsek Bintang',
+            'subdomain' => 'sdn-bintang-07',
+            'nama_lengkap' => 'Operator Bintang',
+            'nama_pengguna' => 'op_bintang07',
+            'email' => 'op@bintang07.sch.id',
+            'kata_sandi' => 'SandiKuat123!@#',
+            'kata_sandi_confirmation' => 'SandiKuat123!@#',
+        ]);
+        $regRes->assertRedirect(route('login'));
+        $verifyUrl = session('email_verification_url');
+        $this->assertNotEmpty($verifyUrl);
+
+        $pendingTenant = Tenant::where('npsn', '40398765')->firstOrFail();
+        $this->assertFalse($pendingTenant->aktif);
+        $this->assertTrue($pendingTenant->isPendingApproval());
+        $this->assertFalse($pendingTenant->isEmailVerified());
+
+        // Klik tautan verifikasi email -> status email_verified_at tercatat
+        $this->get($verifyUrl)->assertRedirect(route('login'));
+        $pendingTenant->refresh();
+        $this->assertTrue($pendingTenant->isEmailVerified());
+
+        // Super Admin melihat antrean "Menunggu Persetujuan" di layar Katalog Sekolah & menyetujui pendaftaran
+        $superAdmin = User::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_lengkap' => 'Super Admin Pusat',
+            'nama_pengguna' => 'superadmin_approval',
+            'email' => 'sa@simantap.sch.id',
+            'kata_sandi' => Hash::make('Password123!'),
+            'peran' => 'super_admin',
+            'tenant_id' => null,
+            'aktif' => true,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('superadmin.tenants.index', ['status' => 'pending']))
+            ->assertOk()
+            ->assertSee('SDN Bintang Timur 07')
+            ->assertSee('Menunggu Persetujuan');
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.approve', $pendingTenant->uuid))
+            ->assertRedirect();
+
+        $pendingTenant->refresh();
+        $this->assertTrue($pendingTenant->aktif);
+        $this->assertSame('approved', $pendingTenant->approvalStatus());
+        $this->assertTrue(
+            (bool) User::withoutGlobalScopes()->where('nama_pengguna', 'op_bintang07')->value('aktif')
+        );
     }
 }

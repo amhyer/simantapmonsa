@@ -86,6 +86,32 @@
     </div>
 </div>
 
+@if($tenant->isPendingApproval())
+    <div class="alert alert-warning" style="margin-bottom:20px;background:#FFFBEB;border:1px solid #F59E0B;color:#92400E;padding:16px 20px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+            <b><i class="fas fa-user-clock"></i> Pendaftaran Sekolah Ini Menunggu Persetujuan Super Admin</b>
+            <div style="font-size:13px;margin-top:4px">
+                Status NPSN: <b>{{ $tenant->isNpsnVerified() ? 'Format Valid (8 Digit)' : 'Perlu Pemeriksaan' }}</b> &bull;
+                Status Email Operator: <b>{{ $tenant->isEmailVerified() ? 'Sudah Diverifikasi' : 'Belum Diverifikasi' }}</b>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px">
+            <form method="POST" action="{{ route('superadmin.tenants.approve', $tenant->uuid) }}" style="display:inline">
+                @csrf
+                <button type="submit" class="btn btn-sm" style="background:#059669;color:#fff;font-weight:700">
+                    <i class="fas fa-check-circle"></i> Setujui &amp; Aktifkan Sekolah
+                </button>
+            </form>
+            <form method="POST" action="{{ route('superadmin.tenants.reject', $tenant->uuid) }}" style="display:inline">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-times-circle"></i> Tolak Pendaftaran
+                </button>
+            </form>
+        </div>
+    </div>
+@endif
+
 {{-- Alert Peringatan Jika Langganan Habis --}}
 @if($tenant->isExpired())
     <div class="alert alert-danger" style="margin-bottom:20px;background:#FEF2F2;border:1px solid #F87171;color:var(--bad);padding:14px 18px;border-radius:8px">
