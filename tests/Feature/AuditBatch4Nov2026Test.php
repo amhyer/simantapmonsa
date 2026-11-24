@@ -46,7 +46,7 @@ class AuditBatch4Nov2026Test extends TestCase
         return TenantContext::run($tenant->id, fn () => Semester::create([
             'tenant_id' => $tenant->id,
             'semester_id' => $code,
-            'nama_semester' => '2026/2027 Ganjil',
+            'nama_semester' => 'ganjil',
             'tahun_ajaran' => '2026/2027',
             'semester' => 'Ganjil',
             'aktif' => true,

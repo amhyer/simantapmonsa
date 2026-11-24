@@ -199,7 +199,10 @@ class KesiapanLaunchTest extends TestCase
 
     public function test_seluruh_grup_route_cbt_memasang_force_password_change(): void
     {
-        $sumber = (string) file_get_contents(base_path('routes/web.php'));
+        $sumber = '';
+        foreach (glob(base_path('routes').'/*.php') ?: [] as $berkas) {
+            $sumber .= "\n".(string) file_get_contents($berkas);
+        }
 
         preg_match_all(
             '/Route::middleware\(\[([^\]]*)\]\)->prefix\(\'cbt[^\']*\'\)/',
