@@ -90,6 +90,7 @@ class PetaKelasController extends Controller
                 'pembaruan' => now(),
             ]
         );
+        forgetKKMCache($guru->id, $guru->tenant_id !== null ? (int) $guru->tenant_id : null);
 
         $message = $pengaturan->wasRecentlyCreated
             ? 'Kelas berhasil ditambahkan ke guru.'
@@ -109,7 +110,9 @@ class PetaKelasController extends Controller
                 ->with('error', 'Tidak bisa menghapus pengaturan kelas yang masih memiliki siswa terkait.');
         }
 
+        $guruId = (int) $pengaturan->guru_id;
         $pengaturan->delete();
+        forgetKKMCache($guruId, TenantContext::id() ?? auth()->user()?->tenant_id);
 
         return redirect()->route('admin.peta-kelas.index')
             ->with('success', 'Pengaturan kelas berhasil dihapus.');

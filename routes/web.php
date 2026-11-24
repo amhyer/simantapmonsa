@@ -158,6 +158,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/daftar-sekolah', [RegisterSekolahController::class, 'create'])->name('sekolah.register');
     Route::post('/daftar-sekolah', [RegisterSekolahController::class, 'store'])->middleware('throttle:5,1')->name('sekolah.register.store');
     Route::get('/daftar-sekolah/verifikasi/{uuid}/{token}', [RegisterSekolahController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('sekolah.verify-email');
+    Route::post('/daftar-sekolah/verifikasi/{uuid}/kirim-ulang', [RegisterSekolahController::class, 'resendVerificationEmail'])->middleware('throttle:3,1')->name('sekolah.verify-email.resend');
 });
 Route::post('/csp-report', [CspReportController::class, 'store'])
     ->withoutMiddleware([

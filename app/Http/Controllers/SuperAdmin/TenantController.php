@@ -215,8 +215,12 @@ class TenantController extends Controller
         return back()->with('success', "Sekolah '{$tenant->nama_sekolah}' berhasil {$statusStr}.");
     }
 
-    public function approve(Tenant $tenant)
+    public function approve(Request $request, Tenant $tenant)
     {
+        if (! $tenant->isEmailVerified() && ! $request->boolean('force_approve')) {
+            return back()->with('error', "Email operator sekolah '{$tenant->nama_sekolah}' belum diverifikasi. Minta operator memverifikasi email terlebih dahulu atau gunakan persetujuan manual (force_approve).");
+        }
+
         $meta = is_array($tenant->meta) ? $tenant->meta : [];
         $meta['approval_status'] = 'approved';
         $meta['approved_at'] = now()->toIso8601String();

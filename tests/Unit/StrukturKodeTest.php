@@ -26,7 +26,6 @@ class StrukturKodeTest extends TestCase
         'app/Services/Dapodik/DapodikSyncService.php' => 1250,
         'app/Services/Tka/TkaCognitiveAnalyticsService.php' => 1100,
         'app/Http/Controllers/Admin/PresensiLaporanController.php' => 1025,
-        'app/Http/Controllers/Api/DapodikSyncController.php' => 950,
         'app/Http/Controllers/Admin/DataReferensiController.php' => 825,
     ];
 

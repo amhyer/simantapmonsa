@@ -89,17 +89,20 @@
 @if($tenant->isPendingApproval())
     <div class="alert alert-warning" style="margin-bottom:20px;background:#FFFBEB;border:1px solid #F59E0B;color:#92400E;padding:16px 20px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
-            <b><i class="fas fa-user-clock"></i> Pendaftaran Sekolah Ini Menunggu Persetujuan Super Admin</b>
+            <b><i class="fas fa-user-clock"></i> Pendaftaran Sekolah Ini Menunggu Persetujuan Manual Super Admin</b>
             <div style="font-size:13px;margin-top:4px">
-                Status NPSN: <b>{{ $tenant->isNpsnVerified() ? 'Format Valid (8 Digit)' : 'Perlu Pemeriksaan' }}</b> &bull;
+                Format NPSN (8 Digit): <b>Valid — Wajib Verifikasi Manual Kepemilikan di <a href="https://referensi.data.kemdikbud.go.id/pendidikan/npsn/{{ urlencode($tenant->npsn) }}" target="_blank" rel="noopener noreferrer" style="color:#92400E;text-decoration:underline">Referensi Kemendikdasmen ({{ $tenant->npsn }})</a></b> &bull;
                 Status Email Operator: <b>{{ $tenant->isEmailVerified() ? 'Sudah Diverifikasi' : 'Belum Diverifikasi' }}</b>
             </div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
             <form method="POST" action="{{ route('superadmin.tenants.approve', $tenant->uuid) }}" style="display:inline">
                 @csrf
+                @if(!$tenant->isEmailVerified())
+                    <input type="hidden" name="force_approve" value="1">
+                @endif
                 <button type="submit" class="btn btn-sm" style="background:#059669;color:#fff;font-weight:700">
-                    <i class="fas fa-check-circle"></i> Setujui &amp; Aktifkan Sekolah
+                    <i class="fas fa-check-circle"></i> {{ $tenant->isEmailVerified() ? 'Setujui & Aktifkan Sekolah' : 'Setujui Manual (Tanpa Tunggu Email)' }}
                 </button>
             </form>
             <form method="POST" action="{{ route('superadmin.tenants.reject', $tenant->uuid) }}" style="display:inline">

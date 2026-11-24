@@ -765,12 +765,7 @@ class AuditBatch4Nov2026Test extends TestCase
         $this->assertTrue($pendingTenant->isPendingApproval());
         $this->assertFalse($pendingTenant->isEmailVerified());
 
-        // Klik tautan verifikasi email -> status email_verified_at tercatat
-        $this->get($verifyUrl)->assertRedirect(route('login'));
-        $pendingTenant->refresh();
-        $this->assertTrue($pendingTenant->isEmailVerified());
-
-        // Super Admin melihat antrean "Menunggu Persetujuan" di layar Katalog Sekolah & menyetujui pendaftaran
+        // Super Admin melihat antrean "Menunggu Persetujuan" di layar Katalog Sekolah
         $superAdmin = User::create([
             'uuid' => (string) Str::uuid(),
             'nama_lengkap' => 'Super Admin Pusat',
@@ -781,6 +776,27 @@ class AuditBatch4Nov2026Test extends TestCase
             'tenant_id' => null,
             'aktif' => true,
         ]);
+
+        // Sebelum email diverifikasi, approve tanpa force_approve ditolak
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.approve', $pendingTenant->uuid))
+            ->assertSessionHas('error');
+        $this->assertFalse($pendingTenant->fresh()->aktif);
+
+        // Uji kirim ulang verifikasi email (resend) lalu klik tautan verifikasi baru
+        auth()->logout();
+        $resendRes = $this->post(route('sekolah.verify-email.resend', $pendingTenant->uuid));
+        $resendRes->assertRedirect(route('login'));
+        $newVerifyUrl = session('email_verification_url');
+        $this->assertNotEmpty($newVerifyUrl);
+
+        // Klik tautan verifikasi email -> status email_verified_at tercatat di Tenant meta DAN kolom users.email_verified_at
+        $this->get($newVerifyUrl)->assertRedirect(route('login'));
+        $pendingTenant->refresh();
+        $this->assertTrue($pendingTenant->isEmailVerified());
+        $this->assertNotNull(
+            User::withoutGlobalScopes()->where('nama_pengguna', 'op_bintang07')->value('email_verified_at')
+        );
 
         $this->actingAs($superAdmin)
             ->get(route('superadmin.tenants.index', ['status' => 'pending']))
@@ -798,5 +814,18 @@ class AuditBatch4Nov2026Test extends TestCase
         $this->assertTrue(
             (bool) User::withoutGlobalScopes()->where('nama_pengguna', 'op_bintang07')->value('aktif')
         );
+
+        // 7. Isolasi TranskripNilai dengan kolom tenant_id langsung & BelongsToTenant
+        $transkripA = TenantContext::run($t1->id, fn () => \App\Models\TranskripNilai::create([
+            'tenant_id' => $t1->id,
+            'siswa_id' => $siswa1->id,
+            'mata_pelajaran_id' => $mapelA->id,
+            'nama_mapel' => 'Matematika Sekolah A',
+            'nilai_akhir' => 92.5,
+            'predikat' => 'A',
+        ]));
+        $this->assertSame($t1->id, (int) $transkripA->tenant_id);
+        $this->assertSame(0, TenantContext::run($t2->id, fn () => \App\Models\TranskripNilai::count()));
+        $this->assertSame(1, TenantContext::run($t1->id, fn () => \App\Models\TranskripNilai::count()));
     }
 }

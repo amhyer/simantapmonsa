@@ -107,9 +107,11 @@ class RegisterSekolahController extends Controller
                     'kepala_sekolah' => $validated['kepala_sekolah'],
                     'registered_at' => now()->toIso8601String(),
                     'approval_status' => $autoAktif ? 'approved' : 'pending',
-                    'npsn_verified' => true,
+                    'npsn_format_valid' => true,
+                    'npsn_verified' => false,
                     'email_verification_token_hash' => hash('sha256', $verificationToken),
                     'email_verification_sent_at' => now()->toIso8601String(),
+                    'email_verification_expires_at' => now()->addHours(24)->toIso8601String(),
                     'ip' => $request->ip(),
                 ],
             ]);
@@ -179,21 +181,46 @@ class RegisterSekolahController extends Controller
                 ->withErrors(['nama_pengguna' => 'Tautan verifikasi email tidak valid atau sudah digunakan.']);
         }
 
+        if (! empty($meta['email_verification_expires_at']) && now()->greaterThan(\Carbon\Carbon::parse($meta['email_verification_expires_at']))) {
+            return redirect()->route('login')
+                ->withErrors(['nama_pengguna' => 'Tautan verifikasi email telah kedaluwarsa (berlaku 24 jam). Silakan minta pengiriman ulang tautan verifikasi.']);
+        }
+
         $meta['email_verified_at'] = now()->toIso8601String();
-        unset($meta['email_verification_token_hash']);
+        unset($meta['email_verification_token_hash'], $meta['email_verification_expires_at']);
 
         DB::transaction(function () use ($tenant, $meta) {
             $tenant->update(['meta' => $meta]);
 
-            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'email_verified_at')) {
-                User::withoutGlobalScopes()
-                    ->where('tenant_id', $tenant->id)
-                    ->where('peran', 'admin')
-                    ->update(['email_verified_at' => now()]);
-            }
+            User::withoutGlobalScopes()
+                ->where('tenant_id', $tenant->id)
+                ->where('peran', 'admin')
+                ->update(['email_verified_at' => now()]);
         });
 
         return redirect()->route('login')
             ->with('success', "Email operator sekolah \"{$tenant->nama_sekolah}\" berhasil diverifikasi.");
+    }
+
+    public function resendVerificationEmail(Request $request, string $uuid)
+    {
+        $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
+        if ($tenant->isEmailVerified()) {
+            return redirect()->route('login')
+                ->with('success', 'Email operator sekolah ini sudah terverifikasi sebelumnya.');
+        }
+
+        $verificationToken = Str::random(40);
+        $meta = is_array($tenant->meta) ? $tenant->meta : [];
+        $meta['email_verification_token_hash'] = hash('sha256', $verificationToken);
+        $meta['email_verification_sent_at'] = now()->toIso8601String();
+        $meta['email_verification_expires_at'] = now()->addHours(24)->toIso8601String();
+
+        $tenant->update(['meta' => $meta]);
+        $verifyUrl = route('sekolah.verify-email', ['uuid' => $tenant->uuid, 'token' => $verificationToken]);
+
+        return redirect()->route('login')
+            ->with('success', "Tautan verifikasi email baru untuk \"{$tenant->nama_sekolah}\" telah dikirim ulang (berlaku 24 jam).")
+            ->with('email_verification_url', $verifyUrl);
     }
 }

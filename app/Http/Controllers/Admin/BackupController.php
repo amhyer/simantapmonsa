@@ -203,19 +203,18 @@ class BackupController extends Controller
             abort(403, 'Akun admin belum terhubung ke sekolah.');
         }
 
-        $siswaIds = ($isMultiTenant && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id'))
-            ? DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id')
-            : collect();
-        $userIds = ($isMultiTenant && Schema::hasTable('users') && Schema::hasColumn('users', 'tenant_id'))
-            ? DB::table('users')->where('tenant_id', $tenantId)->pluck('id')
-            : collect();
-
         // Seluruh wipe berjalan dalam SATU transaksi: gagal di tabel mana pun
-        // membatalkan semuanya (tidak ada DB setengah terhapus). Pakai DELETE
-        // biasa — BUKAN TRUNCATE ... CASCADE yang bisa ikut mengosongkan tabel
-        // referensi di luar daftar BackupTables::dikosongkan().
+        // membatalkan semuanya (tidak ada DB setengah terhapus). Snapshot ID diambil
+        // di dalam transaksi dengan lockForUpdate() agar baris baru tidak lolos di tengah wipe.
         try {
-            DB::transaction(function () use ($tabelData, $isMultiTenant, $tenantId, $siswaIds, $userIds, &$dihapus): void {
+            DB::transaction(function () use ($tabelData, $isMultiTenant, $tenantId, &$dihapus): void {
+                $siswaIds = ($isMultiTenant && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id'))
+                    ? DB::table('siswa')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')
+                    : collect();
+                $userIds = ($isMultiTenant && Schema::hasTable('users') && Schema::hasColumn('users', 'tenant_id'))
+                    ? DB::table('users')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')
+                    : collect();
+
                 Schema::disableForeignKeyConstraints();
                 try {
                     foreach ($tabelData as $tabel) {

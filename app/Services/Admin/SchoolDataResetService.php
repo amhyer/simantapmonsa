@@ -81,7 +81,7 @@ class SchoolDataResetService
             $deletedEmails = collect();
 
             if (isset($tables['users'])) {
-                $usersQuery = DB::table('users');
+                $usersQuery = DB::table('users')->lockForUpdate();
                 if ($isMultiSchool && Schema::hasColumn('users', 'tenant_id')) {
                     $usersQuery->where('tenant_id', $tenantId);
                 }
@@ -107,7 +107,7 @@ class SchoolDataResetService
             // 2. Kumpulkan ID induk milik sekolah ini (termasuk baris yang sudah soft-deleted)
             $siswaIds = collect();
             if (isset($tables['siswa'])) {
-                $siswaQuery = DB::table('siswa');
+                $siswaQuery = DB::table('siswa')->lockForUpdate();
                 if ($isMultiSchool && Schema::hasColumn('siswa', 'tenant_id')) {
                     $siswaQuery->where('tenant_id', $tenantId);
                 }

@@ -31,13 +31,13 @@ class TenantDataDeletionService
 
         try {
             $siswaIds = isset($tables['siswa'])
-                ? DB::table('siswa')->where('tenant_id', $tenantId)->pluck('id')->all()
+                ? DB::table('siswa')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')->all()
                 : [];
             $rombelIds = isset($tables['rombel'])
-                ? DB::table('rombel')->where('tenant_id', $tenantId)->pluck('id')->all()
+                ? DB::table('rombel')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')->all()
                 : [];
             $userIds = isset($tables['users'])
-                ? DB::table('users')->where('tenant_id', $tenantId)->pluck('id')->all()
+                ? DB::table('users')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')->all()
                 : [];
 
             $orderedChildTables = [

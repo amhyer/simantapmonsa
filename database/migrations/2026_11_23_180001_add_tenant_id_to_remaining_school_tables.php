@@ -29,7 +29,7 @@ return new class extends Migration
             }
         }
 
-        foreach (['tema_kokurikuler', 'kegiatan_kokurikuler', 'kelompok_kokurikuler', 'tka_assessment_items'] as $tbl) {
+        foreach (['tema_kokurikuler', 'kegiatan_kokurikuler', 'kelompok_kokurikuler', 'tka_assessment_items', 'transkrip_nilai'] as $tbl) {
             if (Schema::hasTable($tbl)) {
                 Schema::table($tbl, function (Blueprint $table) use ($tbl) {
                     if (! Schema::hasColumn($tbl, 'tenant_id')) {
@@ -38,6 +38,12 @@ return new class extends Migration
                     }
                 });
             }
+        }
+
+        if (Schema::hasTable('users') && ! Schema::hasColumn('users', 'email_verified_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('email_verified_at')->nullable()->after('email');
+            });
         }
 
         if (Schema::hasTable('tka_dimensions_enhanced')) {
@@ -140,7 +146,13 @@ return new class extends Migration
             });
         }
 
-        foreach (['tka_assessment_items', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler'] as $tbl) {
+        if (Schema::hasTable('users') && Schema::hasColumn('users', 'email_verified_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('email_verified_at');
+            });
+        }
+
+        foreach (['transkrip_nilai', 'tka_assessment_items', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler'] as $tbl) {
             if (Schema::hasTable($tbl) && Schema::hasColumn($tbl, 'tenant_id')) {
                 Schema::table($tbl, function (Blueprint $table) {
                     $table->dropConstrainedForeignId('tenant_id');

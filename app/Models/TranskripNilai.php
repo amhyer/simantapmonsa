@@ -2,20 +2,20 @@
 
 namespace App\Models;
 
-use App\Modules\Tenant\Contexts\TenantContext;
-use Illuminate\Database\Eloquent\Builder;
+use App\Modules\Tenant\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class TranskripNilai extends Model
 {
-    use SoftDeletes;
+    use BelongsToTenant, SoftDeletes;
 
     protected $table = 'transkrip_nilai';
 
     protected $fillable = [
         'uuid',
+        'tenant_id',
         'siswa_id',
         'mata_pelajaran_id',
         'nama_mapel',
@@ -33,11 +33,6 @@ class TranskripNilai extends Model
     protected static function boot(): void
     {
         parent::boot();
-        static::addGlobalScope('tenant_via_siswa', function (Builder $builder) {
-            if (TenantContext::check()) {
-                $builder->whereHas('siswa');
-            }
-        });
         static::creating(function ($model) {
             if (! $model->uuid) {
                 $model->uuid = Str::uuid();

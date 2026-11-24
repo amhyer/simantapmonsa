@@ -25,6 +25,7 @@ class User extends Authenticatable
         'nama_lengkap',
         'nama_pengguna',
         'email',
+        'email_verified_at',
         'kata_sandi',
         'peran',
         'terhubung_dengan',
@@ -59,6 +60,7 @@ class User extends Authenticatable
     {
         return [
             'kata_sandi' => 'hashed',
+            'email_verified_at' => 'datetime',
             'terhubung_dengan' => 'array',
             'is_wali_kelas' => 'boolean',
             'aktif' => 'boolean',

@@ -157,6 +157,7 @@ Dua hal ini **tidak jalan sendiri**. Tanpa keduanya fitur inti mati diam-diam.
 | Jadwal | Perintah | Akibat bila cron mati |
 |---|---|---|
 | Tiap hari 02:00 | `simantap:backup` | **Tidak ada backup sama sekali** |
+| Tiap hari 03:30 | `menu:usage-prune` | Data telemetri kunjungan menu > 60 hari tidak dibersihkan |
 | Tiap 6 jam | `tka:refresh` | Statistik TKA basi |
 | Tiap menit (bila CBT aktif) | `cbt:finalize-expired` | **Ujian siswa yang terputus tidak pernah difinalisasi/dinilai** |
 
@@ -247,6 +248,10 @@ aktif, lalu arahkan `DocumentRoot` ke `/var/www/simantap/public`.
 sudo chown -R www-data:www-data storage bootstrap/cache
 sudo find /var/www/simantap -type d -exec chmod 755 {} \;
 sudo find /var/www/simantap -type f -exec chmod 644 {} \;
+# WAJIB: kunci .env dan direktori storage (backup & foto privat) agar tidak terbaca akun lokal lain
+sudo chown www-data:www-data /var/www/simantap/.env
+sudo chmod 600 /var/www/simantap/.env
+sudo chmod -R 750 /var/www/simantap/storage /var/www/simantap/bootstrap/cache
 ```
 
 ---

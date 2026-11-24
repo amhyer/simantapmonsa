@@ -296,7 +296,8 @@
                                     @if($tenant->isPendingApproval())
                                         <span class="tag tag-warn">Menunggu Persetujuan</span>
                                         <div style="font-size:10.5px;color:#64748B;margin-top:3px">
-                                            {{ $tenant->isEmailVerified() ? 'Email Terverifikasi' : 'Email Belum Verifikasi' }}
+                                            {{ $tenant->isEmailVerified() ? 'Email Terverifikasi' : 'Email Belum Verifikasi' }} &bull;
+                                            <a href="https://referensi.data.kemdikbud.go.id/pendidikan/npsn/{{ urlencode($tenant->npsn) }}" target="_blank" rel="noopener noreferrer" style="color:#4338CA;text-decoration:underline" title="Verifikasi kepemilikan NPSN di Referensi Kemendikdasmen">Cek NPSN</a>
                                         </div>
                                     @elseif($tenant->isRejectedApproval())
                                         <span class="tag tag-bad">Ditolak</span>
