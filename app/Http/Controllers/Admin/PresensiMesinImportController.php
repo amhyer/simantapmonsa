@@ -49,8 +49,21 @@ class PresensiMesinImportController extends Controller
         $mesinEngineTerpilih = $directDisabled
             ? (string) config('presensi.mesin_db_engine', 'auto')
             : $reader->engineTerpilih();
+        $belumTerpetakan = $this->karyawan->daftarBelumTerpetakan();
+        $daftarPegawai = $this->karyawan->daftarPengguna();
+        $opsiAutoAkun = $this->karyawan->pengaturanAutoAkun();
 
-        return view('admin.presensi.mesin-import', compact('jumlahPegawai', 'sudahAdaNik', 'koneksi', 'terakhirTarik', 'directDisabled', 'mesinEngineTerpilih'));
+        return view('admin.presensi.mesin-import', compact(
+            'jumlahPegawai',
+            'sudahAdaNik',
+            'koneksi',
+            'terakhirTarik',
+            'directDisabled',
+            'mesinEngineTerpilih',
+            'belumTerpetakan',
+            'daftarPegawai',
+            'opsiAutoAkun',
+        ));
     }
 
     /**
@@ -71,6 +84,9 @@ class PresensiMesinImportController extends Controller
         $koneksi = $directDisabled
             ? ['ok' => false, 'pesan' => 'Tarik langsung belum mendukung isolasi per sekolah.', 'path' => null, 'engine' => null]
             : $reader->status();
+        $belumTerpetakan = $this->karyawan->daftarBelumTerpetakan();
+        $daftarPegawai = $this->karyawan->daftarPengguna();
+        $opsiAutoAkun = $this->karyawan->pengaturanAutoAkun();
 
         return view('admin.presensi.mesin-sinkron', [
             'logs' => $logs,
@@ -78,6 +94,9 @@ class PresensiMesinImportController extends Controller
             'terakhirTarik' => $terakhirTarik,
             'directDisabled' => $directDisabled,
             'koneksi' => $koneksi,
+            'belumTerpetakan' => $belumTerpetakan,
+            'daftarPegawai' => $daftarPegawai,
+            'opsiAutoAkun' => $opsiAutoAkun,
         ]);
     }
 
@@ -109,12 +128,15 @@ class PresensiMesinImportController extends Controller
             return back()->withErrors(['file' => 'File tidak dapat dibaca: '.$e->getMessage()]);
         }
 
-        $hasil = $this->karyawan->simpanNikKaryawan($pasangan);
+        $autoCreate = $request->has('buat_akun_otomatis') ? $request->boolean('buat_akun_otomatis') : null;
+        $peranDefault = $request->filled('peran_otomatis') ? (string) $request->input('peran_otomatis') : null;
+
+        $hasil = $this->karyawan->simpanNikKaryawan($pasangan, $autoCreate, $peranDefault);
 
         AktivitasService::log(
             'tambah',
             'Import NIK karyawan dari mesin presensi',
-            "Import data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
+            "Import data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['akun_dibuat']} akun baru dibuat, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
             'users',
             null,
             null,
@@ -128,7 +150,7 @@ class PresensiMesinImportController extends Controller
      * Ambil daftar pegawai (NIK/No.PIN + nama) langsung dari database mesin
      * lalu cocokkan dengan akun pegawai SIMANTAP berdasarkan nama.
      */
-    public function tarikKaryawan(AttendanceDatabaseReader $reader): RedirectResponse
+    public function tarikKaryawan(Request $request, AttendanceDatabaseReader $reader): RedirectResponse
     {
         // Membaca USERINFO lewat PowerShell bisa lambat pada peluncuran pertama.
         @set_time_limit(300);
@@ -146,12 +168,15 @@ class PresensiMesinImportController extends Controller
             return back()->with('success', 'Database mesin berhasil dibaca, tetapi belum ada data pegawai di dalamnya.');
         }
 
-        $hasil = $this->karyawan->simpanNikKaryawan($pegawai);
+        $autoCreate = $request->has('buat_akun_otomatis') ? $request->boolean('buat_akun_otomatis') : null;
+        $peranDefault = $request->filled('peran_otomatis') ? (string) $request->input('peran_otomatis') : null;
+
+        $hasil = $this->karyawan->simpanNikKaryawan($pegawai, $autoCreate, $peranDefault);
 
         AktivitasService::log(
             'tambah',
             'Tarik NIK karyawan dari database mesin',
-            "Tarik data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
+            "Tarik data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['akun_dibuat']} akun baru dibuat, {$hasil['tetap']} sudah sesuai, {$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.",
             'users',
             null,
             null,
@@ -354,7 +379,10 @@ class PresensiMesinImportController extends Controller
             if ($sekolah) {
                 $sekolah->update(['pengaturan' => $pengaturan]);
             } else {
-                SekolahSettings::create(['pengaturan' => $pengaturan]);
+                SekolahSettings::create([
+                    'nama_sekolah' => (string) config('app.name', 'SIMANTAP'),
+                    'pengaturan' => $pengaturan,
+                ]);
             }
         } catch (\Throwable $e) {
             report($e);
@@ -363,6 +391,137 @@ class PresensiMesinImportController extends Controller
         }
 
         return back()->with('success', 'Pengaturan pembacaan mesin berhasil disimpan (mesin_engine: '.$engine.').');
+    }
+
+    /**
+     * Simpan pengaturan pembuatan akun otomatis untuk nama baru dari mesin absensi.
+     */
+    public function updatePengaturanAkun(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'auto_akun' => ['nullable', 'boolean'],
+            'default_peran' => ['required', 'string', 'in:tendik,guru'],
+        ]);
+
+        $aktif = $request->boolean('auto_akun');
+        $peran = (string) $validated['default_peran'];
+
+        $this->karyawan->simpanPengaturanAutoAkun($aktif, $peran);
+
+        $statusTeks = $aktif
+            ? 'Aktif (otomatis buat akun '.strtoupper($peran).' untuk nama baru dari mesin)'
+            : 'Nonaktif (tahan nama baru di daftar Pemetaan PIN Mesin)';
+
+        return back()->with('success', 'Pengaturan akun otomatis mesin absensi disimpan: '.$statusTeks.'.');
+    }
+
+    /**
+     * Pasangkan PIN mesin yang belum cocok ke akun pegawai yang dipilih dari dropdown.
+     */
+    public function pasangkanPin(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nik' => ['required', 'string', 'max:50'],
+            'user_id' => ['required', 'integer'],
+        ]);
+
+        try {
+            $user = $this->karyawan->pasangkanPinKePegawai($validated['nik'], (int) $validated['user_id']);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['pemetaan' => $e->getMessage()]);
+        }
+
+        AktivitasService::log(
+            'ubah',
+            'Pasangkan PIN mesin absensi ke pegawai',
+            "PIN mesin {$user->nik} dipasangkan ke akun {$user->nama_lengkap} ({$user->peran}).",
+            'users',
+            $user->id,
+            null,
+            ['nik' => $user->nik, 'user_id' => $user->id],
+        );
+
+        return back()->with('success', "PIN {$user->nik} berhasil dipasangkan ke akun {$user->nama_lengkap}.");
+    }
+
+    /**
+     * Buat 1 akun pegawai baru dengan 1 klik dari daftar PIN mesin belum terpetakan.
+     */
+    public function buatAkunDariPin(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nik' => ['required', 'string', 'max:50'],
+            'nama' => ['required', 'string', 'max:120'],
+            'peran' => ['required', 'string', 'in:tendik,guru'],
+        ]);
+
+        try {
+            $res = $this->karyawan->buatAkunPegawaiMesin($validated['nik'], $validated['nama'], $validated['peran']);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['pemetaan' => $e->getMessage()]);
+        }
+
+        $user = $res['user'];
+
+        AktivitasService::log(
+            'tambah',
+            'Buat akun pegawai dari PIN mesin absensi',
+            "Akun {$user->nama_lengkap} ({$user->peran}) dibuat dari PIN mesin {$user->nik}.",
+            'users',
+            $user->id,
+            null,
+            ['nik' => $user->nik, 'username' => $res['username'], 'peran' => $user->peran],
+        );
+
+        return back()->with(
+            'success',
+            "Akun {$user->nama_lengkap} (".strtoupper($user->peran).") berhasil dibuat dengan PIN {$user->nik}. Username: {$res['username']} | Sandi awal: {$res['password_awal']}",
+        );
+    }
+
+    /**
+     * Buat akun baru secara massal (1 klik) untuk seluruh PIN mesin yang belum terpetakan.
+     */
+    public function buatSemuaAkunPin(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'peran' => ['required', 'string', 'in:tendik,guru'],
+        ]);
+
+        $res = $this->karyawan->buatSemuaAkunBelumTerpetakan($validated['peran']);
+
+        if ($res['dibuat'] === 0) {
+            return back()->with('warning', 'Tidak ada PIN mesin yang dapat dibuatkan akun baru.');
+        }
+
+        AktivitasService::log(
+            'tambah',
+            'Buat akun massal dari PIN mesin absensi',
+            "{$res['dibuat']} akun pegawai ({$validated['peran']}) dibuat otomatis dari daftar PIN mesin belum terpetakan.",
+            'users',
+            null,
+            null,
+            $res,
+        );
+
+        return back()->with(
+            'success',
+            "{$res['dibuat']} akun baru (".strtoupper($validated['peran']).") berhasil dibuat dan langsung terhubung dengan PIN mesin masing-masing.",
+        );
+    }
+
+    /**
+     * Hapus/abaikan 1 entri dari daftar antrean Pemetaan PIN Mesin.
+     */
+    public function hapusPinBelumTerpetakan(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nik' => ['required', 'string', 'max:50'],
+        ]);
+
+        $this->karyawan->hapusBelumTerpetakan($validated['nik']);
+
+        return back()->with('success', "PIN {$validated['nik']} dihapus dari daftar antrean pemetaan.");
     }
 
     /**

@@ -27,11 +27,31 @@ class PresensiMesinService
     private const METODE_DILINDUNGI = ['admin', 'manual'];
 
     /**
-     * @param  list<array{nik: string, waktu: Carbon, jenis: string}>  $scans
+     * @param  list<array{nik: string, waktu: Carbon, jenis: string, nama?: string}>  $scans
      * @return array{scan: int, pegawai: int, dibuat: int, diperbarui: int, tetap: int, dilindungi: int, nik_tidak_dikenal: int, contoh_nik_tidak_dikenal: list<string>, perubahan: list<array<string, mixed>>}
      */
     public function importScans(array $scans, ?int $userId = null): array
     {
+        $namaPerNik = [];
+        foreach ($scans as $scan) {
+            $normNik = $this->normalizeNik($scan['nik'] ?? null);
+            $namaScan = trim((string) ($scan['nama'] ?? ''));
+            if ($normNik !== null && $namaScan !== '' && ! isset($namaPerNik[$normNik])) {
+                $namaPerNik[$normNik] = $namaScan;
+            }
+        }
+
+        // Bila file log mesin juga memuat kolom Nama dan opsi Buat Akun Otomatis aktif,
+        // cocokkan/buatkan akun pegawai terlebih dahulu sebelum memproses scan kehadiran.
+        $karyawanService = app(\App\Services\MesinPresensi\PresensiMesinKaryawanService::class);
+        if ($namaPerNik !== [] && $karyawanService->pengaturanAutoAkun()['aktif']) {
+            $pasanganAuto = [];
+            foreach ($namaPerNik as $nikItem => $namaItem) {
+                $pasanganAuto[] = ['nik' => (string) $nikItem, 'nama' => $namaItem];
+            }
+            $karyawanService->simpanNikKaryawan($pasanganAuto);
+        }
+
         $groups = $this->kelompokkan($scans);
 
         $usersByNik = [];
@@ -59,7 +79,9 @@ class PresensiMesinService
             'perubahan' => [],
         ];
 
-        DB::transaction(function () use ($groups, $usersByNik, $userId, &$hasil) {
+        $unmappedDariLog = [];
+
+        DB::transaction(function () use ($groups, $usersByNik, $userId, $namaPerNik, &$hasil, &$unmappedDariLog) {
             foreach ($groups as $group) {
                 $user = $usersByNik[$group['nik']] ?? null;
                 if ($user === null) {
@@ -67,6 +89,14 @@ class PresensiMesinService
                     if (count($hasil['contoh_nik_tidak_dikenal']) < 8) {
                         $hasil['contoh_nik_tidak_dikenal'][] = $group['nik'];
                     }
+
+                    $unmappedDariLog[$group['nik']] = [
+                        'nik' => $group['nik'],
+                        'nama' => $namaPerNik[$group['nik']] ?? '',
+                        'alasan' => 'nik_tidak_dikenal',
+                        'sumber' => 'log_scan',
+                        'diperbarui_at' => now()->toDateTimeString(),
+                    ];
 
                     continue;
                 }
@@ -176,6 +206,10 @@ class PresensiMesinService
                 $hasil['dibuat']++;
             }
         });
+
+        if ($unmappedDariLog !== []) {
+            $karyawanService->catatBelumTerpetakan(array_values($unmappedDariLog));
+        }
 
         return $hasil;
     }

@@ -58,8 +58,8 @@
             </div>
 
             @if($mapel->count())
-                <form id="bulkForm">
-                    <div id="bulkActions" style="display:none;margin-bottom:12px;padding:10px 16px;background:#FEF3E2;border:1px solid #F59E0B;border-radius:8px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                <div id="bulkForm">
+                    <div id="bulkActions" style="display:none;margin-bottom:12px;padding:10px 16px;background:#FEF3E2;border:1px solid #F59E0B;border-radius:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
                         <span style="font-size:13px;font-weight:600;color:#B54708">
                             <i class="fas fa-check-double"></i> <span id="selectedCount">0</span> item dipilih
                         </span>
@@ -88,7 +88,7 @@
                             <tbody>
                                 @foreach($mapel as $i => $m)
                                     <tr>
-                                        <td><input type="checkbox" name="ids[]" value="{{ $m->id }}" class="row-check" onchange="updateBulk()"></td>
+                                        <td><input type="checkbox" name="ids[]" value="{{ $m->id }}" form="deleteSelectedForm" class="row-check" onchange="updateBulk()"></td>
                                         <td>{{ ($mapel->currentPage() - 1) * $mapel->perPage() + $i + 1 }}</td>
                                         <td style="font-weight:600">{{ $m->nama }}</td>
                                         <td><span class="tag tag-primary">{{ $m->kode ?: '-' }}</span></td>
@@ -117,7 +117,7 @@
                             </tbody>
                         </table>
                     </div>
-                </form>
+                </div>
 
                 <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">

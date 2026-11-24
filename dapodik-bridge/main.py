@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
     "dapodik_protocol": "http",
     "dapodik_token": "",
     "npsn": "",
+    "school_name": "Konektor Sinkronisasi Dapodik & e-Rapor Multi-Sekolah",
     "semester_id": "20261",
     "tahun_ajaran": "2026/2027",
     "nama_semester": "ganjil",
@@ -48,13 +49,27 @@ ENV_OVERRIDES = {
 }
 
 
+def get_user_config_path() -> Path:
+    """Simpan konfigurasi di folder profil pengguna (%APPDATA%/SIMANTAP_Bridge) agar bebas PermissionError di Windows."""
+    appdata = os.environ.get("APPDATA")
+    base = Path(appdata) if appdata else (Path.home() / ".config")
+    return base / "SIMANTAP_Bridge" / CONFIG_FILE
+
+
 def load_config():
-    p = Path(CONFIG_FILE)
     cfg = DEFAULT_CONFIG.copy()
-    if p.exists():
-        with open(p, "r", encoding="utf-8") as f:
-            saved = json.load(f)
-            cfg.update(saved)
+    user_path = get_user_config_path()
+    legacy_path = Path(CONFIG_FILE)
+
+    for candidate in (legacy_path, user_path):
+        if candidate.exists():
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    if isinstance(saved, dict):
+                        cfg.update(saved)
+            except Exception:
+                pass
 
     for env_name, key in ENV_OVERRIDES.items():
         value = os.environ.get(env_name)
@@ -65,8 +80,22 @@ def load_config():
 
 
 def save_config(cfg):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    target = get_user_config_path()
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+        try:
+            os.chmod(target, 0o600)
+        except Exception:
+            pass
+    except OSError:
+        # Fallback ke direktori kerja lokal bila %APPDATA% tidak dapat ditulis
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=2, ensure_ascii=False)
+        except OSError:
+            pass
 
 
 # ─── DAPODIK WEB SERVICE ────────────────────────────────────────
@@ -130,12 +159,12 @@ def dapodik_request(protocol, host, port, token, npsn, endpoint, params=None):
 
 
 def dapodik_fetch_all(protocol, host, port, token, npsn):
-    """Ambil semua data yang tersedia dari Dapodik (sekolah, rombel, ptk, peserta didik, mapel, pembelajaran)."""
+    """Ambil semua data yang tersedia dari Dapodik (sekolah, ptk, rombel, peserta didik, mapel, pembelajaran)."""
     results = {}
     endpoints = [
         "getSekolah",
-        "getRombonganBelajar",
         "getGtk",
+        "getRombonganBelajar",
         "getPesertaDidik",
         "getMataPelajaran",
         "getPembelajaran",
@@ -212,38 +241,57 @@ def simantap_sync_module(url, api_key, modul, data, semester_id, tahun_ajaran, n
     last_message = "Sinkronisasi selesai."
 
     for batch in batches:
-        try:
-            resp = requests.post(
-                f"{url.rstrip('/')}/api/dapodik/sync/{modul}",
-                headers={"X-API-Key": api_key, "Content-Type": "application/json", "Accept": "application/json"},
-                json={
-                    "semester_id": semester_id,
-                    "tahun_ajaran": tahun_ajaran,
-                    "nama_semester": nama_semester,
-                    "data": batch,
-                },
-                timeout=180,
-            )
+        batch_ok = False
+        last_err = "Tidak dapat terhubung ke server SIMANTAP"
+
+        for attempt in range(1, 4):
             try:
-                payload = resp.json()
-            except ValueError:
-                return {
-                    "success": False,
-                    "message": f"Server SIMANTAP mengembalikan respons non-JSON (HTTP {resp.status_code}).",
-                }
+                resp = requests.post(
+                    f"{url.rstrip('/')}/api/dapodik/sync/{modul}",
+                    headers={"X-API-Key": api_key, "Content-Type": "application/json", "Accept": "application/json"},
+                    json={
+                        "semester_id": semester_id,
+                        "tahun_ajaran": tahun_ajaran,
+                        "nama_semester": nama_semester,
+                        "data": batch,
+                    },
+                    timeout=180,
+                )
+                if resp.status_code >= 500 and attempt < 3:
+                    time.sleep(1.0 * attempt)
+                    continue
 
-            if not isinstance(payload, dict) or not payload.get("success", False):
-                return payload if isinstance(payload, dict) else {"success": False, "message": f"HTTP {resp.status_code}"}
+                try:
+                    payload = resp.json()
+                except ValueError:
+                    if attempt < 3:
+                        time.sleep(1.0 * attempt)
+                        continue
+                    return {
+                        "success": False,
+                        "message": f"Server SIMANTAP mengembalikan respons non-JSON (HTTP {resp.status_code}).",
+                    }
 
-            res_data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
-            for key in ("berhasil", "diperbarui", "dilewati", "gagal"):
-                agg[key] += int(res_data.get(key, 0) or 0)
-            if payload.get("message"):
-                last_message = payload["message"]
-        except requests.exceptions.ConnectionError:
-            return {"success": False, "message": "Tidak dapat terhubung ke server SIMANTAP"}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+                if not isinstance(payload, dict) or not payload.get("success", False):
+                    return payload if isinstance(payload, dict) else {"success": False, "message": f"HTTP {resp.status_code}"}
+
+                res_data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+                for key in ("berhasil", "diperbarui", "dilewati", "gagal"):
+                    agg[key] += int(res_data.get(key, 0) or 0)
+                if payload.get("message"):
+                    last_message = payload["message"]
+                batch_ok = True
+                break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                last_err = "Tidak dapat terhubung ke server SIMANTAP" if isinstance(e, requests.exceptions.ConnectionError) else f"Timeout saat mengirim batch {modul}"
+                if attempt < 3:
+                    time.sleep(1.0 * attempt)
+                    continue
+            except Exception as e:
+                return {"success": False, "message": str(e)}
+
+        if not batch_ok:
+            return {"success": False, "message": last_err}
 
     return {
         "success": True,
@@ -349,13 +397,14 @@ def create_gui():
     icon_file = os.path.join(base_dir, "icon.ico")
     logo_file = os.path.join(base_dir, "logo_gui.png")
 
+    subtitle_text = cfg.get("school_name") or "Konektor Sinkronisasi Dapodik & e-Rapor Multi-Sekolah"
     header_row = []
     if os.path.exists(logo_file):
         header_row.append(sg.Image(logo_file))
     header_row.extend([
         sg.Column([
             [sg.Text(APP_NAME, font=("Segoe UI", 15, "bold"), text_color="white")],
-            [sg.Text("UPTD SD Negeri Unggulan Mongisidi 1 · Inovasi Bimtek BBGTK", font=("Segoe UI", 8), text_color="#D4A017")],
+            [sg.Text(subtitle_text, key="-SCHOOL_SUBTITLE-", font=("Segoe UI", 8), text_color="#D4A017")],
         ]),
         sg.Text(f"v{APP_VERSION}", font=("Segoe UI", 9), text_color="gray", justification="right", expand_x=True)
     ])
@@ -400,6 +449,16 @@ def create_gui():
         window["-STATUS-"].update(msg)
         window.refresh()
 
+    current_school_name = cfg.get("school_name") or "Konektor Sinkronisasi Dapodik & e-Rapor Multi-Sekolah"
+    sync_busy = False
+    action_buttons = ("Test Dapodik", "Test SIMANTAP", "Tarik & Sinkron", "Kirim ke Dapodik")
+
+    def set_buttons_state(disabled: bool):
+        for btn_key in action_buttons:
+            if btn_key in window.AllKeysDict:
+                window[btn_key].update(disabled=disabled)
+        window.refresh()
+
     def get_cfg():
         return {
             "server_url": values["-SERVER-"].rstrip("/"),
@@ -409,6 +468,7 @@ def create_gui():
             "dapodik_protocol": values["-DPROTO-"],
             "dapodik_token": values["-DTOKEN-"],
             "npsn": values["-NPSN-"],
+            "school_name": current_school_name,
             "semester_id": values["-SEMID-"].strip(),
             "tahun_ajaran": values["-TA-"].strip(),
             "nama_semester": values["-NSEM-"],
@@ -425,6 +485,8 @@ def create_gui():
             log("Konfigurasi tersimpan.")
 
         if event == "Test Dapodik":
+            if sync_busy:
+                continue
             c = get_cfg()
             log(f"Test koneksi Dapodik: {c['dapodik_protocol']}://{c['dapodik_host']}:{c['dapodik_port']}...")
             window.refresh()
@@ -437,11 +499,16 @@ def create_gui():
                 if isinstance(rows, dict):
                     rows = [rows]
                 nama = rows[0].get("nama", rows[0].get("nama_sekolah", "?")) if rows else "?"
+                if nama and nama != "?":
+                    current_school_name = f"{nama} (NPSN: {c['npsn']})" if c.get("npsn") else nama
+                    window["-SCHOOL_SUBTITLE-"].update(current_school_name)
                 log(f"BERHASIL: {nama}")
             else:
                 log(f"GAGAL: {data}")
 
         if event == "Test SIMANTAP":
+            if sync_busy:
+                continue
             c = get_cfg()
             log(f"Test koneksi SIMANTAP: {c['server_url']}...")
             window.refresh()
@@ -449,6 +516,9 @@ def create_gui():
             log(f"{'BERHASIL' if ok else 'GAGAL'}: {msg}")
 
         if event == "Tarik & Sinkron":
+            if sync_busy:
+                log("Sinkronisasi sedang berjalan, harap tunggu hingga selesai.")
+                continue
             c = get_cfg()
 
             if not c["dapodik_token"]:
@@ -461,6 +531,9 @@ def create_gui():
                 log("ERROR: NPSN wajib diisi.")
                 continue
 
+            sync_busy = True
+            set_buttons_state(True)
+
             def do_sync():
                 try:
                     log_sync = "Mengambil data dari Dapodik..."
@@ -471,10 +544,16 @@ def create_gui():
                         c["dapodik_token"], c["npsn"]
                     )
 
+                    sekolah_rows = raw.get("getSekolah", [])
+                    if isinstance(sekolah_rows, list) and sekolah_rows:
+                        nama_sek = sekolah_rows[0].get("nama") or sekolah_rows[0].get("nama_sekolah")
+                        if nama_sek:
+                            window.write_event_value("-SCHOOL_NAME-", f"{nama_sek} (NPSN: {c['npsn']})")
+
                     endpoints_order = [
                         "getSekolah",
-                        "getRombonganBelajar",
                         "getGtk",
+                        "getRombonganBelajar",
                         "getPesertaDidik",
                         "getMataPelajaran",
                         "getPembelajaran",
@@ -491,8 +570,8 @@ def create_gui():
 
                     modules_map = {
                         "getSekolah": "sekolah",
-                        "getRombonganBelajar": "rombongan-belajar",
                         "getGtk": "ptk",
+                        "getRombonganBelajar": "rombongan-belajar",
                         "getPesertaDidik": "peserta-didik",
                         "getMataPelajaran": "mata-pelajaran",
                         "getPembelajaran": "pembelajaran",
@@ -543,6 +622,9 @@ def create_gui():
             threading.Thread(target=do_sync, daemon=True).start()
 
         if event == "Kirim ke Dapodik":
+            if sync_busy:
+                log("Sinkronisasi sedang berjalan, harap tunggu hingga selesai.")
+                continue
             c = get_cfg()
 
             if not c["dapodik_token"]:
@@ -554,6 +636,9 @@ def create_gui():
             if not c["npsn"]:
                 log("ERROR: NPSN wajib diisi.")
                 continue
+
+            sync_busy = True
+            set_buttons_state(True)
 
             def do_push_to_dapodik():
                 try:
@@ -632,6 +717,10 @@ def create_gui():
 
             threading.Thread(target=do_push_to_dapodik, daemon=True).start()
 
+        if event == "-SCHOOL_NAME-":
+            current_school_name = values[event]
+            window["-SCHOOL_SUBTITLE-"].update(current_school_name)
+
         if event == "-SYNC_LOG-":
             log(values[event])
 
@@ -641,6 +730,8 @@ def create_gui():
             window["-STATUS-"].update(msg)
 
         if event == "-SYNC_DONE-":
+            sync_busy = False
+            set_buttons_state(False)
             ok = values[event]
             if ok:
                 log("Sinkronisasi selesai!")

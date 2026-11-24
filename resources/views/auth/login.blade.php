@@ -269,9 +269,33 @@
                 </div>
             @endif
 
+            @if(session('success'))
+                <div class="status" role="status">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if(session('status'))
                 <div class="status" role="status">
                     {{ session('status') }}
+                </div>
+            @endif
+
+            @if(session('pending_tenant_uuid'))
+                <div style="background:#FEF3E2;border-left:3px solid #B54708;color:#714B00;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:18px">
+                    <div style="font-weight:700;margin-bottom:6px">Status Pendaftaran: {{ session('pending_school_name') }}</div>
+                    <div style="margin-bottom:10px">
+                        <a href="{{ route('sekolah.status', session('pending_tenant_uuid')) }}" style="color:#1F3864;font-weight:700;text-decoration:underline">
+                            Lihat Status Pendaftaran Sekolah &rarr;
+                        </a>
+                    </div>
+                    <form method="POST" action="{{ route('sekolah.verify-email.resend', session('pending_tenant_uuid')) }}" style="display:flex;gap:6px;flex-wrap:wrap">
+                        @csrf
+                        <input type="email" name="email" required placeholder="Email operator terdaftar" class="form-control" style="flex:1;min-width:170px;padding:8px 10px;font-size:12.5px">
+                        <button type="submit" style="padding:8px 12px;background:#1F3864;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer">
+                            Kirim Ulang Verifikasi
+                        </button>
+                    </form>
                 </div>
             @endif
 

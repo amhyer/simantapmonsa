@@ -45,7 +45,7 @@ class TenantDataDeletionService
                 'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages',
                 'tka_assessment_responses', 'tka_parent_reports', 'tka_early_warnings', 'tka_historical_tracking', 'tka_student_assessments', 'tka_assessment_items', 'tka_dimensions_enhanced',
                 'exam_answers', 'exam_results', 'exam_violations', 'exam_attempts', 'exam_sessions', 'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks',
-                'presensi_sesi_qr', 'presensi_pegawai', 'pengajuan_izin_presensi',
+                'kehadiran_mapel', 'presensi_sesi_qr', 'presensi_pegawai', 'pengajuan_izin_presensi',
                 'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler',
                 'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'kehadiran', 'catatan', 'dimensi', 'kebiasaan',
                 'anggota_rombel', 'pembelajaran', 'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'mata_pelajaran', 'semesters',
@@ -132,11 +132,24 @@ class TenantDataDeletionService
 
         $this->cleanCbtHierarchy(null, $userIds, []);
 
+        if (Schema::hasTable('jadwal_pelajaran') && Schema::hasColumn('jadwal_pelajaran', 'guru_id')) {
+            $jadwalIds = DB::table('jadwal_pelajaran')->whereIn('guru_id', $userIds)->pluck('id')->all();
+            if ($jadwalIds !== []) {
+                foreach (['kehadiran_mapel', 'presensi_sesi_qr'] as $jadwalChild) {
+                    if (Schema::hasTable($jadwalChild) && Schema::hasColumn($jadwalChild, 'jadwal_pelajaran_id')) {
+                        DB::table($jadwalChild)->whereIn('jadwal_pelajaran_id', $jadwalIds)->delete();
+                    }
+                }
+            }
+        }
+
         $directDeleteRefs = [
             'cbt_student_attempts' => ['user_id'],
             'cbt_results' => ['user_id'],
             'cbt_test_sessions' => ['guru_id'],
+            'kehadiran_mapel' => ['guru_id'],
             'presensi_sesi_qr' => ['guru_id'],
+            'jadwal_pelajaran' => ['guru_id'],
             'pengajuan_izin_presensi' => ['orang_tua_id', 'diproses_oleh'],
             'presensi_pegawai' => ['user_id'],
             'aktivitas' => ['guru_id'],

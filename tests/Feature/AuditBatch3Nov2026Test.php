@@ -114,50 +114,8 @@ class AuditBatch3Nov2026Test extends TestCase
             ->assertForbidden();
     }
 
-    private function ensureOptionalCascadeTablesExist(): void
-    {
-        if (! Schema::hasTable('cbt_student_attempts')) {
-            Schema::create('cbt_student_attempts', function (\Illuminate\Database\Schema\Blueprint $table) {
-                $table->id();
-                $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
-                $table->foreignId('session_id')->constrained('cbt_test_sessions')->restrictOnDelete();
-                $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
-                $table->foreignId('siswa_id')->nullable()->constrained('siswa')->restrictOnDelete();
-                $table->string('status', 30)->default('in_progress');
-                $table->timestamp('started_at')->nullable();
-                $table->timestamps();
-            });
-        }
-        if (! Schema::hasTable('cbt_student_answers')) {
-            Schema::create('cbt_student_answers', function (\Illuminate\Database\Schema\Blueprint $table) {
-                $table->id();
-                $table->foreignId('attempt_id')->constrained('cbt_student_attempts')->restrictOnDelete();
-                $table->foreignId('question_id')->constrained('cbt_questions')->restrictOnDelete();
-                $table->string('selected_option', 10)->nullable();
-                $table->boolean('is_correct')->default(false);
-                $table->timestamps();
-            });
-        }
-        if (! Schema::hasTable('presensi_sesi_qr')) {
-            Schema::create('presensi_sesi_qr', function (\Illuminate\Database\Schema\Blueprint $table) {
-                $table->id();
-                $table->string('uuid')->unique();
-                $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
-                $table->foreignId('guru_id')->constrained('users')->restrictOnDelete();
-                $table->foreignId('rombel_id')->nullable()->constrained('rombel')->restrictOnDelete();
-                $table->foreignId('jadwal_pelajaran_id')->nullable()->constrained('jadwal_pelajaran')->restrictOnDelete();
-                $table->date('tanggal');
-                $table->string('secret_key', 64);
-                $table->timestamp('dibuka_pada')->nullable();
-                $table->string('status', 20)->default('aktif');
-                $table->timestamps();
-            });
-        }
-    }
-
     public function test_p0_2_hapus_guru_dan_tenant_dengan_cbt_attempts_answers_siswa_lain_tidak_crash_fk(): void
     {
-        $this->ensureOptionalCascadeTablesExist();
         $superAdmin = User::factory()->superAdmin()->create();
         $tenant = $this->buatSekolah('60200001');
 
@@ -171,6 +129,28 @@ class AuditBatch3Nov2026Test extends TestCase
             'jenis_kelamin' => 'L',
             'aktif' => true,
         ]));
+
+        $jadwal = TenantContext::run($tenant->id, fn () => JadwalPelajaran::create([
+            'guru_id' => $guruPemilikSesi->id,
+            'kelas' => '6A',
+            'mata_pelajaran' => 'Matematika',
+            'hari' => 'Senin',
+            'jam_mulai' => '07:30',
+            'jam_selesai' => '09:00',
+        ]));
+        $kehadiranMapelId = DB::table('kehadiran_mapel')->insertGetId([
+            'uuid' => (string) Str::uuid(),
+            'jadwal_pelajaran_id' => $jadwal->id,
+            'siswa_id' => $siswa->id,
+            'guru_id' => $guruPemilikSesi->id,
+            'tanggal' => now()->toDateString(),
+            'mata_pelajaran' => 'Matematika',
+            'kelas' => '6A',
+            'status' => 'H',
+            'metode' => 'manual',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $bank = TenantContext::run($tenant->id, fn () => CbtQuestionBank::create([
             'guru_id' => $guruPembuatBank->id,
@@ -196,24 +176,6 @@ class AuditBatch3Nov2026Test extends TestCase
         ]));
 
         // Siswa (user_id != guru_id) mengerjakan sesi ujian milik guruPemilikSesi
-        $attemptId = DB::table('cbt_student_attempts')->insertGetId([
-            'tenant_id' => $tenant->id,
-            'session_id' => $session->id,
-            'user_id' => $siswaUser->id,
-            'siswa_id' => $siswa->id,
-            'status' => 'in_progress',
-            'started_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::table('cbt_student_answers')->insert([
-            'attempt_id' => $attemptId,
-            'question_id' => $question->id,
-            'selected_option' => 'B',
-            'is_correct' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
         $result = TenantContext::run($tenant->id, fn () => CbtResult::create([
             'session_id' => $session->id,
             'user_id' => $siswaUser->id,
@@ -229,15 +191,14 @@ class AuditBatch3Nov2026Test extends TestCase
             'updated_at' => now(),
         ]);
 
-        // Hapus guruPemilikSesi meskipun bank dibuat guru lain dan cbt_student_attempts/cbt_results dimiliki siswaUser
+        // Hapus guruPemilikSesi meskipun bank dibuat guru lain, kehadiran_mapel tercatat, dan cbt_results dimiliki siswaUser
         $this->actingAs($superAdmin)
             ->delete(route('superadmin.users.destroy', $guruPemilikSesi))
             ->assertRedirect()
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('users', ['id' => $guruPemilikSesi->id]);
-        $this->assertDatabaseMissing('cbt_student_answers', ['attempt_id' => $attemptId]);
-        $this->assertDatabaseMissing('cbt_student_attempts', ['id' => $attemptId]);
+        $this->assertDatabaseMissing('kehadiran_mapel', ['id' => $kehadiranMapelId]);
         $this->assertDatabaseMissing('cbt_violations', ['result_id' => $result->id]);
         $this->assertDatabaseMissing('cbt_results', ['id' => $result->id]);
         $this->assertDatabaseMissing('cbt_test_sessions', ['id' => $session->id]);
@@ -245,7 +206,6 @@ class AuditBatch3Nov2026Test extends TestCase
 
     public function test_p0_3_school_data_reset_service_menghapus_rantai_fk_berurutan_dan_mempertahankan_sekolah_settings(): void
     {
-        $this->ensureOptionalCascadeTablesExist();
         config(['simantap.multi_tenant_enabled' => true]);
         $tenant = $this->buatSekolah('60300001');
         $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
@@ -289,16 +249,16 @@ class AuditBatch3Nov2026Test extends TestCase
             'jam_mulai' => '08:00',
             'jam_selesai' => '09:00',
         ]));
-        $sesiQrId = DB::table('presensi_sesi_qr')->insertGetId([
+        $kehadiranMapelId = DB::table('kehadiran_mapel')->insertGetId([
             'uuid' => (string) Str::uuid(),
-            'tenant_id' => $tenant->id,
-            'guru_id' => $guru->id,
-            'rombel_id' => $rombel->id,
             'jadwal_pelajaran_id' => $jadwal->id,
+            'siswa_id' => $siswa->id,
+            'guru_id' => $guru->id,
             'tanggal' => now()->toDateString(),
-            'secret_key' => Str::random(32),
-            'dibuka_pada' => now(),
-            'status' => 'aktif',
+            'mata_pelajaran' => 'IPA',
+            'kelas' => '6A',
+            'status' => 'H',
+            'metode' => 'manual',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -324,24 +284,6 @@ class AuditBatch3Nov2026Test extends TestCase
             'opens_at' => now(),
             'closes_at' => now()->addHour(),
         ]));
-        $cbtAttemptId = DB::table('cbt_student_attempts')->insertGetId([
-            'tenant_id' => $tenant->id,
-            'session_id' => $cbtSess->id,
-            'user_id' => $siswaUser->id,
-            'siswa_id' => $siswa->id,
-            'status' => 'in_progress',
-            'started_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::table('cbt_student_answers')->insert([
-            'attempt_id' => $cbtAttemptId,
-            'question_id' => $q->id,
-            'selected_option' => 'A',
-            'is_correct' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
         $cbtRes = TenantContext::run($tenant->id, fn () => CbtResult::create([
             'session_id' => $cbtSess->id,
             'user_id' => $siswaUser->id,
@@ -354,12 +296,10 @@ class AuditBatch3Nov2026Test extends TestCase
         $stats = app(SchoolDataResetService::class)->resetSchoolKeepAdmins($tenant->id, $admin->id);
 
         $this->assertSame(1, $stats['siswa']);
-        $this->assertDatabaseMissing('cbt_student_answers', ['attempt_id' => $cbtAttemptId]);
-        $this->assertDatabaseMissing('cbt_student_attempts', ['id' => $cbtAttemptId]);
         $this->assertDatabaseMissing('cbt_results', ['id' => $cbtRes->id]);
         $this->assertDatabaseMissing('cbt_test_sessions', ['id' => $cbtSess->id]);
         $this->assertDatabaseMissing('cbt_question_banks', ['id' => $bank->id]);
-        $this->assertDatabaseMissing('presensi_sesi_qr', ['id' => $sesiQrId]);
+        $this->assertDatabaseMissing('kehadiran_mapel', ['id' => $kehadiranMapelId]);
         $this->assertDatabaseMissing('jadwal_pelajaran', ['id' => $jadwal->id]);
         $this->assertDatabaseMissing('siswa', ['id' => $siswa->id]);
         $this->assertDatabaseMissing('rombel', ['id' => $rombel->id]);
@@ -576,6 +516,7 @@ class AuditBatch3Nov2026Test extends TestCase
         ]);
         DB::table('ptk')->insert([
             'tenant_id' => null,
+            'dapodik_id' => 'ptk-backfill-001',
             'semester_id' => $semId,
             'nama' => 'PTK Backfill',
             'jenis_ptk' => 'Guru Kelas',

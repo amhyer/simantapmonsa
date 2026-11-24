@@ -45,6 +45,8 @@
         </div>
     </div>
 
+    @include('admin.presensi._pemetaan-pin-card')
+
     @if($terakhir)
         <div class="card" style="margin-bottom:16px;border-left:4px solid {{ $terakhir->status === 'berhasil' ? '#12805C' : 'var(--bad)' }}">
             <div class="card-header" style="gap:12px;flex-wrap:wrap">

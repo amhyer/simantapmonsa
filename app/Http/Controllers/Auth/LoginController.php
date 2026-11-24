@@ -160,6 +160,27 @@ class LoginController extends Controller
         RateLimiter::hit($pairKey, 300);
         RateLimiter::hit($accountKey, 300);
 
+        // Jika operator sekolah yang belum aktif/belum verifikasi mencoba login dengan sandi yang benar,
+        // arahkan atau tampilkan tombol ke halaman status pendaftaran & kirim ulang verifikasi email.
+        $pendingAdmin = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('nama_pengguna', $credentials['nama_pengguna'])
+            ->where('peran', 'admin')
+            ->where('aktif', false)
+            ->whereNotNull('tenant_id')
+            ->with('tenant')
+            ->get()
+            ->first(fn (User $u) => Hash::check($credentials['kata_sandi'], (string) $u->kata_sandi));
+
+        if ($pendingAdmin && $pendingAdmin->tenant) {
+            return back()
+                ->with('pending_tenant_uuid', $pendingAdmin->tenant->uuid)
+                ->with('pending_school_name', $pendingAdmin->tenant->nama_sekolah)
+                ->withErrors([
+                    'nama_pengguna' => "Akun sekolah \"{$pendingAdmin->tenant->nama_sekolah}\" belum aktif. Silakan verifikasi email operator atau cek status persetujuan pendaftaran.",
+                ])->onlyInput('nama_pengguna');
+        }
+
         return back()->withErrors([
             'nama_pengguna' => 'Nama pengguna atau kata sandi salah.',
         ])->onlyInput('nama_pengguna');

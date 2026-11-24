@@ -143,11 +143,15 @@ class PresensiMesinPullService
     }
 
     /**
-     * @param  array{diperbarui: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok?: list<string>}  $hasil
+     * @param  array{diperbarui: int, akun_dibuat?: int, tetap: int, tidak_cocok: int, ambigu: int, bentrok: int, contoh_tidak_cocok?: list<string>}  $hasil
      */
     public function pesanKaryawan(array $hasil): string
     {
-        $pesan = "Data karyawan: {$hasil['diperbarui']} NIK diperbarui, {$hasil['tetap']} sudah sesuai, "
+        $bagianAkun = (($hasil['akun_dibuat'] ?? 0) > 0)
+            ? ", {$hasil['akun_dibuat']} akun baru dibuat"
+            : '';
+
+        $pesan = "Data karyawan: {$hasil['diperbarui']} NIK diperbarui{$bagianAkun}, {$hasil['tetap']} sudah sesuai, "
             ."{$hasil['tidak_cocok']} nama tidak cocok, {$hasil['ambigu']} ambigu, {$hasil['bentrok']} bentrok.";
 
         $contoh = (array) ($hasil['contoh_tidak_cocok'] ?? []);

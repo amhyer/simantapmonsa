@@ -9,7 +9,10 @@
         <div class="stat"><div class="label">Pegawai Aktif</div><div class="value">{{ $jumlahPegawai }}</div></div>
         <div class="stat ok"><div class="label">Sudah Punya NIK</div><div class="value">{{ $sudahAdaNik }}</div></div>
         <div class="stat gold"><div class="label">Belum Punya NIK</div><div class="value">{{ max($jumlahPegawai - $sudahAdaNik, 0) }}</div></div>
+        <div class="stat {{ count($belumTerpetakan ?? []) > 0 ? 'warn' : 'ok' }}"><div class="label">PIN Mesin Belum Terpetakan</div><div class="value">{{ count($belumTerpetakan ?? []) }}</div></div>
     </div>
+
+    @include('admin.presensi._pemetaan-pin-card')
 
     <div class="card" style="margin-bottom:16px">
         <div class="card-header"><h3>Alur Import</h3></div>
@@ -159,6 +162,16 @@
                     <div style="flex:1;min-width:220px">
                         <label for="fld-presensi-mesin-import-file" class="form-label">File data karyawan (maks 10MB)</label>
                         <input id="fld-presensi-mesin-import-file" type="file" name="file" accept=".xls,.xlsx,.csv,.txt" required class="form-control">
+                    </div>
+                    <div style="width:100%;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:#344054">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                            <input type="checkbox" name="buat_akun_otomatis" value="1" {{ ($opsiAutoAkun['aktif'] ?? false) ? 'checked' : '' }}>
+                            <span>Buat akun otomatis jika nama belum ada</span>
+                        </label>
+                        <select name="peran_otomatis" class="form-control" style="width:auto;padding:4px 8px;font-size:13px" aria-label="Peran akun otomatis saat import karyawan">
+                            <option value="tendik" {{ ($opsiAutoAkun['peran'] ?? 'tendik') === 'tendik' ? 'selected' : '' }}>Peran: Tendik</option>
+                            <option value="guru" {{ ($opsiAutoAkun['peran'] ?? 'tendik') === 'guru' ? 'selected' : '' }}>Peran: Guru</option>
+                        </select>
                     </div>
                     <div>
                         <button type="submit" class="btn btn-sm">Import NIK</button>

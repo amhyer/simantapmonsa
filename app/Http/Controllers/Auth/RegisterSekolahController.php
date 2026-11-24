@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SchoolRegistrationStatusMail;
+use App\Mail\SchoolRegistrationVerificationMail;
 use App\Models\SekolahSettings;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
@@ -10,6 +12,7 @@ use App\Services\AktivitasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -151,12 +154,14 @@ class RegisterSekolahController extends Controller
         [$tenant, $admin] = $result;
         $verifyUrl = route('sekolah.verify-email', ['uuid' => $tenant->uuid, 'token' => $verificationToken]);
 
+        $this->kirimEmailVerifikasi($tenant, $admin->email, $admin->nama_lengkap, $verifyUrl, ! $autoAktif);
+        $this->notifikasiSuperAdminSekolahBaru($tenant);
+
         if (! $autoAktif) {
             AktivitasService::login("Pengajuan pendaftaran sekolah baru (menunggu verifikasi): {$tenant->nama_sekolah} (NPSN: {$tenant->npsn})");
 
-            return redirect()->route('login')
-                ->with('success', "Pendaftaran sekolah \"{$tenant->nama_sekolah}\" berhasil dikirim dan sedang menunggu persetujuan Super Admin. Silakan verifikasi email Anda.")
-                ->with('email_verification_url', $verifyUrl);
+            return redirect()->route('sekolah.status', $tenant->uuid)
+                ->with('success', "Pendaftaran sekolah \"{$tenant->nama_sekolah}\" berhasil dikirim. Tautan verifikasi telah dikirim ke email {$admin->email}.");
         }
 
         // Login otomatis admin yang baru mendaftar
@@ -166,8 +171,21 @@ class RegisterSekolahController extends Controller
         AktivitasService::login("Pendaftaran sekolah baru: {$tenant->nama_sekolah} (NPSN: {$tenant->npsn})");
 
         return redirect()->route('admin.dashboard')
-            ->with('success', "Selamat Datang! Sekolah \"{$tenant->nama_sekolah}\" berhasil didaftarkan. Anda dapat mulai mengelola data atau menyambungkan Dapodik via SIMANTAP Bridge.")
-            ->with('email_verification_url', $verifyUrl);
+            ->with('success', "Selamat Datang! Sekolah \"{$tenant->nama_sekolah}\" berhasil didaftarkan. Tautan verifikasi email telah dikirim ke {$admin->email}.");
+    }
+
+    public function status(string $uuid)
+    {
+        $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
+        $admin = User::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+
+        $email = (string) ($admin?->email ?? '');
+        $maskedEmail = $this->maskEmail($email);
+
+        return view('auth.status-sekolah', compact('tenant', 'maskedEmail'));
     }
 
     public function verifyEmail(Request $request, string $uuid, string $token)
@@ -182,8 +200,8 @@ class RegisterSekolahController extends Controller
         }
 
         if (! empty($meta['email_verification_expires_at']) && now()->greaterThan(\Carbon\Carbon::parse($meta['email_verification_expires_at']))) {
-            return redirect()->route('login')
-                ->withErrors(['nama_pengguna' => 'Tautan verifikasi email telah kedaluwarsa (berlaku 24 jam). Silakan minta pengiriman ulang tautan verifikasi.']);
+            return redirect()->route('sekolah.status', $tenant->uuid)
+                ->withErrors(['email' => 'Tautan verifikasi email telah kedaluwarsa (berlaku 24 jam). Silakan minta pengiriman ulang tautan verifikasi.']);
         }
 
         $meta['email_verified_at'] = now()->toIso8601String();
@@ -198,8 +216,13 @@ class RegisterSekolahController extends Controller
                 ->update(['email_verified_at' => now()]);
         });
 
+        if ($tenant->fresh()->isPendingApproval()) {
+            return redirect()->route('sekolah.status', $tenant->uuid)
+                ->with('success', "Email operator sekolah \"{$tenant->nama_sekolah}\" berhasil diverifikasi. Pendaftaran Anda kini menunggu persetujuan Super Admin.");
+        }
+
         return redirect()->route('login')
-            ->with('success', "Email operator sekolah \"{$tenant->nama_sekolah}\" berhasil diverifikasi.");
+            ->with('success', "Email operator sekolah \"{$tenant->nama_sekolah}\" berhasil diverifikasi. Silakan masuk.");
     }
 
     public function resendVerificationEmail(Request $request, string $uuid)
@@ -207,7 +230,24 @@ class RegisterSekolahController extends Controller
         $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
         if ($tenant->isEmailVerified()) {
             return redirect()->route('login')
-                ->with('success', 'Email operator sekolah ini sudah terverifikasi sebelumnya.');
+                ->with('status', 'Email operator sekolah ini sudah terverifikasi sebelumnya.');
+        }
+
+        $admin = User::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+
+        if (! $admin || empty($admin->email)) {
+            return redirect()->route('login')
+                ->withErrors(['nama_pengguna' => 'Data email operator sekolah tidak ditemukan.']);
+        }
+
+        $inputEmail = strtolower(trim((string) $request->input('email', '')));
+        if ($inputEmail === '' || ! hash_equals(strtolower(trim((string) $admin->email)), $inputEmail)) {
+            return back()
+                ->withErrors(['email' => 'Alamat email yang dimasukkan tidak sesuai dengan email operator sekolah yang terdaftar.'])
+                ->withInput();
         }
 
         $verificationToken = Str::random(40);
@@ -219,8 +259,54 @@ class RegisterSekolahController extends Controller
         $tenant->update(['meta' => $meta]);
         $verifyUrl = route('sekolah.verify-email', ['uuid' => $tenant->uuid, 'token' => $verificationToken]);
 
-        return redirect()->route('login')
-            ->with('success', "Tautan verifikasi email baru untuk \"{$tenant->nama_sekolah}\" telah dikirim ulang (berlaku 24 jam).")
-            ->with('email_verification_url', $verifyUrl);
+        $this->kirimEmailVerifikasi($tenant, $admin->email, (string) $admin->nama_lengkap, $verifyUrl, $tenant->isPendingApproval());
+
+        return redirect()->route('sekolah.status', $tenant->uuid)
+            ->with('success', "Tautan verifikasi email baru untuk \"{$tenant->nama_sekolah}\" telah dikirim ke {$this->maskEmail($admin->email)} (berlaku 24 jam).");
+    }
+
+    private function kirimEmailVerifikasi(Tenant $tenant, string $email, string $namaOperator, string $verifyUrl, bool $requireApproval): void
+    {
+        try {
+            Mail::to($email)->send(new SchoolRegistrationVerificationMail(
+                $tenant,
+                $namaOperator,
+                $verifyUrl,
+                $requireApproval,
+            ));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function notifikasiSuperAdminSekolahBaru(Tenant $tenant): void
+    {
+        try {
+            $superAdmins = User::withoutGlobalScopes()
+                ->whereNull('deleted_at')
+                ->where('peran', 'super_admin')
+                ->where('aktif', true)
+                ->whereNotNull('email')
+                ->get();
+
+            foreach ($superAdmins as $sa) {
+                if (filled($sa->email)) {
+                    Mail::to($sa->email)->send(new SchoolRegistrationStatusMail($tenant, 'new_registration_admin_alert'));
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function maskEmail(string $email): string
+    {
+        if (! str_contains($email, '@')) {
+            return '***';
+        }
+        [$local, $domain] = explode('@', $email, 2);
+        $prefix = substr($local, 0, min(2, strlen($local)));
+
+        return $prefix.'***@'.$domain;
     }
 }

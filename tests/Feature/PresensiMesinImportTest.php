@@ -227,4 +227,79 @@ class PresensiMesinImportTest extends TestCase
 
         $this->actingAs($guru)->get(route('admin.presensi.mesin.index'))->assertForbidden();
     }
+
+    public function test_nama_tidak_cocok_masuk_daftar_pemetaan_dan_bisa_dipasangkan_atau_dibuat_akun(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pegawaiAda = User::factory()->tendik()->create(['nama_lengkap' => 'Budi Santoso']);
+
+        $csv = $this->csv(['nik', 'nama'], [
+            ['PIN901', 'Pak Budi S'],
+            ['PIN902', 'Siti Aminah, S.Pd'],
+            ['PIN903', 'Rudi Hartono'],
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.presensi.mesin.karyawan.import'), [
+            'file' => $this->upload('karyawan.csv', $csv),
+        ])->assertRedirect()->assertSessionHas('success');
+
+        // Muncul di halaman Pemetaan PIN Mesin
+        $this->actingAs($admin)->get(route('admin.presensi.mesin.index'))
+            ->assertOk()
+            ->assertSee('PIN901')
+            ->assertSee('Pak Budi S')
+            ->assertSee('PIN902');
+
+        // 1. Pasangkan PIN901 ke akun Budi Santoso lewat dropdown
+        $this->actingAs($admin)->post(route('admin.presensi.mesin.pemetaan.pasangkan'), [
+            'nik' => 'PIN901',
+            'user_id' => $pegawaiAda->id,
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('PIN901', $pegawaiAda->fresh()->nik);
+
+        // 2. Buat akun baru 1 klik untuk PIN902 sebagai guru
+        $this->actingAs($admin)->post(route('admin.presensi.mesin.pemetaan.buat-akun'), [
+            'nik' => 'PIN902',
+            'nama' => 'Siti Aminah, S.Pd',
+            'peran' => 'guru',
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $siti = User::where('nik', 'PIN902')->firstOrFail();
+        $this->assertSame('guru', $siti->peran);
+        $this->assertSame('Siti Aminah, S.Pd', $siti->nama_lengkap);
+
+        // 3. Buat semua akun untuk sisa PIN (PIN903) sebagai tendik
+        $this->actingAs($admin)->post(route('admin.presensi.mesin.pemetaan.buat-semua'), [
+            'peran' => 'tendik',
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $rudi = User::where('nik', 'PIN903')->firstOrFail();
+        $this->assertSame('tendik', $rudi->peran);
+        $this->assertSame('Rudi Hartono', $rudi->nama_lengkap);
+    }
+
+    public function test_opsi_buat_akun_otomatis_saat_import_karyawan(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $csv = $this->csv(['nik', 'nama'], [
+            ['PIN777', 'Ahmad Fauzi'],
+            ['PIN778', 'Dewi Lestari'],
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.presensi.mesin.karyawan.import'), [
+            'file' => $this->upload('karyawan.csv', $csv),
+            'buat_akun_otomatis' => '1',
+            'peran_otomatis' => 'tendik',
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $ahmad = User::where('nik', 'PIN777')->firstOrFail();
+        $dewi = User::where('nik', 'PIN778')->firstOrFail();
+
+        $this->assertSame('tendik', $ahmad->peran);
+        $this->assertSame('Ahmad Fauzi', $ahmad->nama_lengkap);
+        $this->assertSame('tendik', $dewi->peran);
+        $this->assertSame('Dewi Lestari', $dewi->nama_lengkap);
+    }
 }

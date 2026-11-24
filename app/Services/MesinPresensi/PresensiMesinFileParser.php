@@ -101,6 +101,7 @@ class PresensiMesinFileParser
 
         $headers = array_map(fn (array $cell) => $this->normalizeHeader($cell['fmt']), $rows[$headerIndex]);
         $nikIndex = $this->findColumn($headers, ['nik', 'no pin', 'pin']);
+        $namaIndex = $this->findColumn($headers, ['nama', 'nama karyawan', 'nama pegawai', 'nama lengkap']);
         $statusIndex = $this->findColumn($headers, ['status']);
         $dateTimeIndex = $this->findColumn($headers, ['tgl waktu', 'tanggal waktu', 'waktu lengkap', 'datetime']);
         $tanggalIndex = $this->findColumn($headers, ['tanggal', 'tgl', 'date']);
@@ -134,6 +135,8 @@ class PresensiMesinFileParser
                 continue;
             }
 
+            $namaPegawai = $namaIndex !== null ? trim((string) ($row[$namaIndex]['fmt'] ?? '')) : '';
+
             if ($mode === 'datetime') {
                 $waktu = $this->parseDateTimeCell($row[$dateTimeIndex] ?? null);
                 if ($waktu === null) {
@@ -142,7 +145,11 @@ class PresensiMesinFileParser
                     continue;
                 }
                 $jenis = $this->jenisScan($statusIndex !== null ? (string) ($row[$statusIndex]['fmt'] ?? '') : '', $waktu);
-                $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
+                $scanRow = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
+                if ($namaPegawai !== '') {
+                    $scanRow['nama'] = $namaPegawai;
+                }
+                $scans[] = $scanRow;
 
                 continue;
             }
@@ -165,7 +172,11 @@ class PresensiMesinFileParser
                 }
                 $adaJam = true;
                 $waktu = $tanggal->copy()->setTime($jam[0], $jam[1], $jam[2]);
-                $scans[] = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
+                $scanRow = ['nik' => $nik, 'waktu' => $waktu, 'jenis' => $jenis];
+                if ($namaPegawai !== '') {
+                    $scanRow['nama'] = $namaPegawai;
+                }
+                $scans[] = $scanRow;
             }
 
             if (! $adaJam) {

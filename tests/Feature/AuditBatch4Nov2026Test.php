@@ -720,11 +720,23 @@ class AuditBatch4Nov2026Test extends TestCase
 
         $this->assertTrue(Hash::check('SandiBaruTendik99!@#', $tendik->fresh()->kata_sandi));
 
-        // 6. P1-5: Alur Persetujuan Pendaftaran Sekolah (school_registration_require_approval=true), Verifikasi NPSN, Verifikasi Email, & Layar Approve Super Admin
+        // 6. P1-5 & P0-2: Alur Persetujuan Pendaftaran Sekolah (school_registration_require_approval=true), Mailable Verifikasi Email (tanpa bocor ke session guest), Halaman Status Tunggu, & Notifikasi Super Admin
         auth()->logout();
+        \Illuminate\Support\Facades\Mail::fake();
         config([
             'simantap.school_registration_enabled' => true,
             'simantap.school_registration_require_approval' => true,
+        ]);
+
+        $superAdmin = User::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_lengkap' => 'Super Admin Pusat',
+            'nama_pengguna' => 'superadmin_approval',
+            'email' => 'sa@simantap.sch.id',
+            'kata_sandi' => Hash::make('Password123!'),
+            'peran' => 'super_admin',
+            'tenant_id' => null,
+            'aktif' => true,
         ]);
 
         // NPSN palsu (8 digit kembar / diawali 0) harus ditolak
@@ -742,7 +754,7 @@ class AuditBatch4Nov2026Test extends TestCase
             'kata_sandi_confirmation' => 'SandiKuat123!@#',
         ])->assertSessionHasErrors('npsn');
 
-        // Pendaftaran dengan NPSN valid saat require_approval=true -> masuk status pending (aktif = false)
+        // Pendaftaran dengan NPSN valid saat require_approval=true -> masuk status pending (aktif = false), diarahkan ke halaman status tunggu, dan mengirim Mailable sungguhan
         \Illuminate\Support\Facades\RateLimiter::clear('register-sekolah:127.0.0.1');
         $regRes = $this->post('/daftar-sekolah', [
             'nama_sekolah' => 'SDN Bintang Timur 07',
@@ -756,26 +768,33 @@ class AuditBatch4Nov2026Test extends TestCase
             'kata_sandi' => 'SandiKuat123!@#',
             'kata_sandi_confirmation' => 'SandiKuat123!@#',
         ]);
-        $regRes->assertRedirect(route('login'));
-        $verifyUrl = session('email_verification_url');
-        $this->assertNotEmpty($verifyUrl);
 
         $pendingTenant = Tenant::where('npsn', '40398765')->firstOrFail();
+        $regRes->assertRedirect(route('sekolah.status', $pendingTenant->uuid));
+        $this->assertNull(session('email_verification_url'), 'Token verifikasi tidak boleh dibocorkan ke session guest');
+
+        $verifyUrl = null;
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\SchoolRegistrationVerificationMail::class, function ($mail) use (&$verifyUrl) {
+            $verifyUrl = $mail->verifyUrl;
+
+            return $mail->hasTo('op@bintang07.sch.id');
+        });
+        $this->assertNotEmpty($verifyUrl);
+
+        // Super Admin juga menerima email notifikasi pendaftaran sekolah baru
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\SchoolRegistrationStatusMail::class, function ($mail) {
+            return $mail->hasTo('sa@simantap.sch.id') && $mail->status === 'new_registration_admin_alert';
+        });
+
+        // Halaman status tunggu dapat diakses dan menampilkan informasi sekolah
+        $this->get(route('sekolah.status', $pendingTenant->uuid))
+            ->assertOk()
+            ->assertSee('SDN Bintang Timur 07')
+            ->assertSee('Menunggu Aktivasi');
+
         $this->assertFalse($pendingTenant->aktif);
         $this->assertTrue($pendingTenant->isPendingApproval());
         $this->assertFalse($pendingTenant->isEmailVerified());
-
-        // Super Admin melihat antrean "Menunggu Persetujuan" di layar Katalog Sekolah
-        $superAdmin = User::create([
-            'uuid' => (string) Str::uuid(),
-            'nama_lengkap' => 'Super Admin Pusat',
-            'nama_pengguna' => 'superadmin_approval',
-            'email' => 'sa@simantap.sch.id',
-            'kata_sandi' => Hash::make('Password123!'),
-            'peran' => 'super_admin',
-            'tenant_id' => null,
-            'aktif' => true,
-        ]);
 
         // Sebelum email diverifikasi, approve tanpa force_approve ditolak
         $this->actingAs($superAdmin)
@@ -783,15 +802,26 @@ class AuditBatch4Nov2026Test extends TestCase
             ->assertSessionHas('error');
         $this->assertFalse($pendingTenant->fresh()->aktif);
 
-        // Uji kirim ulang verifikasi email (resend) lalu klik tautan verifikasi baru
+        // Uji kirim ulang verifikasi email: ditolak bila email tidak cocok, berhasil bila email sesuai
         auth()->logout();
-        $resendRes = $this->post(route('sekolah.verify-email.resend', $pendingTenant->uuid));
-        $resendRes->assertRedirect(route('login'));
-        $newVerifyUrl = session('email_verification_url');
+        $this->from(route('sekolah.status', $pendingTenant->uuid))
+            ->post(route('sekolah.verify-email.resend', $pendingTenant->uuid), ['email' => 'penyerang@asing.com'])
+            ->assertSessionHasErrors('email');
+
+        $newVerifyUrl = null;
+        $resendRes = $this->post(route('sekolah.verify-email.resend', $pendingTenant->uuid), ['email' => 'op@bintang07.sch.id']);
+        $resendRes->assertRedirect(route('sekolah.status', $pendingTenant->uuid));
+        $this->assertNull(session('email_verification_url'));
+
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\SchoolRegistrationVerificationMail::class, function ($mail) use (&$newVerifyUrl) {
+            $newVerifyUrl = $mail->verifyUrl;
+
+            return $mail->hasTo('op@bintang07.sch.id');
+        });
         $this->assertNotEmpty($newVerifyUrl);
 
         // Klik tautan verifikasi email -> status email_verified_at tercatat di Tenant meta DAN kolom users.email_verified_at
-        $this->get($newVerifyUrl)->assertRedirect(route('login'));
+        $this->get($newVerifyUrl)->assertRedirect(route('sekolah.status', $pendingTenant->uuid));
         $pendingTenant->refresh();
         $this->assertTrue($pendingTenant->isEmailVerified());
         $this->assertNotNull(
@@ -814,6 +844,11 @@ class AuditBatch4Nov2026Test extends TestCase
         $this->assertTrue(
             (bool) User::withoutGlobalScopes()->where('nama_pengguna', 'op_bintang07')->value('aktif')
         );
+
+        // Email pemberitahuan persetujuan dikirim ke operator sekolah
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\SchoolRegistrationStatusMail::class, function ($mail) {
+            return $mail->hasTo('op@bintang07.sch.id') && $mail->status === 'approved';
+        });
 
         // 7. Isolasi TranskripNilai dengan kolom tenant_id langsung & BelongsToTenant
         $transkripA = TenantContext::run($t1->id, fn () => \App\Models\TranskripNilai::create([

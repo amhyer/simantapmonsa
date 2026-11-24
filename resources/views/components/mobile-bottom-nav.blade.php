@@ -63,6 +63,29 @@
         }
         $tabs = array_slice($tabs, 0, 4);
         $tabs[] = ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'];
+    } elseif ($role === 'tendik') {
+        $tabs = [
+            ['title' => 'Presensi', 'route' => route('presensi.pegawai.index'), 'active' => $isActive('presensi.pegawai.index'), 'icon' => 'fas fa-user-clock'],
+            ['title' => 'Kartu QR', 'route' => route('presensi.pegawai.kartu'), 'active' => $isActive('presensi.pegawai.kartu'), 'icon' => 'fas fa-id-card'],
+            ['title' => 'Profil', 'route' => route('account.profile.show'), 'active' => $isActive('account.profile.*'), 'icon' => 'fas fa-user-cog'],
+            ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
+        ];
+    } elseif ($role === 'pengawas') {
+        $tabs = [
+            ['title' => 'Dasbor', 'route' => route('pengawas.dashboard'), 'active' => $isActive('pengawas.dashboard'), 'icon' => 'fas fa-tachometer-alt'],
+            ['title' => 'Supervisi', 'route' => route('pengawas.supervisi.index'), 'active' => $isActive('pengawas.supervisi.*'), 'icon' => 'fas fa-clipboard-check'],
+            ['title' => 'Visitasi', 'route' => route('pengawas.visitasi.index'), 'active' => $isActive('pengawas.visitasi.*'), 'icon' => 'fas fa-walking'],
+            ['title' => 'Audit', 'route' => route('pengawas.audit.index'), 'active' => $isActive('pengawas.audit.*'), 'icon' => 'fas fa-balance-scale'],
+            ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
+        ];
+    } elseif ($role === 'super_admin') {
+        $tabs = [
+            ['title' => 'Dasbor', 'route' => route('superadmin.dashboard'), 'active' => $isActive('superadmin.dashboard'), 'icon' => 'fas fa-tachometer-alt'],
+            ['title' => 'Sekolah', 'route' => route('superadmin.tenants.index'), 'active' => $isActive('superadmin.tenants.*'), 'icon' => 'fas fa-school'],
+            ['title' => 'Pengguna', 'route' => route('superadmin.users.index'), 'active' => $isActive('superadmin.users.*'), 'icon' => 'fas fa-users-cog'],
+            ['title' => 'Profil', 'route' => route('account.profile.show'), 'active' => $isActive('account.profile.*'), 'icon' => 'fas fa-user-shield'],
+            ['title' => 'Menu', 'route' => '#', 'onclick' => 'toggleSidebar(); return false;', 'active' => false, 'icon' => 'fas fa-bars'],
+        ];
     }
 @endphp
 

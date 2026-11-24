@@ -240,6 +240,8 @@ class TenantController extends Controller
                 ->update(['aktif' => true]);
         });
 
+        $this->kirimNotifikasiKeputusanSekolah($tenant, 'approved');
+
         return back()->with('success', "Pendaftaran sekolah '{$tenant->nama_sekolah}' (NPSN: {$tenant->npsn}) telah disetujui dan akun administrator telah diaktifkan.");
     }
 
@@ -267,7 +269,29 @@ class TenantController extends Controller
                 ->update(['aktif' => false]);
         });
 
+        $this->kirimNotifikasiKeputusanSekolah($tenant, 'rejected', $meta['rejection_reason']);
+
         return back()->with('success', "Pendaftaran sekolah '{$tenant->nama_sekolah}' telah ditolak dan aksesnya dinonaktifkan.");
+    }
+
+    private function kirimNotifikasiKeputusanSekolah(Tenant $tenant, string $status, ?string $reason = null): void
+    {
+        try {
+            $admin = User::withoutGlobalScopes()
+                ->whereNull('deleted_at')
+                ->where('tenant_id', $tenant->id)
+                ->where('peran', 'admin')
+                ->whereNotNull('email')
+                ->first();
+
+            if ($admin && filled($admin->email)) {
+                \Illuminate\Support\Facades\Mail::to($admin->email)->send(
+                    new \App\Mail\SchoolRegistrationStatusMail($tenant, $status, $reason)
+                );
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function destroy(Request $request, Tenant $tenant)
@@ -648,8 +672,14 @@ class TenantController extends Controller
 
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
 
-        Schema::disableForeignKeyConstraints();
+        $driver = DB::getDriverName();
+        if ($driver !== 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         DB::beginTransaction();
+        if ($driver === 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         try {
             $this->detachAndDeleteUserDependents([(int) $user->id]);
             $user->forceDelete();
@@ -689,8 +719,14 @@ class TenantController extends Controller
             return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
         }
 
-        Schema::disableForeignKeyConstraints();
+        $driver = DB::getDriverName();
+        if ($driver !== 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         DB::beginTransaction();
+        if ($driver === 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         try {
             $this->detachAndDeleteUserDependents($targetIds);
             $count = User::withoutGlobalScopes()
