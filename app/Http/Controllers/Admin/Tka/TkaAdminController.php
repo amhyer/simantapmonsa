@@ -114,12 +114,16 @@ class TkaAdminController extends Controller
      */
     public function storeDimension(Request $request)
     {
-        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where(fn ($q) => TenantContext::check()
-            ? $q->where('tenant_id', TenantContext::id())
-            : $q->whereNull('tenant_id'));
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where($tenantScope);
+        $semesterRule = Rule::exists('semesters', 'id')->where($tenantScope);
 
         $validated = $request->validate([
-            'semester_id' => 'nullable|exists:semesters,id',
+            'semester_id' => ['nullable', 'integer', $semesterRule],
             'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -129,7 +133,9 @@ class TkaAdminController extends Controller
             'rubrik_penilaian' => 'nullable|array',
         ]);
 
-        $semesterId = $validated['semester_id'] ?? Semester::orderByDesc('tahun_ajaran')->orderByDesc('id')->value('id');
+        $semesterId = ! empty($validated['semester_id'])
+            ? Semester::findOrFail($validated['semester_id'])->id
+            : Semester::orderByDesc('tahun_ajaran')->orderByDesc('id')->value('id');
         if (! $semesterId) {
             return back()->withErrors(['semester_id' => 'Semester aktif belum tersedia.'])->withInput();
         }
@@ -180,14 +186,18 @@ class TkaAdminController extends Controller
      */
     public function updateDimension(Request $request, Dimension $dimension)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
         $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')
             ->ignore($dimension->id)
-            ->where(fn ($q) => TenantContext::check()
-                ? $q->where('tenant_id', TenantContext::id())
-                : $q->whereNull('tenant_id'));
+            ->where($tenantScope);
+        $semesterRule = Rule::exists('semesters', 'id')->where($tenantScope);
 
         $validated = $request->validate([
-            'semester_id' => 'nullable|exists:semesters,id',
+            'semester_id' => ['nullable', 'integer', $semesterRule],
             'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -196,6 +206,10 @@ class TkaAdminController extends Controller
             'threshold_siap' => 'nullable|numeric|min:1|max:4',
             'rubrik_penilaian' => 'nullable|array',
         ]);
+
+        if (! empty($validated['semester_id'])) {
+            $validated['semester_id'] = Semester::findOrFail($validated['semester_id'])->id;
+        }
 
         $dimension->update(array_filter($validated, fn ($v) => $v !== null));
 
@@ -267,10 +281,15 @@ class TkaAdminController extends Controller
      */
     public function earlyWarnings(Request $request)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
         $request->validate([
             'status' => 'nullable|in:pending,sedang_diproses,selesai',
             'tingkat_peringatan' => 'nullable|in:rendah,sedang,tinggi,kritis',
-            'dimension_id' => 'nullable|integer|exists:tka_dimensions_enhanced,id',
+            'dimension_id' => ['nullable', 'integer', Rule::exists('tka_dimensions_enhanced', 'id')->where($tenantScope)],
             'tanggal_from' => 'nullable|date',
             'tanggal_to' => 'nullable|date',
             'search' => 'nullable|string|max:150',
@@ -374,8 +393,13 @@ class TkaAdminController extends Controller
      */
     public function generateReport(Request $request, ExcelExportService $excel)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
         $validated = $request->validate([
-            'semester_id' => 'required|integer|exists:semesters,id',
+            'semester_id' => ['required', 'integer', Rule::exists('semesters', 'id')->where($tenantScope)],
             'format' => 'required|in:pdf,excel',
         ]);
 
@@ -432,10 +456,15 @@ class TkaAdminController extends Controller
      */
     public function export(Request $request, ExcelExportService $excel)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
         $validated = $request->validate([
             'type' => 'required|in:assessments,warnings,dimensions',
             'format' => 'required|in:excel,pdf',
-            'semester_id' => 'nullable|integer|exists:semesters,id',
+            'semester_id' => ['nullable', 'integer', Rule::exists('semesters', 'id')->where($tenantScope)],
         ]);
 
         $semesterId = isset($validated['semester_id']) ? (int) $validated['semester_id'] : null;

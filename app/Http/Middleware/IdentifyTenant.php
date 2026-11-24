@@ -56,17 +56,31 @@ class IdentifyTenant
 
         $user = $request->user();
         $userTenantId = ($user && $user->tenant_id !== null) ? (int) $user->tenant_id : null;
+        $allowedPengawasIds = ($user && $user->peran === 'pengawas')
+            ? $this->allowedPengawasTenantIds($user)
+            : [];
+
+        if ($user && $user->peran === 'pengawas' && $request->hasSession()) {
+            $activeBinaanId = $request->session()->get('pengawas_active_tenant_id');
+            if ($activeBinaanId !== null && is_numeric($activeBinaanId) && in_array((int) $activeBinaanId, $allowedPengawasIds, true)) {
+                $userTenantId = (int) $activeBinaanId;
+            }
+        }
 
         // Super Admin dan rute portal /superadmin tidak dibatasi oleh tenant tunggal
         if ($request->is('superadmin*') || ($user && in_array($user->peran, ['super_admin'], true) && $requestedSubdomain === null && $customDomain === null)) {
             $resolvedTenantId = null;
         } elseif ($userTenantId !== null) {
             if ($resolvedTenantId !== null && $resolvedTenantId !== $userTenantId) {
-                abort(403, 'Akses lintas sekolah (cross-tenant) tidak diizinkan.');
+                if ($user && $user->peran === 'pengawas' && in_array((int) $resolvedTenantId, $allowedPengawasIds, true)) {
+                    $userTenantId = (int) $resolvedTenantId;
+                } else {
+                    abort(403, 'Akses lintas sekolah (cross-tenant) tidak diizinkan.');
+                }
             }
             $resolvedTenantId = $userTenantId;
 
-            // Periksa kedaluwarsa langganan akun pengguna
+            // Periksa kedaluwarsa langganan akun pengguna / sekolah binaan aktif
             $userTenantInfo = $this->resolveById($userTenantId);
             if (! $userTenantInfo || ! $userTenantInfo['aktif']) {
                 abort(403, 'Sekolah akun Anda tidak aktif atau tidak ditemukan.');
@@ -87,6 +101,46 @@ class IdentifyTenant
         }
     }
 
+    /**
+     * @return array<int, int>
+     */
+    private function allowedPengawasTenantIds(object $pengawas): array
+    {
+        $ids = [];
+        if (isset($pengawas->tenant_id) && $pengawas->tenant_id !== null) {
+            $ids[] = (int) $pengawas->tenant_id;
+        }
+        if (isset($pengawas->terhubung_dengan) && is_array($pengawas->terhubung_dengan)) {
+            foreach ($pengawas->terhubung_dengan as $id) {
+                if (is_numeric($id)) {
+                    $ids[] = (int) $id;
+                }
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private function normalizedAppHost(): string
+    {
+        $raw = strtolower((string) parse_url((string) config('app.url', ''), PHP_URL_HOST));
+
+        return preg_replace('/^(www|app)\./', '', $raw) ?: '';
+    }
+
+    private function isCentralOrLocalHost(string $host, string $appHost): bool
+    {
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true) || filter_var($host, FILTER_VALIDATE_IP)) {
+            return true;
+        }
+
+        if ($appHost !== '' && ($host === $appHost || $host === 'www.'.$appHost || $host === 'app.'.$appHost)) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function extractCustomDomain(Request $request): ?string
     {
         $header = trim((string) $request->header('X-Tenant-Domain', ''));
@@ -94,21 +148,30 @@ class IdentifyTenant
             return strtolower($header);
         }
 
+        if (trim((string) $request->header('X-Tenant-Subdomain', '')) !== '') {
+            return null;
+        }
+
         if (! config('simantap.multi_tenant_enabled', false)) {
             return null;
         }
 
         $host = strtolower($request->getHost());
-        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true) || filter_var($host, FILTER_VALIDATE_IP)) {
+        $appHost = $this->normalizedAppHost();
+
+        if ($this->isCentralOrLocalHost($host, $appHost)) {
             return null;
         }
 
-        $appHost = parse_url(config('app.url', ''), PHP_URL_HOST);
-        if ($appHost && $host === strtolower($appHost)) {
-            return null;
+        if ($appHost !== '' && ! in_array($appHost, ['localhost', '127.0.0.1', '::1'], true)) {
+            if (str_ends_with($host, '.'.$appHost)) {
+                return null;
+            }
+
+            return $host;
         }
 
-        return $host;
+        return null;
     }
 
     private function extractSubdomain(Request $request): ?string
@@ -123,12 +186,35 @@ class IdentifyTenant
         }
 
         $host = strtolower($request->getHost());
-        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true) || filter_var($host, FILTER_VALIDATE_IP)) {
+        $appHost = $this->normalizedAppHost();
+
+        if ($this->isCentralOrLocalHost($host, $appHost)) {
+            return null;
+        }
+
+        if ($appHost !== '' && ! in_array($appHost, ['localhost', '127.0.0.1', '::1'], true)) {
+            $suffix = '.'.$appHost;
+            if (str_ends_with($host, $suffix)) {
+                $sub = substr($host, 0, -strlen($suffix));
+                if ($sub !== '' && ! str_contains($sub, '.') && ! in_array($sub, ['www', 'app'], true)) {
+                    return $sub;
+                }
+            }
+
             return null;
         }
 
         $parts = explode('.', $host);
-        if (count($parts) >= 3 && ! in_array($parts[0], ['www', 'app'], true)) {
+        $twoLevelTlds = ['sch.id', 'go.id', 'ac.id', 'or.id', 'co.id', 'my.id', 'web.id', 'desa.id', 'ponpes.id'];
+        $minParts = 3;
+        foreach ($twoLevelTlds as $tld) {
+            if ($host === $tld || str_ends_with($host, '.'.$tld)) {
+                $minParts = 4;
+                break;
+            }
+        }
+
+        if (count($parts) >= $minParts && ! in_array($parts[0], ['www', 'app'], true)) {
             return $parts[0];
         }
 

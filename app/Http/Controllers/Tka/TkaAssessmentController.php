@@ -54,9 +54,9 @@ class TkaAssessmentController extends Controller
     {
         $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
         $tenantScope = function ($query) use ($tenantId): void {
-            if ($tenantId !== null) {
-                $query->where('tenant_id', $tenantId);
-            }
+            $tenantId !== null
+                ? $query->where('tenant_id', $tenantId)
+                : $query->whereNull('tenant_id');
         };
 
         $validated = $request->validate([
@@ -216,32 +216,33 @@ class TkaAssessmentController extends Controller
             }
 
             DB::commit();
+        } catch (\Throwable $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
-            if (Schema::hasTable('tka_learning_recommendations')) {
+            return back()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
+        }
+
+        if (Schema::hasTable('tka_learning_recommendations')) {
+            try {
                 $analytics = app(TkaCognitiveAnalyticsService::class);
                 $analytics->generateRecommendation($siswa, (int) $validated['semester_id'], (int) auth()->id());
 
                 if ($request->filled('sync_mata_pelajaran')) {
-                    try {
-                        $analytics->syncStudentToErapor($siswa, auth()->user(), [
-                            'mata_pelajaran' => (string) $request->input('sync_mata_pelajaran'),
-                            'komponen_target' => (string) $request->input('sync_komponen_target', 'sumatif'),
-                            'semester_id' => (int) $validated['semester_id'],
-                        ]);
-                    } catch (\Throwable) {
-                        // Jangan gagalkan simpan asesmen bila sinkronisasi opsional belum siap.
-                    }
+                    $analytics->syncStudentToErapor($siswa, auth()->user(), [
+                        'mata_pelajaran' => (string) $request->input('sync_mata_pelajaran'),
+                        'komponen_target' => (string) $request->input('sync_komponen_target', 'sumatif'),
+                        'semester_id' => (int) $validated['semester_id'],
+                    ]);
                 }
+            } catch (\Throwable) {
+                // Jangan gagalkan simpan asesmen bila analitik/sinkronisasi opsional belum siap.
             }
-
-            return redirect()->route('tka.assessments.show', $assessment)
-                ->with('success', 'Penilaian TKA berhasil disimpan');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return back()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
         }
+
+        return redirect()->route('tka.assessments.show', $assessment)
+            ->with('success', 'Penilaian TKA berhasil disimpan');
     }
 
     public function show(StudentAssessment $assessment)

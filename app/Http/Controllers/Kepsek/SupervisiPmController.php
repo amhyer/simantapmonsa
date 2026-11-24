@@ -171,7 +171,7 @@ class SupervisiPmController extends Controller
                 ?: (SekolahSettings::withoutGlobalScopes()
                     ->whereNotNull('nama_sekolah')
                     ->whereNotIn('nama_sekolah', ['SDN SIMANTAP', 'Sekolah Dasar'])
-                    ->value('nama_sekolah') ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1');
+                    ->value('nama_sekolah') ?: config('app.name', 'SIMANTAP'));
             $sekolah = SekolahSettings::create([
                 'tenant_id' => $tenantId,
                 'guru_id' => $kepsek->id,
@@ -234,7 +234,7 @@ class SupervisiPmController extends Controller
         }
 
         $guruTenant = $guru->tenant_id !== null ? (int) $guru->tenant_id : null;
-        if ($tenantId !== null && $guruTenant !== $tenantId) {
+        if ($guruTenant !== $tenantId) {
             abort(403, 'Anda tidak memiliki akses supervisi untuk guru dari sekolah lain.');
         }
     }

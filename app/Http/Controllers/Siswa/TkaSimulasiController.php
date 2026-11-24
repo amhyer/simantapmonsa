@@ -298,11 +298,18 @@ class TkaSimulasiController extends Controller
         abort_unless(isset($paketList[$id]), 404, 'Paket simulasi TKA tidak ditemukan.');
 
         $paket = $paketList[$id];
+        $proctorToken = $this->proctorConfiguredToken();
         $tokenSessionKey = 'tka_simulasi_token_'.$id;
-        $token = session($tokenSessionKey);
-        if (! is_string($token) || $token === '') {
-            $token = 'TKA-'.strtoupper(bin2hex(random_bytes(4)));
-            session([$tokenSessionKey => $token]);
+
+        if ($proctorToken !== '') {
+            session([$tokenSessionKey => $proctorToken]);
+            $token = null; // Jangan tampilkan token pengawas di layar siswa
+        } else {
+            $token = session($tokenSessionKey);
+            if (! is_string($token) || $token === '') {
+                $token = 'TKA-'.strtoupper(bin2hex(random_bytes(4)));
+                session([$tokenSessionKey => $token]);
+            }
         }
 
         return view('siswa.tka.confirm', compact('siswa', 'paket', 'token'));
@@ -317,7 +324,8 @@ class TkaSimulasiController extends Controller
         abort_unless(isset($paketList[$id]), 404);
 
         $tokenSessionKey = 'tka_simulasi_token_'.$id;
-        $tokenExpected = (string) session($tokenSessionKey, '');
+        $proctorToken = $this->proctorConfiguredToken();
+        $tokenExpected = $proctorToken !== '' ? $proctorToken : (string) session($tokenSessionKey, '');
         $tokenInput = strtoupper(trim((string) $request->input('token')));
 
         if ($tokenExpected === '' || ! hash_equals($tokenExpected, $tokenInput)) {
@@ -341,6 +349,18 @@ class TkaSimulasiController extends Controller
         ]);
 
         return redirect()->route('siswa.tka-simulasi.exam', $id);
+    }
+
+    private function proctorConfiguredToken(): string
+    {
+        try {
+            $sekolah = \App\Models\SekolahSettings::query()->first();
+            $pengaturan = is_array($sekolah?->pengaturan) ? $sekolah->pengaturan : [];
+
+            return strtoupper(trim((string) ($pengaturan['tka_simulasi_token'] ?? '')));
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /**

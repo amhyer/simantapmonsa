@@ -98,8 +98,9 @@ class RoleTaskSummaryService
             // Jangan gagalkan render layout jika tabel belum siap saat migrasi awal.
         }
 
-        if (! TenantContext::check() && ! config('simantap.multi_tenant_enabled', false)
-            && ! Tenant::hasAnyTenant() && Schema::hasTable('failed_jobs')) {
+        if ($tenantId === null && ! TenantContext::check()
+            && ! \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
+            && Schema::hasTable('failed_jobs')) {
             $gagal = DB::table('failed_jobs')->count();
             if ($gagal > 0) {
                 $notifs[] = [

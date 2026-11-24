@@ -490,11 +490,22 @@ window.konfirmasiKetik = function (form, frasa, keterangan) {
         if (typeof window.simantapConfirm !== 'function') {
             return;
         }
+        const submitter = event.submitter;
         event.preventDefault();
         window.simantapConfirm(form.dataset.confirm).then((ok) => {
             if (!ok) return;
             form.dataset.confirmAccepted = '1';
-            form.requestSubmit ? form.requestSubmit() : form.submit();
+            try {
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit(submitter && form.contains(submitter) ? submitter : undefined);
+                } else {
+                    form.submit();
+                }
+            } finally {
+                window.setTimeout(() => {
+                    delete form.dataset.confirmAccepted;
+                }, 0);
+            }
         });
     });
 })();

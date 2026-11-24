@@ -16,6 +16,13 @@ use Illuminate\Validation\Rules\Password;
 
 class RegisterSekolahController extends Controller
 {
+    public const RESERVED_SUBDOMAINS = [
+        'www', 'app', 'api', 'admin', 'superadmin', 'panel', 'mail', 'smtp', 'imap', 'pop', 'ftp',
+        'cbt', 'tryout', 'tka', 'dapodik', 'erapor', 'login', 'register', 'daftar-sekolah', 'auth',
+        'cdn', 'assets', 'static', 'storage', 'media', 'help', 'support', 'status', 'docs',
+        'dev', 'staging', 'test', 'localhost', 'simantap',
+    ];
+
     public function create()
     {
         abort_unless(config('simantap.school_registration_enabled', true), 404);
@@ -31,13 +38,26 @@ class RegisterSekolahController extends Controller
     {
         abort_unless(config('simantap.school_registration_enabled', true), 404);
 
+        $request->merge([
+            'subdomain' => strtolower(trim((string) $request->input('subdomain', ''))),
+            'email' => strtolower(trim((string) $request->input('email', ''))),
+        ]);
+
         $validated = $request->validate([
             // Identitas Sekolah
             'nama_sekolah' => 'required|string|max:255',
             'npsn' => 'required|numeric|digits:8|unique:tenants,npsn',
             'jenjang' => 'required|in:SD,SMP,SMA,SMK',
             'kepala_sekolah' => 'required|string|max:255',
-            'subdomain' => 'required|string|min:3|max:30|regex:/^[a-z0-9\-]+$/|unique:tenants,subdomain',
+            'subdomain' => [
+                'required',
+                'string',
+                'min:3',
+                'max:30',
+                'regex:/^[a-z0-9](?:[a-z0-9\-]{1,28}[a-z0-9])?$/',
+                Rule::notIn(self::RESERVED_SUBDOMAINS),
+                'unique:tenants,subdomain',
+            ],
             'alamat' => 'nullable|string|max:500',
             'kota' => 'nullable|string|max:100',
 
@@ -51,7 +71,8 @@ class RegisterSekolahController extends Controller
             'npsn.digits' => 'NPSN harus terdiri dari 8 digit angka.',
             'npsn.unique' => 'NPSN sekolah ini sudah terdaftar di SIMANTAP_MONSA.',
             'kepala_sekolah.required' => 'Nama Kepala Sekolah wajib diisi.',
-            'subdomain.regex' => 'Subdomain hanya boleh berupa huruf kecil, angka, dan tanda hubung (-).',
+            'subdomain.regex' => 'Subdomain hanya boleh berupa huruf kecil, angka, dan tanda hubung (-) serta tidak boleh diawali/diakhiri tanda hubung.',
+            'subdomain.not_in' => 'Subdomain ini dicadangkan untuk sistem. Pilih nama subdomain sekolah yang lain.',
             'subdomain.unique' => 'Subdomain ini sudah digunakan sekolah lain. Pilih subdomain lain.',
             'nama_pengguna.unique' => 'Nama pengguna operator ini sudah dipakai. Gunakan nama pengguna lain.',
             'nama_pengguna.regex' => 'Nama pengguna hanya boleh mengandung huruf, angka, titik, atau garis bawah.',
@@ -61,20 +82,22 @@ class RegisterSekolahController extends Controller
         ]);
 
         $subdomain = strtolower(trim($validated['subdomain']));
+        $autoAktif = ! (bool) config('simantap.school_registration_require_approval', false);
 
-        $result = DB::transaction(function () use ($validated, $subdomain, $request) {
+        $result = DB::transaction(function () use ($validated, $subdomain, $autoAktif, $request) {
             // 1. Buat Tenant Sekolah
             $tenant = Tenant::create([
                 'uuid' => (string) Str::uuid(),
                 'npsn' => $validated['npsn'],
                 'nama_sekolah' => $validated['nama_sekolah'],
                 'subdomain' => $subdomain,
-                'aktif' => true,
+                'aktif' => $autoAktif,
                 'meta' => [
                     'jenjang' => $validated['jenjang'],
                     'kota' => $validated['kota'] ?? null,
                     'kepala_sekolah' => $validated['kepala_sekolah'],
                     'registered_at' => now()->toIso8601String(),
+                    'approval_status' => $autoAktif ? 'approved' : 'pending',
                     'ip' => $request->ip(),
                 ],
             ]);
@@ -89,7 +112,7 @@ class RegisterSekolahController extends Controller
                 'peran' => 'admin',
                 'tenant_id' => $tenant->id,
                 'tenant_owned' => true,
-                'aktif' => true,
+                'aktif' => $autoAktif,
                 'force_password_change' => false,
             ]);
 
@@ -112,6 +135,13 @@ class RegisterSekolahController extends Controller
         });
 
         [$tenant, $admin] = $result;
+
+        if (! $autoAktif) {
+            AktivitasService::login("Pengajuan pendaftaran sekolah baru (menunggu verifikasi): {$tenant->nama_sekolah} (NPSN: {$tenant->npsn})");
+
+            return redirect()->route('login')
+                ->with('success', "Pendaftaran sekolah \"{$tenant->nama_sekolah}\" berhasil dikirim dan sedang menunggu persetujuan Super Admin.");
+        }
 
         // Login otomatis admin yang baru mendaftar
         Auth::login($admin);

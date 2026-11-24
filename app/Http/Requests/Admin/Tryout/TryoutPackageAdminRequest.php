@@ -20,9 +20,9 @@ class TryoutPackageAdminRequest extends FormRequest
         $packageId = $package instanceof Package ? $package->id : $package;
         $tenantId = TenantContext::id() ?? $this->user()?->tenant_id;
         $tenantScope = function ($q) use ($tenantId): void {
-            if ($tenantId !== null) {
-                $q->where('tenant_id', $tenantId);
-            }
+            $tenantId !== null
+                ? $q->where('tenant_id', $tenantId)
+                : $q->whereNull('tenant_id');
         };
 
         return [

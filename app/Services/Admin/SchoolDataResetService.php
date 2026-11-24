@@ -23,6 +23,7 @@ class SchoolDataResetService
     private const PROTECTED_TABLES = [
         'migrations',
         'tenants',
+        'sekolah_settings',
         'users',
         'api_keys',
         'sessions',
@@ -65,8 +66,14 @@ class SchoolDataResetService
             'tabel_dibersihkan' => 0,
         ];
 
-        Schema::disableForeignKeyConstraints();
+        $driver = DB::getDriverName();
+        if ($driver !== 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         DB::beginTransaction();
+        if ($driver === 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
         try {
             // 1. Tentukan akun Admin yang dipertahankan vs seluruh akun lain yang dihapus total
             $preservedAdminIds = collect();
@@ -136,8 +143,8 @@ class SchoolDataResetService
                 $stats['jadwal'] = $jadwalQuery->count();
             }
 
-            // 3. Bersihkan tabel cucu berantai (CBT, Tryout, TKA, Exam Engine, Kelas Digital)
-            $this->cleanNestedAssessmentTables(
+            // 3. Bersihkan tabel cucu & rantai FK RESTRICT/NO ACTION berurutan (CBT, Tryout, TKA, Exam Engine, Presensi, Rombel)
+            $cleanedTables = $this->cleanNestedAssessmentTables(
                 $tables,
                 $isMultiSchool,
                 $tenantId,
@@ -146,8 +153,26 @@ class SchoolDataResetService
                 $allSchoolUserIds
             );
 
+            // Pastikan baris identitas sekolah_settings tetap utuh tetapi data operasional & guru_id yang dihapus dibersihkan
+            if (isset($tables['sekolah_settings'])) {
+                $fallbackAdminId = $preservedAdminIds->first();
+                $settingsQuery = DB::table('sekolah_settings');
+                if ($isMultiSchool && Schema::hasColumn('sekolah_settings', 'tenant_id')) {
+                    $settingsQuery->where('tenant_id', $tenantId);
+                }
+                $updatePayload = [];
+                if (Schema::hasColumn('sekolah_settings', 'pengaturan')) {
+                    $updatePayload['pengaturan'] = null;
+                }
+                if ($fallbackAdminId !== null && Schema::hasColumn('sekolah_settings', 'guru_id')) {
+                    $updatePayload['guru_id'] = $fallbackAdminId;
+                }
+                if ($updatePayload !== []) {
+                    $settingsQuery->update($updatePayload);
+                }
+            }
+
             // 4. Bersihkan seluruh tabel data operasional sekolah
-            $cleanedTables = [];
             foreach ($tables as $lowerName => $actualTable) {
                 if (in_array($lowerName, self::PROTECTED_TABLES, true) || $lowerName === 'semesters') {
                     continue;
@@ -303,6 +328,7 @@ class SchoolDataResetService
      * @param  Collection<int, int>  $siswaIds
      * @param  Collection<int, int>  $rombelIds
      * @param  Collection<int, int>  $allSchoolUserIds
+     * @return array<int, string>
      */
     private function cleanNestedAssessmentTables(
         array $tables,
@@ -311,25 +337,115 @@ class SchoolDataResetService
         Collection $siswaIds,
         Collection $rombelIds,
         Collection $allSchoolUserIds
-    ): void {
+    ): array {
+        $cleaned = [];
+
+        $orderedTables = [
+            'cbt_student_answers', 'cbt_student_attempts', 'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
+            'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages',
+            'tka_assessment_responses', 'tka_parent_reports', 'tka_early_warnings', 'tka_historical_tracking', 'tka_student_assessments', 'tka_assessment_items', 'tka_dimensions_enhanced',
+            'exam_answers', 'exam_results', 'exam_violations', 'exam_attempts', 'exam_sessions', 'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks',
+            'presensi_sesi_qr', 'pengajuan_izin_presensi', 'presensi_pegawai', 'kehadiran', 'kehadiran_mapel',
+            'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler',
+            'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'catatan', 'dimensi', 'kebiasaan',
+            'anggota_rombel', 'pembelajaran', 'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'mata_pelajaran',
+        ];
+
         if (! $isMultiSchool) {
-            // Mode sekolah tunggal akan mengosongkan seluruh tabel di langkah 4.
-            return;
+            foreach ($orderedTables as $lowerKey) {
+                if (isset($tables[$lowerKey])) {
+                    DB::table($tables[$lowerKey])->delete();
+                    $cleaned[] = $tables[$lowerKey];
+                }
+            }
+
+            return $cleaned;
         }
 
-        // ── CBT ──
-        if (isset($tables['cbt_question_banks'])) {
-            $bankIds = $this->scopedIds('cbt_question_banks', $tenantId, 'guru_id', $allSchoolUserIds);
-            if ($bankIds->isNotEmpty() && isset($tables['cbt_questions']) && Schema::hasColumn('cbt_questions', 'bank_id')) {
-                DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
+        // ── CBT (child-to-parent: answers -> attempts -> violations -> results -> sessions -> questions -> banks) ──
+        $bankIds = isset($tables['cbt_question_banks'])
+            ? $this->scopedIds('cbt_question_banks', $tenantId, 'guru_id', $allSchoolUserIds)
+            : collect();
+
+        $sessIds = collect();
+        if (isset($tables['cbt_test_sessions'])) {
+            $sessIds = DB::table('cbt_test_sessions')
+                ->where(function ($q) use ($tenantId, $bankIds, $allSchoolUserIds) {
+                    $hasCond = false;
+                    if ($tenantId !== null && Schema::hasColumn('cbt_test_sessions', 'tenant_id')) {
+                        $q->orWhere('tenant_id', $tenantId);
+                        $hasCond = true;
+                    }
+                    if ($bankIds->isNotEmpty() && Schema::hasColumn('cbt_test_sessions', 'bank_id')) {
+                        $q->orWhereIn('bank_id', $bankIds);
+                        $hasCond = true;
+                    }
+                    if ($allSchoolUserIds->isNotEmpty() && Schema::hasColumn('cbt_test_sessions', 'guru_id')) {
+                        $q->orWhereIn('guru_id', $allSchoolUserIds);
+                        $hasCond = true;
+                    }
+                    if (! $hasCond) {
+                        $q->whereRaw('1 = 0');
+                    }
+                })
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id);
+        }
+
+        if (isset($tables['cbt_student_attempts'])) {
+            $cbtAttemptIds = DB::table('cbt_student_attempts')
+                ->where(function ($q) use ($tenantId, $sessIds, $siswaIds, $allSchoolUserIds) {
+                    $hasCond = false;
+                    if ($tenantId !== null && Schema::hasColumn('cbt_student_attempts', 'tenant_id')) {
+                        $q->orWhere('tenant_id', $tenantId);
+                        $hasCond = true;
+                    }
+                    if ($sessIds->isNotEmpty() && Schema::hasColumn('cbt_student_attempts', 'session_id')) {
+                        $q->orWhereIn('session_id', $sessIds);
+                        $hasCond = true;
+                    }
+                    if ($siswaIds->isNotEmpty() && Schema::hasColumn('cbt_student_attempts', 'siswa_id')) {
+                        $q->orWhereIn('siswa_id', $siswaIds);
+                        $hasCond = true;
+                    }
+                    if ($allSchoolUserIds->isNotEmpty() && Schema::hasColumn('cbt_student_attempts', 'user_id')) {
+                        $q->orWhereIn('user_id', $allSchoolUserIds);
+                        $hasCond = true;
+                    }
+                    if (! $hasCond) {
+                        $q->whereRaw('1 = 0');
+                    }
+                })
+                ->pluck('id');
+
+            if ($cbtAttemptIds->isNotEmpty()) {
+                if (isset($tables['cbt_student_answers']) && Schema::hasColumn('cbt_student_answers', 'attempt_id')) {
+                    DB::table('cbt_student_answers')->whereIn('attempt_id', $cbtAttemptIds)->delete();
+                    $cleaned[] = $tables['cbt_student_answers'];
+                }
+                DB::table('cbt_student_attempts')->whereIn('id', $cbtAttemptIds)->delete();
+                $cleaned[] = $tables['cbt_student_attempts'];
             }
         }
+
+        if ($bankIds->isNotEmpty() && isset($tables['cbt_questions']) && Schema::hasColumn('cbt_questions', 'bank_id')) {
+            $qIds = DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->pluck('id');
+            if ($qIds->isNotEmpty() && isset($tables['cbt_student_answers']) && Schema::hasColumn('cbt_student_answers', 'question_id')) {
+                DB::table('cbt_student_answers')->whereIn('question_id', $qIds)->delete();
+                $cleaned[] = $tables['cbt_student_answers'];
+            }
+        }
+
         if (isset($tables['cbt_results'])) {
             $cbtResultIds = DB::table('cbt_results')
-                ->where(function ($q) use ($tenantId, $siswaIds, $allSchoolUserIds) {
+                ->where(function ($q) use ($tenantId, $sessIds, $siswaIds, $allSchoolUserIds) {
                     $hasCond = false;
                     if ($tenantId !== null && Schema::hasColumn('cbt_results', 'tenant_id')) {
                         $q->orWhere('tenant_id', $tenantId);
+                        $hasCond = true;
+                    }
+                    if ($sessIds->isNotEmpty() && Schema::hasColumn('cbt_results', 'session_id')) {
+                        $q->orWhereIn('session_id', $sessIds);
                         $hasCond = true;
                     }
                     if ($siswaIds->isNotEmpty() && Schema::hasColumn('cbt_results', 'siswa_id')) {
@@ -346,12 +462,47 @@ class SchoolDataResetService
                 })
                 ->pluck('id');
 
-            if ($cbtResultIds->isNotEmpty() && isset($tables['cbt_violations']) && Schema::hasColumn('cbt_violations', 'result_id')) {
-                DB::table('cbt_violations')->whereIn('result_id', $cbtResultIds)->delete();
+            if ($cbtResultIds->isNotEmpty()) {
+                if (isset($tables['cbt_violations']) && Schema::hasColumn('cbt_violations', 'result_id')) {
+                    DB::table('cbt_violations')->whereIn('result_id', $cbtResultIds)->delete();
+                    $cleaned[] = $tables['cbt_violations'];
+                }
+                DB::table('cbt_results')->whereIn('id', $cbtResultIds)->delete();
+                $cleaned[] = $tables['cbt_results'];
+            }
+        }
+
+        if ($sessIds->isNotEmpty() && isset($tables['cbt_test_sessions'])) {
+            DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
+            $cleaned[] = $tables['cbt_test_sessions'];
+        }
+        if ($bankIds->isNotEmpty()) {
+            if (isset($tables['cbt_questions']) && Schema::hasColumn('cbt_questions', 'bank_id')) {
+                DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
+                $cleaned[] = $tables['cbt_questions'];
+            }
+            if (isset($tables['cbt_question_banks'])) {
+                DB::table('cbt_question_banks')->whereIn('id', $bankIds)->delete();
+                $cleaned[] = $tables['cbt_question_banks'];
             }
         }
 
         // ── Tryout ──
+        if (isset($tables['tryout_sessions'])) {
+            $tryoutSessionIds = $this->scopedIds('tryout_sessions', $tenantId, 'guru_id', $allSchoolUserIds, $rombelIds);
+            if ($tryoutSessionIds->isNotEmpty()) {
+                if (isset($tables['tryout_student_answers']) && Schema::hasColumn('tryout_student_answers', 'tryout_session_id')) {
+                    DB::table('tryout_student_answers')->whereIn('tryout_session_id', $tryoutSessionIds)->delete();
+                    $cleaned[] = $tables['tryout_student_answers'];
+                }
+                if (isset($tables['tryout_results']) && Schema::hasColumn('tryout_results', 'tryout_session_id')) {
+                    DB::table('tryout_results')->whereIn('tryout_session_id', $tryoutSessionIds)->delete();
+                    $cleaned[] = $tables['tryout_results'];
+                }
+                DB::table('tryout_sessions')->whereIn('id', $tryoutSessionIds)->delete();
+                $cleaned[] = $tables['tryout_sessions'];
+            }
+        }
         if (isset($tables['tryout_packages']) && Schema::hasColumn('tryout_packages', 'tenant_id')) {
             $pkgIds = DB::table('tryout_packages')->where('tenant_id', $tenantId)->pluck('id');
             if ($pkgIds->isNotEmpty() && isset($tables['tryout_subjects'])) {
@@ -360,50 +511,64 @@ class SchoolDataResetService
                     $qIds = DB::table('tryout_questions')->whereIn('tryout_subject_id', $subjIds)->pluck('id');
                     if ($qIds->isNotEmpty() && isset($tables['tryout_question_options'])) {
                         DB::table('tryout_question_options')->whereIn('question_id', $qIds)->delete();
+                        $cleaned[] = $tables['tryout_question_options'];
                     }
                     DB::table('tryout_questions')->whereIn('id', $qIds)->delete();
+                    $cleaned[] = $tables['tryout_questions'];
                 }
                 DB::table('tryout_subjects')->whereIn('id', $subjIds)->delete();
-            }
-        }
-        if (isset($tables['tryout_sessions'])) {
-            $tryoutSessionIds = $this->scopedIds('tryout_sessions', $tenantId, 'guru_id', $allSchoolUserIds, $rombelIds);
-            if ($tryoutSessionIds->isNotEmpty() && isset($tables['tryout_student_answers']) && Schema::hasColumn('tryout_student_answers', 'tryout_session_id')) {
-                DB::table('tryout_student_answers')->whereIn('tryout_session_id', $tryoutSessionIds)->delete();
+                $cleaned[] = $tables['tryout_subjects'];
             }
         }
 
         // ── TKA ──
         if (isset($tables['tka_student_assessments'])) {
             $tkaIds = $this->scopedIds('tka_student_assessments', $tenantId, 'guru_id', $allSchoolUserIds, collect(), $siswaIds);
-            if ($tkaIds->isNotEmpty() && isset($tables['tka_assessment_responses']) && Schema::hasColumn('tka_assessment_responses', 'assessment_id')) {
-                DB::table('tka_assessment_responses')->whereIn('assessment_id', $tkaIds)->delete();
+            if ($tkaIds->isNotEmpty()) {
+                if (isset($tables['tka_assessment_responses']) && Schema::hasColumn('tka_assessment_responses', 'assessment_id')) {
+                    DB::table('tka_assessment_responses')->whereIn('assessment_id', $tkaIds)->delete();
+                    $cleaned[] = $tables['tka_assessment_responses'];
+                }
+                if (isset($tables['tka_parent_reports']) && Schema::hasColumn('tka_parent_reports', 'assessment_id')) {
+                    DB::table('tka_parent_reports')->whereIn('assessment_id', $tkaIds)->delete();
+                    $cleaned[] = $tables['tka_parent_reports'];
+                }
             }
         }
 
         // ── Exam Engine ──
-        if (isset($tables['exam_banks'])) {
-            $examBankIds = $this->scopedIds('exam_banks', $tenantId, 'guru_id', $allSchoolUserIds);
-            if ($examBankIds->isNotEmpty()) {
-                if (isset($tables['exam_questions']) && Schema::hasColumn('exam_questions', 'bank_id')) {
-                    $examQIds = DB::table('exam_questions')->whereIn('bank_id', $examBankIds)->pluck('id');
-                    if ($examQIds->isNotEmpty() && isset($tables['exam_question_options'])) {
-                        DB::table('exam_question_options')->whereIn('question_id', $examQIds)->delete();
-                    }
-                    DB::table('exam_questions')->whereIn('id', $examQIds)->delete();
-                }
-                if (isset($tables['exam_sections']) && Schema::hasColumn('exam_sections', 'bank_id')) {
-                    DB::table('exam_sections')->whereIn('bank_id', $examBankIds)->delete();
-                }
-            }
-        }
         if (isset($tables['exam_attempts'])) {
             $attemptIds = $this->scopedIds('exam_attempts', $tenantId, 'user_id', $allSchoolUserIds, collect(), $siswaIds);
             if ($attemptIds->isNotEmpty()) {
                 foreach (['exam_answers', 'exam_results', 'exam_violations'] as $childTbl) {
                     if (isset($tables[$childTbl]) && Schema::hasColumn($childTbl, 'attempt_id')) {
                         DB::table($childTbl)->whereIn('attempt_id', $attemptIds)->delete();
+                        $cleaned[] = $tables[$childTbl];
                     }
+                }
+                DB::table('exam_attempts')->whereIn('id', $attemptIds)->delete();
+                $cleaned[] = $tables['exam_attempts'];
+            }
+        }
+        if (isset($tables['exam_banks'])) {
+            $examBankIds = $this->scopedIds('exam_banks', $tenantId, 'guru_id', $allSchoolUserIds);
+            if ($examBankIds->isNotEmpty()) {
+                if (isset($tables['exam_sessions']) && Schema::hasColumn('exam_sessions', 'bank_id')) {
+                    DB::table('exam_sessions')->whereIn('bank_id', $examBankIds)->delete();
+                    $cleaned[] = $tables['exam_sessions'];
+                }
+                if (isset($tables['exam_questions']) && Schema::hasColumn('exam_questions', 'bank_id')) {
+                    $examQIds = DB::table('exam_questions')->whereIn('bank_id', $examBankIds)->pluck('id');
+                    if ($examQIds->isNotEmpty() && isset($tables['exam_question_options'])) {
+                        DB::table('exam_question_options')->whereIn('question_id', $examQIds)->delete();
+                        $cleaned[] = $tables['exam_question_options'];
+                    }
+                    DB::table('exam_questions')->whereIn('id', $examQIds)->delete();
+                    $cleaned[] = $tables['exam_questions'];
+                }
+                if (isset($tables['exam_sections']) && Schema::hasColumn('exam_sections', 'bank_id')) {
+                    DB::table('exam_sections')->whereIn('bank_id', $examBankIds)->delete();
+                    $cleaned[] = $tables['exam_sections'];
                 }
             }
         }
@@ -413,8 +578,45 @@ class SchoolDataResetService
             $projekIds = DB::table('p5_projek')->whereIn('koordinator_id', $allSchoolUserIds)->pluck('id');
             if ($projekIds->isNotEmpty() && isset($tables['p5_siswa']) && Schema::hasColumn('p5_siswa', 'projek_id')) {
                 DB::table('p5_siswa')->whereIn('projek_id', $projekIds)->delete();
+                $cleaned[] = $tables['p5_siswa'];
             }
         }
+
+        // ── Rantai anak ber-FK RESTRICT/NO ACTION sebelum jadwal_pelajaran, rombel & mata_pelajaran ──
+        foreach ($orderedTables as $lowerKey) {
+            if (! isset($tables[$lowerKey])) {
+                continue;
+            }
+            $actual = $tables[$lowerKey];
+            $touched = false;
+
+            if (Schema::hasColumn($actual, 'tenant_id')) {
+                DB::table($actual)->where('tenant_id', $tenantId)->delete();
+                $touched = true;
+            }
+            if ($siswaIds->isNotEmpty() && Schema::hasColumn($actual, 'siswa_id')) {
+                DB::table($actual)->whereIn('siswa_id', $siswaIds)->delete();
+                $touched = true;
+            }
+            if ($rombelIds->isNotEmpty() && Schema::hasColumn($actual, 'rombel_id')) {
+                DB::table($actual)->whereIn('rombel_id', $rombelIds)->delete();
+                $touched = true;
+            }
+            if ($allSchoolUserIds->isNotEmpty()) {
+                foreach (['guru_id', 'user_id', 'orang_tua_id', 'created_by', 'koordinator_id', 'dibuat_oleh'] as $col) {
+                    if (Schema::hasColumn($actual, $col)) {
+                        DB::table($actual)->whereIn($col, $allSchoolUserIds)->delete();
+                        $touched = true;
+                    }
+                }
+            }
+
+            if ($touched) {
+                $cleaned[] = $actual;
+            }
+        }
+
+        return $cleaned;
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Models\Siswa;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ApiKeyController extends Controller
 {
@@ -44,17 +45,23 @@ class ApiKeyController extends Controller
     public function store(Request $request)
     {
         $this->tenantId();
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'akses' => 'required|string|in:dapodik:import,presensi:import,dapodik:import,presensi:import',
-        ]);
-
         $mapAkses = [
             'dapodik:import' => ['dapodik:import'],
             'presensi:import' => ['presensi:import'],
             'dapodik:import,presensi:import' => ['dapodik:import', 'presensi:import'],
+            'semua' => ['dapodik:import', 'presensi:import'],
         ];
-        $result = ApiKey::generate(auth()->id(), (string) $request->input('name'), (array) ($mapAkses[$request->input('akses')] ?? ['dapodik:import']));
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'akses' => ['required', 'string', Rule::in(array_keys($mapAkses))],
+        ]);
+
+        $result = ApiKey::generate(
+            auth()->id(),
+            (string) $validated['name'],
+            $mapAkses[$validated['akses']]
+        );
 
         return redirect()->route('admin.api-keys.index')
             ->with('success', 'API Key berhasil dibuat.')

@@ -118,8 +118,8 @@ class AppServiceProvider extends ServiceProvider
         // dan sinkronisasi memakai rantai hash yang sama.
         NilaiErapot::observe(NilaiErapotObserver::class);
 
-        // Share activeTab with all views for admin routes
-        View::share('activeTab', activeAdminTab());
+        // Share activeTab fallback, dan evaluasi ulang di View::composer saat route sudah cocok
+        View::share('activeTab', 'setup');
 
         // Sediakan data user layout dan identitas sekolah tenant (dengan cache 5 menit)
         // agar layout tidak menjalankan query berulang di tiap halaman.
@@ -149,76 +149,75 @@ class AppServiceProvider extends ServiceProvider
             }
 
             // Nama sekolah dinamis sesuai tenant sekolah yang sedang aktif/login
-            $namaSekolah = 'UPTD SDN Unggulan Mongisidi 1';
-            if ($user) {
-                if ($user->peran === 'super_admin') {
-                    $namaSekolah = 'Administrator Sistem';
-                } elseif (! empty($user->tenant_id)) {
-                    $tenantId = (int) $user->tenant_id;
-                    $namaSekolah = Cache::remember(
-                        'tenant-nama-'.$tenantId,
-                        300,
-                        function () use ($tenantId) {
-                            $tenant = Tenant::query()->find($tenantId);
-                            if ($tenant && ! empty($tenant->nama_sekolah)) {
-                                return $tenant->nama_sekolah;
-                            }
-                            $settings = SekolahSettings::query()->where('tenant_id', $tenantId)->first(['nama_sekolah']);
+            $defaultNamaSekolah = config('app.name', 'SIMANTAP');
+            $namaSekolah = $defaultNamaSekolah;
+            $activeTenantId = TenantContext::check()
+                ? (int) TenantContext::id()
+                : (! empty($user?->tenant_id) ? (int) $user->tenant_id : null);
 
-                            return $settings->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
-                        }
-                    );
-                } else {
-                    $namaSekolah = Cache::remember(
-                        'root-sekolah-nama',
-                        300,
-                        function () {
-                            $settings = SekolahSettings::query()->first(['nama_sekolah']);
-
-                            return $settings->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
-                        }
-                    );
-                }
-            } elseif (TenantContext::check()) {
-                $tenantId = TenantContext::id();
+            if ($user && $user->peran === 'super_admin' && ! TenantContext::check()) {
+                $namaSekolah = 'Administrator Sistem';
+            } elseif ($activeTenantId !== null) {
                 $namaSekolah = Cache::remember(
-                    'tenant-nama-'.$tenantId,
+                    'tenant-nama-'.$activeTenantId,
                     300,
-                    function () use ($tenantId) {
-                        $tenant = Tenant::query()->find($tenantId);
+                    function () use ($activeTenantId, $defaultNamaSekolah) {
+                        $settings = SekolahSettings::withoutGlobalScopes()
+                            ->where('tenant_id', $activeTenantId)
+                            ->first(['nama_sekolah']);
+                        if ($settings && ! empty($settings->nama_sekolah) && ! in_array($settings->nama_sekolah, ['SIMANTAP', 'SIMANTAP_MONSA'], true)) {
+                            return $settings->nama_sekolah;
+                        }
 
-                        return $tenant->nama_sekolah ?? 'UPTD SDN Unggulan Mongisidi 1';
+                        $tenant = Tenant::query()->find($activeTenantId);
+                        if ($tenant && ! empty($tenant->nama_sekolah)) {
+                            return $tenant->nama_sekolah;
+                        }
+
+                        return $settings->nama_sekolah ?? $defaultNamaSekolah;
+                    }
+                );
+            } elseif ($user) {
+                $namaSekolah = Cache::remember(
+                    'root-sekolah-nama',
+                    300,
+                    function () use ($defaultNamaSekolah) {
+                        $settings = SekolahSettings::query()->first(['nama_sekolah']);
+
+                        return $settings->nama_sekolah ?? $defaultNamaSekolah;
                     }
                 );
             }
 
-            $view->with('layoutUser', $user)
+            $view->with('activeTab', activeAdminTab())
+                ->with('layoutUser', $user)
                 ->with('layoutUserFoto', $foto)
                 ->with('layoutNamaSekolah', $namaSekolah);
         });
 
         // Nama sekolah dinamis di halaman login (terutama saat diakses via subdomain sekolah)
         View::composer('auth.login', function ($view) {
-            $namaSekolah = 'UPTD SD Negeri Unggulan Mongisidi 1';
+            $defaultNamaSekolah = config('app.name', 'SIMANTAP');
+            $namaSekolah = $defaultNamaSekolah;
             if (TenantContext::check()) {
                 $tenantId = TenantContext::id();
                 $namaSekolah = Cache::remember(
                     'tenant-nama-'.$tenantId,
                     300,
-                    function () use ($tenantId) {
+                    function () use ($tenantId, $defaultNamaSekolah) {
                         $tenant = Tenant::query()->find($tenantId);
 
-                        return $tenant->nama_sekolah ?? 'UPTD SD Negeri Unggulan Mongisidi 1';
+                        return $tenant->nama_sekolah ?? $defaultNamaSekolah;
                     }
                 );
             } else {
                 $namaSekolah = Cache::remember(
                     'root-sekolah-nama',
                     300,
-                    function () {
+                    function () use ($defaultNamaSekolah) {
                         $settings = SekolahSettings::query()->first(['nama_sekolah']);
 
-                        return $settings->nama_sekolah ?? 'UPTD SD Negeri Unggulan Mongisidi 1';
+                        return $settings->nama_sekolah ?? $defaultNamaSekolah;
                     }
                 );
             }

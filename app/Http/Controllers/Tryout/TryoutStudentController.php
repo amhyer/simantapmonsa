@@ -256,16 +256,25 @@ class TryoutStudentController extends Controller
         $siswa = null;
         $ids = array_map('intval', (array) ($user->terhubung_dengan ?? []));
         if ($ids !== []) {
-            $siswa = Siswa::whereIn('id', $ids)->first();
+            $siswa = Siswa::whereIn('id', $ids)
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->first();
         }
 
         if (! $siswa) {
-            $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
+            $siswa = Siswa::where('nis', $user->nama_pengguna)
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->first();
         }
 
         if (! $siswa) {
             $cleanedNis = preg_replace('/^siswa/i', '', (string) $user->nama_pengguna);
-            $siswa = Siswa::where(fn ($q) => $q->where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna))->first();
+            $siswa = Siswa::where('aktif', true)
+                ->whereNull('archived_at')
+                ->where(fn ($q) => $q->where('nis', $cleanedNis)->orWhere('nisn', (string) $user->nama_pengguna))
+                ->first();
         }
 
         return $siswa;

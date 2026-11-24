@@ -260,14 +260,14 @@ class TenantController extends Controller
 
             // 1. Urutan topologis child-to-parent (wajib agar aman terhadap RESTRICT/NO ACTION di PostgreSQL)
             $orderedChildTables = [
-                'cbt_violations', 'cbt_student_answers', 'cbt_student_attempts', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
+                'cbt_student_answers', 'cbt_student_attempts', 'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
                 'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages',
                 'tka_assessment_responses', 'tka_parent_reports', 'tka_early_warnings', 'tka_historical_tracking', 'tka_student_assessments', 'tka_assessment_items', 'tka_dimensions_enhanced',
                 'exam_answers', 'exam_results', 'exam_violations', 'exam_attempts', 'exam_sessions', 'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks',
                 'presensi_sesi_qr', 'presensi_pegawai', 'pengajuan_izin_presensi',
                 'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler',
                 'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'kehadiran', 'catatan', 'dimensi', 'kebiasaan',
-                'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'semesters',
+                'anggota_rombel', 'pembelajaran', 'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'mata_pelajaran', 'semesters',
             ];
 
             $deleteScoped = function (string $tbl) use ($tenantId, $siswaIds, $rombelIds, $userIds): void {
@@ -289,24 +289,8 @@ class TenantController extends Controller
                 }
             };
 
-            // Bersihkan tabel cucu yang tidak memiliki tenant_id/siswa_id/user_id langsung
-            if (isset($tables['cbt_question_banks'], $tables['cbt_questions']) && Schema::hasColumn('cbt_question_banks', 'tenant_id')) {
-                $bankIds = DB::table('cbt_question_banks')->where('tenant_id', $tenantId)->pluck('id')->all();
-                if ($bankIds !== []) {
-                    if (isset($tables['cbt_test_sessions']) && Schema::hasColumn('cbt_test_sessions', 'bank_id')) {
-                        $sessIds = DB::table('cbt_test_sessions')->whereIn('bank_id', $bankIds)->pluck('id')->all();
-                        if ($sessIds !== [] && isset($tables['cbt_results'])) {
-                            $resIds = DB::table('cbt_results')->whereIn('session_id', $sessIds)->pluck('id')->all();
-                            if ($resIds !== [] && isset($tables['cbt_violations'])) {
-                                DB::table('cbt_violations')->whereIn('result_id', $resIds)->delete();
-                            }
-                            DB::table('cbt_results')->whereIn('id', $resIds)->delete();
-                        }
-                        DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
-                    }
-                    DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
-                }
-            }
+            // Bersihkan rantai CBT child-to-parent secara eksplisit sebelum menyentuh cbt_test_sessions & cbt_question_banks
+            $this->cleanCbtHierarchy($tenantId, $userIds, $siswaIds);
 
             foreach ($orderedChildTables as $tblKey) {
                 if (isset($tables[$tblKey])) {
@@ -373,32 +357,14 @@ class TenantController extends Controller
             }
         }
 
-        // Hapus tabel anak ber-FK RESTRICT/NO ACTION dalam urutan child-to-parent
-        if (Schema::hasTable('cbt_question_banks') && Schema::hasColumn('cbt_question_banks', 'guru_id')) {
-            $bankIds = DB::table('cbt_question_banks')->whereIn('guru_id', $userIds)->pluck('id')->all();
-            if ($bankIds !== []) {
-                if (Schema::hasTable('cbt_test_sessions')) {
-                    $sessIds = DB::table('cbt_test_sessions')->whereIn('bank_id', $bankIds)->pluck('id')->all();
-                    if ($sessIds !== [] && Schema::hasTable('cbt_results')) {
-                        $resIds = DB::table('cbt_results')->whereIn('session_id', $sessIds)->pluck('id')->all();
-                        if ($resIds !== [] && Schema::hasTable('cbt_violations')) {
-                            DB::table('cbt_violations')->whereIn('result_id', $resIds)->delete();
-                        }
-                        DB::table('cbt_results')->whereIn('id', $resIds)->delete();
-                    }
-                    DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
-                }
-                if (Schema::hasTable('cbt_questions')) {
-                    DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
-                }
-                DB::table('cbt_question_banks')->whereIn('id', $bankIds)->delete();
-            }
-        }
+        // Hapus rantai CBT ber-FK RESTRICT/NO ACTION dalam urutan ketat:
+        // cbt_student_answers -> cbt_student_attempts -> cbt_violations -> cbt_results -> cbt_test_sessions -> cbt_questions -> cbt_question_banks
+        $this->cleanCbtHierarchy(null, $userIds, []);
 
         $directDeleteRefs = [
+            'cbt_student_attempts' => ['user_id'],
             'cbt_results' => ['user_id'],
             'cbt_test_sessions' => ['guru_id'],
-            'cbt_student_attempts' => ['user_id'],
             'presensi_sesi_qr' => ['guru_id'],
             'pengajuan_izin_presensi' => ['orang_tua_id', 'diproses_oleh'],
             'presensi_pegawai' => ['user_id'],
@@ -418,13 +384,162 @@ class TenantController extends Controller
         }
     }
 
+    /**
+     * Hapus rantai tabel CBT secara berurutan (child-to-parent) agar aman terhadap
+     * FK RESTRICT/NO ACTION di PostgreSQL baik saat menghapus tenant maupun user.
+     *
+     * @param  array<int, int>  $userIds
+     * @param  array<int, int>  $siswaIds
+     */
+    private function cleanCbtHierarchy(?int $tenantId, array $userIds, array $siswaIds): void
+    {
+        $bankIds = [];
+        if (Schema::hasTable('cbt_question_banks')) {
+            $bankQuery = DB::table('cbt_question_banks')->where(function ($q) use ($tenantId, $userIds) {
+                $matched = false;
+                if ($tenantId !== null && Schema::hasColumn('cbt_question_banks', 'tenant_id')) {
+                    $q->orWhere('tenant_id', $tenantId);
+                    $matched = true;
+                }
+                if ($userIds !== [] && Schema::hasColumn('cbt_question_banks', 'guru_id')) {
+                    $q->orWhereIn('guru_id', $userIds);
+                    $matched = true;
+                }
+                if (! $matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+            $bankIds = $bankQuery->pluck('id')->all();
+        }
+
+        $sessIds = [];
+        if (Schema::hasTable('cbt_test_sessions')) {
+            $sessQuery = DB::table('cbt_test_sessions')->where(function ($q) use ($tenantId, $userIds, $bankIds) {
+                $matched = false;
+                if ($tenantId !== null && Schema::hasColumn('cbt_test_sessions', 'tenant_id')) {
+                    $q->orWhere('tenant_id', $tenantId);
+                    $matched = true;
+                }
+                if ($bankIds !== [] && Schema::hasColumn('cbt_test_sessions', 'bank_id')) {
+                    $q->orWhereIn('bank_id', $bankIds);
+                    $matched = true;
+                }
+                if ($userIds !== [] && Schema::hasColumn('cbt_test_sessions', 'guru_id')) {
+                    $q->orWhereIn('guru_id', $userIds);
+                    $matched = true;
+                }
+                if (! $matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+            $sessIds = $sessQuery->pluck('id')->all();
+        }
+
+        if (Schema::hasTable('cbt_student_attempts')) {
+            $attemptIds = DB::table('cbt_student_attempts')->where(function ($q) use ($tenantId, $sessIds, $userIds, $siswaIds) {
+                $matched = false;
+                if ($tenantId !== null && Schema::hasColumn('cbt_student_attempts', 'tenant_id')) {
+                    $q->orWhere('tenant_id', $tenantId);
+                    $matched = true;
+                }
+                if ($sessIds !== [] && Schema::hasColumn('cbt_student_attempts', 'session_id')) {
+                    $q->orWhereIn('session_id', $sessIds);
+                    $matched = true;
+                }
+                if ($userIds !== [] && Schema::hasColumn('cbt_student_attempts', 'user_id')) {
+                    $q->orWhereIn('user_id', $userIds);
+                    $matched = true;
+                }
+                if ($siswaIds !== [] && Schema::hasColumn('cbt_student_attempts', 'siswa_id')) {
+                    $q->orWhereIn('siswa_id', $siswaIds);
+                    $matched = true;
+                }
+                if (! $matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            })->pluck('id')->all();
+
+            if ($attemptIds !== []) {
+                if (Schema::hasTable('cbt_student_answers') && Schema::hasColumn('cbt_student_answers', 'attempt_id')) {
+                    DB::table('cbt_student_answers')->whereIn('attempt_id', $attemptIds)->delete();
+                }
+                DB::table('cbt_student_attempts')->whereIn('id', $attemptIds)->delete();
+            }
+        }
+
+        if ($bankIds !== [] && Schema::hasTable('cbt_questions')) {
+            $qIds = DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->pluck('id')->all();
+            if ($qIds !== [] && Schema::hasTable('cbt_student_answers') && Schema::hasColumn('cbt_student_answers', 'question_id')) {
+                DB::table('cbt_student_answers')->whereIn('question_id', $qIds)->delete();
+            }
+        }
+
+        if (Schema::hasTable('cbt_results')) {
+            $resIds = DB::table('cbt_results')->where(function ($q) use ($tenantId, $sessIds, $userIds, $siswaIds) {
+                $matched = false;
+                if ($tenantId !== null && Schema::hasColumn('cbt_results', 'tenant_id')) {
+                    $q->orWhere('tenant_id', $tenantId);
+                    $matched = true;
+                }
+                if ($sessIds !== [] && Schema::hasColumn('cbt_results', 'session_id')) {
+                    $q->orWhereIn('session_id', $sessIds);
+                    $matched = true;
+                }
+                if ($userIds !== [] && Schema::hasColumn('cbt_results', 'user_id')) {
+                    $q->orWhereIn('user_id', $userIds);
+                    $matched = true;
+                }
+                if ($siswaIds !== [] && Schema::hasColumn('cbt_results', 'siswa_id')) {
+                    $q->orWhereIn('siswa_id', $siswaIds);
+                    $matched = true;
+                }
+                if (! $matched) {
+                    $q->whereRaw('1 = 0');
+                }
+            })->pluck('id')->all();
+
+            if ($resIds !== []) {
+                if (Schema::hasTable('cbt_violations') && Schema::hasColumn('cbt_violations', 'result_id')) {
+                    DB::table('cbt_violations')->whereIn('result_id', $resIds)->delete();
+                }
+                DB::table('cbt_results')->whereIn('id', $resIds)->delete();
+            }
+        }
+
+        if ($sessIds !== [] && Schema::hasTable('cbt_test_sessions')) {
+            DB::table('cbt_test_sessions')->whereIn('id', $sessIds)->delete();
+        }
+
+        if ($bankIds !== []) {
+            if (Schema::hasTable('cbt_questions')) {
+                DB::table('cbt_questions')->whereIn('bank_id', $bankIds)->delete();
+            }
+            if (Schema::hasTable('cbt_question_banks')) {
+                DB::table('cbt_question_banks')->whereIn('id', $bankIds)->delete();
+            }
+        }
+    }
+
     public function store(Request $request)
     {
+        $request->merge([
+            'subdomain' => strtolower(trim((string) $request->input('subdomain', ''))),
+            'admin_email' => $request->filled('admin_email') ? strtolower(trim((string) $request->input('admin_email'))) : null,
+        ]);
+
         $validated = $request->validate([
             'npsn' => 'required|string|max:16|unique:tenants,npsn',
             'nama_sekolah' => 'required|string|max:255',
             'wilayah' => 'nullable|string|max:100',
-            'subdomain' => 'required|string|max:64|alpha_dash|unique:tenants,subdomain',
+            'subdomain' => [
+                'required',
+                'string',
+                'min:3',
+                'max:64',
+                'regex:/^[a-z0-9](?:[a-z0-9\-]{1,62}[a-z0-9])?$/',
+                Rule::notIn(\App\Http\Controllers\Auth\RegisterSekolahController::RESERVED_SUBDOMAINS),
+                'unique:tenants,subdomain',
+            ],
             'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom',
             'paket' => 'nullable|string|in:standar,pro,enterprise',
             'kuota_siswa' => 'nullable|integer|min:10|max:100000',

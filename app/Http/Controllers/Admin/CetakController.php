@@ -319,9 +319,15 @@ class CetakController extends Controller
             'hapus_ttd_wali' => 'nullable|array',
         ]);
 
+        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+            ?: config('app.name', 'SIMANTAP');
         $sekolah = SekolahSettings::firstOrCreate(
-            [],
-            ['nama_sekolah' => config('app.name', 'SIMANTAP')]
+            ['tenant_id' => $tenantId],
+            [
+                'guru_id' => auth()->id(),
+                'nama_sekolah' => $defaultNama,
+            ]
         );
         $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
         $current = self::ambilConfigRapor($sekolah);
@@ -487,7 +493,16 @@ class CetakController extends Controller
             'pts_tabel_ekskul' => 'required|in:0,1',
         ]);
 
-        $sekolah = SekolahSettings::firstOrCreate([], ['nama_sekolah' => config('app.name', 'SIMANTAP')]);
+        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+            ?: config('app.name', 'SIMANTAP');
+        $sekolah = SekolahSettings::firstOrCreate(
+            ['tenant_id' => $tenantId],
+            [
+                'guru_id' => auth()->id(),
+                'nama_sekolah' => $defaultNama,
+            ]
+        );
         $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
         $current = self::ambilTampilanRapor($sekolah);
 

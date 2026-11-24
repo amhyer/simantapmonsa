@@ -540,8 +540,8 @@
             <div class="kop-teks">
                 <h4>PEMERINTAH KOTA MAKASSAR</h4>
                 <h3>DINAS PENDIDIKAN</h3>
-                <h2>{{ $sekolah->nama_sekolah ?? 'UPTD SD NEGERI UNGGULAN MONGISIDI 1' }}</h2>
-                <p>{{ $sekolah->alamat ?? 'Jl. Mongisidi No. 1' }}, Kec. {{ $sekolah->kecamatan ?? 'Makassar' }}, Kota {{ $sekolah->kota ?? 'Makassar' }} | NPSN: {{ $sekolah->npsn ?? '-' }}</p>
+                <h2>{{ $sekolah->nama_sekolah ?? config('app.name', 'SIMANTAP') }}</h2>
+                <p>{{ $sekolah->alamat ?? '-' }}, Kec. {{ $sekolah->kecamatan ?? '-' }}, Kota {{ $sekolah->kota ?? '-' }} | NPSN: {{ $sekolah->npsn ?? '-' }}</p>
             </div>
         </div>
 

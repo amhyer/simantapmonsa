@@ -29,11 +29,17 @@
         <div style="background:#FAF5FF;border-bottom:1px solid #E9D5FF;padding:16px 30px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
             <div>
                 <span style="font-size:11.5px;font-weight:700;color:var(--violet);text-transform:uppercase;letter-spacing:0.5px">Token Ujian Simulasi</span>
-                <div style="font-size:12px;color:var(--muted)">Salin kode token di samping ke formulir di bawah</div>
+                <div style="font-size:12px;color:var(--muted)">
+                    {{ $token ? 'Salin kode token di samping ke formulir di bawah' : 'Masukkan kode token resmi dari Proktor / Guru Pengawas' }}
+                </div>
             </div>
-            <div style="font-family:monospace;font-size:20px;font-weight:900;letter-spacing:2px;color:var(--violet);background:#fff;border:1.5px dashed var(--violet);padding:6px 16px;border-radius:8px">
-                {{ $token }}
-            </div>
+            @if($token)
+                <div style="font-family:monospace;font-size:20px;font-weight:900;letter-spacing:2px;color:var(--violet);background:#fff;border:1.5px dashed var(--violet);padding:6px 16px;border-radius:8px">
+                    {{ $token }}
+                </div>
+            @else
+                <span class="tag tag-primary" style="font-weight:700">Token Pengawas Aktif</span>
+            @endif
         </div>
 
         {{-- Confirmation Form --}}
@@ -90,11 +96,11 @@
                                class="form-control" 
                                style="font-family:monospace;font-weight:800;font-size:16px;letter-spacing:1.5px;text-transform:uppercase" 
                                required 
-                               placeholder="{{ $token }}" 
-                               value="{{ old('token', $token) }}">
+                               placeholder="{{ $token ?: 'TKA-XXXXXXXX' }}" 
+                               value="{{ old('token', '') }}">
                     </div>
                     <small style="color:var(--muted);font-size:11.5px;margin-top:6px;display:block">
-                        Format token otomatis terisi sesuai sesi simulasi aktif Anda.
+                        {{ $token ? 'Ketik atau salin kode token sesi simulasi Anda untuk memulai ujian.' : 'Masukkan kode token yang diumumkan oleh pengawas ruangan.' }}
                     </small>
                 </div>
 

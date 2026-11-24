@@ -151,7 +151,7 @@ class DapodikTenantIsolationTest extends TestCase
         $keyB = ApiKey::generate($adminB->id, 'Rahasia Sekolah B')['model'];
 
         $this->actingAs($adminA)->get(route('admin.backup.index'))->assertStatus(503);
-        $this->actingAs($adminA)->get(route('admin.backup.export'))->assertStatus(503);
+        $this->actingAs($adminA)->post(route('admin.backup.export'))->assertStatus(503);
         $this->actingAs($adminA)->post(route('admin.backup.import'))->assertStatus(503);
         $this->actingAs($adminA)->post(route('admin.backup.wipe'))->assertStatus(503);
         $this->actingAs($adminA)->get(route('admin.log.index'))->assertStatus(503);

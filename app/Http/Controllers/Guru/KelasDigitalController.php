@@ -19,6 +19,7 @@ use App\Services\Elearning\KelasDigitalAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class KelasDigitalController extends Controller
 {
@@ -26,6 +27,13 @@ class KelasDigitalController extends Controller
         private readonly KelasDigitalAccessService $access,
         private readonly ElearningFileService $files,
     ) {}
+
+    private function tenantScope($guru): \Closure
+    {
+        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? $guru?->tenant_id;
+
+        return fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
+    }
 
     public function index()
     {
@@ -55,11 +63,12 @@ class KelasDigitalController extends Controller
     public function store(Request $request)
     {
         $guru = auth()->user();
+        $tenantScope = $this->tenantScope($guru);
 
         $validated = $request->validate([
             'nama_kelas' => 'required|string|max:180',
             'mata_pelajaran' => 'required|string|max:120',
-            'rombel_id' => 'nullable|integer|exists:rombel,id',
+            'rombel_id' => ['nullable', 'integer', Rule::exists('rombel', 'id')->where($tenantScope)],
             'kelas' => 'nullable|string|max:60|required_without:rombel_id',
             'deskripsi' => 'nullable|string|max:2000',
             'aktif' => 'nullable|boolean',
@@ -154,11 +163,12 @@ class KelasDigitalController extends Controller
     {
         $guru = auth()->user();
         $this->access->authorizeGuruKelas($guru, $kelasDigital);
+        $tenantScope = $this->tenantScope($guru);
 
         $validated = $request->validate([
             'nama_kelas' => 'required|string|max:180',
             'mata_pelajaran' => 'required|string|max:120',
-            'rombel_id' => 'nullable|integer|exists:rombel,id',
+            'rombel_id' => ['nullable', 'integer', Rule::exists('rombel', 'id')->where($tenantScope)],
             'kelas' => 'nullable|string|max:60|required_without:rombel_id',
             'deskripsi' => 'nullable|string|max:2000',
             'aktif' => 'nullable|boolean',
@@ -273,14 +283,15 @@ class KelasDigitalController extends Controller
         $guru = auth()->user();
         $this->access->authorizeGuruKelas($guru, $kelasDigital);
         abort_unless((int) $modul->kelas_digital_id === (int) $kelasDigital->id, 404);
+        $tenantScope = $this->tenantScope($guru);
 
         $validated = $request->validate([
             'judul' => 'required|string|max:200',
             'deskripsi' => 'nullable|string|max:2000',
             'tanggal' => 'nullable|date',
             'urutan' => 'nullable|integer|min:1|max:999',
-            'materi_id' => 'nullable|integer|exists:materi,id',
-            'kuis_id' => 'nullable|integer|exists:kuis,id',
+            'materi_id' => ['nullable', 'integer', Rule::exists('materi', 'id')->where($tenantScope)],
+            'kuis_id' => ['nullable', 'integer', Rule::exists('kuis', 'id')->where($tenantScope)],
             'dipublikasikan' => 'nullable|boolean',
         ]);
 

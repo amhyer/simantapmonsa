@@ -20,6 +20,12 @@ use Illuminate\Support\Facades\Schema;
  */
 class BackupRestoreService
 {
+    /** @var array<string, array<int, string>> */
+    private array $restoreColumns = [];
+
+    /** @var array<string, ?string> */
+    private array $restoreModels = [];
+
     /**
      * @return array{tidak_dikenal: array<int, string>, total: int, tabel: array<int, string>}
      */
@@ -101,73 +107,103 @@ class BackupRestoreService
             return 0;
         }
 
-        $kolom = Schema::getColumnListing($table);
-        $modelClass = BackupTables::model($table);
         $diproses = 0;
 
         foreach ($records as $record) {
-            if (! is_array($record)) {
-                continue;
-            }
-
-            $row = array_intersect_key($record, array_flip($kolom));
-
-            if ($row === []) {
-                continue;
-            }
-
-            $id = $row['id'] ?? null;
-
-            if ($table === 'users' && empty($row['kata_sandi'])) {
-                $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));
-                $row['force_password_change'] = true;
-            }
-
-            if ($modelClass) {
-                Model::unguarded(function () use ($modelClass, $id, $row) {
-                    $modelClass::withoutEvents(function () use ($modelClass, $id, $row) {
-                        $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
-
-                        if ($id !== null) {
-                            $query->updateOrCreate(['id' => $id], $row);
-                        } else {
-                            $modelClass::create($row);
-                        }
-                    });
-                });
-
+            if ($this->restoreRecord($table, $record)) {
                 $diproses++;
-
-                continue;
             }
-
-            // Tabel tanpa model Eloquent (pivot).
-            if ($id !== null) {
-                DB::table($table)->updateOrInsert(['id' => $id], $row);
-            } else {
-                DB::table($table)->insert($row);
-            }
-
-            $diproses++;
         }
 
-        $this->sinkronkanSequence($table, $kolom, $connection);
+        $this->sinkronkanSequence($table, null, $connection);
 
         return $diproses;
     }
 
     /**
-     * @param  array<int, string>  $kolom
+     * Restore satu baris record (dipakai baik oleh streaming import di BackupController
+     * maupun restore array penuh di BackupRestoreService::restoreTable).
      */
-    private function sinkronkanSequence(string $table, array $kolom, ?string $connection = null): void
+    public function restoreRecord(string $table, mixed $record): bool
     {
-        if (! in_array('id', $kolom, true)) {
-            return;
+        if (! is_array($record) || ! in_array($table, BackupTables::tabel(), true)) {
+            return false;
         }
 
+        if (! array_key_exists($table, $this->restoreColumns)) {
+            if (! Schema::hasTable($table)) {
+                $this->restoreColumns[$table] = [];
+                $this->restoreModels[$table] = null;
+            } else {
+                $this->restoreColumns[$table] = Schema::getColumnListing($table);
+                $this->restoreModels[$table] = BackupTables::model($table);
+            }
+        }
+
+        $kolom = $this->restoreColumns[$table];
+        if ($kolom === []) {
+            return false;
+        }
+
+        $modelClass = $this->restoreModels[$table];
+        $row = array_intersect_key($record, array_flip($kolom));
+
+        if ($row === []) {
+            return false;
+        }
+
+        $id = $row['id'] ?? null;
+
+        if ($table === 'users' && empty($row['kata_sandi'])) {
+            $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));
+            $row['force_password_change'] = true;
+        }
+
+        if ($modelClass) {
+            Model::unguarded(function () use ($modelClass, $id, $row): void {
+                $modelClass::withoutEvents(function () use ($modelClass, $id, $row): void {
+                    $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
+
+                    if ($id !== null) {
+                        $query->updateOrCreate(['id' => $id], $row);
+                    } else {
+                        $modelClass::create($row);
+                    }
+                });
+            });
+
+            return true;
+        }
+
+        // Tabel tanpa model Eloquent (pivot).
+        if ($id !== null) {
+            DB::table($table)->updateOrInsert(['id' => $id], $row);
+        } else {
+            DB::table($table)->insert($row);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<int, string>|null  $kolom
+     */
+    public function sinkronkanSequence(string $table, ?array $kolom = null, ?string $connection = null): void
+    {
         $db = $connection !== null ? DB::connection($connection) : DB::connection();
 
         if ($db->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        if ($kolom === null) {
+            if (! Schema::hasTable($table)) {
+                return;
+            }
+            $kolom = $this->restoreColumns[$table] ?? Schema::getColumnListing($table);
+        }
+
+        if (! in_array('id', $kolom, true)) {
             return;
         }
 

@@ -109,15 +109,24 @@ class InputNilaiController extends Controller
     public function simpanNilai(Request $request): JsonResponse
     {
         $user = Auth::user();
+        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? $user?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
 
         $validated = $request->validate([
             // 'UH' diterima demi kompatibilitas UI lama, lalu dinormalkan.
             'jenis' => ['required', 'string', Rule::in([...self::JENIS_VALID, 'UH'])],
             'judul_penilaian' => 'nullable|string|max:255',
             'nilai' => 'required|array',
-            'nilai.*.siswa_id' => 'required|exists:siswa,id',
+            'nilai.*.siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
             'nilai.*.nilai' => 'nullable|numeric|between:0,100',
         ]);
+
+        if ($request->filled('kelas') && Rombel::apakahTerkunciUntukKelas((string) $request->input('kelas'), $user->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Input nilai untuk kelas ini sedang dikunci oleh Admin Sekolah.',
+            ], 423);
+        }
 
         $jenis = $validated['jenis'] === 'UH' ? 'Ulangan Harian' : $validated['jenis'];
 
@@ -126,9 +135,23 @@ class InputNilaiController extends Controller
             $q->where('guru_id', $user->id)
                 ->orWhereNotNull('dapodik_id')
                 ->orWhereNull('guru_id');
-        })->where('aktif', true)->whereNull('archived_at')->get(['id', 'nama_peserta_didik']);
+        })->where('aktif', true)->whereNull('archived_at')->get(['id', 'nama_peserta_didik', 'kelas']);
         $ownedSiswaIds = $ownedSiswa->pluck('id')->toArray();
         $namaBySiswa = $ownedSiswa->pluck('nama_peserta_didik', 'id');
+        $kelasBySiswa = $ownedSiswa->pluck('kelas', 'id');
+
+        foreach ($validated['nilai'] as $item) {
+            if ($item['nilai'] === null || $item['nilai'] === '') {
+                continue;
+            }
+            $kelasSiswa = $kelasBySiswa[$item['siswa_id']] ?? null;
+            if ($kelasSiswa && Rombel::apakahTerkunciUntukKelas((string) $kelasSiswa, $user->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Input nilai untuk kelas {$kelasSiswa} sedang dikunci oleh Admin Sekolah.",
+                ], 423);
+            }
+        }
 
         DB::transaction(function () use ($validated, $user, $ownedSiswaIds, $namaBySiswa, $jenis, &$saved) {
             foreach ($validated['nilai'] as $item) {

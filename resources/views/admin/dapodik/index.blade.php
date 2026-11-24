@@ -429,7 +429,7 @@
     <div class="card" style="margin-bottom:20px">
         <div class="card-header">
             <h3><i class="fas fa-list" style="color:var(--navy)"></i> Daftar PTK</h3>
-            <span class="tag tag-secondary">{{ $isTenant ? 'Tidak tersedia' : $ptkList->count().' data' }}</span>
+            <span class="tag tag-secondary">{{ $ptkList->count().' data' }}</span>
         </div>
         <div class="card-body tight">
             @if($ptkList->count())
@@ -947,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rombel = '{{ $stats["rombel"] ?? 0 }}';
     const sinkronTerakhir = '{{ $stats["sinkron_terakhir"] ?? "" }}';
     document.getElementById('statTotalSiswa').textContent = fmtNumber(parseInt(totalSiswa));
-    document.getElementById('statPtk').textContent = isTenant ? 'PTK tidak tersedia / ' + fmtNumber(parseInt(guruUsers)) + ' akun' : fmtNumber(parseInt(ptk)) + ' / ' + fmtNumber(parseInt(guruUsers)) + ' akun';
+    document.getElementById('statPtk').textContent = fmtNumber(parseInt(ptk)) + ' / ' + fmtNumber(parseInt(guruUsers)) + ' akun';
     document.getElementById('statRombel').textContent = fmtNumber(parseInt(rombel));
     if (sinkronTerakhir) {
         const dt = new Date(sinkronTerakhir);

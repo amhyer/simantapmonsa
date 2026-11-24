@@ -24,8 +24,8 @@
             <img src="{{ asset('images/logo-128.png') }}" alt="Logo Sekolah" style="width:70px;height:70px;object-fit:cover">
             <div style="flex:1">
                 <h2 style="margin:0;font-size:18px;text-transform:uppercase;font-weight:700">PEMERINTAH KOTA MAKASSAR</h2>
-                <h3 style="margin:2px 0;font-size:16px;font-weight:800;text-transform:uppercase">{{ $sekolah->nama_sekolah ?? 'UPTD SD NEGERI UNGGULAN MONGISIDI 1' }}</h3>
-                <p style="margin:0;font-size:12px;color:#333">{{ $sekolah->alamat ?? 'Jl. Mongisidi No. 1' }}, Kec. {{ $sekolah->kecamatan ?? 'Makassar' }}, Kota {{ $sekolah->kota ?? 'Makassar' }} | NPSN: {{ $sekolah->npsn ?? '-' }}</p>
+                <h3 style="margin:2px 0;font-size:16px;font-weight:800;text-transform:uppercase">{{ $sekolah->nama_sekolah ?? config('app.name', 'SIMANTAP') }}</h3>
+                <p style="margin:0;font-size:12px;color:#333">{{ $sekolah->alamat ?? '-' }}, Kec. {{ $sekolah->kecamatan ?? '-' }}, Kota {{ $sekolah->kota ?? '-' }} | NPSN: {{ $sekolah->npsn ?? '-' }}</p>
             </div>
         </div>
         <div style="margin-top:14px;text-align:center">

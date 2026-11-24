@@ -25,7 +25,11 @@ trait HasSiswaLookup
 
         $ids = array_map('intval', (array) ($user->terhubung_dengan ?? []));
         if ($ids !== []) {
-            $siswa = Siswa::whereIn('id', $ids)->orderBy('id')->first();
+            $siswa = Siswa::whereIn('id', $ids)
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->orderBy('id')
+                ->first();
             if ($siswa) {
                 return $siswa;
             }
@@ -41,9 +45,11 @@ trait HasSiswaLookup
             return null;
         }
 
-        return Siswa::where(function ($q) use ($kandidatNis) {
-            $q->whereIn('nis', $kandidatNis)
-                ->orWhereIn('nisn', $kandidatNis);
-        })->orderBy('id')->first();
+        return Siswa::where('aktif', true)
+            ->whereNull('archived_at')
+            ->where(function ($q) use ($kandidatNis) {
+                $q->whereIn('nis', $kandidatNis)
+                    ->orWhereIn('nisn', $kandidatNis);
+            })->orderBy('id')->first();
     }
 }

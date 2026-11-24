@@ -462,7 +462,7 @@ class DapodikSyncService
                 }
 
                 // Determine username: prefer NIP, fallback NUPTK/NIK/dapodikId
-                $username = $nip ?? ($nuptk ?? ($nik ?? ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : rand(1000, 9999)))));
+                $username = $nip ?? ($nuptk ?? ($nik ?? ('gtk_'.($dapodikId ? substr(md5($dapodikId), 0, 8) : strtolower(Str::random(8))))));
                 if ($existing && $existing->nama_pengguna !== $username) {
                     // Ensure unique username
                     $base = $username;

@@ -117,9 +117,11 @@ class BackupController extends Controller
 
         fclose($stream);
 
+        $restoreService = app(\App\Services\BackupRestoreService::class);
+
         try {
-            NilaiErapotAuditService::tanpaAudit(function () use ($spools): void {
-                DB::transaction(function () use ($spools): void {
+            NilaiErapotAuditService::tanpaAudit(function () use ($spools, $restoreService): void {
+                DB::transaction(function () use ($spools, $restoreService): void {
                     foreach (BackupTables::tabel() as $table) {
                         if (! isset($spools[$table])) {
                             continue;
@@ -128,9 +130,9 @@ class BackupController extends Controller
                         rewind($spools[$table]);
                         while (($line = fgets($spools[$table])) !== false) {
                             $record = json_decode(rtrim($line, "\r\n"), true, 512, JSON_THROW_ON_ERROR);
-                            $this->restoreRecord($table, $record);
+                            $restoreService->restoreRecord($table, $record);
                         }
-                        $this->resetSequence($table);
+                        $restoreService->sinkronkanSequence($table);
                     }
                 });
             });
@@ -147,67 +149,6 @@ class BackupController extends Controller
 
         return redirect()->route('admin.backup.index')
             ->with('success', 'Data berhasil dipulihkan dari backup.');
-    }
-
-    /**
-     * Restore one streamed row inside the import transaction. Filtering against
-     * the live schema keeps backups from other releases backward-compatible.
-     */
-    protected function restoreRecord(string $table, mixed $record): void
-    {
-        if (! is_array($record) || ! in_array($table, BackupTables::tabel(), true)) {
-            return;
-        }
-
-        if (! array_key_exists($table, $this->restoreColumns)) {
-            if (! Schema::hasTable($table)) {
-                $this->restoreColumns[$table] = [];
-                $this->restoreModels[$table] = null;
-            } else {
-                $this->restoreColumns[$table] = Schema::getColumnListing($table);
-                $this->restoreModels[$table] = BackupTables::model($table);
-            }
-        }
-
-        $kolom = $this->restoreColumns[$table];
-        if ($kolom === []) {
-            return;
-        }
-        $modelClass = $this->restoreModels[$table];
-        $row = array_intersect_key($record, array_flip($kolom));
-        if ($row === []) {
-            return;
-        }
-
-        $id = $row['id'] ?? null;
-
-        // Export sengaja tidak menyertakan `kata_sandi`. Karena kolomnya
-        // NOT NULL, baris users yang dipulihkan tanpa sandi diberi sandi acak
-        // + wajib ganti saat login pertama (tidak ada akun tanpa sandi).
-        if ($table === 'users' && empty($row['kata_sandi'])) {
-            $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));
-            $row['force_password_change'] = true;
-        }
-
-        if ($modelClass) {
-            Model::unguarded(function () use ($modelClass, $id, $row): void {
-                $query = method_exists($modelClass, 'withTrashed') ? $modelClass::withTrashed() : $modelClass::query();
-                if ($id !== null) {
-                    $query->updateOrCreate(['id' => $id], $row);
-                } else {
-                    $modelClass::create($row);
-                }
-            });
-
-            return;
-        }
-
-        // Tabel tanpa model Eloquent (pivot).
-        if ($id !== null) {
-            DB::table($table)->updateOrInsert(['id' => $id], $row);
-        } else {
-            DB::table($table)->insert($row);
-        }
     }
 
     /** @param resource $stream */
@@ -232,24 +173,6 @@ class BackupController extends Controller
             if (is_resource($spool)) {
                 fclose($spool);
             }
-        }
-    }
-
-    /** Ensure PostgreSQL sequences remain above restored explicit IDs. */
-    private function resetSequence(string $table): void
-    {
-        if (DB::getDriverName() !== 'pgsql' || ! Schema::hasTable($table)) {
-            return;
-        }
-
-        if (! in_array('id', Schema::getColumnListing($table), true)) {
-            return;
-        }
-
-        $sequence = DB::selectOne('SELECT pg_get_serial_sequence(?, ?) AS seq', [$table, 'id'])?->seq;
-        if ($sequence) {
-            $maxId = (int) DB::table($table)->max('id');
-            DB::statement('SELECT setval(?, ?, ?)', [$sequence, max($maxId, 1), $maxId > 0]);
         }
     }
 

@@ -259,7 +259,7 @@
                 <h1><span class="dot"></span>SIMANTAP_MONSA</h1>
                 <p>
                     Situs Mandiri Terintegrasi Aplikasi Pembelajaran
-                    <span class="sub-sch">{{ $layoutNamaSekolah ?? 'UPTD SD Negeri Unggulan Mongisidi 1' }}</span>
+                    <span class="sub-sch">{{ $layoutNamaSekolah ?? config('app.name', 'SIMANTAP') }}</span>
                 </p>
             </div>
 

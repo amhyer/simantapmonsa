@@ -206,7 +206,7 @@ class DapodikResetTest extends TestCase
         $this->assertDatabaseMissing('siswa', ['id' => $siswaTrashedA->id]);
         $this->assertDatabaseMissing('rombel', ['id' => $rombelA->id]);
         $this->assertDatabaseMissing('ptk', ['id' => $ptkA->id]);
-        $this->assertDatabaseMissing('sekolah_settings', ['id' => $settingsA->id]);
+        $this->assertDatabaseHas('sekolah_settings', ['id' => $settingsA->id, 'nama_sekolah' => 'SD Negeri 1']);
         $this->assertDatabaseMissing('materi', ['id' => $materiA->id]);
         $this->assertDatabaseMissing('cbt_question_banks', ['id' => $bankA->id]);
         $this->assertDatabaseMissing('users', ['id' => $guruDapodikA->id]);

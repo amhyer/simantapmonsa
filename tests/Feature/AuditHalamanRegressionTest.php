@@ -161,7 +161,7 @@ class AuditHalamanRegressionTest extends TestCase
         ]);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.backup.export'))
+            ->post(route('admin.backup.export'))
             ->assertOk()
             ->assertJson(['success' => true]);
     }

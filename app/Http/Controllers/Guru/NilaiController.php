@@ -7,9 +7,11 @@ use App\Models\Nilai;
 use App\Models\PengaturanGuru;
 use App\Models\Rombel;
 use App\Models\Siswa;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Traits\SyncableToSheet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class NilaiController extends Controller
 {
@@ -67,8 +69,12 @@ class NilaiController extends Controller
 
     public function store(Request $request)
     {
+        $guru = auth()->user();
+        $tenantId = TenantContext::id() ?? $guru?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
+
         $validated = $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
+            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
             'tanggal' => 'required|date',
             'jenis' => 'required|in:Tugas,Ulangan Harian,Praktik,PTS,PAS',
             'judul_penilaian' => 'required|string|max:255',
@@ -76,13 +82,15 @@ class NilaiController extends Controller
             'nilai' => 'required|numeric|min:0|max:100',
         ]);
 
-        $guru = auth()->user();
         $siswa = Siswa::where('aktif', true)->whereNull('archived_at')->find($validated['siswa_id']);
         if (! $siswa) {
             return back()->withErrors(['siswa_id' => 'Siswa aktif tidak ditemukan.'])->withInput();
         }
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== $guru->id) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();
+        }
+        if ($siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas, $guru->id)) {
+            return back()->with('error', "Input nilai untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
 
         $nilai = Nilai::create([
@@ -108,7 +116,10 @@ class NilaiController extends Controller
         if ($nilai->guru_id !== auth()->id()) {
             abort(403);
         }
-        $siswa = Siswa::where('guru_id', auth()->id())->where('aktif', true)->get();
+        $siswa = Siswa::where(function ($q) use ($nilai) {
+            $q->where('guru_id', auth()->id())
+                ->orWhere('id', $nilai->siswa_id);
+        })->where('aktif', true)->orderBy('nama_peserta_didik')->get();
 
         return view('guru.nilai.edit', compact('nilai', 'siswa'));
     }
@@ -119,8 +130,12 @@ class NilaiController extends Controller
             abort(403);
         }
 
+        $guru = auth()->user();
+        $tenantId = TenantContext::id() ?? $guru?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
+
         $validated = $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
+            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
             'tanggal' => 'required|date',
             'jenis' => 'required|in:Tugas,Ulangan Harian,Praktik,PTS,PAS',
             'judul_penilaian' => 'required|string|max:255',
@@ -136,6 +151,9 @@ class NilaiController extends Controller
         // nilai tidak bisa dipindahkan ke siswa kelas/sekolah lain (IDOR).
         if (empty($siswa->dapodik_id) && $siswa->guru_id !== null && $siswa->guru_id !== auth()->id()) {
             return back()->withErrors(['siswa_id' => 'Siswa tidak ditemukan atau bukan milik Anda.'])->withInput();
+        }
+        if ($siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas, auth()->id())) {
+            return back()->with('error', "Input nilai untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
         $nilai->update([
             'siswa_id' => $validated['siswa_id'],
@@ -154,6 +172,10 @@ class NilaiController extends Controller
     {
         if ($nilai->guru_id !== auth()->id()) {
             abort(403);
+        }
+        $siswa = Siswa::find($nilai->siswa_id);
+        if ($siswa && $siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas, auth()->id())) {
+            return back()->with('error', "Penghapusan nilai untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.");
         }
         $nilai->delete();
 

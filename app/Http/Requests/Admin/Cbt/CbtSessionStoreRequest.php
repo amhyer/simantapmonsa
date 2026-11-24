@@ -17,9 +17,9 @@ class CbtSessionStoreRequest extends FormRequest
     {
         $tenantId = TenantContext::id() ?? $this->user()?->tenant_id;
         $tenantScope = function ($query) use ($tenantId): void {
-            if ($tenantId !== null) {
-                $query->where('tenant_id', $tenantId);
-            }
+            $tenantId !== null
+                ? $query->where('tenant_id', $tenantId)
+                : $query->whereNull('tenant_id');
         };
 
         return [
@@ -28,9 +28,9 @@ class CbtSessionStoreRequest extends FormRequest
                 'integer',
                 Rule::exists('users', 'id')->where(function ($query) use ($tenantId): void {
                     $query->where('peran', 'guru');
-                    if ($tenantId !== null) {
-                        $query->where('tenant_id', $tenantId);
-                    }
+                    $tenantId !== null
+                        ? $query->where('tenant_id', $tenantId)
+                        : $query->whereNull('tenant_id');
                 }),
             ],
             'bank_id' => ['required', 'integer', Rule::exists('cbt_question_banks', 'id')->where($tenantScope)],

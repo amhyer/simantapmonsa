@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Elearning\KelasDigitalPertemuan;
 use App\Models\HasilKuis;
 use App\Models\Kuis;
+use App\Models\Rombel;
 use App\Models\Siswa;
+use App\Services\Elearning\KelasDigitalAccessService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +20,63 @@ class KuisController extends Controller
 {
     use HasSiswaLookup;
 
+    private function kuisUntukSiswaQuery(Siswa $siswa): Builder
+    {
+        $kelasKandidat = array_values(array_unique(array_filter([
+            trim((string) ($siswa->kelas ?? '')),
+            $siswa->rombel_id ? trim((string) Rombel::whereKey($siswa->rombel_id)->value('nama_rombel')) : '',
+        ])));
+
+        $kelasDigitalIds = app(KelasDigitalAccessService::class)
+            ->queryForSiswa($siswa)
+            ->pluck('id')
+            ->all();
+
+        $kuisKelasDigitalIds = $kelasDigitalIds === []
+            ? []
+            : KelasDigitalPertemuan::query()
+                ->whereNotNull('kuis_id')
+                ->where('dipublikasikan', true)
+                ->whereHas('modul', fn ($q) => $q->whereIn('kelas_digital_id', $kelasDigitalIds)->where('dipublikasikan', true))
+                ->pluck('kuis_id')
+                ->unique()
+                ->values()
+                ->all();
+
+        return Kuis::query()
+            ->where('aktif', true)
+            ->where(function (Builder $q) use ($siswa, $kelasKandidat, $kuisKelasDigitalIds) {
+                $matchedAny = false;
+
+                if (! empty($siswa->guru_id)) {
+                    $q->where('guru_id', $siswa->guru_id);
+                    $matchedAny = true;
+                }
+
+                if ($kelasKandidat !== []) {
+                    if ($matchedAny) {
+                        $q->orWhereIn('kelas', $kelasKandidat);
+                    } else {
+                        $q->whereIn('kelas', $kelasKandidat);
+                        $matchedAny = true;
+                    }
+                }
+
+                if ($kuisKelasDigitalIds !== []) {
+                    if ($matchedAny) {
+                        $q->orWhereIn('id', $kuisKelasDigitalIds);
+                    } else {
+                        $q->whereIn('id', $kuisKelasDigitalIds);
+                        $matchedAny = true;
+                    }
+                }
+
+                if (! $matchedAny) {
+                    $q->whereRaw('1 = 0');
+                }
+            });
+    }
+
     public function index()
     {
         $siswa = $this->getSiswa();
@@ -24,8 +85,7 @@ class KuisController extends Controller
             return view('siswa.kuis.index', ['kuis' => collect(), 'hasilKuis' => collect(), 'siswa' => null]);
         }
 
-        $kuis = Kuis::where('guru_id', $siswa->guru_id)
-            ->where('aktif', true)
+        $kuis = $this->kuisUntukSiswaQuery($siswa)
             ->orderBy('tanggal', 'desc')
             ->get();
 
@@ -42,9 +102,8 @@ class KuisController extends Controller
             abort(404);
         }
 
-        $kuis = Kuis::where('id', $kuis)
-            ->where('guru_id', $siswa->guru_id)
-            ->where('aktif', true)
+        $kuis = $this->kuisUntukSiswaQuery($siswa)
+            ->where('id', $kuis)
             ->firstOrFail();
 
         $sudahMengerjakan = HasilKuis::where('kuis_id', $kuis->id)
@@ -62,9 +121,8 @@ class KuisController extends Controller
             abort(404);
         }
 
-        $kuis = Kuis::where('id', $kuis)
-            ->where('guru_id', $siswa->guru_id)
-            ->where('aktif', true)
+        $kuis = $this->kuisUntukSiswaQuery($siswa)
+            ->where('id', $kuis)
             ->firstOrFail();
 
         $sudahMengerjakan = HasilKuis::where('kuis_id', $kuis->id)
@@ -130,7 +188,7 @@ class KuisController extends Controller
 
                 HasilKuis::create([
                     'uuid' => Str::uuid(),
-                    'guru_id' => $siswa->guru_id,
+                    'guru_id' => $kuis->guru_id ?? $siswa->guru_id,
                     'kuis_id' => $kuis->id,
                     'siswa_id' => $siswa->id,
                     'nama_guru' => $kuis->nama_guru,

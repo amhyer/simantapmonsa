@@ -19,7 +19,7 @@ class TenantBackfillCommand extends Command
     {
         $this->info('Memeriksa data sekolah eksisting...');
 
-        $sekolah = SekolahSettings::first();
+        $sekolah = SekolahSettings::withoutGlobalScopes()->first();
         $namaSekolah = $sekolah?->nama_sekolah ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1';
         $npsn = $sekolah?->npsn ?: '40313912';
         $subdomain = 'mongisidi1';
@@ -51,21 +51,38 @@ class TenantBackfillCommand extends Command
             $this->info("Tenant sudah ada: [ID: {$tenant->id}] {$tenant->nama_sekolah} ({$tenant->wilayah})");
         }
 
-        $tables = [
+        $explicitTables = [
             'users',
             'siswa',
             'rombel',
             'sekolah_settings',
+            'mata_pelajaran',
+            'semesters',
+            'ptk',
+            'pembelajaran',
+            'anggota_rombel',
+            'ekstrakurikuler',
+            'tanggal_rapor',
+            'tema_kokurikuler',
+            'kegiatan_kokurikuler',
+            'kelompok_kokurikuler',
+            'dapodik_configs',
+            'dapodik_sync_logs',
             'cbt_question_banks',
             'cbt_test_sessions',
             'cbt_results',
+            'cbt_student_attempts',
             'exam_banks',
             'exam_sessions',
             'exam_attempts',
             'tryout_packages',
             'tryout_sessions',
             'tryout_results',
+            'tka_dimensions_enhanced',
+            'tka_assessment_items',
             'tka_student_assessments',
+            'tka_kesiapan_pengaturan',
+            'tka_kesiapan_pemetaan',
             'nilai_erapor',
             'kehadiran',
             'kehadiran_mapel',
@@ -79,7 +96,54 @@ class TenantBackfillCommand extends Command
             'nilai',
             'presensi_lokasi',
             'presensi_pegawai',
+            'presensi_sesi_qr',
+            'pengajuan_izin_presensi',
+            'presensi_mesin_configs',
+            'presensi_mesin_karyawan_mappings',
+            'presensi_mesin_sync_logs',
+            'kelas_digital',
+            'perangkat_pembelajaran',
+            'jurnal_mengajar',
+            'pm_capaian_pembelajaran',
+            'pm_tujuan_pembelajaran',
+            'pm_kktp_items',
+            'pm_kktp_intervals',
+            'pm_prota_items',
+            'pm_prosem_items',
+            'pm_kokurikuler',
+            'pm_alokasi_waktu',
+            'pm_kalender_pendidikan',
+            'pm_hari_libur',
+            'pm_supervisi',
+            'visitasi_pengawas',
+            'aktivitas',
         ];
+
+        $excludedSystemTables = [
+            'migrations',
+            'tenants',
+            'jobs',
+            'job_batches',
+            'failed_jobs',
+            'cache',
+            'cache_locks',
+            'sessions',
+            'password_reset_tokens',
+        ];
+
+        $discoveredTables = [];
+        foreach (Schema::getTableListing() as $entry) {
+            $name = (string) $entry;
+            if (str_contains($name, '.')) {
+                $name = substr($name, strrpos($name, '.') + 1);
+            }
+            $lower = strtolower($name);
+            if (! in_array($lower, $excludedSystemTables, true)) {
+                $discoveredTables[] = $name;
+            }
+        }
+
+        $tables = array_values(array_unique(array_merge($explicitTables, $discoveredTables)));
 
         foreach ($tables as $table) {
             if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'tenant_id')) {

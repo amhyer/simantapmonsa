@@ -35,12 +35,16 @@ class TkaDimensionController extends Controller
 
     public function store(Request $request)
     {
-        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where(fn ($q) => TenantContext::check()
-            ? $q->where('tenant_id', TenantContext::id())
-            : $q->whereNull('tenant_id'));
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
+        $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')->where($tenantScope);
+        $semesterRule = Rule::exists('semesters', 'id')->where($tenantScope);
 
         $validated = $request->validate([
-            'semester_id' => 'required|exists:semesters,id',
+            'semester_id' => ['required', 'integer', $semesterRule],
             'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -50,9 +54,11 @@ class TkaDimensionController extends Controller
             'threshold_siap' => 'required|numeric|min:1|max:4',
         ]);
 
+        $semester = Semester::findOrFail($validated['semester_id']);
+
         $dimension = Dimension::create([
             'uuid' => Str::uuid(),
-            'semester_id' => $validated['semester_id'],
+            'semester_id' => $semester->id,
             'kode_dimensi' => $validated['kode_dimensi'],
             'nama_dimensi' => $validated['nama_dimensi'],
             'deskripsi' => $validated['deskripsi'] ?? null,
@@ -84,14 +90,18 @@ class TkaDimensionController extends Controller
 
     public function update(Request $request, Dimension $dimension)
     {
+        $tenantId = TenantContext::id() ?? $request->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null
+            ? $q->where('tenant_id', $tenantId)
+            : $q->whereNull('tenant_id');
+
         $kodeRule = Rule::unique('tka_dimensions_enhanced', 'kode_dimensi')
             ->ignore($dimension->id)
-            ->where(fn ($q) => TenantContext::check()
-                ? $q->where('tenant_id', TenantContext::id())
-                : $q->whereNull('tenant_id'));
+            ->where($tenantScope);
+        $semesterRule = Rule::exists('semesters', 'id')->where($tenantScope);
 
         $validated = $request->validate([
-            'semester_id' => 'required|exists:semesters,id',
+            'semester_id' => ['required', 'integer', $semesterRule],
             'kode_dimensi' => ['required', 'string', 'max:50', $kodeRule],
             'nama_dimensi' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -101,6 +111,9 @@ class TkaDimensionController extends Controller
             'threshold_siap' => 'required|numeric|min:1|max:4',
             'aktif' => 'boolean',
         ]);
+
+        $semester = Semester::findOrFail($validated['semester_id']);
+        $validated['semester_id'] = $semester->id;
 
         $dimension->update($validated);
 

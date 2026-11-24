@@ -9,7 +9,7 @@
     @php
         $isConfigured = !empty($config->npsn) && !empty($config->token);
         $modules = [
-            ['key' => 'sekolah', 'label' => 'Data Sekolah', 'icon' => 'lucide-building-2', 'desc' => 'Profil sekolah (NPSN, alamat, kepala sekolah)', 'method' => 'GET', 'needs_semester' => false],
+            ['key' => 'sekolah', 'label' => 'Data Sekolah', 'icon' => 'lucide-building-2', 'desc' => 'Profil sekolah (NPSN, alamat, kepala sekolah)', 'method' => 'POST', 'needs_semester' => false],
             ['key' => 'peserta-didik', 'label' => 'Peserta Didik', 'icon' => 'lucide-graduation-cap', 'desc' => 'Data siswa aktif per semester', 'method' => 'POST', 'needs_semester' => true],
             ['key' => 'gtk', 'label' => 'GTK (Guru/Tendik)', 'icon' => 'lucide-presentation', 'desc' => 'Data guru & tendik terhubung Dapodik', 'method' => 'POST', 'needs_semester' => false],
             ['key' => 'rombel', 'label' => 'Rombongan Belajar', 'icon' => 'lucide-school', 'desc' => 'Data rombel beserta wali kelas', 'method' => 'POST', 'needs_semester' => false],

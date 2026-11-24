@@ -91,17 +91,17 @@ class SchoolDataAvailabilityService
             }
         }
 
-        Cache::forget(self::cacheKey(null));
-        Cache::forget('dapodik-menu-sync:v2:single');
-        Cache::forget('admin-dashboard:single:v3');
-        Cache::forget('root-sekolah-nama');
-
         if ($tenantId !== null) {
             $tid = (int) $tenantId;
             Cache::forget(self::cacheKey($tid));
             Cache::forget('dapodik-menu-sync:v2:tenant:'.$tid);
             Cache::forget('admin-dashboard:tenant:v3:'.$tid);
             Cache::forget('tenant-nama-'.$tid);
+        } else {
+            Cache::forget(self::cacheKey(null));
+            Cache::forget('dapodik-menu-sync:v2:single');
+            Cache::forget('admin-dashboard:single:v3');
+            Cache::forget('root-sekolah-nama');
         }
     }
 

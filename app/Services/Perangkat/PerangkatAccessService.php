@@ -170,7 +170,7 @@ class PerangkatAccessService
         ]);
 
         return [
-            'nama_sekolah' => (string) ($s?->nama_sekolah ?: 'UPTD SD Negeri Unggulan Mongisidi 1'),
+            'nama_sekolah' => (string) ($s?->nama_sekolah ?: config('app.name', 'SIMANTAP')),
             'npsn' => (string) ($s?->npsn ?: '-'),
             'alamat' => trim(implode(', ', array_filter([
                 $s?->alamat,

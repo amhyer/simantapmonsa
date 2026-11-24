@@ -3,17 +3,47 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
+use App\Models\JadwalPelajaran;
 use App\Models\NilaiErapot;
 use App\Models\PengaturanGuru;
 use App\Models\Rombel;
 use App\Models\Siswa;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\JadwalPelajaranResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class NilaiErapotController extends Controller
 {
+    private function guruBolehMenilaiSiswa($guru, Siswa $siswa, ?string $kelasRequest = null): bool
+    {
+        if ((int) $siswa->guru_id === (int) $guru->id) {
+            return true;
+        }
+
+        $kelasSiswa = trim((string) ($siswa->kelas ?? ''));
+        if ($kelasRequest !== null && $kelasSiswa !== '' && strcasecmp($kelasSiswa, trim($kelasRequest)) !== 0) {
+            return false;
+        }
+
+        $kelasDiampu = collect()
+            ->merge(Rombel::where('guru_id', $guru->id)->pluck('nama_rombel'))
+            ->merge(PengaturanGuru::where('guru_id', $guru->id)->pluck('kelas'))
+            ->merge(JadwalPelajaran::where('guru_id', $guru->id)->pluck('kelas'))
+            ->map(fn ($k) => trim((string) $k))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($kelasDiampu->isEmpty()) {
+            return true;
+        }
+
+        return $kelasSiswa !== '' && $kelasDiampu->contains(fn (string $k) => strcasecmp($k, $kelasSiswa) === 0);
+    }
+
     public function index(Request $request)
     {
         $guru = auth()->user();
@@ -45,9 +75,12 @@ class NilaiErapotController extends Controller
 
     public function simpan(Request $request)
     {
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $tenantScope = fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
+
         $request->validate([
             'nilai' => 'required|array',
-            'nilai.*.siswa_id' => 'required|exists:siswa,id',
+            'nilai.*.siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
             'nilai.*.formatif' => 'nullable|numeric|min:0|max:100',
             'nilai.*.sumatif' => 'nullable|numeric|min:0|max:100',
             'nilai.*.sumatif_akhir' => 'nullable|numeric|min:0|max:100',
@@ -57,11 +90,11 @@ class NilaiErapotController extends Controller
             'tahun_ajaran' => 'required|string',
         ]);
 
-        if (Rombel::apakahTerkunciUntukKelas($request->kelas)) {
+        $guru = auth()->user();
+
+        if (Rombel::apakahTerkunciUntukKelas($request->kelas, $guru->id)) {
             return back()->with('error', "Input nilai rapor untuk kelas {$request->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
         }
-
-        $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
         $kkm = $pengaturan->kkm ?? 70;
         $bobot = ($pengaturan->pengaturan ?? [])['bobot_erapor'] ?? ['formatif' => 0.30, 'sumatif' => 0.40, 'sumatif_akhir' => 0.30];
@@ -90,7 +123,16 @@ class NilaiErapotController extends Controller
                     continue;
                 }
 
-                if ($siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas)) {
+                if (! $this->guruBolehMenilaiSiswa($guru, $siswa, (string) $request->kelas)) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki hak akses untuk mengubah nilai e-Rapor siswa di kelas ini.',
+                    ], 403);
+                }
+
+                if ($siswa->kelas && Rombel::apakahTerkunciUntukKelas($siswa->kelas, $guru->id)) {
                     DB::rollBack();
 
                     return back()->with('error', "Input nilai rapor untuk kelas {$siswa->kelas} sedang dikunci oleh Admin Sekolah.")->withInput();
@@ -154,15 +196,22 @@ class NilaiErapotController extends Controller
             ], 404);
         }
 
+        $guru = auth()->user();
+        if (! $this->guruBolehMenilaiSiswa($guru, $siswa, (string) $request->kelas)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah nilai e-Rapor siswa di kelas ini.',
+            ], 403);
+        }
+
         $kelasAsli = (string) ($siswa->kelas ?: $request->kelas);
-        if (Rombel::apakahTerkunciUntukKelas($request->kelas) || Rombel::apakahTerkunciUntukKelas($kelasAsli)) {
+        if (Rombel::apakahTerkunciUntukKelas($request->kelas, $guru->id) || Rombel::apakahTerkunciUntukKelas($kelasAsli, $guru->id)) {
             return response()->json([
                 'success' => false,
                 'message' => "Input nilai rapor untuk kelas {$kelasAsli} sedang dikunci oleh Admin Sekolah.",
             ], 423);
         }
 
-        $guru = auth()->user();
         $pengaturan = PengaturanGuru::where('guru_id', $guru->id)->first();
         $kkm = $pengaturan->kkm ?? 70;
         $bobot = ($pengaturan->pengaturan ?? [])['bobot_erapor'] ?? ['formatif' => 0.30, 'sumatif' => 0.40, 'sumatif_akhir' => 0.30];

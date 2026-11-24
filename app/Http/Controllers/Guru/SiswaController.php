@@ -225,10 +225,9 @@ class SiswaController extends Controller
                 continue;
             }
 
-            $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-            while (Siswa::where('nama_orang_tua', $kodeOrtu)->exists()) {
-                $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-            }
+            $namaOrtu = isset($data[4]) && trim((string) $data[4]) !== ''
+                ? trim((string) $data[4])
+                : null;
 
             Siswa::create([
                 'uuid' => Str::uuid(),
@@ -238,7 +237,7 @@ class SiswaController extends Controller
                 'nis' => $data[1],
                 'jenis_kelamin' => $data[2] ?? 'L',
                 'kelas' => $data[3] ?? auth()->user()->kelas_mata_pelajaran,
-                'nama_orang_tua' => $kodeOrtu,
+                'nama_orang_tua' => $namaOrtu,
                 'aktif' => true,
             ]);
 
@@ -340,53 +339,41 @@ class SiswaController extends Controller
     {
         $request->validate([
             'siswa_ids' => 'required|array',
+            'siswa_ids.*' => 'integer',
         ]);
 
         $guru = auth()->user();
+        $rombelGuru = Rombel::where('guru_id', $guru->id)->first();
+        $pengaturanKelas = PengaturanGuru::where('guru_id', $guru->id)->value('kelas');
+        $targetKelas = $rombelGuru?->nama_rombel ?: ($pengaturanKelas ?: $guru->kelas_mata_pelajaran);
+
+        if ($targetKelas && Rombel::apakahTerkunciUntukKelas($targetKelas, $guru->id)) {
+            return back()->with('error', "Kelas {$targetKelas} sedang dikunci oleh Admin Sekolah.");
+        }
+
         $count = 0;
 
         foreach ($request->siswa_ids as $siswaId) {
             $asal = Siswa::find($siswaId);
-            if (! $asal || $asal->guru_id === $guru->id) {
+            if (! $asal || (int) $asal->guru_id === (int) $guru->id) {
                 continue;
             }
 
-            $existing = Siswa::where('nis', $asal->nis)
-                ->where('guru_id', $guru->id)
-                ->first();
-
-            if ($existing) {
+            if ($asal->kelas && Rombel::apakahTerkunciUntukKelas($asal->kelas, $guru->id)) {
                 continue;
             }
 
-            $kodeOrtu = $asal->nama_orang_tua;
-            if (! $kodeOrtu || $kodeOrtu === 'ORT'.substr($asal->nis, -4)) {
-                $kodeOrtu = 'ORT'.str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-            }
+            $kelasLama = $asal->kelas;
+            $waliLama = $asal->nama_guru;
 
-            // Generate unique NIS with prefix for target class
-            $newNis = $guru->id.'-'.$asal->nis;
-            if (Siswa::where('nis', $newNis)->exists()) {
-                $newNis = $guru->id.'-'.$asal->nis.'-'.Str::random(4);
-            }
-
-            Siswa::create([
-                'uuid' => Str::uuid(),
+            $asal->update([
                 'guru_id' => $guru->id,
                 'nama_guru' => $guru->nama_lengkap,
-                'nis' => $newNis,
-                'nisn' => $asal->nisn,
-                'nama_peserta_didik' => $asal->nama_peserta_didik,
-                'kelas' => $asal->kelas,
-                'jenis_kelamin' => $asal->jenis_kelamin,
-                'nama_orang_tua' => $asal->nama_orang_tua,
-                'aktif' => true,
-                'dapodik_id' => $asal->dapodik_id,
-                'semester_id' => $asal->semester_id,
-                'status_siswa' => $asal->status_siswa,
+                'kelas' => $targetKelas ?: $asal->kelas,
+                'rombel_id' => $rombelGuru?->id ?? $asal->rombel_id,
                 'rekaman' => array_merge($asal->rekaman ?? [], [
-                    'dari_kelas' => $asal->kelas,
-                    'wali_kelas_asal' => $asal->nama_guru,
+                    'dari_kelas' => $kelasLama,
+                    'wali_kelas_asal' => $waliLama,
                     'diambil_pada' => now()->toIso8601String(),
                 ]),
             ]);

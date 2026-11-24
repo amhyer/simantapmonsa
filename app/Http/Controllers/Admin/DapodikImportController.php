@@ -32,19 +32,20 @@ class DapodikImportController extends Controller
             ->limit(20)
             ->get();
 
+        $canLoadPtk = ! $isTenant || TenantContext::check();
         $stats = [
             'total_siswa' => Siswa::count(),
             'dari_dapodik' => Siswa::where('dapodik_id', '!=', null)->count(),
             'sinkron_terakhir' => DapodikSyncLog::orderBy('created_at', 'desc')->value('created_at'),
             'semesters' => Semester::count(),
-            'ptk' => $isTenant ? null : Ptk::count(),
+            'ptk' => $canLoadPtk ? Ptk::count() : null,
             'guru_users' => User::where('tenant_id', $tenantId)->where('peran', 'guru')->count(),
             'rombel' => Rombel::count(),
             'jadwal' => JadwalPelajaran::count(),
         ];
 
         $semesters = Semester::orderByDesc('semester_id')->get();
-        $ptkList = $isTenant ? collect() : Ptk::with('semester')->orderBy('nama')->limit(50)->get();
+        $ptkList = $canLoadPtk ? Ptk::with('semester')->orderBy('nama')->limit(50)->get() : collect();
         $rombelList = Rombel::with('semester')->orderBy('nama_rombel')->limit(50)->get();
 
         $bridgeDownloadUrl = config('dapodik.bridge_download_url');
@@ -163,14 +164,18 @@ class DapodikImportController extends Controller
 
     public function logDetail($id)
     {
-        $log = DapodikSyncLog::findOrFail($id);
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_unless(is_numeric($id) && (int) $id > 0, 404);
+        $log = DapodikSyncLog::query()->whereKey((int) $id)->firstOrFail();
 
         return view('admin.dapodik.log-detail', compact('log'));
     }
 
     public function logDestroy($id)
     {
-        DapodikSyncLog::findOrFail($id)->delete();
+        abort_if(! TenantContext::check() && (config('simantap.multi_tenant_enabled', false) || Tenant::hasAnyTenant()), 403, 'Akun admin belum terhubung ke sekolah.');
+        abort_unless(is_numeric($id) && (int) $id > 0, 404);
+        DapodikSyncLog::query()->whereKey((int) $id)->firstOrFail()->delete();
         SchoolDataAvailabilityService::forget(TenantContext::id() ?? auth()->user()?->tenant_id);
 
         return redirect()->route('admin.dapodik.index')->with('success', 'Log dihapus.');

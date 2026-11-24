@@ -129,6 +129,14 @@ class SekolahController extends Controller
             $sekolahSettings->update($validated);
         }
 
+        if ($tenantId !== null) {
+            \App\Modules\Tenant\Models\Tenant::query()
+                ->whereKey($tenantId)
+                ->update(['nama_sekolah' => $validated['nama_sekolah']]);
+            \Illuminate\Support\Facades\Cache::forget('tenant-nama-'.$tenantId);
+        }
+        \Illuminate\Support\Facades\Cache::forget('root-sekolah-nama');
+
         SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);
 
         return redirect()->route('admin.sekolah.index')
@@ -143,6 +151,11 @@ class SekolahController extends Controller
             $query->where('tenant_id', $tenantId);
         }
         $query->delete();
+
+        if ($tenantId !== null) {
+            \Illuminate\Support\Facades\Cache::forget('tenant-nama-'.$tenantId);
+        }
+        \Illuminate\Support\Facades\Cache::forget('root-sekolah-nama');
 
         SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);
 

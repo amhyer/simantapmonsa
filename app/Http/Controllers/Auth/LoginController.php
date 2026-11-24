@@ -83,12 +83,12 @@ class LoginController extends Controller
                 ->whereNull('archived_at')
                 ->get();
 
-            if ($kandidatAktif->pluck('tenant_id')->filter()->unique()->count() > 1) {
+            if ($kandidatAktif->isNotEmpty()) {
                 $cocokSandi = $kandidatAktif->filter(
-                    fn (User $u) => Hash::check($credentials['kata_sandi'], $u->kata_sandi)
+                    fn (User $u) => Hash::check($credentials['kata_sandi'], (string) $u->kata_sandi)
                 );
 
-                if ($cocokSandi->count() > 1) {
+                if ($cocokSandi->pluck('tenant_id')->unique()->count() > 1) {
                     RateLimiter::hit($throttleKey, 300);
                     RateLimiter::hit($pairKey, 300);
                     RateLimiter::hit($accountKey, 300);
@@ -105,10 +105,8 @@ class LoginController extends Controller
                     $attemptSuccess = false;
                 }
             } else {
-                $attemptSuccess = Auth::attempt([
-                    'nama_pengguna' => $credentials['nama_pengguna'],
-                    'password' => $credentials['kata_sandi'],
-                ]);
+                Hash::check($credentials['kata_sandi'], self::DUMMY_HASH);
+                $attemptSuccess = false;
             }
         }
 

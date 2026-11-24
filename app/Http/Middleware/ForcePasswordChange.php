@@ -21,7 +21,7 @@ class ForcePasswordChange
 
         if ($user->force_password_change) {
             // Allow access to password change routes and logout
-            if ($request->routeIs('force-password-change.*') || $request->routeIs('logout')) {
+            if ($request->routeIs('force-password-change.*', 'account.profile.password', 'logout')) {
                 return $next($request);
             }
 

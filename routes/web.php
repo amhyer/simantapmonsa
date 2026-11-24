@@ -448,7 +448,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
 
     // Data & Pemulihan
     Route::get('/backup', [BackupController::class, 'index'])->middleware('data.single-school')->name('backup.index');
-    Route::get('/backup/export', [BackupController::class, 'export'])->middleware('data.single-school')->name('backup.export');
+    Route::post('/backup/export', [BackupController::class, 'export'])->middleware('data.single-school')->name('backup.export');
     Route::post('/backup/import', [BackupController::class, 'import'])->middleware(['data.single-school', 'throttle:5,1'])->name('backup.import');
     Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware(['data.single-school', 'throttle:10,5'])->name('backup.wipe');
 
@@ -496,7 +496,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.contex
     // Dapodik Push (Sync ke Dapodik Server)
     Route::prefix('dapodik/push')->name('dapodik.push.')->middleware(['throttle:10,1'])->group(function () {
         Route::get('/', [DapodikPushController::class, 'index'])->name('index');
-        Route::get('/sekolah', [App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
+        Route::post('/sekolah', [App\Http\Controllers\Api\DapodikPushController::class, 'pushSekolah'])->name('sekolah');
         Route::post('/peserta-didik', [App\Http\Controllers\Api\DapodikPushController::class, 'pushPesertaDidik'])->name('peserta-didik');
         Route::post('/gtk', [App\Http\Controllers\Api\DapodikPushController::class, 'pushGtk'])->name('gtk');
         Route::post('/rombel', [App\Http\Controllers\Api\DapodikPushController::class, 'pushRombel'])->name('rombel');

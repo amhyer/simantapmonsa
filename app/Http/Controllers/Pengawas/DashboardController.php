@@ -392,7 +392,7 @@ class DashboardController extends Controller
             ?: (SekolahSettings::withoutGlobalScopes()
                 ->whereNotNull('nama_sekolah')
                 ->whereNotIn('nama_sekolah', ['SDN SIMANTAP', 'Sekolah Dasar'])
-                ->value('nama_sekolah') ?: 'UPT SPF SD NEGERI UNGGULAN MONGISIDI 1');
+                ->value('nama_sekolah') ?: config('app.name', 'SIMANTAP'));
 
         $sekolah = SekolahSettings::firstOrCreate(
             ['tenant_id' => $tenantId],
@@ -485,12 +485,19 @@ class DashboardController extends Controller
 
     private function activeTenantId(User $pengawas): ?int
     {
-        $baseTenantId = $this->ctx->tenantId($pengawas);
+        $baseTenantId = $pengawas->tenant_id !== null ? (int) $pengawas->tenant_id : $this->ctx->tenantId($pengawas);
         $allowed = $this->allowedTenantIds($pengawas);
         $sessionTenant = session('pengawas_active_tenant_id');
 
         if ($sessionTenant !== null && in_array((int) $sessionTenant, $allowed, true)) {
-            return (int) $sessionTenant;
+            $activeId = (int) $sessionTenant;
+            \App\Modules\Tenant\Contexts\TenantContext::set($activeId);
+
+            return $activeId;
+        }
+
+        if ($baseTenantId !== null) {
+            \App\Modules\Tenant\Contexts\TenantContext::set($baseTenantId);
         }
 
         return $baseTenantId;

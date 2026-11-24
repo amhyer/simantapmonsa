@@ -18,9 +18,12 @@
                 <div class="note note" style="margin-bottom:16px">
                     <i class="fas fa-info-circle"></i> File backup akan diunduh secara otomatis setelah proses selesai.
                 </div>
-                <a href="{{ route('admin.backup.export') }}" class="btn btn-primary btn-block" onclick="return confirm('Ekspor seluruh data sistem?')">
-                    <i class="fas fa-download"></i> Ekspor Data Sekarang
-                </a>
+                <form action="{{ route('admin.backup.export') }}" method="POST" onsubmit="return confirm('Ekspor seluruh data sistem?')">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-download"></i> Ekspor Data Sekarang
+                    </button>
+                </form>
             </div>
         </div>
 

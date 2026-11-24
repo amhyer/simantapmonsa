@@ -84,7 +84,10 @@ class UserAccountService
      */
     public function create(array $validated, ?string $rawIsWaliKelas): User
     {
-        $this->validateStudentLinks($validated['terhubung_dengan'] ?? []);
+        $terhubungDengan = in_array($validated['peran'], ['ortu', 'siswa'], true)
+            ? array_values(array_map('intval', $validated['terhubung_dengan'] ?? []))
+            : [];
+        $this->validateStudentLinks($terhubungDengan);
 
         $isWaliKelas = null;
         if ($validated['peran'] === 'guru' && $rawIsWaliKelas !== null && $rawIsWaliKelas !== '') {
@@ -98,7 +101,7 @@ class UserAccountService
             'email' => $validated['email'] ?? null,
             'kata_sandi' => Hash::make($validated['kata_sandi']),
             'peran' => $validated['peran'],
-            'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
+            'terhubung_dengan' => $terhubungDengan,
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,
             'is_wali_kelas' => $isWaliKelas,
             'aktif' => $validated['aktif'] ?? true,
@@ -133,14 +136,17 @@ class UserAccountService
      */
     public function update(User $user, array $validated, bool $hasIsWaliKelas, ?string $rawIsWaliKelas, ?int $actorId): User
     {
-        $this->validateStudentLinks($validated['terhubung_dengan'] ?? []);
+        $terhubungDengan = in_array($validated['peran'], ['ortu', 'siswa'], true)
+            ? array_values(array_map('intval', $validated['terhubung_dengan'] ?? []))
+            : [];
+        $this->validateStudentLinks($terhubungDengan);
 
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
             'nama_pengguna' => $validated['nama_pengguna'],
             'email' => $validated['email'] ?? null,
             'peran' => $validated['peran'],
-            'terhubung_dengan' => $validated['terhubung_dengan'] ?? [],
+            'terhubung_dengan' => $terhubungDengan,
             'kelas_mata_pelajaran' => $validated['kelas_mata_pelajaran'] ?? null,
             'aktif' => $validated['aktif'] ?? true,
         ];
@@ -348,23 +354,7 @@ class UserAccountService
             });
         }
 
-        if ($user->peran === 'siswa') {
-            $siswa = Siswa::where('nis', $user->nama_pengguna)->first();
-            if ($siswa) {
-                $this->deleteSiswaCascade($siswa);
-            }
-        }
-    }
-
-    private function deleteSiswaCascade(Siswa $siswa): void
-    {
-        $siswa->nilai()->delete();
-        $siswa->kehadiran()->delete();
-        $siswa->hasilKuis()->delete();
-        $siswa->catatan()->delete();
-        $siswa->dimensi()->delete();
-        $siswa->kebiasaan()->delete();
-        $siswa->nilaiErapot()->delete();
-        $siswa->delete();
+        // Menghapus akun login siswa (User) TIDAK boleh menghapus data pokok Siswa
+        // maupun arsip nilai, kehadiran, ujian CBT, dan rapor siswa tersebut.
     }
 }

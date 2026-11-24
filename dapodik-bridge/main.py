@@ -200,28 +200,57 @@ def simantap_test(url):
         return False, str(e)
 
 
-def simantap_sync_module(url, api_key, modul, data, semester_id, tahun_ajaran, nama_semester):
+def simantap_sync_module(url, api_key, modul, data, semester_id, tahun_ajaran, nama_semester, batch_size=250):
     ok, err = validate_server_security(url)
     if not ok:
         return {"success": False, "message": err}
 
-    try:
-        resp = requests.post(
-            f"{url.rstrip('/')}/api/dapodik/sync/{modul}",
-            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
-            json={
-                "semester_id": semester_id,
-                "tahun_ajaran": tahun_ajaran,
-                "nama_semester": nama_semester,
-                "data": data,
-            },
-            timeout=180,
-        )
-        return resp.json()
-    except requests.exceptions.ConnectionError:
-        return {"success": False, "message": "Tidak dapat terhubung ke server SIMANTAP"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+    items = data if isinstance(data, list) else []
+    batches = [items[i : i + batch_size] for i in range(0, len(items), batch_size)] if items else [[]]
+
+    agg = {"berhasil": 0, "diperbarui": 0, "dilewati": 0, "gagal": 0}
+    last_message = "Sinkronisasi selesai."
+
+    for batch in batches:
+        try:
+            resp = requests.post(
+                f"{url.rstrip('/')}/api/dapodik/sync/{modul}",
+                headers={"X-API-Key": api_key, "Content-Type": "application/json", "Accept": "application/json"},
+                json={
+                    "semester_id": semester_id,
+                    "tahun_ajaran": tahun_ajaran,
+                    "nama_semester": nama_semester,
+                    "data": batch,
+                },
+                timeout=180,
+            )
+            try:
+                payload = resp.json()
+            except ValueError:
+                return {
+                    "success": False,
+                    "message": f"Server SIMANTAP mengembalikan respons non-JSON (HTTP {resp.status_code}).",
+                }
+
+            if not isinstance(payload, dict) or not payload.get("success", False):
+                return payload if isinstance(payload, dict) else {"success": False, "message": f"HTTP {resp.status_code}"}
+
+            res_data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+            for key in ("berhasil", "diperbarui", "dilewati", "gagal"):
+                agg[key] += int(res_data.get(key, 0) or 0)
+            if payload.get("message"):
+                last_message = payload["message"]
+        except requests.exceptions.ConnectionError:
+            return {"success": False, "message": "Tidak dapat terhubung ke server SIMANTAP"}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    return {
+        "success": True,
+        "message": last_message,
+        "data": agg,
+        **agg,
+    }
 
 
 def dapodik_post(protocol, host, port, token, npsn, endpoint, payload):

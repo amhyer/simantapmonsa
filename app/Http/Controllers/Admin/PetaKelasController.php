@@ -8,13 +8,22 @@ use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 
 class PetaKelasController extends Controller
 {
+    private function tenantScope(): \Closure
+    {
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+
+        return fn ($q) => $tenantId !== null ? $q->where('tenant_id', $tenantId) : $q->whereNull('tenant_id');
+    }
     public function daftar(Request $request)
     {
         $jenis = $request->get('jenis');
@@ -61,8 +70,9 @@ class PetaKelasController extends Controller
 
     public function store(Request $request)
     {
+        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'guru_id' => 'required|exists:users,id',
+            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
             'kelas' => 'required|string|max:255',
             'mata_pelajaran' => 'nullable|string|max:255',
         ]);
@@ -108,9 +118,10 @@ class PetaKelasController extends Controller
 
     public function pindahSiswa(Request $request): JsonResponse
     {
+        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
-            'guru_id' => 'required|exists:users,id',
+            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
+            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
             'kelas' => 'required|string',
         ]);
 
@@ -143,8 +154,9 @@ class PetaKelasController extends Controller
 
     public function keluarkanSiswa(Request $request): JsonResponse
     {
+        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'siswa_id' => 'required|exists:siswa,id',
+            'siswa_id' => ['required', Rule::exists('siswa', 'id')->where($tenantScope)],
         ]);
 
         $siswa = Siswa::findOrFail($validated['siswa_id']);
@@ -163,8 +175,9 @@ class PetaKelasController extends Controller
 
     public function getKelasOptions(Request $request): JsonResponse
     {
+        $tenantScope = $this->tenantScope();
         $validated = $request->validate([
-            'guru_id' => 'required|exists:users,id',
+            'guru_id' => ['required', Rule::exists('users', 'id')->where($tenantScope)],
         ]);
 
         $kelasList = PengaturanGuru::forSchool()
@@ -188,17 +201,23 @@ class PetaKelasController extends Controller
     {
         $terkunciSekarang = Rombel::apakahTerkunciGlobal();
         $targetKunci = ! $terkunciSekarang;
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+            ?: config('app.name', 'SIMANTAP');
 
         $sekolah = SekolahSettings::firstOrCreate(
-            [],
-            ['nama_sekolah' => config('app.name', 'SIMANTAP')]
+            ['tenant_id' => $tenantId],
+            [
+                'guru_id' => auth()->id(),
+                'nama_sekolah' => $defaultNama,
+            ]
         );
         $pengaturan = is_array($sekolah->pengaturan) ? $sekolah->pengaturan : [];
         $pengaturan['kunci_input_rapor_global'] = $targetKunci;
         $sekolah->update(['pengaturan' => $pengaturan]);
 
         Rombel::query()->update(['kunci_input_rapor' => $targetKunci]);
-        Cache::forget('admin-dashboard:'.tenantCacheScope().':v3');
+        Cache::forget($tenantId !== null ? 'admin-dashboard:tenant:v3:'.$tenantId : 'admin-dashboard:single:v3');
 
         $status = $targetKunci ? 'dikunci (ditutup)' : 'dibuka kembali';
 

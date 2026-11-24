@@ -136,10 +136,12 @@ class DashboardController extends Controller
                     $backupTerakhir = $waktu;
                 }
             }
-            $backupAntre = Schema::hasTable('jobs')
+            $canSeeGlobalQueue = ! \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
+                || auth()->user()?->peran === 'super_admin';
+            $backupAntre = ($canSeeGlobalQueue && Schema::hasTable('jobs'))
                 ? DB::table('jobs')->where('payload', 'like', '%ExportBackupJob%')->count()
                 : 0;
-            $jobGagal = Schema::hasTable('failed_jobs')
+            $jobGagal = ($canSeeGlobalQueue && Schema::hasTable('failed_jobs'))
                 ? DB::table('failed_jobs')->count()
                 : 0;
             $backupInfo = [

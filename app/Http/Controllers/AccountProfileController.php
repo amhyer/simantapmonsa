@@ -45,6 +45,12 @@ class AccountProfileController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
+        if ($request->has('email') && $request->input('email') !== null) {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->input('email'))),
+            ]);
+        }
+
         $validated = $request->validate([
             'email' => [
                 'nullable',
@@ -57,7 +63,7 @@ class AccountProfileController extends Controller
             'email.unique' => 'Alamat email ini sudah digunakan akun lain.',
         ]);
 
-        $email = isset($validated['email']) ? trim((string) $validated['email']) : '';
+        $email = isset($validated['email']) ? strtolower(trim((string) $validated['email'])) : '';
         $user->update([
             'email' => $email !== '' ? $email : null,
         ]);
@@ -99,10 +105,15 @@ class AccountProfileController extends Controller
             ]);
         }
 
-        $user->update([
+        $user->forceFill([
             'kata_sandi' => Hash::make((string) $request->input('password')),
             'force_password_change' => false,
-        ]);
+            'sandi_awal_diterbitkan_at' => null,
+        ])->save();
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         AktivitasService::ubah(
             'Ubah Kata Sandi Mandiri',

@@ -56,9 +56,9 @@ class KokurikulerController extends Controller
             'tema_id' => [
                 'required',
                 Rule::exists('tema_kokurikuler', 'id')->where(function ($query) use ($tenantId): void {
-                    if ($tenantId !== null) {
-                        $query->where('tenant_id', $tenantId);
-                    }
+                    $tenantId !== null
+                        ? $query->where('tenant_id', $tenantId)
+                        : $query->whereNull('tenant_id');
                 }),
             ],
             'nama' => 'required|string|max:255',
@@ -107,9 +107,9 @@ class KokurikulerController extends Controller
             'kegiatan_id' => [
                 'required',
                 Rule::exists('kegiatan_kokurikuler', 'id')->where(function ($query) use ($tenantId): void {
-                    if ($tenantId !== null) {
-                        $query->where('tenant_id', $tenantId);
-                    }
+                    $tenantId !== null
+                        ? $query->where('tenant_id', $tenantId)
+                        : $query->whereNull('tenant_id');
                 }),
             ],
             'nama' => 'required|string|max:255',

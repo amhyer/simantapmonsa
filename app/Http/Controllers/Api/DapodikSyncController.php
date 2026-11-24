@@ -28,6 +28,8 @@ class DapodikSyncController extends Controller
 {
     public function store(Request $request, string $modul)
     {
+        @set_time_limit(300);
+
         // Mode multi-sekolah: konteks sekolah WAJIB berasal dari pemilik API Key
         // (middleware `tenant`), bukan dari payload Bridge.
         if ($this->isMultiSchool() && ! TenantContext::check()) {
@@ -37,19 +39,24 @@ class DapodikSyncController extends Controller
             ], 403);
         }
 
+        $request->merge([
+            'nama_semester' => strtolower(trim((string) $request->input('nama_semester', ''))),
+        ]);
+
         $request->validate([
-            'semester_id' => 'required|string',
-            'tahun_ajaran' => 'required|string',
+            'semester_id' => 'required|string|max:20',
+            'tahun_ajaran' => 'required|string|max:20',
             'nama_semester' => 'required|in:ganjil,genap',
-            'data' => 'required|array',
+            'data' => 'required|array|max:2000',
         ]);
 
         $semesterId = $request->input('semester_id');
+        $namaSemesterNorm = strtolower(trim((string) $request->input('nama_semester')));
         $semester = Semester::firstOrCreate(
             ['semester_id' => $semesterId],
             [
                 'tahun_ajaran' => $request->input('tahun_ajaran'),
-                'nama_semester' => $request->input('nama_semester'),
+                'nama_semester' => $namaSemesterNorm,
             ]
         );
 

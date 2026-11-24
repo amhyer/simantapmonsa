@@ -44,9 +44,16 @@ class RaporMerdekaController extends Controller
 
     private function settings(): SekolahSettings
     {
+        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+            ?: config('app.name', 'SIMANTAP');
+
         return SekolahSettings::firstOrCreate(
-            [],
-            ['nama_sekolah' => config('app.name', 'SIMANTAP')]
+            ['tenant_id' => $tenantId],
+            [
+                'guru_id' => auth()->id(),
+                'nama_sekolah' => $defaultNama,
+            ]
         );
     }
 
