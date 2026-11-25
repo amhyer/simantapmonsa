@@ -273,7 +273,10 @@ class TenantQuotaService
         }
 
         $guruSettings = PengaturanGuru::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
+            ->whereIn(
+                'guru_id',
+                User::withoutGlobalScopes()->where('tenant_id', $tenantId)->select('id')
+            )
             ->get(['pengaturan']);
 
         foreach ($guruSettings as $gRow) {
