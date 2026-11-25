@@ -182,7 +182,7 @@
                     </div>
                 @endif
 
-                <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
+                <div class="grid grid-3" style="gap:12px;margin-bottom:14px">
                     <div class="form-group">
                         <label for="fld-tenants-show-kuota-siswa" class="form-label">Batas Kuota Siswa (Akun)</label>
                         <input id="fld-tenants-show-kuota-siswa" type="number" name="kuota_siswa" class="form-control" value="{{ old('kuota_siswa', $tenant->kuota_siswa ?: 500) }}" min="10" max="100000" required>
@@ -190,6 +190,14 @@
                     <div class="form-group">
                         <label for="fld-tenants-show-kuota-storage-mb" class="form-label">Batas Kuota File/Storage (MB)</label>
                         <input id="fld-tenants-show-kuota-storage-mb" type="number" name="kuota_storage_mb" class="form-control" value="{{ old('kuota_storage_mb', $tenant->kuota_storage_mb ?: 2048) }}" min="100" max="1048576" required>
+                    </div>
+                    <div class="form-group">
+                        @php
+                            $defaultAiCap = \App\Services\Tenant\TenantQuotaService::defaultAiQuotaForPaket($tenant->paket);
+                            $savedAiCap = is_array($tenant->meta) && !empty($tenant->meta['kuota_ai_harian']) ? (int) $tenant->meta['kuota_ai_harian'] : $defaultAiCap;
+                        @endphp
+                        <label for="fld-tenants-show-kuota-ai" class="form-label">Plafon AI Harian (Shared Key)</label>
+                        <input id="fld-tenants-show-kuota-ai" type="number" name="kuota_ai_harian" class="form-control" value="{{ old('kuota_ai_harian', $savedAiCap) }}" min="10" max="50000">
                     </div>
                 </div>
 
@@ -214,6 +222,23 @@
                     </button>
                 </div>
             </form>
+
+            <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <span style="font-size:12.5px;color:var(--muted);font-weight:600">
+                    <i class="fas fa-bolt" style="color:#059669"></i> Perpanjangan Cepat &amp; Kirim Email Konfirmasi:
+                </span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    @foreach([1 => '+1 Bulan', 6 => '+6 Bulan', 12 => '+1 Tahun'] as $bln => $lbl)
+                        <form method="POST" action="{{ route('superadmin.tenants.extend', $tenant->uuid) }}" style="margin:0;display:inline">
+                            @csrf
+                            <input type="hidden" name="months" value="{{ $bln }}">
+                            <button type="submit" class="btn btn-xs" style="background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;font-weight:600">
+                                {{ $lbl }}
+                            </button>
+                        </form>
+                    @endforeach
+                </div>
+            </div>
         </div>
     </div>
 
@@ -252,6 +277,20 @@
                         <tr>
                             <td style="color:var(--muted)">Alamat Subdomain Bawaan</td>
                             <td><code>{{ $tenant->subdomain }}.simantap.sch.id</code></td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--muted)">Pemakaian Storage Aktual</td>
+                            <td>
+                                <b>{{ number_format($storageStatus['used_mb'] ?? 0, 2) }} MB</b>
+                                <span style="font-size:11.5px;color:var(--muted)">/ {{ number_format($storageStatus['limit_mb'] ?? ($tenant->kuota_storage_mb ?: 2048)) }} MB ({{ $storageStatus['percent'] ?? 0 }}%)</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="color:var(--muted)">Pemakaian AI Hari Ini</td>
+                            <td>
+                                <b>{{ number_format($aiQuotaStatus['used_today'] ?? 0) }}</b>
+                                <span style="font-size:11.5px;color:var(--muted)">/ {{ number_format($aiQuotaStatus['cap'] ?? 60) }} permintaan harian</span>
+                            </td>
                         </tr>
                     </table>
                 </div>

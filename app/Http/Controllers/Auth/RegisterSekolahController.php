@@ -95,14 +95,37 @@ class RegisterSekolahController extends Controller
         $subdomain = strtolower(trim($validated['subdomain']));
         $autoAktif = ! (bool) config('simantap.school_registration_require_approval', false);
         $verificationToken = Str::random(40);
+        $trialDays = max(0, (int) config('simantap.school_registration_trial_days', 30));
+        $defaultPaket = strtolower((string) config('simantap.school_registration_default_paket', 'standar'));
+        if (! in_array($defaultPaket, ['standar', 'pro', 'enterprise'], true)) {
+            $defaultPaket = 'standar';
+        }
+        $defaultKuotaSiswa = max(10, (int) config('simantap.school_registration_default_kuota_siswa', 500));
+        $defaultKuotaStorageMb = max(100, (int) config('simantap.school_registration_default_kuota_storage_mb', 2048));
+        $trialExpiry = $trialDays > 0 ? now()->addDays($trialDays)->toDateString() : null;
 
-        $result = DB::transaction(function () use ($validated, $subdomain, $autoAktif, $verificationToken, $request) {
+        $result = DB::transaction(function () use (
+            $validated,
+            $subdomain,
+            $autoAktif,
+            $verificationToken,
+            $trialDays,
+            $defaultPaket,
+            $defaultKuotaSiswa,
+            $defaultKuotaStorageMb,
+            $trialExpiry,
+            $request
+        ) {
             // 1. Buat Tenant Sekolah
             $tenant = Tenant::create([
                 'uuid' => (string) Str::uuid(),
                 'npsn' => $validated['npsn'],
                 'nama_sekolah' => $validated['nama_sekolah'],
                 'subdomain' => $subdomain,
+                'paket' => $defaultPaket,
+                'kuota_siswa' => $defaultKuotaSiswa,
+                'kuota_storage_mb' => $defaultKuotaStorageMb,
+                'tgl_kedaluwarsa' => $trialExpiry,
                 'aktif' => $autoAktif,
                 'meta' => [
                     'jenjang' => $validated['jenjang'],
@@ -110,6 +133,8 @@ class RegisterSekolahController extends Controller
                     'kepala_sekolah' => $validated['kepala_sekolah'],
                     'registered_at' => now()->toIso8601String(),
                     'approval_status' => $autoAktif ? 'approved' : 'pending',
+                    'is_trial' => $trialDays > 0,
+                    'kuota_ai_harian' => \App\Services\Tenant\TenantQuotaService::defaultAiQuotaForPaket($defaultPaket),
                     'npsn_format_valid' => true,
                     'npsn_verified' => false,
                     'email_verification_token_hash' => hash('sha256', $verificationToken),

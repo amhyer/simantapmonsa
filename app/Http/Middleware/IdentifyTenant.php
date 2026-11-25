@@ -40,17 +40,21 @@ class IdentifyTenant
             }
         }
 
-        if ($tenantInfo !== null) {
-            if (! $tenantInfo['aktif']) {
-                abort(404, 'Sekolah (tenant) tidak ditemukan atau sedang dinonaktifkan.');
-            }
+        $isLogoutRequest = $request->is('logout') || $request->routeIs('logout');
 
-            if (! empty($tenantInfo['tgl_kedaluwarsa']) && strtotime($tenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
-                abort(402, 'Masa aktif langganan sekolah telah berakhir. Silakan hubungi Super Administrator untuk perpanjangan layanan.');
+        if ($tenantInfo !== null) {
+            if (! $isLogoutRequest) {
+                if (! $tenantInfo['aktif']) {
+                    abort(404, 'Sekolah (tenant) tidak ditemukan atau sedang dinonaktifkan.');
+                }
+
+                if (! empty($tenantInfo['tgl_kedaluwarsa']) && strtotime($tenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
+                    abort(402, 'Masa aktif langganan sekolah telah berakhir. Silakan hubungi Super Administrator untuk perpanjangan layanan.');
+                }
             }
 
             $resolvedTenantId = $tenantInfo['id'];
-        } elseif ($requestedSubdomain !== null || $customDomain !== null) {
+        } elseif (($requestedSubdomain !== null || $customDomain !== null) && ! $isLogoutRequest) {
             abort(404, 'Sekolah (tenant) tidak ditemukan atau sedang dinonaktifkan.');
         }
 
@@ -80,13 +84,15 @@ class IdentifyTenant
             }
             $resolvedTenantId = $userTenantId;
 
-            // Periksa kedaluwarsa langganan akun pengguna / sekolah binaan aktif
-            $userTenantInfo = $this->resolveById($userTenantId);
-            if (! $userTenantInfo || ! $userTenantInfo['aktif']) {
-                abort(403, 'Sekolah akun Anda tidak aktif atau tidak ditemukan.');
-            }
-            if (! empty($userTenantInfo['tgl_kedaluwarsa']) && strtotime($userTenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
-                abort(402, 'Masa aktif langganan sekolah akun Anda telah berakhir. Silakan hubungi Super Administrator.');
+            // Periksa kedaluwarsa langganan akun pengguna / sekolah binaan aktif (kecuali saat proses logout)
+            if (! $isLogoutRequest) {
+                $userTenantInfo = $this->resolveById($userTenantId);
+                if (! $userTenantInfo || ! $userTenantInfo['aktif']) {
+                    abort(403, 'Sekolah akun Anda tidak aktif atau tidak ditemukan.');
+                }
+                if (! empty($userTenantInfo['tgl_kedaluwarsa']) && strtotime($userTenantInfo['tgl_kedaluwarsa']) < strtotime('today')) {
+                    abort(402, 'Masa aktif langganan sekolah akun Anda telah berakhir. Silakan hubungi Super Administrator.');
+                }
             }
         } elseif ($user && $resolvedTenantId !== null) {
             abort(403, 'Akun belum terhubung ke sekolah tersebut.');

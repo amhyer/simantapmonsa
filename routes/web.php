@@ -217,6 +217,7 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.te
     Route::post('/tenants/bulk-destroy-expired', [TenantController::class, 'destroyExpiredTenants'])->middleware('throttle:10,1')->name('tenants.bulk-destroy-expired');
     Route::get('/tenants/{tenant}', [TenantController::class, 'show'])->name('tenants.show');
     Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->middleware('throttle:30,1')->name('tenants.update');
+    Route::post('/tenants/{tenant}/extend', [TenantController::class, 'extend'])->middleware('throttle:20,1')->name('tenants.extend');
     Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->middleware('throttle:15,1')->name('tenants.destroy');
     Route::post('/tenants/{tenant}/toggle', [TenantController::class, 'toggleActive'])->middleware('throttle:30,1')->name('tenants.toggle');
     Route::post('/tenants/{tenant}/approve', [TenantController::class, 'approve'])->middleware('throttle:30,1')->name('tenants.approve');

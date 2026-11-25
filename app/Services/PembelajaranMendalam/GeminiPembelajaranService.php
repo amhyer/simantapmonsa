@@ -20,35 +20,42 @@ class GeminiPembelajaranService
 
         $pengaturan = is_array($sekolah?->pengaturan) ? $sekolah->pengaturan : [];
 
-        $apiKey = '';
+        $ownApiKey = '';
         if (! empty($pengaturan['gemini_api_key_encrypted'])) {
             try {
-                $apiKey = trim((string) Crypt::decryptString((string) $pengaturan['gemini_api_key_encrypted']));
+                $ownApiKey = trim((string) Crypt::decryptString((string) $pengaturan['gemini_api_key_encrypted']));
             } catch (DecryptException) {
-                $apiKey = '';
+                $ownApiKey = '';
             }
         }
-        if ($apiKey === '') {
-            $apiKey = trim((string) ($pengaturan['gemini_api_key'] ?? ''));
+        if ($ownApiKey === '') {
+            $ownApiKey = trim((string) ($pengaturan['gemini_api_key'] ?? ''));
         }
-        if ($apiKey === '') {
-            $apiKey = trim((string) config('services.gemini.api_key', ''));
-        }
+
+        $hasOwnApiKey = $ownApiKey !== '';
+        $apiKey = $hasOwnApiKey ? $ownApiKey : trim((string) config('services.gemini.api_key', ''));
 
         $model = trim((string) ($pengaturan['gemini_model'] ?? ''));
         if ($model === '') {
             $model = (string) config('services.gemini.model', 'gemini-2.5-flash');
         }
 
-        $quota = (int) ($pengaturan['gemini_daily_quota'] ?? config('services.gemini.daily_quota', 60));
-        if ($quota <= 0) {
-            $quota = 60;
+        $requestedQuota = (int) ($pengaturan['gemini_daily_quota'] ?? config('services.gemini.daily_quota', 60));
+        if ($requestedQuota <= 0) {
+            $requestedQuota = 60;
         }
+
+        $quotaSummary = app(\App\Services\Tenant\TenantQuotaService::class)->aiQuotaSummary(
+            $tenantId,
+            $requestedQuota,
+            $hasOwnApiKey
+        );
 
         return [
             'api_key' => $apiKey,
+            'has_own_api_key' => $hasOwnApiKey,
             'model' => $model,
-            'daily_quota' => $quota,
+            'daily_quota' => $quotaSummary['limit'],
             'base_url' => rtrim((string) config('services.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
         ];
     }
@@ -305,7 +312,8 @@ class GeminiPembelajaranService
         ?int $tenantId,
         int $userId
     ): array {
-        $prompt = "Anda adalah guru SD Indonesia. Susun Jurnal Mengajar Harian berbasis Pembelajaran Mendalam untuk Kelas {$kelas}, Mapel \"{$mapel}\", Materi \"{$topik}\".\n"
+        $jenjang = SchoolLevel::current($tenantId);
+        $prompt = "Anda adalah guru {$jenjang} Indonesia. Susun Jurnal Mengajar Harian berbasis Pembelajaran Mendalam untuk Kelas {$kelas}, Mapel \"{$mapel}\", Materi \"{$topik}\".\n"
             .($kejadianKelas ? "Yang terjadi di kelas hari ini: {$kejadianKelas}\n" : '')
             ."Kembalikan HANYA JSON object valid dengan struktur:\n"
             .'{"praktik_pedagogis":"Problem Based Learning (PBL)","prinsip_pm":["Berkesadaran (Mindful)","Bermakna (Meaningful)","Menggembirakan (Joyful)"],"pengalaman_belajar":["Memahami","Mengaplikasi","Merefleksi"],"kegiatan":"Uraian singkat kegiatan pembelajaran...","asesmen":"Bentuk asesmen formatif...","catatan":"Refleksi guru...","tindak_lanjut":"Rencana tindak lanjut pertemuan berikutnya..."}';
@@ -325,8 +333,9 @@ class GeminiPembelajaranService
         ?int $tenantId,
         int $userId
     ): array {
-        $prompt = "Anda adalah koordinator Kokurikuler SD Kurikulum Merdeka Indonesia.\n"
-            ."Rancang kegiatan Kokurikuler untuk SD Kelas {$tingkat} dengan bentuk kegiatan \"{$bentukKegiatan}\" dan tema/ide: \"{$temaAtauIde}\".\n"
+        $jenjang = SchoolLevel::current($tenantId);
+        $prompt = "Anda adalah koordinator Kokurikuler {$jenjang} Kurikulum Merdeka Indonesia.\n"
+            ."Rancang kegiatan Kokurikuler untuk {$jenjang} Kelas {$tingkat} dengan bentuk kegiatan \"{$bentukKegiatan}\" dan tema/ide: \"{$temaAtauIde}\".\n"
             ."Kembalikan HANYA JSON object valid dengan struktur:\n"
             .'{"tema_judul":"...","dimensi_profil":["Kreativitas","Kolaborasi","Kemandirian"],"tujuan":"...","rangkaian_kegiatan":"Tahap 1: ...\nTahap 2: ...\nTahap 3: ...","mitra":"Orang tua, komite sekolah, ...","refleksi_hasil":"Indikator keberhasilan dan refleksi murid..."}';
 

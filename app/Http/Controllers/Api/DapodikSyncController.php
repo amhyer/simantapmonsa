@@ -347,6 +347,7 @@ class DapodikSyncController extends Controller
                     return 'diperbarui';
                 }
 
+                app(\App\Services\Tenant\TenantQuotaService::class)->assertCanAddStudents(TenantContext::id(), 1);
                 $siswaData['uuid'] = Str::uuid();
                 Siswa::create($siswaData);
 
