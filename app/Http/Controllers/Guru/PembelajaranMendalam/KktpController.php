@@ -238,7 +238,7 @@ class KktpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $tingkat = max(1, min(12, (int) $request->query('tingkat', 1)));
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $mapel = trim((string) $request->query('mapel', ''));

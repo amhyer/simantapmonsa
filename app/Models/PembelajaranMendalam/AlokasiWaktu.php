@@ -103,7 +103,19 @@ class AlokasiWaktu extends Model
      */
     public static function standarUntukJenjang(?string $jenjang = null): array
     {
-        return match (SchoolLevel::normalize($jenjang, 'SD')) {
+        $normalized = SchoolLevel::normalize($jenjang, 'SD');
+        if ($normalized === 'SLB') {
+            $gabungan = self::STANDAR_PERMENDIKDASMEN_2025;
+            foreach ([self::STANDAR_SMP_2025, self::STANDAR_SMA_SMK_2025] as $set) {
+                foreach ($set as $mapel => $perTingkat) {
+                    $gabungan[$mapel] = ($gabungan[$mapel] ?? []) + $perTingkat;
+                }
+            }
+
+            return $gabungan;
+        }
+
+        return match ($normalized) {
             'SMP', 'MTs' => self::STANDAR_SMP_2025,
             'SMA', 'MA', 'SMK' => self::STANDAR_SMA_SMK_2025,
             default => self::STANDAR_PERMENDIKDASMEN_2025,

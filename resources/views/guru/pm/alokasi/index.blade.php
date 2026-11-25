@@ -66,7 +66,9 @@
                 <span style="font-size:12px;color:#667085;margin-left:6px">Tahun Ajaran {{ $tahunAjaran }} · 1 JP = 35 menit</span>
             </div>
         </div>
-        @php($daftarTingkatAlokasi = $tingkatList ?? \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current()))
+        @php
+            $daftarTingkatAlokasi = $tingkatList ?? \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current());
+        @endphp
         <form method="POST" action="{{ route(($routePrefix ?? 'guru.pm').'.alokasi.store') }}">
             @csrf
             <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">

@@ -168,35 +168,37 @@ class AlokasiWaktuController extends Controller
         $daftarMapel = $this->ctx->daftarMapel();
         $jenjang = SchoolLevel::current($tenantId);
 
-        foreach (AlokasiWaktu::standarUntukJenjang($jenjang) as $namaStandar => $perTingkat) {
-            // Cocokkan dengan nama mapel aktual sekolah (misal: "Matematika" -> "Matematika (Umum)")
-            $matched = $daftarMapel->first(function ($m) use ($namaStandar): bool {
-                $a = mb_strtolower($m->nama);
-                $b = mb_strtolower($namaStandar);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($jenjang, $daftarMapel, $tenantId, $tahunAjaran, $guru): void {
+            foreach (AlokasiWaktu::standarUntukJenjang($jenjang) as $namaStandar => $perTingkat) {
+                // Cocokkan dengan nama mapel aktual sekolah (misal: "Matematika" -> "Matematika (Umum)")
+                $matched = $daftarMapel->first(function ($m) use ($namaStandar): bool {
+                    $a = mb_strtolower($m->nama);
+                    $b = mb_strtolower($namaStandar);
 
-                return $a === $b || str_contains($a, $b) || str_contains($b, $a);
-            });
+                    return $a === $b || str_contains($a, $b) || str_contains($b, $a);
+                });
 
-            $namaTarget = $matched ? $matched->nama : $namaStandar;
-            $mapelId = $matched?->id;
+                $namaTarget = $matched ? $matched->nama : $namaStandar;
+                $mapelId = $matched?->id;
 
-            foreach ($perTingkat as $tingkat => [$intra, $ko]) {
-                AlokasiWaktu::updateOrCreate(
-                    [
-                        'tenant_id' => $tenantId,
-                        'nama_mapel' => $namaTarget,
-                        'tingkat' => $tingkat,
-                        'tahun_ajaran' => $tahunAjaran,
-                    ],
-                    [
-                        'mata_pelajaran_id' => $mapelId,
-                        'jp_intra' => $intra,
-                        'jp_kokurikuler' => $ko,
-                        'updated_by' => $guru->id,
-                    ]
-                );
+                foreach ($perTingkat as $tingkat => [$intra, $ko]) {
+                    AlokasiWaktu::updateOrCreate(
+                        [
+                            'tenant_id' => $tenantId,
+                            'nama_mapel' => $namaTarget,
+                            'tingkat' => $tingkat,
+                            'tahun_ajaran' => $tahunAjaran,
+                        ],
+                        [
+                            'mata_pelajaran_id' => $mapelId,
+                            'jp_intra' => $intra,
+                            'jp_kokurikuler' => $ko,
+                            'updated_by' => $guru->id,
+                        ]
+                    );
+                }
             }
-        }
+        });
 
         return redirect()
             ->route('admin.pm.alokasi.index', ['tahun_ajaran' => $tahunAjaran])

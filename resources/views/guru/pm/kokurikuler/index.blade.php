@@ -34,7 +34,9 @@
                             <input id="fld-pm-kokurikuler-tema-judul" type="text" name="tema_judul" required placeholder="Misal: Kebun Sayur Sekolahku"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
-                        @php($daftarTingkatKoku = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user()))
+                        @php
+                            $daftarTingkatKoku = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user());
+                        @endphp
                         <div>
                             <label for="fld-pm-kokurikuler-tingkat" style="font-size:12px;font-weight:600">Kelas *</label>
                             <select id="fld-pm-kokurikuler-tingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">

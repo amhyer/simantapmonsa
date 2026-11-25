@@ -86,17 +86,15 @@ final class SchoolLevel
             $settingsQuery->whereNull('tenant_id');
         }
 
-        $settings = $settingsQuery->first(['jenjang', 'nama_sekolah']);
+        $settings = $settingsQuery
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first(['jenjang', 'nama_sekolah']);
         if ($settings && ! empty($settings->jenjang)) {
             return self::normalize($settings->jenjang, 'SD') ?? 'SD';
         }
 
-        $tenant = null;
-        if (TenantContext::check() && ($tenantId === null || (int) TenantContext::id() === $tenantId)) {
-            $tenant = TenantContext::tenant();
-        } elseif ($resolvedTenantId !== null) {
-            $tenant = Tenant::find($resolvedTenantId);
-        }
+        $tenant = $resolvedTenantId !== null ? Tenant::find($resolvedTenantId) : null;
 
         $metaJenjang = is_array($tenant?->meta ?? null) ? ($tenant->meta['jenjang'] ?? null) : null;
         if (! empty($metaJenjang)) {

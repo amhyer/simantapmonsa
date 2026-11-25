@@ -255,10 +255,14 @@
                     <label for="jenjang">Jenjang Pendidikan <span class="req">*</span></label>
                     <select id="jenjang" name="jenjang" class="form-control" required>
                         <option value="">-- Pilih Jenjang --</option>
-                        <option value="SD" {{ old('jenjang') === 'SD' ? 'selected' : '' }}>SD / MI</option>
-                        <option value="SMP" {{ old('jenjang') === 'SMP' ? 'selected' : '' }}>SMP / MTs</option>
-                        <option value="SMA" {{ old('jenjang') === 'SMA' ? 'selected' : '' }}>SMA / MA</option>
-                        <option value="SMK" {{ old('jenjang') === 'SMK' ? 'selected' : '' }}>SMK</option>
+                        <option value="SD" {{ old('jenjang') === 'SD' ? 'selected' : '' }}>SD (Sekolah Dasar)</option>
+                        <option value="MI" {{ old('jenjang') === 'MI' ? 'selected' : '' }}>MI (Madrasah Ibtidaiyah)</option>
+                        <option value="SMP" {{ old('jenjang') === 'SMP' ? 'selected' : '' }}>SMP (Sekolah Menengah Pertama)</option>
+                        <option value="MTs" {{ old('jenjang') === 'MTs' ? 'selected' : '' }}>MTs (Madrasah Tsanawiyah)</option>
+                        <option value="SMA" {{ old('jenjang') === 'SMA' ? 'selected' : '' }}>SMA (Sekolah Menengah Atas)</option>
+                        <option value="MA" {{ old('jenjang') === 'MA' ? 'selected' : '' }}>MA (Madrasah Aliyah)</option>
+                        <option value="SMK" {{ old('jenjang') === 'SMK' ? 'selected' : '' }}>SMK (Sekolah Menengah Kejuruan)</option>
+                        <option value="SLB" {{ old('jenjang') === 'SLB' ? 'selected' : '' }}>SLB (Sekolah Luar Biasa)</option>
                     </select>
                 </div>
 

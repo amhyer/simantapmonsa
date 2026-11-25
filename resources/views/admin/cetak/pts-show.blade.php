@@ -48,7 +48,7 @@
 
     @php
         $ptsCfg = $tampilanRapor ?? [];
-        $tingkatKelas = preg_match('/^([1-6])/', (string) ($siswa->kelas ?? ''), $m) ? $m[1] : '1';
+        $tingkatKelas = (string) (\App\Support\SchoolLevel::parseTingkat($siswa->rombel?->tingkat ?? null, $siswa->kelas ?? null) ?? 1);
         $jmlKolomPts = (int) (($ptsCfg['pts_kolom_kelas'][$tingkatKelas] ?? 5));
         $showFormatif = (bool) ($ptsCfg['pts_formatif_masuk'] ?? false);
         $showEkskulPts = array_key_exists('pts_tabel_ekskul', $ptsCfg) ? (bool) $ptsCfg['pts_tabel_ekskul'] : true;

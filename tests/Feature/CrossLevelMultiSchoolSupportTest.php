@@ -6,6 +6,7 @@ use App\Models\MataPelajaran;
 use App\Models\PembelajaranMendalam\AlokasiWaktu;
 use App\Models\PembelajaranMendalam\CapaianPembelajaran;
 use App\Models\PembelajaranMendalam\TujuanPembelajaranPm;
+use App\Models\PengaturanGuru;
 use App\Models\Rombel;
 use App\Models\SekolahSettings;
 use App\Models\Semester;
@@ -58,10 +59,8 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         $semester = TenantContext::run($tenant->id, fn () => Semester::create([
             'tenant_id' => $tenant->id,
             'semester_id' => '20261',
-            'nama_semester' => 'Ganjil',
+            'nama_semester' => 'ganjil',
             'tahun_ajaran' => '2026/2027',
-            'semester' => 1,
-            'periode_aktif' => true,
         ]));
 
         return [$tenant, $admin, $settings, $semester];
@@ -74,6 +73,7 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         $this->assertSame([7, 8, 9], SchoolLevel::tingkatForJenjang('MTs'));
         $this->assertSame([10, 11, 12], SchoolLevel::tingkatForJenjang('SMA'));
         $this->assertSame([10, 11, 12], SchoolLevel::tingkatForJenjang('SMK'));
+        $this->assertSame(range(1, 12), SchoolLevel::tingkatForJenjang('SLB'));
 
         $this->assertSame(['A', 'B', 'C'], SchoolLevel::faseForJenjang('SD'));
         $this->assertSame(['D'], SchoolLevel::faseForJenjang('SMP'));
@@ -96,6 +96,11 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         $this->assertSame(32, AlokasiWaktu::mingguPerTahun(12));
         $this->assertSame(36, AlokasiWaktu::mingguPerTahun(8));
         $this->assertSame(36, AlokasiWaktu::mingguPerTahun(10));
+
+        $slbStandar = AlokasiWaktu::standarUntukJenjang('SLB');
+        $this->assertArrayHasKey(1, $slbStandar['Matematika']);
+        $this->assertArrayHasKey(8, $slbStandar['Matematika']);
+        $this->assertArrayHasKey(12, $slbStandar['Matematika']);
 
         $this->assertSame(7, SchoolLevel::parseTingkat(null, '7A'));
         $this->assertSame(8, SchoolLevel::parseTingkat(null, 'VIII B'));
@@ -134,16 +139,16 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         $guruSmp = User::factory()->guru()->create([
             'tenant_id' => $smp->id,
             'tenant_owned' => true,
-            'adalah_wali_kelas' => true,
+            'is_wali_kelas' => true,
         ]);
 
         $rombel8 = TenantContext::run($smp->id, fn () => Rombel::create([
             'tenant_id' => $smp->id,
+            'dapodik_id' => (string) Str::uuid(),
             'semester_id' => $semSmp->id,
             'guru_id' => $guruSmp->id,
             'nama_rombel' => 'VIII B',
-            'tingkat' => '8',
-            'jenis_rombel' => 'Reguler',
+            'tingkat' => 8,
         ]));
 
         TenantContext::run($smp->id, fn () => MataPelajaran::create([
@@ -212,7 +217,7 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
 
         $this->assertSame(8, (int) $tpD->fresh()->kelas_target);
 
-        // Simpan KKTP & Prota untuk tingkat 8
+        // Simpan KKTP, cetak PDF KKTP kelas 8, & Prota untuk tingkat 8
         $this->actingAs($guruSmp)
             ->post(route('guru.pm.kktp.interval'), [
                 'nama_mapel' => 'Matematika',
@@ -224,6 +229,17 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
+        $this->assertDatabaseHas('pm_kktp_interval', [
+            'tenant_id' => $smp->id,
+            'nama_mapel' => 'Matematika',
+            'tingkat' => 8,
+            'nilai_kktp' => 75,
+        ]);
+
+        $this->actingAs($guruSmp)
+            ->get(route('guru.pm.kktp.pdf', ['tingkat' => 8, 'mapel' => 'Matematika']))
+            ->assertOk();
+
         $this->actingAs($guruSmp)
             ->post(route('guru.pm.prota.ambil-atp'), [
                 'tahun_ajaran' => '2026/2027',
@@ -233,13 +249,13 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('pm_prota_items', [
+        $this->assertDatabaseHas('pm_prota', [
             'tenant_id' => $smp->id,
             'tingkat' => 8,
             'nama_mapel' => 'Matematika',
         ]);
 
-        // Simpan TP Wali Kelas untuk Fase D
+        // Simpan TP Wali Kelas untuk Fase D dan verifikasi tersimpan di PengaturanGuru
         $this->actingAs($guruSmp)
             ->post(route('guru.tp.store'), [
                 'kode' => 'TP-8.1',
@@ -250,6 +266,10 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
             ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
+
+        $pengaturanGuru = TenantContext::run($smp->id, fn () => PengaturanGuru::where('guru_id', $guruSmp->id)->firstOrFail());
+        $tpWali = collect($pengaturanGuru->pengaturan['tujuan_pembelajaran'] ?? []);
+        $this->assertTrue($tpWali->contains(fn (array $row) => ($row['kode'] ?? null) === 'TP-8.1' && ($row['fase'] ?? null) === 'Fase D'));
 
         // 3. Siswa SMP Kelas VIII B melihat Tingkat 8 (Fase D) di dashboard
         $akunSiswaSmp = User::factory()->siswa()->create([
@@ -263,6 +283,7 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         TenantContext::run($smp->id, fn () => Siswa::create([
             'tenant_id' => $smp->id,
             'guru_id' => $guruSmp->id,
+            'nama_guru' => $guruSmp->nama_lengkap,
             'rombel_id' => $rombel8->id,
             'nis' => '260801',
             'nisn' => '0081122334',
@@ -297,16 +318,16 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         $guruSmk = User::factory()->guru()->create([
             'tenant_id' => $smk->id,
             'tenant_owned' => true,
-            'adalah_wali_kelas' => true,
+            'is_wali_kelas' => true,
         ]);
 
         $rombel12 = TenantContext::run($smk->id, fn () => Rombel::create([
             'tenant_id' => $smk->id,
+            'dapodik_id' => (string) Str::uuid(),
             'semester_id' => $semSmk->id,
             'guru_id' => $guruSmk->id,
             'nama_rombel' => 'XII TKJ 1',
-            'tingkat' => '12',
-            'jenis_rombel' => 'Reguler',
+            'tingkat' => 12,
         ]));
 
         // Kokurikuler & TP Fase F (Kelas 12)
@@ -316,7 +337,6 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
                 'tingkat' => 12,
                 'tema_judul' => 'Rekayasa Jaringan Sekolah Hijau',
                 'bentuk_kegiatan' => 'kolaboratif_lintas_disiplin',
-                'alokasi_jp' => 24,
             ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
@@ -338,6 +358,7 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
         TenantContext::run($smk->id, fn () => Siswa::create([
             'tenant_id' => $smk->id,
             'guru_id' => $guruSmk->id,
+            'nama_guru' => $guruSmk->nama_lengkap,
             'rombel_id' => $rombel12->id,
             'nis' => '261201',
             'nisn' => '0129988776',

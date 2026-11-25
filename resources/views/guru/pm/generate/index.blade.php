@@ -26,7 +26,9 @@
             <strong><i class="fas fa-file-pdf"></i> Cetak Bundel Administrasi Guru 1 Semester (Siap Supervisi &amp; Akreditasi)</strong>
         </div>
         <div class="card-body">
-            @php($daftarTingkatGen = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user()))
+            @php
+                $daftarTingkatGen = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user());
+            @endphp
             <form method="GET" action="{{ route('guru.pm.bundel.pdf') }}" target="_blank" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
                 <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
                 <div>
