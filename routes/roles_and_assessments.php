@@ -21,6 +21,7 @@ use App\Http\Controllers\Kepsek\SupervisiPmController;
 use App\Http\Controllers\Kepsek\TkaLaporanController;
 use App\Http\Controllers\Ortu\CatatanController as OrtuCatatanController;
 use App\Http\Controllers\Ortu\DashboardController as OrtuDashboard;
+use App\Http\Controllers\Ortu\IzinPresensiController;
 use App\Http\Controllers\Ortu\KebiasaanController as OrtuKebiasaanController;
 use App\Http\Controllers\Ortu\KehadiranController as OrtuKehadiranController;
 use App\Http\Controllers\Ortu\LaporanController as OrtuLaporanController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Ortu\RekapController as OrtuRekapController;
 use App\Http\Controllers\Ortu\TkaRiwayatController;
 use App\Http\Controllers\Pengawas\DashboardController as PengawasDashboardController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboard;
+use App\Http\Controllers\Siswa\KelasDigitalController;
 use App\Http\Controllers\Siswa\KuisController as SiswaKuisController;
 use App\Http\Controllers\Siswa\MateriController as SiswaMateriController;
 use App\Http\Controllers\Siswa\NilaiController as SiswaNilaiController;
@@ -52,14 +54,14 @@ Route::middleware(['auth', 'role:siswa', 'force.password.change', 'school.contex
 
     // E-Learning / Kelas Digital Siswa
     Route::prefix('kelas-digital')->name('kelas-digital.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'index'])->name('index');
-        Route::get('/{kelasDigital}', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'show'])->name('show');
-        Route::get('/{kelasDigital}/pertemuan/{pertemuan}', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'pertemuan'])->name('pertemuan');
-        Route::post('/{kelasDigital}/pertemuan/{pertemuan}/selesai', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'tandaiSelesai'])->middleware('throttle:60,1')->name('pertemuan.selesai');
-        Route::post('/{kelasDigital}/tugas/{tugas}/kumpul', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'kumpulTugas'])->middleware('throttle:30,1')->name('tugas.kumpul');
-        Route::get('/{kelasDigital}/item/{item}/unduh', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadItem'])->name('item.download');
-        Route::get('/{kelasDigital}/tugas/{tugas}/lampiran', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadLampiranTugas'])->name('tugas.download');
-        Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [App\Http\Controllers\Siswa\KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
+        Route::get('/', [KelasDigitalController::class, 'index'])->name('index');
+        Route::get('/{kelasDigital}', [KelasDigitalController::class, 'show'])->name('show');
+        Route::get('/{kelasDigital}/pertemuan/{pertemuan}', [KelasDigitalController::class, 'pertemuan'])->name('pertemuan');
+        Route::post('/{kelasDigital}/pertemuan/{pertemuan}/selesai', [KelasDigitalController::class, 'tandaiSelesai'])->middleware('throttle:60,1')->name('pertemuan.selesai');
+        Route::post('/{kelasDigital}/tugas/{tugas}/kumpul', [KelasDigitalController::class, 'kumpulTugas'])->middleware('throttle:30,1')->name('tugas.kumpul');
+        Route::get('/{kelasDigital}/item/{item}/unduh', [KelasDigitalController::class, 'downloadItem'])->name('item.download');
+        Route::get('/{kelasDigital}/tugas/{tugas}/lampiran', [KelasDigitalController::class, 'downloadLampiranTugas'])->name('tugas.download');
+        Route::get('/{kelasDigital}/pengumpulan/{pengumpulan}/unduh', [KelasDigitalController::class, 'downloadPengumpulan'])->name('pengumpulan.download');
     });
     Route::get('/kuis', [SiswaKuisController::class, 'index'])->name('kuis.index');
     Route::get('/kuis/{kuis}', [SiswaKuisController::class, 'show'])->name('kuis.show');
@@ -102,7 +104,7 @@ Route::middleware(['auth', 'role:ortu', 'force.password.change', 'school.context
     Route::get('/nilai', [DashboardController::class, 'ortuNilai'])->name('nilai.index');
     Route::get('/rekap', [OrtuRekapController::class, 'index'])->name('rekap.index');
     Route::get('/kehadiran', [OrtuKehadiranController::class, 'index'])->name('kehadiran.index');
-    Route::post('/kehadiran/izin', [App\Http\Controllers\Ortu\IzinPresensiController::class, 'store'])->middleware('throttle:10,1')->name('kehadiran.izin.store');
+    Route::post('/kehadiran/izin', [IzinPresensiController::class, 'store'])->middleware('throttle:10,1')->name('kehadiran.izin.store');
     Route::get('/catatan', [OrtuCatatanController::class, 'index'])->name('catatan.index');
     Route::get('/laporan', [OrtuLaporanController::class, 'index'])->name('laporan.index');
     Route::get('/tka-riwayat', [TkaRiwayatController::class, 'index'])->name('tka-riwayat.index');
@@ -233,7 +235,7 @@ if (config('simantap.cbt_enabled', false)) {
         Route::post('/{session}/start', [CbtStudentController::class, 'begin'])->name('begin');
         Route::post('/{result}/integrity', [CbtIntegrityController::class, 'logViolation'])->middleware('throttle:30,1')->name('integrity');
         Route::post('/{result}/answer', [CbtStudentController::class, 'submitAnswer'])->middleware('throttle:120,1')->name('answer');
-        Route::post('/{result}/submit', [CbtStudentController::class, 'submit'])->name('submit');
+        Route::post('/{result}/submit', [CbtStudentController::class, 'submit'])->middleware('throttle:20,1')->name('submit');
         Route::get('/{result}/result', [CbtStudentController::class, 'result'])->name('result');
     });
 }
@@ -365,8 +367,8 @@ Route::middleware(['module.asesmen', 'auth', 'role:guru,admin', 'school.context'
 Route::middleware(['module.asesmen', 'auth', 'role:siswa', 'school.context', 'force.password.change'])->prefix('tryout/student')->name('tryout.student.')->group(function () {
     Route::get('/', [TryoutStudentController::class, 'index'])->name('index');
     Route::get('/{session}/start', [TryoutStudentController::class, 'start'])->name('start');
-    Route::post('/{result}/answer', [TryoutStudentController::class, 'submitAnswer'])->name('answer');
-    Route::post('/{result}/complete', [TryoutStudentController::class, 'complete'])->name('complete');
+    Route::post('/{result}/answer', [TryoutStudentController::class, 'submitAnswer'])->middleware('throttle:120,1')->name('answer');
+    Route::post('/{result}/complete', [TryoutStudentController::class, 'complete'])->middleware('throttle:20,1')->name('complete');
     Route::get('/{result}/result', [TryoutStudentController::class, 'result'])->name('result');
 });
 

@@ -95,9 +95,33 @@ function Jalankan-Export([datetime]$dari, [datetime]$sampai) {
     return $mentah
 }
 
+function Test-ServerSecurity([string]$url) {
+    $uri = [System.Uri]$url
+    $hostLower = $uri.Host.ToLowerInvariant()
+    $isLocal = ($hostLower -eq 'localhost' -or $hostLower -eq '127.0.0.1' -or $hostLower -eq '::1')
+    if (-not $isLocal -and $uri.Scheme -ne 'https') {
+        throw 'Demi keamanan API key dan data presensi pegawai, server_url non-lokal WAJIB menggunakan protokol HTTPS (https://...).'
+    }
+}
+
 function Kirim-Ke-Server($payload) {
+    Test-ServerSecurity $cfg.server_url
     $body = $payload | ConvertTo-Json -Depth 10 -Compress
-    return Invoke-RestMethod -Uri ($cfg.server_url + '/api/presensi/mesin/sinkron') -Method Post -ContentType 'application/json' -Body $body -Headers @{ 'X-API-Key' = $cfg.api_key } -TimeoutSec 120
+    $endpoint = $cfg.server_url + '/api/presensi/mesin/sinkron'
+    $maxAttempts = 3
+
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        try {
+            return Invoke-RestMethod -Uri $endpoint -Method Post -ContentType 'application/json' -Body $body -Headers @{ 'X-API-Key' = $cfg.api_key } -TimeoutSec 120
+        } catch {
+            if ($attempt -ge $maxAttempts) {
+                throw
+            }
+            $delay = $attempt * 3
+            Write-Log ("Gagal kirim ke server (percobaan {0}/{1}): {2}. Ulangi dalam {3} detik..." -f $attempt, $maxAttempts, $_.Exception.Message, $delay)
+            Start-Sleep -Seconds $delay
+        }
+    }
 }
 
 $script:root = Split-Path -Parent $MyInvocation.MyCommand.Path

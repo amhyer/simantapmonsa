@@ -85,6 +85,7 @@ Buat database dan **user aplikasi terpisah** — jangan pakai superuser `postgre
 CREATE DATABASE simantap_db ENCODING 'UTF8';
 
 CREATE USER simantap_app WITH PASSWORD 'ganti-dengan-yang-kuat';
+GRANT USAGE ON SCHEMA public TO simantap_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO simantap_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO simantap_app;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
@@ -92,6 +93,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO simantap_app;
 ```
+
+> ⚠️ **PostgreSQL 15+ & Migrasi**: Pada PostgreSQL 15+, user biasa (`simantap_app`) tidak otomatis memiliki hak `CREATE` pada schema `public`. Jalankan `php artisan migrate --force` memakai user owner database / role migrator terpisah, atau berikan sementara `GRANT CREATE ON SCHEMA public TO simantap_app;` saat migrasi lalu cabut kembali dengan `REVOKE CREATE ON SCHEMA public FROM simantap_app;` dan ulangi `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES ...` / `GRANT USAGE, SELECT ON ALL SEQUENCES ...`.
 
 Migrasi:
 

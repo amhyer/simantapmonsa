@@ -130,7 +130,11 @@ def parse_routes(path: pathlib.Path) -> dict[str, dict]:
 
 def load_routes() -> dict[str, dict]:
     routes: dict[str, dict] = {}
-    for path in (ROOT / "routes" / "web.php", ROOT / "routes" / "api.php"):
+    for path in (
+        ROOT / "routes" / "web.php",
+        ROOT / "routes" / "api.php",
+        ROOT / "routes" / "roles_and_assessments.php",
+    ):
         if not path.exists():
             continue
         for name, info in parse_routes(path).items():

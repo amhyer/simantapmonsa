@@ -1,10 +1,9 @@
 <?php
 
+use App\Http\Controllers\AccountProfileController;
 use App\Http\Controllers\Admin\ApiKeyController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BobotController;
-use App\Http\Controllers\Admin\Cbt\CbtBankController;
-use App\Http\Controllers\Admin\Cbt\CbtSessionController;
 use App\Http\Controllers\Admin\CetakController;
 use App\Http\Controllers\Admin\DapodikImportController;
 use App\Http\Controllers\Admin\DapodikPushController;
@@ -25,10 +24,7 @@ use App\Http\Controllers\Admin\RaporMerdekaController;
 use App\Http\Controllers\Admin\SekolahController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\SheetController;
-use App\Http\Controllers\Admin\Tka\TkaAdminController;
-use App\Http\Controllers\Admin\Tka\TkaLaporanSekolahController;
 use App\Http\Controllers\Admin\TranskripController;
-use App\Http\Controllers\Admin\Tryout\TryoutPackageAdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ValidasiDataController;
 use App\Http\Controllers\Api\DapodikController;
@@ -37,11 +33,6 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterSekolahController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Cbt\CbtIntegrityController;
-use App\Http\Controllers\Cbt\CbtQuestionBankController;
-use App\Http\Controllers\Cbt\CbtQuestionController;
-use App\Http\Controllers\Cbt\CbtStudentController;
-use App\Http\Controllers\Cbt\CbtTestSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\Guru\AnalisisController;
@@ -61,7 +52,6 @@ use App\Http\Controllers\Guru\LaporanController;
 use App\Http\Controllers\Guru\MateriController;
 use App\Http\Controllers\Guru\NilaiController;
 use App\Http\Controllers\Guru\NilaiErapotController;
-use App\Http\Controllers\Guru\PengaturanController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\AlokasiWaktuController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\AtpController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\BukuPaketController;
@@ -74,48 +64,19 @@ use App\Http\Controllers\Guru\PembelajaranMendalam\ProsemController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\ProtaController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\TandaTanganController;
 use App\Http\Controllers\Guru\PembelajaranMendalam\TpController as PmTpController;
+use App\Http\Controllers\Guru\PengaturanController;
 use App\Http\Controllers\Guru\PerangkatController;
 use App\Http\Controllers\Guru\SiswaController;
 use App\Http\Controllers\Guru\TKAController;
 use App\Http\Controllers\Guru\TkaInovasiController;
 use App\Http\Controllers\Guru\WaliKelasController;
-use App\Http\Controllers\Kepsek\AktivitasController;
-use App\Http\Controllers\Kepsek\HasilBelajarController;
-use App\Http\Controllers\Kepsek\KebiasaanController as KepsekKebiasaanController;
-use App\Http\Controllers\Kepsek\PerangkatSupervisiController;
-use App\Http\Controllers\Kepsek\PetaKelasController as KepsekPetaKelas;
-use App\Http\Controllers\Kepsek\RekapController;
-use App\Http\Controllers\Kepsek\SupervisiPmController;
-use App\Http\Controllers\Kepsek\TkaLaporanController;
-use App\Http\Controllers\Pengawas\DashboardController as PengawasDashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Media\SiswaFotoController;
-use App\Http\Controllers\Ortu\CatatanController as OrtuCatatanController;
-use App\Http\Controllers\Ortu\DashboardController as OrtuDashboard;
-use App\Http\Controllers\Ortu\KebiasaanController as OrtuKebiasaanController;
-use App\Http\Controllers\Ortu\KehadiranController as OrtuKehadiranController;
-use App\Http\Controllers\Ortu\LaporanController as OrtuLaporanController;
-use App\Http\Controllers\Ortu\RekapController as OrtuRekapController;
-use App\Http\Controllers\Ortu\TkaRiwayatController;
 use App\Http\Controllers\Pegawai\PresensiController;
 use App\Http\Controllers\Security\CspReportController;
-use App\Http\Controllers\Siswa\DashboardController as SiswaDashboard;
-use App\Http\Controllers\Siswa\KuisController as SiswaKuisController;
-use App\Http\Controllers\Siswa\MateriController as SiswaMateriController;
-use App\Http\Controllers\Siswa\NilaiController as SiswaNilaiController;
-use App\Http\Controllers\Siswa\ProfilController;
-use App\Http\Controllers\Siswa\RaporController;
-use App\Http\Controllers\Siswa\TkaSimulasiController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\Tka\KesiapanController;
-use App\Http\Controllers\Tka\TkaAssessmentController;
-use App\Http\Controllers\Tka\TkaDimensionController;
-use App\Http\Controllers\Tka\TkaParentController;
 use App\Http\Controllers\TkaController as TkaStatsController;
-use App\Http\Controllers\Tryout\TryoutPackageController;
-use App\Http\Controllers\Tryout\TryoutSessionController;
-use App\Http\Controllers\Tryout\TryoutStudentController;
-use App\Http\Middleware\CbtAccessMiddleware;
 use App\Http\Middleware\CspReportOnlyHeaders;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -132,7 +93,7 @@ Route::get('/demo', [LandingController::class, 'demo'])->name('demo');
 
 // TKA Statistics (public view, protected write)
 Route::get('/tka-statistik', [TkaStatsController::class, 'index'])->name('tka.statistik');
-Route::get('/api/tka-statistik', [TkaStatsController::class, 'api'])->name('tka.api');
+Route::get('/api/tka-statistik', [TkaStatsController::class, 'api'])->middleware('throttle:60,1')->name('tka.api');
 Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
     ->middleware(['auth', 'role:admin,super_admin', 'throttle:10,1'])
     ->name('tka.refresh');
@@ -191,9 +152,9 @@ Route::middleware(['auth'])->group(function () {
 
 // Profil & Ubah Kata Sandi Mandiri (semua peran terautentikasi)
 Route::middleware(['auth', 'force.password.change'])->prefix('akun')->name('account.')->group(function () {
-    Route::get('/profil', [\App\Http\Controllers\AccountProfileController::class, 'show'])->name('profile.show');
-    Route::put('/profil', [\App\Http\Controllers\AccountProfileController::class, 'updateProfile'])->middleware('throttle:10,1')->name('profile.update');
-    Route::put('/profil/password', [\App\Http\Controllers\AccountProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
+    Route::get('/profil', [AccountProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profil', [AccountProfileController::class, 'updateProfile'])->middleware('throttle:10,1')->name('profile.update');
+    Route::put('/profil/password', [AccountProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
 });
 
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
@@ -820,4 +781,3 @@ Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context
 });
 
 require __DIR__.'/roles_and_assessments.php';
-

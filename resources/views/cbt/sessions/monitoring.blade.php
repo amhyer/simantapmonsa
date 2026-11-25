@@ -34,7 +34,7 @@
         <i class="fas fa-users stat-icon"></i>
         <div class="stat-label">Total Peserta Terdaftar</div>
         <div class="stat-value">{{ $totalPeserta }}</div>
-        <div class="stat-change">Kelas {{ $session->kelas }}</div>
+        <div class="stat-change">{{ stripos(trim((string) $session->kelas), 'kelas') === 0 ? $session->kelas : 'Kelas '.$session->kelas }}</div>
     </div>
 
     <div class="stat-card ok">

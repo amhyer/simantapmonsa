@@ -193,14 +193,19 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Proses akun massal belum tersedia untuk multi-sekolah.'], 503);
         }
 
-        $request->validate([
+        $siswaExistsRule = Rule::exists('siswa', 'id');
+        if (TenantContext::check()) {
+            $siswaExistsRule->where('tenant_id', TenantContext::id());
+        }
+
+        $validated = $request->validate([
             'siswa_ids' => 'required|array',
-            'siswa_ids.*' => 'exists:siswa,id',
+            'siswa_ids.*' => ['integer', $siswaExistsRule],
             'buat_ortu' => 'boolean',
             'buat_siswa' => 'boolean',
         ]);
 
-        ProsesAkunMassalJob::dispatch($request->all());
+        ProsesAkunMassalJob::dispatch($validated);
 
         return response()->json([
             'success' => true,

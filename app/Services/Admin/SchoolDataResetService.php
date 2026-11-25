@@ -67,13 +67,14 @@ class SchoolDataResetService
         ];
 
         $driver = DB::getDriverName();
+        // Di PostgreSQL, `Schema::disableForeignKeyConstraints()` menjalankan
+        // `SET session_replication_role = 'replica'` yang membutuhkan hak superuser
+        // dan gagal pada user aplikasi non-superuser (`simantap_app`). Karena itu
+        // pada pgsql penghapusan selalu mengikuti urutan child -> parent secara eksplisit.
         if ($driver !== 'pgsql') {
             Schema::disableForeignKeyConstraints();
         }
         DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
         try {
             // 1. Tentukan akun Admin yang dipertahankan vs seluruh akun lain yang dihapus total
             $preservedAdminIds = collect();
@@ -296,7 +297,9 @@ class SchoolDataResetService
             DB::rollBack();
             throw $e;
         } finally {
-            Schema::enableForeignKeyConstraints();
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
+            }
         }
 
         // 8. Hapus berkas fisik foto siswa setelah transaksi DB sukses

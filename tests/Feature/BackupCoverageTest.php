@@ -12,6 +12,7 @@ use App\Services\Backup\BackupStreamWriter;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -51,6 +52,31 @@ class BackupCoverageTest extends TestCase
             $this->assertContains($tabel, $dicadangkan);
             $this->assertNotContains($tabel, $dikosongkan);
         }
+    }
+
+    public function test_semua_tabel_skema_terdaftar_di_backup_tables(): void
+    {
+        $infra = [
+            'migrations', 'sessions', 'password_reset_tokens', 'cache', 'cache_locks',
+            'jobs', 'job_batches', 'failed_jobs', 'sqlite_sequence',
+            'telescope_entries', 'telescope_entries_tags', 'telescope_monitoring',
+        ];
+        $tercatat = array_merge(
+            BackupTables::tabel(),
+            BackupTables::tidakDicadangkan(),
+            BackupTables::konfigurasiRahasia(),
+            $infra
+        );
+
+        $semuaTabel = array_map(function ($entry): string {
+            $name = (string) $entry;
+
+            return str_contains($name, '.') ? substr($name, strrpos($name, '.') + 1) : $name;
+        }, Schema::getTableListing());
+
+        $terlewat = array_values(array_diff($semuaTabel, $tercatat));
+
+        $this->assertSame([], $terlewat, 'Tabel baru belum terdaftar di BackupTables: '.implode(', ', $terlewat));
     }
 
     public function test_backup_menyertakan_nik_dan_no_kk_siswa(): void

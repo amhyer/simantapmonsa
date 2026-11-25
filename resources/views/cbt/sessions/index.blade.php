@@ -115,7 +115,7 @@
                                         </a>
                                     </div>
                                     <div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px">
-                                        <span class="tag tag-primary" style="font-size:10.5px">Kelas {{ $session->kelas }}</span>
+                                        <span class="tag tag-primary" style="font-size:10.5px">{{ stripos(trim((string) $session->kelas), 'kelas') === 0 ? $session->kelas : 'Kelas '.$session->kelas }}</span>
                                         <span>• {{ $session->duration_minutes }} Menit</span>
                                     </div>
                                 </td>

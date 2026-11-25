@@ -4,6 +4,8 @@ SIMANTAP Dapodik Bridge - Simplified API Method
 Menggunakan requests library untuk komunikasi HTTP langsung
 """
 
+import getpass
+import os
 import requests
 import json
 from datetime import datetime
@@ -13,10 +15,10 @@ print("=" * 70)
 print("SIMANTAP Dapodik Bridge - Tarik Data (Simplified Method)")
 print("=" * 70)
 
-# Konfigurasi
-DAPODIK_URL = "http://localhost:5774"
-USERNAME = "sdnungmongisidi1@gmail.com"
-PASSWORD = "Monsajaya12*#"
+# Konfigurasi (WAJIB dari environment variable atau input interaktif; jangan hardcode)
+DAPODIK_URL = os.environ.get("DAPODIK_URL", "http://localhost:5774").rstrip("/")
+USERNAME = os.environ.get("DAPODIK_USERNAME") or input("Email/Username Dapodik: ").strip()
+PASSWORD = os.environ.get("DAPODIK_PASSWORD") or getpass.getpass("Password Dapodik: ")
 CSV_FOLDER = Path("csv_files")
 
 # Buat session

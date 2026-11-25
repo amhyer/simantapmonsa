@@ -50,7 +50,7 @@ Script ini adalah **solusi tercepat dan paling praktis**.
 **Step 1: Export CSV dari Dapodik**
 ```
 1. Buka: http://localhost:5774
-2. Login: sdnungmongisidi1@gmail.com / Monsajaya12*#
+2. Login menggunakan akun operator Dapodik sekolah Anda (`<email-operator>` / `<password-dapodik>`)
 3. Menu: Admin → Export Data
 4. Export semua modul sebagai CSV
 5. Simpan dengan nama:

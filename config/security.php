@@ -92,16 +92,13 @@ return [
     | Content-Security-Policy
     |--------------------------------------------------------------------------
     |
-    | SENGAJA KOSONG.
+    | SENGAJA KOSONG secara default.
     |
-    | Ada 22 tag CDN (jsdelivr, cdnjs, unpkg, Google Fonts) dan banyak blok
-    | <script> inline di template Blade. Memasang CSP sekarang akan
-    | mematahkan grafik, ikon, dan interaksi di hampir seluruh halaman.
-    |
-    | Urutan yang benar bila ingin memakainya:
-    |   1. Self-host aset CDN lewat Vite (lihat LAPORAN_KESIAPAN_LAUNCH §6 S4).
-    |   2. Pasang dulu sebagai Content-Security-Policy-Report-Only dan pantau.
-    |   3. Baru tegakkan sebagai header wajib.
+    | Seluruh aset frontend utama sudah di-self-host melalui Vite (tanpa CDN
+    | eksternal di Blade aplikasi), namun beberapa blok <script> inline masih
+    | dipakai di template Blade. Urutan penerapan yang aman:
+    |   1. Aktifkan SIMANTAP_CSP_REPORT_ONLY=true dan pantau /csp-report.
+    |   2. Setelah bersih dari pelanggaran, tegakkan lewat SECURITY_CSP.
     |
     */
 

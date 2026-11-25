@@ -67,7 +67,7 @@
     <div class="card" style="grid-column: span 2">
         <div class="card-header">
             <h3><i class="fas fa-info-circle" style="color:var(--navy);margin-right:8px"></i>Parameter Sesi Ujian</h3>
-            <span class="tag tag-primary">Kelas {{ $session->kelas }}</span>
+            <span class="tag tag-primary">{{ stripos(trim((string) $session->kelas), 'kelas') === 0 ? $session->kelas : 'Kelas '.$session->kelas }}</span>
         </div>
         <div class="card-body tight">
             <div class="table-wrapper">
@@ -97,7 +97,7 @@
                         <tr>
                             <td style="font-weight:600;color:var(--muted)">Daftar Peserta Terdaftar</td>
                             <td>
-                                <span class="tag tag-primary">{{ count($session->participant_ids ?? []) }} Siswa Kelas {{ $session->kelas }}</span>
+                                <span class="tag tag-primary">{{ count($session->participant_ids ?? []) }} Siswa {{ stripos(trim((string) $session->kelas), 'kelas') === 0 ? $session->kelas : 'Kelas '.$session->kelas }}</span>
                             </td>
                         </tr>
                     </tbody>

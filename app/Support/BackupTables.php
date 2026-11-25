@@ -205,6 +205,34 @@ class BackupTables
             'exam_results' => ['class' => \App\Models\Exam\Result::class, 'except' => []],
             'exam_violations' => ['class' => Violation::class, 'except' => []],
 
+            // ── Rapor Merdeka, P5, & Prestasi ───────────────────────────
+            'kenaikan_kelas' => ['class' => null, 'except' => []],
+            'siswa_belajar' => ['class' => null, 'except' => []],
+            'prestasi' => ['class' => null, 'except' => []],
+            'p5_projek' => ['class' => null, 'except' => []],
+            'p5_siswa' => ['class' => null, 'except' => []],
+            'p5_penilaian' => ['class' => null, 'except' => []],
+
+            // ── Pembelajaran Mendalam (PM), Supervisi, & Pengawas ───────
+            'pm_alokasi_waktu' => ['class' => null, 'except' => []],
+            'pm_buku_paket' => ['class' => null, 'except' => []],
+            'pm_capaian_pembelajaran' => ['class' => null, 'except' => []],
+            'pm_tujuan_pembelajaran' => ['class' => null, 'except' => []],
+            'pm_kalender_pendidikan' => ['class' => null, 'except' => []],
+            'pm_hari_libur' => ['class' => null, 'except' => []],
+            'pm_prota' => ['class' => null, 'except' => []],
+            'pm_prosem' => ['class' => null, 'except' => []],
+            'pm_kokurikuler' => ['class' => null, 'except' => []],
+            'pm_kktp_interval' => ['class' => null, 'except' => []],
+            'pm_kktp_item' => ['class' => null, 'except' => []],
+            'pm_supervisi' => ['class' => null, 'except' => []],
+            'pm_visitasi_pengawas' => ['class' => null, 'except' => []],
+
+            // ── TKA Inovasi (Simulasi Adaptif & Rekomendasi) ────────────
+            'tka_adaptive_simulations' => ['class' => null, 'except' => []],
+            'tka_learning_recommendations' => ['class' => null, 'except' => []],
+            'tka_erapor_sync_logs' => ['class' => null, 'except' => []],
+
             // ── Lain-lain ───────────────────────────────────────────────
             'tanggal_rapor' => ['class' => TanggalRapor::class, 'except' => []],
             'aktivitas' => ['class' => Aktivitas::class, 'except' => []],
@@ -261,9 +289,30 @@ class BackupTables
     public static function tidakDicadangkan(): array
     {
         return [
-            'dapodik_sync_logs',   // riwayat sinkronisasi (dapat dibuat ulang)
-            'dapodik_import_logs', // riwayat import (dapat dibuat ulang)
-            'dapodik_data_cache',  // cache data Dapodik (diisi ulang saat sync)
+            'dapodik_sync_logs',        // riwayat sinkronisasi (dapat dibuat ulang)
+            'dapodik_import_logs',      // riwayat import (dapat dibuat ulang)
+            'dapodik_data_cache',       // cache data Dapodik (diisi ulang saat sync)
+            'presensi_mesin_sync_logs', // log sinkronisasi mesin absensi
+            'pm_ai_usage_logs',         // log kuota pemakaian AI Gemini
+            'menu_usage_daily',         // agregat telemetri menu (tanpa PII)
+            'cbt_integrity_logs',       // tabel CBT legacy
+            'cbt_question_options',     // tabel CBT legacy
+            'cbt_student_answers',      // tabel CBT legacy
+            'cbt_test_results',         // tabel CBT legacy
+        ];
+    }
+
+    /**
+     * Tabel konfigurasi/kredensial sensitif yang sengaja tidak dicadangkan ke
+     * berkas JSON dan tidak dikosongkan otomatis oleh "Hapus Semua Data".
+     *
+     * @return array<int, string>
+     */
+    public static function konfigurasiRahasia(): array
+    {
+        return [
+            'api_keys',        // hash kunci API integrasi
+            'dapodik_configs', // menyimpan token Dapodik & CF Access terenkripsi
         ];
     }
 

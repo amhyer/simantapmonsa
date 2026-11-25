@@ -13,7 +13,7 @@
 
 ```
 1. Buka browser: http://localhost:5774
-2. Login: sdnungmongisidi1@gmail.com / Monsajaya12*#
+2. Login menggunakan akun operator Dapodik sekolah Anda (`<email-operator>` / `<password-dapodik>`)
 3. Cari menu "Export Data" atau "Manajemen Data"
 4. Export & save sebagai CSV:
    - PesertaDidik.csv

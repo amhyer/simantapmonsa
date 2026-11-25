@@ -18,7 +18,7 @@
         <div style="background:linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);color:#fff;padding:28px 32px">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
                 <span class="tag tag-gold" style="font-weight:700">SESI CBT</span>
-                <span style="font-size:13px;opacity:0.85">Kelas {{ $session->kelas }}</span>
+                <span style="font-size:13px;opacity:0.85">{{ stripos(trim((string) $session->kelas), 'kelas') === 0 ? $session->kelas : 'Kelas '.$session->kelas }}</span>
             </div>
             <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;margin:0 0 8px">{{ $session->title }}</h2>
             <p style="font-size:13.5px;opacity:0.85;margin:0;line-height:1.5">

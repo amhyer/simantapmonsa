@@ -21,13 +21,13 @@ class TenantDataDeletionService
         }
 
         $driver = DB::getDriverName();
+        // Jangan panggil `disableForeignKeyConstraints()` pada PostgreSQL:
+        // perintah `session_replication_role` membutuhkan hak superuser dan gagal
+        // pada user non-superuser (`simantap_app`). Gunakan urutan child -> parent.
         if ($driver !== 'pgsql') {
             Schema::disableForeignKeyConstraints();
         }
         DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
 
         try {
             $siswaIds = isset($tables['siswa'])
@@ -42,14 +42,22 @@ class TenantDataDeletionService
 
             $orderedChildTables = [
                 'cbt_student_answers', 'cbt_student_attempts', 'cbt_violations', 'cbt_results', 'cbt_test_sessions', 'cbt_questions', 'cbt_question_banks',
-                'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages',
+                'tryout_student_answers', 'tryout_results', 'tryout_sessions', 'tryout_question_options', 'tryout_questions', 'tryout_subjects', 'tryout_packages', 'tryout_categories',
                 'tka_assessment_responses', 'tka_parent_reports', 'tka_early_warnings', 'tka_historical_tracking', 'tka_student_assessments', 'tka_assessment_items', 'tka_dimensions_enhanced',
+                'tka_kesiapan_tindak_lanjut_revisi', 'tka_kesiapan_tindak_lanjut', 'tka_kesiapan_pemetaan', 'tka_kesiapan_audit', 'tka_kesiapan_pengaturan',
+                'tka_learning_recommendations', 'tka_adaptive_simulations', 'tka_erapor_sync_logs',
                 'exam_answers', 'exam_results', 'exam_violations', 'exam_attempts', 'exam_sessions', 'exam_question_options', 'exam_questions', 'exam_sections', 'exam_banks',
-                'kehadiran_mapel', 'presensi_sesi_qr', 'presensi_pegawai', 'pengajuan_izin_presensi',
-                'dapodik_import_logs', 'dapodik_sync_logs', 'dapodik_data_cache',
-                'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler',
-                'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'kehadiran', 'catatan', 'dimensi', 'kebiasaan',
-                'anggota_rombel', 'pembelajaran', 'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'mata_pelajaran', 'semesters',
+                'kelas_digital_progress', 'kelas_digital_pengumpulan', 'kelas_digital_tugas', 'kelas_digital_materi_item', 'kelas_digital_pertemuan', 'kelas_digital_modul', 'kelas_digital',
+                'jurnal_mengajar', 'perangkat_pembelajaran',
+                'pm_visitasi_pengawas', 'pm_supervisi', 'pm_kktp_item', 'pm_kktp_interval', 'pm_kokurikuler', 'pm_prosem', 'pm_prota', 'pm_hari_libur', 'pm_kalender_pendidikan', 'pm_tujuan_pembelajaran', 'pm_capaian_pembelajaran', 'pm_buku_paket', 'pm_alokasi_waktu', 'pm_ai_usage_logs',
+                'p5_penilaian', 'p5_siswa', 'p5_projek', 'kenaikan_kelas', 'siswa_belajar', 'prestasi',
+                'kehadiran_mapel', 'presensi_sesi_qr', 'presensi_pegawai', 'presensi_lokasi', 'pengajuan_izin_presensi', 'presensi_mesin_sync_logs',
+                'dapodik_import_logs', 'dapodik_sync_logs', 'dapodik_data_cache', 'dapodik_configs',
+                'anggota_kelompok', 'kelompok_kokurikuler', 'kegiatan_kokurikuler', 'tema_kokurikuler', 'siswa_ekstrakurikuler', 'ekstrakurikuler',
+                'nilai_cp', 'nilai_mapel', 'capaian_pembelajaran', 'nilai_erapor_audit_logs', 'transkrip_nilai',
+                'hasil_kuis', 'kuis', 'materi', 'nilai_erapor', 'nilai', 'kehadiran', 'catatan', 'dimensi', 'kebiasaan', 'orang_tua_siswa',
+                'tanggal_rapor', 'pengaturan_guru', 'ringkasan_guru', 'aktivitas', 'menu_usage_daily',
+                'anggota_rombel', 'pembelajaran', 'jadwal_pelajaran', 'siswa', 'ptk', 'rombel', 'mata_pelajaran', 'semesters', 'sekolah_settings',
             ];
 
             $deleteScoped = function (string $tbl) use ($tenantId, $siswaIds, $rombelIds, $userIds): void {
@@ -100,7 +108,9 @@ class TenantDataDeletionService
             DB::rollBack();
             throw $e;
         } finally {
-            Schema::enableForeignKeyConstraints();
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
+            }
         }
     }
 
@@ -117,7 +127,7 @@ class TenantDataDeletionService
             'siswa' => ['guru_id'],
             'sekolah_settings' => ['guru_id'],
             'tka_early_warnings' => ['ditangani_oleh'],
-            'visitasi_pengawas' => ['guru_id'],
+            'pm_visitasi_pengawas' => ['guru_id', 'pengawas_id'],
             'pm_supervisi' => ['kepsek_id', 'pengawas_id'],
         ];
         foreach ($nullableRefs as $tbl => $cols) {

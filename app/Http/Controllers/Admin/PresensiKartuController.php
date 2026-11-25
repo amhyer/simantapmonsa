@@ -212,7 +212,9 @@ class PresensiKartuController extends Controller
 
     public function cetakSiswaMassal(Request $request, IdentityCardService $cards)
     {
-        @set_time_limit(180);
+        if (! app()->runningUnitTests()) {
+            @set_time_limit(180);
+        }
         $query = Siswa::query()->with('rombel')->where('aktif', true);
         $subjudul = 'Semua Kelas';
         $currentRombel = null;
@@ -456,7 +458,9 @@ class PresensiKartuController extends Controller
 
     public function cetakPegawaiMassal(Request $request, IdentityCardService $cards)
     {
-        @set_time_limit(180);
+        if (! app()->runningUnitTests()) {
+            @set_time_limit(180);
+        }
         $query = User::forSchool()
             ->whereIn('peran', IdentityCardService::PERAN_PEGAWAI)
             ->where('aktif', true);
