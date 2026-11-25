@@ -68,6 +68,8 @@ class TenantBackfillCommand extends Command
             'kelompok_kokurikuler',
             'dapodik_configs',
             'dapodik_sync_logs',
+            'dapodik_import_logs',
+            'dapodik_data_cache',
             'cbt_question_banks',
             'cbt_test_sessions',
             'cbt_results',
@@ -159,7 +161,11 @@ class TenantBackfillCommand extends Command
 
             $count = $query->count();
             if ($count > 0) {
-                $query->update(['tenant_id' => $tenant->id]);
+                $payload = ['tenant_id' => $tenant->id];
+                if (Schema::hasColumn($table, 'tenant_owned')) {
+                    $payload['tenant_owned'] = true;
+                }
+                $query->update($payload);
                 $this->line("  ✓ Menghubungkan {$count} baris di tabel `{$table}` ke Tenant #{$tenant->id}");
             }
         }

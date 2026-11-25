@@ -53,8 +53,10 @@ class LegacyExamMapper
     {
         $bank = Bank::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_CBT_BANK, 'sumber_id' => $cbtBank->id],
-            ['engine_id' => $this->engine(Engine::CBT, 'CBT (pilihan ganda)')->id]
-                + $this->atributBankCbt($cbtBank)
+            [
+                'tenant_id' => $cbtBank->tenant_id,
+                'engine_id' => $this->engine(Engine::CBT, 'CBT (pilihan ganda)')->id,
+            ] + $this->atributBankCbt($cbtBank)
         );
 
         foreach ($cbtBank->questions()->orderBy('id')->get() as $cbtQuestion) {
@@ -135,7 +137,10 @@ class LegacyExamMapper
     {
         return ExamSession::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_CBT_SESI, 'sumber_id' => $cbtSession->id],
-            ['bank_id' => $bank->id] + $this->atributSesiCbt($cbtSession)
+            [
+                'tenant_id' => $cbtSession->tenant_id ?? $bank->tenant_id,
+                'bank_id' => $bank->id,
+            ] + $this->atributSesiCbt($cbtSession)
         );
     }
 
@@ -190,8 +195,10 @@ class LegacyExamMapper
     {
         return Bank::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_PAKET, 'sumber_id' => $package->id],
-            ['engine_id' => $this->engine(Engine::TRYOUT, 'Tryout')->id]
-                + $this->atributBankTryout($package)
+            [
+                'tenant_id' => $package->tenant_id,
+                'engine_id' => $this->engine(Engine::TRYOUT, 'Tryout')->id,
+            ] + $this->atributBankTryout($package)
         );
     }
 
@@ -320,7 +327,10 @@ class LegacyExamMapper
 
         return ExamSession::updateOrCreate(
             ['sumber_tabel' => self::SUMBER_TRYOUT_SESI, 'sumber_id' => $tryoutSession->id],
-            ['bank_id' => $bank->id] + $this->atributSesiTryout($tryoutSession)
+            [
+                'tenant_id' => $tryoutSession->tenant_id ?? $bank->tenant_id,
+                'bank_id' => $bank->id,
+            ] + $this->atributSesiTryout($tryoutSession)
         );
     }
 

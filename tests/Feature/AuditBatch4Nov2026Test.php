@@ -256,7 +256,7 @@ class AuditBatch4Nov2026Test extends TestCase
             'tanggal' => now()->toDateString(),
             'kkm' => 75,
             'aktif' => true,
-            'sumber' => 'manual',
+            'sumber' => 'lokal',
             'soal' => [
                 ['pertanyaan' => '1/2 + 1/2 = ?', 'opsi' => ['A' => '1', 'B' => '2'], 'kunci' => 'A'],
             ],
@@ -862,5 +862,103 @@ class AuditBatch4Nov2026Test extends TestCase
         $this->assertSame($t1->id, (int) $transkripA->tenant_id);
         $this->assertSame(0, TenantContext::run($t2->id, fn () => \App\Models\TranskripNilai::count()));
         $this->assertSame(1, TenantContext::run($t1->id, fn () => \App\Models\TranskripNilai::count()));
+    }
+
+    public function test_exam_engine_unique_kode_dan_dapodik_import_log_terisolasi_per_tenant(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $sekolahA = $this->buatSekolah('70900001');
+        $sekolahB = $this->buatSekolah('70900002');
+
+        $adminA = User::factory()->admin()->create(['tenant_id' => $sekolahA->id]);
+        $adminB = User::factory()->admin()->create(['tenant_id' => $sekolahB->id]);
+
+        // Poin #3: exam_banks.kode, exam_sessions.kode, dan dapodik_data_cache.dapodik_id
+        // boleh memakai kode yang sama di dua sekolah berbeda tanpa bentrok unique constraint.
+        $engine = \App\Models\Exam\Engine::updateOrCreate(
+            ['kode' => 'tryout'],
+            ['nama' => 'Tryout', 'jenis' => 'tryout', 'aktif' => true]
+        );
+
+        $bankA = TenantContext::run($sekolahA->id, fn () => \App\Models\Exam\Bank::create([
+            'engine_id' => $engine->id,
+            'kode' => 'TO-2026-01',
+            'nama' => 'Paket Tryout Sekolah A',
+        ]));
+        $bankB = TenantContext::run($sekolahB->id, fn () => \App\Models\Exam\Bank::create([
+            'engine_id' => $engine->id,
+            'kode' => 'TO-2026-01',
+            'nama' => 'Paket Tryout Sekolah B',
+        ]));
+
+        $sesiA = TenantContext::run($sekolahA->id, fn () => \App\Models\Exam\Session::create([
+            'bank_id' => $bankA->id,
+            'kode' => 'SESI-01',
+            'nama' => 'Sesi 1 Sekolah A',
+            'status' => 'draft',
+        ]));
+        $sesiB = TenantContext::run($sekolahB->id, fn () => \App\Models\Exam\Session::create([
+            'bank_id' => $bankB->id,
+            'kode' => 'SESI-01',
+            'nama' => 'Sesi 1 Sekolah B',
+            'status' => 'draft',
+        ]));
+
+        $this->assertSame($sekolahA->id, (int) $bankA->tenant_id);
+        $this->assertSame($sekolahB->id, (int) $bankB->tenant_id);
+        $this->assertSame($sekolahA->id, (int) $sesiA->tenant_id);
+        $this->assertSame($sekolahB->id, (int) $sesiB->tenant_id);
+
+        DB::table('dapodik_data_cache')->insert([
+            [
+                'tenant_id' => $sekolahA->id,
+                'dapodik_id' => 'DAPO-SISWA-001',
+                'tipe' => 'siswa',
+                'data' => json_encode(['nama' => 'Siswa A']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'tenant_id' => $sekolahB->id,
+                'dapodik_id' => 'DAPO-SISWA-001',
+                'tipe' => 'siswa',
+                'data' => json_encode(['nama' => 'Siswa B']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+        $this->assertSame(2, DB::table('dapodik_data_cache')->where('dapodik_id', 'DAPO-SISWA-001')->count());
+
+        // Poin #4: DapodikImportLog terisolasi per tenant dan tampil aman di /admin/api-keys
+        $importLogA = TenantContext::run($sekolahA->id, fn () => \App\Models\DapodikImportLog::create([
+            'user_id' => $adminA->id,
+            'nama_sekolah' => 'Riwayat Import Sekolah A',
+            'total_siswa' => 42,
+            'berhasil' => 40,
+            'gagal' => 2,
+        ]));
+        $importLogB = TenantContext::run($sekolahB->id, fn () => \App\Models\DapodikImportLog::create([
+            'user_id' => $adminB->id,
+            'nama_sekolah' => 'Riwayat Import Rahasia B',
+            'total_siswa' => 55,
+            'berhasil' => 55,
+            'gagal' => 0,
+        ]));
+
+        $this->assertTrue((bool) $importLogA->tenant_owned);
+        $this->assertSame(42, $importLogA->total_data);
+        $this->assertSame([$importLogA->id], TenantContext::run($sekolahA->id, fn () => \App\Models\DapodikImportLog::pluck('id')->all()));
+        $this->assertSame([$importLogB->id], TenantContext::run($sekolahB->id, fn () => \App\Models\DapodikImportLog::pluck('id')->all()));
+
+        $this->actingAs($adminA)->get(route('admin.api-keys.index'))
+            ->assertOk()
+            ->assertSee('Riwayat Import Sekolah A')
+            ->assertSee('42')
+            ->assertDontSee('Riwayat Import Rahasia B');
+
+        $this->actingAs($adminB)->get(route('admin.api-keys.index'))
+            ->assertOk()
+            ->assertSee('Riwayat Import Rahasia B')
+            ->assertDontSee('Riwayat Import Sekolah A');
     }
 }

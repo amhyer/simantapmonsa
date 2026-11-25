@@ -339,7 +339,7 @@ class AuditBatch3Nov2026Test extends TestCase
             'kelas' => '6A',
             'mata_pelajaran' => 'Matematika',
             'judul_penilaian' => 'Ulangan Harian 1',
-            'jenis' => 'Formatif',
+            'jenis' => 'Ulangan Harian',
             'nilai' => 92,
             'tanggal' => now()->toDateString(),
         ]);
@@ -542,15 +542,20 @@ class AuditBatch3Nov2026Test extends TestCase
     {
         $mig1 = require base_path('database/migrations/2026_11_23_170001_add_tenant_id_to_mata_pelajaran_and_semesters.php');
         $mig2 = require base_path('database/migrations/2026_11_23_180001_add_tenant_id_to_remaining_school_tables.php');
+        $mig3 = require base_path('database/migrations/2026_11_24_170001_scope_exam_and_dapodik_unique_constraints_per_tenant.php');
 
         // Re-run up() ketika indeks lama sudah tidak ada & indeks baru sudah ada -> tidak boleh melempar QueryException
         $mig1->up();
         $mig2->up();
+        $mig3->up();
 
         $this->assertTrue(Schema::hasIndex('mata_pelajaran', 'mata_pelajaran_tenant_nama_jenjang_unique'));
         $this->assertTrue(Schema::hasIndex('semesters', 'semesters_tenant_semester_id_unique'));
         $this->assertTrue(Schema::hasIndex('tanggal_rapor', 'tanggal_rapor_tenant_tahun_semester_unique'));
         $this->assertTrue(Schema::hasIndex('tka_dimensions_enhanced', 'tka_dimensions_tenant_kode_unique'));
+        $this->assertTrue(Schema::hasIndex('exam_banks', 'exam_banks_tenant_kode_unique'));
+        $this->assertTrue(Schema::hasIndex('exam_sessions', 'exam_sessions_tenant_kode_unique'));
+        $this->assertTrue(Schema::hasIndex('dapodik_data_cache', 'dapodik_data_cache_tenant_dapodik_id_unique'));
     }
 
     public function test_p1_9_validasi_semester_id_dan_filter_tryout_tka_terisolasi_per_tenant(): void
