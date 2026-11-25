@@ -114,7 +114,7 @@ class ProsemController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'semester' => ['required', 'in:1,2'],
             'jp_per_minggu' => ['required', 'integer', 'min:1', 'max:20'],
@@ -157,7 +157,7 @@ class ProsemController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'semester' => ['required', 'in:1,2'],
             'bab' => ['nullable', 'string', 'max:120'],
@@ -204,7 +204,7 @@ class ProsemController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $tingkat = max(1, min(12, (int) $request->query('tingkat', 1)));
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $semester = in_array((int) $request->query('semester', 1), [1, 2], true) ? (int) $request->query('semester', 1) : 1;
         $mapel = trim((string) $request->query('mapel', ''));

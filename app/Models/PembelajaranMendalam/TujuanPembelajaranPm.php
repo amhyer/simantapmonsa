@@ -4,6 +4,7 @@ namespace App\Models\PembelajaranMendalam;
 
 use App\Models\User;
 use App\Modules\Tenant\Traits\BelongsToTenant;
+use App\Support\SchoolLevel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -87,26 +88,17 @@ class TujuanPembelajaranPm extends Model
     }
 
     /**
-     * Daftar tingkat kelas yang valid untuk sebuah Fase SD.
+     * Daftar tingkat kelas yang valid untuk sebuah Fase Kurikulum Merdeka (A–F).
      *
      * @return array<int, int>
      */
     public static function kelasUntukFase(string $fase): array
     {
-        return match (strtoupper($fase)) {
-            'A' => [1, 2],
-            'B' => [3, 4],
-            'C' => [5, 6],
-            default => [1, 2, 3, 4, 5, 6],
-        };
+        return SchoolLevel::kelasUntukFase($fase);
     }
 
     public static function faseUntukKelas(int $tingkat): string
     {
-        return match (true) {
-            $tingkat <= 2 => 'A',
-            $tingkat <= 4 => 'B',
-            default => 'C',
-        };
+        return SchoolLevel::faseUntukKelas($tingkat);
     }
 }

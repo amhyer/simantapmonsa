@@ -23,7 +23,7 @@
     <div class="cover">
         <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#4B5563">PERANGKAT ADMINISTRASI GURU — KURIKULUM MERDEKA</div>
         <h1>BUNDEL PEMBELAJARAN MENDALAM</h1>
-        <h2>{{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }}</h2>
+        <h2>{{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }}</h2>
 
         <table class="cover-meta">
             <tr><td style="width:38%"><strong>Tahun Ajaran</strong></td><td>: {{ $tahunAjaran }}</td></tr>

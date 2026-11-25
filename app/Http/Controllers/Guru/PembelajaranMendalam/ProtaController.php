@@ -94,7 +94,7 @@ class ProtaController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'rows' => ['nullable', 'array'],
         ]);
@@ -154,7 +154,7 @@ class ProtaController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
         ]);
 
@@ -222,7 +222,7 @@ class ProtaController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
@@ -311,7 +311,7 @@ class ProtaController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $tingkat = max(1, min(12, (int) $request->query('tingkat', 1)));
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $mapel = trim((string) $request->query('mapel', ''));
         if ($mapel !== '') {

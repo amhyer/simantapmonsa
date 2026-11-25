@@ -9,6 +9,7 @@ use App\Models\MataPelajaran;
 use App\Models\SekolahSettings;
 use App\Services\AktivitasService;
 use App\Services\Dapodik\DapodikClient;
+use App\Support\SchoolLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,9 +17,7 @@ class MapelController extends Controller
 {
     private function getJenjangSekolah(): string
     {
-        $settings = SekolahSettings::first();
-
-        return $settings->jenjang ?? 'SD';
+        return SchoolLevel::current();
     }
 
     public function index(Request $request)

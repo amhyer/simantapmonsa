@@ -3,10 +3,11 @@
     $pmUser = auth()->user();
     $pmTenantId = $pmCtxService->tenantId($pmUser);
     $pmCtx = $pmCtxService->getContext(request(), $pmUser);
+    $pmDefaultTingkat = \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current($pmTenantId));
     $pmScope = ($pmUser && $pmUser->peran === 'guru')
         ? app(\App\Services\PembelajaranMendalam\GuruScopeService::class)->resolveForGuru($pmUser, $pmTenantId)
-        : ['is_scoped' => false, 'tingkat_list' => [1, 2, 3, 4, 5, 6], 'kelas_list' => []];
-    $pmAllowedTingkat = $pmScope['tingkat_list'] ?? [1, 2, 3, 4, 5, 6];
+        : ['is_scoped' => false, 'tingkat_list' => $pmDefaultTingkat, 'kelas_list' => []];
+    $pmAllowedTingkat = $pmScope['tingkat_list'] ?? $pmDefaultTingkat;
     $pmSupervisi = $pmUser?->peran === 'guru'
         ? $pmCtxService->supervisiAktifGuru($pmTenantId, $pmUser->id, $pmCtx['tahun_ajaran'], $pmCtx['semester'])
         : null;

@@ -4,6 +4,7 @@ namespace App\Models\PembelajaranMendalam;
 
 use App\Models\User;
 use App\Modules\Tenant\Traits\BelongsToTenant;
+use App\Support\SchoolLevel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,11 +17,15 @@ class CapaianPembelajaran extends Model
 
     protected $table = 'pm_capaian_pembelajaran';
 
-    public const FASE_LABELS = [
-        'A' => 'Fase A (Kelas 1–2)',
-        'B' => 'Fase B (Kelas 3–4)',
-        'C' => 'Fase C (Kelas 5–6)',
-    ];
+    public const FASE_LABELS = SchoolLevel::FASE_LABELS;
+
+    /**
+     * @return array<string, string>
+     */
+    public static function faseLabelsFor(?int $tenantId = null): array
+    {
+        return SchoolLevel::faseLabelsForJenjang(SchoolLevel::current($tenantId));
+    }
 
     protected $fillable = [
         'uuid',

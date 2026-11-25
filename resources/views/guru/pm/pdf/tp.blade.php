@@ -16,7 +16,7 @@
 <body>
     <h2>DAFTAR TUJUAN PEMBELAJARAN (TP)</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }}
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }}
         @if($mapelFilter) · {{ $mapelFilter }} @endif
         @if($faseFilter) · Fase {{ $faseFilter }} @endif
     </div>

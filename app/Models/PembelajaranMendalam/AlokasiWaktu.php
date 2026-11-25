@@ -3,6 +3,7 @@
 namespace App\Models\PembelajaranMendalam;
 
 use App\Modules\Tenant\Traits\BelongsToTenant;
+use App\Support\SchoolLevel;
 use Illuminate\Database\Eloquent\Model;
 
 class AlokasiWaktu extends Model
@@ -68,8 +69,61 @@ class AlokasiWaktu extends Model
         ];
     }
 
+    /** @var array<string, array<int, array{0: int, 1: int}>> */
+    public const STANDAR_SMP_2025 = [
+        'Pendidikan Agama dan Budi Pekerti' => [7 => [2, 1], 8 => [2, 1], 9 => [2, 1]],
+        'Pendidikan Pancasila' => [7 => [2, 1], 8 => [2, 1], 9 => [2, 1]],
+        'Bahasa Indonesia' => [7 => [5, 1], 8 => [5, 1], 9 => [5, 1]],
+        'Matematika' => [7 => [4, 1], 8 => [4, 1], 9 => [4, 1]],
+        'Ilmu Pengetahuan Alam (IPA)' => [7 => [4, 1], 8 => [4, 1], 9 => [4, 1]],
+        'Ilmu Pengetahuan Sosial (IPS)' => [7 => [3, 1], 8 => [3, 1], 9 => [3, 1]],
+        'Bahasa Inggris' => [7 => [3, 1], 8 => [3, 1], 9 => [3, 1]],
+        'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)' => [7 => [2, 1], 8 => [2, 1], 9 => [2, 1]],
+        'Informatika' => [7 => [2, 1], 8 => [2, 1], 9 => [2, 1]],
+        'Seni dan Prakarya' => [7 => [2, 1], 8 => [2, 1], 9 => [2, 1]],
+        'Muatan Lokal' => [7 => [2, 0], 8 => [2, 0], 9 => [2, 0]],
+    ];
+
+    /** @var array<string, array<int, array{0: int, 1: int}>> */
+    public const STANDAR_SMA_SMK_2025 = [
+        'Pendidikan Agama dan Budi Pekerti' => [10 => [2, 1], 11 => [2, 1], 12 => [2, 1]],
+        'Pendidikan Pancasila' => [10 => [2, 0], 11 => [2, 0], 12 => [2, 0]],
+        'Bahasa Indonesia' => [10 => [3, 1], 11 => [3, 1], 12 => [3, 1]],
+        'Matematika' => [10 => [3, 1], 11 => [3, 1], 12 => [3, 1]],
+        'Bahasa Inggris' => [10 => [2, 1], 11 => [2, 1], 12 => [2, 1]],
+        'Sejarah' => [10 => [2, 1], 11 => [2, 0], 12 => [2, 0]],
+        'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)' => [10 => [2, 1], 11 => [2, 1], 12 => [2, 1]],
+        'Seni dan Budaya' => [10 => [2, 0], 11 => [2, 0], 12 => [2, 0]],
+        'Informatika' => [10 => [2, 0], 11 => [2, 0], 12 => [2, 0]],
+        'Muatan Lokal' => [10 => [2, 0], 11 => [2, 0], 12 => [2, 0]],
+    ];
+
+    /**
+     * @return array<string, array<int, array{0: int, 1: int}>>
+     */
+    public static function standarUntukJenjang(?string $jenjang = null): array
+    {
+        $normalized = SchoolLevel::normalize($jenjang, 'SD');
+        if ($normalized === 'SLB') {
+            $gabungan = self::STANDAR_PERMENDIKDASMEN_2025;
+            foreach ([self::STANDAR_SMP_2025, self::STANDAR_SMA_SMK_2025] as $set) {
+                foreach ($set as $mapel => $perTingkat) {
+                    $gabungan[$mapel] = ($gabungan[$mapel] ?? []) + $perTingkat;
+                }
+            }
+
+            return $gabungan;
+        }
+
+        return match ($normalized) {
+            'SMP', 'MTs' => self::STANDAR_SMP_2025,
+            'SMA', 'MA', 'SMK' => self::STANDAR_SMA_SMK_2025,
+            default => self::STANDAR_PERMENDIKDASMEN_2025,
+        };
+    }
+
     public static function mingguPerTahun(int $tingkat): int
     {
-        return $tingkat === 6 ? 32 : 36;
+        return SchoolLevel::mingguEfektifPerTahun($tingkat);
     }
 }

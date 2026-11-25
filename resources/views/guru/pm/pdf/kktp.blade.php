@@ -16,7 +16,7 @@
 <body>
     <h2>KRITERIA KETERCAPAIAN TUJUAN PEMBELAJARAN (KKTP)</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · {{ $mapel }} · Kelas {{ $tingkat }} (Fase {{ $fase }})
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · {{ $mapel }} · Kelas {{ $tingkat }} (Fase {{ $fase }})
     </div>
 
     <table>

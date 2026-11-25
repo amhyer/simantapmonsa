@@ -73,7 +73,7 @@ class CpController extends Controller
         return view('guru.pm.cp.index', [
             'cpList' => $query->paginate(20)->withQueryString(),
             'mapelList' => $mapelList,
-            'faseLabels' => CapaianPembelajaran::FASE_LABELS,
+            'faseLabels' => CapaianPembelajaran::faseLabelsFor($tenantId),
             'mapelFilter' => $mapelFilter,
             'faseFilter' => $faseFilter,
             'cari' => $cari,

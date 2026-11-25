@@ -119,20 +119,57 @@ class SekolahController extends Controller
         }
         $validated['pengaturan'] = $pengaturan;
 
-        if (! $sekolahSettings) {
-            $sekolahSettings = SekolahSettings::create([
-                'tenant_id' => $tenantId,
-                'guru_id' => auth()->id(),
-                ...$validated,
-            ]);
-        } else {
-            $sekolahSettings->update($validated);
+        if (! empty($validated['jenjang'])) {
+            $validated['jenjang'] = \App\Support\SchoolLevel::normalize($validated['jenjang'], $validated['jenjang']);
         }
 
+        \Illuminate\Support\Facades\DB::transaction(function () use (&$sekolahSettings, $tenantId, $validated): void {
+            if ($tenantId !== null) {
+                $tenantModel = \App\Modules\Tenant\Models\Tenant::query()
+                    ->whereKey($tenantId)
+                    ->lockForUpdate()
+                    ->first();
+
+                $existing = SekolahSettings::withoutGlobalScopes()
+                    ->where('tenant_id', $tenantId)
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $existing) {
+                    $sekolahSettings = SekolahSettings::create([
+                        'tenant_id' => $tenantId,
+                        'guru_id' => auth()->id(),
+                        ...$validated,
+                    ]);
+                } else {
+                    $existing->update($validated);
+                    $sekolahSettings = $existing;
+                }
+
+                if ($tenantModel) {
+                    $meta = is_array($tenantModel->meta) ? $tenantModel->meta : [];
+                    if (! empty($validated['jenjang'])) {
+                        $meta['jenjang'] = $validated['jenjang'];
+                    }
+                    $tenantModel->update([
+                        'nama_sekolah' => $validated['nama_sekolah'],
+                        'meta' => $meta,
+                    ]);
+                }
+            } elseif (! $sekolahSettings) {
+                $sekolahSettings = SekolahSettings::create([
+                    'tenant_id' => null,
+                    'guru_id' => auth()->id(),
+                    ...$validated,
+                ]);
+            } else {
+                $sekolahSettings->update($validated);
+            }
+        });
+
         if ($tenantId !== null) {
-            \App\Modules\Tenant\Models\Tenant::query()
-                ->whereKey($tenantId)
-                ->update(['nama_sekolah' => $validated['nama_sekolah']]);
             \Illuminate\Support\Facades\Cache::forget('tenant-nama-'.$tenantId);
         }
         \Illuminate\Support\Facades\Cache::forget('root-sekolah-nama');

@@ -67,7 +67,7 @@ class BukuPaketController extends Controller
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'judul' => ['required', 'string', 'max:255'],
             'penulis' => ['nullable', 'string', 'max:200'],
             'tautan_sibi' => ['nullable', 'url', 'max:500'],
@@ -109,7 +109,7 @@ class BukuPaketController extends Controller
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'judul' => ['required', 'string', 'max:255'],
         ]);
 

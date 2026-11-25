@@ -14,6 +14,7 @@ use App\Models\Perangkat\JurnalMengajar;
 use App\Models\Rombel;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Support\SchoolLevel;
 use Illuminate\Support\Collection;
 
 class PengawasAnalyticsService
@@ -214,21 +215,19 @@ class PengawasAnalyticsService
             ];
         });
 
-        // Peta Ketuntasan & Rata-rata Hasil Belajar per Kelas 1..6
+        // Peta Ketuntasan & Rata-rata Hasil Belajar sesuai tingkat jenjang sekolah aktif
+        $tingkatJenjang = SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
+        $defaultTingkat = $tingkatJenjang[0] ?? 1;
         $siswaByTingkat = Siswa::query()
             ->where('aktif', true)
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->get(['id', 'kelas'])
-            ->groupBy(function (Siswa $s): int {
-                if ($s->kelas && preg_match('/([1-6])/', (string) $s->kelas, $m)) {
-                    return (int) $m[1];
-                }
-
-                return 1;
+            ->groupBy(function (Siswa $s) use ($defaultTingkat): int {
+                return SchoolLevel::parseTingkat(null, (string) $s->kelas) ?? $defaultTingkat;
             });
 
         $petaKelas = [];
-        for ($t = 1; $t <= 6; $t++) {
+        foreach ($tingkatJenjang as $t) {
             $siswaIds = ($siswaByTingkat->get($t) ?? collect())->pluck('id')->all();
             $rataNilai = 0.0;
             if (! empty($siswaIds)) {

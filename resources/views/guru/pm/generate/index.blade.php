@@ -26,14 +26,17 @@
             <strong><i class="fas fa-file-pdf"></i> Cetak Bundel Administrasi Guru 1 Semester (Siap Supervisi &amp; Akreditasi)</strong>
         </div>
         <div class="card-body">
+            @php
+                $daftarTingkatGen = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user());
+            @endphp
             <form method="GET" action="{{ route('guru.pm.bundel.pdf') }}" target="_blank" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
                 <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
                 <div>
                     <label for="fld-pm-generate-tingkat" style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Kelas</label>
                     <select id="fld-pm-generate-tingkat" name="tingkat" style="padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                        @for($t = 1; $t <= 6; $t++)
+                        @foreach($daftarTingkatGen as $t)
                             <option value="{{ $t }}">Kelas {{ $t }}</option>
-                        @endfor
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -74,9 +77,9 @@
                     <div>
                         <label for="fld-pm-generate-tingkat-2" style="font-size:12px;font-weight:600">Tingkat Kelas *</label>
                         <select id="fld-pm-generate-tingkat-2" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                            @for($t = 1; $t <= 6; $t++)
-                                <option value="{{ $t }}" {{ (int) ($inputPreview['tingkat'] ?? 1) === $t ? 'selected' : '' }}>Kelas {{ $t }}</option>
-                            @endfor
+                            @foreach($daftarTingkatGen as $t)
+                                <option value="{{ $t }}" {{ (int) ($inputPreview['tingkat'] ?? ($daftarTingkatGen[0] ?? 1)) === $t ? 'selected' : '' }}>Kelas {{ $t }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
@@ -242,9 +245,9 @@
                         <div>
                             <label for="fld-pm-generate-tingkat-3" style="font-size:12px;font-weight:600">Kelas *</label>
                             <select id="fld-pm-generate-tingkat-3" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                                @for($t = 1; $t <= 6; $t++)
+                                @foreach($daftarTingkatGen as $t)
                                     <option value="{{ $t }}">Kelas {{ $t }}</option>
-                                @endfor
+                                @endforeach
                             </select>
                         </div>
                     </div>

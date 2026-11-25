@@ -123,15 +123,10 @@ class DashboardController extends Controller
             : null;
         $nipWali = $ptkWali?->nip ?? ($waliUser && preg_match('/^\d{8,}$/', (string) $waliUser->nama_pengguna) ? $waliUser->nama_pengguna : '-');
 
-        $tingkatAngka = (int) preg_replace('/[^0-9]/', '', (string) ($rombelRow?->tingkat ?? $siswa->kelas ?? '1'));
-        if ($tingkatAngka < 1 || $tingkatAngka > 6) {
-            $tingkatAngka = 1;
-        }
-        $faseLabel = match (true) {
-            $tingkatAngka <= 2 => "Tingkat {$tingkatAngka} (Fase A)",
-            $tingkatAngka <= 4 => "Tingkat {$tingkatAngka} (Fase B)",
-            default => "Tingkat {$tingkatAngka} (Fase C)",
-        };
+        $defaultTingkat = \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current())[0] ?? 1;
+        $tingkatAngka = \App\Support\SchoolLevel::parseTingkat($rombelRow?->tingkat, (string) ($siswa->kelas ?? '')) ?? $defaultTingkat;
+        $faseKode = \App\Support\SchoolLevel::faseUntukKelas($tingkatAngka);
+        $faseLabel = "Tingkat {$tingkatAngka} (Fase {$faseKode})";
 
         $infoAkademik = [
             'status_rombel' => $rombelRow?->jenis_rombel ?? 'Reguler',

@@ -4,6 +4,7 @@ namespace App\Services\PembelajaranMendalam;
 
 use App\Models\PembelajaranMendalam\AiUsageLog;
 use App\Models\SekolahSettings;
+use App\Support\SchoolLevel;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
@@ -80,8 +81,9 @@ class GeminiPembelajaranService
      */
     public function susunCp(string $mapel, string $fase, ?string $catatan, ?int $tenantId, int $userId): array
     {
-        $prompt = "Anda adalah pakar kurikulum SD Indonesia (Kurikulum Merdeka & Pembelajaran Mendalam, acuan BSKAP No. 046/H/KR/2025).\n"
-            ."Susun Capaian Pembelajaran (CP) untuk mata pelajaran \"{$mapel}\" Fase {$fase} jenjang SD.\n"
+        $jenjang = SchoolLevel::current($tenantId);
+        $prompt = "Anda adalah pakar kurikulum {$jenjang} Indonesia (Kurikulum Merdeka & Pembelajaran Mendalam, acuan BSKAP No. 046/H/KR/2025).\n"
+            ."Susun Capaian Pembelajaran (CP) untuk mata pelajaran \"{$mapel}\" Fase {$fase} jenjang {$jenjang}.\n"
             .($catatan ? "Catatan khusus guru: {$catatan}\n" : '')
             ."Kembalikan HANYA JSON array valid tanpa teks tambahan dengan format:\n"
             .'[{"elemen": "Nama Elemen", "deskripsi": "Rumusan CP lengkap..."}]';
@@ -120,7 +122,8 @@ class GeminiPembelajaranService
         int $userId
     ): array {
         $jumlah = max(1, min(15, $jumlah));
-        $prompt = "Anda adalah pakar Kurikulum Merdeka & Pembelajaran Mendalam jenjang SD Indonesia.\n"
+        $jenjang = SchoolLevel::current($tenantId);
+        $prompt = "Anda adalah pakar Kurikulum Merdeka & Pembelajaran Mendalam jenjang {$jenjang} Indonesia.\n"
             ."Susun {$jumlah} Tujuan Pembelajaran (TP) yang operasional, terukur, dan mencerminkan Pembelajaran Mendalam (Memahami, Mengaplikasi, Merefleksi) "
             ."untuk mata pelajaran \"{$mapel}\" Fase {$fase}.\n"
             .($elemen ? "Fokus elemen: {$elemen}\n" : '')
@@ -156,19 +159,25 @@ class GeminiPembelajaranService
      */
     public function susunAtp(string $mapel, string $fase, array $daftarTp, ?int $tenantId, int $userId): array
     {
+        $jenjang = SchoolLevel::current($tenantId);
+        $kelasValid = SchoolLevel::kelasUntukFase($fase);
+        $defaultKelas = $kelasValid[0] ?? 1;
         $kelasRange = match (strtoupper($fase)) {
             'A' => '1 atau 2',
             'B' => '3 atau 4',
             'C' => '5 atau 6',
-            default => '1 sampai 6',
+            'D' => '7, 8, atau 9',
+            'E' => '10',
+            'F' => '11 atau 12',
+            default => implode(', ', $kelasValid),
         };
 
         $tpJson = json_encode($daftarTp, JSON_UNESCAPED_UNICODE);
-        $prompt = "Anda adalah pakar Kurikulum Merdeka SD. Urutkan daftar Tujuan Pembelajaran (TP) berikut menjadi Alur Tujuan Pembelajaran (ATP) yang logis "
+        $prompt = "Anda adalah pakar Kurikulum Merdeka {$jenjang}. Urutkan daftar Tujuan Pembelajaran (TP) berikut menjadi Alur Tujuan Pembelajaran (ATP) yang logis "
             ."untuk mapel \"{$mapel}\" Fase {$fase} (kelas_target hanya boleh {$kelasRange}, semester_target hanya 1 atau 2).\n"
             ."Daftar TP:\n{$tpJson}\n"
             ."Kembalikan HANYA JSON array valid dengan format:\n"
-            .'[{"id": 1, "urutan": 1, "kelas_target": 1, "semester_target": 1, "materi_pokok": "Topik singkat", "alokasi_jp": 6}]';
+            .'[{"id": 1, "urutan": 1, "kelas_target": '.$defaultKelas.', "semester_target": 1, "materi_pokok": "Topik singkat", "alokasi_jp": 6}]';
 
         $decoded = $this->requestJson($prompt, 'susun_atp', $tenantId, $userId);
 
@@ -180,7 +189,7 @@ class GeminiPembelajaranService
             $items[] = [
                 'id' => (int) $row['id'],
                 'urutan' => max(1, (int) ($row['urutan'] ?? ($idx + 1))),
-                'kelas_target' => max(1, min(6, (int) ($row['kelas_target'] ?? 1))),
+                'kelas_target' => max(1, min(12, (int) ($row['kelas_target'] ?? $defaultKelas))),
                 'semester_target' => in_array((int) ($row['semester_target'] ?? 1), [1, 2], true) ? (int) $row['semester_target'] : 1,
                 'materi_pokok' => trim((string) ($row['materi_pokok'] ?? '')),
                 'alokasi_jp' => max(1, min(60, (int) ($row['alokasi_jp'] ?? 4))),

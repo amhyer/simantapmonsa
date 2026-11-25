@@ -16,7 +16,7 @@
 <body>
     <h2>ALUR TUJUAN PEMBELAJARAN (ATP)</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · {{ $mapel }} · Fase {{ $fase }}
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · {{ $mapel }} · Fase {{ $fase }}
         @if($kelasFilter) · Kelas {{ $kelasFilter }} @endif
     </div>
     <table>

@@ -66,6 +66,9 @@
                 <span style="font-size:12px;color:#667085;margin-left:6px">Tahun Ajaran {{ $tahunAjaran }} · 1 JP = 35 menit</span>
             </div>
         </div>
+        @php
+            $daftarTingkatAlokasi = $tingkatList ?? \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current());
+        @endphp
         <form method="POST" action="{{ route(($routePrefix ?? 'guru.pm').'.alokasi.store') }}">
             @csrf
             <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaran }}">
@@ -75,22 +78,22 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" style="min-width:220px;vertical-align:middle">Mata Pelajaran</th>
-                                @for($t = 1; $t <= 6; $t++)
+                                @foreach($daftarTingkatAlokasi as $t)
                                     <th colspan="2" style="text-align:center;border-left:1px solid #EAECF0">Kelas {{ $t }}</th>
-                                @endfor
+                                @endforeach
                             </tr>
                             <tr>
-                                @for($t = 1; $t <= 6; $t++)
+                                @foreach($daftarTingkatAlokasi as $t)
                                     <th style="text-align:center;font-size:11px;border-left:1px solid #EAECF0">Intra</th>
                                     <th style="text-align:center;font-size:11px">Ko</th>
-                                @endfor
+                                @endforeach
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($namaMapelList as $namaMapel)
                                 <tr>
                                     <td style="font-weight:600;color:#101828">{{ $namaMapel }}</td>
-                                    @for($t = 1; $t <= 6; $t++)
+                                    @foreach($daftarTingkatAlokasi as $t)
                                         @php
                                             $intra = $matrix[$namaMapel][$t]['intra'] ?? 0;
                                             $ko = $matrix[$namaMapel][$t]['ko'] ?? 0;
@@ -115,17 +118,17 @@
                                                 {{ $ko }}
                                             @endif
                                         </td>
-                                    @endfor
+                                    @endforeach
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr style="background:#F9FAFB;font-weight:700">
                                 <td>Total JP / Minggu</td>
-                                @for($t = 1; $t <= 6; $t++)
-                                    <td style="text-align:center;border-left:1px solid #EAECF0">{{ $ringkasanTingkat[$t]['intra'] }}</td>
-                                    <td style="text-align:center">{{ $ringkasanTingkat[$t]['ko'] }}</td>
-                                @endfor
+                                @foreach($daftarTingkatAlokasi as $t)
+                                    <td style="text-align:center;border-left:1px solid #EAECF0">{{ $ringkasanTingkat[$t]['intra'] ?? 0 }}</td>
+                                    <td style="text-align:center">{{ $ringkasanTingkat[$t]['ko'] ?? 0 }}</td>
+                                @endforeach
                             </tr>
                         </tfoot>
                     </table>

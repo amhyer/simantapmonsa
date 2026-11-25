@@ -16,7 +16,7 @@
 <body>
     <h2>ALOKASI WAKTU STRUKTUR KURIKULUM</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · Tahun Ajaran {{ $tahunAjaran }} · Permendikdasmen No. 13 Tahun 2025 (JP/Minggu)
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · Tahun Ajaran {{ $tahunAjaran }} · Permendikdasmen No. 13 Tahun 2025 (JP/Minggu)
     </div>
     <table>
         <thead>

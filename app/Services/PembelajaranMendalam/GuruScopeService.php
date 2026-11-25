@@ -9,6 +9,7 @@ use App\Models\PengaturanGuru;
 use App\Models\Rombel;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Support\SchoolLevel;
 use Illuminate\Support\Collection;
 
 /**
@@ -113,11 +114,11 @@ class GuruScopeService
             }
         }
 
-        $tingkatList = array_values(array_unique(array_filter($tingkatSet, fn (int $t) => $t >= 1 && $t <= 6)));
+        $tingkatList = array_values(array_unique(array_filter($tingkatSet, fn (int $t) => $t >= 1 && $t <= 12)));
         sort($tingkatList);
 
         if (empty($tingkatList)) {
-            $tingkatList = [1, 2, 3, 4, 5, 6];
+            $tingkatList = SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
         }
 
         $faseList = array_values(array_unique(array_map(
@@ -276,17 +277,6 @@ class GuruScopeService
 
     private function parseTingkat(mixed $tingkat, ?string $namaKelas): ?int
     {
-        if (is_numeric($tingkat)) {
-            $n = (int) $tingkat;
-            if ($n >= 1 && $n <= 6) {
-                return $n;
-            }
-        }
-
-        if ($namaKelas && preg_match('/([1-6])/', $namaKelas, $m)) {
-            return (int) $m[1];
-        }
-
-        return null;
+        return SchoolLevel::parseTingkat($tingkat, $namaKelas);
     }
 }

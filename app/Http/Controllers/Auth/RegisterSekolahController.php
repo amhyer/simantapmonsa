@@ -57,7 +57,7 @@ class RegisterSekolahController extends Controller
                 'unique:tenants,npsn',
                 'unique:sekolah_settings,npsn',
             ],
-            'jenjang' => 'required|in:SD,SMP,SMA,SMK',
+            'jenjang' => 'required|in:SD,MI,SMP,MTs,SMA,MA,SMK,SLB',
             'kepala_sekolah' => 'required|string|max:255',
             'subdomain' => [
                 'required',
