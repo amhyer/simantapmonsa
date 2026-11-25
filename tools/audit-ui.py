@@ -276,10 +276,13 @@ def main() -> int:
         # tabel
         pdf_view = (
             "/pdf/" in rel
+            or "/exports/" in rel
             or path.name in ("pdf.blade.php", "pdf-bulk.blade.php")
             or "pdf-" in path.name
             or "-pdf-" in path.name
             or path.name.endswith("-pdf.blade.php")
+            or bool(re.search(r"@page\s*\{", text))
+            or ("@extends" not in text and "@media print" in text)
         )
         for tm in re.finditer(r"<table\b.*?</table>", text, re.S | re.I):
             block = tm.group(0)

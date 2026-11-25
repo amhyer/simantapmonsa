@@ -441,6 +441,10 @@
                 box-shadow: none;
             }
 
+            .table-wrapper {
+                overflow: visible !important;
+            }
+
             .info-mode-waktu {
                 color: #000;
             }
@@ -558,6 +562,7 @@
             </div>
         </div>
 
+        <div class="table-wrapper" style="overflow-x:auto">
         <table class="tabel-matriks">
             <thead>
                 <tr>
@@ -668,6 +673,7 @@
                 @endif
             </tbody>
         </table>
+        </div>
 
         <div class="catatan-bawah">
             @if($kategori !== 'siswa')

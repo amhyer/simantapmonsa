@@ -156,37 +156,41 @@
                     <div style="font-size:10.5px">Semester Ganjil Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</div>
                 </div>
 
-                <table style="width:100%;font-size:11px;margin-bottom:10px">
-                    <tr>
-                        <td style="width:120px">Nama Peserta Didik</td>
-                        <td style="width:10px">:</td>
-                        <td><strong id="pvNamaSiswa">Alya Putri Pratama</strong></td>
-                    </tr>
-                    <tr>
-                        <td>Kelas</td>
-                        <td>:</td>
-                        <td>6A</td>
-                    </tr>
-                </table>
-
-                <table style="width:100%;border-collapse:collapse;font-size:11px">
-                    <thead>
-                        <tr style="background:#F1F5F9">
-                            <th style="border:1px solid #000;padding:4px 6px;width:28px">No</th>
-                            <th style="border:1px solid #000;padding:4px 6px;text-align:left">Muatan Pelajaran</th>
-                            <th style="border:1px solid #000;padding:4px 6px;width:60px">Nilai</th>
-                            <th style="border:1px solid #000;padding:4px 6px;width:55px">Predikat</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="table-wrapper">
+                    <table style="width:100%;font-size:11px;margin-bottom:10px">
                         <tr>
-                            <td style="border:1px solid #000;padding:4px 6px;text-align:center">1</td>
-                            <td style="border:1px solid #000;padding:4px 6px">Matematika</td>
-                            <td id="pvNilai" style="border:1px solid #000;padding:4px 6px;text-align:center">88</td>
-                            <td style="border:1px solid #000;padding:4px 6px;text-align:center">B</td>
+                            <td style="width:120px">Nama Peserta Didik</td>
+                            <td style="width:10px">:</td>
+                            <td><strong id="pvNamaSiswa">Alya Putri Pratama</strong></td>
                         </tr>
-                    </tbody>
-                </table>
+                        <tr>
+                            <td>Kelas</td>
+                            <td>:</td>
+                            <td>6A</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="table-wrapper">
+                    <table style="width:100%;border-collapse:collapse;font-size:11px">
+                        <thead>
+                            <tr style="background:#F1F5F9">
+                                <th style="border:1px solid #000;padding:4px 6px;width:28px">No</th>
+                                <th style="border:1px solid #000;padding:4px 6px;text-align:left">Muatan Pelajaran</th>
+                                <th style="border:1px solid #000;padding:4px 6px;width:60px">Nilai</th>
+                                <th style="border:1px solid #000;padding:4px 6px;width:55px">Predikat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border:1px solid #000;padding:4px 6px;text-align:center">1</td>
+                                <td style="border:1px solid #000;padding:4px 6px">Matematika</td>
+                                <td id="pvNilai" style="border:1px solid #000;padding:4px 6px;text-align:center">88</td>
+                                <td style="border:1px solid #000;padding:4px 6px;text-align:center">B</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <div style="display:flex;justify-content:space-between;margin-top:20px;font-size:10.5px;text-align:center">
                     <div style="width:45%">
