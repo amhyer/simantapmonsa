@@ -39,6 +39,16 @@ Akun hasil seed (hanya untuk pengembangan): `admin/admin123`, `guru/guru123`,
 
 ---
 
+## 🏫 Mode Multi-Sekolah (SaaS) & Lintas Jenjang
+
+Saat `SIMANTAP_MULTI_TENANT=true`, satu instalasi melayani banyak sekolah secara terisolasi per `tenant_id` (`SuperAdmin` mengelola lintas sekolah di `/superadmin/tenants`):
+
+- **Lintas jenjang penuh (`SD`, `MI`, `SMP`, `MTs`, `SMA`, `MA`, `SMK`, `SLB`):** Tingkat `1–12` dan Fase Kurikulum Merdeka `A–F` menyesuaikan otomatis dengan jenjang masing-masing sekolah.
+- **Pendaftaran mandiri sekolah (`/daftar-sekolah`):** Mengatur masa uji coba dan kuota awal bawaan melalui `SIMANTAP_SCHOOL_TRIAL_DAYS`, `SIMANTAP_SCHOOL_DEFAULT_PAKET`, `SIMANTAP_SCHOOL_DEFAULT_KUOTA_SISWA`, dan `SIMANTAP_SCHOOL_DEFAULT_KUOTA_STORAGE_MB`.
+- **Penegakan kuota & masa aktif langganan:** Kuota siswa (`kuota_siswa`), penyimpanan berkas (`kuota_storage_mb`), dan kuota AI harian per paket ditegakkan otomatis; pengingat jatuh tempo dijalankan harian oleh scheduler melalui `php artisan tenants:send-expiry-reminders`.
+
+---
+
 ## 📦 Deploy ke produksi
 
 Lihat **[`DEPLOYMENT.md`](DEPLOYMENT.md)** — berisi prasyarat server, konfigurasi `.env`
