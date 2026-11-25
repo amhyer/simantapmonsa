@@ -62,6 +62,16 @@ php artisan key:generate
 
 Daftar lengkap variabel beserta penjelasannya ada di `.env.production.example`.
 
+Bila mengaktifkan mode Multi-Sekolah (SaaS), tinjau juga variabel pendaftaran mandiri & kuota awal berikut pada `.env`:
+
+```env
+SIMANTAP_MULTI_TENANT=true
+SIMANTAP_SCHOOL_TRIAL_DAYS=30
+SIMANTAP_SCHOOL_DEFAULT_PAKET=standar
+SIMANTAP_SCHOOL_DEFAULT_KUOTA_SISWA=500
+SIMANTAP_SCHOOL_DEFAULT_KUOTA_STORAGE_MB=2048
+```
+
 > ⚠️ `.env.example` (tanpa `.production`) adalah konfigurasi **pengembangan**:
 > `APP_ENV=local` dan `APP_DEBUG=true`. Jangan menyalinnya ke server live.
 
