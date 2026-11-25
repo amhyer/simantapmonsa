@@ -277,7 +277,6 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
             'tenant_owned' => true,
             'nama_pengguna' => '0081122334',
             'nama_lengkap' => 'Budi Siswa SMP',
-            'kelas' => 'VIII B',
         ]);
 
         TenantContext::run($smp->id, fn () => Siswa::create([
@@ -352,7 +351,6 @@ class CrossLevelMultiSchoolSupportTest extends TestCase
             'tenant_owned' => true,
             'nama_pengguna' => '0129988776',
             'nama_lengkap' => 'Siti Siswa SMK',
-            'kelas' => 'XII TKJ 1',
         ]);
 
         TenantContext::run($smk->id, fn () => Siswa::create([

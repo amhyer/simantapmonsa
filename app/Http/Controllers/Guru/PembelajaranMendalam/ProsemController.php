@@ -114,7 +114,7 @@ class ProsemController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'semester' => ['required', 'in:1,2'],
             'jp_per_minggu' => ['required', 'integer', 'min:1', 'max:20'],
@@ -157,7 +157,7 @@ class ProsemController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'nama_mapel' => ['required', 'string', 'max:120'],
             'semester' => ['required', 'in:1,2'],
             'bab' => ['nullable', 'string', 'max:120'],
