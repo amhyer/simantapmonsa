@@ -158,6 +158,7 @@ Dua hal ini **tidak jalan sendiri**. Tanpa keduanya fitur inti mati diam-diam.
 |---|---|---|
 | Tiap hari 02:00 | `simantap:backup` | **Tidak ada backup sama sekali** |
 | Tiap hari 03:30 | `menu:usage-prune` | Data telemetri kunjungan menu > 60 hari tidak dibersihkan |
+| Tiap hari 07:30 | `tenants:send-expiry-reminders` | Pengingat jatuh tempo langganan sekolah (H-14/H-7/H-3/H-1) tidak terkirim |
 | Tiap 6 jam | `tka:refresh` | Statistik TKA basi |
 | Tiap menit (bila CBT aktif) | `cbt:finalize-expired` | **Ujian siswa yang terputus tidak pernah difinalisasi/dinilai** |
 
