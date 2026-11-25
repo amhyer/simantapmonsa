@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -867,8 +868,11 @@ class AuditBatch4Nov2026Test extends TestCase
     public function test_exam_engine_unique_kode_dan_dapodik_import_log_terisolasi_per_tenant(): void
     {
         config(['simantap.multi_tenant_enabled' => true]);
-        $sekolahA = $this->buatSekolah('70900001');
-        $sekolahB = $this->buatSekolah('70900002');
+        $sekolahA = $this->createTenant('70900001', 'Sekolah A', 'sek-70900001');
+        $sekolahB = $this->createTenant('70900002', 'Sekolah B', 'sek-70900002');
+
+        // Pastikan parameter non-UUID pada /daftar-sekolah/status/{uuid} mengembalikan 404 bersih (tanpa SQLSTATE[22P02] di PostgreSQL)
+        $this->get('/daftar-sekolah/status/1')->assertNotFound();
 
         $adminA = User::factory()->admin()->create(['tenant_id' => $sekolahA->id]);
         $adminB = User::factory()->admin()->create(['tenant_id' => $sekolahB->id]);

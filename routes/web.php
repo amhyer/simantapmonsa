@@ -160,9 +160,9 @@ Route::middleware('guest')->group(function () {
 });
 
 // Status & Verifikasi Email Pendaftaran Sekolah (dapat diakses baik saat guest maupun sudah login)
-Route::get('/daftar-sekolah/status/{uuid}', [RegisterSekolahController::class, 'status'])->name('sekolah.status');
-Route::get('/daftar-sekolah/verifikasi/{uuid}/{token}', [RegisterSekolahController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('sekolah.verify-email');
-Route::post('/daftar-sekolah/verifikasi/{uuid}/kirim-ulang', [RegisterSekolahController::class, 'resendVerificationEmail'])->middleware('throttle:5,1')->name('sekolah.verify-email.resend');
+Route::get('/daftar-sekolah/status/{uuid}', [RegisterSekolahController::class, 'status'])->whereUuid('uuid')->name('sekolah.status');
+Route::get('/daftar-sekolah/verifikasi/{uuid}/{token}', [RegisterSekolahController::class, 'verifyEmail'])->whereUuid('uuid')->middleware('throttle:10,1')->name('sekolah.verify-email');
+Route::post('/daftar-sekolah/verifikasi/{uuid}/kirim-ulang', [RegisterSekolahController::class, 'resendVerificationEmail'])->whereUuid('uuid')->middleware('throttle:5,1')->name('sekolah.verify-email.resend');
 Route::post('/csp-report', [CspReportController::class, 'store'])
     ->withoutMiddleware([
         EncryptCookies::class,
