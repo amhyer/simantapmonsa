@@ -125,12 +125,14 @@ class TenantSubscriptionService
         }
 
         $today = now()->startOfDay();
-        $targetDates = array_map(fn (int $d): string => $today->copy()->addDays($d)->toDateString(), $days);
+        $minDate = $today->copy()->addDays(min($days))->toDateString();
+        $maxDate = $today->copy()->addDays(max($days))->toDateString();
 
         $tenants = Tenant::query()
             ->where('aktif', true)
             ->whereNotNull('tgl_kedaluwarsa')
-            ->whereIn('tgl_kedaluwarsa', $targetDates)
+            ->whereDate('tgl_kedaluwarsa', '>=', $minDate)
+            ->whereDate('tgl_kedaluwarsa', '<=', $maxDate)
             ->get();
 
         $checked = $tenants->count();

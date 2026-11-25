@@ -188,6 +188,7 @@ class TenantQuotaAndSubscriptionLifecycleTest extends TestCase
         // Sekolah mencoba menaikkan sendiri gemini_daily_quota = 500 tanpa mengisi API key milik sendiri
         SekolahSettings::withoutGlobalScopes()
             ->where('tenant_id', $tenantStandar->id)
+            ->firstOrFail()
             ->update(['pengaturan' => ['gemini_daily_quota' => 500]]);
 
         $gemini = app(GeminiPembelajaranService::class);
@@ -197,6 +198,7 @@ class TenantQuotaAndSubscriptionLifecycleTest extends TestCase
         // Bila sekolah memakai API key sendiri (BYOK), kuota 500 diizinkan penuh
         SekolahSettings::withoutGlobalScopes()
             ->where('tenant_id', $tenantStandar->id)
+            ->firstOrFail()
             ->update(['pengaturan' => [
                 'gemini_api_key' => 'SCHOOL-OWN-GEMINI-KEY',
                 'gemini_daily_quota' => 500,
