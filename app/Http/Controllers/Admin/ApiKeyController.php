@@ -34,11 +34,14 @@ class ApiKeyController extends Controller
         $tenantId = $this->tenantId();
         $keys = ApiKey::with('user')->whereHas('user', fn ($query) => $query->where('tenant_id', $tenantId))->orderBy('created_at', 'desc')->get();
         // Baik DapodikSyncLog maupun DapodikImportLog kini memiliki global scope
-        // tenant_id + tenant_owned sehingga aman dan terisolasi per sekolah.
+        // tenant_id + tenant_owned sehingga aman digabung dan terisolasi per sekolah.
         $syncLogs = DapodikSyncLog::with('user')->orderBy('created_at', 'desc')->limit(20)->get();
-        $logs = $syncLogs->isNotEmpty()
-            ? $syncLogs
-            : DapodikImportLog::with('user')->orderBy('created_at', 'desc')->limit(20)->get();
+        $importLogs = DapodikImportLog::with('user')->orderBy('created_at', 'desc')->limit(20)->get();
+        $logs = $syncLogs->toBase()
+            ->merge($importLogs)
+            ->sortByDesc('created_at')
+            ->take(20)
+            ->values();
         $siswaDapodik = Siswa::whereNotNull('rekaman->dapodik_imported_at')->count();
 
         return view('admin.api-keys.index', compact('keys', 'logs', 'siswaDapodik'));
