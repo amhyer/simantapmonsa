@@ -584,7 +584,13 @@
                 <div class="anbk-student-name">
                     {{ $siswa->nis ?? auth()->user()->nama_pengguna }} - {{ $siswa->nama_peserta_didik ?? auth()->user()->nama_lengkap }}
                 </div>
-                <div class="anbk-student-meta">Kelas {{ $siswa->kelas ?? '-' }} &bull; {{ $session->title }}</div>
+                @php
+                    $kelasLabel = trim((string) ($siswa->kelas ?? ''));
+                    $kelasDisplay = $kelasLabel === ''
+                        ? 'Kelas -'
+                        : (stripos($kelasLabel, 'kelas') === 0 ? $kelasLabel : 'Kelas ' . $kelasLabel);
+                @endphp
+                <div class="anbk-student-meta">{{ $kelasDisplay }} &bull; {{ $session->title }}</div>
             </div>
             <div class="anbk-avatar-tile" aria-hidden="true">
                 <i class="fas fa-user-graduate"></i>
@@ -999,8 +1005,9 @@
     const btnEnterFs = document.getElementById('btn-enter-mandatory-fs');
     const exitUrl = @json(route('cbt.student.index', ['kicked' => 1]));
     const outboxStorageKey = 'simantap:exam-outbox:' + @json('cbt:'.$result->id);
+    const fullscreenSupported = !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
     let examEnteredFullscreen = !!document.fullscreenElement;
-    let adminUnlocked = false;
+    let adminUnlocked = !fullscreenSupported;
     let violationTriggered = false;
 
     function syncFsGate() {
@@ -1016,19 +1023,17 @@
     }
 
     function requestMandatoryFullscreen() {
-        if (document.fullscreenElement) {
+        if (!fullscreenSupported || document.fullscreenElement) {
             syncFsGate();
             return;
         }
         const el = document.documentElement;
-        if (el.requestFullscreen) {
-            el.requestFullscreen().then(() => {
-                examEnteredFullscreen = true;
-                syncFsGate();
-            }).catch(() => {
-                syncFsGate();
-            });
-        }
+        el.requestFullscreen().then(() => {
+            examEnteredFullscreen = true;
+            syncFsGate();
+        }).catch(() => {
+            syncFsGate();
+        });
     }
 
     if (btnEnterFs) {

@@ -74,7 +74,12 @@ class CbtStudentController extends Controller
         );
         $questions = CbtScoring::publicQuestions($session->question_snapshot ?? []);
 
-        return view('cbt.student.exam', compact('session', 'result', 'questions'));
+        return view('cbt.student.exam', [
+            'session' => $session,
+            'result' => $result,
+            'questions' => $questions,
+            'siswa' => $student,
+        ]);
     }
 
     public function begin(CbtTestSession $session)
