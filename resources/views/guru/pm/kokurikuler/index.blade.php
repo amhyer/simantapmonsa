@@ -34,12 +34,13 @@
                             <input id="fld-pm-kokurikuler-tema-judul" type="text" name="tema_judul" required placeholder="Misal: Kebun Sayur Sekolahku"
                                    style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
                         </div>
+                        @php($daftarTingkatKoku = \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user()))
                         <div>
                             <label for="fld-pm-kokurikuler-tingkat" style="font-size:12px;font-weight:600">Kelas *</label>
                             <select id="fld-pm-kokurikuler-tingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                                @for($t = 1; $t <= 6; $t++)
+                                @foreach($daftarTingkatKoku as $t)
                                     <option value="{{ $t }}">Kelas {{ $t }}</option>
-                                @endfor
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -107,9 +108,9 @@
                     <div>
                         <label for="fld-pm-kokurikuler-tingkat-2" style="font-size:12px;font-weight:600">Kelas *</label>
                         <select id="fld-pm-kokurikuler-tingkat-2" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                            @for($t = 1; $t <= 6; $t++)
+                            @foreach($daftarTingkatKoku as $t)
                                 <option value="{{ $t }}">Kelas {{ $t }}</option>
-                            @endfor
+                            @endforeach
                         </select>
                     </div>
                     <div>
@@ -221,7 +222,7 @@
                         <div>
                             <label style="font-size:12px;font-weight:600" for="editKokuTingkat">Kelas *</label>
                             <select id="editKokuTingkat" name="tingkat" required style="width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:8px;font-size:13px">
-                                @for($t = 1; $t <= 6; $t++)<option value="{{ $t }}">Kelas {{ $t }}</option>@endfor
+                                @foreach($daftarTingkatKoku as $t)<option value="{{ $t }}">Kelas {{ $t }}</option>@endforeach
                             </select>
                         </div>
                     </div>

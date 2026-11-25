@@ -418,7 +418,10 @@ class CetakController extends Controller
             $kopBaris[$i] = array_merge($defaultKopBaris[$i], is_array($savedBaris[$i] ?? null) ? $savedBaris[$i] : []);
         }
 
-        $defaultPtsKolom = ['1' => 5, '2' => 5, '3' => 5, '4' => 5, '5' => 5, '6' => 5];
+        $defaultPtsKolom = [];
+        for ($k = 1; $k <= 12; $k++) {
+            $defaultPtsKolom[(string) $k] = 5;
+        }
         $savedPtsKolom = is_array($saved['pts_kolom_kelas'] ?? null) ? $saved['pts_kolom_kelas'] : [];
         $ptsKolom = [];
         foreach ($defaultPtsKolom as $k => $v) {
@@ -534,7 +537,7 @@ class CetakController extends Controller
 
         $ptsKolom = [];
         $inputPts = (array) $request->input('pts_kolom_kelas', []);
-        for ($k = 1; $k <= 6; $k++) {
+        for ($k = 1; $k <= 12; $k++) {
             $ptsKolom[(string) $k] = max(1, min(12, (int) ($inputPts[(string) $k] ?? 5)));
         }
 

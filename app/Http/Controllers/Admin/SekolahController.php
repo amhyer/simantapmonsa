@@ -119,6 +119,10 @@ class SekolahController extends Controller
         }
         $validated['pengaturan'] = $pengaturan;
 
+        if (! empty($validated['jenjang'])) {
+            $validated['jenjang'] = \App\Support\SchoolLevel::normalize($validated['jenjang'], $validated['jenjang']);
+        }
+
         if (! $sekolahSettings) {
             $sekolahSettings = SekolahSettings::create([
                 'tenant_id' => $tenantId,
@@ -130,9 +134,17 @@ class SekolahController extends Controller
         }
 
         if ($tenantId !== null) {
-            \App\Modules\Tenant\Models\Tenant::query()
-                ->whereKey($tenantId)
-                ->update(['nama_sekolah' => $validated['nama_sekolah']]);
+            $tenantModel = \App\Modules\Tenant\Models\Tenant::query()->find($tenantId);
+            if ($tenantModel) {
+                $meta = is_array($tenantModel->meta) ? $tenantModel->meta : [];
+                if (! empty($validated['jenjang'])) {
+                    $meta['jenjang'] = $validated['jenjang'];
+                }
+                $tenantModel->update([
+                    'nama_sekolah' => $validated['nama_sekolah'],
+                    'meta' => $meta,
+                ]);
+            }
             \Illuminate\Support\Facades\Cache::forget('tenant-nama-'.$tenantId);
         }
         \Illuminate\Support\Facades\Cache::forget('root-sekolah-nama');

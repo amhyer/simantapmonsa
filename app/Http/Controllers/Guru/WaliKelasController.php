@@ -124,7 +124,7 @@ class WaliKelasController extends Controller
         $validated = $request->validate([
             'kode' => 'required|string|max:30',
             'mata_pelajaran' => 'required|string|max:120',
-            'fase' => 'required|in:Fase A,Fase B,Fase C',
+            'fase' => 'required|in:Fase A,Fase B,Fase C,Fase D,Fase E,Fase F',
             'semester' => 'required|in:Ganjil,Genap',
             'deskripsi' => 'required|string|max:300',
         ]);

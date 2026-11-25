@@ -28,7 +28,7 @@
         <div class="card-body" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
             <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
                 <span style="font-size:12px;font-weight:700;color:#667085;margin-right:4px">KELAS:</span>
-                @foreach($pmAllowedTingkat ?? [1,2,3,4,5,6] as $t)
+                @foreach(($pmAllowedTingkat ?? \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user())) as $t)
                     <a href="{{ route('guru.pm.kktp.index', ['tingkat' => $t, 'mapel' => $mapelAktif]) }}"
                        class="btn btn-sm {{ $tingkat === $t ? '' : 'btn-ghost' }}">Kelas {{ $t }}</a>
                 @endforeach

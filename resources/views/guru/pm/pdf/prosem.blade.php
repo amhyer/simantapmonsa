@@ -18,7 +18,7 @@
 <body>
     <h2>PROGRAM SEMESTER {{ $semester }} (PROSEM MATRIKS)</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · {{ $mapel }} · Kelas {{ $tingkat }} · Tahun Ajaran {{ $tahunAjaran }}
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · {{ $mapel }} · Kelas {{ $tingkat }} · Tahun Ajaran {{ $tahunAjaran }}
     </div>
     <table>
         <thead>

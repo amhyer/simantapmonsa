@@ -16,7 +16,7 @@
 <body>
     <h2>PROGRAM TAHUNAN (PROTA)</h2>
     <div class="sub">
-        {{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · {{ $mapel }} · Kelas {{ $tingkat }} · Tahun Ajaran {{ $tahunAjaran }}
+        {{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · {{ $mapel }} · Kelas {{ $tingkat }} · Tahun Ajaran {{ $tahunAjaran }}
     </div>
     <table>
         <thead>

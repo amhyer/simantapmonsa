@@ -51,7 +51,7 @@
                         <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px" for="jenjang">Jenjang</label>
                         <select name="jenjang" id="jenjang" style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px">
                             <option value="">-- Pilih --</option>
-                            @foreach(['SD', 'SMP', 'SMA', 'SMK'] as $j)
+                            @foreach(\App\Support\SchoolLevel::VALID_JENJANG as $j)
                                 <option value="{{ $j }}" {{ ($sekolahSettings->jenjang ?? '') === $j ? 'selected' : '' }}>{{ $j }}</option>
                             @endforeach
                         </select>

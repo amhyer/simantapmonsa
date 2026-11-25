@@ -239,13 +239,14 @@
                 {{-- Modul 5: Rapor Tengah Semester (PTS) --}}
                 <div id="menu_pengaturan_rapor_tengah_semester" class="modif-panel">
                     <div style="font-weight:700;font-size:13px;margin-bottom:8px">Jumlah Kolom Rincian Penilaian per Tingkat</div>
+                    @php($tingkatPts = \App\Support\SchoolLevel::tingkatForJenjang(\App\Support\SchoolLevel::current()))
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
-                        @for($k = 1; $k <= 6; $k++)
+                        @foreach($tingkatPts as $k)
                             <div class="form-group">
                                 <label for="pts_kolom_kelas_{{ $k }}">Kelas {{ $k }}</label>
                                 <input type="number" id="pts_kolom_kelas_{{ $k }}" min="1" max="12" name="pts_kolom_kelas[{{ $k }}]" class="form-control live-input" value="{{ $tampilan['pts_kolom_kelas'][(string)$k] ?? 5 }}">
                             </div>
-                        @endfor
+                        @endforeach
                     </div>
                     <div class="form-group" style="margin-bottom:10px">
                         <label for="pts_formatif_masuk">Penilaian Formatif Masuk ke Rapor Tengah Semester</label>

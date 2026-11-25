@@ -311,7 +311,7 @@ class ProtaController extends Controller
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = (string) $request->query('tahun_ajaran', $this->ctx->tahunAjaranAktif());
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $tingkat = max(1, min(12, (int) $request->query('tingkat', 1)));
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $mapel = trim((string) $request->query('mapel', ''));
         if ($mapel !== '') {

@@ -34,9 +34,13 @@ class AtpController extends Controller
 
         $ctx = $this->ctx->getContext($request, $guru);
         $mapelAktif = trim((string) $request->query('mapel', $mapelList->first()?->nama ?? 'Matematika'));
+        $faseLabels = CapaianPembelajaran::faseLabelsFor($tenantId);
         $faseAktif = $ctx['fase'];
         if (! array_key_exists($faseAktif, CapaianPembelajaran::FASE_LABELS)) {
-            $faseAktif = 'A';
+            $faseAktif = array_key_first($faseLabels) ?? 'A';
+        }
+        if (! array_key_exists($faseAktif, $faseLabels)) {
+            $faseLabels = [$faseAktif => CapaianPembelajaran::FASE_LABELS[$faseAktif]] + $faseLabels;
         }
         $this->scope->authorizeFase($guru, $faseAktif, $tenantId);
         $this->scope->authorizeMapel($guru, $mapelAktif, $tenantId);
@@ -74,7 +78,7 @@ class AtpController extends Controller
             'mapelList' => $mapelList,
             'mapelAktif' => $mapelAktif,
             'faseAktif' => $faseAktif,
-            'faseLabels' => CapaianPembelajaran::FASE_LABELS,
+            'faseLabels' => $faseLabels,
             'kelasFase' => $kelasFase,
             'cpAcuan' => $cpAcuan,
             'tpList' => $tpList,
@@ -111,7 +115,7 @@ class AtpController extends Controller
 
             $this->scope->authorizeFase($guru, $tp->fase, $tenantId);
             $this->scope->authorizeMapel($guru, $tp->nama_mapel, $tenantId);
-            $kelasTarget = ! empty($row['kelas_target']) ? max(1, min(6, (int) $row['kelas_target'])) : null;
+            $kelasTarget = ! empty($row['kelas_target']) ? max(1, min(12, (int) $row['kelas_target'])) : null;
             if ($kelasTarget !== null) {
                 $this->scope->authorizeTingkat($guru, $kelasTarget, $tenantId);
             }

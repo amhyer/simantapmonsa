@@ -89,7 +89,7 @@ class KktpController extends Controller
 
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:120'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'batas_bawah' => ['required', 'integer', 'min:1', 'max:90'],
             'nilai_kktp' => ['required', 'integer', 'gt:batas_bawah', 'max:95'],
             'batas_atas' => ['required', 'integer', 'gt:nilai_kktp', 'max:99'],
@@ -190,7 +190,7 @@ class KktpController extends Controller
         /** @var User $guru */
         $guru = Auth::user();
         $tenantId = $this->ctx->tenantId($guru);
-        $tingkat = max(1, min(6, (int) $request->query('tingkat', 1)));
+        $tingkat = max(1, min(12, (int) $request->query('tingkat', 1)));
         $this->scope->authorizeTingkat($guru, $tingkat, $tenantId);
         $fase = TujuanPembelajaranPm::faseUntukKelas($tingkat);
         $mapel = trim((string) $request->query('mapel', ''));

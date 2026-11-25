@@ -26,7 +26,7 @@
     <div class="card" style="margin-bottom:16px">
         <div class="card-body" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
             <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-                @foreach($pmAllowedTingkat ?? [1,2,3,4,5,6] as $t)
+                @foreach(($pmAllowedTingkat ?? \App\Support\SchoolLevel::allowedTingkatForUser(auth()->user())) as $t)
                     <a href="{{ route('guru.pm.prosem.index', ['tahun_ajaran' => $tahunAjaran, 'tingkat' => $t, 'semester' => $semester, 'mapel' => $mapelAktif]) }}"
                        class="btn btn-sm {{ $tingkat === $t ? '' : 'btn-ghost' }}">Kls {{ $t }}</a>
                 @endforeach

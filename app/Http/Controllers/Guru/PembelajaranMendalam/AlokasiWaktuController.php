@@ -7,6 +7,7 @@ use App\Models\PembelajaranMendalam\AlokasiWaktu;
 use App\Models\User;
 use App\Services\PembelajaranMendalam\GuruScopeService;
 use App\Services\PembelajaranMendalam\PembelajaranContextService;
+use App\Support\SchoolLevel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class AlokasiWaktuController extends Controller
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
             'semester' => ['required', 'in:1,2'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
         ]);
 
         $this->scope->authorizeTingkat($guru, (int) $data['tingkat'], $tenantId);
@@ -55,15 +56,17 @@ class AlokasiWaktuController extends Controller
         // Gabungkan mapel yang sudah ada di DB agar tidak hilang
         $namaMapelSet = $mapelList->pluck('nama')->merge($records->pluck('nama_mapel'))->unique()->values();
 
+        $tingkatList = SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
+
         $matrix = [];
         foreach ($namaMapelSet as $namaMapel) {
-            for ($t = 1; $t <= 6; $t++) {
+            foreach ($tingkatList as $t) {
                 $matrix[$namaMapel][$t] = ['intra' => 0, 'ko' => 0];
             }
         }
         foreach ($records as $row) {
-            if ($row->tingkat >= 1 && $row->tingkat <= 6) {
-                $matrix[$row->nama_mapel][$row->tingkat] = [
+            if (in_array((int) $row->tingkat, $tingkatList, true)) {
+                $matrix[$row->nama_mapel][(int) $row->tingkat] = [
                     'intra' => (int) $row->jp_intra,
                     'ko' => (int) $row->jp_kokurikuler,
                 ];
@@ -71,12 +74,12 @@ class AlokasiWaktuController extends Controller
         }
 
         $ringkasanTingkat = [];
-        for ($t = 1; $t <= 6; $t++) {
+        foreach ($tingkatList as $t) {
             $intra = 0;
             $ko = 0;
             foreach ($matrix as $perTingkat) {
-                $intra += $perTingkat[$t]['intra'];
-                $ko += $perTingkat[$t]['ko'];
+                $intra += $perTingkat[$t]['intra'] ?? 0;
+                $ko += $perTingkat[$t]['ko'] ?? 0;
             }
             $minggu = AlokasiWaktu::mingguPerTahun($t);
             $ringkasanTingkat[$t] = [
@@ -92,6 +95,7 @@ class AlokasiWaktuController extends Controller
 
         return view('guru.pm.alokasi.index', [
             'tahunAjaran' => $tahunAjaran,
+            'tingkatList' => $tingkatList,
             'namaMapelList' => $namaMapelSet,
             'matrix' => $matrix,
             'ringkasanTingkat' => $ringkasanTingkat,
@@ -117,6 +121,7 @@ class AlokasiWaktuController extends Controller
         }
 
         $mapelByName = $this->ctx->daftarMapel()->keyBy('nama');
+        $tingkatList = SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
 
         foreach ($alokasi as $namaMapel => $perTingkat) {
             $namaMapel = trim((string) $namaMapel);
@@ -125,7 +130,7 @@ class AlokasiWaktuController extends Controller
             }
             $mapelId = $mapelByName->get($namaMapel)?->id;
 
-            for ($t = 1; $t <= 6; $t++) {
+            foreach ($tingkatList as $t) {
                 $intra = max(0, min(30, (int) ($perTingkat[$t]['intra'] ?? 0)));
                 $ko = max(0, min(20, (int) ($perTingkat[$t]['ko'] ?? 0)));
 
@@ -161,8 +166,9 @@ class AlokasiWaktuController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
         $tahunAjaran = trim((string) $request->input('tahun_ajaran', $this->ctx->tahunAjaranAktif()));
         $daftarMapel = $this->ctx->daftarMapel();
+        $jenjang = SchoolLevel::current($tenantId);
 
-        foreach (AlokasiWaktu::STANDAR_PERMENDIKDASMEN_2025 as $namaStandar => $perTingkat) {
+        foreach (AlokasiWaktu::standarUntukJenjang($jenjang) as $namaStandar => $perTingkat) {
             // Cocokkan dengan nama mapel aktual sekolah (misal: "Matematika" -> "Matematika (Umum)")
             $matched = $daftarMapel->first(function ($m) use ($namaStandar): bool {
                 $a = mb_strtolower($m->nama);
@@ -213,7 +219,9 @@ class AlokasiWaktuController extends Controller
             ->orderBy('tingkat')
             ->get();
 
-        $tingkatList = $tingkatFilter ? [$tingkatFilter] : [1, 2, 3, 4, 5, 6];
+        $tingkatList = $tingkatFilter
+            ? [$tingkatFilter]
+            : SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
         $namaMapelList = $records->pluck('nama_mapel')->unique()->values();
         $matrix = [];
         foreach ($records as $row) {

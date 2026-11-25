@@ -409,6 +409,9 @@ class TenantController extends Controller
                 'tgl_kedaluwarsa' => $validated['tgl_kedaluwarsa'] ?? null,
                 'catatan_langganan' => $validated['catatan_langganan'] ?? null,
                 'aktif' => true,
+                'meta' => [
+                    'jenjang' => \App\Support\SchoolLevel::normalize($validated['jenjang'] ?? 'SD', 'SD'),
+                ],
             ]);
 
             $adminUser = User::create([

@@ -68,7 +68,7 @@ class KokurikulerPmController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'tema_judul' => ['required', 'string', 'max:255'],
             'bentuk_kegiatan' => ['required', 'in:kolaboratif_lintas_disiplin,tujuh_kebiasaan,lainnya'],
             'dimensi_profil' => ['nullable', 'array'],
@@ -111,7 +111,7 @@ class KokurikulerPmController extends Controller
         $tenantId = $this->ctx->tenantId($guru);
 
         $data = $request->validate([
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'tema_judul' => ['required', 'string', 'max:255'],
             'bentuk_kegiatan' => ['required', 'in:kolaboratif_lintas_disiplin,tujuh_kebiasaan,lainnya'],
             'dimensi_profil' => ['nullable', 'array'],
@@ -157,7 +157,7 @@ class KokurikulerPmController extends Controller
 
         $data = $request->validate([
             'tahun_ajaran' => ['required', 'string', 'max:20'],
-            'tingkat' => ['required', 'integer', 'min:1', 'max:6'],
+            'tingkat' => ['required', 'integer', 'min:1', 'max:12'],
             'tema_ide' => ['required', 'string', 'max:255'],
             'bentuk_kegiatan' => ['required', 'in:kolaboratif_lintas_disiplin,tujuh_kebiasaan,lainnya'],
         ]);

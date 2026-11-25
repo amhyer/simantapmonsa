@@ -10,6 +10,7 @@ use App\Models\SekolahSettings;
 use App\Models\Semester;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
+use App\Support\SchoolLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -42,22 +43,23 @@ class PembelajaranContextService
         $semester = in_array($semRaw, [1, 2], true) ? $semRaw : 1;
 
         $guru ??= auth()->user();
-        $allowedTingkat = [1, 2, 3, 4, 5, 6];
+        $tenantId = $this->tenantId($guru);
+        $allowedTingkat = SchoolLevel::tingkatForJenjang(SchoolLevel::current($tenantId));
         if ($guru && $guru->peran === 'guru') {
-            $scope = app(GuruScopeService::class)->resolveForGuru($guru, $this->tenantId($guru));
+            $scope = app(GuruScopeService::class)->resolveForGuru($guru, $tenantId);
             if ($scope['is_scoped'] && ! empty($scope['tingkat_list'])) {
                 $allowedTingkat = $scope['tingkat_list'];
             }
         }
 
         $tingkatRaw = (int) ($request?->query('tingkat') ?: ($saved['tingkat'] ?? $allowedTingkat[0]));
-        $tingkat = max(1, min(6, $tingkatRaw));
+        $tingkat = max(1, min(12, $tingkatRaw));
         if (! $request?->query('tingkat') && ! in_array($tingkat, $allowedTingkat, true)) {
             $tingkat = $allowedTingkat[0];
         }
 
         $faseQuery = strtoupper(trim((string) ($request?->query('fase') ?? '')));
-        $fase = in_array($faseQuery, ['A', 'B', 'C'], true)
+        $fase = in_array($faseQuery, SchoolLevel::VALID_FASE, true)
             ? $faseQuery
             : TujuanPembelajaranPm::faseUntukKelas($tingkat);
 
@@ -75,7 +77,7 @@ class PembelajaranContextService
             'pm_context' => [
                 'tahun_ajaran' => trim($tahunAjaran) ?: $this->tahunAjaranAktif(),
                 'semester' => in_array($semester, [1, 2], true) ? $semester : 1,
-                'tingkat' => max(1, min(6, $tingkat)),
+                'tingkat' => max(1, min(12, $tingkat)),
             ],
         ]);
     }
@@ -140,11 +142,14 @@ class PembelajaranContextService
             'Muatan Lokal' => 'MULOK',
         ];
 
-        return collect(array_keys(AlokasiWaktu::STANDAR_PERMENDIKDASMEN_2025))
+        $jenjang = SchoolLevel::current($this->tenantId());
+        $standar = AlokasiWaktu::standarUntukJenjang($jenjang);
+
+        return collect(array_keys($standar))
             ->map(fn (string $nama) => (object) [
                 'id' => null,
                 'nama' => $nama,
-                'kode' => $fallbackKode[$nama] ?? strtoupper(substr($nama, 0, 4)),
+                'kode' => $fallbackKode[$nama] ?? strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $nama) ?: 'MP', 0, 4)),
             ]);
     }
 

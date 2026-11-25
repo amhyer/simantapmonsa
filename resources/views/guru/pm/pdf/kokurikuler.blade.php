@@ -15,7 +15,7 @@
 </head>
 <body>
     <h2>PERENCANAAN & DOKUMENTASI KEGIATAN KOKURIKULER</h2>
-    <div class="sub">{{ $sekolah?->nama_sekolah ?? 'Sekolah Dasar' }} · Tahun Ajaran {{ $tahunAjaran }}</div>
+    <div class="sub">{{ $sekolah?->nama_sekolah ?? \App\Support\SchoolLevel::labelSekolah($sekolah?->jenjang) }} · Tahun Ajaran {{ $tahunAjaran }}</div>
     <table>
         <thead>
             <tr>

@@ -33,10 +33,11 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                         <div>
                             <label for="fld-guru-tp-fase" class="form-label">Fase</label>
+                            @php($faseOptionsTp = \App\Support\SchoolLevel::faseLabelsForJenjang(\App\Support\SchoolLevel::current()))
                             <select id="fld-guru-tp-fase" name="fase" class="form-control" required>
-                                <option value="Fase A">Fase A (Kelas 1-2)</option>
-                                <option value="Fase B">Fase B (Kelas 3-4)</option>
-                                <option value="Fase C">Fase C (Kelas 5-6)</option>
+                                @foreach($faseOptionsTp as $kodeFase => $labelFase)
+                                    <option value="Fase {{ $kodeFase }}">{{ $labelFase }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div>

@@ -85,7 +85,7 @@ class TpController extends Controller
             'tpList' => $query->paginate(20)->withQueryString(),
             'cpList' => $cpList,
             'mapelList' => $mapelList,
-            'faseLabels' => CapaianPembelajaran::FASE_LABELS,
+            'faseLabels' => CapaianPembelajaran::faseLabelsFor($tenantId),
             'mapelFilter' => $mapelFilter,
             'faseFilter' => $faseFilter,
             'cari' => $cari,
@@ -426,7 +426,7 @@ class TpController extends Controller
                 continue;
             }
 
-            $faseLabel = in_array($tp->fase, ['A', 'B', 'C'], true) ? ('Fase '.$tp->fase) : 'Fase A';
+            $faseLabel = in_array($tp->fase, ['A', 'B', 'C', 'D', 'E', 'F'], true) ? ('Fase '.$tp->fase) : 'Fase A';
             $existing[] = [
                 'id' => (string) Str::uuid(),
                 'kode' => $tp->kode_tp ?: ('TP.'.($i + 1)),
