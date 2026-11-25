@@ -319,24 +319,26 @@
                         <div style="font-size:12px;margin-top:2px">Semester Ganjil Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</div>
                     </div>
 
-                    <table class="preview-table" id="previewTable">
-                        <thead>
-                            <tr>
-                                <th style="width:36px">No</th>
-                                <th>Muatan Pelajaran</th>
-                                <th style="width:70px">Nilai</th>
-                                <th style="width:65px">Predikat</th>
-                                <th>Capaian Kompetensi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td style="text-align:center">1</td><td>Pendidikan Agama &amp; Budi Pekerti</td><td style="text-align:center">90</td><td style="text-align:center">A</td><td>Sangat baik dalam praktik ibadah dan akhlak.</td></tr>
-                            <tr><td style="text-align:center">2</td><td>Bahasa Indonesia</td><td style="text-align:center">86</td><td style="text-align:center">B</td><td>Baik dalam membaca pemahaman dan menulis narasi.</td></tr>
-                            <tr><td style="text-align:center">3</td><td>Matematika</td><td style="text-align:center">84</td><td style="text-align:center">B</td><td>Cakap dalam operasi hitung pecahan dan geometri.</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-wrapper">
+                        <table class="preview-table" id="previewTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:36px">No</th>
+                                    <th>Muatan Pelajaran</th>
+                                    <th style="width:70px">Nilai</th>
+                                    <th style="width:65px">Predikat</th>
+                                    <th>Capaian Kompetensi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="text-align:center">1</td><td>Pendidikan Agama &amp; Budi Pekerti</td><td style="text-align:center">90</td><td style="text-align:center">A</td><td>Sangat baik dalam praktik ibadah dan akhlak.</td></tr>
+                                <tr><td style="text-align:center">2</td><td>Bahasa Indonesia</td><td style="text-align:center">86</td><td style="text-align:center">B</td><td>Baik dalam membaca pemahaman dan menulis narasi.</td></tr>
+                                <tr><td style="text-align:center">3</td><td>Matematika</td><td style="text-align:center">84</td><td style="text-align:center">B</td><td>Cakap dalam operasi hitung pecahan dan geometri.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                    <div id="previewEkskulWrap" style="margin-top:10px">
+                    <div id="previewEkskulWrap" class="table-wrapper" style="margin-top:10px">
                         <table class="preview-table" id="previewEkskulTable">
                             <thead>
                                 <tr><th style="width:36px">No</th><th>Ekstrakurikuler</th><th style="width:100px">Predikat</th></tr>
