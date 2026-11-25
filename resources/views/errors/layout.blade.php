@@ -64,7 +64,12 @@
 
         <div class="aksi">
             <a class="btn utama" href="{{ url('/') }}">Ke beranda</a>
-            @if ($tombol)
+            @if (!empty($show_logout))
+                <form method="POST" action="{{ route('logout') }}" style="margin:0">
+                    @csrf
+                    <button type="submit" class="btn kedua" style="cursor:pointer;font-family:inherit;display:inline-block;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;background:#fff;color:var(--navy);border:1.5px solid var(--line)">Keluar Akun</button>
+                </form>
+            @elseif ($tombol)
                 <a class="btn kedua" href="{{ $tombol['url'] }}">{{ $tombol['label'] }}</a>
             @else
                 <a class="btn kedua" href="javascript:history.back()">Kembali</a>

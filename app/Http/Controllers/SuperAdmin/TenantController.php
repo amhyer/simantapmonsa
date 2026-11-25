@@ -153,6 +153,14 @@ class TenantController extends Controller
             ->take(10)
             ->get();
 
+        $quotaService = app(\App\Services\Tenant\TenantQuotaService::class);
+        $storageStatus = $quotaService->storageQuotaStatus($tenant->id, $tenant);
+        $aiQuotaStatus = $quotaService->aiQuotaSummary(
+            $tenant->id,
+            \App\Services\Tenant\TenantQuotaService::defaultAiQuotaForPaket($tenant->paket),
+            false
+        );
+
         return view('superadmin.tenants.show', compact(
             'tenant',
             'admin',
@@ -163,11 +171,13 @@ class TenantController extends Controller
             'cbtBankCount',
             'cbtSessionCount',
             'cbtResultCount',
-            'recentUsers'
+            'recentUsers',
+            'storageStatus',
+            'aiQuotaStatus'
         ));
     }
 
-    public function update(Request $request, Tenant $tenant)
+    public function update(Request $request, Tenant $tenant, \App\Services\SuperAdmin\TenantSubscriptionService $subscriptions)
     {
         $validated = $request->validate([
             'nama_sekolah' => 'required|string|max:255',
@@ -176,21 +186,37 @@ class TenantController extends Controller
             'paket' => 'required|string|in:standar,pro,enterprise',
             'kuota_siswa' => 'required|integer|min:10|max:100000',
             'kuota_storage_mb' => 'required|integer|min:100|max:1048576',
+            'kuota_ai_harian' => 'nullable|integer|min:10|max:50000',
             'tgl_kedaluwarsa' => 'nullable|date',
             'catatan_langganan' => 'nullable|string|max:1000',
         ], [
             'domain_kustom.unique' => 'Domain kustom ini sudah dipakai oleh sekolah lain.',
         ]);
 
-        if (! empty($validated['domain_kustom'])) {
-            $validated['domain_kustom'] = strtolower(trim($validated['domain_kustom']));
-        } else {
-            $validated['domain_kustom'] = null;
-        }
-
-        $tenant->update($validated);
+        $subscriptions->updateSubscription($tenant, $validated);
 
         return back()->with('success', "Informasi paket dan langganan sekolah '{$tenant->nama_sekolah}' berhasil diperbarui.");
+    }
+
+    public function extend(Request $request, Tenant $tenant, \App\Services\SuperAdmin\TenantSubscriptionService $subscriptions)
+    {
+        $validated = $request->validate([
+            'months' => 'required|integer|in:1,3,6,12,24',
+            'catatan_langganan' => 'nullable|string|max:1000',
+        ]);
+
+        $updated = $subscriptions->extendSubscription(
+            $tenant,
+            (int) $validated['months'],
+            $validated['catatan_langganan'] ?? null
+        );
+
+        $jatuhTempo = $updated->tgl_kedaluwarsa?->format('d-m-Y') ?? '-';
+
+        return back()->with(
+            'success',
+            "Masa aktif langganan '{$updated->nama_sekolah}' diperpanjang +{$validated['months']} bulan (sampai {$jatuhTempo})."
+        );
     }
 
     public function toggleActive(Tenant $tenant)

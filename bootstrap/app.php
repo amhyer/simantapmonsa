@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ApiKeyMiddleware;
 use App\Http\Middleware\CspReportOnlyHeaders;
+use App\Http\Middleware\EnforceTenantQuota;
 use App\Http\Middleware\EnsureCbtEnabled;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureSchoolContext;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(remove: [SubstituteBindings::class], append: [
             IdentifyTenant::class,
             SubstituteBindings::class,
+            EnforceTenantQuota::class,
             CspReportOnlyHeaders::class,
         ]);
 
@@ -55,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'module.asesmen' => EnsureModuleEnabled::class,
             'cbt.enabled' => EnsureCbtEnabled::class,
             'tenant' => IdentifyTenant::class,
+            'tenant.quota' => EnforceTenantQuota::class,
             'dapodik.single-school' => EnsureSingleSchoolDapodik::class,
             'school.context' => EnsureSchoolContext::class,
             'data.single-school' => EnsureSingleSchoolData::class,

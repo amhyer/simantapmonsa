@@ -131,6 +131,25 @@
                 </form>
             </div>
         @endif
+        @php
+            $sisaHariTenantAktif = null;
+            $tglKedaluwarsaTenantAktif = null;
+            if (auth()->check() && auth()->user()->peran === 'admin' && auth()->user()->tenant_id !== null) {
+                $tenantBannerModel = \App\Modules\Tenant\Models\Tenant::find((int) auth()->user()->tenant_id);
+                if ($tenantBannerModel && $tenantBannerModel->tgl_kedaluwarsa) {
+                    $sisaHariTenantAktif = $tenantBannerModel->sisaHariLangganan();
+                    $tglKedaluwarsaTenantAktif = $tenantBannerModel->tgl_kedaluwarsa;
+                }
+            }
+        @endphp
+        @if($sisaHariTenantAktif !== null && $sisaHariTenantAktif >= 0 && $sisaHariTenantAktif <= 14)
+            <div style="background:#FFFBEB;border-bottom:1px solid #FCD34D;color:#92400E;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px">
+                <div>
+                    <i class="fas fa-clock"></i>
+                    <b>Pengingat Masa Aktif Layanan:</b> Paket sekolah Anda akan jatuh tempo dalam <b>{{ $sisaHariTenantAktif }} hari</b> ({{ $tglKedaluwarsaTenantAktif->format('d-m-Y') }}). Hubungi Pengelola Platform untuk perpanjangan agar layanan tetap aktif.
+                </div>
+            </div>
+        @endif
         <header class="topbar">
             <div class="topbar-left">
                 <button class="topbar-toggle" onclick="toggleSidebar()" aria-label="Buka Menu Navigasi">

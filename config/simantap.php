@@ -41,6 +41,12 @@ return [
     // Moderasi pendaftaran sekolah baru oleh Super Admin (status pending hingga disetujui).
     'school_registration_require_approval' => (bool) env('SIMANTAP_SCHOOL_REGISTRATION_REQUIRE_APPROVAL', false),
 
+    // Masa uji coba (trial) bawaan dalam hari saat sekolah mendaftar mandiri (0 = tanpa batas waktu).
+    'school_registration_trial_days' => max(0, (int) env('SIMANTAP_SCHOOL_TRIAL_DAYS', 30)),
+    'school_registration_default_paket' => (string) env('SIMANTAP_SCHOOL_DEFAULT_PAKET', 'standar'),
+    'school_registration_default_kuota_siswa' => max(10, (int) env('SIMANTAP_SCHOOL_DEFAULT_KUOTA_SISWA', 500)),
+    'school_registration_default_kuota_storage_mb' => max(100, (int) env('SIMANTAP_SCHOOL_DEFAULT_KUOTA_STORAGE_MB', 2048)),
+
     // Wajib ganti kata sandi pada login pertama untuk akun siswa baru
     // (hasil sinkronisasi Dapodik / generate massal). Guru/PTK selalu wajib.
     'force_change_siswa' => env('SIMANTAP_FORCE_CHANGE_SISWA', true),
