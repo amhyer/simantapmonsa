@@ -176,6 +176,7 @@ class RegisterSekolahController extends Controller
 
     public function status(string $uuid)
     {
+        abort_unless(Str::isUuid($uuid), 404);
         $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
         $admin = User::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
@@ -190,6 +191,7 @@ class RegisterSekolahController extends Controller
 
     public function verifyEmail(Request $request, string $uuid, string $token)
     {
+        abort_unless(Str::isUuid($uuid), 404);
         $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
         $meta = is_array($tenant->meta) ? $tenant->meta : [];
         $expectedHash = (string) ($meta['email_verification_token_hash'] ?? '');
@@ -227,6 +229,7 @@ class RegisterSekolahController extends Controller
 
     public function resendVerificationEmail(Request $request, string $uuid)
     {
+        abort_unless(Str::isUuid($uuid), 404);
         $tenant = Tenant::where('uuid', $uuid)->firstOrFail();
         if ($tenant->isEmailVerified()) {
             return redirect()->route('login')
