@@ -756,27 +756,7 @@ class TenantController extends Controller
         }
 
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
-
-        $driver = DB::getDriverName();
-        // Di PostgreSQL, `Schema::disableForeignKeyConstraints()` menjalankan
-        // `SET session_replication_role = 'replica'` yang butuh hak superuser;
-        // `detachAndDeleteUserDependents` sudah menghapus child secara berurutan.
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        try {
-            $this->detachAndDeleteUserDependents([(int) $user->id]);
-            $user->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            if ($driver !== 'pgsql') {
-                Schema::enableForeignKeyConstraints();
-            }
-        }
+        app(TenantDataDeletionService::class)->forceDeleteUsers([(int) $user->id]);
 
         return back()->with('success', "Akun pengguna '{$nama}' berhasil dihapus permanen dari sistem.");
     }
@@ -793,7 +773,6 @@ class TenantController extends Controller
         $currentId = (int) auth()->id();
         $rawIds = array_map('intval', $request->input('user_ids', []));
 
-        // Saring keluar diri sendiri & akun super_admin SEBELUM menghapus relasi presensi/aktivitas
         $targetIds = User::withoutGlobalScopes()
             ->whereIn('id', $rawIds)
             ->where('id', '!=', $currentId)
@@ -806,25 +785,7 @@ class TenantController extends Controller
             return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
         }
 
-        $driver = DB::getDriverName();
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        try {
-            $this->detachAndDeleteUserDependents($targetIds);
-            $count = User::withoutGlobalScopes()
-                ->whereIn('id', $targetIds)
-                ->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            if ($driver !== 'pgsql') {
-                Schema::enableForeignKeyConstraints();
-            }
-        }
+        $count = app(TenantDataDeletionService::class)->forceDeleteUsers($targetIds);
 
         return back()->with('success', "Sebanyak {$count} akun pengguna berhasil dihapus permanen.");
     }
