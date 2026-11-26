@@ -304,7 +304,7 @@ class SecurityHardeningFase1Test extends TestCase
 
     public function test_tarik_semua_presensi_job_memiliki_timeout_eksplisit(): void
     {
-        $job = new TarikSemuaPresensiJob(null, 'manual');
+        $job = new TarikSemuaPresensiJob(null);
         $this->assertSame(300, $job->timeout);
     }
 }
