@@ -20,7 +20,17 @@ return [
 
     'archive_chunk' => 500,
 
-    'bridge_download_url' => env('DAPODIK_BRIDGE_DOWNLOAD_URL'),
+    // URL unduhan installer Bridge WAJIB memakai HTTPS yang valid.
+    'bridge_download_url' => (static function (?string $raw): ?string {
+        $url = trim((string) $raw);
+        if ($url === '') {
+            return null;
+        }
+
+        return str_starts_with(strtolower($url), 'https://') && filter_var($url, FILTER_VALIDATE_URL) !== false
+            ? $url
+            : null;
+    })(env('DAPODIK_BRIDGE_DOWNLOAD_URL')),
 
     'bridge_version' => env('DAPODIK_BRIDGE_VERSION'),
 

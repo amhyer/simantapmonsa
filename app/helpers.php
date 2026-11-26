@@ -22,6 +22,21 @@ if (! function_exists('tenantCacheScope')) {
 if (! function_exists('setting')) {
     function setting(string|array|null $key = null, mixed $default = null): mixed
     {
+        $hasTenantContext = TenantContext::check();
+        $isMultiSchool = $hasTenantContext
+            || (bool) config('simantap.multi_tenant_enabled', false)
+            || Tenant::hasAnyTenant();
+
+        // Pada mode multi-tenant tanpa konteks sekolah aktif, jangan membaca atau
+        // menulis berkas global `settings.json` agar konfigurasi tidak bocor lintas tenant.
+        if ($isMultiSchool && ! $hasTenantContext) {
+            if (is_array($key)) {
+                return false;
+            }
+
+            return $key === null ? [] : $default;
+        }
+
         $scope = tenantCacheScope();
         $path = $scope === 'single'
             ? storage_path('app/settings.json')
@@ -29,7 +44,7 @@ if (! function_exists('setting')) {
         $cacheKey = 'app_settings:'.$scope;
 
         $settings = Cache::remember($cacheKey, 300, function () use ($path) {
-            return file_exists($path) ? json_decode(file_get_contents($path), true) ?? [] : [];
+            return file_exists($path) ? json_decode((string) file_get_contents($path), true) ?? [] : [];
         });
 
         if (is_array($key)) {
@@ -37,7 +52,11 @@ if (! function_exists('setting')) {
                 return false;
             }
             $settings = array_merge($settings, $key);
-            file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $dir = dirname($path);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0750, true);
+            }
+            file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
             Cache::forget($cacheKey);
 
             return true;

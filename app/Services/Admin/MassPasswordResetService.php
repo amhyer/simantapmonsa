@@ -7,10 +7,12 @@ use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\AktivitasService;
 use App\Support\InitialPassword;
+use App\Support\SessionSecurity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class MassPasswordResetService
 {
@@ -113,37 +115,59 @@ class MassPasswordResetService
                 ];
             }
 
-            $targetIds = (clone $baseQuery)->limit($batas)->pluck('id')->all();
-            $sisa = max(0, $total - count($targetIds));
-            $credentials = [];
+            $targetUsers = (clone $baseQuery)
+                ->limit($batas)
+                ->get(['id', 'peran', 'nama_lengkap', 'kelas_mata_pelajaran', 'nama_pengguna']);
+
+            $sisa = max(0, $total - $targetUsers->count());
             $now = now();
             $eksporUrl = null;
             $rolesLabel = implode(', ', (array) ($filters['peran'] ?? ['siswa']));
             $kelasLabel = trim((string) ($filters['kelas'] ?? '')) ?: 'semua';
 
-            DB::transaction(function () use ($targetIds, $now, $admin, $tenantId, $rolesLabel, $kelasLabel, $sisa, &$credentials, &$eksporUrl): void {
+            // Lakukan komputasi bcrypt di LUAR DB::transaction agar kunci baris
+            // pada tabel `users` tetap sangat singkat (mencegah lock contention).
+            $prepared = [];
+            $credentials = [];
+            foreach ($targetUsers as $targetUser) {
+                $plain = InitialPassword::generate();
+                $forceChange = $targetUser->peran === 'siswa'
+                    ? InitialPassword::shouldForceChangeSiswa()
+                    : true;
+
+                $prepared[(int) $targetUser->id] = [
+                    'hash' => Hash::make($plain),
+                    'force_change' => $forceChange,
+                    'remember_token' => Str::random(60),
+                ];
+
+                $credentials[] = [
+                    'nama' => (string) $targetUser->nama_lengkap,
+                    'kelas' => (string) ($targetUser->kelas_mata_pelajaran ?: '-'),
+                    'username' => (string) $targetUser->nama_pengguna,
+                    'password' => $plain,
+                ];
+            }
+
+            $targetIds = array_keys($prepared);
+
+            DB::transaction(function () use ($targetIds, $prepared, $now, $admin, $tenantId, $rolesLabel, $kelasLabel, $sisa, $credentials, &$eksporUrl): void {
                 User::forSchool()
                     ->whereIn('id', $targetIds)
                     ->orderBy('id')
-                    ->chunkById(50, function ($users) use (&$credentials, $now): void {
+                    ->chunkById(50, function ($users) use ($prepared, $now): void {
                         foreach ($users as $user) {
-                            $plain = InitialPassword::generate();
-                            $forceChange = $user->peran === 'siswa'
-                                ? InitialPassword::shouldForceChangeSiswa()
-                                : true;
+                            $item = $prepared[(int) $user->id] ?? null;
+                            if ($item === null) {
+                                continue;
+                            }
 
                             $user->forceFill([
-                                'kata_sandi' => Hash::make($plain),
-                                'force_password_change' => $forceChange,
+                                'kata_sandi' => $item['hash'],
+                                'force_password_change' => $item['force_change'],
                                 'sandi_awal_diterbitkan_at' => $now,
+                                'remember_token' => $item['remember_token'],
                             ])->save();
-
-                            $credentials[] = [
-                                'nama' => (string) $user->nama_lengkap,
-                                'kelas' => (string) ($user->kelas_mata_pelajaran ?: '-'),
-                                'username' => (string) $user->nama_pengguna,
-                                'password' => $plain,
-                            ];
                         }
                     });
 
@@ -158,6 +182,10 @@ class MassPasswordResetService
                     ? $this->exporter->store((int) $admin->id, $tenantId, $credentials)
                     : null;
             });
+
+            foreach ($targetIds as $uid) {
+                SessionSecurity::invalidateUserSessions((int) $uid);
+            }
 
             $pesan = 'Reset sandi massal selesai untuk '.count($credentials).' akun.';
             if ($sisa > 0) {
