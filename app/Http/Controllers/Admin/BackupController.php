@@ -192,7 +192,9 @@ class BackupController extends Controller
 
         // Daftar wipe diturunkan dari registry backup, dengan pengecualian
         // eksplisit untuk tabel identitas yang harus tetap ada.
-        $tabelData = BackupTables::dikosongkan();
+        // Urutan dibalik (anak -> induk) agar penghapusan aman tanpa
+        // mematikan FK constraint pada PostgreSQL non-superuser.
+        $tabelData = array_reverse(BackupTables::dikosongkan());
 
         $dihapus = [];
         $tenantId = auth()->user()?->tenant_id ?? TenantContext::id();
@@ -206,8 +208,9 @@ class BackupController extends Controller
         // Seluruh wipe berjalan dalam SATU transaksi: gagal di tabel mana pun
         // membatalkan semuanya (tidak ada DB setengah terhapus). Snapshot ID diambil
         // di dalam transaksi dengan lockForUpdate() agar baris baru tidak lolos di tengah wipe.
+        $driver = DB::getDriverName();
         try {
-            DB::transaction(function () use ($tabelData, $isMultiTenant, $tenantId, &$dihapus): void {
+            DB::transaction(function () use ($tabelData, $isMultiTenant, $tenantId, $driver, &$dihapus): void {
                 $siswaIds = ($isMultiTenant && Schema::hasTable('siswa') && Schema::hasColumn('siswa', 'tenant_id'))
                     ? DB::table('siswa')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')
                     : collect();
@@ -215,7 +218,9 @@ class BackupController extends Controller
                     ? DB::table('users')->where('tenant_id', $tenantId)->lockForUpdate()->pluck('id')
                     : collect();
 
-                Schema::disableForeignKeyConstraints();
+                if ($driver !== 'pgsql') {
+                    Schema::disableForeignKeyConstraints();
+                }
                 try {
                     foreach ($tabelData as $tabel) {
                         if (! Schema::hasTable($tabel)) {
@@ -242,7 +247,9 @@ class BackupController extends Controller
                         $dihapus[] = $tabel;
                     }
                 } finally {
-                    Schema::enableForeignKeyConstraints();
+                    if ($driver !== 'pgsql') {
+                        Schema::enableForeignKeyConstraints();
+                    }
                 }
             });
         } catch (\Throwable $e) {

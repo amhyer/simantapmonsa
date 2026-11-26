@@ -217,4 +217,24 @@ class MfaAuthenticationTest extends TestCase
 
         $this->assertFalse($superAdmin->fresh()->hasMfaEnabled());
     }
+
+    public function test_mfa_enforced_memblokir_rute_asesmen_admin_dan_rute_guru_sebelum_setup(): void
+    {
+        config([
+            'simantap.mfa_enabled' => true,
+            'simantap.mfa_enforced_roles' => ['admin', 'guru'],
+            'simantap.mfa_allowed_roles' => ['super_admin', 'admin', 'guru'],
+        ]);
+
+        $admin = User::factory()->admin()->create(['tenant_id' => null, 'aktif' => true]);
+        $guru = User::factory()->guru()->create(['tenant_id' => null, 'aktif' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.cbt.banks.index'))
+            ->assertRedirect(route('account.mfa.show'));
+
+        $this->actingAs($guru)
+            ->get(route('guru.dashboard'))
+            ->assertRedirect(route('account.mfa.show'));
+    }
 }

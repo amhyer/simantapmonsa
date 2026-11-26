@@ -160,7 +160,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Profil & Ubah Kata Sandi Mandiri (semua peran terautentikasi)
-Route::middleware(['auth', 'force.password.change'])->prefix('akun')->name('account.')->group(function () {
+Route::middleware(['auth', 'force.password.change', 'mfa.setup'])->prefix('akun')->name('account.')->group(function () {
     Route::get('/profil', [AccountProfileController::class, 'show'])->name('profile.show');
     Route::put('/profil', [AccountProfileController::class, 'updateProfile'])->middleware('throttle:10,1')->name('profile.update');
     Route::put('/profil/password', [AccountProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
@@ -171,7 +171,7 @@ Route::middleware(['auth', 'force.password.change'])->prefix('akun')->name('acco
 });
 
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
-Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', 'school.context', 'menu.telemetry'])
+Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', 'mfa.setup', 'school.context', 'menu.telemetry'])
     ->prefix('presensi/pegawai')->name('presensi.pegawai.')->group(function () {
         Route::get('/', [PresensiController::class, 'index'])->name('index');
         Route::get('/kartu-identitas', [PresensiController::class, 'kartuSaya'])->name('kartu');
@@ -520,7 +520,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'mfa.setup', '
 });
 
 // ==================== GURU ROUTES ====================
-Route::middleware(['auth', 'role:guru', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('guru')->name('guru.')->group(function () {
+Route::middleware(['auth', 'role:guru', 'force.password.change', 'mfa.setup', 'school.context', 'menu.telemetry'])->prefix('guru')->name('guru.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [GuruDashboard::class, 'index'])->name('dashboard');
 

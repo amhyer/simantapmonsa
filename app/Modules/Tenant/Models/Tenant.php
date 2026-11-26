@@ -2,6 +2,7 @@
 
 namespace App\Modules\Tenant\Models;
 
+use App\Http\Middleware\TrustHosts;
 use App\Models\User;
 use App\Modules\Tenant\Support\TenantExistenceCache;
 use Illuminate\Database\Eloquent\Model;
@@ -107,6 +108,7 @@ class Tenant extends Model
 
         static::saved(function (Tenant $tenant): void {
             static::forgetExistsCache();
+            Cache::forget(TrustHosts::CUSTOM_DOMAINS_CACHE_KEY);
             Cache::forget("tenant:subdomain:{$tenant->subdomain}");
             if (! empty($tenant->domain_kustom)) {
                 Cache::forget("tenant:domain:{$tenant->domain_kustom}");
@@ -114,8 +116,14 @@ class Tenant extends Model
             Cache::forget("tenant:id:{$tenant->id}");
         });
 
-        static::deleted(function (): void {
+        static::deleted(function (Tenant $tenant): void {
             static::forgetExistsCache();
+            Cache::forget(TrustHosts::CUSTOM_DOMAINS_CACHE_KEY);
+            Cache::forget("tenant:subdomain:{$tenant->subdomain}");
+            if (! empty($tenant->domain_kustom)) {
+                Cache::forget("tenant:domain:{$tenant->domain_kustom}");
+            }
+            Cache::forget("tenant:id:{$tenant->id}");
         });
     }
 

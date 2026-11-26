@@ -214,4 +214,43 @@ class BrokenAuthenticationHardeningTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_super_admin_reset_admin_password_merotasi_token_dan_mencabut_sesi(): void
+    {
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40330009',
+            'nama_sekolah' => 'SDN Reset Admin Pass',
+            'subdomain' => 'sdnresetadmin',
+            'aktif' => true,
+        ]);
+
+        $superAdmin = User::factory()->create([
+            'tenant_id' => null,
+            'peran' => 'super_admin',
+            'aktif' => true,
+        ]);
+
+        $schoolAdmin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'peran' => 'admin',
+            'aktif' => true,
+            'force_password_change' => false,
+            'remember_token' => 'token-lama-school-admin',
+        ]);
+
+        $this->insertDbSession('sess-hijacked-school-admin', $schoolAdmin->id);
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.reset-admin-password', $tenant->uuid), [
+                'password_baru' => 'SandiAdminBaru2026!',
+            ])
+            ->assertSessionHas('success');
+
+        $schoolAdmin->refresh();
+        $this->assertTrue((bool) $schoolAdmin->force_password_change);
+        $this->assertNotSame('token-lama-school-admin', $schoolAdmin->remember_token);
+        $this->assertTrue(Hash::check('SandiAdminBaru2026!', $schoolAdmin->kata_sandi));
+        $this->assertDatabaseMissing('sessions', ['id' => 'sess-hijacked-school-admin']);
+    }
 }
