@@ -2,6 +2,7 @@
 
 namespace App\Services\Dapodik;
 
+use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -17,12 +18,84 @@ class DapodikClient
         private array $cfAccess = [],
     ) {}
 
+    public static function validateHostSafety(string $host, bool $multiSchool = false): ?string
+    {
+        $normalized = strtolower(trim($host));
+        if ($normalized === '' || ! preg_match('/^[a-z0-9.-]+$/', $normalized)) {
+            return 'Host Dapodik harus berupa nama host atau alamat IP yang valid.';
+        }
+
+        $metadataHosts = [
+            'metadata.google.internal',
+            'metadata.goog',
+            'instance-data',
+            '100.100.100.200',
+        ];
+        if (in_array($normalized, $metadataHosts, true)) {
+            return 'Host metadata cloud tidak diizinkan.';
+        }
+
+        $ips = filter_var($normalized, FILTER_VALIDATE_IP) !== false
+            ? [$normalized]
+            : ((function () use ($normalized): array {
+                if (app()->runningUnitTests()) {
+                    return [];
+                }
+                $resolved = @gethostbynamel($normalized);
+
+                return is_array($resolved) ? $resolved : [];
+            })());
+
+        foreach ($ips as $ip) {
+            if (self::isLinkLocalOrUnspecifiedIp($ip)) {
+                return 'Alamat IP link-local/metadata tidak diizinkan sebagai host Dapodik.';
+            }
+            if ($multiSchool && ! config('dapodik.allow_private_host', false) && self::isLoopbackIp($ip)) {
+                return 'Alamat loopback tidak diizinkan sebagai host Dapodik pada mode multi-sekolah.';
+            }
+        }
+
+        if ($multiSchool && ! config('dapodik.allow_private_host', false)) {
+            if ($normalized === 'localhost' || str_ends_with($normalized, '.localhost') || $normalized === 'localhost.localdomain') {
+                return 'Host localhost tidak diizinkan sebagai host Dapodik pada mode multi-sekolah.';
+            }
+        }
+
+        return null;
+    }
+
+    private static function isLinkLocalOrUnspecifiedIp(string $ip): bool
+    {
+        $long = ip2long($ip);
+        if ($long === false) {
+            return false;
+        }
+        $unsigned = (int) sprintf('%u', $long);
+
+        // 0.0.0.0/8 and 169.254.0.0/16 (cloud metadata)
+        return ($unsigned & 0xFF000000) === 0x00000000
+            || ($unsigned & 0xFFFF0000) === 0xA9FE0000;
+    }
+
+    private static function isLoopbackIp(string $ip): bool
+    {
+        $long = ip2long($ip);
+        if ($long === false) {
+            return $ip === '::1';
+        }
+        $unsigned = (int) sprintf('%u', $long);
+
+        // 127.0.0.0/8
+        return ($unsigned & 0xFF000000) === 0x7F000000;
+    }
+
     private function base(): string
     {
         // Pertahanan berlapis: host dari DB/config tetap divalidasi di sini
-        // (hostname/IP polos tanpa skema/path/@) sebelum dipakai membangun URL.
-        if (! preg_match('/^[A-Za-z0-9.-]+$/', $this->host)) {
-            throw new RuntimeException('Host Dapodik tidak valid: '.$this->host);
+        // (hostname/IP polos tanpa skema/path/@ serta bukan loopback/metadata) sebelum dipakai membangun URL.
+        $hostError = self::validateHostSafety($this->host, TenantMode::isMultiSchool());
+        if ($hostError !== null) {
+            throw new RuntimeException($hostError);
         }
 
         $base = $this->protocol.'://'.$this->host;

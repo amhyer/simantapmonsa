@@ -305,4 +305,20 @@ class PasswordResetTest extends TestCase
 
         Notification::assertNotSentTo($user, ResetPassword::class);
     }
+
+    public function test_login_email_case_insensitive_pada_lupa_sandi(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create([
+            'nama_pengguna' => 'guru.kapital',
+            'email' => 'Guru.Kapital@Sekolah.Test',
+            'aktif' => true,
+        ]);
+
+        $this->post(route('password.email'), ['login' => 'guru.kapital@sekolah.test'])
+            ->assertSessionHas('status');
+
+        Notification::assertSentTo($user, ResetPassword::class);
+    }
 }

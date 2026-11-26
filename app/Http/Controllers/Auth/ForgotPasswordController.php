@@ -31,30 +31,31 @@ class ForgotPasswordController extends Controller
         ]);
 
         $login = trim((string) $request->input('login'));
+        $loginLower = mb_strtolower($login);
 
         if (TenantContext::check()) {
             $user = User::query()
                 ->where('tenant_id', TenantContext::id())
                 ->where('aktif', true)
                 ->whereNull('archived_at')
-                ->where(function ($query) use ($login) {
+                ->where(function ($query) use ($login, $loginLower) {
                     $query->where('nama_pengguna', $login)
-                        ->orWhere('email', $login);
+                        ->orWhereRaw('LOWER(email) = ?', [$loginLower]);
                 })
                 ->first();
         } else {
             $kandidat = User::query()
                 ->where('aktif', true)
                 ->whereNull('archived_at')
-                ->where(function ($query) use ($login) {
+                ->where(function ($query) use ($login, $loginLower) {
                     $query->where('nama_pengguna', $login)
-                        ->orWhere('email', $login);
+                        ->orWhereRaw('LOWER(email) = ?', [$loginLower]);
                 })
                 ->get();
 
             if ($kandidat->count() > 1) {
                 $cocokEmail = $kandidat->first(
-                    fn (User $u) => $u->email !== null && mb_strtolower((string) $u->email) === mb_strtolower($login)
+                    fn (User $u) => $u->email !== null && mb_strtolower((string) $u->email) === $loginLower
                 );
 
                 if ($cocokEmail !== null) {

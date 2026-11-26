@@ -12,7 +12,7 @@ Latar belakang temuan yang melahirkannya: `LAPORAN_KESIAPAN_LAUNCH_2026-10-25.md
 
 | Komponen | Versi minimum | Catatan |
 |---|---|---|
-| PHP | **8.3** (CI memakai 8.4) | Ekstensi: `mbstring`, `pdo_pgsql`, `sqlite3`, `bcmath`, `gd`, `zip`, `xml`, `intl`, `gmp`, `dom`, `fileinfo`, `iconv`, `curl` |
+| PHP | **8.4** | Ekstensi: `mbstring`, `pdo_pgsql`, `sqlite3`, `bcmath`, `gd`, `zip`, `xml`, `intl`, `gmp`, `dom`, `fileinfo`, `iconv`, `curl` |
 | PostgreSQL | 16 | SQLite hanya untuk test suite |
 | Node.js | 22 | Hanya dibutuhkan saat build aset |
 | Composer | 2 | |
@@ -260,10 +260,16 @@ sudo systemctl enable --now simantap-queue
 ```nginx
 server {
     listen 443 ssl http2;
+    # Untuk mode multi-sekolah (subdomain per sekolah), tambahkan wildcard:
+    # server_name simantap.sekolah.sch.id *.simantap.sekolah.sch.id;
     server_name simantap.sekolah.sch.id;
 
     root /var/www/simantap/public;
     index index.php;
+
+    # Wajib: default Nginx hanya 1M. Aplikasi mendukung unggahan foto siswa ZIP,
+    # impor backup JSON (maks 100 MB), dan lampiran E-Learning (maks 10 MB).
+    client_max_body_size 110M;
 
     # Header keamanan (X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
     # Permissions-Policy, HSTS) dipasang oleh aplikasi lewat
@@ -275,7 +281,7 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
     }
@@ -288,6 +294,14 @@ server {
     server_name simantap.sekolah.sch.id;
     return 301 https://$host$request_uri;
 }
+```
+
+Pastikan pula `php.ini` untuk PHP-FPM (`/etc/php/8.4/fpm/php.ini`) mengizinkan unggahan hingga 110 MB:
+
+```ini
+upload_max_filesize = 110M
+post_max_size = 110M
+memory_limit = 512M
 ```
 
 ### Apache

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DapodikConfig;
+use App\Modules\Tenant\Support\TenantMode;
 use App\Services\Dapodik\DapodikClient;
 use App\Services\Dapodik\DapodikSyncService;
 use Illuminate\Http\JsonResponse;
@@ -59,8 +60,22 @@ class DapodikController extends Controller
         $validator = Validator::make($request->all(), [
             'npsn' => 'required|string|size:8',
             // Host harus hostname/IP polos tanpa skema, path, port, atau '@',
-            // agar tidak bisa dipakai untuk SSRF ke URL arbitrer.
-            'host' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
+            // serta tidak menunjuk ke alamat metadata cloud / loopback multi-tenant.
+            'host' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[A-Za-z0-9.-]+$/',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value === null || trim((string) $value) === '') {
+                        return;
+                    }
+                    $error = DapodikClient::validateHostSafety((string) $value, TenantMode::isMultiSchool());
+                    if ($error !== null) {
+                        $fail($error);
+                    }
+                },
+            ],
             'port' => 'nullable|integer|min:1|max:65535',
             'protocol' => 'nullable|in:http,https',
             'token' => 'nullable|string',

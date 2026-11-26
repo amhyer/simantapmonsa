@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use App\Services\Navigation\SchoolDataAvailabilityService;
+use App\Services\Tenant\TenantQuotaService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -225,6 +226,9 @@ class ImportDapodikJob implements ShouldQueue
             $existing->update($siswaData);
             $status = 'update';
         } else {
+            if ($this->tenantId !== null) {
+                app(TenantQuotaService::class)->assertCanAddStudents($this->tenantId, 1, 'siswa');
+            }
             $existing = Siswa::create(array_merge($siswaData, [
                 'uuid' => Str::uuid(),
                 'guru_id' => null,
