@@ -256,4 +256,41 @@ class DapodikTenantIsolationTest extends TestCase
         $this->assertFalse(Hash::check('siswa123', User::where('nama_pengguna', 'NIS-A-2')->firstOrFail()->kata_sandi));
         $this->assertSame(2, TenantContext::run($a->id, fn () => DapodikSyncLog::findOrFail($log->id)->berhasil));
     }
+
+    public function test_import_dapodik_job_menghormati_kuota_siswa_tenant(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $tenant = Tenant::create([
+            'uuid' => Str::uuid(),
+            'nama_sekolah' => 'Sekolah Kuota',
+            'npsn' => '10000099',
+            'subdomain' => 'school-10000099',
+            'aktif' => true,
+            'kuota_siswa' => 10,
+        ]);
+        $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+        TenantContext::run($tenant->id, function () {
+            for ($i = 1; $i <= 9; $i++) {
+                Siswa::create([
+                    'nis' => 'Q-00'.$i,
+                    'nama_peserta_didik' => 'Siswa '.$i,
+                    'kelas' => '1',
+                    'jenis_kelamin' => 'L',
+                ]);
+            }
+        });
+        $log = $this->logFor($tenant, 'Log Kuota');
+        $data = ['sekolah' => ['nama' => 'Sekolah Kuota'], 'siswa' => [
+            ['nama' => 'Siswa Kesepuluh', 'nisn' => 'Q-010', 'kelas' => '1', 'jenis_kelamin' => 'L'],
+            ['nama' => 'Siswa Kesebelas', 'nisn' => 'Q-011', 'kelas' => '1', 'jenis_kelamin' => 'P'],
+        ]];
+        $job = new ImportDapodikJob($data, $log->id, 'semua', $admin->id, 'Admin Kuota', $tenant->id);
+        $job->handle();
+
+        $freshLog = TenantContext::run($tenant->id, fn () => DapodikSyncLog::findOrFail($log->id));
+        $this->assertSame(1, $freshLog->berhasil);
+        $this->assertSame(1, $freshLog->gagal);
+        $this->assertDatabaseHas('siswa', ['tenant_id' => $tenant->id, 'nisn' => 'Q-010']);
+        $this->assertDatabaseMissing('siswa', ['tenant_id' => $tenant->id, 'nisn' => 'Q-011']);
+    }
 }

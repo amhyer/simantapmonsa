@@ -268,4 +268,43 @@ class SecurityHardeningFase1Test extends TestCase
         // String berkutip ganda akan menginterpolasi $apiKey — harus di-escape.
         $this->assertStringNotContainsString("'key' => \$apiKey", $source);
     }
+
+    public function test_masked_token_mengembalikan_token_tersamar_dari_model(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $config = DapodikConfig::getInstance();
+        $config->update(['token' => 'secret-token-987654']);
+
+        $this->assertSame('secr****7654', $config->fresh()->masked_token);
+
+        $this->actingAs($admin)->getJson(route('admin.dapodik.api.config'))
+            ->assertOk()
+            ->assertJsonPath('data.token', 'secr****7654');
+    }
+
+    public function test_host_dapodik_metadata_cloud_dan_loopback_multitenant_ditolak(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SD Uji SSRF',
+            'npsn' => '88776655',
+            'subdomain' => 'sduji-ssrf',
+            'aktif' => true,
+        ]);
+        $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+
+        foreach (['169.254.169.254', '0.0.0.0', 'metadata.google.internal', '127.0.0.1', 'localhost'] as $blockedHost) {
+            $this->actingAs($admin)->postJson(route('admin.dapodik.api.config.save'), [
+                'npsn' => '88776655',
+                'host' => $blockedHost,
+            ])->assertStatus(422);
+        }
+    }
+
+    public function test_tarik_semua_presensi_job_memiliki_timeout_eksplisit(): void
+    {
+        $job = new TarikSemuaPresensiJob(null);
+        $this->assertSame(300, $job->timeout);
+    }
 }

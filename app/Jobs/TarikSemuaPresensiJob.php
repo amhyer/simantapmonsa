@@ -20,6 +20,8 @@ class TarikSemuaPresensiJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 300;
+
     /** Batas waktu lock: 10 menit, sama dengan TTL lock di controller. */
     public const KUNCI_LOCK = 'presensi-tarik-semua';
 

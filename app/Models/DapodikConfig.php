@@ -74,7 +74,13 @@ class DapodikConfig extends Model
 
     protected function maskedToken(): Attribute
     {
-        return Attribute::get(function (?string $value): ?string {
+        return Attribute::get(function (): ?string {
+            try {
+                $value = $this->token;
+            } catch (\Throwable) {
+                return null;
+            }
+
             if (empty($value)) {
                 return null;
             }
