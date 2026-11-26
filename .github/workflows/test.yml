@@ -109,7 +109,7 @@ jobs:
 
       - name: Simpan matriks audit menu
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: menu-inventory
           path: storage/logs/menu-inventory.md
@@ -117,7 +117,7 @@ jobs:
 
       - name: Simpan laporan endpoint 5xx
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: route-health-report
           path: storage/logs/route-health-report.txt
@@ -236,7 +236,7 @@ jobs:
 
       - name: Simpan laporan endpoint 5xx PostgreSQL
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: route-health-report-postgres
           path: storage/logs/route-health-report.txt
@@ -341,7 +341,7 @@ jobs:
 
       - name: Upload browser traces on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: |
@@ -442,7 +442,7 @@ jobs:
 
       - name: Retain Playwright traces, screenshots, videos, and logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-e2e-failure-artifacts
           path: |
