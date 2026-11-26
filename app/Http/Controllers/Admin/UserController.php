@@ -299,6 +299,8 @@ class UserController extends Controller
 
         if (! $admin || ! $admin->aktif || $admin->archived_at !== null || ! in_array($admin->peran, ['admin', 'super_admin'], true)) {
             auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             return redirect()->route('login');
         }

@@ -2,17 +2,25 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Http\Controllers\Auth\RegisterSekolahController;
 use App\Http\Controllers\Controller;
+use App\Mail\SchoolRegistrationStatusMail;
 use App\Models\CbtQuestionBank;
 use App\Models\CbtResult;
 use App\Models\CbtTestSession;
+use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\SuperAdmin\TenantDataDeletionService;
+use App\Services\SuperAdmin\TenantSubscriptionService;
+use App\Services\Tenant\TenantQuotaService;
+use App\Support\SchoolLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -153,11 +161,11 @@ class TenantController extends Controller
             ->take(10)
             ->get();
 
-        $quotaService = app(\App\Services\Tenant\TenantQuotaService::class);
+        $quotaService = app(TenantQuotaService::class);
         $storageStatus = $quotaService->storageQuotaStatus($tenant->id, $tenant);
         $aiQuotaStatus = $quotaService->aiQuotaSummary(
             $tenant->id,
-            \App\Services\Tenant\TenantQuotaService::defaultAiQuotaForPaket($tenant->paket),
+            TenantQuotaService::defaultAiQuotaForPaket($tenant->paket),
             false
         );
 
@@ -177,7 +185,7 @@ class TenantController extends Controller
         ));
     }
 
-    public function update(Request $request, Tenant $tenant, \App\Services\SuperAdmin\TenantSubscriptionService $subscriptions)
+    public function update(Request $request, Tenant $tenant, TenantSubscriptionService $subscriptions)
     {
         $validated = $request->validate([
             'nama_sekolah' => 'required|string|max:255',
@@ -198,7 +206,7 @@ class TenantController extends Controller
         return back()->with('success', "Informasi paket dan langganan sekolah '{$tenant->nama_sekolah}' berhasil diperbarui.");
     }
 
-    public function extend(Request $request, Tenant $tenant, \App\Services\SuperAdmin\TenantSubscriptionService $subscriptions)
+    public function extend(Request $request, Tenant $tenant, TenantSubscriptionService $subscriptions)
     {
         $validated = $request->validate([
             'months' => 'required|integer|in:1,3,6,12,24',
@@ -311,8 +319,8 @@ class TenantController extends Controller
                 ->first();
 
             if ($admin && filled($admin->email)) {
-                \Illuminate\Support\Facades\Mail::to($admin->email)->send(
-                    new \App\Mail\SchoolRegistrationStatusMail($tenant, $status, $reason)
+                Mail::to($admin->email)->send(
+                    new SchoolRegistrationStatusMail($tenant, $status, $reason)
                 );
             }
         } catch (\Throwable $e) {
@@ -362,7 +370,7 @@ class TenantController extends Controller
 
     protected function deleteTenantData(Tenant $tenant): void
     {
-        app(\App\Services\SuperAdmin\TenantDataDeletionService::class)->deleteTenantData($tenant);
+        app(TenantDataDeletionService::class)->deleteTenantData($tenant);
     }
 
     /**
@@ -370,7 +378,7 @@ class TenantController extends Controller
      */
     protected function detachAndDeleteUserDependents(array $userIds): void
     {
-        app(\App\Services\SuperAdmin\TenantDataDeletionService::class)->detachAndDeleteUserDependents($userIds);
+        app(TenantDataDeletionService::class)->detachAndDeleteUserDependents($userIds);
     }
 
     public function store(Request $request)
@@ -390,7 +398,7 @@ class TenantController extends Controller
                 'min:3',
                 'max:64',
                 'regex:/^[a-z0-9](?:[a-z0-9\-]{1,62}[a-z0-9])?$/',
-                Rule::notIn(\App\Http\Controllers\Auth\RegisterSekolahController::RESERVED_SUBDOMAINS),
+                Rule::notIn(RegisterSekolahController::RESERVED_SUBDOMAINS),
                 'unique:tenants,subdomain',
             ],
             'domain_kustom' => 'nullable|string|max:191|unique:tenants,domain_kustom',
@@ -436,7 +444,7 @@ class TenantController extends Controller
                 'catatan_langganan' => $validated['catatan_langganan'] ?? null,
                 'aktif' => true,
                 'meta' => [
-                    'jenjang' => \App\Support\SchoolLevel::normalize($validated['jenjang'] ?? 'SD', 'SD'),
+                    'jenjang' => SchoolLevel::normalize($validated['jenjang'] ?? 'SD', 'SD'),
                 ],
             ]);
 
@@ -454,7 +462,7 @@ class TenantController extends Controller
 
             // Auto-provision pengaturan dasar sekolah agar siap pakai saat login pertama
             if (Schema::hasTable('sekolah_settings')) {
-                \App\Models\SekolahSettings::withoutGlobalScopes()->firstOrCreate(
+                SekolahSettings::withoutGlobalScopes()->firstOrCreate(
                     ['tenant_id' => $tenant->id],
                     [
                         'guru_id' => $adminUser->id,
@@ -643,9 +651,11 @@ class TenantController extends Controller
         }
 
         $superAdmin = User::withoutGlobalScopes()->find($superAdminId);
-        if (! $superAdmin || $superAdmin->peran !== 'super_admin') {
+        if (! $superAdmin || ! $superAdmin->aktif || $superAdmin->archived_at !== null || $superAdmin->peran !== 'super_admin') {
             session()->forget(['impersonator_id', 'impersonator_tenant_uuid']);
             auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             return redirect()->route('login');
         }

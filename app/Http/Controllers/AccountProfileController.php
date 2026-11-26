@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AktivitasService;
+use App\Support\SessionSecurity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -109,10 +111,14 @@ class AccountProfileController extends Controller
             'kata_sandi' => Hash::make((string) $request->input('password')),
             'force_password_change' => false,
             'sandi_awal_diterbitkan_at' => null,
+            'remember_token' => Str::random(60),
         ])->save();
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
+            SessionSecurity::invalidateUserSessions((int) $user->id, $request->session()->getId());
+        } else {
+            SessionSecurity::invalidateUserSessions((int) $user->id);
         }
 
         AktivitasService::ubah(

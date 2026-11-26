@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
+use App\Support\SessionSecurity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -51,10 +53,19 @@ class ProfileController extends Controller
             return back()->withErrors(['password' => 'Password baru harus berbeda dari password lama.']);
         }
 
-        $user->update([
-            'kata_sandi' => bcrypt($request->password),
+        $user->forceFill([
+            'kata_sandi' => $request->password,
+            'force_password_change' => false,
             'sandi_awal_diterbitkan_at' => null,
-        ]);
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+            SessionSecurity::invalidateUserSessions((int) $user->id, $request->session()->getId());
+        } else {
+            SessionSecurity::invalidateUserSessions((int) $user->id);
+        }
 
         return back()->with('success', 'Password berhasil diubah.');
     }

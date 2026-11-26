@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\SessionSecurity;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -48,6 +49,8 @@ class ResetPasswordController extends Controller
                     'sandi_awal_diterbitkan_at' => null,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                SessionSecurity::invalidateUserSessions((int) $user->id);
 
                 event(new PasswordReset($user));
             }
