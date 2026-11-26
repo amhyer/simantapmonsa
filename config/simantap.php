@@ -68,6 +68,19 @@ return [
     'foto_zip_max_entries' => max(1, (int) env('SIMANTAP_FOTO_ZIP_MAX_ENTRIES', 200)),
     'foto_zip_max_uncompressed_bytes' => max(1048576, (int) env('SIMANTAP_FOTO_ZIP_MAX_UNCOMPRESSED_BYTES', 100 * 1024 * 1024)),
 
+    // Autentikasi Dua Faktor (MFA / TOTP RFC 6238).
+    // Tahap 1: wajib untuk super_admin, opsional untuk admin sekolah.
+    // Dapat diperluas bertahap ke peran lain cukup lewat variabel env berikut.
+    'mfa_enabled' => (bool) env('SIMANTAP_MFA_ENABLED', true),
+    'mfa_enforced_roles' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('SIMANTAP_MFA_ENFORCED_ROLES', 'super_admin'))
+    ))),
+    'mfa_allowed_roles' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('SIMANTAP_MFA_ALLOWED_ROLES', 'super_admin,admin'))
+    ))),
+
     // Pengaturan visibilitas bagian opsional di halaman landing publik.
     'landing' => [
         'show_demo_video' => (bool) env('SIMANTAP_LANDING_DEMO_VIDEO', false),
