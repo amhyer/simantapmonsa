@@ -23,6 +23,7 @@ use App\Models\TemaKokurikuler;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Support\TenantMode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +85,21 @@ class DashboardController extends Controller
 
             $onlineCount = User::where('terakhir_masuk', '>=', now()->subMinutes(15))->count();
 
+            $canSeeGlobalQueue = ! TenantMode::isMultiSchool()
+                || auth()->user()?->peran === 'super_admin';
+
+            // Info backup: hanya dipindai pada instalasi single-school atau oleh super_admin.
+            $backupFiles = $canSeeGlobalQueue ? Storage::disk('local')->files('backups') : [];
+            $backupUkuran = 0;
+            $backupTerakhir = null;
+            foreach ($backupFiles as $file) {
+                $backupUkuran += Storage::disk('local')->size($file);
+                $waktu = Storage::disk('local')->lastModified($file);
+                if ($backupTerakhir === null || $waktu > $backupTerakhir) {
+                    $backupTerakhir = $waktu;
+                }
+            }
+
             // Baca config tanpa menulis (getInstance() = firstOrCreate menulis di tiap GET).
             $dapodikConfig = DapodikConfig::first();
             $pengaturanSekolah = $sekolahSettings?->pengaturan ?? [];
@@ -101,7 +117,7 @@ class DashboardController extends Controller
                 ['label' => 'Update data Kop Sekolah', 'done' => ! empty($pengaturanSekolah['kop_sekolah'])],
                 ['label' => 'Update tanggal rapor', 'done' => TanggalRapor::exists()],
                 ['label' => 'Update tema kokurikuler', 'done' => TemaKokurikuler::exists()],
-                ['label' => 'Backup Data', 'done' => count(Storage::disk('local')->files('backups')) > 0],
+                ['label' => 'Backup Data', 'done' => $canSeeGlobalQueue && count($backupFiles) > 0],
                 ['label' => 'Kirim Nilai Ke Dapodik', 'done' => NilaiErapot::where('terkirim_erapor', true)->exists()],
             ];
             $progresKerja = count($statusKerja) > 0
@@ -125,19 +141,6 @@ class DashboardController extends Controller
                 ];
             }
 
-            // Info backup: file + ukuran + antrean export async + job gagal.
-            $backupFiles = Storage::disk('local')->files('backups');
-            $backupUkuran = 0;
-            $backupTerakhir = null;
-            foreach ($backupFiles as $file) {
-                $backupUkuran += Storage::disk('local')->size($file);
-                $waktu = Storage::disk('local')->lastModified($file);
-                if ($backupTerakhir === null || $waktu > $backupTerakhir) {
-                    $backupTerakhir = $waktu;
-                }
-            }
-            $canSeeGlobalQueue = ! \App\Modules\Tenant\Support\TenantMode::isMultiSchool()
-                || auth()->user()?->peran === 'super_admin';
             $backupAntre = ($canSeeGlobalQueue && Schema::hasTable('jobs'))
                 ? DB::table('jobs')->where('payload', 'like', '%ExportBackupJob%')->count()
                 : 0;
@@ -146,7 +149,7 @@ class DashboardController extends Controller
                 : 0;
             $backupInfo = [
                 'jumlah' => count($backupFiles),
-                'ukuran' => $this->formatBytes($backupUkuran),
+                'ukuran' => $canSeeGlobalQueue ? $this->formatBytes($backupUkuran) : '-',
                 'terakhir' => $backupTerakhir ? now()->setTimestamp($backupTerakhir)->diffForHumans() : null,
                 'antre' => $backupAntre,
                 'gagal' => $jobGagal,
@@ -176,7 +179,7 @@ class DashboardController extends Controller
                 ['label' => 'Job gagal', 'nilai' => (string) $jobGagal, 'ok' => $jobGagal === 0],
                 ['label' => 'Cache', 'nilai' => config('cache.default'), 'ok' => true],
                 ['label' => 'Database', 'nilai' => DB::getDriverName().' ('.$this->formatBytes($this->ukuranDatabase()).')', 'ok' => true],
-                ['label' => 'Folder backup', 'nilai' => $this->formatBytes($backupUkuran), 'ok' => true],
+                ['label' => 'Folder backup', 'nilai' => $canSeeGlobalQueue ? $this->formatBytes($backupUkuran) : 'Dikelola pusat', 'ok' => true],
                 ['label' => 'Kartu QR Siswa', 'nilai' => Siswa::whereNotNull('qr_token_hash')->count().' / '.$siswaAktif.' aktif', 'ok' => Siswa::whereNotNull('qr_token_hash')->count() > 0],
             ];
 

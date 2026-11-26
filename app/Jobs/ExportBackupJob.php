@@ -15,6 +15,8 @@ class ExportBackupJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 300;
+
     /**
      * Tulis backup registry secara bertahap ke temporary stream, lalu unggah
      * sebagai resource agar JSON utuh tidak pernah dimaterialisasi di memori.

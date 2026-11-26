@@ -128,13 +128,51 @@ php artisan view:cache
 
 ## 6. Akun admin pertama
 
-Karena seeder dilarang di produksi, buat admin secara manual:
+Karena seeder dilarang di produksi, pembuatan akun awal mengikuti mode instalasi pada `.env`:
+
+### 6.1 Mode Multi-Tenant / SaaS (`SIMANTAP_MULTI_TENANT=true`, bawaan `.env.production.example`)
+
+1. Buat akun **Super Admin** pusat terlebih dahulu:
+
+```bash
+php artisan superadmin:create
+# atau non-interaktif:
+php artisan superadmin:create \
+  --user=superadmin \
+  --name="Super Administrator" \
+  --email="pusat@domain-anda.id" \
+  --pass="GANTI-DENGAN-SANDI-KUAT"
+```
+
+2. Daftarkan sekolah pertama beserta akun **Admin Sekolah** (terikat `tenant_id` otomatis) menggunakan salah satu cara:
+   - **Via CLI (disarankan untuk sekolah awal):**
+
+```bash
+php artisan tenant:create \
+  --npsn=40301234 \
+  --nama="SDN Contoh 01" \
+  --subdomain=sdncontoh01 \
+  --jenjang=SD \
+  --admin-user=admin_sdncontoh01 \
+  --admin-nama="Administrator Sekolah" \
+  --admin-email="admin@sdncontoh01.sch.id" \
+  --admin-pass="GANTI-SEGERA"
+```
+
+   - **Via pendaftaran mandiri:** buka `/daftar-sekolah` (bila `SIMANTAP_SCHOOL_REGISTRATION=true`), verifikasi email operator, lalu setujui pendaftaran dari panel Super Admin.
+
+> ⚠️ Pada mode multi-tenant, **jangan** membuat akun `admin` dengan `tenant_id => null` lewat Tinker. Middleware `EnsureSchoolContext` akan menolak akun admin tanpa sekolah dengan `403 Akun belum terhubung ke sekolah aktif`.
+
+### 6.2 Mode Single-School (`SIMANTAP_MULTI_TENANT=false`)
+
+Buat admin tunggal secara manual:
 
 ```bash
 php artisan tinker --execute="
 \App\Models\User::create([
     'nama_lengkap' => 'Administrator Sekolah',
     'nama_pengguna' => 'admin',
+    'email' => 'admin@sekolah.sch.id',
     'kata_sandi' => \Illuminate\Support\Facades\Hash::make('GANTI-SEGERA'),
     'peran' => 'admin',
     'terhubung_dengan' => [],
@@ -147,15 +185,14 @@ php artisan tinker --execute="
 `force_password_change => true` membuat admin diarahkan ke halaman ganti sandi begitu
 login pertama kali. **Jangan** dihapus.
 
-### Prosedur reset sandi pengguna
+### 6.3 Prosedur reset sandi pengguna
 
-SIMANTAP **tidak punya fitur "lupa password"** — tabel `users` tidak memiliki kolom
-`email`. Semua reset dilakukan admin lewat **Admin → Pengguna → Edit → Kata Sandi**.
+SIMANTAP menyediakan dua jalur pemulihan sandi:
 
-Sejak perbaikan launching, sandi yang direset admin otomatis menandai akun tersebut
-`force_password_change = true`, sehingga pengguna dipaksa mengganti sandi sementara itu
-pada login berikutnya. Sampaikan ke pengguna: *"sandi ini sementara, Anda akan diminta
-menggantinya saat masuk."*
+1. **Reset sandi mandiri (`/lupa-sandi` → `/reset-sandi/{token}`):**
+   Pengguna yang memiliki alamat email terdaftar pada kolom `users.email` dapat meminta tautan reset sekali pakai menggunakan `nama_pengguna` maupun `email`. Fitur ini membutuhkan konfigurasi SMTP produksi (`MAIL_MAILER=smtp` dan `MAIL_*`) yang valid di `.env`. Pada mode multi-tenant, bila `nama_pengguna` dipakai oleh lebih dari satu sekolah di domain utama, pengguna diminta memakai alamat email terdaftar atau membuka `/lupa-sandi` melalui subdomain sekolahnya.
+2. **Reset oleh Admin (fallback untuk akun tanpa email):**
+   Untuk akun yang belum memiliki email (misalnya akun siswa hasil impor massal), reset dilakukan admin lewat **Admin → Pengguna → Edit → Kata Sandi**. Sandi yang direset admin otomatis menandai akun tersebut `force_password_change = true`, sehingga pengguna dipaksa mengganti sandi sementara itu pada login berikutnya. Sampaikan ke pengguna: *"sandi ini sementara, Anda akan diminta menggantinya saat masuk."*
 
 ---
 
@@ -195,12 +232,14 @@ After=network.target postgresql.service
 [Service]
 User=www-data
 WorkingDirectory=/var/www/simantap
-ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --timeout=300 --max-time=3600
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+> Pastikan `DB_QUEUE_RETRY_AFTER` di `.env` (bawaan `.env.production.example`: `600`) selalu lebih besar daripada `--timeout` worker (`300`), agar job berdurasi panjang seperti Impor Dapodik atau Export Backup tidak dianggap menggantung dan diambil ulang oleh worker lain saat masih berjalan.
 
 ```bash
 sudo systemctl daemon-reload

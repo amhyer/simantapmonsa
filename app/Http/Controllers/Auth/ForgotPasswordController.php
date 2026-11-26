@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
@@ -31,13 +32,42 @@ class ForgotPasswordController extends Controller
 
         $login = trim((string) $request->input('login'));
 
-        $user = User::forSchool()
-            ->where('aktif', true)
-            ->where(function ($query) use ($login) {
-                $query->where('nama_pengguna', $login)
-                    ->orWhere('email', $login);
-            })
-            ->first();
+        if (TenantContext::check()) {
+            $user = User::query()
+                ->where('tenant_id', TenantContext::id())
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->where(function ($query) use ($login) {
+                    $query->where('nama_pengguna', $login)
+                        ->orWhere('email', $login);
+                })
+                ->first();
+        } else {
+            $kandidat = User::query()
+                ->where('aktif', true)
+                ->whereNull('archived_at')
+                ->where(function ($query) use ($login) {
+                    $query->where('nama_pengguna', $login)
+                        ->orWhere('email', $login);
+                })
+                ->get();
+
+            if ($kandidat->count() > 1) {
+                $cocokEmail = $kandidat->first(
+                    fn (User $u) => $u->email !== null && mb_strtolower((string) $u->email) === mb_strtolower($login)
+                );
+
+                if ($cocokEmail !== null) {
+                    $user = $cocokEmail;
+                } else {
+                    return back()->withInput()->withErrors([
+                        'login' => 'Nama pengguna terdaftar di lebih dari satu sekolah. Silakan gunakan alamat email terdaftar atau buka halaman lupa sandi melalui portal/subdomain sekolah Anda.',
+                    ]);
+                }
+            } else {
+                $user = $kandidat->first();
+            }
+        }
 
         if ($user?->email) {
             try {

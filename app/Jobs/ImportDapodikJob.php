@@ -20,6 +20,8 @@ class ImportDapodikJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 300;
+
     protected array $data;
 
     protected $logId;
