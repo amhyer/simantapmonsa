@@ -2,17 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\TarikSemuaPresensiJob;
 use App\Models\ApiKey;
 use App\Models\DapodikConfig;
 use App\Models\Nilai;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
-use App\Jobs\TarikSemuaPresensiJob;
+use App\Services\Dapodik\DapodikClient;
+use App\Services\MesinPresensi\AttendanceDatabaseReader;
+use App\Services\MesinPresensi\PresensiMesinPullService;
+use App\Services\PresensiMesinService;
 use App\Support\BackupTables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -306,5 +312,122 @@ class SecurityHardeningFase1Test extends TestCase
     {
         $job = new TarikSemuaPresensiJob(null);
         $this->assertSame(300, $job->timeout);
+        $this->assertGreaterThan($job->timeout, (int) config('queue.connections.database.retry_after'));
+    }
+
+    public function test_ssrf_guard_dapodik_memblokir_ipv6_loopback_link_local_ula_dan_ipv4_mapped(): void
+    {
+        try {
+            DapodikClient::useDnsResolver(fn (string $host): array => match ($host) {
+                'ipv6-loopback.internal' => ['::1'],
+                'ipv6-linklocal.internal' => ['fe80::1'],
+                'ipv6-metadata.internal' => ['fd00:ec2::254'],
+                'ipv6-ula.internal' => ['fd12:3456:789a::1'],
+                'ipv4-mapped-meta.internal' => ['::ffff:169.254.169.254'],
+                'ipv4-mapped-loop.internal' => ['::ffff:127.0.0.1'],
+                'ipv6-publik.sekolah.id' => ['2001:db8:85a3::8a2e:370:7334'],
+                default => [],
+            });
+
+            // Link-local, unspecified, dan metadata diblokir baik di mode single maupun multi-school
+            foreach (['::', 'fe80::1', 'fd00:ec2::254', '::ffff:169.254.169.254', 'ipv6-linklocal.internal', 'ipv6-metadata.internal', 'ipv4-mapped-meta.internal'] as $blockedAlways) {
+                $this->assertNotNull(DapodikClient::validateHostSafety($blockedAlways, false), "Harus diblokir di single-school: {$blockedAlways}");
+                $this->assertNotNull(DapodikClient::validateHostSafety($blockedAlways, true), "Harus diblokir di multi-school: {$blockedAlways}");
+            }
+
+            // Loopback & ULA IPv6 diblokir pada mode multi-school secara bawaan
+            foreach (['::1', '[::1]', 'ipv6-loopback.internal', 'ipv6-ula.internal', 'ipv4-mapped-loop.internal'] as $blockedMulti) {
+                $this->assertNotNull(DapodikClient::validateHostSafety($blockedMulti, true), "Harus diblokir di multi-school: {$blockedMulti}");
+            }
+
+            // Host publik IPv6 valid diizinkan
+            $this->assertNull(DapodikClient::validateHostSafety('ipv6-publik.sekolah.id', true));
+
+            // Opsi config dapodik.allow_loopback_in_multi_school bekerja nyata
+            config(['dapodik.allow_loopback_in_multi_school' => true]);
+            $this->assertNull(DapodikClient::validateHostSafety('localhost', true));
+            $this->assertNull(DapodikClient::validateHostSafety('::1', true));
+        } finally {
+            config(['dapodik.allow_loopback_in_multi_school' => false]);
+            DapodikClient::useDnsResolver(null);
+        }
+    }
+
+    public function test_dapodik_client_memoize_resolusi_dns_dan_validasi_base_url(): void
+    {
+        $lookupCalls = 0;
+
+        try {
+            DapodikClient::useDnsResolver(function (string $host) use (&$lookupCalls): array {
+                $lookupCalls++;
+
+                return ['203.0.113.10'];
+            });
+
+            Http::fake([
+                '*' => Http::response(['rows' => [['nama' => 'SD Uji Memo', 'npsn' => '12345678']], 'count' => 1]),
+            ]);
+
+            $client = new DapodikClient('12345678', 'tok-uji', 'dapodik.sekolah.sch.id', 5774, 'http');
+            $client->getSekolah();
+            $client->getSekolah();
+            $client->getSekolah();
+
+            // Meski memanggil 3 request berturut-turut, DNS resolver hanya dipanggil 1 kali
+            $this->assertSame(1, $lookupCalls);
+        } finally {
+            DapodikClient::useDnsResolver(null);
+        }
+    }
+
+    public function test_default_host_dapodik_kosong_pada_multitenant_dan_mengembalikan_422_ramah(): void
+    {
+        config(['simantap.multi_tenant_enabled' => true]);
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SD Default Host',
+            'npsn' => '77889900',
+            'subdomain' => 'sd-default-host',
+            'aktif' => true,
+        ]);
+        $admin = User::factory()->admin()->create(['tenant_id' => $tenant->id]);
+
+        try {
+            TenantContext::set($tenant->id);
+            $cfg = DapodikConfig::getInstance();
+            $this->assertSame('', $cfg->host);
+            $cfg->update(['npsn' => '77889900', 'token' => 'token-valid-123456']);
+        } finally {
+            TenantContext::clear();
+        }
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.dapodik.api.test-connection'))
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_tarik_semua_presensi_job_mencegah_eksekusi_worker_ganda_dan_email_user_dinormalisasi_lowercase(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'email' => '  Admin.HurufBesar@Sekolah.SCH.ID  ',
+        ]);
+        $this->assertSame('admin.hurufbesar@sekolah.sch.id', $admin->fresh()->email);
+
+        $execLock = Cache::lock(TarikSemuaPresensiJob::executionLockKey($admin->tenant_id), TarikSemuaPresensiJob::TTL_LOCK);
+        $this->assertTrue($execLock->get());
+
+        try {
+            $readerMock = $this->mock(AttendanceDatabaseReader::class);
+            $readerMock->shouldNotReceive('rentang');
+
+            (new TarikSemuaPresensiJob($admin->id, $admin->tenant_id))->handle(
+                $readerMock,
+                app(PresensiMesinService::class),
+                app(PresensiMesinPullService::class),
+            );
+        } finally {
+            $execLock->release();
+        }
     }
 }

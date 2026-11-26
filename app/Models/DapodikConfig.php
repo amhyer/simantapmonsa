@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Support\TenantMode;
 use App\Modules\Tenant\Traits\HasSchoolOwnership;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -60,12 +61,13 @@ class DapodikConfig extends Model
     public static function getInstance(): static
     {
         $id = TenantContext::check() ? 'tenant-'.TenantContext::id() : 'singleton';
+        $defaultHost = TenantMode::isMultiSchool() ? '' : 'localhost';
 
         return static::firstOrCreate(
             ['id' => $id],
             [
                 'npsn' => null,
-                'host' => 'localhost',
+                'host' => $defaultHost,
                 'port' => 5774,
                 'protocol' => 'http',
             ]

@@ -65,7 +65,7 @@ class DapodikController extends Controller
                 'nullable',
                 'string',
                 'max:255',
-                'regex:/^[A-Za-z0-9.-]+$/',
+                'regex:/^[A-Za-z0-9.:\[\]-]+$/',
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     if ($value === null || trim((string) $value) === '') {
                         return;
@@ -88,9 +88,11 @@ class DapodikController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $firstError = $validator->errors()->first() ?: 'Validasi gagal.';
+
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal.',
+                'message' => $firstError,
                 'errors' => $validator->errors()->all(),
             ], 422);
         }
@@ -142,11 +144,26 @@ class DapodikController extends Controller
             ], 422);
         }
 
+        if (blank($config->host)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Host WebService Dapodik belum dikonfigurasi. Isi alamat server Dapodik atau gunakan aplikasi desktop SIMANTAP Bridge.',
+            ], 422);
+        }
+
+        $hostError = DapodikClient::validateHostSafety((string) $config->host, TenantMode::isMultiSchool());
+        if ($hostError !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => $hostError,
+            ], 422);
+        }
+
         try {
             $client = new DapodikClient(
                 npsn: $config->npsn,
                 token: $config->token,
-                host: $config->host,
+                host: (string) $config->host,
                 port: (int) $config->port,
                 protocol: $config->protocol,
                 cfAccess: $config->cf_access ?? [],

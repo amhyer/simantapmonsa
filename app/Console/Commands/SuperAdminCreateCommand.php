@@ -19,13 +19,20 @@ class SuperAdminCreateCommand extends Command
 
     public function handle(): int
     {
-        $user = $this->option('user') ?: $this->ask('Username Superadmin', 'superadmin');
-        $name = $this->option('name') ?: $this->ask('Nama Lengkap', 'Super Administrator');
-        $email = $this->option('email') ?: $this->ask('Email (opsional)', 'pusat@simantap.id');
-        $pass = $this->option('pass') ?: $this->secret('Password (min 8 karakter)') ?: 'SuperAdmin123!';
+        $user = trim((string) ($this->option('user') ?: $this->ask('Username Superadmin', 'superadmin')));
+        $name = trim((string) ($this->option('name') ?: $this->ask('Nama Lengkap', 'Super Administrator')));
+        $emailRaw = trim((string) ($this->option('email') ?: $this->ask('Email (opsional)', 'pusat@simantap.id')));
+        $email = $emailRaw !== '' ? strtolower($emailRaw) : null;
+        $pass = (string) ($this->option('pass') ?: $this->secret('Password (min 8 karakter)') ?: 'SuperAdmin123!');
 
-        if (User::where('nama_pengguna', $user)->exists()) {
+        if (User::withoutGlobalScopes()->withTrashed()->where('nama_pengguna', $user)->exists()) {
             $this->error("Gagal: Username {$user} sudah digunakan!");
+
+            return self::FAILURE;
+        }
+
+        if ($email !== null && User::withoutGlobalScopes()->withTrashed()->whereRaw('LOWER(email) = ?', [$email])->exists()) {
+            $this->error("Gagal: Email {$email} sudah digunakan!");
 
             return self::FAILURE;
         }

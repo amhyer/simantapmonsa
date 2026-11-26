@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Admin\BackupController;
+use App\Models\CbtQuestionBank;
+use App\Models\CbtTestSession;
 use App\Models\Kehadiran;
+use App\Models\PengajuanIzinPresensi;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
@@ -198,6 +201,44 @@ class QaSecurityRemediationTest extends TestCase
             'tanggal' => '2026-11-08',
             'status' => 'H',
         ]));
+
+        // Tambahkan relasi RESTRICT bertingkat (pengajuan_izin_presensi -> siswa,
+        // cbt_test_sessions -> cbt_question_banks) untuk memastikan urutan hapus
+        // child -> parent tidak melempar FK violation di PostgreSQL.
+        $ortuA = User::factory()->create([
+            'tenant_id' => $sekolahA->id,
+            'peran' => 'ortu',
+            'aktif' => true,
+        ]);
+        TenantContext::run($sekolahA->id, function () use ($sekolahA, $guruA, $siswaA, $ortuA): void {
+            PengajuanIzinPresensi::create([
+                'siswa_id' => $siswaA->id,
+                'orang_tua_id' => $ortuA->id,
+                'tanggal' => '2026-11-08',
+                'jenis' => 'S',
+                'alasan' => 'Demam',
+            ]);
+
+            $bankA = CbtQuestionBank::create([
+                'tenant_id' => $sekolahA->id,
+                'guru_id' => $guruA->id,
+                'title' => 'Bank A',
+                'subject' => 'IPA',
+            ]);
+
+            CbtTestSession::create([
+                'tenant_id' => $sekolahA->id,
+                'guru_id' => $guruA->id,
+                'bank_id' => $bankA->id,
+                'title' => 'Sesi A',
+                'kelas' => '5A',
+                'opens_at' => now(),
+                'closes_at' => now()->addHour(),
+                'duration_minutes' => 60,
+                'status' => 'draft',
+            ]);
+        });
+
         TenantContext::run($sekolahB->id, fn () => Kehadiran::create([
             'guru_id' => $guruB->id,
             'siswa_id' => $siswaB->id,
@@ -219,6 +260,8 @@ class QaSecurityRemediationTest extends TestCase
 
         $this->assertDatabaseMissing('siswa', ['id' => $siswaA->id]);
         $this->assertDatabaseMissing('kehadiran', ['siswa_id' => $siswaA->id]);
+        $this->assertDatabaseMissing('pengajuan_izin_presensi', ['siswa_id' => $siswaA->id]);
+        $this->assertDatabaseMissing('cbt_question_banks', ['tenant_id' => $sekolahA->id]);
         $this->assertDatabaseHas('siswa', ['id' => $siswaB->id, 'nama_peserta_didik' => 'Siswa Utuh B']);
         $this->assertDatabaseHas('kehadiran', ['siswa_id' => $siswaB->id]);
     }

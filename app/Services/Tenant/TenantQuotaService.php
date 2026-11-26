@@ -56,18 +56,29 @@ class TenantQuotaService
         ];
     }
 
-    public function assertCanAddStudents(?int $tenantId, int $additional = 1, string $field = 'kuota_siswa'): void
-    {
+    /**
+     * @param  array{used: int, limit: int, remaining: int, percent: float, exceeded: bool}|null  $precomputedStatus
+     */
+    public function assertCanAddStudents(
+        ?int $tenantId,
+        int $additional = 1,
+        string $field = 'kuota_siswa',
+        ?array $precomputedStatus = null
+    ): void {
         if ($tenantId === null || $additional <= 0) {
             return;
         }
 
-        $tenant = Tenant::find($tenantId);
-        if (! $tenant) {
-            return;
+        if ($precomputedStatus !== null) {
+            $status = $precomputedStatus;
+        } else {
+            $tenant = Tenant::find($tenantId);
+            if (! $tenant) {
+                return;
+            }
+            $status = $this->studentQuotaStatus($tenantId, $tenant);
         }
 
-        $status = $this->studentQuotaStatus($tenantId, $tenant);
         if (($status['used'] + $additional) > $status['limit']) {
             throw ValidationException::withMessages([
                 $field => sprintf(

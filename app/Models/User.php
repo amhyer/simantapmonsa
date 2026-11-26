@@ -83,6 +83,10 @@ class User extends Authenticatable
     {
         parent::boot();
         static::saving(function ($model) {
+            if ($model->email !== null) {
+                $trimmedEmail = trim((string) $model->email);
+                $model->email = $trimmedEmail === '' ? null : mb_strtolower($trimmedEmail);
+            }
             if ($model->tenant_id !== null) {
                 $model->tenant_owned = true;
             }

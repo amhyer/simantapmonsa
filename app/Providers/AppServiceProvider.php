@@ -40,6 +40,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -69,6 +70,15 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
+        }
+
+        // Peringatan startup CLI bila retry_after antrean aktif tidak melebihi timeout job panjang (300 detik).
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
+            $defaultQueue = (string) config('queue.default', 'database');
+            $retryAfter = config("queue.connections.{$defaultQueue}.retry_after");
+            if (is_numeric($retryAfter) && (int) $retryAfter <= 300) {
+                Log::warning("Konfigurasi queue.connections.{$defaultQueue}.retry_after ({$retryAfter}s) harus > 300s agar job panjang tidak dieksekusi ganda.");
+            }
         }
 
         Password::defaults(function () {

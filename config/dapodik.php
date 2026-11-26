@@ -12,6 +12,13 @@ return [
 
     'token' => env('DAPODIK_TOKEN'),
 
+    // Pada mode multi-sekolah, host loopback/localhost ditolak secara bawaan
+    // agar server cloud SIMANTAP tidak diarahkan ke dirinya sendiri oleh tenant.
+    'allow_loopback_in_multi_school' => (bool) env('DAPODIK_ALLOW_LOOPBACK_IN_MULTI_SCHOOL', false),
+
+    // Alias kompatibilitas konfigurasi lama untuk pengecualian loopback di atas.
+    'allow_private_host' => (bool) env('DAPODIK_ALLOW_PRIVATE_HOST', false),
+
     'max_retries' => 3,
 
     'retry_delay_ms' => [400, 1200],
