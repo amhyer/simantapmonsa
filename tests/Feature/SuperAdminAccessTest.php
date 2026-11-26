@@ -7,6 +7,7 @@ use App\Models\PengajuanIzinPresensi;
 use App\Models\PresensiPegawai;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -57,14 +58,15 @@ class SuperAdminAccessTest extends TestCase
             'status' => 'hadir',
         ]);
 
-        PengajuanIzinPresensi::create([
-            'tenant_id' => $tenant->id,
-            'siswa_id' => $dataSiswa->id,
-            'orang_tua_id' => $ortu1->id,
-            'tanggal' => now()->toDateString(),
-            'jenis' => 'I',
-            'alasan' => 'Acara keluarga',
-        ]);
+        TenantContext::run($tenant->id, function () use ($dataSiswa, $ortu1): void {
+            PengajuanIzinPresensi::create([
+                'siswa_id' => $dataSiswa->id,
+                'orang_tua_id' => $ortu1->id,
+                'tanggal' => now()->toDateString(),
+                'jenis' => 'I',
+                'alasan' => 'Acara keluarga',
+            ]);
+        });
 
         // 1. Hapus akun individual (memiliki relasi RESTRICT cbt_question_banks & siswa.guru_id)
         $resDelete1 = $this->actingAs($superAdmin)->delete(route('superadmin.users.destroy', $guru1->id));

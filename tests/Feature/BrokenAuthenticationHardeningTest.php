@@ -266,11 +266,11 @@ class BrokenAuthenticationHardeningTest extends TestCase
 
         // 3. Reset massal password siswa oleh admin
         $this->insertDbSession('sess-siswa-massal', $siswa->id);
-        app(MassPasswordResetService::class)->execute($admin, [
+        app(MassPasswordResetService::class)->execute([
             'peran' => ['siswa'],
             'hanya_belum_login' => false,
             'sertakan_sudah_diterbitkan' => true,
-        ]);
+        ], $admin);
         $this->assertDatabaseMissing('sessions', ['id' => 'sess-siswa-massal']);
         $this->assertNotSame('token-siswa-awal', $siswa->fresh()->remember_token);
     }
@@ -301,7 +301,7 @@ class BrokenAuthenticationHardeningTest extends TestCase
         $this->insertDbSession('sess-admin-sekolah', $schoolAdmin->id);
 
         $this->actingAs($superAdmin)
-            ->post(route('superadmin.tenants.reset-password', $tenant), [
+            ->post(route('superadmin.tenants.reset-admin-password', $tenant), [
                 'password_baru' => 'SandiAdminBaru#2026',
             ])
             ->assertSessionHas('success');
