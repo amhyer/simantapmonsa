@@ -128,6 +128,23 @@ class LoginController extends Controller
                 ])->onlyInput('nama_pengguna');
             }
 
+            // Jika MFA aktif pada akun ini, tahan sesi login sampai OTP/recovery code terverifikasi.
+            if (config('simantap.mfa_enabled', true) && $user->hasMfaEnabled()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                $request->session()->put([
+                    'mfa_pending_user_id' => $user->id,
+                    'mfa_pending_expires_at' => now()->addMinutes(5)->timestamp,
+                ]);
+
+                RateLimiter::clear($throttleKey);
+                RateLimiter::clear($pairKey);
+                RateLimiter::clear($accountKey);
+
+                return redirect()->route('mfa.challenge');
+            }
+
             try {
                 $user->update(['terakhir_masuk' => now()]);
                 AktivitasService::login('Login sebagai '.$user->peran.' dari IP '.$request->ip());
@@ -143,17 +160,7 @@ class LoginController extends Controller
             RateLimiter::clear($accountKey);
             $request->session()->regenerate();
 
-            return match ($user->peran) {
-                'super_admin' => redirect()->route('superadmin.dashboard'),
-                'admin' => redirect()->route('admin.dashboard'),
-                'guru' => redirect()->route('guru.dashboard'),
-                'siswa' => redirect()->route('siswa.dashboard'),
-                'ortu' => redirect()->route('ortu.dashboard'),
-                'kepsek' => redirect()->route('kepsek.dashboard'),
-                'pengawas' => redirect()->route('pengawas.dashboard'),
-                'tendik' => redirect()->route('presensi.pegawai.index'),
-                default => redirect()->route('login'),
-            };
+            return self::redirectForRole($user);
         }
 
         RateLimiter::hit($throttleKey, 300);
@@ -184,6 +191,21 @@ class LoginController extends Controller
         return back()->withErrors([
             'nama_pengguna' => 'Nama pengguna atau kata sandi salah.',
         ])->onlyInput('nama_pengguna');
+    }
+
+    public static function redirectForRole(User $user)
+    {
+        return match ($user->peran) {
+            'super_admin' => redirect()->route('superadmin.dashboard'),
+            'admin' => redirect()->route('admin.dashboard'),
+            'guru' => redirect()->route('guru.dashboard'),
+            'siswa' => redirect()->route('siswa.dashboard'),
+            'ortu' => redirect()->route('ortu.dashboard'),
+            'kepsek' => redirect()->route('kepsek.dashboard'),
+            'pengawas' => redirect()->route('pengawas.dashboard'),
+            'tendik' => redirect()->route('presensi.pegawai.index'),
+            default => redirect()->route('login'),
+        };
     }
 
     public function logout(Request $request)

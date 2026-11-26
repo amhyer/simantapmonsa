@@ -50,6 +50,8 @@ class User extends Authenticatable
     protected $hidden = [
         'kata_sandi',
         'remember_token',
+        'mfa_secret',
+        'mfa_recovery_codes',
         'terhubung_dengan',
         'qr_token_hash',
         'qr_previous_token_hash',
@@ -61,6 +63,10 @@ class User extends Authenticatable
         return [
             'kata_sandi' => 'hashed',
             'email_verified_at' => 'datetime',
+            'mfa_secret' => 'encrypted',
+            'mfa_recovery_codes' => 'encrypted:array',
+            'mfa_confirmed_at' => 'datetime',
+            'mfa_last_used_window' => 'integer',
             'terhubung_dengan' => 'array',
             'is_wali_kelas' => 'boolean',
             'aktif' => 'boolean',
@@ -128,6 +134,25 @@ class User extends Authenticatable
     public function getAuthPassword()
     {
         return $this->kata_sandi;
+    }
+
+    public function hasMfaEnabled(): bool
+    {
+        return $this->mfa_confirmed_at !== null && filled($this->mfa_secret);
+    }
+
+    public function isMfaAllowed(): bool
+    {
+        $allowed = (array) config('simantap.mfa_allowed_roles', ['super_admin', 'admin']);
+
+        return in_array($this->peran, $allowed, true) || $this->isMfaEnforced();
+    }
+
+    public function isMfaEnforced(): bool
+    {
+        $enforced = (array) config('simantap.mfa_enforced_roles', ['super_admin']);
+
+        return in_array($this->peran, $enforced, true);
     }
 
     public function siswa()

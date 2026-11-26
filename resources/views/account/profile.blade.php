@@ -126,4 +126,25 @@
         </div>
     </div>
 </div>
+
+@if(config('simantap.mfa_enabled', true) && $user->isMfaAllowed())
+    <div class="card" style="margin-top:20px">
+        <div class="card-header">
+            <h3><i class="fas fa-shield-halved" style="margin-right:8px;color:var(--navy)"></i>Autentikasi Dua Faktor (MFA / TOTP)</h3>
+            @if($user->hasMfaEnabled())
+                <span class="tag tag-ok">Aktif</span>
+            @else
+                <span class="tag tag-warn">Belum Aktif</span>
+            @endif
+        </div>
+        <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div style="font-size:13px;color:var(--muted);max-width:640px">
+                Tambahkan lapisan keamanan ekstra dengan aplikasi authenticator (Google Authenticator / Authy) dan 8 kode pemulihan sekali pakai.
+            </div>
+            <a href="{{ route('account.mfa.show') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-shield-halved"></i> {{ $user->hasMfaEnabled() ? 'Kelola MFA' : 'Aktifkan MFA' }}
+            </a>
+        </div>
+    </div>
+@endif
 @endsection

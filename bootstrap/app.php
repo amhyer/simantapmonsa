@@ -4,6 +4,7 @@ use App\Http\Middleware\ApiKeyMiddleware;
 use App\Http\Middleware\CspReportOnlyHeaders;
 use App\Http\Middleware\EnforceTenantQuota;
 use App\Http\Middleware\EnsureCbtEnabled;
+use App\Http\Middleware\EnsureMfaSetup;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureSchoolContext;
 use App\Http\Middleware\EnsureSingleSchoolDapodik;
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'apikey' => ApiKeyMiddleware::class,
             'force.password.change' => ForcePasswordChange::class,
+            'mfa.setup' => EnsureMfaSetup::class,
             'module.asesmen' => EnsureModuleEnabled::class,
             'cbt.enabled' => EnsureCbtEnabled::class,
             'tenant' => IdentifyTenant::class,

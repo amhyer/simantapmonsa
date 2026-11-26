@@ -31,6 +31,8 @@ use App\Http\Controllers\Api\DapodikController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\MfaChallengeController;
+use App\Http\Controllers\Auth\MfaSettingsController;
 use App\Http\Controllers\Auth\RegisterSekolahController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
@@ -102,6 +104,8 @@ Route::post('/tka-statistik/refresh', [TkaStatsController::class, 'refresh'])
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
+    Route::get('/mfa/challenge', [MfaChallengeController::class, 'show'])->name('mfa.challenge');
+    Route::post('/mfa/challenge', [MfaChallengeController::class, 'verify'])->middleware('throttle:10,1')->name('mfa.challenge.verify');
     // Tidak ada registrasi untuk guru, siswa, maupun orang tua.
     // Akses /register langsung diarahkan ke Pendaftaran Akun Sekolah (jika diaktifkan).
     Route::get('/register', fn () => config('simantap.school_registration_enabled', true)
@@ -155,6 +159,10 @@ Route::middleware(['auth', 'force.password.change'])->prefix('akun')->name('acco
     Route::get('/profil', [AccountProfileController::class, 'show'])->name('profile.show');
     Route::put('/profil', [AccountProfileController::class, 'updateProfile'])->middleware('throttle:10,1')->name('profile.update');
     Route::put('/profil/password', [AccountProfileController::class, 'updatePassword'])->middleware('throttle:10,1')->name('profile.password');
+    Route::get('/keamanan/mfa', [MfaSettingsController::class, 'show'])->name('mfa.show');
+    Route::post('/keamanan/mfa/aktifkan', [MfaSettingsController::class, 'enable'])->middleware('throttle:10,1')->name('mfa.enable');
+    Route::post('/keamanan/mfa/recovery', [MfaSettingsController::class, 'regenerateRecoveryCodes'])->middleware('throttle:5,1')->name('mfa.recovery');
+    Route::delete('/keamanan/mfa', [MfaSettingsController::class, 'disable'])->middleware('throttle:5,1')->name('mfa.disable');
 });
 
 // Presensi mandiri pegawai (guru, kepala sekolah, dan tendik): kartu identitas QR & geofence sekolah.
@@ -171,7 +179,7 @@ Route::middleware(['auth', 'role:guru,kepsek,tendik', 'force.password.change', '
 Route::get('/dashboard', DashboardRedirectController::class)->name('home');
 
 // ==================== SUPER ADMIN ROUTES ====================
-Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.telemetry'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'mfa.setup', 'menu.telemetry'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/tenants', [TenantController::class, 'index'])->name('tenants.index');
     Route::post('/tenants', [TenantController::class, 'store'])->middleware('throttle:30,1')->name('tenants.store');
@@ -185,6 +193,7 @@ Route::middleware(['auth', 'role:super_admin', 'force.password.change', 'menu.te
     Route::post('/tenants/{tenant}/reject', [TenantController::class, 'reject'])->middleware('throttle:30,1')->name('tenants.reject');
     Route::post('/tenants/{tenant}/impersonate', [TenantController::class, 'impersonate'])->middleware('throttle:20,1')->name('tenants.impersonate');
     Route::post('/tenants/{tenant}/reset-admin-password', [TenantController::class, 'resetAdminPassword'])->middleware('throttle:10,1')->name('tenants.reset-admin-password');
+    Route::post('/tenants/{tenant}/reset-admin-mfa', [TenantController::class, 'resetAdminMfa'])->middleware('throttle:10,1')->name('tenants.reset-admin-mfa');
     Route::get('/users', [TenantController::class, 'users'])->name('users.index');
     Route::delete('/users/{user}', [TenantController::class, 'destroyUser'])->middleware('throttle:20,1')->name('users.destroy');
     Route::post('/users/bulk-destroy', [TenantController::class, 'bulkDestroyUsers'])->middleware('throttle:10,1')->name('users.bulk-destroy');
@@ -200,7 +209,7 @@ Route::post('/admin/impersonate/leave', [UserController::class, 'leaveGuruImpers
     ->name('admin.impersonate.leave');
 
 // ==================== ADMIN ROUTES ====================
-Route::middleware(['auth', 'role:admin', 'force.password.change', 'school.context', 'menu.telemetry'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'force.password.change', 'mfa.setup', 'school.context', 'menu.telemetry'])->prefix('admin')->name('admin.')->group(function () {
     // Dasbor
     Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
 

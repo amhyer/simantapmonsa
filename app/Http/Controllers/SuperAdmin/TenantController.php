@@ -16,6 +16,7 @@ use App\Services\SuperAdmin\TenantDataDeletionService;
 use App\Services\SuperAdmin\TenantSubscriptionService;
 use App\Services\Tenant\TenantQuotaService;
 use App\Support\SchoolLevel;
+use App\Support\SessionSecurity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -676,6 +677,38 @@ class TenantController extends Controller
 
         return redirect()->route('superadmin.dashboard')
             ->with('success', 'Kembali ke sesi Super Administrator.');
+    }
+
+    public function resetAdminMfa(Request $request, Tenant $tenant)
+    {
+        $admin = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('tenant_id', $tenant->id)
+            ->where('peran', 'admin')
+            ->first();
+
+        if (! $admin) {
+            return back()->with('error', "Sekolah '{$tenant->nama_sekolah}' belum memiliki akun administrator.");
+        }
+
+        $admin->forceFill([
+            'mfa_secret' => null,
+            'mfa_recovery_codes' => null,
+            'mfa_confirmed_at' => null,
+            'mfa_last_used_window' => null,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        SessionSecurity::invalidateUserSessions((int) $admin->id);
+
+        Log::warning('Super admin mereset MFA admin sekolah', [
+            'super_admin_id' => auth()->id(),
+            'target_admin_id' => $admin->id,
+            'tenant_id' => $tenant->id,
+            'ip' => $request->ip(),
+        ]);
+
+        return back()->with('success', "MFA untuk administrator sekolah '{$tenant->nama_sekolah}' ({$admin->nama_pengguna}) berhasil direset.");
     }
 
     public function resetAdminPassword(Request $request, Tenant $tenant)
