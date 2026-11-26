@@ -757,27 +757,7 @@ class TenantController extends Controller
         }
 
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
-
-        $driver = DB::getDriverName();
-        // Jangan panggil `disableForeignKeyConstraints()` pada PostgreSQL:
-        // perintah `session_replication_role` membutuhkan hak superuser dan gagal
-        // pada user non-superuser (`simantap_app`).
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        try {
-            $this->detachAndDeleteUserDependents([(int) $user->id]);
-            $user->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            if ($driver !== 'pgsql') {
-                Schema::enableForeignKeyConstraints();
-            }
-        }
+        app(TenantDataDeletionService::class)->forceDeleteUsers([(int) $user->id]);
 
         return back()->with('success', "Akun pengguna '{$nama}' berhasil dihapus permanen dari sistem.");
     }
@@ -807,25 +787,7 @@ class TenantController extends Controller
             return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
         }
 
-        $driver = DB::getDriverName();
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        try {
-            $this->detachAndDeleteUserDependents($targetIds);
-            $count = User::withoutGlobalScopes()
-                ->whereIn('id', $targetIds)
-                ->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            if ($driver !== 'pgsql') {
-                Schema::enableForeignKeyConstraints();
-            }
-        }
+        $count = app(TenantDataDeletionService::class)->forceDeleteUsers($targetIds);
 
         return back()->with('success', "Sebanyak {$count} akun pengguna berhasil dihapus permanen.");
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services\SuperAdmin;
 
+use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -308,6 +309,42 @@ class TenantDataDeletionService
             }
             if (Schema::hasTable('cbt_question_banks')) {
                 DB::table('cbt_question_banks')->whereIn('id', $bankIds)->delete();
+            }
+        }
+    }
+
+    /**
+     * Hapus permanen satu atau beberapa akun pengguna beserta seluruh relasinya
+     * tanpa memanggil `Schema::disableForeignKeyConstraints()` pada PostgreSQL.
+     *
+     * @param  array<int, int>  $userIds
+     */
+    public function forceDeleteUsers(array $userIds): int
+    {
+        if ($userIds === []) {
+            return 0;
+        }
+
+        $driver = DB::getDriverName();
+        if ($driver !== 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
+        DB::beginTransaction();
+
+        try {
+            $this->detachAndDeleteUserDependents($userIds);
+            $deleted = User::withoutGlobalScopes()
+                ->whereIn('id', $userIds)
+                ->forceDelete();
+            DB::commit();
+
+            return $deleted;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        } finally {
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
             }
         }
     }
