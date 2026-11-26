@@ -258,6 +258,15 @@ sudo systemctl enable --now simantap-queue
 ### Nginx
 
 ```nginx
+# Tolak request dengan header Host yang tidak cocok dengan server_name (anti Host Header Injection)
+server {
+    listen 80 default_server;
+    listen 443 ssl default_server;
+    server_name _;
+    ssl_reject_handshake on;
+    return 444;
+}
+
 server {
     listen 443 ssl http2;
     # Untuk mode multi-sekolah (subdomain per sekolah), tambahkan wildcard:

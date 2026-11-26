@@ -14,6 +14,7 @@ use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\RecordMenuUsage;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrustHosts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,6 +35,9 @@ return Application::configure(basePath: dirname(__DIR__))
             TrustProxies::class,
             App\Http\Middleware\TrustProxies::class,
         );
+
+        // Tolak Host header tak dikenal (anti Host Header Injection pada reset sandi & verifikasi email).
+        $middleware->append(TrustHosts::class);
 
         // Header keamanan pada setiap respons (nilai di config/security.php).
         $middleware->append(SecurityHeaders::class);

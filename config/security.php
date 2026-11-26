@@ -89,6 +89,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Hosts (Anti Host Header Injection)
+    |--------------------------------------------------------------------------
+    |
+    | Membatasi header Host yang diterima aplikasi ke host APP_URL (+ subdomain),
+    | domain kustom tenant aktif, dan daftar tambahan pada SIMANTAP_TRUSTED_HOSTS.
+    |
+    */
+
+    'trust_hosts_enabled' => (bool) env('SIMANTAP_TRUST_HOSTS_ENABLED', true),
+    'trusted_hosts' => env('SIMANTAP_TRUSTED_HOSTS', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Content-Security-Policy
     |--------------------------------------------------------------------------
     |
