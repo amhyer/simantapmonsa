@@ -7,10 +7,12 @@ use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Services\AktivitasService;
 use App\Support\InitialPassword;
+use App\Support\SessionSecurity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class MassPasswordResetService
 {
@@ -121,11 +123,13 @@ class MassPasswordResetService
             $rolesLabel = implode(', ', (array) ($filters['peran'] ?? ['siswa']));
             $kelasLabel = trim((string) ($filters['kelas'] ?? '')) ?: 'semua';
 
-            DB::transaction(function () use ($targetIds, $now, $admin, $tenantId, $rolesLabel, $kelasLabel, $sisa, &$credentials, &$eksporUrl): void {
+            $processedUserIds = [];
+
+            DB::transaction(function () use ($targetIds, $now, $admin, $tenantId, $rolesLabel, $kelasLabel, $sisa, &$credentials, &$eksporUrl, &$processedUserIds): void {
                 User::forSchool()
                     ->whereIn('id', $targetIds)
                     ->orderBy('id')
-                    ->chunkById(50, function ($users) use (&$credentials, $now): void {
+                    ->chunkById(50, function ($users) use (&$credentials, &$processedUserIds, $now): void {
                         foreach ($users as $user) {
                             $plain = InitialPassword::generate();
                             $forceChange = $user->peran === 'siswa'
@@ -136,7 +140,10 @@ class MassPasswordResetService
                                 'kata_sandi' => Hash::make($plain),
                                 'force_password_change' => $forceChange,
                                 'sandi_awal_diterbitkan_at' => $now,
+                                'remember_token' => Str::random(60),
                             ])->save();
+
+                            $processedUserIds[] = (int) $user->id;
 
                             $credentials[] = [
                                 'nama' => (string) $user->nama_lengkap,
@@ -158,6 +165,10 @@ class MassPasswordResetService
                     ? $this->exporter->store((int) $admin->id, $tenantId, $credentials)
                     : null;
             });
+
+            foreach ($processedUserIds as $uid) {
+                SessionSecurity::invalidateUserSessions($uid);
+            }
 
             $pesan = 'Reset sandi massal selesai untuk '.count($credentials).' akun.';
             if ($sisa > 0) {

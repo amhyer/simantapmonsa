@@ -161,7 +161,7 @@ class TenantDataDeletionService
             'kehadiran_mapel' => ['guru_id'],
             'presensi_sesi_qr' => ['guru_id'],
             'jadwal_pelajaran' => ['guru_id'],
-            'pengajuan_izin_presensi' => ['orang_tua_id', 'diproses_oleh'],
+            'pengajuan_izin_presensi' => ['orang_tua_id', 'diperiksa_oleh'],
             'presensi_pegawai' => ['user_id'],
             'dapodik_import_logs' => ['user_id'],
             'dapodik_sync_logs' => ['user_id'],

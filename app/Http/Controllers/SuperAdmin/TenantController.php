@@ -16,6 +16,7 @@ use App\Services\SuperAdmin\TenantDataDeletionService;
 use App\Services\SuperAdmin\TenantSubscriptionService;
 use App\Services\Tenant\TenantQuotaService;
 use App\Support\SchoolLevel;
+use App\Support\SessionSecurity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -350,10 +351,20 @@ class TenantController extends Controller
     public function destroyExpiredTenants(Request $request)
     {
         $today = now()->toDateString();
-        $expiredTenants = Tenant::where(function ($q) use ($today) {
-            $q->whereNotNull('tgl_kedaluwarsa')
-                ->where('tgl_kedaluwarsa', '<', $today);
-        })->orWhere('aktif', false)->get();
+        $expiredTenants = Tenant::query()
+            ->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereNotNull('tgl_kedaluwarsa')
+                        ->where('tgl_kedaluwarsa', '<', $today);
+                })->orWhere('aktif', false);
+            })
+            ->get()
+            ->reject(function (Tenant $tenant) use ($today): bool {
+                $isExpired = $tenant->tgl_kedaluwarsa !== null && $tenant->tgl_kedaluwarsa->toDateString() < $today;
+
+                return ! $isExpired && $tenant->isPendingApproval();
+            })
+            ->values();
 
         if ($expiredTenants->isEmpty()) {
             return back()->with('info', 'Tidak ditemukan sekolah dengan status hosting kedaluwarsa atau nonaktif.');
@@ -692,9 +703,13 @@ class TenantController extends Controller
             'password_baru' => ['required', 'string', Password::defaults()],
         ]);
 
-        $admin->kata_sandi = Hash::make($validated['password_baru']);
-        $admin->force_password_change = false;
-        $admin->save();
+        $admin->forceFill([
+            'kata_sandi' => Hash::make($validated['password_baru']),
+            'force_password_change' => false,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        SessionSecurity::invalidateUserSessions((int) $admin->id);
 
         return back()->with('success', "Kata sandi admin sekolah '{$admin->nama_lengkap}' ({$admin->nama_pengguna}) berhasil direset!");
     }
@@ -712,13 +727,13 @@ class TenantController extends Controller
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
 
         $driver = DB::getDriverName();
+        // Jangan panggil `disableForeignKeyConstraints()` pada PostgreSQL:
+        // perintah `session_replication_role` membutuhkan hak superuser dan gagal
+        // pada user non-superuser (`simantap_app`).
         if ($driver !== 'pgsql') {
             Schema::disableForeignKeyConstraints();
         }
         DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
         try {
             $this->detachAndDeleteUserDependents([(int) $user->id]);
             $user->forceDelete();
@@ -727,7 +742,9 @@ class TenantController extends Controller
             DB::rollBack();
             throw $e;
         } finally {
-            Schema::enableForeignKeyConstraints();
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
+            }
         }
 
         return back()->with('success', "Akun pengguna '{$nama}' berhasil dihapus permanen dari sistem.");
@@ -763,9 +780,6 @@ class TenantController extends Controller
             Schema::disableForeignKeyConstraints();
         }
         DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
         try {
             $this->detachAndDeleteUserDependents($targetIds);
             $count = User::withoutGlobalScopes()
@@ -776,7 +790,9 @@ class TenantController extends Controller
             DB::rollBack();
             throw $e;
         } finally {
-            Schema::enableForeignKeyConstraints();
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
+            }
         }
 
         return back()->with('success', "Sebanyak {$count} akun pengguna berhasil dihapus permanen.");

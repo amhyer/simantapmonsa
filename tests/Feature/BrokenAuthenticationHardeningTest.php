@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
+use App\Services\Admin\MassPasswordResetService;
+use App\Services\Admin\UserAccountService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -213,5 +215,136 @@ class BrokenAuthenticationHardeningTest extends TestCase
             ->assertRedirect(route('login'));
 
         $this->assertGuest();
+    }
+
+    public function test_admin_reset_instan_toggle_nonaktif_dan_reset_massal_menginvalidasi_sesi_dan_remember_token(): void
+    {
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SD Sesi Admin',
+            'npsn' => '88776655',
+            'subdomain' => 'sd-sesi-admin',
+            'aktif' => true,
+        ]);
+
+        TenantContext::set($tenant->id);
+
+        $admin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'peran' => 'admin',
+            'aktif' => true,
+        ]);
+
+        $guru = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'peran' => 'guru',
+            'aktif' => true,
+            'remember_token' => 'token-guru-awal',
+        ]);
+
+        $siswa = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'peran' => 'siswa',
+            'aktif' => true,
+            'remember_token' => 'token-siswa-awal',
+        ]);
+
+        $accountService = app(UserAccountService::class);
+
+        // 1. Reset password instan oleh admin
+        $this->insertDbSession('sess-guru-instan', $guru->id);
+        $accountService->resetPasswordInstan($guru, $admin->id);
+        $this->assertDatabaseMissing('sessions', ['id' => 'sess-guru-instan']);
+        $this->assertNotSame('token-guru-awal', $guru->fresh()->remember_token);
+
+        // 2. Nonaktifkan akun oleh admin (toggleAktif)
+        $tokenSebelumNonaktif = $guru->fresh()->remember_token;
+        $this->insertDbSession('sess-guru-toggle', $guru->id);
+        $accountService->toggleAktif($guru->fresh());
+        $this->assertDatabaseMissing('sessions', ['id' => 'sess-guru-toggle']);
+        $this->assertNotSame($tokenSebelumNonaktif, $guru->fresh()->remember_token);
+
+        // 3. Reset massal password siswa oleh admin
+        $this->insertDbSession('sess-siswa-massal', $siswa->id);
+        app(MassPasswordResetService::class)->execute($admin, [
+            'peran' => ['siswa'],
+            'hanya_belum_login' => false,
+            'sertakan_sudah_diterbitkan' => true,
+        ]);
+        $this->assertDatabaseMissing('sessions', ['id' => 'sess-siswa-massal']);
+        $this->assertNotSame('token-siswa-awal', $siswa->fresh()->remember_token);
+    }
+
+    public function test_superadmin_reset_password_admin_sekolah_menginvalidasi_sesi_admin(): void
+    {
+        $superAdmin = User::factory()->create([
+            'peran' => 'super_admin',
+            'tenant_id' => null,
+            'aktif' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'nama_sekolah' => 'SD Reset Superadmin',
+            'npsn' => '77665544',
+            'subdomain' => 'sd-reset-sa',
+            'aktif' => true,
+        ]);
+
+        $schoolAdmin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'peran' => 'admin',
+            'aktif' => true,
+            'remember_token' => 'token-admin-sekolah-lama',
+        ]);
+
+        $this->insertDbSession('sess-admin-sekolah', $schoolAdmin->id);
+
+        $this->actingAs($superAdmin)
+            ->post(route('superadmin.tenants.reset-password', $tenant), [
+                'password_baru' => 'SandiAdminBaru#2026',
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('sessions', ['id' => 'sess-admin-sekolah']);
+        $this->assertNotSame('token-admin-sekolah-lama', $schoolAdmin->fresh()->remember_token);
+    }
+
+    public function test_artisan_tenant_dan_superadmin_menolak_email_duplikat_serta_subdomain_tercadang(): void
+    {
+        User::factory()->create([
+            'nama_pengguna' => 'operator.lama',
+            'email' => 'duplikat@simantap.id',
+            'tenant_id' => null,
+        ]);
+
+        $this->artisan('superadmin:create', [
+            '--user' => 'superadmin_baru',
+            '--name' => 'SA Baru',
+            '--email' => 'DUPLIKAT@simantap.id',
+            '--pass' => 'SuperAdmin#2026',
+        ])->assertExitCode(1);
+
+        $this->artisan('tenant:create', [
+            '--npsn' => '40319999',
+            '--nama' => 'SD Subdomain Tercadang',
+            '--subdomain' => 'admin',
+            '--jenjang' => 'SD',
+            '--admin-user' => 'admin_sd',
+            '--admin-nama' => 'Admin SD',
+            '--admin-email' => 'unik@sd.sch.id',
+            '--admin-pass' => 'Admin#2026',
+        ])->assertExitCode(1);
+
+        $this->artisan('tenant:create', [
+            '--npsn' => '40319998',
+            '--nama' => 'SD Email Duplikat',
+            '--subdomain' => 'sdujicli',
+            '--jenjang' => 'SD',
+            '--admin-user' => 'admin_sduji',
+            '--admin-nama' => 'Admin SD Uji',
+            '--admin-email' => 'duplikat@simantap.id',
+            '--admin-pass' => 'Admin#2026',
+        ])->assertExitCode(1);
     }
 }

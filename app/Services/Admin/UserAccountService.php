@@ -10,6 +10,7 @@ use App\Modules\Tenant\Contexts\TenantContext;
 use App\Modules\Tenant\Models\Tenant;
 use App\Services\AktivitasService;
 use App\Support\InitialPassword;
+use App\Support\SessionSecurity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -161,7 +162,10 @@ class UserAccountService
             $data['is_wali_kelas'] = null;
         }
 
-        if (! empty($validated['kata_sandi'])) {
+        $passwordChanged = ! empty($validated['kata_sandi']);
+        $deactivated = ! (bool) $data['aktif'];
+
+        if ($passwordChanged) {
             $data['kata_sandi'] = Hash::make($validated['kata_sandi']);
 
             if ($user->id !== $actorId) {
@@ -170,6 +174,14 @@ class UserAccountService
         }
 
         $user->update($data);
+
+        if ($passwordChanged || $deactivated) {
+            $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
+            $exceptSession = ($passwordChanged && ! $deactivated && $user->id === $actorId && session()->isStarted())
+                ? session()->getId()
+                : null;
+            SessionSecurity::invalidateUserSessions((int) $user->id, $exceptSession);
+        }
 
         AktivitasService::ubah(
             'Ubah Akun: '.$user->nama_lengkap,
@@ -196,11 +208,15 @@ class UserAccountService
     {
         $nama = $user->nama_lengkap;
         $peran = $user->peran;
+        $userId = (int) $user->id;
 
         DB::transaction(function () use ($user) {
+            $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
             $this->deleteUserRelations($user);
             $user->delete();
         });
+
+        SessionSecurity::invalidateUserSessions($userId);
 
         AktivitasService::hapus(
             'Hapus Akun: '.$nama,
@@ -223,12 +239,19 @@ class UserAccountService
             return 0;
         }
 
+        $deletedIds = $users->pluck('id')->map(fn ($id) => (int) $id)->all();
+
         DB::transaction(function () use ($users) {
             foreach ($users as $user) {
+                $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
                 $this->deleteUserRelations($user);
                 $user->delete();
             }
         });
+
+        foreach ($deletedIds as $deletedId) {
+            SessionSecurity::invalidateUserSessions($deletedId);
+        }
 
         $label = self::ROLE_LABELS[$peran] ?? $peran;
         AktivitasService::hapus(
@@ -254,7 +277,13 @@ class UserAccountService
             'kata_sandi' => Hash::make($passwordBaru),
             'force_password_change' => $forceChange,
             'sandi_awal_diterbitkan_at' => now(),
+            'remember_token' => Str::random(60),
         ])->save();
+
+        $exceptSession = ($user->id === $actorId && session()->isStarted())
+            ? session()->getId()
+            : null;
+        SessionSecurity::invalidateUserSessions((int) $user->id, $exceptSession);
 
         AktivitasService::ubah(
             'Reset Sandi Instan: '.$user->nama_lengkap,
@@ -276,6 +305,11 @@ class UserAccountService
     {
         $statusBaru = ! $user->aktif;
         $user->update(['aktif' => $statusBaru]);
+
+        if (! $statusBaru) {
+            $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
+            SessionSecurity::invalidateUserSessions((int) $user->id);
+        }
 
         $labelAksi = $statusBaru ? 'Aktifkan' : 'Non-aktifkan';
         AktivitasService::ubah(
