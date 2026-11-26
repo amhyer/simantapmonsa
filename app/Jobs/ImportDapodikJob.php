@@ -75,19 +75,33 @@ class ImportDapodikJob implements ShouldQueue
         $dilewati = 0;
         $errors = [];
 
+        $quotaService = app(TenantQuotaService::class);
+        $quotaSnapshot = null;
+        if ($this->tenantId !== null) {
+            $tenantModel = Tenant::find($this->tenantId);
+            if ($tenantModel !== null) {
+                $quotaSnapshot = $quotaService->studentQuotaStatus($this->tenantId, $tenantModel);
+            }
+        }
+
         $rows = $this->data['siswa'] ?? [];
         foreach (array_chunk($rows, 50) as $chunkIndex => $chunk) {
             try {
-                DB::transaction(function () use ($chunk, $chunkIndex, &$berhasil, &$gagal, &$diperbarui, &$dilewati, &$errors) {
+                DB::transaction(function () use ($chunk, $chunkIndex, $quotaService, &$quotaSnapshot, &$berhasil, &$gagal, &$diperbarui, &$dilewati, &$errors) {
                     foreach ($chunk as $i => $s) {
                         $baris = $chunkIndex * 50 + $i + 1;
                         try {
                             // Savepoint per baris: pada PostgreSQL satu baris yang gagal
                             // membuat seluruh transaksi "aborted" bila tidak di-rollback,
                             // sehingga baris berikutnya ikut gagal dengan SQLSTATE 25P02.
-                            $hasil = DB::transaction(fn () => $this->importSiswaRow($s));
+                            $hasil = DB::transaction(fn () => $this->importSiswaRow($s, $quotaService, $quotaSnapshot));
                             if ($hasil === 'baru') {
                                 $berhasil++;
+                                if ($quotaSnapshot !== null) {
+                                    $quotaSnapshot['used']++;
+                                    $quotaSnapshot['remaining'] = max(0, $quotaSnapshot['limit'] - $quotaSnapshot['used']);
+                                    $quotaSnapshot['exceeded'] = $quotaSnapshot['used'] >= $quotaSnapshot['limit'];
+                                }
                             } elseif ($hasil === 'update') {
                                 $diperbarui++;
                             } else {
@@ -102,6 +116,9 @@ class ImportDapodikJob implements ShouldQueue
                 });
             } catch (\Throwable $e) {
                 Log::error('Gagal commit chunk import dapodik: '.$e->getMessage());
+                if ($this->tenantId !== null && $quotaSnapshot !== null) {
+                    $quotaSnapshot = $quotaService->studentQuotaStatus($this->tenantId);
+                }
             }
         }
 
@@ -160,9 +177,10 @@ class ImportDapodikJob implements ShouldQueue
      * Impor satu baris siswa di dalam savepoint agar kegagalan satu baris
      * tidak membatalkan transaksi PostgreSQL untuk baris lain.
      *
+     * @param  array{used: int, limit: int, remaining: int, percent: float, exceeded: bool}|null  $quotaSnapshot
      * @return string 'baru'|'update'|'lewat'
      */
-    private function importSiswaRow(array $s): string
+    private function importSiswaRow(array $s, ?TenantQuotaService $quotaService = null, ?array $quotaSnapshot = null): string
     {
         $existing = null;
         if (! empty($s['dapodik_id'])) {
@@ -227,7 +245,8 @@ class ImportDapodikJob implements ShouldQueue
             $status = 'update';
         } else {
             if ($this->tenantId !== null) {
-                app(TenantQuotaService::class)->assertCanAddStudents($this->tenantId, 1, 'siswa');
+                ($quotaService ?? app(TenantQuotaService::class))
+                    ->assertCanAddStudents($this->tenantId, 1, 'siswa', $quotaSnapshot);
             }
             $existing = Siswa::create(array_merge($siswaData, [
                 'uuid' => Str::uuid(),

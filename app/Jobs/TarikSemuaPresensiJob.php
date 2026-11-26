@@ -22,8 +22,11 @@ class TarikSemuaPresensiJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    /** Batas waktu lock: 10 menit, sama dengan TTL lock di controller. */
+    /** Batas waktu lock antrean dispatch: 10 menit. */
     public const KUNCI_LOCK = 'presensi-tarik-semua';
+
+    /** Lock eksekusi worker agar job tidak pernah berjalan ganda secara paralel. */
+    public const KUNCI_LOCK_EKSEKUSI = 'presensi-tarik-semua:running';
 
     public const TTL_LOCK = 600;
 
@@ -32,6 +35,13 @@ class TarikSemuaPresensiJob implements ShouldQueue
         $scope = tenantCacheScope($tenantId);
 
         return $scope === 'single' ? self::KUNCI_LOCK : self::KUNCI_LOCK.':'.$scope;
+    }
+
+    public static function executionLockKey(?int $tenantId = null): string
+    {
+        $scope = tenantCacheScope($tenantId);
+
+        return $scope === 'single' ? self::KUNCI_LOCK_EKSEKUSI : self::KUNCI_LOCK_EKSEKUSI.':'.$scope;
     }
 
     protected ?int $userId;
@@ -55,6 +65,13 @@ class TarikSemuaPresensiJob implements ShouldQueue
         PresensiMesinService $presensi,
         PresensiMesinPullService $pull,
     ): void {
+        $executionLock = Cache::lock(self::executionLockKey($this->tenantId), self::TTL_LOCK);
+        if (! $executionLock->get()) {
+            Log::warning('Tarik semua presensi dilewati: eksekusi worker lain masih berjalan untuk sekolah ini.');
+
+            return;
+        }
+
         try {
             $user = $this->penggunaValid();
 
@@ -68,8 +85,9 @@ class TarikSemuaPresensiJob implements ShouldQueue
                 $this->tarik($reader, $presensi, $pull, $user);
             });
         } finally {
-            // Lock dilepas di sini, bukan menunggu TTL 10 menit, agar admin bisa
-            // mengulang penarikan segera setelah proses ini selesai/gagal.
+            $executionLock->release();
+            // Lock dispatch juga dilepas di sini (bukan menunggu TTL 10 menit)
+            // agar admin bisa mengulang penarikan segera setelah proses ini selesai/gagal.
             Cache::lock(self::lockKey($this->tenantId))->forceRelease();
         }
     }

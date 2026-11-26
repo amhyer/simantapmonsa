@@ -39,7 +39,10 @@ class ForgotPasswordController extends Controller
                 ->where('aktif', true)
                 ->whereNull('archived_at')
                 ->where(function ($query) use ($login, $loginLower) {
+                    // Cocokkan kolom `email` langsung lebih dulu agar btree index
+                    // dipakai penuh; LOWER(email) tetap mendukung data historis campuran huruf.
                     $query->where('nama_pengguna', $login)
+                        ->orWhere('email', $loginLower)
                         ->orWhereRaw('LOWER(email) = ?', [$loginLower]);
                 })
                 ->first();
@@ -49,6 +52,7 @@ class ForgotPasswordController extends Controller
                 ->whereNull('archived_at')
                 ->where(function ($query) use ($login, $loginLower) {
                     $query->where('nama_pengguna', $login)
+                        ->orWhere('email', $loginLower)
                         ->orWhereRaw('LOWER(email) = ?', [$loginLower]);
                 })
                 ->get();
