@@ -455,7 +455,7 @@ class IdentityCardService
             'unit' => $jabatan,
             'info_tambahan_label' => 'Peran Sistem',
             'info_tambahan' => $peranLabel,
-            'foto_url' => $user->foto ? asset('storage/'.ltrim($user->foto, '/')) : null,
+            'foto_url' => $user->fotoUrl(),
             'inisial' => mb_strtoupper(mb_substr((string) $user->nama_lengkap, 0, 2)),
             'kode_kartu' => 'PEG-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT)
                 .((int) $user->qr_card_version > 0 ? '-V'.$user->qr_card_version : '-EXT'),

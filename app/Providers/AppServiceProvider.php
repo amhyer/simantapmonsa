@@ -27,6 +27,7 @@ use App\Policies\CbtQuestionBankPolicy;
 use App\Policies\CbtQuestionPolicy;
 use App\Policies\CbtResultPolicy;
 use App\Policies\CbtTestSessionPolicy;
+use App\Policies\PegawaiFotoPolicy;
 use App\Policies\PembelajaranMendalamPolicy;
 use App\Policies\SiswaFotoPolicy;
 use App\Policies\TkaAssessmentPolicy;
@@ -100,6 +101,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(CbtQuestion::class, CbtQuestionPolicy::class);
         Gate::policy(CbtTestSession::class, CbtTestSessionPolicy::class);
         Gate::policy(Siswa::class, SiswaFotoPolicy::class);
+        Gate::define('view-pegawai-foto', [PegawaiFotoPolicy::class, 'viewFoto']);
         Gate::policy(CbtResult::class, CbtResultPolicy::class);
         Gate::policy(Session::class, TryoutSessionPolicy::class);
         Gate::policy(Result::class, TryoutResultPolicy::class);

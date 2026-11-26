@@ -73,6 +73,7 @@ use App\Http\Controllers\Guru\TKAController;
 use App\Http\Controllers\Guru\TkaInovasiController;
 use App\Http\Controllers\Guru\WaliKelasController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Media\PegawaiFotoController;
 use App\Http\Controllers\Media\SiswaFotoController;
 use App\Http\Controllers\Pegawai\PresensiController;
 use App\Http\Controllers\Security\CspReportController;
@@ -147,6 +148,10 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('throttle
 Route::get('/media/siswa/{siswa:uuid}/foto', [SiswaFotoController::class, 'show'])
     ->middleware(['auth', 'school.context'])
     ->name('media.siswa.foto');
+
+Route::get('/media/pegawai/{user:uuid}/foto', [PegawaiFotoController::class, 'show'])
+    ->middleware(['auth', 'school.context'])
+    ->name('media.pegawai.foto');
 
 // Force Password Change
 Route::middleware(['auth'])->group(function () {

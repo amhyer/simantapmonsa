@@ -155,6 +155,16 @@ class User extends Authenticatable
         return in_array($this->peran, $enforced, true);
     }
 
+    public function fotoUrl(): ?string
+    {
+        $path = trim((string) ($this->foto ?? ''));
+        if ($path === '' || empty($this->uuid)) {
+            return null;
+        }
+
+        return route('media.pegawai.foto', ['user' => $this->uuid]);
+    }
+
     public function siswa()
     {
         return $this->hasMany(Siswa::class, 'guru_id');
