@@ -52,10 +52,44 @@ class SchoolLookupTest extends TestCase
                 'jenjang' => 'SD',
                 'status' => 'NEGERI',
                 'kepala_sekolah' => 'ANDI WINDAYANI',
+                'jabatan_kepala_sekolah' => 'Kepala Sekolah',
+                'jabatan_operator' => 'Operator Sekolah (OPS)',
                 'email' => 'sdnungmongisidi1@gmail.com',
                 'telepon' => '04118918116',
             ],
         ]);
+    }
+
+    public function test_lookup_sekolah_otomatis_menarik_token_baca_dapo_env_js_bila_dapodik_token_kosong(): void
+    {
+        config(['dapodik.token' => null]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://dapo.kemendikdasmen.go.id/env.js' => Http::response(
+                'window.__env__ = { VITE_API_TOKEN: "6d04941d7990b3b5270fe4a2d48dbe2a2eea962ebc7dce8d5b18d9a5017fec43" };',
+                200
+            ),
+            'https://dapo.kemendikdasmen.go.id/api/detail-sekolah*' => Http::response([
+                'data' => [[
+                    'nama' => 'SDN Uji Kepsek Otomatis',
+                    'bentuk_pendidikan' => 'SD',
+                    'status_sekolah' => 'Negeri',
+                    'alamat_jalan' => 'Jl. Pendidikan No. 1',
+                    'nama_kepsek' => 'Plt. BUDI SANTOSO, S.Pd.',
+                    'nama_operator' => 'SITI AMINAH',
+                ]],
+            ], 200),
+            'https://referensi.data.kemendikdasmen.go.id/satpen/detail/*' => Http::response('', 404),
+        ]);
+
+        $response = $this->postJson('/api/sekolah/lookup', ['npsn' => '40313999']);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.kepala_sekolah', 'BUDI SANTOSO, S.Pd.')
+            ->assertJsonPath('data.jabatan_kepala_sekolah', 'Plt. Kepala Sekolah')
+            ->assertJsonPath('data.operator', 'SITI AMINAH')
+            ->assertJsonPath('data.jabatan_operator', 'Operator Sekolah (OPS)');
     }
 
     public function test_lookup_sekolah_mengembalikan_429_pada_permintaan_ke_11_dalam_satu_menit(): void

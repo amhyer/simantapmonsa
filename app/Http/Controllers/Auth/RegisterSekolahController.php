@@ -59,6 +59,7 @@ class RegisterSekolahController extends Controller
             ],
             'jenjang' => 'required|in:SD,MI,SMP,MTs,SMA,MA,SMK,SLB',
             'kepala_sekolah' => 'required|string|max:255',
+            'jabatan_kepala_sekolah' => 'nullable|string|max:100',
             'subdomain' => [
                 'required',
                 'string',
@@ -73,6 +74,7 @@ class RegisterSekolahController extends Controller
 
             // Akun Operator Sekolah (Administrator)
             'nama_lengkap' => 'required|string|max:255',
+            'jabatan_operator' => 'nullable|string|max:100',
             'nama_pengguna' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_\-\.]+$/', Rule::unique('users', 'nama_pengguna')->whereNull('tenant_id')],
             'email' => 'required|email|max:255|unique:users,email',
             'telepon' => 'nullable|string|max:20',
@@ -131,6 +133,9 @@ class RegisterSekolahController extends Controller
                     'jenjang' => $validated['jenjang'],
                     'kota' => $validated['kota'] ?? null,
                     'kepala_sekolah' => $validated['kepala_sekolah'],
+                    'jabatan_kepala_sekolah' => $validated['jabatan_kepala_sekolah'] ?? 'Kepala Sekolah',
+                    'operator_sekolah' => $validated['nama_lengkap'],
+                    'jabatan_operator' => $validated['jabatan_operator'] ?? 'Operator Sekolah (OPS)',
                     'registered_at' => now()->toIso8601String(),
                     'approval_status' => $autoAktif ? 'approved' : 'pending',
                     'is_trial' => $trialDays > 0,
@@ -171,6 +176,11 @@ class RegisterSekolahController extends Controller
                 'email' => $validated['email'],
                 'telepon' => $validated['telepon'] ?? null,
                 'status' => 'aktif',
+                'pengaturan' => [
+                    'jabatan_kepala_sekolah' => $validated['jabatan_kepala_sekolah'] ?? 'Kepala Sekolah',
+                    'nama_operator' => $validated['nama_lengkap'],
+                    'jabatan_operator' => $validated['jabatan_operator'] ?? 'Operator Sekolah (OPS)',
+                ],
             ]);
 
             return [$tenant, $admin];

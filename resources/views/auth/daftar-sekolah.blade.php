@@ -244,11 +244,21 @@
                            onkeyup="autoSlugSubdomain(this.value)">
                 </div>
 
-                <div class="form-group col-span-2">
+                <div class="form-group">
                     <label for="kepala_sekolah">Nama Kepala Sekolah <span class="req">*</span></label>
                     <input type="text" id="kepala_sekolah" name="kepala_sekolah" class="form-control"
                            value="{{ old('kepala_sekolah') }}" required placeholder="Contoh: Hj. Rosmiati, S.Pd., M.Pd.">
-                    <div class="hint">Nama Kepala Sekolah definitif / Plt. sesuai SK resmi Kemendikdasmen (terisi otomatis bila terdaftar di pangkalan data).</div>
+                    <div class="hint">Nama Kepala Sekolah sesuai data resmi Kemendikdasmen (terisi otomatis bila terdaftar).</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="jabatan_kepala_sekolah">Jabatan Kepala Sekolah</label>
+                    <select id="jabatan_kepala_sekolah" name="jabatan_kepala_sekolah" class="form-control">
+                        <option value="Kepala Sekolah" {{ old('jabatan_kepala_sekolah', 'Kepala Sekolah') === 'Kepala Sekolah' ? 'selected' : '' }}>Kepala Sekolah (Definitif)</option>
+                        <option value="Plt. Kepala Sekolah" {{ old('jabatan_kepala_sekolah') === 'Plt. Kepala Sekolah' ? 'selected' : '' }}>Plt. Kepala Sekolah</option>
+                        <option value="Pjs. Kepala Sekolah" {{ old('jabatan_kepala_sekolah') === 'Pjs. Kepala Sekolah' ? 'selected' : '' }}>Pjs. Kepala Sekolah</option>
+                    </select>
+                    <div class="hint">Status jabatan pimpinan satuan pendidikan.</div>
                 </div>
 
                 <div class="form-group">
@@ -296,11 +306,18 @@
             </div>
 
             <div class="form-grid">
-                <div class="form-group col-span-2">
-                    <label for="nama_lengkap">Nama Lengkap Operator Sekolah <span class="req">*</span></label>
+                <div class="form-group">
+                    <label for="nama_lengkap">Nama Lengkap Operator Sekolah (OPS) <span class="req">*</span></label>
                     <input type="text" id="nama_lengkap" name="nama_lengkap" class="form-control"
                            value="{{ old('nama_lengkap') }}" required placeholder="Contoh: Muhammad Akbar, S.Kom">
-                    <div class="hint">Operator sekolah bertindak sebagai Administrator utama (Admin) yang mengelola sistem, data sekolah, dan integrasi Dapodik.</div>
+                    <div class="hint">Operator sekolah bertindak sebagai Administrator utama yang mengelola sistem & Dapodik.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="jabatan_operator">Jabatan Operator / Admin</label>
+                    <input type="text" id="jabatan_operator" name="jabatan_operator" class="form-control"
+                           value="{{ old('jabatan_operator', 'Operator Sekolah (OPS)') }}" placeholder="Contoh: Operator Sekolah (OPS)">
+                    <div class="hint">Jabatan penanggung jawab operator Dapodik / sistem sekolah.</div>
                 </div>
 
                 <div class="form-group">
@@ -392,6 +409,23 @@
                     if (data.kepala_sekolah) {
                         document.getElementById('kepala_sekolah').value = data.kepala_sekolah;
                     }
+                    if (data.jabatan_kepala_sekolah) {
+                        const jabKepsekEl = document.getElementById('jabatan_kepala_sekolah');
+                        if (jabKepsekEl) {
+                            for (let opt of jabKepsekEl.options) {
+                                if (opt.value.toLowerCase() === data.jabatan_kepala_sekolah.toLowerCase()) {
+                                    jabKepsekEl.value = opt.value;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (data.jabatan_operator) {
+                        const jabOpsEl = document.getElementById('jabatan_operator');
+                        if (jabOpsEl) {
+                            jabOpsEl.value = data.jabatan_operator;
+                        }
+                    }
                     if (data.operator) {
                         const namaLengkapEl = document.getElementById('nama_lengkap');
                         namaLengkapEl.value = data.operator;
@@ -406,6 +440,12 @@
                                 slugUser = 'operator_' + (data.npsn || 'sekolah');
                             }
                             usernameEl.value = slugUser;
+                            usernameEl.dataset.auto = 'true';
+                        }
+                    } else {
+                        const usernameEl = document.getElementById('nama_pengguna');
+                        if (!usernameEl.value || usernameEl.dataset.auto) {
+                            usernameEl.value = 'ops_' + (data.npsn || npsn);
                             usernameEl.dataset.auto = 'true';
                         }
                     }
@@ -453,8 +493,16 @@
 
                     let rincian = [];
                     if (data.nama_sekolah) rincian.push('<b>Sekolah:</b> ' + data.nama_sekolah);
-                    if (data.kepala_sekolah) rincian.push('<b>Kepala Sekolah:</b> ' + data.kepala_sekolah);
-                    if (data.operator) rincian.push('<b>Operator:</b> ' + data.operator);
+                    if (data.kepala_sekolah) {
+                        const jab = data.jabatan_kepala_sekolah ? ' (' + data.jabatan_kepala_sekolah + ')' : '';
+                        rincian.push('<b>Kepala Sekolah:</b> ' + data.kepala_sekolah + jab);
+                    }
+                    if (data.operator) {
+                        const jabOp = data.jabatan_operator ? ' (' + data.jabatan_operator + ')' : '';
+                        rincian.push('<b>OPS:</b> ' + data.operator + jabOp);
+                    } else if (data.jabatan_operator) {
+                        rincian.push('<b>Jabatan Admin:</b> ' + data.jabatan_operator);
+                    }
 
                     statusEl.innerHTML = '✓ <b>Data Resmi Kemendikdasmen RI Berhasil Ditarik:</b><br>' +
                                          rincian.join(' &nbsp;•&nbsp; ') +
