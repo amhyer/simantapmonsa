@@ -79,6 +79,20 @@ class Siswa extends Model
         ];
     }
 
+    public function getKelasAttribute(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        if (preg_match('/^kelas\s+(.+)$/i', $trimmed, $m)) {
+            return trim($m[1]);
+        }
+
+        return $trimmed;
+    }
+
     protected static function boot(): void
     {
         parent::boot();

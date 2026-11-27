@@ -182,13 +182,26 @@ if (! function_exists('sidebarRouteActive')) {
         if (str_ends_with($route, '.index') || str_ends_with($route, '.show')) {
             $prefix = substr($route, 0, strrpos($route, '.'));
 
+            if ($route === 'siswa.tka-simulasi.index') {
+                return request()->routeIs(
+                    'siswa.tka-simulasi.confirm',
+                    'siswa.tka-simulasi.exam',
+                    'siswa.tka-simulasi.result',
+                    'siswa.tka-simulasi.adaptif.*'
+                );
+            }
+
             return request()->routeIs(
                 $prefix.'.show',
                 $prefix.'.detail',
                 $prefix.'.edit',
                 $prefix.'.create',
                 $prefix.'.pertemuan',
-                $prefix.'.tugas.*'
+                $prefix.'.tugas.*',
+                $prefix.'.start',
+                $prefix.'.result',
+                $prefix.'.confirm',
+                $prefix.'.exam'
             );
         }
 

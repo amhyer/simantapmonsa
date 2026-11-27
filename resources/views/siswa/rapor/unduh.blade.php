@@ -48,8 +48,8 @@
                         <span class="tag tag-violet">{{ $jmlMapel }} mapel tercatat</span>
                     </div>
                     <a href="{{ route('siswa.rapor.cetak.akademik', ['semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}"
-                       target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;background:var(--violet,#6D28D9);border-color:var(--violet,#6D28D9)">
-                        <i class="fas fa-print"></i> Buka & Download Rapor Akademik
+                       target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;text-align:center;white-space:normal;line-height:1.35;background:var(--violet,#6D28D9);border-color:var(--violet,#6D28D9)">
+                        <i class="fas fa-print"></i> Download Rapor Akademik
                     </a>
                 </div>
             </div>
@@ -67,8 +67,8 @@
                         <span class="tag tag-ok">{{ $jmlP5 }} capaian P5</span>
                     </div>
                     <a href="{{ route('siswa.rapor.cetak.p5', ['semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}"
-                       target="_blank" class="btn btn-primary" style="width:100%;justify-content:center">
-                        <i class="fas fa-print"></i> Buka & Download Rapor P5
+                       target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;text-align:center;white-space:normal;line-height:1.35">
+                        <i class="fas fa-print"></i> Download Rapor P5
                     </a>
                 </div>
             </div>
@@ -86,8 +86,8 @@
                         <span class="tag tag-gold">NISN: {{ $siswa->nisn ?? $siswa->nis ?? '-' }}</span>
                     </div>
                     <a href="{{ route('siswa.rapor.cetak.pelengkap') }}"
-                       target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center;border:1px solid var(--line)">
-                        <i class="fas fa-file-alt"></i> Buka & Cetak Pelengkap Rapor
+                       target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center;text-align:center;white-space:normal;line-height:1.35;border:1px solid var(--line)">
+                        <i class="fas fa-file-alt"></i> Cetak Pelengkap Rapor
                     </a>
                 </div>
             </div>
