@@ -27,6 +27,7 @@ class StrukturKodeTest extends TestCase
         'app/Services/Tka/TkaCognitiveAnalyticsService.php' => 1100,
         'app/Http/Controllers/Admin/PresensiLaporanController.php' => 1025,
         'app/Http/Controllers/Admin/DataReferensiController.php' => 825,
+        'app/Http/Controllers/SuperAdmin/TenantController.php' => 825,
     ];
 
     private function baris(string $path): int
