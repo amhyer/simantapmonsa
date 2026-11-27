@@ -31,6 +31,8 @@ class SchoolDataService
                 'operator' => '',
                 'email' => '',
                 'telepon' => '',
+                'kelurahan' => '',
+                'kodepos' => '',
                 'updated_at' => now()->toIso8601String(),
                 'source' => 'Kemendikdasmen RI',
             ];
@@ -38,7 +40,15 @@ class SchoolDataService
             $foundOfficial = false;
 
             // 1. Portal Resmi Dapodik Kemendikdasmen RI (Tarik Kepala Sekolah & Identitas Utama)
+            // Token kosong tidak boleh menghentikan pencarian: sumber publik di
+            // bawah (referensi & open data) tetap dicoba. Error token baru
+            // dilempar di akhir bila semua sumber tidak menemukan apa pun.
+            $tokenMissing = trim((string) config('dapodik.token', '')) === '';
+
             try {
+                if ($tokenMissing) {
+                    throw new DapodikTokenMissingException('Token Dapodik belum dikonfigurasi.');
+                }
                 $token = $this->getDapodikToken();
                 $response = Http::timeout(6)
                     ->withHeaders([
@@ -67,43 +77,35 @@ class SchoolDataService
                     }
                 }
             } catch (DapodikTokenMissingException $e) {
-                throw $e;
+                Log::info('Lookup NPSN: token Dapodik kosong, memakai sumber publik.');
             } catch (\Exception $e) {
                 Log::info('Dapodik Kemendikdasmen API timeout atau gagal: '.$e->getMessage());
             }
 
-            // 2. Data Referensi Kemendikdasmen (Tarik Operator Sekolah & Kontak)
+            // 2. Portal Data Referensi Kemendikdasmen (halaman publik, tanpa token):
+            //    /satpen/detail/{npsn} memuat identitas, alamat, kontak, dan koordinat.
             try {
-                $response = Http::timeout(6)
+                $response = Http::timeout(8)
                     ->withHeaders([
                         'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                     ])
-                    ->get("https://referensi.data.kemendikdasmen.go.id/pendidikan/npsn/{$npsn}");
+                    ->get("https://referensi.data.kemendikdasmen.go.id/satpen/detail/{$npsn}");
 
                 if ($response->successful()) {
-                    $html = $response->body();
-                    if (preg_match('/Operator\s*<\/td>\s*<td[^>]*>:\s*<\/td>\s*<td[^>]*>(.*?)<\/td>/is', $html, $m)) {
-                        $data['operator'] = trim(strip_tags($m[1]));
-                    }
-                    if (preg_match('/Email\s*<\/td>\s*<td[^>]*>:\s*<\/td>\s*<td[^>]*>(.*?)<\/td>/is', $html, $m)) {
-                        $cleanEmail = trim(strip_tags($m[1]));
-                        if (filter_var($cleanEmail, FILTER_VALIDATE_EMAIL)) {
-                            $data['email'] = $cleanEmail;
+                    $ref = $this->parseReferensiDetail($response->body(), $npsn);
+                    if ($ref !== null) {
+                        // Data referensi menjadi dasar; kepala sekolah dari Dapodik (jika ada) dipertahankan.
+                        foreach ($ref as $key => $value) {
+                            if ($value !== '' && ($data[$key] === '' || in_array($key, ['email', 'telepon', 'kodepos', 'kelurahan'], true))) {
+                                $data[$key] = $value;
+                            }
                         }
-                    }
-                    if (preg_match('/Telepon\s*<\/td>\s*<td[^>]*>:\s*<\/td>\s*<td[^>]*>(.*?)<\/td>/is', $html, $m)) {
-                        $telp = trim(strip_tags($m[1]));
-                        if ($telp !== '-' && ! empty($telp)) {
-                            $data['telepon'] = $telp;
-                        }
-                    }
-                    if (empty($data['nama_sekolah']) && preg_match('/Nama\s*<\/td>\s*<td[^>]*>:\s*<\/td>\s*<td[^>]*>(.*?)<\/td>/is', $html, $m)) {
-                        $data['nama_sekolah'] = trim(strip_tags($m[1]));
+                        $data['jenjang'] = $ref['jenjang'] ?: $data['jenjang'];
                         $foundOfficial = true;
                     }
                 }
             } catch (\Exception $e) {
-                Log::info('Referensi Kemendikdasmen scrap timeout atau gagal: '.$e->getMessage());
+                Log::info('Referensi Kemendikdasmen gagal: '.$e->getMessage());
             }
 
             if ($foundOfficial && ! empty($data['nama_sekolah'])) {
@@ -170,8 +172,52 @@ class SchoolDataService
                 ];
             }
 
+            if ($tokenMissing) {
+                throw new DapodikTokenMissingException('Token Dapodik belum dikonfigurasi.');
+            }
+
             return null;
         });
+    }
+
+    /**
+     * Parse halaman publik /satpen/detail/{npsn} (blok .detail-row label/value).
+     * Mengembalikan null bila halaman tidak memuat data sekolah untuk NPSN tsb.
+     */
+    private function parseReferensiDetail(string $html, string $npsn): ?array
+    {
+        if (! preg_match_all('/<div class="detail-row">\s*<div class="detail-label">(.*?)<\/div>\s*<div class="detail-value">(.*?)<\/div>/is', $html, $rows, PREG_SET_ORDER)) {
+            return null;
+        }
+
+        $f = [];
+        foreach ($rows as $row) {
+            $label = strtolower(trim(html_entity_decode(strip_tags($row[1]))));
+            $value = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($row[2]))));
+            $value = trim(str_replace('↗', '', $value));
+            $f[$label] = $value === '-' ? '' : $value;
+        }
+
+        $nama = $f['nama'] ?? '';
+        if ($nama === '' || preg_replace('/\D/', '', $f['npsn'] ?? '') !== $npsn) {
+            return null;
+        }
+
+        $email = $f['email'] ?? '';
+
+        return [
+            'nama_sekolah' => $nama,
+            'jenjang' => strtoupper($f['bentuk pendidikan'] ?? ''),
+            'status' => $this->normalizeStatus($f['status sekolah'] ?? ''),
+            'alamat' => $f['alamat'] ?? '',
+            'kelurahan' => $f['desa/kelurahan'] ?? '',
+            'kecamatan' => $f['kecamatan'] ?? '',
+            'kabupaten' => $f['kabupaten/kota'] ?? '',
+            'provinsi' => $f['provinsi'] ?? '',
+            'kodepos' => $f['kode pos'] ?? '',
+            'email' => filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '',
+            'telepon' => $f['telepon'] ?? '',
+        ];
     }
 
     private function getDapodikToken(): string

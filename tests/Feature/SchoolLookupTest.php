@@ -30,8 +30,11 @@ class SchoolLookupTest extends TestCase
                     ],
                 ],
             ], 200),
-            'https://referensi.data.kemendikdasmen.go.id/pendidikan/npsn/*' => Http::response(
-                '<tr><td>Operator</td><td>:</td><td>AMIRULLAH</td></tr><tr><td>Email</td><td>:</td><td>sdnungmongisidi1@gmail.com</td></tr><tr><td>Telepon</td><td>:</td><td>04118918116</td></tr>',
+            'https://referensi.data.kemendikdasmen.go.id/satpen/detail/*' => Http::response(
+                '<div class="detail-row"><div class="detail-label">Nama</div><div class="detail-value">UPT SPF SD NEGERI UNGGULAN MONGISIDI 1</div></div>'
+                .'<div class="detail-row"><div class="detail-label">NPSN</div><div class="detail-value">40313912 <a href="#">↗</a></div></div>'
+                .'<div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">sdnungmongisidi1@gmail.com</div></div>'
+                .'<div class="detail-row"><div class="detail-label">Telepon</div><div class="detail-value">04118918116</div></div>',
                 200
             ),
         ]);
@@ -49,7 +52,6 @@ class SchoolLookupTest extends TestCase
                 'jenjang' => 'SD',
                 'status' => 'NEGERI',
                 'kepala_sekolah' => 'ANDI WINDAYANI',
-                'operator' => 'AMIRULLAH',
                 'email' => 'sdnungmongisidi1@gmail.com',
                 'telepon' => '04118918116',
             ],

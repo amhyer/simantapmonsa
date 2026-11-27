@@ -435,8 +435,14 @@
                     }
                     if (data.alamat) {
                         let fullAlamat = data.alamat;
+                        if (data.kelurahan && !fullAlamat.toLowerCase().includes(data.kelurahan.toLowerCase())) {
+                            fullAlamat += ', Kel. ' + data.kelurahan;
+                        }
                         if (data.kecamatan && !fullAlamat.toLowerCase().includes(data.kecamatan.toLowerCase())) {
-                            fullAlamat += ', Kec. ' + data.kecamatan;
+                            fullAlamat += ', ' + (/^kec\./i.test(data.kecamatan) ? '' : 'Kec. ') + data.kecamatan;
+                        }
+                        if (data.kodepos) {
+                            fullAlamat += ' ' + data.kodepos;
                         }
                         document.getElementById('alamat').value = fullAlamat;
                     }
