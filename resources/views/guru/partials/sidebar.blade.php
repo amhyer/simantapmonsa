@@ -1,4 +1,4 @@
-@php
+﻿@php
     $adalahWaliKelas = guruAdalahWaliKelas();
     $menuGuru = [
         ['label' => 'MENU UTAMA', 'items' => [
@@ -6,23 +6,27 @@
         ]],
         ['label' => 'PEMBELAJARAN', 'items' => [
             ['route' => 'guru.kelas-digital.index', 'icon' => 'lucide-school', 'label' => 'Kelas Digital'],
-            ['label' => 'Pembelajaran Mendalam', 'icon' => 'lucide-sparkles', 'open' => request()->routeIs('guru.pm.*', 'guru.perangkat.*'), 'children' => [
+            ['label' => 'PM: Perencanaan', 'icon' => 'lucide-sparkles', 'open' => request()->routeIs('guru.pm.alokasi.*', 'guru.pm.cp.*', 'guru.pm.tp.*', 'guru.pm.atp.*', 'guru.pm.kktp.*', 'guru.pm.kalender.*', 'guru.pm.prota.*', 'guru.pm.prosem.*'), 'children' => [
                 ['route' => 'guru.pm.alokasi.index', 'icon' => 'lucide-clock', 'label' => 'Alokasi Waktu'],
                 ['route' => 'guru.pm.cp.index', 'icon' => 'lucide-award', 'label' => 'Capaian Pembelajaran (CP)'],
-                ['route' => 'guru.pm.tp.index', 'icon' => 'lucide-target', 'label' => 'Tujuan Pembelajaran (TP)'],
+                ['route' => 'guru.pm.tp.index', 'icon' => 'lucide-target', 'label' => 'TP Administrasi Guru'],
                 ['route' => 'guru.pm.atp.index', 'icon' => 'lucide-git-branch', 'label' => 'Alur Tujuan Pembelajaran'],
-                ['route' => 'guru.pm.buku-paket.index', 'icon' => 'lucide-book-copy', 'label' => 'Buku Paket (SIBI)'],
                 ['route' => 'guru.pm.kktp.index', 'icon' => 'lucide-sliders', 'label' => 'KKTP'],
                 ['route' => 'guru.pm.kalender.index', 'icon' => 'lucide-calendar-days', 'label' => 'Kalender & Hari Libur'],
                 ['route' => 'guru.pm.prota.index', 'icon' => 'lucide-calendar-range', 'label' => 'Program Tahunan (Prota)'],
                 ['route' => 'guru.pm.prosem.index', 'icon' => 'lucide-grid-3x3', 'label' => 'Program Semester (Prosem)'],
+            ]],
+            ['label' => 'PM: Perangkat Ajar', 'icon' => 'lucide-folder-open', 'open' => request()->routeIs('guru.perangkat.*', 'guru.pm.buku-paket.*', 'guru.pm.generate.*'), 'children' => [
                 ['route' => 'guru.perangkat.index', 'icon' => 'lucide-folder-open', 'label' => 'Modul Ajar / RPM'],
                 ['route' => 'guru.perangkat.jurnal.index', 'icon' => 'lucide-book-marked', 'label' => 'Jurnal Mengajar'],
                 ['route' => 'guru.pm.generate.index', 'icon' => 'lucide-wand-2', 'label' => 'Buat Modul & Jurnal Sekaligus'],
+                ['route' => 'guru.pm.buku-paket.index', 'icon' => 'lucide-book-copy', 'label' => 'Buku Paket (SIBI)'],
+            ]],
+            ['label' => 'PM: Kokurikuler & TTD', 'icon' => 'lucide-compass', 'open' => request()->routeIs('guru.pm.kokurikuler.*', 'guru.pm.ttd.*'), 'children' => [
                 ['route' => 'guru.pm.kokurikuler.index', 'icon' => 'lucide-compass', 'label' => 'Kokurikuler'],
                 ['route' => 'guru.pm.ttd.index', 'icon' => 'lucide-pen-tool', 'label' => 'Tanda Tangan Digital'],
             ]],
-            ['route' => 'guru.tp.index', 'icon' => 'lucide-check-square', 'label' => 'TP e-Rapor'],
+            ['route' => 'guru.tp.index', 'icon' => 'lucide-check-square', 'label' => 'TP e-Rapor (untuk Nilai)'],
             ['route' => 'guru.materi.index', 'icon' => 'lucide-book-open', 'label' => 'Materi Ajar'],
             ['route' => 'guru.dimensi.index', 'icon' => 'lucide-sprout', 'label' => 'Profil Lulusan'],
         ]],
@@ -70,18 +74,22 @@
         ]],
         ['label' => 'PEMANTAUAN', 'items' => [
             ['route' => 'presensi.pegawai.index', 'icon' => 'lucide-map-pin-check', 'label' => 'Presensi Saya'],
-            ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
-            ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
-            ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
-            ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Data Siswa'],
+            ['label' => 'Kesiswaan', 'icon' => 'lucide-users', 'open' => request()->routeIs('guru.kehadiran.*', 'guru.catatan.*', 'guru.kebiasaan.*', 'guru.siswa.*'), 'children' => [
+                ['route' => 'guru.kehadiran.index', 'icon' => 'lucide-calendar-check', 'label' => 'Kehadiran Siswa'],
+                ['route' => 'guru.catatan.index', 'icon' => 'lucide-sticky-note', 'label' => 'Catatan Siswa'],
+                ['route' => 'guru.kebiasaan.index', 'icon' => 'lucide-home', 'label' => '7 Kebiasaan'],
+                ['route' => 'guru.siswa.index', 'icon' => 'lucide-users', 'label' => 'Data Siswa'],
+            ]],
         ]],
-        ['label' => 'PELAPORAN', 'items' => [
-            ['route' => 'guru.laporan.index', 'icon' => 'lucide-printer', 'label' => 'Laporan & Rapor'],
-            ['route' => 'guru.erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Generate e-Rapor'],
-        ]],
-        ['label' => 'PENGATURAN', 'items' => [
-            ['route' => 'guru.integrasi.index', 'icon' => 'lucide-cloud', 'label' => 'Google Sheet'],
-            ['route' => 'guru.pengaturan.index', 'icon' => 'lucide-settings', 'label' => 'Pengaturan'],
+        ['label' => 'LAPORAN & PENGATURAN', 'items' => [
+            ['label' => 'Laporan & Rapor', 'icon' => 'lucide-printer', 'open' => request()->routeIs('guru.laporan.*', 'guru.erapor.*'), 'children' => [
+                ['route' => 'guru.laporan.index', 'icon' => 'lucide-printer', 'label' => 'Laporan & Rapor'],
+                ['route' => 'guru.erapor.index', 'icon' => 'lucide-file-text', 'label' => 'Generate e-Rapor'],
+            ]],
+            ['label' => 'Pengaturan', 'icon' => 'lucide-settings', 'open' => request()->routeIs('guru.integrasi.*', 'guru.pengaturan.*'), 'children' => [
+                ['route' => 'guru.integrasi.index', 'icon' => 'lucide-cloud', 'label' => 'Google Sheet'],
+                ['route' => 'guru.pengaturan.index', 'icon' => 'lucide-settings', 'label' => 'Pengaturan'],
+            ]],
         ]],
     ];
     $isActive = function ($route) {
