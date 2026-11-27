@@ -140,8 +140,9 @@ class DapodikTenantIsolationTest extends TestCase
             ->assertDontSee('action="'.route('admin.presensi.mesin.karyawan.tarik').'"', false);
     }
 
-    public function test_backup_global_log_aktivitas_dan_api_key_sekolah_lain_dilindungi(): void
+    public function test_backup_per_sekolah_terisolasi_log_aktivitas_dan_api_key_sekolah_lain_dilindungi(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('local');
         config(['simantap.multi_tenant_enabled' => true]);
         $a = $this->school('Sekolah A', '10000001');
         $b = $this->school('Sekolah B', '10000002');
@@ -150,10 +151,49 @@ class DapodikTenantIsolationTest extends TestCase
         $keyA = ApiKey::generate($adminA->id, 'Kunci Sekolah A')['model'];
         $keyB = ApiKey::generate($adminB->id, 'Rahasia Sekolah B')['model'];
 
-        $this->actingAs($adminA)->get(route('admin.backup.index'))->assertStatus(503);
-        $this->actingAs($adminA)->post(route('admin.backup.export'))->assertStatus(503);
-        $this->actingAs($adminA)->post(route('admin.backup.import'))->assertStatus(503);
-        $this->actingAs($adminA)->post(route('admin.backup.wipe'))->assertStatus(503);
+        $siswaA = TenantContext::run($a->id, fn () => Siswa::create([
+            'nis' => 'A-001', 'nama_peserta_didik' => 'Siswa Backup A', 'kelas' => '1', 'jenis_kelamin' => 'L',
+        ]));
+        $siswaB = TenantContext::run($b->id, fn () => Siswa::create([
+            'nis' => 'B-001', 'nama_peserta_didik' => 'Siswa Rahasia B', 'kelas' => '1', 'jenis_kelamin' => 'P',
+        ]));
+
+        // Simpan file backup palsu milik global dan Sekolah B; Admin A tidak boleh melihat atau mengunduhnya.
+        \Illuminate\Support\Facades\Storage::disk('local')->put('backups/backup-global.json', '{"metadata":{"version":"1.0"}}');
+        \Illuminate\Support\Facades\Storage::disk('local')->put("backups/tenant-{$b->id}/backup-milik-b.json", '{"metadata":{"version":"1.0"}}');
+
+        $this->actingAs($adminA)->get(route('admin.backup.index'))
+            ->assertOk()
+            ->assertSee('Isolasi Data Sekolah Aktif')
+            ->assertDontSee('backup-global.json')
+            ->assertDontSee('backup-milik-b.json');
+
+        $this->actingAs($adminA)->get(route('admin.backup.download', 'backup-global.json'))->assertNotFound();
+        $this->actingAs($adminA)->get(route('admin.backup.download', 'backup-milik-b.json'))->assertNotFound();
+
+        // Ekspor backup oleh Admin A hanya menyimpan data Sekolah A di folder backups/tenant-{A}.
+        $this->actingAs($adminA)->post(route('admin.backup.export'))
+            ->assertRedirect(route('admin.backup.index'));
+
+        $filesA = \Illuminate\Support\Facades\Storage::disk('local')->files("backups/tenant-{$a->id}");
+        $this->assertCount(1, $filesA);
+        $jsonA = (string) \Illuminate\Support\Facades\Storage::disk('local')->get($filesA[0]);
+        $this->assertStringContainsString('Siswa Backup A', $jsonA);
+        $this->assertStringNotContainsString('Siswa Rahasia B', $jsonA);
+
+        // Admin B tidak dapat melihat atau mengunduh file backup milik Sekolah A.
+        $namaFileA = basename($filesA[0]);
+        $this->actingAs($adminB)->get(route('admin.backup.index'))->assertOk()->assertDontSee($namaFileA);
+        $this->actingAs($adminB)->get(route('admin.backup.download', $namaFileA))->assertNotFound();
+
+        // Admin B mencoba merestore file backup milik Sekolah A -> harus ditolak dan data Sekolah A utuh.
+        $tmpUpload = \Illuminate\Http\UploadedFile::fake()->createWithContent('backup-a.json', $jsonA);
+        $this->actingAs($adminB)->post(route('admin.backup.import'), ['backup_file' => $tmpUpload])
+            ->assertRedirect(route('admin.backup.index'))
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('siswa', ['id' => $siswaA->id, 'tenant_id' => $a->id, 'nama_peserta_didik' => 'Siswa Backup A']);
+        $this->assertDatabaseHas('siswa', ['id' => $siswaB->id, 'tenant_id' => $b->id, 'nama_peserta_didik' => 'Siswa Rahasia B']);
+
         $this->actingAs($adminA)->get(route('admin.log.index'))->assertStatus(503);
         $this->actingAs($adminA)->get(route('admin.api-keys.index'))->assertOk()->assertSee('Kunci Sekolah A')->assertDontSee('Rahasia Sekolah B');
         $this->actingAs($adminA)->post(route('admin.api-keys.toggle', $keyA->id))->assertRedirect();

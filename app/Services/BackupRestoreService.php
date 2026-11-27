@@ -123,10 +123,17 @@ class BackupRestoreService
     /**
      * Restore satu baris record (dipakai baik oleh streaming import di BackupController
      * maupun restore array penuh di BackupRestoreService::restoreTable).
+     *
+     * Bila `$tenantId` diberikan (mode multi-sekolah), setiap baris divalidasi
+     * agar tidak pernah menimpa atau menyisipkan data milik sekolah lain.
      */
-    public function restoreRecord(string $table, mixed $record): bool
+    public function restoreRecord(string $table, mixed $record, ?int $tenantId = null): bool
     {
         if (! is_array($record) || ! in_array($table, BackupTables::tabel(), true)) {
+            return false;
+        }
+
+        if ($tenantId !== null && $table === 'tenants') {
             return false;
         }
 
@@ -153,6 +160,52 @@ class BackupRestoreService
         }
 
         $id = $row['id'] ?? null;
+
+        if ($tenantId !== null) {
+            if (in_array('tenant_id', $kolom, true)) {
+                if (array_key_exists('tenant_id', $row) && $row['tenant_id'] !== null && (int) $row['tenant_id'] !== $tenantId) {
+                    throw new \UnexpectedValueException('File backup ini milik sekolah lain dan tidak dapat dipulihkan ke sekolah Anda.');
+                }
+
+                $row['tenant_id'] = $tenantId;
+
+                if ($id !== null) {
+                    $existingOwner = DB::table($table)->where('id', $id)->value('tenant_id');
+                    if ($existingOwner !== null && (int) $existingOwner !== $tenantId) {
+                        throw new \UnexpectedValueException("ID data pada tabel '{$table}' bentrok dengan data sekolah lain.");
+                    }
+                }
+            } elseif (in_array('siswa_id', $kolom, true)) {
+                $siswaId = $row['siswa_id'] ?? null;
+                if ($siswaId === null || ! Schema::hasTable('siswa') || ! Schema::hasColumn('siswa', 'tenant_id')) {
+                    return false;
+                }
+                $siswaOwner = DB::table('siswa')->where('id', $siswaId)->value('tenant_id');
+                if ($siswaOwner !== null && (int) $siswaOwner !== $tenantId) {
+                    throw new \UnexpectedValueException('File backup ini berisi data siswa milik sekolah lain.');
+                }
+                if ($siswaOwner === null) {
+                    return false;
+                }
+            } elseif (in_array('guru_id', $kolom, true) || in_array('user_id', $kolom, true)) {
+                $ownerCol = in_array('guru_id', $kolom, true) ? 'guru_id' : 'user_id';
+                $ownerUserId = $row[$ownerCol] ?? null;
+                if ($ownerUserId === null || ! Schema::hasTable('users') || ! Schema::hasColumn('users', 'tenant_id')) {
+                    return false;
+                }
+                $userOwner = DB::table('users')->where('id', $ownerUserId)->value('tenant_id');
+                if ($userOwner !== null && (int) $userOwner !== $tenantId) {
+                    throw new \UnexpectedValueException('File backup ini berisi data pengguna milik sekolah lain.');
+                }
+                if ($userOwner === null) {
+                    return false;
+                }
+            } else {
+                // Tabel tanpa kolom kepemilikan sekolah dilewati agar data
+                // referensi global / sekolah lain tidak pernah berubah.
+                return false;
+            }
+        }
 
         if ($table === 'users' && empty($row['kata_sandi'])) {
             $row['kata_sandi'] = Hash::make(bin2hex(random_bytes(8)));

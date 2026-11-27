@@ -434,11 +434,13 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'mfa.setup', '
     Route::post('/sheet/connect', [SheetController::class, 'connect'])->name('sheet.connect');
     Route::post('/sheet/disconnect', [SheetController::class, 'disconnect'])->name('sheet.disconnect');
 
-    // Data & Pemulihan
-    Route::get('/backup', [BackupController::class, 'index'])->middleware('data.single-school')->name('backup.index');
-    Route::post('/backup/export', [BackupController::class, 'export'])->middleware('data.single-school')->name('backup.export');
-    Route::post('/backup/import', [BackupController::class, 'import'])->middleware(['data.single-school', 'throttle:5,1'])->name('backup.import');
-    Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware(['data.single-school', 'throttle:10,5'])->name('backup.wipe');
+    // Data & Pemulihan (terisolasi per sekolah / tenant)
+    Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+    Route::post('/backup/export', [BackupController::class, 'export'])->name('backup.export');
+    Route::post('/backup/export-erapor-xsp', [BackupController::class, 'exportEraporXsp'])->name('backup.export-erapor-xsp');
+    Route::get('/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+    Route::post('/backup/import', [BackupController::class, 'import'])->middleware('throttle:5,1')->name('backup.import');
+    Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware('throttle:10,5')->name('backup.wipe');
 
     // Log Aktivitas
     Route::get('/log', [LogController::class, 'index'])->middleware('data.single-school')->name('log.index');

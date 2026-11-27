@@ -88,13 +88,19 @@ class DashboardController extends Controller
             $canSeeGlobalQueue = ! TenantMode::isMultiSchool()
                 || auth()->user()?->peran === 'super_admin';
 
-            // Info backup: hanya dipindai pada instalasi single-school atau oleh super_admin.
-            $backupFiles = $canSeeGlobalQueue ? Storage::disk('local')->files('backups') : [];
+            // Info backup: pada mode multi-sekolah hanya memindai folder milik sekolah aktif
+            // (`backups/tenant-{id}`), tidak pernah membaca folder backup global (`backups/`).
+            $backupTenantId = $canSeeGlobalQueue ? null : (auth()->user()?->tenant_id ?? TenantContext::id());
+            $backupDisk = \App\Services\Backup\BackupDirectory::disk();
+            $backupDir = \App\Services\Backup\BackupDirectory::forTenant($backupTenantId !== null ? (int) $backupTenantId : null);
+            $backupFiles = ($canSeeGlobalQueue || $backupTenantId !== null)
+                ? $backupDisk->files($backupDir)
+                : [];
             $backupUkuran = 0;
             $backupTerakhir = null;
             foreach ($backupFiles as $file) {
-                $backupUkuran += Storage::disk('local')->size($file);
-                $waktu = Storage::disk('local')->lastModified($file);
+                $backupUkuran += $backupDisk->size($file);
+                $waktu = $backupDisk->lastModified($file);
                 if ($backupTerakhir === null || $waktu > $backupTerakhir) {
                     $backupTerakhir = $waktu;
                 }
@@ -117,7 +123,7 @@ class DashboardController extends Controller
                 ['label' => 'Update data Kop Sekolah', 'done' => ! empty($pengaturanSekolah['kop_sekolah'])],
                 ['label' => 'Update tanggal rapor', 'done' => TanggalRapor::exists()],
                 ['label' => 'Update tema kokurikuler', 'done' => TemaKokurikuler::exists()],
-                ['label' => 'Backup Data', 'done' => $canSeeGlobalQueue && count($backupFiles) > 0],
+                ['label' => 'Backup Data', 'done' => count($backupFiles) > 0],
                 ['label' => 'Kirim Nilai Ke Dapodik', 'done' => NilaiErapot::where('terkirim_erapor', true)->exists()],
             ];
             $progresKerja = count($statusKerja) > 0
@@ -149,7 +155,7 @@ class DashboardController extends Controller
                 : 0;
             $backupInfo = [
                 'jumlah' => count($backupFiles),
-                'ukuran' => $canSeeGlobalQueue ? $this->formatBytes($backupUkuran) : '-',
+                'ukuran' => count($backupFiles) > 0 ? $this->formatBytes($backupUkuran) : ($canSeeGlobalQueue ? $this->formatBytes(0) : '-'),
                 'terakhir' => $backupTerakhir ? now()->setTimestamp($backupTerakhir)->diffForHumans() : null,
                 'antre' => $backupAntre,
                 'gagal' => $jobGagal,
