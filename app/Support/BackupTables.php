@@ -103,7 +103,20 @@ class BackupTables
         return [
             // ── Identitas & referensi induk ─────────────────────────────
             'tenants' => ['class' => Tenant::class, 'except' => []],
-            'users' => ['class' => User::class, 'except' => ['kata_sandi', 'remember_token', 'dapodik_id', 'rekaman']],
+            'users' => [
+                'class' => User::class,
+                'except' => [
+                    'kata_sandi',
+                    'remember_token',
+                    'mfa_secret',
+                    'mfa_recovery_codes',
+                    'qr_token_hash',
+                    'qr_previous_token_hash',
+                    'qr_generation_nonce',
+                    'dapodik_id',
+                    'rekaman',
+                ],
+            ],
             'semesters' => ['class' => Semester::class, 'except' => []],
             'sekolah_settings' => ['class' => SekolahSettings::class, 'except' => []],
             'ptk' => ['class' => Ptk::class, 'except' => []],

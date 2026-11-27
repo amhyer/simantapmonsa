@@ -398,8 +398,11 @@ class AuditBatch3Nov2026Test extends TestCase
         // 3. Subdomain tidak dikenal di bawah .simantap.sch.id -> 404
         $this->get('https://fiktif.simantap.sch.id/login')->assertNotFound();
 
-        // 4. Custom domain terdaftar -> 200 OK; custom domain asing -> 404
+        // 4. Custom domain terdaftar -> 200 OK; custom domain asing -> 400 (TrustHosts) dan 404 (IdentifyTenant)
         $this->get('https://ujian.sdn2makassar.sch.id/login')->assertOk();
+        $this->get('https://ujian.tidak-terdaftar.sch.id/login')->assertStatus(400);
+
+        config(['security.trust_hosts_enabled' => false]);
         $this->get('https://ujian.tidak-terdaftar.sch.id/login')->assertNotFound();
     }
 

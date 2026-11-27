@@ -354,6 +354,15 @@
                                 </button>
                             </form>
                         </details>
+
+                        @if($admin->hasMfaEnabled())
+                            <form method="POST" action="{{ route('superadmin.tenants.reset-admin-mfa', $tenant->uuid) }}" style="margin-top:10px">
+                                @csrf
+                                <button type="submit" class="btn btn-danger btn-xs" style="width:100%" onclick="return confirm('Reset MFA / Authenticator untuk admin sekolah ini? Sesi aktif admin akan dicabut.')">
+                                    <i class="fas fa-shield-xmark"></i> Reset MFA Admin Sekolah
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 @else
                     <div class="empty-state" style="padding:16px">

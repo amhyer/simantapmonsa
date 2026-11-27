@@ -129,4 +129,33 @@ class TrustHostsTest extends TestCase
         $this->get('http://pendidikan.go.id/login')
             ->assertStatus(400);
     }
+
+    public function test_cache_domain_kustom_otomatis_dihapus_saat_tenant_diubah_atau_dinonaktifkan(): void
+    {
+        config([
+            'app.url' => 'https://simantap.sch.id',
+            'simantap.multi_tenant_enabled' => true,
+            'security.trust_hosts_enabled' => true,
+        ]);
+
+        $tenant = Tenant::create([
+            'uuid' => (string) Str::uuid(),
+            'npsn' => '40350009',
+            'nama_sekolah' => 'SDN Cache Bust',
+            'subdomain' => 'sdncachebust',
+            'domain_kustom' => 'awal.sdncache.sch.id',
+            'aktif' => true,
+        ]);
+
+        $this->get('http://awal.sdncache.sch.id/login')->assertOk();
+
+        // Ubah domain_kustom tanpa manual Cache::forget
+        $tenant->update(['domain_kustom' => 'baru.sdncache.sch.id']);
+        $this->get('http://baru.sdncache.sch.id/login')->assertOk();
+        $this->get('http://awal.sdncache.sch.id/login')->assertStatus(400);
+
+        // Nonaktifkan tenant -> domain kustom langsung ditolak
+        $tenant->update(['aktif' => false]);
+        $this->get('http://baru.sdncache.sch.id/login')->assertStatus(400);
+    }
 }

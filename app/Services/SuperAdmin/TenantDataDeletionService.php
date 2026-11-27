@@ -311,4 +311,39 @@ class TenantDataDeletionService
             }
         }
     }
+
+    /**
+     * @param  array<int, int>  $userIds
+     */
+    public function forceDeleteUsers(array $userIds): int
+    {
+        if ($userIds === []) {
+            return 0;
+        }
+
+        $driver = DB::getDriverName();
+        // Di PostgreSQL, `Schema::disableForeignKeyConstraints()` menjalankan
+        // `SET session_replication_role = 'replica'` yang butuh hak superuser;
+        // `detachAndDeleteUserDependents` sudah menghapus child secara berurutan.
+        if ($driver !== 'pgsql') {
+            Schema::disableForeignKeyConstraints();
+        }
+        DB::beginTransaction();
+        try {
+            $this->detachAndDeleteUserDependents($userIds);
+            $count = \App\Models\User::withoutGlobalScopes()
+                ->whereIn('id', $userIds)
+                ->forceDelete();
+            DB::commit();
+
+            return (int) $count;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        } finally {
+            if ($driver !== 'pgsql') {
+                Schema::enableForeignKeyConstraints();
+            }
+        }
+    }
 }

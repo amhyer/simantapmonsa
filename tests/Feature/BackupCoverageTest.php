@@ -152,4 +152,30 @@ class BackupCoverageTest extends TestCase
         $this->assertDatabaseCount('users', 2); // admin + guru tetap ada
         $this->assertDatabaseHas('users', ['id' => $admin->id]);
     }
+
+    public function test_backup_tidak_mengekspor_rahasia_mfa_dan_token_qr_user(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'nama_pengguna' => 'admin.mfa.backup',
+        ]);
+        $admin->forceFill([
+            'mfa_secret' => 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+            'mfa_recovery_codes' => ['hash-1', 'hash-2'],
+            'qr_token_hash' => hash('sha256', 'qr-secret'),
+            'qr_previous_token_hash' => hash('sha256', 'qr-prev'),
+            'qr_generation_nonce' => 'nonce-secret',
+        ])->save();
+
+        $stream = fopen('php://temp', 'w+b');
+        app(BackupStreamWriter::class)->writeTo($stream);
+        rewind($stream);
+        $isi = json_decode((string) stream_get_contents($stream), true);
+        fclose($stream);
+
+        $baris = collect($isi['users'] ?? [])->firstWhere('nama_pengguna', 'admin.mfa.backup');
+        $this->assertNotNull($baris);
+        foreach (['kata_sandi', 'remember_token', 'mfa_secret', 'mfa_recovery_codes', 'qr_token_hash', 'qr_previous_token_hash', 'qr_generation_nonce'] as $hiddenCol) {
+            $this->assertArrayNotHasKey($hiddenCol, $baris);
+        }
+    }
 }

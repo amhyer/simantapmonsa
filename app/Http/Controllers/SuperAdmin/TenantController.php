@@ -713,7 +713,9 @@ class TenantController extends Controller
 
     public function resetAdminPassword(Request $request, Tenant $tenant)
     {
-        $admin = User::where('tenant_id', $tenant->id)
+        $admin = User::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('tenant_id', $tenant->id)
             ->where('peran', 'admin')
             ->first();
 
@@ -725,9 +727,20 @@ class TenantController extends Controller
             'password_baru' => ['required', 'string', Password::defaults()],
         ]);
 
-        $admin->kata_sandi = Hash::make($validated['password_baru']);
-        $admin->force_password_change = false;
-        $admin->save();
+        $admin->forceFill([
+            'kata_sandi' => Hash::make($validated['password_baru']),
+            'force_password_change' => true,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        SessionSecurity::invalidateUserSessions((int) $admin->id);
+
+        Log::info('Super admin mereset kata sandi admin sekolah', [
+            'super_admin_id' => auth()->id(),
+            'target_admin_id' => $admin->id,
+            'tenant_id' => $tenant->id,
+            'ip' => $request->ip(),
+        ]);
 
         return back()->with('success', "Kata sandi admin sekolah '{$admin->nama_lengkap}' ({$admin->nama_pengguna}) berhasil direset!");
     }
@@ -743,25 +756,7 @@ class TenantController extends Controller
         }
 
         $nama = $user->nama_lengkap ?? $user->nama_pengguna;
-
-        $driver = DB::getDriverName();
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        try {
-            $this->detachAndDeleteUserDependents([(int) $user->id]);
-            $user->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        app(TenantDataDeletionService::class)->forceDeleteUsers([(int) $user->id]);
 
         return back()->with('success', "Akun pengguna '{$nama}' berhasil dihapus permanen dari sistem.");
     }
@@ -778,7 +773,6 @@ class TenantController extends Controller
         $currentId = (int) auth()->id();
         $rawIds = array_map('intval', $request->input('user_ids', []));
 
-        // Saring keluar diri sendiri & akun super_admin SEBELUM menghapus relasi presensi/aktivitas
         $targetIds = User::withoutGlobalScopes()
             ->whereIn('id', $rawIds)
             ->where('id', '!=', $currentId)
@@ -791,26 +785,7 @@ class TenantController extends Controller
             return back()->with('error', 'Tidak ada akun valid yang dapat dihapus.');
         }
 
-        $driver = DB::getDriverName();
-        if ($driver !== 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        DB::beginTransaction();
-        if ($driver === 'pgsql') {
-            Schema::disableForeignKeyConstraints();
-        }
-        try {
-            $this->detachAndDeleteUserDependents($targetIds);
-            $count = User::withoutGlobalScopes()
-                ->whereIn('id', $targetIds)
-                ->forceDelete();
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        $count = app(TenantDataDeletionService::class)->forceDeleteUsers($targetIds);
 
         return back()->with('success', "Sebanyak {$count} akun pengguna berhasil dihapus permanen.");
     }
