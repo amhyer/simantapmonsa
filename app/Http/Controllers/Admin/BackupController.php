@@ -74,7 +74,39 @@ class BackupController extends Controller
             $namaSekolah = SekolahSettings::first()?->nama_sekolah;
         }
 
-        return view('admin.backup.index', compact('backupList', 'isMultiTenant', 'namaSekolah'));
+        $appMaxBytes = 250 * 1024 * 1024;
+        $uploadMaxBytes = $this->phpIniBytes((string) ini_get('upload_max_filesize'));
+        $postMaxBytes = $this->phpIniBytes((string) ini_get('post_max_size'));
+        $serverLimitCandidates = array_filter([$uploadMaxBytes, $postMaxBytes], fn (int $v) => $v > 0);
+        $serverMaxBytes = $serverLimitCandidates !== [] ? min($serverLimitCandidates) : $appMaxBytes;
+        $maxUploadBytes = min($appMaxBytes, $serverMaxBytes);
+        $maxUploadLabel = number_format($maxUploadBytes / (1024 * 1024), $maxUploadBytes % (1024 * 1024) === 0 ? 0 : 1).' MB';
+
+        return view('admin.backup.index', compact(
+            'backupList',
+            'isMultiTenant',
+            'namaSekolah',
+            'maxUploadBytes',
+            'maxUploadLabel',
+        ));
+    }
+
+    private function phpIniBytes(string $value): int
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '' || $trimmed === '0' || $trimmed === '-1') {
+            return 0;
+        }
+
+        $unit = strtolower(substr($trimmed, -1));
+        $number = (float) $trimmed;
+
+        return match ($unit) {
+            'g' => (int) round($number * 1024 * 1024 * 1024),
+            'm' => (int) round($number * 1024 * 1024),
+            'k' => (int) round($number * 1024),
+            default => (int) round($number),
+        };
     }
 
     public function export()
@@ -158,7 +190,7 @@ class BackupController extends Controller
         [$tenantId] = $this->resolveTenantScope();
 
         $request->validate([
-            'backup_file' => 'required|file|max:102400',
+            'backup_file' => 'required|file|max:256000',
         ]);
 
         $uploadedFile = $request->file('backup_file');
@@ -171,7 +203,7 @@ class BackupController extends Controller
             try {
                 $stats = app(EraporXspBackupService::class)->restoreFromXsp((string) $realPath, $tenantId);
                 $ringkasan = sprintf(
-                    'Database e-Rapor (.xsp) "%s" (NPSN %s) berhasil dipulihkan: %d semester, %d PTK/Guru, %d rombel, %d mapel, %d siswa, %d pembelajaran, %d TP, %d nilai rapor, %d transkrip, %d catatan walas, dan %d penilaian P5.',
+                    'Database e-Rapor (.xsp) "%s" (NPSN %s) berhasil dipulihkan: %d semester, %d PTK/Guru, %d rombel, %d mapel, %d siswa, %d pembelajaran, %d TP, %d nilai & deskripsi rapor, %d transkrip, %d rekap kehadiran, %d catatan walas, %d anggota & %d narasi kokurikuler, serta %d penilaian P5.',
                     $stats['nama_sekolah'],
                     $stats['npsn'],
                     $stats['semesters'],
@@ -183,7 +215,10 @@ class BackupController extends Controller
                     $stats['capaian_pembelajaran'],
                     $stats['nilai_erapor'],
                     $stats['transkrip_nilai'],
+                    $stats['kehadiran'] ?? 0,
                     $stats['catatan'],
+                    $stats['anggota_kelompok'] ?? 0,
+                    $stats['kokurikuler_deskripsi'] ?? 0,
                     $stats['p5_penilaian']
                 );
 
@@ -197,7 +232,7 @@ class BackupController extends Controller
         }
 
         $request->validate([
-            'backup_file' => 'required|file|mimes:json|max:102400',
+            'backup_file' => 'required|file|mimes:json|max:256000',
         ]);
 
         $stream = fopen($request->file('backup_file')->getRealPath(), 'rb');

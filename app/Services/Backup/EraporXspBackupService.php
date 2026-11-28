@@ -246,12 +246,15 @@ class EraporXspBackupService
             'transkrip_nilai' => 0,
             'ekstrakurikuler' => 0,
             'siswa_ekstrakurikuler' => 0,
+            'kehadiran' => 0,
             'kenaikan_kelas' => 0,
             'catatan' => 0,
             'tanggal_rapor' => 0,
             'tema_kokurikuler' => 0,
             'kegiatan_kokurikuler' => 0,
             'kelompok_kokurikuler' => 0,
+            'anggota_kelompok' => 0,
+            'kokurikuler_deskripsi' => 0,
             'p5_projek' => 0,
             'p5_penilaian' => 0,
         ];
@@ -259,7 +262,9 @@ class EraporXspBackupService
         $defaultPasswordHash = Hash::make(InitialPassword::generate());
 
         NilaiErapotAuditService::tanpaAudit(function () use ($tables, $sekolahRow, $tenantId, $defaultPasswordHash, &$stats): void {
-            DB::transaction(function () use ($tables, $sekolahRow, $tenantId, $defaultPasswordHash, &$stats): void {
+            // Jalankan secara idempoten per tahap (tanpa 1 transaksi raksasa untuk >25.000 baris)
+            // agar PostgreSQL tidak kehabisan shared lock memory (max_locks_per_transaction).
+            (function () use ($tables, $sekolahRow, $tenantId, $defaultPasswordHash, &$stats): void {
                 // 1. Semester (`public.semester`)
                 $semesterCodeToModel = [];
                 $semesterMetaMap = [];
@@ -277,7 +282,7 @@ class EraporXspBackupService
 
                     $sem = Semester::withoutGlobalScopes()->updateOrCreate(
                         ['tenant_id' => $tenantId, 'semester_id' => $code],
-                        ['tahun_ajaran' => $tahunAjaran, 'nama_semester' => $namaSmt]
+                        ['tahun_ajaran' => $tahunAjaran, 'nama_semester' => strtolower($namaSmt)]
                     );
 
                     $semesterCodeToModel[$code] = $sem;
@@ -307,7 +312,7 @@ class EraporXspBackupService
 
                     $sem = Semester::withoutGlobalScopes()->firstOrCreate(
                         ['tenant_id' => $tenantId, 'semester_id' => $effCode],
-                        ['tahun_ajaran' => $ta, 'nama_semester' => $nm]
+                        ['tahun_ajaran' => $ta, 'nama_semester' => strtolower($nm)]
                     );
                     $semesterCodeToModel[$effCode] = $sem;
                     $semesterMetaMap[$effCode] = [
@@ -455,7 +460,34 @@ class EraporXspBackupService
                     }
                 }
 
-                // 4. Mata Pelajaran (`public.tabel_mapel`)
+                // 4. Mata Pelajaran & Kelompok Mapel Rapor (`public.ref_klp_mapel`, `public.tabel_mapel`, `public.tabel_map_mapelskl`)
+                $klpMapelRef = [];
+                foreach ($tables['public.ref_klp_mapel']['rows'] ?? [] as $row) {
+                    $jns = strtoupper(trim((string) ($row['jns_klp'] ?? '')));
+                    $klpId = trim((string) ($row['klp_id'] ?? ''));
+                    if ($jns !== '' && $jns !== 'X') {
+                        if ($klpId !== '') {
+                            $klpMapelRef[$klpId] = $jns;
+                        }
+                        $klpMapelRef[$jns] = $jns;
+                    }
+                }
+
+                $sklMapelMeta = [];
+                foreach ($tables['public.tabel_map_mapelskl']['rows'] ?? [] as $row) {
+                    $kodeSkl = trim((string) ($row['mata_pelajaran_id'] ?? ''));
+                    if ($kodeSkl === '') {
+                        continue;
+                    }
+                    $area = strtoupper(trim((string) ($row['area_kompetensi'] ?? '')));
+                    $sklMapelMeta[$kodeSkl] = [
+                        'kelompok' => $area !== '' ? $area : ($klpMapelRef[trim((string) ($row['klp_mpl'] ?? ''))] ?? 'A'),
+                        'urutan' => (int) ($row['urut_skl'] ?? 0),
+                        'nama' => trim((string) ($row['nm_lokal'] ?? '')),
+                    ];
+                }
+
+                $mapelHasMasukTranskrip = Schema::hasColumn('mata_pelajaran', 'masuk_transkrip');
                 $mapelCodeToName = [];
                 $mapelCodeToModelId = [];
                 foreach ($tables['public.tabel_mapel']['rows'] ?? [] as $row) {
@@ -464,21 +496,57 @@ class EraporXspBackupService
                     if ($nama === '') {
                         continue;
                     }
+                    $rawKlp = strtoupper(trim((string) ($row['kelompok'] ?? '')));
+                    $kelompok = $sklMapelMeta[$kode]['kelompok']
+                        ?? ($klpMapelRef[$rawKlp] ?? ($rawKlp === 'L' ? 'B' : ($rawKlp !== '' ? $rawKlp : 'A')));
+                    $urutan = (int) ($row['urut_rapor'] ?? 0);
+                    if ($urutan === 0 && isset($sklMapelMeta[$kode]['urutan'])) {
+                        $urutan = $sklMapelMeta[$kode]['urutan'];
+                    }
+
+                    $mapelData = [
+                        'kode' => $kode ?: null,
+                        'jenjang' => 'SD',
+                        'kelompok' => mb_substr($kelompok, 0, 20),
+                        'urutan' => $urutan,
+                        'aktif' => true,
+                    ];
+                    if ($mapelHasMasukTranskrip) {
+                        $mapelData['masuk_transkrip'] = isset($sklMapelMeta[$kode]);
+                    }
+
                     $mapel = MataPelajaran::withoutGlobalScopes()->updateOrCreate(
                         ['tenant_id' => $tenantId, 'nama' => $nama],
-                        [
-                            'kode' => $kode ?: null,
-                            'jenjang' => 'SD',
-                            'kelompok' => trim((string) ($row['kelompok'] ?? 'A')) ?: 'A',
-                            'urutan' => (int) ($row['urut_rapor'] ?? 0),
-                            'aktif' => true,
-                        ]
+                        $mapelData
                     );
                     if ($kode !== '') {
                         $mapelCodeToName[$kode] = $nama;
                         $mapelCodeToModelId[$kode] = $mapel->id;
                     }
                     $stats['mata_pelajaran']++;
+                }
+
+                // Pastikan mapel yang terdaftar di mapping SKL (`public.tabel_map_mapelskl`) juga tersinkron.
+                foreach ($sklMapelMeta as $kodeSkl => $meta) {
+                    if (isset($mapelCodeToModelId[$kodeSkl]) || $meta['nama'] === '') {
+                        continue;
+                    }
+                    $mapelData = [
+                        'kode' => $kodeSkl,
+                        'jenjang' => 'SD',
+                        'kelompok' => mb_substr($meta['kelompok'], 0, 20),
+                        'urutan' => $meta['urutan'],
+                        'aktif' => true,
+                    ];
+                    if ($mapelHasMasukTranskrip) {
+                        $mapelData['masuk_transkrip'] = true;
+                    }
+                    $mapel = MataPelajaran::withoutGlobalScopes()->updateOrCreate(
+                        ['tenant_id' => $tenantId, 'nama' => $meta['nama']],
+                        $mapelData
+                    );
+                    $mapelCodeToName[$kodeSkl] = $meta['nama'];
+                    $mapelCodeToModelId[$kodeSkl] = $mapel->id;
                 }
 
                 // Tambahkan kamus dari ref_mapeldapo bila ada kode mapel di nilai yang tidak ada di tabel_mapel
@@ -503,16 +571,38 @@ class EraporXspBackupService
                     $semMeta = $resolveSemesterMeta($semCode);
                     $walasUserId = $ptkUuidToUserId[trim((string) ($row['ptk_id'] ?? ''))] ?? null;
 
-                    $rombel = Rombel::withoutGlobalScopes()->updateOrCreate(
-                        ['tenant_id' => $tenantId, 'dapodik_id' => $rUuid, 'semester_id' => $semMeta['id']],
-                        [
-                            'nama_rombel' => $cleanKelas,
-                            'tingkat' => trim((string) ($row['tingkat_pendidikan_id'] ?? '')),
-                            'kurikulum' => trim((string) ($row['kurikulum_id'] ?? 'Kurikulum Merdeka')),
-                            'jenis_rombel' => trim((string) ($row['jenis_rombel'] ?? '1')),
-                            'guru_id' => $walasUserId,
-                        ]
-                    );
+                    $rombelQuery = method_exists(Rombel::class, 'withTrashed')
+                        ? Rombel::withTrashed()->withoutGlobalScopes()
+                        : Rombel::withoutGlobalScopes();
+
+                    $rombel = $rombelQuery
+                        ->where('tenant_id', $tenantId)
+                        ->where('semester_id', $semMeta['id'])
+                        ->where(function ($q) use ($rUuid, $cleanKelas) {
+                            $q->where('dapodik_id', $rUuid)
+                                ->orWhere('nama_rombel', $cleanKelas);
+                        })
+                        ->first();
+
+                    $rombelPayload = [
+                        'tenant_id' => $tenantId,
+                        'dapodik_id' => $rUuid,
+                        'semester_id' => $semMeta['id'],
+                        'nama_rombel' => $cleanKelas,
+                        'tingkat' => trim((string) ($row['tingkat_pendidikan_id'] ?? '')),
+                        'kurikulum' => trim((string) ($row['kurikulum_id'] ?? 'Kurikulum Merdeka')),
+                        'jenis_rombel' => trim((string) ($row['jenis_rombel'] ?? '1')),
+                        'guru_id' => $walasUserId,
+                    ];
+
+                    if ($rombel) {
+                        if (method_exists($rombel, 'trashed') && $rombel->trashed()) {
+                            $rombel->restore();
+                        }
+                        $rombel->update($rombelPayload);
+                    } else {
+                        $rombel = Rombel::withoutGlobalScopes()->create($rombelPayload);
+                    }
 
                     if ($walasUserId) {
                         User::withoutGlobalScopes()->where('id', $walasUserId)->update(['is_wali_kelas' => true]);
@@ -718,12 +808,13 @@ class EraporXspBackupService
                             continue;
                         }
 
+                        $elemenRaw = trim((string) ($row['ringkasan_kompetensi'] ?? 'Umum'));
                         $cpData = [
-                            'mata_pelajaran' => $mapelNama,
+                            'mata_pelajaran' => mb_substr($mapelNama, 0, 100),
                             'fase' => $fase,
-                            'elemen' => trim((string) ($row['ringkasan_kompetensi'] ?? 'Umum')),
+                            'elemen' => mb_substr($elemenRaw !== '' ? $elemenRaw : 'Umum', 0, 100),
                             'deskripsi' => $deskripsi,
-                            'kode_cp' => $kodeCp ?: null,
+                            'kode_cp' => $kodeCp !== '' ? mb_substr($kodeCp, 0, 50) : null,
                             'updated_at' => now(),
                         ];
                         if (Schema::hasColumn('capaian_pembelajaran', 'tenant_id')) {
@@ -743,14 +834,22 @@ class EraporXspBackupService
                 }
 
                 // 10. Nilai Akhir & Deskripsi e-Rapor (`public.tabel_nilaiakhir` + `public.tabel_deskripsi`)
+                // Gabungkan deskripsi capaian tertinggi (`deskripsi_peng_m`) dan bagian
+                // perlu peningkatan (`deskripsi_ket_m` / `deskripsi_peng_p`) agar 100% identik dengan rapor e-Rapor SD.
                 $deskripsiMap = [];
                 foreach ($tables['public.tabel_deskripsi']['rows'] ?? [] as $row) {
                     $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
                     $kdMapel = trim((string) ($row['mata_pelajaran_id'] ?? ''));
                     $semCode = trim((string) ($row['semester_id'] ?? ''));
-                    $desk = trim((string) ($row['deskripsi_peng_m'] ?? $row['deskripsi_ket_m'] ?? ''));
-                    if ($pdUuid !== '' && $kdMapel !== '' && $semCode !== '' && $desk !== '') {
-                        $deskripsiMap[$pdUuid.'|'.$kdMapel.'|'.$semCode] = $desk;
+                    $deskTinggi = trim((string) ($row['deskripsi_peng_m'] ?? ''));
+                    $deskRendah = trim((string) ($row['deskripsi_ket_m'] ?? $row['deskripsi_peng_p'] ?? ''));
+                    $gabungan = implode("\n", array_filter([$deskTinggi, $deskRendah], fn (string $v) => $v !== ''));
+                    if ($pdUuid !== '' && $kdMapel !== '' && $semCode !== '' && $gabungan !== '') {
+                        $deskripsiMap[$pdUuid.'|'.$kdMapel.'|'.$semCode] = [
+                            'gabungan' => $gabungan,
+                            'tertinggi' => $deskTinggi !== '' ? $deskTinggi : null,
+                            'terendah' => $deskRendah !== '' ? $deskRendah : null,
+                        ];
                     }
                 }
 
@@ -759,7 +858,10 @@ class EraporXspBackupService
                     ->whereIn('peran', ['guru', 'admin'])
                     ->value('id');
 
-                $nilaiUniqueKeys = [];
+                // Deduplikasi di memori lalu bulk upsert per 500 baris agar 18.000+ nilai
+                // selesai dalam hitungan detik tanpa memicu overflow lock PostgreSQL.
+                $nilaiUpsertMap = [];
+                $nowStr = now()->toDateTimeString();
                 foreach ($tables['public.tabel_nilaiakhir']['rows'] ?? [] as $row) {
                     $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
                     $aUuid = trim((string) ($row['anggota_rombel_id'] ?? ''));
@@ -784,8 +886,8 @@ class EraporXspBackupService
                         continue;
                     }
 
-                    $nilaiAkhir = (float) ($row['nilai_peng'] ?? $row['nilai_ket'] ?? 0);
-                    $predikat = trim((string) ($row['predikat_peng'] ?? '')) ?: match (true) {
+                    $nilaiAkhir = max(0.0, min(100.0, round((float) ($row['nilai_peng'] ?? $row['nilai_ket'] ?? 0), 2)));
+                    $predikat = mb_substr(trim((string) ($row['predikat_peng'] ?? '')), 0, 5) ?: match (true) {
                         $nilaiAkhir >= 90 => 'A',
                         $nilaiAkhir >= 80 => 'B',
                         $nilaiAkhir >= 70 => 'C',
@@ -799,39 +901,54 @@ class EraporXspBackupService
                         default => 'C',
                     };
 
-                    $deskripsi = $deskripsiMap[$pdUuid.'|'.$kdMapel.'|'.$semCode] ?? null;
+                    $deskInfo = $deskripsiMap[$pdUuid.'|'.$kdMapel.'|'.$semCode] ?? null;
                     $guruId = $jInfo['guru_id'] ?? ($aInfo['guru_id'] ?? $fallbackGuruId);
+                    $uniqueKey = $siswaId.'|'.$mapelNama.'|'.$semMeta['nama_semester'].'|'.$semMeta['tahun_ajaran'];
 
-                    NilaiErapot::withoutGlobalScopes()->updateOrCreate(
+                    $nilaiUpsertMap[$uniqueKey] = [
+                        'uuid' => (string) Str::uuid(),
+                        'tenant_id' => $tenantId,
+                        'siswa_id' => $siswaId,
+                        'mata_pelajaran' => $mapelNama,
+                        'semester' => $semMeta['nama_semester'],
+                        'tahun_ajaran' => $semMeta['tahun_ajaran'],
+                        'guru_id' => $guruId,
+                        'jadwal_pelajaran_id' => $jInfo['id'] ?? null,
+                        'kelas' => $aInfo['kelas'] ?? '1',
+                        'fase' => $fase,
+                        'nilai_formatif' => $nilaiAkhir,
+                        'nilai_sumatif' => $nilaiAkhir,
+                        'nilai_sumatif_akhir' => $nilaiAkhir,
+                        'nilai_akhir' => $nilaiAkhir,
+                        'predikat' => $predikat,
+                        'deskripsi_capaian' => $deskInfo['gabungan'] ?? null,
+                        'capaian_tertinggi' => isset($deskInfo['tertinggi']) ? mb_substr($deskInfo['tertinggi'], 0, 255) : null,
+                        'capaian_terendah' => isset($deskInfo['terendah']) ? mb_substr($deskInfo['terendah'], 0, 255) : null,
+                        'terkirim_erapor' => true,
+                        'erapor_synced_at' => $nowStr,
+                        'created_at' => $nowStr,
+                        'updated_at' => $nowStr,
+                    ];
+                }
+
+                foreach (array_chunk(array_values($nilaiUpsertMap), 500) as $chunk) {
+                    DB::table('nilai_erapor')->upsert(
+                        $chunk,
+                        ['siswa_id', 'mata_pelajaran', 'semester', 'tahun_ajaran'],
                         [
-                            'tenant_id' => $tenantId,
-                            'siswa_id' => $siswaId,
-                            'mata_pelajaran' => $mapelNama,
-                            'semester' => $semMeta['nama_semester'],
-                            'tahun_ajaran' => $semMeta['tahun_ajaran'],
-                        ],
-                        [
-                            'guru_id' => $guruId,
-                            'jadwal_pelajaran_id' => $jInfo['id'] ?? null,
-                            'kelas' => $aInfo['kelas'] ?? '1',
-                            'fase' => $fase,
-                            'nilai_formatif' => $nilaiAkhir,
-                            'nilai_sumatif' => $nilaiAkhir,
-                            'nilai_sumatif_akhir' => $nilaiAkhir,
-                            'nilai_akhir' => $nilaiAkhir,
-                            'predikat' => $predikat,
-                            'deskripsi_capaian' => $deskripsi,
-                            'terkirim_erapor' => true,
-                            'erapor_synced_at' => now(),
+                            'tenant_id', 'guru_id', 'jadwal_pelajaran_id', 'kelas', 'fase',
+                            'nilai_formatif', 'nilai_sumatif', 'nilai_sumatif_akhir', 'nilai_akhir',
+                            'predikat', 'deskripsi_capaian', 'capaian_tertinggi', 'capaian_terendah',
+                            'terkirim_erapor', 'erapor_synced_at', 'updated_at',
                         ]
                     );
-                    $nilaiUniqueKeys[$siswaId.'|'.$mapelNama.'|'.$semMeta['nama_semester'].'|'.$semMeta['tahun_ajaran']] = true;
                 }
                 // Baris ganda pada .xsp akan bertabrakan pada kunci unik nilai_erapor.
-                $stats['nilai_erapor'] = count($nilaiUniqueKeys);
+                $stats['nilai_erapor'] = count($nilaiUpsertMap);
 
                 // 11. Nilai SKL / Transkrip Ijazah (`public.tabel_nilaiskl`)
                 $transkripUniqueKeys = [];
+                $transkripHasTenant = Schema::hasColumn('transkrip_nilai', 'tenant_id');
                 foreach ($tables['public.tabel_nilaiskl']['rows'] ?? [] as $row) {
                     $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
                     $kdMapel = trim((string) ($row['mata_pelajaran_id'] ?? ''));
@@ -841,21 +958,33 @@ class EraporXspBackupService
                     }
                     $mapelNama = $mapelCodeToName[$kdMapel] ?? $kdMapel;
                     $mapelId = $mapelCodeToModelId[$kdMapel] ?? null;
-                    $nilai = (float) ($row['nilai'] ?? 0);
+                    $nilai = max(0.0, min(100.0, round((float) ($row['nilai'] ?? 0), 2)));
 
-                    TranskripNilai::withTrashed()->withoutGlobalScopes()->updateOrCreate(
-                        [
-                            'tenant_id' => $tenantId,
-                            'siswa_id' => $siswaId,
-                            'nama_mapel' => $mapelNama,
-                        ],
-                        [
-                            'mata_pelajaran_id' => $mapelId,
-                            'nilai_akhir' => $nilai,
-                            'predikat' => TranskripNilai::tentukanPredikat($nilai),
-                            'deleted_at' => null,
-                        ]
-                    );
+                    $transkripKey = [
+                        'siswa_id' => $siswaId,
+                        'nama_mapel' => $mapelNama,
+                    ];
+                    if ($transkripHasTenant) {
+                        $transkripKey['tenant_id'] = $tenantId;
+                    }
+
+                    $transkripPayload = [
+                        'mata_pelajaran_id' => $mapelId,
+                        'nilai_akhir' => $nilai,
+                        'predikat' => TranskripNilai::tentukanPredikat($nilai),
+                        'deleted_at' => null,
+                        'updated_at' => $nowStr,
+                    ];
+
+                    $existingTranskrip = DB::table('transkrip_nilai')->where($transkripKey)->first(['id']);
+                    if ($existingTranskrip) {
+                        DB::table('transkrip_nilai')->where('id', $existingTranskrip->id)->update($transkripPayload);
+                    } else {
+                        DB::table('transkrip_nilai')->insert(array_merge($transkripKey, $transkripPayload, [
+                            'uuid' => (string) Str::uuid(),
+                            'created_at' => $nowStr,
+                        ]));
+                    }
                     // Transkrip disimpan satu baris per siswa+mapel (nilai SKL lintas semester).
                     $transkripUniqueKeys[$siswaId.'|'.$mapelNama] = true;
                 }
@@ -899,10 +1028,10 @@ class EraporXspBackupService
                         }
 
                         $pred = match ((string) ($row['nilai_ekstra'] ?? '')) {
-                            '4', 'A', 'SB' => 'Sangat Baik',
+                            '4', 'A', 'SB' => 'SB',
                             '3', 'B' => 'Baik',
                             '2', 'C' => 'Cukup',
-                            default => (string) ($row['nilai_ekstra'] ?? 'Baik'),
+                            default => mb_substr(trim((string) ($row['nilai_ekstra'] ?? 'Baik')) ?: 'Baik', 0, 10),
                         };
 
                         $eksPayload = [
@@ -951,6 +1080,93 @@ class EraporXspBackupService
                     }
                 }
 
+                // 13b. Ketidakhadiran Rapor (`public.tabel_kehadiran` -> `kehadiran`)
+                // Setiap hari Sakit (S), Izin (I), dan Tanpa Keterangan (A) dipetakan ke baris
+                // harian pada awal semester terkait agar rekap S/I/A di Cetak Rapor SIMANTAP 100% cocok.
+                if (Schema::hasTable('kehadiran') && ! empty($tables['public.tabel_kehadiran']['rows'])) {
+                    $kehadiranHasTenant = Schema::hasColumn('kehadiran', 'tenant_id');
+                    $hapusQ = DB::table('kehadiran')->where('keterangan', 'like', 'Rekap e-Rapor (.xsp)%');
+                    if ($kehadiranHasTenant && $tenantId !== null) {
+                        $hapusQ->where('tenant_id', $tenantId);
+                    }
+                    $hapusQ->delete();
+
+                    // Catat tanggal yang sudah terisi absensi manual agar tidak bentrok unique (siswa_id, tanggal).
+                    $usedAttendanceDates = [];
+                    $existingAttQ = DB::table('kehadiran')->select(['siswa_id', 'tanggal']);
+                    if ($kehadiranHasTenant && $tenantId !== null) {
+                        $existingAttQ->where('tenant_id', $tenantId);
+                    }
+                    foreach ($existingAttQ->cursor() as $attRow) {
+                        $usedAttendanceDates[(int) $attRow->siswa_id][(string) $attRow->tanggal] = true;
+                    }
+
+                    $kehadiranBatch = [];
+                    foreach ($tables['public.tabel_kehadiran']['rows'] as $row) {
+                        $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
+                        $aUuid = trim((string) ($row['anggota_rombel_id'] ?? ''));
+                        $aInfo = $anggotaUuidToInfo[$aUuid] ?? null;
+                        if ($pdUuid === '' && $aInfo) {
+                            $pdUuid = $aInfo['peserta_didik_id'];
+                        }
+                        $siswaId = $siswaUuidToId[$pdUuid] ?? null;
+                        if (! $siswaId) {
+                            continue;
+                        }
+
+                        $semCode = trim((string) ($row['semester_id'] ?? ($aInfo['semester_code'] ?? '20252')));
+                        $yr = (int) substr($semCode, 0, 4);
+                        if ($yr < 2000) {
+                            $yr = (int) date('Y');
+                        }
+                        $isGenap = substr($semCode, -1) === '2';
+                        $baseDate = \Carbon\Carbon::create($isGenap ? ($yr + 1) : $yr, $isGenap ? 1 : 7, 2);
+
+                        $sakit = min(60, max(0, (int) ($row['sakit'] ?? 0)));
+                        $izin = min(60, max(0, (int) ($row['izin'] ?? 0)));
+                        $alpa = min(60, max(0, (int) ($row['tanpa_keterangan'] ?? 0)));
+                        $guruId = $aInfo['guru_id'] ?? $fallbackGuruId;
+                        $ket = 'Rekap e-Rapor (.xsp) '.$semCode;
+
+                        $dayCursor = 0;
+                        foreach (['S' => $sakit, 'I' => $izin, 'A' => $alpa] as $statusCode => $jumlahHari) {
+                            for ($d = 0; $d < $jumlahHari; $d++) {
+                                do {
+                                    $tglStr = $baseDate->copy()->addDays($dayCursor)->toDateString();
+                                    $dayCursor++;
+                                } while (isset($usedAttendanceDates[$siswaId][$tglStr]));
+
+                                $usedAttendanceDates[$siswaId][$tglStr] = true;
+                                $item = [
+                                    'uuid' => (string) Str::uuid(),
+                                    'guru_id' => $guruId,
+                                    'siswa_id' => $siswaId,
+                                    'tanggal' => $tglStr,
+                                    'status' => $statusCode,
+                                    'keterangan' => $ket,
+                                    'created_at' => $nowStr,
+                                    'updated_at' => $nowStr,
+                                ];
+                                if ($kehadiranHasTenant) {
+                                    $item['tenant_id'] = $tenantId;
+                                }
+                                $kehadiranBatch[] = $item;
+                            }
+                        }
+
+                        $stats['kehadiran']++;
+
+                        if (count($kehadiranBatch) >= 500) {
+                            DB::table('kehadiran')->insert($kehadiranBatch);
+                            $kehadiranBatch = [];
+                        }
+                    }
+
+                    if ($kehadiranBatch !== []) {
+                        DB::table('kehadiran')->insert($kehadiranBatch);
+                    }
+                }
+
                 // 14. Catatan Wali Kelas (`public.tabel_cat_wali`)
                 foreach ($tables['public.tabel_cat_wali']['rows'] ?? [] as $row) {
                     $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
@@ -973,7 +1189,7 @@ class EraporXspBackupService
                             'tenant_id' => $tenantId,
                             'siswa_id' => $siswaId,
                             'tanggal' => $tanggal,
-                            'jenis' => 'akademik',
+                            'jenis' => 'umum',
                         ],
                         [
                             'guru_id' => $guruId,
@@ -1027,36 +1243,115 @@ class EraporXspBackupService
                 }
 
                 $firstKegiatanId = null;
+                $kegiatanUuidToId = [];
                 foreach ($tables['projec.kegiatan_kokurikuler']['rows'] ?? [] as $row) {
+                    $kUuid = trim((string) ($row['id_kegiatan'] ?? ''));
                     $nama = trim((string) ($row['nama_kegiatan'] ?? ''));
                     if ($nama === '') {
                         continue;
                     }
                     $temaId = $temaUuidToId[trim((string) ($row['id_tema'] ?? ''))] ?? reset($temaUuidToId) ?: null;
                     $keg = KegiatanKokurikuler::withoutGlobalScopes()->updateOrCreate(
-                        ['tenant_id' => $tenantId, 'nama' => $nama],
+                        ['tenant_id' => $tenantId, 'nama' => mb_substr($nama, 0, 255)],
                         [
                             'tema_id' => $temaId,
-                            'kelas' => trim((string) ($row['fase'] ?? 'A')),
-                            'deskripsi' => trim((string) ($row['tujuan_akhir'] ?? $row['deskripsi_kegiatan'] ?? '')),
+                            'kelas' => mb_substr(trim((string) ($row['fase'] ?? 'A')), 0, 50),
+                            'deskripsi' => mb_substr(trim((string) ($row['tujuan_akhir'] ?? $row['deskripsi_kegiatan'] ?? '')), 0, 500),
                             'aktif' => true,
                         ]
                     );
+                    if ($kUuid !== '') {
+                        $kegiatanUuidToId[$kUuid] = $keg->id;
+                    }
                     $firstKegiatanId ??= $keg->id;
                     $stats['kegiatan_kokurikuler']++;
                 }
 
+                // Petakan relasi kelompok -> kegiatan (`projec.tabel_kokurikuler_perklp`)
+                $kelompokToKegiatanId = [];
+                foreach ($tables['projec.tabel_kokurikuler_perklp']['rows'] ?? [] as $row) {
+                    $klpUuid = trim((string) ($row['kelompok_id'] ?? ''));
+                    $kegUuid = trim((string) ($row['id_kegiatan'] ?? ''));
+                    if ($klpUuid !== '' && isset($kegiatanUuidToId[$kegUuid])) {
+                        $kelompokToKegiatanId[$klpUuid] = $kegiatanUuidToId[$kegUuid];
+                    }
+                }
+
+                $kelompokUuidToId = [];
                 if ($firstKegiatanId) {
                     foreach ($tables['projec.tabel_klp_kokurikuler']['rows'] ?? [] as $row) {
+                        $klpUuid = trim((string) ($row['kelompok_id'] ?? ''));
                         $nmKlp = trim((string) ($row['nm_kelompok'] ?? ''));
                         if ($nmKlp === '') {
                             continue;
                         }
-                        KelompokKokurikuler::withoutGlobalScopes()->updateOrCreate(
-                            ['tenant_id' => $tenantId, 'kegiatan_id' => $firstKegiatanId, 'nama' => $nmKlp],
+                        $kegId = $kelompokToKegiatanId[$klpUuid] ?? $firstKegiatanId;
+                        $klp = KelompokKokurikuler::withoutGlobalScopes()->updateOrCreate(
+                            ['tenant_id' => $tenantId, 'kegiatan_id' => $kegId, 'nama' => $nmKlp],
                             ['keterangan' => 'Fase '.trim((string) ($row['fase'] ?? 'A'))]
                         );
+                        if ($klpUuid !== '') {
+                            $kelompokUuidToId[$klpUuid] = $klp->id;
+                        }
                         $stats['kelompok_kokurikuler']++;
+                    }
+                }
+
+                // 16b. Anggota Kelompok Kokurikuler (`projec.tabel_anggotaklp_kokurikuler` -> `anggota_kelompok`)
+                if (Schema::hasTable('anggota_kelompok') && $kelompokUuidToId !== []) {
+                    $anggotaUpsertMap = [];
+                    foreach ($tables['projec.tabel_anggotaklp_kokurikuler']['rows'] ?? [] as $row) {
+                        $klpUuid = trim((string) ($row['kelompok_id'] ?? ''));
+                        $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
+                        $klpId = $kelompokUuidToId[$klpUuid] ?? null;
+                        $siswaId = $siswaUuidToId[$pdUuid] ?? null;
+                        if (! $klpId || ! $siswaId) {
+                            continue;
+                        }
+                        $anggotaUpsertMap[$klpId.'|'.$siswaId] = [
+                            'kelompok_kokurikuler_id' => $klpId,
+                            'siswa_id' => $siswaId,
+                            'created_at' => $nowStr,
+                            'updated_at' => $nowStr,
+                        ];
+                    }
+                    foreach (array_chunk(array_values($anggotaUpsertMap), 500) as $chunk) {
+                        DB::table('anggota_kelompok')->upsert(
+                            $chunk,
+                            ['kelompok_kokurikuler_id', 'siswa_id'],
+                            ['updated_at']
+                        );
+                    }
+                    $stats['anggota_kelompok'] = count($anggotaUpsertMap);
+                }
+
+                // 16c. Narasi Deskripsi Kokurikuler Rapor (`projec.tabel_deskripsikurikuler` -> `p5_penilaian`)
+                if (Schema::hasTable('p5_penilaian') && ! empty($tables['projec.tabel_deskripsikurikuler']['rows'])) {
+                    foreach ($tables['projec.tabel_deskripsikurikuler']['rows'] as $row) {
+                        $pdUuid = trim((string) ($row['peserta_didik_id'] ?? ''));
+                        $siswaId = $siswaUuidToId[$pdUuid] ?? null;
+                        $deskKok = trim((string) ($row['deskripsi'] ?? ''));
+                        if (! $siswaId || $deskKok === '') {
+                            continue;
+                        }
+                        $semMeta = $resolveSemesterMeta((string) ($row['semester_id'] ?? '20251'));
+                        DB::table('p5_penilaian')->updateOrInsert(
+                            [
+                                'tenant_id' => $tenantId,
+                                'siswa_id' => $siswaId,
+                                'tema' => 'Kokurikuler Profil Lulusan',
+                                'dimensi' => 'Capaian Profil Lulusan',
+                                'semester' => $semMeta['nama_semester'],
+                                'tahun_ajaran' => $semMeta['tahun_ajaran'],
+                            ],
+                            [
+                                'predikat' => 'BSH',
+                                'catatan' => $deskKok,
+                                'updated_at' => $nowStr,
+                                'created_at' => $nowStr,
+                            ]
+                        );
+                        $stats['kokurikuler_deskripsi']++;
                     }
                 }
 
@@ -1127,7 +1422,7 @@ class EraporXspBackupService
                         $stats['p5_penilaian']++;
                     }
                 }
-            });
+            })();
         });
 
         SchoolDataAvailabilityService::forget($tenantId !== null ? (int) $tenantId : null);

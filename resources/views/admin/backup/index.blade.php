@@ -56,13 +56,14 @@
                 <form action="{{ route('admin.backup.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
                     @csrf
                     <div style="margin-bottom:14px">
-                        <label for="fld-admin-backup-backup-file" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File Backup (<code>.xsp</code> e-Rapor atau <code>.json</code> SIMANTAP, maks 100MB)</label>
+                        <label for="fld-admin-backup-backup-file" style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">File Backup (<code>.xsp</code> e-Rapor atau <code>.json</code> SIMANTAP, maks {{ $maxUploadLabel ?? '100 MB' }})</label>
                         <input id="fld-admin-backup-backup-file" type="file" name="backup_file" accept=".xsp,.json" required style="width:100%;padding:10px;border:1px solid #E4E7EC;border-radius:8px" onchange="previewFile(this)">
                     </div>
                     <div id="filePreview" style="display:none;margin-bottom:14px;padding:10px;background:#EEF2F9;border-radius:8px;font-size:13px">
                         <i class="fas fa-file-code" style="color:var(--navy)"></i> <span id="fileName"></span>
                         <span id="fileSize" style="color:var(--muted);margin-left:8px"></span>
                     </div>
+                    <div id="fileSizeWarn" class="note note-warn" style="display:none;margin-bottom:14px;border:1px solid #FECACA;background:#FEF2F2;border-radius:8px;padding:10px 12px;color:#B42318"></div>
                     <button type="submit" class="btn btn-gold btn-block" id="importBtn" onclick="return confirm('Pulihkan (Restore) data dari file backup yang dipilih?')">
                         <i class="fas fa-upload"></i> Restore / Impor Data Sekarang
                     </button>
@@ -156,17 +157,33 @@
     </div>
 
     <script>
+        var maxBackupUploadBytes = {{ (int) ($maxUploadBytes ?? (100 * 1024 * 1024)) }};
+        var maxBackupUploadLabel = @json($maxUploadLabel ?? '100 MB');
+
         function previewFile(input) {
             var preview = document.getElementById('filePreview');
             var nameEl = document.getElementById('fileName');
             var sizeEl = document.getElementById('fileSize');
+            var warnEl = document.getElementById('fileSizeWarn');
+            var importBtn = document.getElementById('importBtn');
             if (input.files && input.files[0]) {
                 var file = input.files[0];
+                var sizeMb = (file.size / 1024 / 1024).toFixed(2);
                 nameEl.textContent = file.name;
-                sizeEl.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+                sizeEl.textContent = sizeMb + ' MB';
                 preview.style.display = 'block';
+                if (maxBackupUploadBytes > 0 && file.size > maxBackupUploadBytes) {
+                    warnEl.textContent = 'Ukuran file (' + sizeMb + ' MB) melebihi batas unggah server (' + maxBackupUploadLabel + ').';
+                    warnEl.style.display = 'block';
+                    if (importBtn) importBtn.disabled = true;
+                } else {
+                    warnEl.style.display = 'none';
+                    if (importBtn) importBtn.disabled = false;
+                }
             } else {
                 preview.style.display = 'none';
+                warnEl.style.display = 'none';
+                if (importBtn) importBtn.disabled = false;
             }
         }
     </script>

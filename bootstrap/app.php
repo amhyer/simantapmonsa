@@ -74,4 +74,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+            $postMax = (string) ini_get('post_max_size');
+            $uploadMax = (string) ini_get('upload_max_filesize');
+            $pesan = "Ukuran berkas yang diunggah melebihi batas server saat ini (post_max_size={$postMax}, upload_max_filesize={$uploadMax}). Kecilkan berkas atau naikkan batas unggah PHP.";
+
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => $pesan], 413);
+            }
+
+            $target = url()->previous();
+            if (! $target || $target === $request->fullUrl()) {
+                $target = route('admin.backup.index');
+            }
+
+            return redirect($target)->with('error', $pesan);
+        });
     })->create();

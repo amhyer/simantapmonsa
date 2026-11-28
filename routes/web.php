@@ -384,6 +384,7 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'mfa.setup', '
     Route::get('/cetak/leger', [CetakController::class, 'leger'])->name('cetak.leger');
     Route::get('/cetak/pelengkap', [CetakController::class, 'pelengkap'])->name('cetak.pelengkap');
     Route::get('/cetak/nilai', [CetakController::class, 'nilai'])->name('cetak.nilai');
+    Route::get('/cetak/nilai-kelas', [CetakController::class, 'showNilaiKelas'])->name('cetak.nilai.kelas');
     Route::get('/cetak/nilai/{siswa}', [CetakController::class, 'showNilai'])->name('cetak.nilai.show');
     Route::get('/cetak/kelengkapan', [CetakController::class, 'kelengkapan'])->name('cetak.kelengkapan');
     Route::get('/cetak/pengaturan-rapor', [CetakController::class, 'pengaturanRapor'])->name('cetak.pengaturan-rapor');
