@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Catatan;
 use App\Models\Kehadiran;
-use App\Models\KenaikanKelas;
 use App\Models\NilaiErapot;
 use App\Models\P5Penilaian;
 use App\Models\Rombel;
@@ -13,12 +12,15 @@ use App\Models\SekolahSettings;
 use App\Models\Siswa;
 use App\Models\TanggalRapor;
 use App\Models\User;
+use App\Modules\Tenant\Contexts\TenantContext;
+use App\Modules\Tenant\Models\Tenant;
 use App\Services\Cetak\RaporCetakService;
 use Illuminate\Http\Request;
 
 class CetakController extends Controller
 {
     public function __construct(private readonly RaporCetakService $raporCetak) {}
+
     private function daftarKelas()
     {
         return Siswa::whereNotNull('kelas')
@@ -361,8 +363,8 @@ class CetakController extends Controller
             'hapus_ttd_wali' => 'nullable|array',
         ]);
 
-        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
-        $defaultNama = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
             ?: config('app.name', 'SIMANTAP');
         $sekolah = SekolahSettings::firstOrCreate(
             ['tenant_id' => $tenantId],
@@ -538,8 +540,8 @@ class CetakController extends Controller
             'pts_tabel_ekskul' => 'required|in:0,1',
         ]);
 
-        $tenantId = \App\Modules\Tenant\Contexts\TenantContext::id() ?? auth()->user()?->tenant_id;
-        $defaultNama = ($tenantId !== null ? \App\Modules\Tenant\Models\Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
+        $tenantId = TenantContext::id() ?? auth()->user()?->tenant_id;
+        $defaultNama = ($tenantId !== null ? Tenant::whereKey($tenantId)->value('nama_sekolah') : null)
             ?: config('app.name', 'SIMANTAP');
         $sekolah = SekolahSettings::firstOrCreate(
             ['tenant_id' => $tenantId],

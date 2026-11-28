@@ -18,6 +18,7 @@ use App\Http\Middleware\TrustHosts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -75,7 +76,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+        $exceptions->render(function (PostTooLargeException $e, Request $request) {
             $postMax = (string) ini_get('post_max_size');
             $uploadMax = (string) ini_get('upload_max_filesize');
             $pesan = "Ukuran berkas yang diunggah melebihi batas server saat ini (post_max_size={$postMax}, upload_max_filesize={$uploadMax}). Kecilkan berkas atau naikkan batas unggah PHP.";

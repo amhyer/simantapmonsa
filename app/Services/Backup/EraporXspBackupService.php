@@ -24,6 +24,7 @@ use App\Modules\Tenant\Models\Tenant;
 use App\Services\Navigation\SchoolDataAvailabilityService;
 use App\Services\NilaiErapotAuditService;
 use App\Support\InitialPassword;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -1120,7 +1121,7 @@ class EraporXspBackupService
                             $yr = (int) date('Y');
                         }
                         $isGenap = substr($semCode, -1) === '2';
-                        $baseDate = \Carbon\Carbon::create($isGenap ? ($yr + 1) : $yr, $isGenap ? 1 : 7, 2);
+                        $baseDate = Carbon::create($isGenap ? ($yr + 1) : $yr, $isGenap ? 1 : 7, 2);
 
                         $sakit = min(60, max(0, (int) ($row['sakit'] ?? 0)));
                         $izin = min(60, max(0, (int) ($row['izin'] ?? 0)));
