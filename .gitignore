@@ -79,3 +79,6 @@ node_modules/
 /storage/logs/menu-inventory.md
 /docs/IDENTIFIKASI.md
 
+# Arsip backup/dump e-Rapor lokal (berisi data riil siswa, jangan pernah di-commit)
+/docs/db/
+

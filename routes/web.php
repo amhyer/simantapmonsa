@@ -443,8 +443,8 @@ Route::middleware(['auth', 'role:admin', 'force.password.change', 'mfa.setup', '
     Route::post('/backup/import', [BackupController::class, 'import'])->middleware('throttle:5,1')->name('backup.import');
     Route::post('/backup/wipe', [BackupController::class, 'wipeAll'])->middleware('throttle:10,5')->name('backup.wipe');
 
-    // Log Aktivitas
-    Route::get('/log', [LogController::class, 'index'])->middleware('data.single-school')->name('log.index');
+    // Log Aktivitas (terisolasi per sekolah via HasSchoolOwnership)
+    Route::get('/log', [LogController::class, 'index'])->name('log.index');
 
     // API Keys & Dapodik
     Route::prefix('api-keys')->name('api-keys.')->group(function () {

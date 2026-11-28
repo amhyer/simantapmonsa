@@ -139,7 +139,7 @@ class CommandPaletteService
             ['title' => 'Kartu QR Siswa & Pegawai', 'category' => 'Presensi', 'route' => 'admin.presensi.kartu.index', 'icon' => 'fas fa-qrcode', 'keywords' => 'cetak kartu qr'],
             ['title' => 'Modul & Tampilan', 'category' => 'Sistem', 'route' => 'admin.modul.index', 'icon' => 'fas fa-sliders-h', 'keywords' => 'fitur aktif nonaktif'],
             ['title' => 'Backup & Restore', 'category' => 'Sistem', 'route' => 'admin.backup.index', 'icon' => 'fas fa-database', 'keywords' => 'cadangan data'],
-            ['title' => 'Log Aktivitas', 'category' => 'Sistem', 'route' => 'admin.log.index', 'icon' => 'fas fa-history', 'single_school_only' => true, 'keywords' => 'audit riwayat'],
+            ['title' => 'Log Aktivitas', 'category' => 'Sistem', 'route' => 'admin.log.index', 'icon' => 'fas fa-history', 'keywords' => 'audit riwayat'],
         ];
     }
 

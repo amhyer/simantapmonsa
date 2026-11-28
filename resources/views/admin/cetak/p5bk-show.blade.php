@@ -45,10 +45,10 @@
             @forelse($penilaian as $i => $p)
                 <tr>
                     <td style="text-align:center">{{ $i + 1 }}</td>
-                    <td>{{ e($p->tema) }}</td>
-                    <td>{{ e($p->dimensi) }}</td>
+                    <td>{{ $p->tema }}</td>
+                    <td>{{ $p->dimensi }}</td>
                     <td style="text-align:center"><strong>{{ $p->predikat }}</strong></td>
-                    <td>{{ e($p->catatan ?? '-') }}</td>
+                    <td>{{ $p->catatan ?? '-' }}</td>
                 </tr>
             @empty
                 <tr><td colspan="5" style="text-align:center">Belum ada penilaian P5BK untuk periode ini.</td></tr>

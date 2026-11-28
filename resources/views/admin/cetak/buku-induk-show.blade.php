@@ -50,7 +50,7 @@
                 @foreach($items as $i => $n)
                     <tr>
                         <td style="text-align:center">{{ $i + 1 }}</td>
-                        <td>{{ e($n->mata_pelajaran) }}</td>
+                        <td>{{ $n->mata_pelajaran }}</td>
                         <td style="text-align:center">{{ $n->nilai_akhir !== null ? number_format((float) $n->nilai_akhir, 0) : '-' }}</td>
                         <td style="text-align:center">{{ $n->predikat ?? '-' }}</td>
                     </tr>

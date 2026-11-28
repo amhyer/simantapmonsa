@@ -673,7 +673,7 @@ class AuditBatch3Nov2026Test extends TestCase
         // P2 #12: GET /admin/backup/export harus ditolak (405), hanya POST yang diizinkan
         $singleAdmin = User::factory()->admin()->create();
         $this->actingAs($singleAdmin)->get('/admin/backup/export')->assertStatus(405);
-        $this->actingAs($singleAdmin)->post(route('admin.backup.export'))->assertOk()->assertJson(['success' => true]);
+        $this->actingAs($singleAdmin)->postJson(route('admin.backup.export'))->assertOk()->assertJson(['success' => true]);
 
         // P2 #13: resources/js/app.js mempertahankan event.submitter & membersihkan confirmAccepted
         $appJs = (string) file_get_contents(base_path('resources/js/app.js'));

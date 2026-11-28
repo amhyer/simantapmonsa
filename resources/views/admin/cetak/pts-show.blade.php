@@ -77,7 +77,7 @@
                 @endphp
                 <tr>
                     <td style="text-align:center">{{ $i + 1 }}</td>
-                    <td>{{ e($n->mata_pelajaran) }}</td>
+                    <td>{{ $n->mata_pelajaran }}</td>
                     @if($showFormatif)
                         <td style="text-align:center">{{ $n->formatif !== null ? number_format((float) $n->formatif, 0) : '-' }}</td>
                     @endif

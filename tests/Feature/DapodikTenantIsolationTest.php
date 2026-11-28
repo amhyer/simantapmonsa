@@ -194,7 +194,27 @@ class DapodikTenantIsolationTest extends TestCase
         $this->assertDatabaseHas('siswa', ['id' => $siswaA->id, 'tenant_id' => $a->id, 'nama_peserta_didik' => 'Siswa Backup A']);
         $this->assertDatabaseHas('siswa', ['id' => $siswaB->id, 'tenant_id' => $b->id, 'nama_peserta_didik' => 'Siswa Rahasia B']);
 
-        $this->actingAs($adminA)->get(route('admin.log.index'))->assertStatus(503);
+        // Log Aktivitas kini terisolasi per sekolah: Admin A hanya melihat aktivitas Sekolah A.
+        TenantContext::run($a->id, fn () => \App\Models\Aktivitas::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'guru_id' => $adminA->id,
+            'nama_guru' => 'Admin A',
+            'jenis' => 'pengaturan',
+            'judul' => 'Aktivitas Milik Sekolah A',
+            'deskripsi' => 'Log internal A',
+        ]));
+        TenantContext::run($b->id, fn () => \App\Models\Aktivitas::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'guru_id' => $adminB->id,
+            'nama_guru' => 'Admin B',
+            'jenis' => 'pengaturan',
+            'judul' => 'Aktivitas Rahasia Sekolah B',
+            'deskripsi' => 'Log internal B',
+        ]));
+        $this->actingAs($adminA)->get(route('admin.log.index'))
+            ->assertOk()
+            ->assertSee('Aktivitas Milik Sekolah A')
+            ->assertDontSee('Aktivitas Rahasia Sekolah B');
         $this->actingAs($adminA)->get(route('admin.api-keys.index'))->assertOk()->assertSee('Kunci Sekolah A')->assertDontSee('Rahasia Sekolah B');
         $this->actingAs($adminA)->post(route('admin.api-keys.toggle', $keyA->id))->assertRedirect();
         $this->assertDatabaseHas('api_keys', ['id' => $keyA->id, 'active' => false]);

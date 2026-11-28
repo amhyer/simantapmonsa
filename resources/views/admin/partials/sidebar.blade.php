@@ -157,9 +157,6 @@
             if (isset($group['children'])) {
                 $group['children'] = array_values(array_filter($group['children'], function ($item) use ($multiSchoolMode, $dataAvail, $isActive) {
                     $route = $item['route'] ?? '';
-                    if ($multiSchoolMode && $route === 'admin.log.index') {
-                        return false;
-                    }
                     if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
                         return false;
                     }
@@ -176,9 +173,6 @@
             } elseif (isset($group['items'])) {
                 $group['items'] = array_values(array_filter($group['items'], function ($item) use ($multiSchoolMode, $dataAvail, $isActive) {
                     $route = $item['route'] ?? '';
-                    if ($multiSchoolMode && $route === 'admin.log.index') {
-                        return false;
-                    }
                     if (!kesiapanTkaAktif() && !empty($item['kesiapan_tka'])) {
                         return false;
                     }

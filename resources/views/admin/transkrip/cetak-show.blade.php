@@ -59,7 +59,7 @@
             @forelse($nilai as $i => $n)
                 <tr>
                     <td style="text-align:center">{{ $i + 1 }}</td>
-                    <td>{{ e($n->nama_mapel) }}</td>
+                    <td>{{ $n->nama_mapel }}</td>
                     <td style="text-align:center">{{ number_format((float) $n->nilai_akhir, 2, ',', '.') }}</td>
                     <td style="text-align:center">{{ $n->predikat ?? '-' }}</td>
                 </tr>
@@ -79,7 +79,7 @@
     </table>
 
     @if(!empty($setting['keterangan']))
-        <p style="font-size:13px;margin-top:12px">Keterangan: {{ e($setting['keterangan']) }}</p>
+        <p style="font-size:13px;margin-top:12px">Keterangan: {{ $setting['keterangan'] }}</p>
     @endif
 
     <div class="ttd">
@@ -90,7 +90,7 @@
             NIP. {{ $setting['nip_kepala_sekolah'] ?? '........................' }}</p>
         </div>
         <div>
-            <p>{{ e($setting['tempat'] ?? '................') }}, {{ now()->format('d-m-Y') }}</p>
+            <p>{{ $setting['tempat'] ?? '................' }}, {{ now()->format('d-m-Y') }}</p>
             <br><br><br><br>
             <p><strong><u>&nbsp;</u></strong></p>
         </div>
